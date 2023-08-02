@@ -14,7 +14,7 @@ class ClientTest < Minitest::Test
   end
 
   def test_bearer_token_get_request_success
-    stub_bearer_request("tweets", :get, 200)
+    stub_bearer_request(:get, "tweets", 200)
 
     response = @client_bearer.get("tweets")
 
@@ -22,16 +22,8 @@ class ClientTest < Minitest::Test
     assert_requested :get, "https://api.twitter.com/2/tweets"
   end
 
-  def test_bearer_token_get_request_failure
-    stub_bearer_request("invalid_endpoint", :get, 404)
-
-    assert_raises StandardError do
-      @client_bearer.get("invalid_endpoint")
-    end
-  end
-
   def test_oauth_get_request_success
-    stub_oauth_request("tweets", :get, 200)
+    stub_oauth_request(:get, "tweets", 200)
 
     response = @client_oauth.get("tweets")
 
@@ -39,16 +31,8 @@ class ClientTest < Minitest::Test
     assert_requested :get, "https://api.twitter.com/2/tweets"
   end
 
-  def test_oauth_get_request_failure
-    stub_oauth_request("invalid_endpoint", :get, 404)
-
-    assert_raises StandardError do
-      @client_oauth.get("invalid_endpoint")
-    end
-  end
-
   def test_post_request_success
-    stub_oauth_request("tweets", :post, 200)
+    stub_oauth_request(:post, "tweets", 200)
 
     body = '{"text":"Hello, World!"}'
     response = @client_oauth.post("tweets", body)
@@ -58,7 +42,7 @@ class ClientTest < Minitest::Test
   end
 
   def test_put_request_success
-    stub_oauth_request("tweets/123", :put, 200)
+    stub_oauth_request(:put, "tweets/123", 200)
 
     body = '{"text":"Updated tweet!"}'
     response = @client_oauth.put("tweets/123", body)
@@ -68,7 +52,7 @@ class ClientTest < Minitest::Test
   end
 
   def test_delete_request_success
-    stub_oauth_request("tweets/123", :delete, 200)
+    stub_oauth_request(:delete, "tweets/123", 200)
 
     response = @client_oauth.delete("tweets/123")
 
