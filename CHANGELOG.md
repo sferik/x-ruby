@@ -1,5 +1,7 @@
 ## [Unreleased]
 
+- Add accessors to X::Client
+
 ## [0.2.0] - 2023-08-02
 
 - Allow configuration of base URL (4bc0531)

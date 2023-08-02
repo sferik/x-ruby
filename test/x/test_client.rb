@@ -133,4 +133,78 @@ class ClientTest < Minitest::Test
       client_oauth.get("tweets")
     end
   end
+
+  def test_bearer_token
+    assert_equal "TEST_BEARER_TOKEN", client_bearer.bearer_token
+  end
+
+  def test_set_bearer_token
+    client = client_oauth
+    assert_nil client.bearer_token
+    refute client.instance_variable_get(:@http_request).instance_variable_get(:@use_bearer_token)
+
+    client.bearer_token = "TEST_BEARER_TOKEN"
+    assert_equal "TEST_BEARER_TOKEN", client.bearer_token
+    assert client.instance_variable_get(:@http_request).instance_variable_get(:@use_bearer_token)
+  end
+
+  def test_api_key
+    assert_equal "TEST_API_KEY", client_oauth.api_key
+  end
+
+  def test_set_api_key
+    client = client_oauth
+    client.api_key = "abc"
+    assert_equal "abc", client.api_key
+  end
+
+  def test_api_key_secret
+    assert_equal "TEST_API_KEY_SECRET", client_oauth.api_key_secret
+  end
+
+  def test_set_api_key_secret
+    client = client_oauth
+    client.api_key_secret = "xyz"
+    assert_equal "xyz", client.api_key_secret
+  end
+
+  def test_access_token
+    assert_equal "TEST_ACCESS_TOKEN", client_oauth.access_token
+  end
+
+  def test_set_access_token
+    client = client_oauth
+    client.access_token = "abc"
+    assert_equal "abc", client.access_token
+  end
+
+  def test_access_token_secret
+    assert_equal "TEST_ACCESS_TOKEN_SECRET", client_oauth.access_token_secret
+  end
+
+  def test_set_access_token_secret
+    client = client_oauth
+    client.access_token_secret = "xyz"
+    assert_equal "xyz", client.access_token_secret
+  end
+
+  def test_default_base_url
+    assert_equal X::Client::DEFAULT_BASE_URL, client_oauth.base_url
+  end
+
+  def test_set_base_url
+    client = client_oauth
+    client.base_url = "https://example.com"
+    assert_equal "https://example.com", client.base_url
+  end
+
+  def test_default_user_agent
+    assert_equal X::Client::DEFAULT_USER_AGENT, client_oauth.user_agent
+  end
+
+  def test_set_user_agent
+    client = client_oauth
+    client.user_agent = "Custom User Agent"
+    assert_equal "Custom User Agent", client.user_agent
+  end
 end
