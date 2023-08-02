@@ -1,12 +1,23 @@
 require "json"
 require "net/http"
 require "oauth"
+require_relative "version"
 
 module X
+  class Error < ::StandardError; end
+  class ClientError < Error; end
+  class AuthenticationError < ClientError; end
+  class BadRequestError < ClientError; end
+  class ForbiddenError < ClientError; end
+  class NotFoundError < ClientError; end
+  class TooManyRequestsError < ClientError; end
+  class ServerError < Error; end
+  class ServiceUnavailableError < ServerError; end
+
   # HTTP client that handles authentication and requests
   class Client
     DEFAULT_BASE_URL = "https://api.twitter.com/2/".freeze
-    DEFAULT_USER_AGENT = "X-Client/#{VERSION} Ruby/#{RUBY_VERSION}".freeze
+    DEFAULT_USER_AGENT = "X-Client/#{X::Version} Ruby/#{RUBY_VERSION}".freeze
 
     def initialize(bearer_token: nil, api_key: nil, api_key_secret: nil, access_token: nil, access_token_secret: nil,
                    base_url: DEFAULT_BASE_URL, user_agent: DEFAULT_USER_AGENT)

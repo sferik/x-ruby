@@ -2,7 +2,7 @@ require_relative "lib/x/version"
 
 Gem::Specification.new do |spec|
   spec.name = "x"
-  spec.version = X::VERSION
+  spec.version = X::Version
   spec.authors = ["Erik Berlin"]
   spec.email = ["sferik@gmail.com"]
 
