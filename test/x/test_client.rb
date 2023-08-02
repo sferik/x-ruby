@@ -1,5 +1,4 @@
 require "test_helper"
-require "webmock/minitest"
 
 class ClientTest < Minitest::Test
   def setup
@@ -81,19 +80,5 @@ class ClientTest < Minitest::Test
     assert_raises ArgumentError do
       X::Client.new
     end
-  end
-
-  private
-
-  def stub_bearer_request(endpoint, method, status)
-    stub_request(method, "https://api.twitter.com/2/#{endpoint}")
-      .with(headers: { "Authorization" => "Bearer #{@bearer_token}" })
-      .to_return(status: status, body: {}.to_json)
-  end
-
-  def stub_oauth_request(endpoint, method, status)
-    stub_request(method, "https://api.twitter.com/2/#{endpoint}")
-      .with(headers: { "Authorization" => /OAuth/ }) # Match any Authorization header containing 'OAuth'
-      .to_return(status: status, body: {}.to_json)
   end
 end

@@ -80,9 +80,16 @@ module X
     end
 
     def handle_response(response)
-      raise "Error #{response.code}: #{response.body}" unless response.code.to_i == 200
-
-      JSON.parse(response.body)
+      case response
+      when Net::HTTPSuccess
+        JSON.parse(response.body)
+      when Net::HTTPUnauthorized
+        raise X::AuthenticationError, "Authentication failed. Please check your credentials."
+      when Net::HTTPServerError
+        raise X::ServerError, "An internal server error occurred."
+      else
+        raise X::Error, "Unexpected response: #{response.code} #{response.message}"
+      end
     end
   end
 end
