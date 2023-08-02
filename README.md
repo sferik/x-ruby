@@ -15,17 +15,20 @@ If bundler is not being used to manage dependencies, install the gem by executin
 ## Usage
 
 ```ruby
-api_key = "YOUR_X_API_KEY"
-api_key_secret = "YOUR_X_API_KEY_SECRET"
-access_token = "YOUR_X_ACCESS_TOKEN"
-access_token_secret = "YOUR_X_ACCESS_TOKEN_SECRET"
+x_api_key             = "YOUR_X_API_KEY"
+x_api_key_secret      = "YOUR_X_API_KEY_SECRET"
+x_access_token        = "YOUR_X_ACCESS_TOKEN"
+x_access_token_secret = "YOUR_X_ACCESS_TOKEN_SECRET"
 
-x_client = X::Client.new(api_key: api_key, api_key_secret: api_key_secret, access_token: access_token, access_token_secret: access_token_secret)
+x_client = X::Client.new(api_key:             x_api_key,
+                         api_key_secret:      x_api_key_secret,
+                         access_token:        x_access_token,
+                         access_token_secret: x_access_token_secret)
 
 begin
   response = x_client.get("users/me")
   puts JSON.pretty_generate(response)
-rescue StandardError => e
+rescue X::Error => e
   puts "Error: #{e.message}"
 end
 ```
