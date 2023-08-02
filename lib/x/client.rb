@@ -6,15 +6,17 @@ module X
   # HTTP client that handles authentication and requests
   class Client
     DEFAULT_BASE_URL = "https://api.twitter.com/2/".freeze
+    DEFAULT_USER_AGENT = "X-Client/#{VERSION} Ruby/#{RUBY_VERSION}".freeze
 
     def initialize(bearer_token: nil, api_key: nil, api_key_secret: nil, access_token: nil, access_token_secret: nil,
-                   base_url: DEFAULT_BASE_URL)
+                   base_url: DEFAULT_BASE_URL, user_agent: DEFAULT_USER_AGENT)
       @http_request = HttpRequest.new(bearer_token: bearer_token,
                                       api_key: api_key,
                                       api_key_secret: api_key_secret,
                                       access_token: access_token,
                                       access_token_secret: access_token_secret,
-                                      base_url: base_url)
+                                      base_url: base_url,
+                                      user_agent: user_agent)
     end
 
     def get(endpoint)
@@ -50,9 +52,10 @@ module X
       }.freeze
 
       def initialize(bearer_token: nil, api_key: nil, api_key_secret: nil, access_token: nil, access_token_secret: nil,
-                     base_url: nil)
+                     base_url: nil, user_agent: nil)
         @base_url = base_url
         @use_bearer_token = !bearer_token.nil?
+        @user_agent = user_agent || Client::DEFAULT_USER_AGENT
 
         if @use_bearer_token
           @bearer_token = bearer_token
@@ -95,6 +98,7 @@ module X
 
         request = create_request(http_method, url, body)
         add_authorization(request)
+        add_user_agent(request)
 
         http.request(request)
       end
@@ -115,6 +119,10 @@ module X
         else
           @consumer.sign!(request, @access_token)
         end
+      end
+
+      def add_user_agent(request)
+        request["User-Agent"] = @user_agent if @user_agent
       end
     end
 
