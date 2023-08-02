@@ -5,7 +5,8 @@ require "net/http"
 module X
   # Main client that handles HTTP authentication and requests
   class Client
-    BASE_URL = "https://api.twitter.com/2/".freeze
+    DEFAULT_BASE_URL = "https://api.twitter.com/2/".freeze
+
     HTTP_METHODS = {
       get: Net::HTTP::Get,
       post: Net::HTTP::Post,
@@ -13,18 +14,15 @@ module X
       delete: Net::HTTP::Delete
     }.freeze
 
-    def initialize(bearer_token: nil, api_key: nil, api_key_secret: nil, access_token: nil, access_token_secret: nil)
+    def initialize(bearer_token: nil, api_key: nil, api_key_secret: nil, access_token: nil, access_token_secret: nil,
+                   base_url: DEFAULT_BASE_URL)
+      @base_url = base_url
       @use_bearer_token = !bearer_token.nil?
 
       if @use_bearer_token
-        @bearer_token = bearer_token
+        initialize_bearer_token(bearer_token)
       else
-        unless api_key && api_key_secret && access_token && access_token_secret
-          raise ArgumentError, "Missing OAuth credentials."
-        end
-
-        @consumer = OAuth::Consumer.new(api_key, api_key_secret, site: BASE_URL)
-        @access_token = OAuth::Token.new(access_token, access_token_secret)
+        initialize_oauth(api_key, api_key_secret, access_token, access_token_secret)
       end
     end
 
@@ -50,8 +48,21 @@ module X
 
     private
 
+    def initialize_bearer_token(bearer_token)
+      @bearer_token = bearer_token
+    end
+
+    def initialize_oauth(api_key, api_key_secret, access_token, access_token_secret)
+      unless api_key && api_key_secret && access_token && access_token_secret
+        raise ArgumentError, "Missing OAuth credentials."
+      end
+
+      @consumer = OAuth::Consumer.new(api_key, api_key_secret, site: @base_url)
+      @access_token = OAuth::Token.new(access_token, access_token_secret)
+    end
+
     def send_request(http_method, endpoint, body = nil)
-      url = URI.parse(BASE_URL + endpoint)
+      url = URI.parse(@base_url + endpoint)
       http = Net::HTTP.new(url.host, url.port)
       http.use_ssl = true
 

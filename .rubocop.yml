@@ -15,8 +15,8 @@ Style/StringLiteralsInInterpolation:
   Enabled: true
   EnforcedStyle: double_quotes
 
-Layout/LineLength:
-  Max: 120
-
 Style/FrozenStringLiteralComment:
   Enabled: false
+
+Metrics/ParameterLists:
+  CountKeywordArgs: false
