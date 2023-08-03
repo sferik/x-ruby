@@ -8,6 +8,13 @@ class ErrorTest < Minitest::Test
     end
   end
 
+  def test_set_invalid_base_url
+    client = client_oauth
+    assert_raises ArgumentError do
+      client.base_url = "ftp://ftp.example.com"
+    end
+  end
+
   def test_bearer_token_get_request_failure
     stub_bearer_request(:get, "invalid_endpoint", 404)
 
@@ -90,6 +97,14 @@ class ErrorTest < Minitest::Test
 
   def test_errno_econnrefused
     stub_request(:get, "https://api.twitter.com/2/tweets").to_raise(Errno::ECONNREFUSED)
+
+    assert_raises X::NetworkError do
+      client_oauth.get("tweets")
+    end
+  end
+
+  def test_net_read_timeout
+    stub_request(:get, "https://api.twitter.com/2/tweets").to_raise(Net::ReadTimeout)
 
     assert_raises X::NetworkError do
       client_oauth.get("tweets")

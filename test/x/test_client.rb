@@ -23,8 +23,7 @@ class ClientTest < Minitest::Test
   def test_post_request_success
     stub_oauth_request(:post, "tweets", 200)
 
-    body = '{"text":"Hello, World!"}'
-    response = client_oauth.post("tweets", body)
+    response = client_oauth.post("tweets", '{"text":"Hello, World!"}')
 
     assert_instance_of Hash, response
     assert_requested :post, "https://api.twitter.com/2/tweets"
@@ -33,8 +32,7 @@ class ClientTest < Minitest::Test
   def test_put_request_success
     stub_oauth_request(:put, "tweets/123", 200)
 
-    body = '{"text":"Updated tweet!"}'
-    response = client_oauth.put("tweets/123", body)
+    response = client_oauth.put("tweets/123", '{"text":"Updated tweet!"}')
 
     assert_instance_of Hash, response
     assert_requested :put, "https://api.twitter.com/2/tweets/123"
@@ -111,18 +109,11 @@ class ClientTest < Minitest::Test
   end
 
   def test_set_base_url
-    url = "https://example.com"
+    url = URI("https://example.com")
     client = client_oauth
     client.base_url = url
 
-    assert_equal URI.parse(url), client.base_url
-  end
-
-  def test_set_invalid_base_url
-    client = client_oauth
-    assert_raises ArgumentError do
-      client.base_url = "ftp://ftp.example.com"
-    end
+    assert_equal url, client.base_url
   end
 
   def test_default_user_agent
@@ -134,5 +125,16 @@ class ClientTest < Minitest::Test
     client.user_agent = "Custom User Agent"
 
     assert_equal "Custom User Agent", client.user_agent
+  end
+
+  def test_default_read_timeout
+    assert_equal X::Client::DEFAULT_READ_TIMEOUT, client_oauth.read_timeout
+  end
+
+  def test_set_read_timeout
+    client = client_oauth
+    client.read_timeout = 10
+
+    assert_equal 10, client.read_timeout
   end
 end

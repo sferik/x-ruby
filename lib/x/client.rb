@@ -23,20 +23,22 @@ module X
     def_delegators :@http_request, :bearer_token, :bearer_token=, :api_key,
                    :api_key=, :api_key_secret, :api_key_secret=, :access_token, :access_token=,
                    :access_token_secret, :access_token_secret=,
-                   :base_url, :base_url=, :user_agent, :user_agent=
+                   :base_url, :base_url=, :user_agent, :user_agent=, :read_timeout, :read_timeout=
 
     DEFAULT_BASE_URL = "https://api.twitter.com/2/".freeze
     DEFAULT_USER_AGENT = "X-Client/#{X::Version} Ruby/#{RUBY_VERSION}".freeze
+    DEFAULT_READ_TIMEOUT = 60 # seconds
 
     def initialize(bearer_token: nil, api_key: nil, api_key_secret: nil, access_token: nil, access_token_secret: nil,
-                   base_url: DEFAULT_BASE_URL, user_agent: DEFAULT_USER_AGENT)
+                   base_url: DEFAULT_BASE_URL, user_agent: DEFAULT_USER_AGENT, read_timeout: DEFAULT_READ_TIMEOUT)
       @http_request = HttpRequest.new(bearer_token: bearer_token,
                                       api_key: api_key,
                                       api_key_secret: api_key_secret,
                                       access_token: access_token,
                                       access_token_secret: access_token_secret,
                                       base_url: base_url,
-                                      user_agent: user_agent)
+                                      user_agent: user_agent,
+                                      read_timeout: read_timeout)
     end
 
     def get(endpoint)
@@ -65,7 +67,7 @@ module X
     # HTTP client requester
     class HttpRequest
       extend Forwardable
-      attr_accessor :user_agent
+      attr_accessor :user_agent, :read_timeout
       attr_reader :base_url, :bearer_token
 
       def_delegator :@access_token, :secret, :access_token_secret
@@ -85,10 +87,12 @@ module X
       }.freeze
 
       def initialize(bearer_token: nil, api_key: nil, api_key_secret: nil, access_token: nil, access_token_secret: nil,
-                     base_url: nil, user_agent: nil)
-        @base_url = URI.parse(base_url)
+                     base_url: Client::DEFAULT_BASE_URL, user_agent: Client::DEFAULT_USER_AGENT,
+                     read_timeout: Client::DEFAULT_READ_TIMEOUT)
+        @base_url = URI(base_url)
         @use_bearer_token = !bearer_token.nil?
-        @user_agent = user_agent || Client::DEFAULT_USER_AGENT
+        @user_agent = user_agent
+        @read_timeout = read_timeout
 
         validate_base_url!
 
@@ -116,7 +120,7 @@ module X
       end
 
       def base_url=(base_url)
-        @base_url = URI.parse(base_url)
+        @base_url = URI(base_url)
         validate_base_url!
       end
 
@@ -139,7 +143,8 @@ module X
       def send_request(http_method, endpoint, body = nil)
         url = URI.join(@base_url, endpoint)
         http = Net::HTTP.new(url.host, url.port)
-        http.use_ssl = true
+        http.use_ssl = url.scheme == "https"
+        http.read_timeout = @read_timeout
 
         request = create_request(http_method, url, body)
         add_authorization(request)
