@@ -57,7 +57,7 @@ class ClientTest < Minitest::Test
     client.bearer_token = "abc"
 
     assert_equal "abc", client.bearer_token
-    assert client.instance_variable_get(:@http_request).instance_variable_get(:@use_bearer_token)
+    assert client.instance_variable_get(:@use_bearer_token)
   end
 
   def test_api_key
