@@ -6,6 +6,7 @@ require_relative "version"
 
 module X
   class Error < ::StandardError; end
+  class NetworkError < Error; end
   class ClientError < Error; end
   class AuthenticationError < ClientError; end
   class BadRequestError < ClientError; end
@@ -136,7 +137,11 @@ module X
         add_authorization(request)
         add_user_agent(request)
 
-        http.request(request)
+        begin
+          http.request(request)
+        rescue Errno::ECONNREFUSED, Net::OpenTimeout, Net::ReadTimeout => e
+          raise X::NetworkError, "Network error: #{e.message}"
+        end
       end
 
       def create_request(http_method, url, body)

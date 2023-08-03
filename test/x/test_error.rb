@@ -87,4 +87,12 @@ class ErrorTest < Minitest::Test
       client_oauth.get("tweets")
     end
   end
+
+  def test_errno_econnrefused
+    stub_request(:get, "https://api.twitter.com/2/tweets").to_raise(Errno::ECONNREFUSED)
+
+    assert_raises X::NetworkError do
+      client_oauth.get("tweets")
+    end
+  end
 end
