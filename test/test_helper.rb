@@ -11,18 +11,19 @@ require "x"
 require "minitest/autorun"
 require "webmock/minitest"
 
+TEST_BEARER_TOKEN = "TEST_BEARER_TOKEN".freeze
+TEST_API_KEY = "TEST_API_KEY".freeze
+TEST_API_KEY_SECRET = "TEST_API_KEY_SECRET".freeze
+TEST_ACCESS_TOKEN = "TEST_ACCESS_TOKEN".freeze
+TEST_ACCESS_TOKEN_SECRET = "TEST_ACCESS_TOKEN_SECRET".freeze
+
 def client_bearer
-  X::Client.new(bearer_token: "TEST_BEARER_TOKEN")
+  X::Client.new(bearer_token: TEST_BEARER_TOKEN)
 end
 
 def client_oauth
-  api_key = "TEST_API_KEY"
-  api_key_secret = "TEST_API_KEY_SECRET"
-  access_token = "TEST_ACCESS_TOKEN"
-  access_token_secret = "TEST_ACCESS_TOKEN_SECRET"
-
-  X::Client.new(api_key: api_key, api_key_secret: api_key_secret, access_token: access_token,
-                access_token_secret: access_token_secret)
+  X::Client.new(api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET, access_token: TEST_ACCESS_TOKEN,
+                access_token_secret: TEST_ACCESS_TOKEN_SECRET)
 end
 
 def stub_bearer_request(method, endpoint, status)

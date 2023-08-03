@@ -1,5 +1,6 @@
 require "test_helper"
 
+# Tests for X::Version module
 class VersionTest < Minitest::Test
   def test_major_version
     refute_nil X::Version.major
