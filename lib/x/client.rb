@@ -164,31 +164,29 @@ module X
 
     # HTTP client error handler
     class ErrorHandler
-      HTTP_STATUS_HANDLERS = {
-        Net::HTTPOK => :handle_success_response,
-        Net::HTTPBadRequest => :handle_bad_request_response,
-        Net::HTTPForbidden => :handle_forbidden_response,
-        Net::HTTPUnauthorized => :handle_unauthorized_response,
-        Net::HTTPNotFound => :handle_not_found_response,
-        Net::HTTPTooManyRequests => :handle_too_many_requests_response,
-        Net::HTTPInternalServerError => :handle_server_error_response,
-        Net::HTTPServiceUnavailable => :handle_service_unavailable_response
-      }.freeze
-
       def initialize(response)
         @response = response
       end
 
       def handle
-        handler_method = HTTP_STATUS_HANDLERS[@response.class]
-        if handler_method
-          send(handler_method)
-        else
-          handle_unexpected_response
-        end
+        send(handler_method)
       end
 
       private
+
+      def handler_method # rubocop:disable Metrics/CyclomaticComplexity, Metrics/MethodLength
+        case @response
+        when Net::HTTPOK then :handle_success_response
+        when Net::HTTPBadRequest then :handle_bad_request_response
+        when Net::HTTPForbidden then :handle_forbidden_response
+        when Net::HTTPUnauthorized then :handle_unauthorized_response
+        when Net::HTTPNotFound then :handle_not_found_response
+        when Net::HTTPTooManyRequests then :handle_too_many_requests_response
+        when Net::HTTPInternalServerError then :handle_server_error_response
+        when Net::HTTPServiceUnavailable then :handle_service_unavailable_response
+        else :handle_unexpected_response
+        end
+      end
 
       def handle_success_response
         JSON.parse(@response.body)
