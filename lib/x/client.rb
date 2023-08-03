@@ -123,6 +123,7 @@ module X
 
     def add_headers(request)
       add_authorization(request)
+      add_content_type(request)
       add_user_agent(request)
     end
 
@@ -132,6 +133,10 @@ module X
       else
         @consumer.sign!(request, @access_token)
       end
+    end
+
+    def add_content_type(request)
+      request["Content-Type"] = "application/json"
     end
 
     def add_user_agent(request)
