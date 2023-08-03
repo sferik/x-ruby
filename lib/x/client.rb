@@ -2,6 +2,7 @@ require "forwardable"
 require "json"
 require "net/http"
 require "oauth"
+require "uri"
 require_relative "version"
 
 module X
@@ -64,8 +65,8 @@ module X
     # HTTP client requester
     class HttpRequest
       extend Forwardable
-      attr_accessor :base_url, :user_agent
-      attr_reader :bearer_token
+      attr_accessor :user_agent
+      attr_reader :base_url, :bearer_token
 
       def_delegator :@access_token, :secret, :access_token_secret
       def_delegator :@access_token, :secret=, :access_token_secret=
@@ -85,9 +86,11 @@ module X
 
       def initialize(bearer_token: nil, api_key: nil, api_key_secret: nil, access_token: nil, access_token_secret: nil,
                      base_url: nil, user_agent: nil)
-        @base_url = base_url
+        @base_url = URI.parse(base_url)
         @use_bearer_token = !bearer_token.nil?
         @user_agent = user_agent || Client::DEFAULT_USER_AGENT
+
+        validate_base_url!
 
         if @use_bearer_token
           @bearer_token = bearer_token
@@ -112,6 +115,11 @@ module X
         send_request(:delete, endpoint)
       end
 
+      def base_url=(base_url)
+        @base_url = URI.parse(base_url)
+        validate_base_url!
+      end
+
       def bearer_token=(bearer_token)
         @use_bearer_token = !bearer_token.nil?
         @bearer_token = bearer_token
@@ -129,7 +137,7 @@ module X
       end
 
       def send_request(http_method, endpoint, body = nil)
-        url = URI.parse(@base_url + endpoint)
+        url = URI.join(@base_url, endpoint)
         http = Net::HTTP.new(url.host, url.port)
         http.use_ssl = true
 
@@ -164,6 +172,14 @@ module X
 
       def add_user_agent(request)
         request["User-Agent"] = @user_agent if @user_agent
+      end
+
+      def validate_base_url!
+        case @base_url
+        when URI::HTTP, URI::HTTPS then @base_url
+        else
+          raise ArgumentError, "Invalid base URL"
+        end
       end
     end
 

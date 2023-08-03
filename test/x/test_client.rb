@@ -107,14 +107,22 @@ class ClientTest < Minitest::Test
   end
 
   def test_default_base_url
-    assert_equal X::Client::DEFAULT_BASE_URL, client_oauth.base_url
+    assert_equal URI.parse(X::Client::DEFAULT_BASE_URL), client_oauth.base_url
   end
 
   def test_set_base_url
+    url = "https://example.com"
     client = client_oauth
-    client.base_url = "https://example.com"
+    client.base_url = url
 
-    assert_equal "https://example.com", client.base_url
+    assert_equal URI.parse(url), client.base_url
+  end
+
+  def test_set_invalid_base_url
+    client = client_oauth
+    assert_raises ArgumentError do
+      client.base_url = "ftp://ftp.example.com"
+    end
   end
 
   def test_default_user_agent
