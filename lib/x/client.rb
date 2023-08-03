@@ -21,8 +21,8 @@ module X
   class Client
     extend Forwardable
 
-    attr_accessor :user_agent, :read_timeout
-    attr_reader :base_url, :bearer_token
+    attr_accessor :bearer_token, :user_agent, :read_timeout
+    attr_reader :base_url
 
     def_delegator :@access_token, :secret, :access_token_secret
     def_delegator :@access_token, :secret=, :access_token_secret=
@@ -46,16 +46,15 @@ module X
     def initialize(bearer_token: nil, api_key: nil, api_key_secret: nil, access_token: nil, access_token_secret: nil,
                    base_url: DEFAULT_BASE_URL, user_agent: DEFAULT_USER_AGENT, read_timeout: DEFAULT_READ_TIMEOUT)
       @base_url = URI(base_url)
-      @use_bearer_token = !bearer_token.nil?
       @user_agent = user_agent
       @read_timeout = read_timeout
 
       validate_base_url!
 
-      if @use_bearer_token
-        @bearer_token = bearer_token
-      else
+      if bearer_token.nil?
         initialize_oauth(api_key, api_key_secret, access_token, access_token_secret)
+      else
+        @bearer_token = bearer_token
       end
     end
 
@@ -80,11 +79,6 @@ module X
       validate_base_url!
     end
 
-    def bearer_token=(bearer_token)
-      @use_bearer_token = !bearer_token.nil?
-      @bearer_token = bearer_token
-    end
-
     private
 
     def initialize_oauth(api_key, api_key_secret, access_token, access_token_secret)
@@ -105,8 +99,7 @@ module X
       request = create_request(http_method, url, body)
       add_headers(request)
 
-      response = http.request(request)
-      handle_response(response)
+      handle_response(http.request(request))
     rescue Errno::ECONNREFUSED, Net::OpenTimeout, Net::ReadTimeout => e
       raise X::NetworkError, "Network error: #{e.message}"
     end
@@ -128,10 +121,10 @@ module X
     end
 
     def add_authorization(request)
-      if @use_bearer_token
-        request["Authorization"] = "Bearer #{@bearer_token}"
-      else
+      if @bearer_token.nil?
         @consumer.sign!(request, @access_token)
+      else
+        request["Authorization"] = "Bearer #{@bearer_token}"
       end
     end
 
@@ -168,11 +161,10 @@ module X
       end
 
       def handle
-        return JSON.parse(@response.body) if @response.code.to_i == 200 || @response.code.to_i == 201
+        return JSON.parse(@response.body) if @response.is_a?(Net::HTTPSuccess)
 
         error_class = ERROR_CLASSES[@response.code.to_i] || X::Error
-        error_message = "#{error_class.name.split("::").last}: #{@response.code} #{@response.message}"
-        raise error_class, error_message
+        raise error_class, "#{error_class.name.split("::").last}: #{@response.code} #{@response.message}"
       end
     end
   end
