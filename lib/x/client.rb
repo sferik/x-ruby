@@ -147,13 +147,13 @@ module X
     # HTTP client response handler
     class ResponseHandler
       ERROR_CLASSES = {
-        400 => X::BadRequestError,
-        401 => X::AuthenticationError,
-        403 => X::ForbiddenError,
-        404 => X::NotFoundError,
-        429 => X::TooManyRequestsError,
-        500 => X::ServerError,
-        503 => X::ServiceUnavailableError
+        Net::HTTPBadRequest => X::BadRequestError,
+        Net::HTTPUnauthorized => X::AuthenticationError,
+        Net::HTTPForbidden => X::ForbiddenError,
+        Net::HTTPNotFound => X::NotFoundError,
+        Net::HTTPTooManyRequests => X::TooManyRequestsError,
+        Net::HTTPInternalServerError => X::ServerError,
+        Net::HTTPServiceUnavailable => X::ServiceUnavailableError
       }.freeze
 
       def initialize(response)
@@ -163,8 +163,8 @@ module X
       def handle
         return JSON.parse(@response.body) if @response.is_a?(Net::HTTPSuccess)
 
-        error_class = ERROR_CLASSES[@response.code.to_i] || X::Error
-        raise error_class, "#{error_class.name.split("::").last}: #{@response.code} #{@response.message}"
+        error_class = ERROR_CLASSES[@response.class] || X::Error
+        raise error_class, "#{@response.code} #{@response.message}: #{@response.body}"
       end
     end
   end
