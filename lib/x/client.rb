@@ -168,7 +168,7 @@ module X
       end
 
       def handle
-        return JSON.parse(@response.body) if @response.code.to_i == 200
+        return JSON.parse(@response.body) if @response.code.to_i == 200 || @response.code.to_i == 201
 
         error_class = ERROR_CLASSES[@response.code.to_i] || X::Error
         error_message = "#{error_class.name.split("::").last}: #{@response.code} #{@response.message}"
