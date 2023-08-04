@@ -3,7 +3,6 @@
 - Add accessors to X::Client
 - Add configurable read timeout
 - Handle network-related errors
-- Update README
 
 ## [0.2.0] - 2023-08-02
 

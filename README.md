@@ -15,22 +15,39 @@ If bundler is not being used to manage dependencies, install the gem by executin
 ## Usage
 
 ```ruby
-x_api_key             = "YOUR_X_API_KEY"
-x_api_key_secret      = "YOUR_X_API_KEY_SECRET"
-x_access_token        = "YOUR_X_ACCESS_TOKEN"
-x_access_token_secret = "YOUR_X_ACCESS_TOKEN_SECRET"
+oauth_credentials = {
+  api_key:             "INSERT YOUR X API KEY HERE",
+  api_key_secret:      "INSERT YOUR X API KEY SECRET HERE",
+  access_token:        "INSERT YOUR X API ACCESS TOKEN HERE",
+  access_token_secret: "INSERT YOUR X API ACCESS TOKEN SECRET HERE",
+}
 
-x_client = X::Client.new(api_key:             x_api_key,
-                         api_key_secret:      x_api_key_secret,
-                         access_token:        x_access_token,
-                         access_token_secret: x_access_token_secret)
+# Initialize X API client with OAuth credentials
+x_client = X::Client.new(**oauth_credentials)
 
-begin
-  response = x_client.get("users/me")
-  puts JSON.pretty_generate(response)
-rescue X::Error => e
-  puts "Error: #{e.message}"
-end
+# Request yourself
+x_client.get("users/me")
+# {"data"=>{"id"=>"7505382", "name"=>"Erik Berlin", "username"=>"sferik"}}
+
+# Post a tweet
+tweet = x_client.post("tweets", '{"text":"Hello, World! (from @gem)"}')
+# {"data"=>{"edit_history_tweet_ids"=>["1234567890123456789"], "id"=>"1234567890123456789", "text"=>"Hello, World! (from @gem)"}}
+
+# Delete a tweet
+x_client.delete("tweets/#{tweet["data"]["id"]}")
+# {"data"=>{"deleted"=>true}}
+
+# Initialize an API v1.1 client
+v1_client = X::Client.new(base_url: "https://api.twitter.com/1.1/", **oauth_credentials)
+
+# Request your account settings
+v1_client.get("account/settings.json")
+
+# Initialize an X Ads API client
+ads_client = X::Client.new(base_url: "https://ads-api.twitter.com/12/", **oauth_credentials)
+
+# Request your ad accounts
+ads_client.get("accounts")
 ```
 
 ## Development
