@@ -15,22 +15,6 @@ class ErrorTest < Minitest::Test
     end
   end
 
-  def test_bearer_token_get_request_failure
-    stub_bearer_request(:get, "invalid_endpoint", 404)
-
-    assert_raises StandardError do
-      client_bearer.get("invalid_endpoint")
-    end
-  end
-
-  def test_oauth_get_request_failure
-    stub_oauth_request(:get, "invalid_endpoint", 404)
-
-    assert_raises StandardError do
-      client_oauth.get("invalid_endpoint")
-    end
-  end
-
   def test_bad_request
     stub_oauth_request(:get, "tweets", 400)
 
@@ -68,6 +52,29 @@ class ErrorTest < Minitest::Test
 
     assert_raises X::TooManyRequestsError do
       client_oauth.get("tweets")
+    end
+  end
+
+  def test_rate_limit
+    stub_oauth_request(:get, "tweets", 429, { "x-rate-limit-limit" => "40000", "x-rate-limit-remaining" => "39999" })
+
+    begin
+      client_oauth.get("tweets")
+    rescue X::TooManyRequestsError => e
+      assert_equal 40_000, e.limit
+      assert_equal 39_999, e.remaining
+    end
+  end
+
+  def test_rate_limit_reset
+    reset_time = Time.now.utc.to_i + 900
+    stub_oauth_request(:get, "tweets", 429, { "x-rate-limit-reset" => reset_time.to_s })
+
+    begin
+      client_oauth.get("tweets")
+    rescue X::TooManyRequestsError => e
+      assert_equal Time.at(reset_time).utc, e.reset_at
+      assert_equal 900, e.reset_in
     end
   end
 

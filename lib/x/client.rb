@@ -6,14 +6,53 @@ require "uri"
 require_relative "version"
 
 module X
-  class Error < ::StandardError; end
+  JSON_CONTENT_TYPE = "application/json; charset=utf-8".freeze
+
+  # Base error class
+  class Error < ::StandardError
+    attr_reader :object
+
+    def initialize(response = nil)
+      if response.is_a?(Net::HTTPResponse) && response.body && response["content-type"] == JSON_CONTENT_TYPE
+        @object = JSON.parse(response.body)
+      end
+      super
+    end
+  end
+
   class NetworkError < Error; end
   class ClientError < Error; end
   class AuthenticationError < ClientError; end
   class BadRequestError < ClientError; end
   class ForbiddenError < ClientError; end
   class NotFoundError < ClientError; end
-  class TooManyRequestsError < ClientError; end
+
+  # Rate limit error
+  class TooManyRequestsError < ClientError
+    def initialize(response = nil)
+      @response = response
+      super
+    end
+
+    def limit
+      @response && @response["x-rate-limit-limit"]&.to_i
+    end
+
+    def remaining
+      @response && @response["x-rate-limit-remaining"]&.to_i
+    end
+
+    def reset_at
+      reset = @response && @response["x-rate-limit-reset"]&.to_i
+      Time.at(reset.to_i).utc if reset
+    end
+
+    def reset_in
+      [(reset_at - Time.now).ceil, 0].max if reset_at
+    end
+    alias retry_after reset_in
+  end
+
   class ServerError < Error; end
   class ServiceUnavailableError < ServerError; end
 
@@ -83,7 +122,7 @@ module X
 
     def initialize_oauth(api_key, api_key_secret, access_token, access_token_secret)
       unless api_key && api_key_secret && access_token && access_token_secret
-        raise ArgumentError, "Missing OAuth credentials."
+        raise ArgumentError, "Missing OAuth credentials"
       end
 
       @consumer = OAuth::Consumer.new(api_key, api_key_secret, site: @base_url)
@@ -129,7 +168,7 @@ module X
     end
 
     def add_content_type(request)
-      request["Content-Type"] = "application/json"
+      request["Content-Type"] = JSON_CONTENT_TYPE
     end
 
     def add_user_agent(request)
@@ -161,10 +200,15 @@ module X
       end
 
       def handle
-        return JSON.parse(@response.body) if @response.is_a?(Net::HTTPSuccess)
+        if @response.is_a?(Net::HTTPSuccess) && @response["content-type"] == JSON_CONTENT_TYPE
+          return JSON.parse(@response.body)
+        end
 
         error_class = ERROR_CLASSES[@response.class] || X::Error
-        raise error_class, "#{@response.code} #{@response.message}: #{@response.body}"
+        error_message = "#{@response.code} #{@response.message}"
+        raise error_class, error_message if @response.body.nil? || @response.body.empty?
+
+        raise error_class.new(@response), error_message
       end
     end
   end
