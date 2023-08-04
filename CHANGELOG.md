@@ -1,8 +1,9 @@
 ## [Unreleased]
 
-- Add accessors to X::Client
-- Add configurable read timeout
-- Handle network-related errors
+- Add accessors to X::Client (e61fa73)
+- Add configurable read timeout (41502b9)
+- Handle network-related errors (9ed1fb4)
+- Include response body in errors (a203e6a)
 
 ## [0.2.0] - 2023-08-02
 
