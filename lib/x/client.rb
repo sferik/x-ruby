@@ -3,72 +3,15 @@ require "json"
 require "net/http"
 require "oauth"
 require "uri"
+require_relative "client/errors"
 require_relative "version"
 
 module X
-  # Base error class
-  class Error < ::StandardError
-    attr_reader :object
-
-    def initialize(response = nil)
-      @object = JSON.parse(response.body) if json_response?(response)
-      super
-    end
-
-    private
-
-    def json_response?(response)
-      response.is_a?(Net::HTTPResponse) && response.body && response["content-type"] == Client::DEFAULT_CONTENT_TYPE
-    end
-  end
-
-  class NetworkError < Error; end
-
-  class ClientError < Error; end
-
-  class AuthenticationError < ClientError; end
-
-  class BadRequestError < ClientError; end
-
-  class ForbiddenError < ClientError; end
-
-  class NotFoundError < ClientError; end
-
-  # Rate limit error
-  class TooManyRequestsError < ClientError
-    def initialize(response = nil)
-      @response = response
-      super
-    end
-
-    def limit
-      @response&.fetch("x-rate-limit-limit", 0).to_i
-    end
-
-    def remaining
-      @response&.fetch("x-rate-limit-remaining", 0).to_i
-    end
-
-    def reset_at
-      Time.at(@response&.fetch("x-rate-limit-reset", 0).to_i).utc if @response
-    end
-
-    def reset_in
-      [(reset_at - Time.now).ceil, 0].max if reset_at
-    end
-
-    alias_method :retry_after, :reset_in
-  end
-
-  class ServerError < Error; end
-
-  class ServiceUnavailableError < ServerError; end
-
   # HTTP client that handles authentication and requests
   class Client
     extend Forwardable
 
-    attr_accessor :bearer_token, :content_type, :read_timeout, :user_agent
+    attr_accessor :bearer_token, :content_type, :read_timeout, :user_agent, :array_class, :object_class
     attr_reader :base_url
 
     def_delegator :@access_token, :secret, :access_token_secret
@@ -82,8 +25,10 @@ module X
 
     DEFAULT_BASE_URL = "https://api.twitter.com/2/".freeze
     DEFAULT_CONTENT_TYPE = "application/json; charset=utf-8".freeze
+    DEFAULT_ARRAY_CLASS = Array
+    DEFAULT_OBJECT_CLASS = Hash
     DEFAULT_READ_TIMEOUT = 60 # seconds
-    DEFAULT_USER_AGENT = "X-Client/#{X::Version} Ruby/#{RUBY_VERSION}".freeze
+    DEFAULT_USER_AGENT = "X-Client/#{Version} Ruby/#{RUBY_VERSION}".freeze
 
     HTTP_METHODS = {
       get: Net::HTTP::Get,
@@ -92,27 +37,19 @@ module X
       delete: Net::HTTP::Delete
     }.freeze
 
-    NETWORK_ERRORS = [
-      Errno::ECONNREFUSED,
-      Net::OpenTimeout,
-      Net::ReadTimeout
-    ].freeze
-
     def initialize(bearer_token: nil, api_key: nil, api_key_secret: nil, access_token: nil, access_token_secret: nil,
       base_url: DEFAULT_BASE_URL, content_type: DEFAULT_CONTENT_TYPE,
-      read_timeout: DEFAULT_READ_TIMEOUT, user_agent: DEFAULT_USER_AGENT)
-      @base_url = URI(base_url)
+      read_timeout: DEFAULT_READ_TIMEOUT, user_agent: DEFAULT_USER_AGENT,
+      array_class: DEFAULT_ARRAY_CLASS, object_class: DEFAULT_OBJECT_CLASS)
+      @bearer_token = bearer_token
+      self.base_url = base_url
       @content_type = content_type
       @read_timeout = read_timeout
       @user_agent = user_agent
+      @array_class = array_class
+      @object_class = object_class
 
-      validate_base_url!
-
-      if bearer_token
-        @bearer_token = bearer_token
-      else
-        initialize_oauth(api_key, api_key_secret, access_token, access_token_secret)
-      end
+      initialize_oauth(api_key, api_key_secret, access_token, access_token_secret) unless bearer_token
     end
 
     HTTP_METHODS.each_key do |http_method|
@@ -148,7 +85,7 @@ module X
 
       handle_response(http.request(request))
     rescue *NETWORK_ERRORS => e
-      raise X::NetworkError, "Network error: #{e.message}"
+      raise NetworkError, "Network error: #{e.message}"
     end
 
     def create_request(http_method, url, body)
@@ -188,33 +125,28 @@ module X
     end
 
     def handle_response(response)
-      ResponseHandler.new(response).handle
+      ResponseHandler.new(response, @array_class, @object_class).handle
     end
 
     # HTTP client response handler
     class ResponseHandler
-      ERROR_CLASSES = {
-        400 => X::BadRequestError,
-        401 => X::AuthenticationError,
-        403 => X::ForbiddenError,
-        404 => X::NotFoundError,
-        429 => X::TooManyRequestsError,
-        500 => X::ServerError,
-        503 => X::ServiceUnavailableError
-      }.freeze
-
-      def initialize(response)
+      def initialize(response, array_class, object_class)
         @response = response
+        @array_class = array_class
+        @object_class = object_class
       end
 
       def handle
-        return JSON.parse(@response.body) if successful_json_response?
+        if successful_json_response?
+          return JSON.parse(@response.body, array_class: @array_class,
+            object_class: @object_class)
+        end
 
-        error_class = ERROR_CLASSES[@response.code.to_i] || X::Error
+        error_class = ERROR_CLASSES[@response.code.to_i] || Error
         error_message = "#{@response.code} #{@response.message}"
         raise error_class, error_message if @response.body.nil? || @response.body.empty?
 
-        raise error_class.new(@response), error_message
+        raise error_class.new(error_message, @response) # , error_message
       end
 
       private

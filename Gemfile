@@ -3,6 +3,7 @@ source "https://rubygems.org"
 # Specify your gem's dependencies in x.gemspec
 gemspec
 
+gem "hashie", ">= 5"
 gem "minitest", ">= 5.19"
 gem "rake", ">= 13.0.6"
 gem "rubocop", ">= 1.21"

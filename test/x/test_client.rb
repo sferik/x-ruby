@@ -1,4 +1,5 @@
 require "test_helper"
+require "hashie"
 
 # Tests for X::Client class
 class ClientTest < Minitest::Test
@@ -113,5 +114,25 @@ class ClientTest < Minitest::Test
     @client_oauth.read_timeout = 10
 
     assert_equal 10, @client_oauth.read_timeout
+  end
+
+  def test_default_object_class
+    assert_equal X::Client::DEFAULT_OBJECT_CLASS, @client_oauth.object_class
+  end
+
+  def test_set_object_class
+    @client_oauth.object_class = Hashie::Mash
+
+    assert_equal Hashie::Mash, @client_oauth.object_class
+  end
+
+  def test_default_array_class
+    assert_equal X::Client::DEFAULT_ARRAY_CLASS, @client_oauth.array_class
+  end
+
+  def test_set_array_class
+    @client_oauth.array_class = Set
+
+    assert_equal Set, @client_oauth.array_class
   end
 end
