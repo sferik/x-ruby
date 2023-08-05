@@ -6,7 +6,7 @@ Gem::Specification.new do |spec|
   spec.authors = ["Erik Berlin"]
   spec.email = ["sferik@gmail.com"]
 
-  spec.summary = "A Ruby interface to the X 2.0 API."
+  spec.summary = "A Ruby interface to the X API."
   spec.homepage = "https://github.com/sferik/x-ruby"
   spec.license = "MIT"
   spec.required_ruby_version = ">= 3.0"

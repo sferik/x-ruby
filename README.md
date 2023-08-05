@@ -1,6 +1,6 @@
 # X
 
-A Ruby interface to the X 2.0 API.
+A Ruby interface to the X API.
 
 ## Installation
 
@@ -15,7 +15,7 @@ If bundler is not being used to manage dependencies, install the gem by executin
 ## Usage
 
 ```ruby
-oauth_credentials = {
+x_oauth_credentials = {
   api_key:             "INSERT YOUR X API KEY HERE",
   api_key_secret:      "INSERT YOUR X API KEY SECRET HERE",
   access_token:        "INSERT YOUR X API ACCESS TOKEN HERE",
@@ -23,7 +23,7 @@ oauth_credentials = {
 }
 
 # Initialize X API client with OAuth credentials
-x_client = X::Client.new(**oauth_credentials)
+x_client = X::Client.new(**x_oauth_credentials)
 
 # Request yourself
 x_client.get("users/me")
@@ -38,13 +38,13 @@ x_client.delete("tweets/#{tweet["data"]["id"]}")
 # {"data"=>{"deleted"=>true}}
 
 # Initialize an API v1.1 client
-v1_client = X::Client.new(base_url: "https://api.twitter.com/1.1/", **oauth_credentials)
+v1_client = X::Client.new(base_url: "https://api.twitter.com/1.1/", **x_oauth_credentials)
 
 # Request your account settings
 v1_client.get("account/settings.json")
 
 # Initialize an X Ads API client
-ads_client = X::Client.new(base_url: "https://ads-api.twitter.com/12/", **oauth_credentials)
+ads_client = X::Client.new(base_url: "https://ads-api.twitter.com/12/", **x_oauth_credentials)
 
 # Request your ad accounts
 ads_client.get("accounts")
