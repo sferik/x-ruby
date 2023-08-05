@@ -84,12 +84,19 @@ module X
     DEFAULT_CONTENT_TYPE = "application/json; charset=utf-8".freeze
     DEFAULT_READ_TIMEOUT = 60 # seconds
     DEFAULT_USER_AGENT = "X-Client/#{X::Version} Ruby/#{RUBY_VERSION}".freeze
+
     HTTP_METHODS = {
       get: Net::HTTP::Get,
       post: Net::HTTP::Post,
       put: Net::HTTP::Put,
       delete: Net::HTTP::Delete
     }.freeze
+
+    NETWORK_ERRORS = [
+      Errno::ECONNREFUSED,
+      Net::OpenTimeout,
+      Net::ReadTimeout
+    ].freeze
 
     def initialize(bearer_token: nil, api_key: nil, api_key_secret: nil, access_token: nil, access_token_secret: nil,
       base_url: DEFAULT_BASE_URL, content_type: DEFAULT_CONTENT_TYPE,
@@ -140,7 +147,7 @@ module X
       add_headers(request)
 
       handle_response(http.request(request))
-    rescue Errno::ECONNREFUSED, Net::OpenTimeout, Net::ReadTimeout => e
+    rescue *NETWORK_ERRORS => e
       raise X::NetworkError, "Network error: #{e.message}"
     end
 
@@ -187,13 +194,13 @@ module X
     # HTTP client response handler
     class ResponseHandler
       ERROR_CLASSES = {
-        Net::HTTPBadRequest => X::BadRequestError,
-        Net::HTTPUnauthorized => X::AuthenticationError,
-        Net::HTTPForbidden => X::ForbiddenError,
-        Net::HTTPNotFound => X::NotFoundError,
-        Net::HTTPTooManyRequests => X::TooManyRequestsError,
-        Net::HTTPInternalServerError => X::ServerError,
-        Net::HTTPServiceUnavailable => X::ServiceUnavailableError
+        400 => X::BadRequestError,
+        401 => X::AuthenticationError,
+        403 => X::ForbiddenError,
+        404 => X::NotFoundError,
+        429 => X::TooManyRequestsError,
+        500 => X::ServerError,
+        503 => X::ServiceUnavailableError
       }.freeze
 
       def initialize(response)
@@ -203,7 +210,7 @@ module X
       def handle
         return JSON.parse(@response.body) if successful_json_response?
 
-        error_class = ERROR_CLASSES[@response.class] || X::Error
+        error_class = ERROR_CLASSES[@response.code.to_i] || X::Error
         error_message = "#{@response.code} #{@response.message}"
         raise error_class, error_message if @response.body.nil? || @response.body.empty?
 
