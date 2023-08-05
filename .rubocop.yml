@@ -1,4 +1,6 @@
 require:
+ - standard
+ - standard-performance
  - rubocop-minitest
  - rubocop-performance
  - rubocop-rake
@@ -6,6 +8,35 @@ require:
 AllCops:
   NewCops: enable
   TargetRubyVersion: 3.0
+
+Layout/ArgumentAlignment:
+  Enabled: true
+  EnforcedStyle: with_fixed_indentation
+
+Layout/ArrayAlignment:
+  Enabled: true
+  EnforcedStyle: with_fixed_indentation
+
+Layout/HashAlignment:
+  Enabled: true
+  EnforcedHashRocketStyle: key
+  EnforcedColonStyle: key
+  EnforcedLastArgumentHashStyle: always_inspect
+
+Layout/ParameterAlignment:
+  Enabled: true
+  EnforcedStyle: with_fixed_indentation
+  IndentationWidth: ~
+
+Layout/SpaceInsideHashLiteralBraces:
+  Enabled: false
+
+Metrics/ParameterLists:
+  CountKeywordArgs: false
+
+Style/Alias:
+  Enabled: true
+  EnforcedStyle: prefer_alias_method
 
 Style/StringLiterals:
   Enabled: true
@@ -17,6 +48,3 @@ Style/StringLiteralsInInterpolation:
 
 Style/FrozenStringLiteralComment:
   Enabled: false
-
-Metrics/ParameterLists:
-  CountKeywordArgs: false

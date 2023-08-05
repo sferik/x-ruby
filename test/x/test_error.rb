@@ -56,7 +56,7 @@ class ErrorTest < Minitest::Test
   end
 
   def test_rate_limit
-    stub_oauth_request(:get, "tweets", 429, { "x-rate-limit-limit" => "40000", "x-rate-limit-remaining" => "39999" })
+    stub_oauth_request(:get, "tweets", 429, {"x-rate-limit-limit" => "40000", "x-rate-limit-remaining" => "39999"})
 
     begin
       client_oauth.get("tweets")
@@ -68,7 +68,7 @@ class ErrorTest < Minitest::Test
 
   def test_rate_limit_reset
     reset_time = Time.now.utc.to_i + 900
-    stub_oauth_request(:get, "tweets", 429, { "x-rate-limit-reset" => reset_time.to_s })
+    stub_oauth_request(:get, "tweets", 429, {"x-rate-limit-reset" => reset_time.to_s})
 
     begin
       client_oauth.get("tweets")

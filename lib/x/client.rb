@@ -21,10 +21,15 @@ module X
   end
 
   class NetworkError < Error; end
+
   class ClientError < Error; end
+
   class AuthenticationError < ClientError; end
+
   class BadRequestError < ClientError; end
+
   class ForbiddenError < ClientError; end
+
   class NotFoundError < ClientError; end
 
   # Rate limit error
@@ -50,10 +55,12 @@ module X
     def reset_in
       [(reset_at - Time.now).ceil, 0].max if reset_at
     end
-    alias retry_after reset_in
+
+    alias_method :retry_after, :reset_in
   end
 
   class ServerError < Error; end
+
   class ServiceUnavailableError < ServerError; end
 
   # HTTP client that handles authentication and requests
@@ -83,7 +90,7 @@ module X
     }.freeze
 
     def initialize(bearer_token: nil, api_key: nil, api_key_secret: nil, access_token: nil, access_token_secret: nil,
-                   base_url: DEFAULT_BASE_URL, user_agent: DEFAULT_USER_AGENT, read_timeout: DEFAULT_READ_TIMEOUT)
+      base_url: DEFAULT_BASE_URL, user_agent: DEFAULT_USER_AGENT, read_timeout: DEFAULT_READ_TIMEOUT)
       @base_url = URI(base_url)
       @user_agent = user_agent
       @read_timeout = read_timeout

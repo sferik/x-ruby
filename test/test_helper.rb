@@ -23,17 +23,17 @@ end
 
 def client_oauth
   X::Client.new(api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET, access_token: TEST_ACCESS_TOKEN,
-                access_token_secret: TEST_ACCESS_TOKEN_SECRET)
+    access_token_secret: TEST_ACCESS_TOKEN_SECRET)
 end
 
 def stub_bearer_request(method, endpoint, status, headers = {})
   stub_request(method, "https://api.twitter.com/2/#{endpoint}")
-    .with(headers: { "Authorization" => /Bearer/ })
-    .to_return(status: status, headers: { "content-type" => X::JSON_CONTENT_TYPE }.merge(headers), body: {}.to_json)
+    .with(headers: {"Authorization" => /Bearer/})
+    .to_return(status: status, headers: {"content-type" => X::JSON_CONTENT_TYPE}.merge(headers), body: {}.to_json)
 end
 
 def stub_oauth_request(method, endpoint, status, headers = {})
   stub_request(method, "https://api.twitter.com/2/#{endpoint}")
-    .with(headers: { "Authorization" => /OAuth/ })
-    .to_return(status: status, headers: { "content-type" => X::JSON_CONTENT_TYPE }.merge(headers), body: {}.to_json)
+    .with(headers: {"Authorization" => /OAuth/})
+    .to_return(status: status, headers: {"content-type" => X::JSON_CONTENT_TYPE}.merge(headers), body: {}.to_json)
 end
