@@ -13,10 +13,14 @@ module X
     attr_reader :object
 
     def initialize(response = nil)
-      if response.is_a?(Net::HTTPResponse) && response.body && response["content-type"] == JSON_CONTENT_TYPE
-        @object = JSON.parse(response.body)
-      end
+      @object = JSON.parse(response.body) if json_response?(response)
       super
+    end
+
+    private
+
+    def json_response?(response)
+      response.is_a?(Net::HTTPResponse) && response.body && response["content-type"] == JSON_CONTENT_TYPE
     end
   end
 
@@ -40,16 +44,15 @@ module X
     end
 
     def limit
-      @response && @response["x-rate-limit-limit"]&.to_i
+      @response&.fetch("x-rate-limit-limit", 0).to_i
     end
 
     def remaining
-      @response && @response["x-rate-limit-remaining"]&.to_i
+      @response&.fetch("x-rate-limit-remaining", 0).to_i
     end
 
     def reset_at
-      reset = @response && @response["x-rate-limit-reset"]&.to_i
-      Time.at(reset.to_i).utc if reset
+      Time.at(@response&.fetch("x-rate-limit-reset", 0).to_i).utc if @response
     end
 
     def reset_in
@@ -104,24 +107,14 @@ module X
       end
     end
 
-    def get(endpoint)
-      send_request(:get, endpoint)
+    HTTP_METHODS.each_key do |http_method|
+      define_method(http_method) do |endpoint, body = nil|
+        send_request(http_method, endpoint, body)
+      end
     end
 
-    def post(endpoint, body = nil)
-      send_request(:post, endpoint, body)
-    end
-
-    def put(endpoint, body = nil)
-      send_request(:put, endpoint, body)
-    end
-
-    def delete(endpoint)
-      send_request(:delete, endpoint)
-    end
-
-    def base_url=(base_url)
-      @base_url = URI(base_url)
+    def base_url=(new_base_url)
+      @base_url = URI(new_base_url)
       validate_base_url!
     end
 
@@ -207,15 +200,19 @@ module X
       end
 
       def handle
-        if @response.is_a?(Net::HTTPSuccess) && @response["content-type"] == JSON_CONTENT_TYPE
-          return JSON.parse(@response.body)
-        end
+        return JSON.parse(@response.body) if successful_json_response?
 
         error_class = ERROR_CLASSES[@response.class] || X::Error
         error_message = "#{@response.code} #{@response.message}"
         raise error_class, error_message if @response.body.nil? || @response.body.empty?
 
         raise error_class.new(@response), error_message
+      end
+
+      private
+
+      def successful_json_response?
+        @response.is_a?(Net::HTTPSuccess) && @response["content-type"] == JSON_CONTENT_TYPE
       end
     end
   end
