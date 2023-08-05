@@ -6,8 +6,6 @@ require "uri"
 require_relative "version"
 
 module X
-  JSON_CONTENT_TYPE = "application/json; charset=utf-8".freeze
-
   # Base error class
   class Error < ::StandardError
     attr_reader :object
@@ -20,7 +18,7 @@ module X
     private
 
     def json_response?(response)
-      response.is_a?(Net::HTTPResponse) && response.body && response["content-type"] == JSON_CONTENT_TYPE
+      response.is_a?(Net::HTTPResponse) && response.body && response["content-type"] == Client::DEFAULT_CONTENT_TYPE
     end
   end
 
@@ -70,7 +68,7 @@ module X
   class Client
     extend Forwardable
 
-    attr_accessor :bearer_token, :user_agent, :read_timeout
+    attr_accessor :bearer_token, :content_type, :read_timeout, :user_agent
     attr_reader :base_url
 
     def_delegator :@access_token, :secret, :access_token_secret
@@ -83,8 +81,9 @@ module X
     def_delegator :@consumer, :secret=, :api_key_secret=
 
     DEFAULT_BASE_URL = "https://api.twitter.com/2/".freeze
-    DEFAULT_USER_AGENT = "X-Client/#{X::Version} Ruby/#{RUBY_VERSION}".freeze
+    DEFAULT_CONTENT_TYPE = "application/json; charset=utf-8".freeze
     DEFAULT_READ_TIMEOUT = 60 # seconds
+    DEFAULT_USER_AGENT = "X-Client/#{X::Version} Ruby/#{RUBY_VERSION}".freeze
     HTTP_METHODS = {
       get: Net::HTTP::Get,
       post: Net::HTTP::Post,
@@ -93,17 +92,19 @@ module X
     }.freeze
 
     def initialize(bearer_token: nil, api_key: nil, api_key_secret: nil, access_token: nil, access_token_secret: nil,
-      base_url: DEFAULT_BASE_URL, user_agent: DEFAULT_USER_AGENT, read_timeout: DEFAULT_READ_TIMEOUT)
+      base_url: DEFAULT_BASE_URL, content_type: DEFAULT_CONTENT_TYPE,
+      read_timeout: DEFAULT_READ_TIMEOUT, user_agent: DEFAULT_USER_AGENT)
       @base_url = URI(base_url)
-      @user_agent = user_agent
+      @content_type = content_type
       @read_timeout = read_timeout
+      @user_agent = user_agent
 
       validate_base_url!
 
-      if bearer_token.nil?
-        initialize_oauth(api_key, api_key_secret, access_token, access_token_secret)
-      else
+      if bearer_token
         @bearer_token = bearer_token
+      else
+        initialize_oauth(api_key, api_key_secret, access_token, access_token_secret)
       end
     end
 
@@ -160,15 +161,15 @@ module X
     end
 
     def add_authorization(request)
-      if @bearer_token.nil?
-        @consumer.sign!(request, @access_token)
-      else
+      if @bearer_token
         request["Authorization"] = "Bearer #{@bearer_token}"
+      else
+        @consumer.sign!(request, @access_token)
       end
     end
 
     def add_content_type(request)
-      request["Content-Type"] = JSON_CONTENT_TYPE
+      request["Content-Type"] = @content_type if @content_type
     end
 
     def add_user_agent(request)
@@ -212,7 +213,7 @@ module X
       private
 
       def successful_json_response?
-        @response.is_a?(Net::HTTPSuccess) && @response["content-type"] == JSON_CONTENT_TYPE
+        @response.is_a?(Net::HTTPSuccess) && @response.body && @response["content-type"] == DEFAULT_CONTENT_TYPE
       end
     end
   end
