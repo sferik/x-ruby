@@ -101,14 +101,17 @@ class ClientTest < Minitest::Test
     assert_equal "Custom User Agent", @client_oauth.user_agent
   end
 
-  def test_default_read_timeout
+  def test_default_timeouts
+    assert_equal X::ClientDefaults::DEFAULT_OPEN_TIMEOUT, @client_oauth.open_timeout
     assert_equal X::ClientDefaults::DEFAULT_READ_TIMEOUT, @client_oauth.read_timeout
   end
 
-  def test_set_read_timeout
+  def test_set_timeouts
+    @client_oauth.open_timeout = 10
     @client_oauth.read_timeout = 10
 
     assert_equal 10, @client_oauth.read_timeout
+    assert_equal 10, @client_oauth.open_timeout
   end
 
   def test_default_object_class

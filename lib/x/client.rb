@@ -12,20 +12,21 @@ module X
     include ClientDefaults
 
     attr_reader :base_url
-    attr_accessor :content_type, :read_timeout, :user_agent, :array_class, :object_class
+    attr_accessor :content_type, :open_timeout, :read_timeout, :user_agent, :array_class, :object_class
 
     def_delegators :@authenticator, :bearer_token, :api_key, :api_key_secret, :access_token, :access_token_secret
     def_delegators :@authenticator, :bearer_token=, :api_key=, :api_key_secret=, :access_token=, :access_token_secret=
 
     def initialize(bearer_token: nil, api_key: nil, api_key_secret: nil, access_token: nil, access_token_secret: nil,
       base_url: DEFAULT_BASE_URL, content_type: DEFAULT_CONTENT_TYPE,
-      read_timeout: DEFAULT_READ_TIMEOUT, user_agent: DEFAULT_USER_AGENT,
+      open_timeout: DEFAULT_OPEN_TIMEOUT, read_timeout: DEFAULT_READ_TIMEOUT, user_agent: DEFAULT_USER_AGENT,
       array_class: DEFAULT_ARRAY_CLASS, object_class: DEFAULT_OBJECT_CLASS)
 
       @authenticator = Authenticator.new(bearer_token: bearer_token, api_key: api_key, api_key_secret: api_key_secret,
         access_token: access_token, access_token_secret: access_token_secret)
       self.base_url = base_url
       @content_type = content_type
+      @open_timeout = open_timeout
       @read_timeout = read_timeout
       @user_agent = user_agent
       @array_class = array_class
@@ -61,7 +62,7 @@ module X
       request = RequestBuilder.build(http_method, @base_url, endpoint, body)
       add_headers(request)
 
-      response = Connection.send_request(@base_url, @read_timeout, request)
+      response = Connection.send_request(@base_url, @open_timeout, @read_timeout, request)
 
       ResponseHandler.new(response, @array_class, @object_class).handle
     end

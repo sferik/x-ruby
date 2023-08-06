@@ -7,10 +7,11 @@ module X
   class Connection
     include Errors
 
-    def self.send_request(base_url, read_timeout, request)
+    def self.send_request(base_url, open_timeout, read_timeout, request)
       url = URI(base_url)
       http = Net::HTTP.new(url.host, url.port)
       http.use_ssl = url.scheme == "https"
+      http.open_timeout = open_timeout
       http.read_timeout = read_timeout
       http.request(request)
     rescue *NETWORK_ERRORS => e

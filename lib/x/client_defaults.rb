@@ -6,6 +6,7 @@ module X
     DEFAULT_CONTENT_TYPE = "application/json; charset=utf-8".freeze
     DEFAULT_ARRAY_CLASS = Array
     DEFAULT_OBJECT_CLASS = Hash
+    DEFAULT_OPEN_TIMEOUT = 60 # seconds
     DEFAULT_READ_TIMEOUT = 60 # seconds
     DEFAULT_USER_AGENT = "X-Client/#{Version} Ruby/#{RUBY_VERSION}".freeze
   end
