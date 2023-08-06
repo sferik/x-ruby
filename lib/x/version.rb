@@ -8,7 +8,7 @@ module X
     end
 
     def minor
-      3
+      4
     end
 
     def patch

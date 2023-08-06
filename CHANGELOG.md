@@ -1,5 +1,9 @@
 ## [Unreleased]
 
+## [0.4.0] - 2023-08-06
+
+- Refactor Client into Authenticator, RequestBuilder, Connection, ResponseHandler (6bee1e9)
+- Add configurable open timeout (1000f9d)
 - Allow configuration of content type (f33a732)
 
 ## [0.3.0] - 2023-08-04
