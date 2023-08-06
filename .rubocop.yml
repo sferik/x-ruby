@@ -17,6 +17,10 @@ Layout/ArrayAlignment:
   Enabled: true
   EnforcedStyle: with_fixed_indentation
 
+Layout/EndAlignment:
+  Enabled: true
+  EnforcedStyleAlignWith: variable
+
 Layout/HashAlignment:
   Enabled: true
   EnforcedHashRocketStyle: key

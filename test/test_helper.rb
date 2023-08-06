@@ -27,14 +27,14 @@ def client_oauth
 end
 
 def stub_bearer_request(method, endpoint, status, headers = {})
-  headers = {"content-type" => X::Client::DEFAULT_CONTENT_TYPE}.merge(headers)
+  headers = {"content-type" => X::ClientDefaults::DEFAULT_CONTENT_TYPE}.merge(headers)
   stub_request(method, "https://api.twitter.com/2/#{endpoint}")
     .with(headers: {"Authorization" => /Bearer/})
     .to_return(status: status, headers: headers, body: {}.to_json)
 end
 
 def stub_oauth_request(method, endpoint, status, headers = {})
-  headers = {"content-type" => X::Client::DEFAULT_CONTENT_TYPE}.merge(headers)
+  headers = {"content-type" => X::ClientDefaults::DEFAULT_CONTENT_TYPE}.merge(headers)
   stub_request(method, "https://api.twitter.com/2/#{endpoint}")
     .with(headers: {"Authorization" => /OAuth/})
     .to_return(status: status, headers: headers, body: {}.to_json)

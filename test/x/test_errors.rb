@@ -1,12 +1,12 @@
 require "test_helper"
 
-# Tests for X::Client::Error subclasses
+# Tests for errors
 class ErrorsTest < Minitest::Test
   def setup
     @client_oauth = client_oauth
   end
 
-  X::Client::ERROR_CLASSES.each do |status, error_class|
+  X::Errors::ERROR_CLASSES.each do |status, error_class|
     define_method("test_#{error_class.name.split("::").last.downcase}_error") do
       stub_oauth_request(:get, "tweets", status)
 
@@ -16,11 +16,11 @@ class ErrorsTest < Minitest::Test
     end
   end
 
-  X::Client::NETWORK_ERRORS.each do |error_class|
+  X::Errors::NETWORK_ERRORS.each do |error_class|
     define_method("test_#{error_class.name.split("::").last.downcase}_error") do
       stub_request(:get, "https://api.twitter.com/2/tweets").to_raise(error_class)
 
-      assert_raises X::Client::NetworkError do
+      assert_raises X::NetworkError do
         @client_oauth.get("tweets")
       end
     end
@@ -43,7 +43,7 @@ class ErrorsTest < Minitest::Test
 
     begin
       @client_oauth.get("tweets")
-    rescue X::Client::TooManyRequestsError => e
+    rescue X::TooManyRequestsError => e
       assert_equal 40_000, e.limit
       assert_equal 39_999, e.remaining
     end
@@ -55,7 +55,7 @@ class ErrorsTest < Minitest::Test
 
     begin
       @client_oauth.get("tweets")
-    rescue X::Client::TooManyRequestsError => e
+    rescue X::TooManyRequestsError => e
       assert_equal Time.at(reset_time).utc, e.reset_at
       assert_equal 900, e.reset_in
     end
@@ -64,7 +64,7 @@ class ErrorsTest < Minitest::Test
   def test_unexpected_response
     stub_oauth_request(:get, "tweets", 600)
 
-    assert_raises X::Client::Error do
+    assert_raises X::Error do
       client_oauth.get("tweets")
     end
   end

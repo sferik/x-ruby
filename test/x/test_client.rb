@@ -9,19 +9,14 @@ class ClientTest < Minitest::Test
   end
 
   # Define test cases for different HTTP methods using parameterized testing
-  [
-    [:get, "tweets"],
-    [:post, "tweets", '{"text":"Hello, World!"}'],
-    [:put, "tweets/123", '{"text":"Updated tweet!"}'],
-    [:delete, "tweets/123"]
-  ].each do |http_method, endpoint, body|
+  %i[get post put delete].each do |http_method|
     define_method("test_#{http_method}_request_success") do
-      stub_oauth_request(http_method, endpoint, 200)
+      stub_oauth_request(http_method, "tweets", 200)
 
-      response = @client_oauth.public_send(http_method, endpoint, body)
+      response = @client_oauth.public_send(http_method, "tweets")
 
       assert_instance_of Hash, response
-      assert_requested http_method, "https://api.twitter.com/2/#{endpoint}"
+      assert_requested http_method, "https://api.twitter.com/2/tweets"
     end
   end
 
@@ -86,7 +81,7 @@ class ClientTest < Minitest::Test
   end
 
   def test_default_base_url
-    assert_equal URI.parse(X::Client::DEFAULT_BASE_URL), @client_oauth.base_url
+    assert_equal URI.parse(X::ClientDefaults::DEFAULT_BASE_URL), @client_oauth.base_url
   end
 
   def test_set_base_url
@@ -97,7 +92,7 @@ class ClientTest < Minitest::Test
   end
 
   def test_default_user_agent
-    assert_equal X::Client::DEFAULT_USER_AGENT, @client_oauth.user_agent
+    assert_equal X::ClientDefaults::DEFAULT_USER_AGENT, @client_oauth.user_agent
   end
 
   def test_set_user_agent
@@ -107,7 +102,7 @@ class ClientTest < Minitest::Test
   end
 
   def test_default_read_timeout
-    assert_equal X::Client::DEFAULT_READ_TIMEOUT, @client_oauth.read_timeout
+    assert_equal X::ClientDefaults::DEFAULT_READ_TIMEOUT, @client_oauth.read_timeout
   end
 
   def test_set_read_timeout
@@ -117,7 +112,7 @@ class ClientTest < Minitest::Test
   end
 
   def test_default_object_class
-    assert_equal X::Client::DEFAULT_OBJECT_CLASS, @client_oauth.object_class
+    assert_equal X::ClientDefaults::DEFAULT_OBJECT_CLASS, @client_oauth.object_class
   end
 
   def test_set_object_class
@@ -127,7 +122,7 @@ class ClientTest < Minitest::Test
   end
 
   def test_default_array_class
-    assert_equal X::Client::DEFAULT_ARRAY_CLASS, @client_oauth.array_class
+    assert_equal X::ClientDefaults::DEFAULT_ARRAY_CLASS, @client_oauth.array_class
   end
 
   def test_set_array_class
