@@ -1,32 +1,28 @@
 require "test_helper"
 
-# Tests for X::Version module
+# Tests for X::VERSION module
 class VersionTest < Minitest::Test
-  def test_major_version
-    refute_nil X::Version.major
+  def test_that_it_has_a_version_number
+    refute_nil ::X::VERSION
   end
 
-  def test_minor_version
-    refute_nil X::Version.minor
+  def test_segments_array
+    assert_kind_of Array, X::VERSION.segments
   end
 
-  def test_patch_version
-    refute_nil X::Version.patch
+  def test_major_version_integer
+    assert_kind_of Integer, X::VERSION.segments[0]
   end
 
-  def test_to_h
-    assert_kind_of Hash, X::Version.to_h
+  def test_minor_version_integer
+    assert_kind_of Integer, X::VERSION.segments[1]
   end
 
-  def test_to_a
-    assert_kind_of Array, X::Version.to_a
+  def test_patch_version_integer
+    assert_kind_of Integer, X::VERSION.segments[2]
   end
 
   def test_to_s
-    assert_kind_of String, X::Version.to_s
-  end
-
-  def test_that_it_has_a_version_number
-    refute_nil ::X::Version
+    assert_kind_of String, X::VERSION.to_s
   end
 end
