@@ -11,26 +11,25 @@ module X
     extend Forwardable
     include ClientDefaults
 
-    attr_reader :base_url
-    attr_accessor :content_type, :open_timeout, :read_timeout, :user_agent, :array_class, :object_class
-
     def_delegators :@authenticator, :bearer_token, :api_key, :api_key_secret, :access_token, :access_token_secret
     def_delegators :@authenticator, :bearer_token=, :api_key=, :api_key_secret=, :access_token=, :access_token_secret=
+    def_delegators :@connection, :base_url, :open_timeout, :read_timeout, :write_timeout
+    def_delegators :@connection, :base_url=, :open_timeout=, :read_timeout=, :write_timeout=
+    def_delegators :@request_builder, :content_type, :user_agent
+    def_delegators :@request_builder, :content_type=, :user_agent=
+    def_delegators :@response_handler, :array_class, :object_class
+    def_delegators :@response_handler, :array_class=, :object_class=
 
     def initialize(bearer_token: nil, api_key: nil, api_key_secret: nil, access_token: nil, access_token_secret: nil,
-      base_url: DEFAULT_BASE_URL, content_type: DEFAULT_CONTENT_TYPE,
-      open_timeout: DEFAULT_OPEN_TIMEOUT, read_timeout: DEFAULT_READ_TIMEOUT, user_agent: DEFAULT_USER_AGENT,
+      base_url: DEFAULT_BASE_URL, content_type: DEFAULT_CONTENT_TYPE, user_agent: DEFAULT_USER_AGENT,
+      open_timeout: DEFAULT_OPEN_TIMEOUT, read_timeout: DEFAULT_READ_TIMEOUT, write_timeout: DEFAULT_WRITE_TIMEOUT,
       array_class: DEFAULT_ARRAY_CLASS, object_class: DEFAULT_OBJECT_CLASS)
-
       @authenticator = Authenticator.new(bearer_token: bearer_token, api_key: api_key, api_key_secret: api_key_secret,
         access_token: access_token, access_token_secret: access_token_secret)
-      self.base_url = base_url
-      @content_type = content_type
-      @open_timeout = open_timeout
-      @read_timeout = read_timeout
-      @user_agent = user_agent
-      @array_class = array_class
-      @object_class = object_class
+      @connection = Connection.new(base_url: base_url, open_timeout: open_timeout, read_timeout: read_timeout,
+        write_timeout: write_timeout)
+      @request_builder = RequestBuilder.new(content_type: content_type, user_agent: user_agent)
+      @response_handler = ResponseHandler.new(array_class: array_class, object_class: object_class)
     end
 
     def get(endpoint)
@@ -49,44 +48,12 @@ module X
       send_request(:delete, endpoint)
     end
 
-    def base_url=(new_base_url)
-      uri = URI(new_base_url)
-      raise ArgumentError, "Invalid base URL" unless uri.is_a?(URI::HTTPS) || uri.is_a?(URI::HTTP)
-
-      @base_url = uri
-    end
-
     private
 
     def send_request(http_method, endpoint, body = nil)
-      request = RequestBuilder.build(http_method, @base_url, endpoint, body)
-      add_headers(request)
-
-      response = Connection.send_request(@base_url, @open_timeout, @read_timeout, request)
-
-      ResponseHandler.new(response, @array_class, @object_class).handle
-    end
-
-    def add_headers(request)
-      add_authorization(request)
-      add_content_type(request)
-      add_user_agent(request)
-    end
-
-    def add_authorization(request)
-      if @authenticator.bearer_token
-        request["Authorization"] = "Bearer #{@bearer_token}"
-      else
-        @authenticator.sign!(request)
-      end
-    end
-
-    def add_content_type(request)
-      request["Content-Type"] = @content_type if @content_type
-    end
-
-    def add_user_agent(request)
-      request["User-Agent"] = @user_agent if @user_agent
+      request = @request_builder.build(@authenticator, http_method, base_url, endpoint, body)
+      response = @connection.send_request(request)
+      @response_handler.handle(response)
     end
   end
 end

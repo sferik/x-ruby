@@ -8,6 +8,7 @@ module X
     DEFAULT_OBJECT_CLASS = Hash
     DEFAULT_OPEN_TIMEOUT = 60 # seconds
     DEFAULT_READ_TIMEOUT = 60 # seconds
+    DEFAULT_WRITE_TIMEOUT = 60 # seconds
     DEFAULT_USER_AGENT = "X-Client/#{VERSION} Ruby/#{RUBY_VERSION}".freeze
   end
 end
