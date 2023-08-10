@@ -1,5 +1,10 @@
 ## [Unreleased]
 
+## [0.5.0] - 2023-08-10
+
+- Add configurable write timeout (2a31f84)
+- Use built-in Gem::Version class (066e0b6)
+
 ## [0.4.0] - 2023-08-06
 
 - Refactor Client into Authenticator, RequestBuilder, Connection, ResponseHandler (6bee1e9)

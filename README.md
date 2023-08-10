@@ -52,7 +52,7 @@ ads_client.get("accounts")
 
 ## History and Philosophy
 
-This library is a rewrite of the [Twitter Ruby library](https://github.com/sferik/twitter). Over 16 years, that library ballooned to over 3,000 lines of code (plus 7,500 lines of tests). At the time of writing, this library is about 200 lines of code (plus 200 test lines) and I’d like to keep it that way. That doesn’t mean new features won’t be added over time, but the benefits of potential new features must be weighed against the benefits of simplicity:
+This library is a rewrite of the [Twitter Ruby library](https://github.com/sferik/twitter). Over 16 years, that library ballooned to over 3,000 lines of code (plus 7,500 lines of tests). At the time of writing, this library is about 300 lines of code (plus 200 test lines) and I’d like to keep it that way. That doesn’t mean new features won’t be added over time, but the benefits of potential new features must be weighed against the benefits of simplicity:
 
 * Less code is easier to maintain.
 * Less code means fewer bugs.
