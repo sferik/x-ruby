@@ -41,7 +41,7 @@ module X
 
     def add_authorization(authenticator, request)
       if authenticator.bearer_token
-        request["Authorization"] = "Bearer #{@bearer_token}"
+        request["Authorization"] = "Bearer #{authenticator.bearer_token}"
       else
         authenticator.sign!(request)
       end
