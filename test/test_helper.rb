@@ -7,9 +7,10 @@ SimpleCov.start do
   minimum_coverage(100)
 end
 
-require "x"
 require "minitest/autorun"
+require "timecop"
 require "webmock/minitest"
+require "x"
 
 TEST_BEARER_TOKEN = "TEST_BEARER_TOKEN".freeze
 TEST_API_KEY = "TEST_API_KEY".freeze

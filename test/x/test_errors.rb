@@ -50,14 +50,16 @@ class ErrorsTest < Minitest::Test
   end
 
   def test_rate_limit_reset
-    reset_time = Time.now.utc.to_i + 900
-    stub_oauth_request(:get, "tweets", 429, {"x-rate-limit-reset" => reset_time.to_s})
+    Timecop.freeze do
+      reset_time = Time.now.utc.to_i + 900
+      stub_oauth_request(:get, "tweets", 429, {"x-rate-limit-reset" => reset_time.to_s})
 
-    begin
-      @client_oauth.get("tweets")
-    rescue X::TooManyRequestsError => e
-      assert_equal Time.at(reset_time).utc, e.reset_at
-      assert_equal 900, e.reset_in
+      begin
+        @client_oauth.get("tweets")
+      rescue X::TooManyRequestsError => e
+        assert_equal Time.at(reset_time).utc, e.reset_at
+        assert_equal 900, e.reset_in
+      end
     end
   end
 
