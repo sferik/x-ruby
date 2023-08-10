@@ -18,7 +18,7 @@ module X
       @user_agent = user_agent
     end
 
-    def build(authenticator, http_method, base_url, endpoint, body = nil)
+    def build(authenticator:, http_method:, base_url:, endpoint:, body: nil)
       url = URI.join(base_url, endpoint)
       request = create_request(http_method, url, body)
       add_authorization(authenticator, request)

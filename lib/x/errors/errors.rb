@@ -1,3 +1,4 @@
+require "net/http"
 require_relative "bad_request_error"
 require_relative "authentication_error"
 require_relative "forbidden_error"

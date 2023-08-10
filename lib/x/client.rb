@@ -51,9 +51,10 @@ module X
     private
 
     def send_request(http_method, endpoint, body = nil)
-      request = @request_builder.build(@authenticator, http_method, base_url, endpoint, body)
-      response = @connection.send_request(request)
-      @response_handler.handle(response)
+      request = @request_builder.build(authenticator: @authenticator, http_method: http_method, base_url: base_url,
+        endpoint: endpoint, body: body)
+      response = @connection.send_request(request: request)
+      @response_handler.handle(response: response)
     end
   end
 end

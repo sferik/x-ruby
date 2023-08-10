@@ -24,7 +24,7 @@ module X
       @http_client.write_timeout = write_timeout
     end
 
-    def send_request(request)
+    def send_request(request:)
       @http_client.request(request)
     rescue *NETWORK_ERRORS => e
       raise NetworkError, "Network error: #{e.message}"

@@ -1,10 +1,12 @@
-require "net/http"
 require_relative "client_error"
+require_relative "../client_defaults"
 
 module X
   # Rate limit error
   class TooManyRequestsError < ClientError
-    def initialize(msg, response = nil, object_class = ClientDefaults::DEFAULT_OBJECT_CLASS)
+    include ClientDefaults
+
+    def initialize(msg = nil, response: nil, array_class: DEFAULT_ARRAY_CLASS, object_class: DEFAULT_OBJECT_CLASS)
       @response = response
       super
     end

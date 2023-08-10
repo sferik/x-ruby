@@ -15,7 +15,7 @@ module X
       @object_class = object_class
     end
 
-    def handle(response)
+    def handle(response:)
       if successful_json_response?(response)
         return JSON.parse(response.body, array_class: array_class, object_class: object_class)
       end
@@ -24,7 +24,7 @@ module X
       error_message = "#{response.code} #{response.message}"
       raise error_class, error_message if empty_response_body?(response)
 
-      raise error_class.new(error_message, response)
+      raise error_class.new(error_message, response: response, array_class: array_class, object_class: object_class)
     end
 
     private
