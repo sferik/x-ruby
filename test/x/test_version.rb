@@ -1,4 +1,4 @@
-require "test_helper"
+require_relative "../test_helper"
 
 # Tests for X::VERSION module
 class VersionTest < Minitest::Test
