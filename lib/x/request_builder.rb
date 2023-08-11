@@ -21,7 +21,7 @@ module X
     def build(authenticator:, http_method:, base_url:, endpoint:, body: nil)
       url = URI.join(base_url, endpoint)
       request = create_request(http_method, url, body)
-      add_authorization(authenticator, request)
+      add_authorization(request, authenticator)
       add_content_type(request)
       add_user_agent(request)
       request
@@ -39,20 +39,20 @@ module X
       request
     end
 
-    def add_authorization(authenticator, request)
+    def add_authorization(request, authenticator)
       if authenticator.bearer_token
-        request["Authorization"] = "Bearer #{authenticator.bearer_token}"
+        request.add_field("Authorization", "Bearer #{authenticator.bearer_token}")
       else
         authenticator.sign!(request)
       end
     end
 
     def add_content_type(request)
-      request["Content-Type"] = content_type if content_type
+      request.add_field("Content-Type", content_type) if content_type
     end
 
     def add_user_agent(request)
-      request["User-Agent"] = user_agent if user_agent
+      request.add_field("User-Agent", user_agent) if user_agent
     end
   end
 end
