@@ -42,42 +42,28 @@ class ClientTest < Minitest::Test
 
   def test_api_key
     assert_equal TEST_API_KEY, @client_oauth.api_key
+    assert_equal TEST_API_KEY_SECRET, @client_oauth.api_key_secret
   end
 
   def test_set_api_key
     @client_oauth.api_key = "abc"
+    @client_oauth.api_key_secret = "def"
 
     assert_equal "abc", @client_oauth.api_key
-  end
-
-  def test_api_key_secret
-    assert_equal TEST_API_KEY_SECRET, @client_oauth.api_key_secret
-  end
-
-  def test_set_api_key_secret
-    @client_oauth.api_key_secret = "xyz"
-
-    assert_equal "xyz", @client_oauth.api_key_secret
+    assert_equal "def", @client_oauth.api_key_secret
   end
 
   def test_access_token
     assert_equal TEST_ACCESS_TOKEN, @client_oauth.access_token
+    assert_equal TEST_ACCESS_TOKEN_SECRET, @client_oauth.access_token_secret
   end
 
   def test_set_access_token
     @client_oauth.access_token = "abc"
+    @client_oauth.access_token_secret = "def"
 
     assert_equal "abc", @client_oauth.access_token
-  end
-
-  def test_access_token_secret
-    assert_equal TEST_ACCESS_TOKEN_SECRET, @client_oauth.access_token_secret
-  end
-
-  def test_set_access_token_secret
-    @client_oauth.access_token_secret = "xyz"
-
-    assert_equal "xyz", @client_oauth.access_token_secret
+    assert_equal "def", @client_oauth.access_token_secret
   end
 
   def test_default_base_url
@@ -115,6 +101,16 @@ class ClientTest < Minitest::Test
     assert_equal 10, @client_oauth.open_timeout
     assert_equal 10, @client_oauth.read_timeout
     assert_equal 10, @client_oauth.write_timeout
+  end
+
+  def test_default_debug_output
+    assert_nil @client_oauth.debug_output
+  end
+
+  def test_set_debug_output
+    @client_oauth.debug_output = $stderr
+
+    assert_equal $stderr, @client_oauth.debug_output
   end
 
   def test_default_object_class

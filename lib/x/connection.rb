@@ -14,14 +14,16 @@ module X
 
     def_delegators :@http_client, :open_timeout, :read_timeout, :write_timeout
     def_delegators :@http_client, :open_timeout=, :read_timeout=, :write_timeout=
+    def_delegator :@http_client, :set_debug_output, :debug_output=
 
-    def initialize(base_url:, open_timeout:, read_timeout:, write_timeout:)
+    def initialize(base_url:, open_timeout:, read_timeout:, write_timeout:, debug_output: nil)
       self.base_url = URI(base_url)
       @http_client = Net::HTTP.new(@base_url.host, @base_url.port)
       @http_client.use_ssl = @base_url.scheme == "https"
       @http_client.open_timeout = open_timeout
       @http_client.read_timeout = read_timeout
       @http_client.write_timeout = write_timeout
+      @http_client.set_debug_output(debug_output)
     end
 
     def send_request(request:)
@@ -35,6 +37,10 @@ module X
       raise ArgumentError, "Invalid base URL" unless uri.is_a?(URI::HTTPS) || uri.is_a?(URI::HTTP)
 
       @base_url = uri
+    end
+
+    def debug_output
+      @http_client.instance_variable_get(:@debug_output)
     end
   end
 end
