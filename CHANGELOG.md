@@ -1,5 +1,9 @@
 ## [Unreleased]
 
+## [0.5.1] - 2023-08-16
+
+- Fix bearer token authentication (1a1ca93)
+
 ## [0.5.0] - 2023-08-10
 
 - Add configurable write timeout (2a31f84)
