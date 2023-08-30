@@ -1,4 +1,142 @@
+module OAuth
+  class Consumer
+    def initialize: (String api_key, String api_key_secret, site: String) -> void
+    def sign!: (Net::HTTPRequest request, OAuth::Token token) -> void
+  end
+  class Token
+    def initialize: (String access_token, String access_token_secret) -> void
+  end
+end
+
 module X
-  VERSION: String
-  # See the writing guide of rbs: https://github.com/ruby/rbs#guides
+  VERSION: Gem::Version
+
+  class Authenticator
+    extend Forwardable
+    @consumer: OAuth::Consumer
+    @access_token: OAuth::Token
+
+    def initialize: (String api_key, String api_key_secret, String access_token, String access_token_secret) -> void
+    def sign!: (Net::HTTPRequest request) -> void
+  end
+
+  module ClientDefaults
+    DEFAULT_BASE_URL: String
+    DEFAULT_CONTENT_TYPE: String
+    DEFAULT_OPEN_TIMEOUT: Integer
+    DEFAULT_READ_TIMEOUT: Integer
+    DEFAULT_WRITE_TIMEOUT: Integer
+    DEFAULT_USER_AGENT: String
+    DEFAULT_ARRAY_CLASS: Class
+    DEFAULT_OBJECT_CLASS: Class
+  end
+
+  class Error < StandardError
+    include ClientDefaults
+
+    attr_reader object: untyped
+    def initialize: (String msg, response: Net::HTTPResponse, ?array_class: Class, ?object_class: Class) -> void
+
+    private
+    def json_response?: (Net::HTTPResponse response) -> bool
+  end
+
+  class ClientError < Error
+  end
+
+  class BadRequestError < ClientError
+  end
+
+  class AuthenticationError < ClientError
+  end
+
+  class ForbiddenError < ClientError
+  end
+
+  class NotFoundError < ClientError
+  end
+
+  class TooManyRequestsError < ClientError
+    include ClientDefaults
+    @response: Net::HTTPResponse
+
+    def initialize: (String msg, response: Net::HTTPResponse, ?array_class: Class, ?object_class: Class) -> void
+    def limit: -> Integer
+    def remaining: -> Integer
+    def reset_at: -> Time
+    def reset_in: -> Integer?
+  end
+
+  class ServerError < Error
+  end
+
+  class ServiceUnavailableError < ServerError
+  end
+
+  module Errors
+    ERROR_CLASSES: Hash[Integer, singleton(AuthenticationError) | singleton(BadRequestError) | singleton(ForbiddenError) | singleton(NotFoundError) | singleton(ServerError) | singleton(ServiceUnavailableError) | singleton(TooManyRequestsError)]
+    NETWORK_ERRORS: Array[(singleton(::Errno::ECONNREFUSED) | singleton(::Net::OpenTimeout) | singleton(::Net::ReadTimeout))]
+  end
+
+  class NetworkError < Error
+  end
+
+  class Connection
+    extend Forwardable
+    include Errors
+    @http_client: Net::HTTP
+
+    attr_reader base_url: URI::Generic
+    def initialize: (URI::Generic | String url, Float | Integer open_timeout, Float | Integer read_timeout, Float | Integer write_timeout, ?debug_output: IO?) -> void
+    def send_request: (Net::HTTPRequest request) -> Net::HTTPResponse
+    def base_url=: (URI::Generic | String new_base_url) -> URI::Generic
+    def debug_output: -> IO?
+  end
+
+  class RequestBuilder
+    HTTP_METHODS: Hash[::Symbol, (singleton(::Net::HTTP::Get) | singleton(::Net::HTTP::Post) | singleton(::Net::HTTP::Put) | singleton(::Net::HTTP::Delete))]
+
+    attr_accessor content_type: String
+    attr_accessor user_agent: String
+    def initialize: (String content_type, String user_agent) -> void
+    def build: (Authenticator authenticator, :delete | :get | :post | :put http_method, URI::Generic base_url, String endpoint, ?body: nil) -> (Net::HTTPRequest)
+
+    private
+    def create_request: (:delete | :get | :post | :put http_method, URI::Generic url, nil body) -> (Net::HTTPRequest)
+    def add_authorization: (Net::HTTPRequest request, Authenticator authenticator) -> void
+    def add_content_type: (Net::HTTPRequest request) -> void
+    def add_user_agent: (Net::HTTPRequest request) -> void
+  end
+
+  class ResponseHandler
+    include Errors
+    include ClientDefaults
+
+    attr_accessor array_class: Class
+    attr_accessor object_class: Class
+    def initialize: (Class array_class, Class object_class) -> void
+    def handle: (Net::HTTPResponse response) -> untyped
+
+    private
+    def successful_json_response?: (Net::HTTPResponse response) -> bool
+  end
+
+  class Client
+    extend Forwardable
+    include ClientDefaults
+    @authenticator: Authenticator
+    @connection: Connection
+    @request_builder: RequestBuilder
+    @response_handler: ResponseHandler
+
+    attr_reader base_url: URI::Generic
+    def initialize: (api_key: String, api_key_secret: String, access_token: String, access_token_secret: String, ?base_url: URI::Generic | String, ?content_type: String, ?user_agent: String, ?open_timeout: Float | Integer, ?read_timeout: Float | Integer, ?write_timeout: Float | Integer, ?debug_output: IO?, ?array_class: Class, ?object_class: Class) -> void
+    def get: (String endpoint) -> untyped
+    def post: (String endpoint, ?nil body) -> untyped
+    def put: (String endpoint, ?nil body) -> untyped
+    def delete: (String endpoint) -> untyped
+
+    private
+    def send_request: (:delete | :get | :post | :put http_method, String endpoint, ?nil body) -> untyped
+  end
 end

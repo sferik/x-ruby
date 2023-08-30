@@ -12,4 +12,12 @@ require "rubocop/rake_task"
 
 RuboCop::RakeTask.new
 
-task default: %i[test rubocop standard]
+require "steep"
+require "steep/cli"
+
+desc "Type check with Steep"
+task :steep do
+  Steep::CLI.new(argv: ["check"], stdout: $stdout, stderr: $stderr, stdin: $stdin).run
+end
+
+task default: %i[test rubocop standard steep]
