@@ -1,5 +1,11 @@
 ## [Unreleased]
 
+## [0.6.0] - 2023-08-30
+
+- Add configurable debug output stream for logging (fd2d4b0)
+- Remove bearer token authentication (efff940)
+- Define RBS type signatures (d7f63ba)
+
 ## [0.5.1] - 2023-08-16
 
 - Fix bearer token authentication (1a1ca93)
