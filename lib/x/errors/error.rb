@@ -8,7 +8,7 @@ module X
     include ClientDefaults
     attr_reader :object
 
-    def initialize(msg = nil, response: nil, array_class: DEFAULT_ARRAY_CLASS, object_class: DEFAULT_OBJECT_CLASS)
+    def initialize(msg, response:, array_class: DEFAULT_ARRAY_CLASS, object_class: DEFAULT_OBJECT_CLASS)
       if json_response?(response)
         @object = JSON.parse(response.body, array_class: array_class, object_class: object_class)
       end

@@ -13,13 +13,13 @@ module X
 
     attr_accessor :content_type, :user_agent
 
-    def initialize(content_type:, user_agent:)
+    def initialize(content_type, user_agent)
       @content_type = content_type
       @user_agent = user_agent
     end
 
-    def build(authenticator:, http_method:, base_url:, endpoint:, body: nil)
-      url = URI.join(base_url, endpoint)
+    def build(authenticator, http_method, base_url, endpoint, body: nil)
+      url = URI.join(base_url.to_s, endpoint)
       request = create_request(http_method, url, body)
       add_authorization(request, authenticator)
       add_content_type(request)
@@ -40,11 +40,7 @@ module X
     end
 
     def add_authorization(request, authenticator)
-      if authenticator.bearer_token
-        request.add_field("Authorization", "Bearer #{authenticator.bearer_token}")
-      else
-        authenticator.sign!(request)
-      end
+      authenticator.sign!(request)
     end
 
     def add_content_type(request)

@@ -18,8 +18,8 @@ If bundler is not being used to manage dependencies, install the gem by executin
 x_oauth_credentials = {
   api_key:             "INSERT YOUR X API KEY HERE",
   api_key_secret:      "INSERT YOUR X API KEY SECRET HERE",
-  access_token:        "INSERT YOUR X API ACCESS TOKEN HERE",
-  access_token_secret: "INSERT YOUR X API ACCESS TOKEN SECRET HERE",
+  access_token:        "INSERT YOUR X ACCESS TOKEN HERE",
+  access_token_secret: "INSERT YOUR X ACCESS TOKEN SECRET HERE",
 }
 
 # Initialize X API client with OAuth credentials
