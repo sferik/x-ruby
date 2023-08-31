@@ -74,11 +74,11 @@ This code is not littered with comments that are intended to generate documentat
 
 1. Checkout and repo:
 
-       git checkout git@github.com:sferik/x.git
+       git checkout git@github.com:sferik/x-ruby.git
 
 2. Enter the repo’s directory:
 
-       cd x
+       cd x-ruby
 
 3. Install dependencies via Bundler:
 
@@ -94,7 +94,7 @@ This code is not littered with comments that are intended to generate documentat
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/sferik/x.
+Bug reports and pull requests are welcome on GitHub at https://github.com/sferik/x-ruby.
 
 Pull requests will only be accepted if they meet all the following criteria:
 

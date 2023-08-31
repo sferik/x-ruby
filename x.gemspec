@@ -7,7 +7,7 @@ Gem::Specification.new do |spec|
   spec.email = ["sferik@gmail.com"]
 
   spec.summary = "A Ruby interface to the X API."
-  spec.homepage = "https://github.com/sferik/x-ruby"
+  spec.homepage = "https://sferik.github.io/x-ruby"
   spec.license = "MIT"
   spec.required_ruby_version = ">= 3.0"
 
