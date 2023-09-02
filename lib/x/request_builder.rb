@@ -10,6 +10,9 @@ module X
       put: Net::HTTP::Put,
       delete: Net::HTTP::Delete
     }.freeze
+    AUTHORIZATION_HEADER = "Authorization".freeze
+    CONTENT_TYPE_HEADER = "Content-Type".freeze
+    USER_AGENT_HEADER = "User-Agent".freeze
 
     attr_accessor :content_type, :user_agent
 
@@ -40,15 +43,15 @@ module X
     end
 
     def add_authorization(request, authenticator)
-      authenticator.sign!(request)
+      request.add_field(AUTHORIZATION_HEADER, authenticator.header(request))
     end
 
     def add_content_type(request)
-      request.add_field("Content-Type", content_type) if content_type
+      request.add_field(CONTENT_TYPE_HEADER, content_type) if content_type
     end
 
     def add_user_agent(request)
-      request.add_field("User-Agent", user_agent) if user_agent
+      request.add_field(USER_AGENT_HEADER, user_agent) if user_agent
     end
   end
 end

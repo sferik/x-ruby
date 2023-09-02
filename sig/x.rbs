@@ -4,23 +4,28 @@ module X
   class Authenticator
     OAUTH_VERSION: String
     OAUTH_SIGNATURE_METHOD: String
+    OAUTH_SIGNATURE_ALGORITHM: String
 
     attr_accessor api_key: String
     attr_accessor api_key_secret: String
     attr_accessor access_token: String
     attr_accessor access_token_secret: String
     def initialize: (String api_key, String api_key_secret, String access_token, String access_token_secret) -> void
-    def sign!: (Net::HTTPRequest request) -> void
+    def header: (Net::HTTPRequest request) -> String
 
     private
-    def split_uri: (URI::Generic uri) -> [String, Hash[String, String]]
-    def oauth_header: (String method, String uri, Hash[String, String] query_params) -> String
+    def parse_request: (Net::HTTPRequest request) -> [String, String, Hash[String, String]]
+    def parse_query_params: (String query_string) -> Hash[String, String]
+    def uri_without_query: (URI::Generic uri) -> String
+    def build_oauth_header: (String method, String url, Hash[String, String] query_params) -> String
     def default_oauth_params: -> Hash[String, String]
-    def generate_signature: (String method, String uri, Hash[String, String] params) -> String
-    def signature_base_string: (String method, String uri, Hash[String, String] params) -> String
+    def generate_signature: (String method, String url, Hash[String, String] params) -> String
+    def hmac_signature: (String base_string) -> String
+    def signature_base_string: (String method, String url, Hash[String, String] params) -> String
     def encode_params: (Hash[String, String] params) -> String
     def signing_key: -> String
-    def formatted_oauth_header: (Hash[String, String] params) -> String
+    def format_oauth_header: (Hash[String, String] params) -> String
+    def encode: (String value) -> String
   end
 
   module ClientDefaults
@@ -98,6 +103,9 @@ module X
 
   class RequestBuilder
     HTTP_METHODS: Hash[::Symbol, (singleton(::Net::HTTP::Get) | singleton(::Net::HTTP::Post) | singleton(::Net::HTTP::Put) | singleton(::Net::HTTP::Delete))]
+    AUTHORIZATION_HEADER: String
+    CONTENT_TYPE_HEADER: String
+    USER_AGENT_HEADER: String
 
     attr_accessor content_type: String
     attr_accessor user_agent: String
