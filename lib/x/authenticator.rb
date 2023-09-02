@@ -29,8 +29,9 @@ module X
     private
 
     def split_uri(uri)
-      uri_base = uri.path.to_s
-      query_params = URI.decode_www_form(uri.query.to_s).to_h
+      query_string = uri.query.to_s
+      uri_base = uri.to_s.chomp("?#{query_string}")
+      query_params = URI.decode_www_form(query_string).to_h
       [uri_base, query_params]
     end
 
