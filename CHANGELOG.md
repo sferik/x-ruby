@@ -1,5 +1,9 @@
 ## [Unreleased]
 
+## [0.7.0] - 2023-09-02
+
+- Remove OAuth gem (7c29bb1)
+
 ## [0.6.0] - 2023-08-30
 
 - Add configurable debug output stream for logging (fd2d4b0)
