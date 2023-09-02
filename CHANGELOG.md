@@ -1,5 +1,9 @@
 ## [Unreleased]
 
+## [0.7.1] - 2023-09-02
+
+- Fix bug in X::Authenticator#split_uri (ebc9d5f)
+
 ## [0.7.0] - 2023-09-02
 
 - Remove OAuth gem (7c29bb1)
