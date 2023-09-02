@@ -64,9 +64,9 @@ In the immortal words of [Ezra Zygmuntowicz](https://github.com/ezmobius) and hi
 
 > No code is faster than no code.
 
-The fastest code is the code that is never executed because it doesn’t exist. That principle should apply not just to this library itself but to third-party dependencies. At present, this library has one runtime dependency ([oauth](https://rubygems.org/gems/oauth)) and I’d like to keep it that way. If anything, it should have fewer dependencies.
+The fastest code is the code that is never executed because it doesn’t exist. That principle should apply not just to this library itself but to third-party dependencies. At present, this library has no runtime dependencies and I’d like to keep it that way.
 
-Tests for the previous version of this library ran in about 2 seconds. That sounds pretty fast until you see that tests for this library run in 2 hundredths of a second. This means you can automatically run the tests any time you write a file and receive immediate feedback. For such of workflows, 2 seconds feels painfully slow.
+The tests for the previous version of this library executed in about 2 seconds. That sounds pretty fast until you see that tests for this library run in 2 hundredths of a second. This means you can automatically run the tests any time you write a file and receive immediate feedback. For such of workflows, 2 seconds feels painfully slow.
 
 This code is not littered with comments that are intended to generate documentation. Rather, this code is intended to be simple enough to serve as its own documentation. If you want to understand how something works, don’t read the documentation—it might be wrong—read the code. The code is always right.
 

@@ -1,23 +1,26 @@
-module OAuth
-  class Consumer
-    def initialize: (String api_key, String api_key_secret, site: String) -> void
-    def sign!: (Net::HTTPRequest request, OAuth::Token token) -> void
-  end
-  class Token
-    def initialize: (String access_token, String access_token_secret) -> void
-  end
-end
-
 module X
   VERSION: Gem::Version
 
   class Authenticator
-    extend Forwardable
-    @consumer: OAuth::Consumer
-    @access_token: OAuth::Token
+    OAUTH_VERSION: String
+    OAUTH_SIGNATURE_METHOD: String
 
+    attr_accessor api_key: String
+    attr_accessor api_key_secret: String
+    attr_accessor access_token: String
+    attr_accessor access_token_secret: String
     def initialize: (String api_key, String api_key_secret, String access_token, String access_token_secret) -> void
     def sign!: (Net::HTTPRequest request) -> void
+
+    private
+    def split_uri: (URI::Generic uri) -> [String, Hash[String, String]]
+    def oauth_header: (String method, String uri, Hash[String, String] query_params) -> String
+    def default_oauth_params: -> Hash[String, String]
+    def generate_signature: (String method, String uri, Hash[String, String] params) -> String
+    def signature_base_string: (String method, String uri, Hash[String, String] params) -> String
+    def encode_params: (Hash[String, String] params) -> String
+    def signing_key: -> String
+    def formatted_oauth_header: (Hash[String, String] params) -> String
   end
 
   module ClientDefaults
