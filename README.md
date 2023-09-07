@@ -17,6 +17,8 @@ Or, if Bundler is not being used to manage dependencies:
 First, obtain X credentails from https://developer.x.com.
 
 ```ruby
+require "x"
+
 x_credentials = {
   api_key:             "INSERT YOUR X API KEY HERE",
   api_key_secret:      "INSERT YOUR X API KEY SECRET HERE",
