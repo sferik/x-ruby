@@ -42,7 +42,7 @@ module X
   class Error < StandardError
     include ClientDefaults
 
-    attr_reader object: untyped
+    attr_reader object: Hash[String, untyped]
     def initialize: (String msg, response: Net::HTTPResponse, ?array_class: Class, ?object_class: Class) -> void
 
     private
@@ -126,7 +126,7 @@ module X
     attr_accessor array_class: Class
     attr_accessor object_class: Class
     def initialize: (Class array_class, Class object_class) -> void
-    def handle: (Net::HTTPResponse response) -> untyped
+    def handle: (Net::HTTPResponse response) -> Hash[String, untyped]
 
     private
     def successful_json_response?: (Net::HTTPResponse response) -> bool
@@ -142,12 +142,12 @@ module X
 
     attr_reader base_url: URI::Generic
     def initialize: (api_key: String, api_key_secret: String, access_token: String, access_token_secret: String, ?base_url: URI::Generic | String, ?content_type: String, ?user_agent: String, ?open_timeout: Float | Integer, ?read_timeout: Float | Integer, ?write_timeout: Float | Integer, ?debug_output: IO?, ?array_class: Class, ?object_class: Class) -> void
-    def get: (String endpoint) -> untyped
-    def post: (String endpoint, ?nil body) -> untyped
-    def put: (String endpoint, ?nil body) -> untyped
-    def delete: (String endpoint) -> untyped
+    def get: (String endpoint) -> Hash[String, untyped]
+    def post: (String endpoint, ?nil body) -> Hash[String, untyped]
+    def put: (String endpoint, ?nil body) -> Hash[String, untyped]
+    def delete: (String endpoint) -> Hash[String, untyped]
 
     private
-    def send_request: (:delete | :get | :post | :put http_method, String endpoint, ?nil body) -> untyped
+    def send_request: (:delete | :get | :post | :put http_method, String endpoint, ?nil body) -> Hash[String, untyped]
   end
 end
