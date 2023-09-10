@@ -12,7 +12,7 @@ class ClientTest < Minitest::Test
     define_method("test_#{http_method}_request_success") do
       stub_request(http_method, "https://api.twitter.com/2/tweets")
         .with(headers: {"Authorization" => /OAuth/})
-        .to_return(status: 200, headers: {"content-type" => "application/json; charset=utf-8"}, body: {}.to_json)
+        .to_return(status: 200, headers: {"content-type" => "application/json"}, body: {}.to_json)
 
       response = @client.public_send(http_method, "tweets")
 
