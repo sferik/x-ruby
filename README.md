@@ -2,6 +2,10 @@
 
 #### A Ruby interface to the X API.
 
+## Follow
+
+For updates and announcements, follow [this gem](https://x.com/gem) and [its creator](https://x.com/sferik) on X.
+
 ## Installation
 
 Install the gem and add to the application's Gemfile:
