@@ -1,6 +1,4 @@
-# X
-
-#### A Ruby interface to the X API.
+# A [Ruby](https://www.ruby-lang.org) interface to the [X API](https://developer.x.com)
 
 ## Follow
 
@@ -18,7 +16,7 @@ Or, if Bundler is not being used to manage dependencies:
 
 ## Usage
 
-First, obtain X credentails from https://developer.x.com.
+First, obtain X credentails from <https://developer.x.com>.
 
 ```ruby
 require "x"
