@@ -28,7 +28,7 @@ module X
     private
 
     def successful_json_response?(response)
-      response.is_a?(Net::HTTPSuccess) && response.body && response["content-type"] == DEFAULT_CONTENT_TYPE
+      response.is_a?(Net::HTTPSuccess) && response.body && JSON_CONTENT_TYPE_REGEXP.match?(response["content-type"])
     end
   end
 end

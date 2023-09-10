@@ -37,6 +37,7 @@ module X
     DEFAULT_USER_AGENT: String
     DEFAULT_ARRAY_CLASS: Class
     DEFAULT_OBJECT_CLASS: Class
+    JSON_CONTENT_TYPE_REGEXP: Regexp
   end
 
   class Error < StandardError
