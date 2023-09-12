@@ -2,6 +2,7 @@ require "forwardable"
 require_relative "authenticator"
 require_relative "client_defaults"
 require_relative "connection"
+require_relative "redirect_handler"
 require_relative "request_builder"
 require_relative "response_handler"
 
@@ -23,10 +24,12 @@ module X
     def initialize(api_key:, api_key_secret:, access_token:, access_token_secret:,
       base_url: DEFAULT_BASE_URL, content_type: DEFAULT_CONTENT_TYPE, user_agent: DEFAULT_USER_AGENT,
       open_timeout: DEFAULT_OPEN_TIMEOUT, read_timeout: DEFAULT_READ_TIMEOUT, write_timeout: DEFAULT_WRITE_TIMEOUT,
-      debug_output: nil, array_class: DEFAULT_ARRAY_CLASS, object_class: DEFAULT_OBJECT_CLASS)
+      debug_output: nil, array_class: DEFAULT_ARRAY_CLASS, object_class: DEFAULT_OBJECT_CLASS,
+      max_redirects: DEFAULT_MAX_REDIRECTS)
       @authenticator = Authenticator.new(api_key, api_key_secret, access_token, access_token_secret)
       @connection = Connection.new(base_url, open_timeout, read_timeout, write_timeout, debug_output: debug_output)
       @request_builder = RequestBuilder.new(content_type, user_agent)
+      @redirect_handler = RedirectHandler.new(@authenticator, @connection, @request_builder, max_redirects)
       @response_handler = ResponseHandler.new(array_class, object_class)
     end
 
@@ -49,9 +52,11 @@ module X
     private
 
     def send_request(http_method, endpoint, body = nil)
-      request = @request_builder.build(@authenticator, http_method, base_url, endpoint, body: body)
+      uri = URI.join(base_url.to_s, endpoint)
+      request = @request_builder.build(@authenticator, http_method, uri, body: body)
       response = @connection.send_request(request)
-      @response_handler.handle(response)
+      final_response = @redirect_handler.handle_redirects(response, request, base_url)
+      @response_handler.handle(final_response)
     end
   end
 end

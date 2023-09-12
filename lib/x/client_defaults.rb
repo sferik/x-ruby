@@ -5,6 +5,7 @@ module X
     DEFAULT_ARRAY_CLASS = Array
     DEFAULT_BASE_URL = "https://api.twitter.com/2/".freeze
     DEFAULT_CONTENT_TYPE = "application/json; charset=utf-8".freeze
+    DEFAULT_MAX_REDIRECTS = 10
     DEFAULT_OBJECT_CLASS = Hash
     DEFAULT_OPEN_TIMEOUT = 60 # seconds
     DEFAULT_READ_TIMEOUT = 60 # seconds

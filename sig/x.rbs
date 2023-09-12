@@ -31,6 +31,7 @@ module X
   module ClientDefaults
     DEFAULT_BASE_URL: String
     DEFAULT_CONTENT_TYPE: String
+    DEFAULT_MAX_REDIRECTS: Integer
     DEFAULT_OPEN_TIMEOUT: Integer
     DEFAULT_READ_TIMEOUT: Integer
     DEFAULT_WRITE_TIMEOUT: Integer
@@ -65,6 +66,9 @@ module X
   class NotFoundError < ClientError
   end
 
+  class TooManyRedirectsError < ClientError
+  end
+
   class TooManyRequestsError < ClientError
     include ClientDefaults
     @response: Net::HTTPResponse
@@ -96,6 +100,9 @@ module X
     @http_client: Net::HTTP
 
     attr_reader base_url: URI::Generic
+    attr_reader open_timeout: Float | Integer 
+    attr_reader read_timeout: Float | Integer 
+    attr_reader write_timeout: Float | Integer 
     def initialize: (URI::Generic | String url, Float | Integer open_timeout, Float | Integer read_timeout, Float | Integer write_timeout, ?debug_output: IO?) -> void
     def send_request: (Net::HTTPRequest request) -> Net::HTTPResponse
     def base_url=: (URI::Generic | String new_base_url) -> URI::Generic
@@ -111,13 +118,27 @@ module X
     attr_accessor content_type: String
     attr_accessor user_agent: String
     def initialize: (String content_type, String user_agent) -> void
-    def build: (Authenticator authenticator, :delete | :get | :post | :put http_method, URI::Generic base_url, String endpoint, ?body: nil) -> (Net::HTTPRequest)
+    def build: (Authenticator authenticator, Symbol http_method, URI::Generic url, ?body: String?) -> (Net::HTTPRequest)
 
     private
-    def create_request: (:delete | :get | :post | :put http_method, URI::Generic url, nil body) -> (Net::HTTPRequest)
+    def create_request: (Symbol http_method, URI::Generic url, String? body) -> (Net::HTTPRequest)
     def add_authorization: (Net::HTTPRequest request, Authenticator authenticator) -> void
     def add_content_type: (Net::HTTPRequest request) -> void
     def add_user_agent: (Net::HTTPRequest request) -> void
+  end
+
+  class RedirectHandler
+    attr_reader authenticator: Authenticator
+    attr_reader connection: Connection
+    attr_reader request_builder: RequestBuilder
+    attr_reader max_redirects: Integer
+    def initialize: (Authenticator authenticator, Connection connection, RequestBuilder request_builder, Integer max_redirects) -> void
+    def handle_redirects: (Net::HTTPResponse response, Net::HTTPRequest original_request, URI::Generic | String original_base_url, ?Integer redirect_count) -> Net::HTTPResponse
+
+    private
+    def build_new_uri: (Net::HTTPResponse response, URI::Generic | String original_base_url) -> URI::Generic
+    def build_request: (Net::HTTPRequest original_request, URI::Generic new_uri) -> Net::HTTPRequest
+    def send_new_request: (URI::Generic new_uri, Net::HTTPRequest new_request) -> Net::HTTPResponse
   end
 
   class ResponseHandler
@@ -139,16 +160,17 @@ module X
     @authenticator: Authenticator
     @connection: Connection
     @request_builder: RequestBuilder
+    @redirect_handler: RedirectHandler
     @response_handler: ResponseHandler
 
     attr_reader base_url: URI::Generic
-    def initialize: (api_key: String, api_key_secret: String, access_token: String, access_token_secret: String, ?base_url: URI::Generic | String, ?content_type: String, ?user_agent: String, ?open_timeout: Float | Integer, ?read_timeout: Float | Integer, ?write_timeout: Float | Integer, ?debug_output: IO?, ?array_class: Class, ?object_class: Class) -> void
+    def initialize: (api_key: String, api_key_secret: String, access_token: String, access_token_secret: String, ?base_url: URI::Generic | String, ?content_type: String, ?user_agent: String, ?open_timeout: Float | Integer, ?read_timeout: Float | Integer, ?write_timeout: Float | Integer, ?debug_output: IO?, ?array_class: Class, ?object_class: Class, ?max_redirects: Integer) -> void
     def get: (String endpoint) -> Hash[String, untyped]
     def post: (String endpoint, ?nil body) -> Hash[String, untyped]
     def put: (String endpoint, ?nil body) -> Hash[String, untyped]
     def delete: (String endpoint) -> Hash[String, untyped]
 
     private
-    def send_request: (:delete | :get | :post | :put http_method, String endpoint, ?nil body) -> Hash[String, untyped]
+    def send_request: (Symbol http_method, String endpoint, ?nil body) -> Hash[String, untyped]
   end
 end
