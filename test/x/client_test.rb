@@ -12,7 +12,7 @@ class ClientTest < Minitest::Test
     define_method("test_#{http_method}_request_success") do
       stub_request(http_method, "https://api.twitter.com/2/tweets")
         .with(headers: {"Authorization" => /OAuth/})
-        .to_return(status: 200, headers: {"content-type" => "application/json"}, body: {}.to_json)
+        .to_return(status: 200, headers: {"content-type" => "application/json"}, body: "{}")
 
       response = @client.public_send(http_method, "tweets")
 
@@ -47,19 +47,19 @@ class ClientTest < Minitest::Test
     assert_equal "def", @client.access_token_secret
   end
 
-  def test_default_base_url
-    assert_equal URI.parse(X::ClientDefaults::DEFAULT_BASE_URL), @client.base_url
+  def test_default_base_uri
+    assert_equal URI.parse(X::Connection::DEFAULT_BASE_URL), @client.base_uri
   end
 
-  def test_set_base_url
-    url = URI("https://example.com")
-    @client.base_url = url
+  def test_set_base_uri
+    uri = URI("https://example.com")
+    @client.base_uri = uri
 
-    assert_equal url, @client.base_url
+    assert_equal uri, @client.base_uri
   end
 
   def test_default_user_agent
-    assert_equal X::ClientDefaults::DEFAULT_USER_AGENT, @client.user_agent
+    assert_equal X::RequestBuilder::DEFAULT_USER_AGENT, @client.user_agent
   end
 
   def test_set_user_agent
@@ -69,9 +69,9 @@ class ClientTest < Minitest::Test
   end
 
   def test_default_timeouts
-    assert_equal X::ClientDefaults::DEFAULT_OPEN_TIMEOUT, @client.open_timeout
-    assert_equal X::ClientDefaults::DEFAULT_READ_TIMEOUT, @client.read_timeout
-    assert_equal X::ClientDefaults::DEFAULT_WRITE_TIMEOUT, @client.write_timeout
+    assert_equal X::Connection::DEFAULT_OPEN_TIMEOUT, @client.open_timeout
+    assert_equal X::Connection::DEFAULT_READ_TIMEOUT, @client.read_timeout
+    assert_equal X::Connection::DEFAULT_WRITE_TIMEOUT, @client.write_timeout
   end
 
   def test_set_timeouts
@@ -95,7 +95,7 @@ class ClientTest < Minitest::Test
   end
 
   def test_default_object_class
-    assert_equal X::ClientDefaults::DEFAULT_OBJECT_CLASS, @client.object_class
+    assert_equal X::ResponseHandler::DEFAULT_OBJECT_CLASS, @client.object_class
   end
 
   def test_set_object_class
@@ -105,7 +105,7 @@ class ClientTest < Minitest::Test
   end
 
   def test_default_array_class
-    assert_equal X::ClientDefaults::DEFAULT_ARRAY_CLASS, @client.array_class
+    assert_equal X::ResponseHandler::DEFAULT_ARRAY_CLASS, @client.array_class
   end
 
   def test_set_array_class

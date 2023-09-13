@@ -28,24 +28,11 @@ module X
     def encode: (String value) -> String
   end
 
-  module ClientDefaults
-    DEFAULT_BASE_URL: String
-    DEFAULT_CONTENT_TYPE: String
-    DEFAULT_MAX_REDIRECTS: Integer
-    DEFAULT_OPEN_TIMEOUT: Integer
-    DEFAULT_READ_TIMEOUT: Integer
-    DEFAULT_WRITE_TIMEOUT: Integer
-    DEFAULT_USER_AGENT: String
-    DEFAULT_ARRAY_CLASS: Class
-    DEFAULT_OBJECT_CLASS: Class
-    JSON_CONTENT_TYPE_REGEXP: Regexp
-  end
-
   class Error < StandardError
-    include ClientDefaults
+    JSON_CONTENT_TYPE_REGEXP: Regexp
 
     attr_reader object: Hash[String, untyped]
-    def initialize: (String msg, response: Net::HTTPResponse, ?array_class: Class, ?object_class: Class) -> void
+    def initialize: (String msg, response: Net::HTTPResponse) -> void
 
     private
     def json_response?: (Net::HTTPResponse response) -> bool
@@ -70,10 +57,9 @@ module X
   end
 
   class TooManyRequestsError < ClientError
-    include ClientDefaults
     @response: Net::HTTPResponse
 
-    def initialize: (String msg, response: Net::HTTPResponse, ?array_class: Class, ?object_class: Class) -> void
+    def initialize: (String msg, response: Net::HTTPResponse) -> void
     def limit: -> Integer
     def remaining: -> Integer
     def reset_at: -> Time
@@ -97,27 +83,34 @@ module X
   class Connection
     extend Forwardable
     include Errors
+
+    DEFAULT_BASE_URL: String
+    DEFAULT_OPEN_TIMEOUT: Integer
+    DEFAULT_READ_TIMEOUT: Integer
+    DEFAULT_WRITE_TIMEOUT: Integer
     @http_client: Net::HTTP
 
-    attr_reader base_url: URI::Generic
+    attr_reader base_uri: URI::Generic
     attr_reader open_timeout: Float | Integer 
     attr_reader read_timeout: Float | Integer 
     attr_reader write_timeout: Float | Integer 
-    def initialize: (URI::Generic | String url, Float | Integer open_timeout, Float | Integer read_timeout, Float | Integer write_timeout, ?debug_output: IO?) -> void
+    def initialize: (?base_url: URI::Generic | String, ?open_timeout: Float | Integer, ?read_timeout: Float | Integer, ?write_timeout: Float | Integer, ?debug_output: IO?) -> void
     def send_request: (Net::HTTPRequest request) -> Net::HTTPResponse
-    def base_url=: (URI::Generic | String new_base_url) -> URI::Generic
+    def base_uri=: (URI::Generic | String base_url) -> URI::Generic
     def debug_output: -> IO?
   end
 
   class RequestBuilder
     HTTP_METHODS: Hash[::Symbol, (singleton(::Net::HTTP::Get) | singleton(::Net::HTTP::Post) | singleton(::Net::HTTP::Put) | singleton(::Net::HTTP::Delete))]
+    DEFAULT_CONTENT_TYPE: String
+    DEFAULT_USER_AGENT: String
     AUTHORIZATION_HEADER: String
     CONTENT_TYPE_HEADER: String
     USER_AGENT_HEADER: String
 
     attr_accessor content_type: String
     attr_accessor user_agent: String
-    def initialize: (String content_type, String user_agent) -> void
+    def initialize: (?content_type: String, ?user_agent: String) -> void
     def build: (Authenticator authenticator, Symbol http_method, URI::Generic url, ?body: String?) -> (Net::HTTPRequest)
 
     private
@@ -128,11 +121,13 @@ module X
   end
 
   class RedirectHandler
+    DEFAULT_MAX_REDIRECTS: Integer
+
     attr_reader authenticator: Authenticator
     attr_reader connection: Connection
     attr_reader request_builder: RequestBuilder
     attr_reader max_redirects: Integer
-    def initialize: (Authenticator authenticator, Connection connection, RequestBuilder request_builder, Integer max_redirects) -> void
+    def initialize: (Authenticator authenticator, Connection connection, RequestBuilder request_builder, ?max_redirects: Integer) -> void
     def handle_redirects: (Net::HTTPResponse response, Net::HTTPRequest original_request, URI::Generic | String original_base_url, ?Integer redirect_count) -> Net::HTTPResponse
 
     private
@@ -142,12 +137,15 @@ module X
   end
 
   class ResponseHandler
+    DEFAULT_ARRAY_CLASS: Class
+    DEFAULT_OBJECT_CLASS: Class
+    JSON_CONTENT_TYPE_REGEXP: Regexp
+
     include Errors
-    include ClientDefaults
 
     attr_accessor array_class: Class
     attr_accessor object_class: Class
-    def initialize: (Class array_class, Class object_class) -> void
+    def initialize: (?array_class: Class, ?object_class: Class) -> void
     def handle: (Net::HTTPResponse response) -> Hash[String, untyped]
 
     private
@@ -156,14 +154,13 @@ module X
 
   class Client
     extend Forwardable
-    include ClientDefaults
     @authenticator: Authenticator
     @connection: Connection
     @request_builder: RequestBuilder
     @redirect_handler: RedirectHandler
     @response_handler: ResponseHandler
 
-    attr_reader base_url: URI::Generic
+    attr_reader base_uri: URI::Generic
     def initialize: (api_key: String, api_key_secret: String, access_token: String, access_token_secret: String, ?base_url: URI::Generic | String, ?content_type: String, ?user_agent: String, ?open_timeout: Float | Integer, ?read_timeout: Float | Integer, ?write_timeout: Float | Integer, ?debug_output: IO?, ?array_class: Class, ?object_class: Class, ?max_redirects: Integer) -> void
     def get: (String endpoint) -> Hash[String, untyped]
     def post: (String endpoint, ?nil body) -> Hash[String, untyped]

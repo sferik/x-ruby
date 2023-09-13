@@ -6,9 +6,11 @@ require_relative "errors/too_many_redirects_error"
 module X
   # Handles HTTP redirects
   class RedirectHandler
+    DEFAULT_MAX_REDIRECTS = 10
+
     attr_reader :authenticator, :connection, :request_builder, :max_redirects
 
-    def initialize(authenticator, connection, request_builder, max_redirects)
+    def initialize(authenticator, connection, request_builder, max_redirects: DEFAULT_MAX_REDIRECTS)
       @authenticator = authenticator
       @connection = connection
       @request_builder = request_builder
@@ -45,7 +47,8 @@ module X
     end
 
     def send_new_request(new_uri, new_request)
-      @connection = Connection.new(new_uri, connection.open_timeout, connection.read_timeout, connection.write_timeout,
+      @connection = Connection.new(base_url: new_uri, open_timeout: connection.open_timeout,
+        read_timeout: connection.read_timeout, write_timeout: connection.write_timeout,
         debug_output: connection.debug_output)
       connection.send_request(new_request)
     end

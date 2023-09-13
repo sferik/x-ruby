@@ -1,5 +1,6 @@
 require "net/http"
 require "uri"
+require_relative "version"
 
 module X
   # Creates HTTP requests
@@ -10,13 +11,15 @@ module X
       put: Net::HTTP::Put,
       delete: Net::HTTP::Delete
     }.freeze
+    DEFAULT_CONTENT_TYPE = "application/json; charset=utf-8".freeze
+    DEFAULT_USER_AGENT = "X-Client/#{VERSION} Ruby/#{RUBY_VERSION}".freeze
     AUTHORIZATION_HEADER = "Authorization".freeze
     CONTENT_TYPE_HEADER = "Content-Type".freeze
     USER_AGENT_HEADER = "User-Agent".freeze
 
     attr_accessor :content_type, :user_agent
 
-    def initialize(content_type, user_agent)
+    def initialize(content_type: DEFAULT_CONTENT_TYPE, user_agent: DEFAULT_USER_AGENT)
       @content_type = content_type
       @user_agent = user_agent
     end

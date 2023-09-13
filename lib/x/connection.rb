@@ -10,16 +10,22 @@ module X
     extend Forwardable
     include Errors
 
-    attr_reader :base_url
+    DEFAULT_BASE_URL = "https://api.twitter.com/2/".freeze
+    DEFAULT_OPEN_TIMEOUT = 60 # seconds
+    DEFAULT_READ_TIMEOUT = 60 # seconds
+    DEFAULT_WRITE_TIMEOUT = 60 # seconds
+
+    attr_reader :base_uri
 
     def_delegators :@http_client, :open_timeout, :read_timeout, :write_timeout
     def_delegators :@http_client, :open_timeout=, :read_timeout=, :write_timeout=
     def_delegator :@http_client, :set_debug_output, :debug_output=
 
-    def initialize(url, open_timeout, read_timeout, write_timeout, debug_output: nil)
-      self.base_url = url
-      @http_client = Net::HTTP.new(base_url.host, base_url.port) if base_url.host
-      @http_client.use_ssl = base_url.scheme == "https"
+    def initialize(base_url: DEFAULT_BASE_URL, open_timeout: DEFAULT_OPEN_TIMEOUT,
+      read_timeout: DEFAULT_READ_TIMEOUT, write_timeout: DEFAULT_WRITE_TIMEOUT, debug_output: nil)
+      self.base_uri = base_url
+      @http_client = Net::HTTP.new(base_uri.host, base_uri.port) if base_uri.host
+      @http_client.use_ssl = base_uri.scheme == "https"
       @http_client.open_timeout = open_timeout
       @http_client.read_timeout = read_timeout
       @http_client.write_timeout = write_timeout
@@ -32,11 +38,11 @@ module X
       raise NetworkError, "Network error: #{e.message}"
     end
 
-    def base_url=(new_base_url)
-      uri = URI(new_base_url)
-      raise ArgumentError, "Invalid base URL" unless uri.is_a?(URI::HTTPS) || uri.is_a?(URI::HTTP)
+    def base_uri=(base_url)
+      base_uri = URI(base_url)
+      raise ArgumentError, "Invalid base URL" unless base_uri.is_a?(URI::HTTPS) || base_uri.is_a?(URI::HTTP)
 
-      @base_url = uri
+      @base_uri = base_uri
     end
 
     def debug_output

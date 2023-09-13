@@ -5,12 +5,14 @@ require_relative "errors/errors"
 module X
   # Process HTTP responses
   class ResponseHandler
-    include ClientDefaults
+    DEFAULT_ARRAY_CLASS = Array
+    DEFAULT_OBJECT_CLASS = Hash
+    JSON_CONTENT_TYPE_REGEXP = %r{application/(problem\+|)json}
     include Errors
 
     attr_accessor :array_class, :object_class
 
-    def initialize(array_class, object_class)
+    def initialize(array_class: DEFAULT_ARRAY_CLASS, object_class: DEFAULT_OBJECT_CLASS)
       @array_class = array_class
       @object_class = object_class
     end
@@ -22,7 +24,7 @@ module X
 
       error_class = ERROR_CLASSES[response.code.to_i] || Error
       error_message = "#{response.code} #{response.message}"
-      raise error_class.new(error_message, response: response, array_class: array_class, object_class: object_class)
+      raise error_class.new(error_message, response: response)
     end
 
     private
