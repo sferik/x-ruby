@@ -1,5 +1,11 @@
 ## [Unreleased]
 
+## [0.8.0] - 2023-09-14
+
+- Add (back) bearer token authentication (62e141d)
+- Follow redirects (90a8c55)
+- Parse error responses with Content-Type: application/problem+json (0b697d9)
+
 ## [0.7.1] - 2023-09-02
 
 - Fix bug in X::Authenticator#split_uri (ebc9d5f)
