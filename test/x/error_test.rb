@@ -6,7 +6,7 @@ class ErrorsTest < Minitest::Test
     @client = client
   end
 
-  X::Errors::ERROR_CLASSES.each do |status, error_class|
+  X::ResponseHandler::ERROR_CLASSES.each do |status, error_class|
     define_method("test_#{error_class.name.split("::").last.downcase}_error") do
       stub_request(:get, "https://api.twitter.com/2/tweets")
         .to_return(status: status, headers: {"content-type" => "application/json"}, body: "{}")
@@ -17,7 +17,7 @@ class ErrorsTest < Minitest::Test
     end
   end
 
-  X::Errors::NETWORK_ERRORS.each do |error_class|
+  X::Connection::NETWORK_ERRORS.each do |error_class|
     define_method("test_#{error_class.name.split("::").last.downcase}_error") do
       stub_request(:get, "https://api.twitter.com/2/tweets").to_raise(error_class)
 

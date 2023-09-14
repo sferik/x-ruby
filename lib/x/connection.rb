@@ -1,19 +1,22 @@
 require "forwardable"
 require "net/http"
 require "uri"
-require_relative "errors/errors"
 require_relative "errors/network_error"
 
 module X
   # Sends HTTP requests
   class Connection
     extend Forwardable
-    include Errors
 
     DEFAULT_BASE_URL = "https://api.twitter.com/2/".freeze
     DEFAULT_OPEN_TIMEOUT = 60 # seconds
     DEFAULT_READ_TIMEOUT = 60 # seconds
     DEFAULT_WRITE_TIMEOUT = 60 # seconds
+    NETWORK_ERRORS = [
+      Errno::ECONNREFUSED,
+      Net::OpenTimeout,
+      Net::ReadTimeout
+    ].freeze
 
     attr_reader :base_uri
 

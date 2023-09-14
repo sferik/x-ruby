@@ -72,22 +72,17 @@ module X
   class ServiceUnavailableError < ServerError
   end
 
-  module Errors
-    ERROR_CLASSES: Hash[Integer, singleton(AuthenticationError) | singleton(BadRequestError) | singleton(ForbiddenError) | singleton(NotFoundError) | singleton(ServerError) | singleton(ServiceUnavailableError) | singleton(TooManyRequestsError)]
-    NETWORK_ERRORS: Array[(singleton(::Errno::ECONNREFUSED) | singleton(::Net::OpenTimeout) | singleton(::Net::ReadTimeout))]
-  end
-
   class NetworkError < Error
   end
 
   class Connection
     extend Forwardable
-    include Errors
 
     DEFAULT_BASE_URL: String
     DEFAULT_OPEN_TIMEOUT: Integer
     DEFAULT_READ_TIMEOUT: Integer
     DEFAULT_WRITE_TIMEOUT: Integer
+    NETWORK_ERRORS: Array[(singleton(::Errno::ECONNREFUSED) | singleton(::Net::OpenTimeout) | singleton(::Net::ReadTimeout))]
     @http_client: Net::HTTP
 
     attr_reader base_uri: URI::Generic
@@ -139,9 +134,8 @@ module X
   class ResponseHandler
     DEFAULT_ARRAY_CLASS: Class
     DEFAULT_OBJECT_CLASS: Class
+    ERROR_CLASSES: Hash[Integer, singleton(AuthenticationError) | singleton(BadRequestError) | singleton(ForbiddenError) | singleton(NotFoundError) | singleton(ServerError) | singleton(ServiceUnavailableError) | singleton(TooManyRequestsError)]
     JSON_CONTENT_TYPE_REGEXP: Regexp
-
-    include Errors
 
     attr_accessor array_class: Class
     attr_accessor object_class: Class
