@@ -14,6 +14,7 @@ require "timecop"
 require "webmock/minitest"
 require "x"
 
+TEST_BEARER_TOKEN = "TEST_BEARER_TOKEN".freeze
 TEST_API_KEY = "TEST_API_KEY".freeze
 TEST_API_KEY_SECRET = "TEST_API_KEY_SECRET".freeze
 TEST_ACCESS_TOKEN = "TEST_ACCESS_TOKEN".freeze

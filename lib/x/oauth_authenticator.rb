@@ -7,7 +7,7 @@ require "uri"
 
 module X
   # Handles OAuth authentication
-  class Authenticator
+  class OauthAuthenticator
     OAUTH_VERSION = "1.0".freeze
     OAUTH_SIGNATURE_METHOD = "HMAC-SHA1".freeze
     OAUTH_SIGNATURE_ALGORITHM = "sha1".freeze

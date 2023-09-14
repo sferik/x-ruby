@@ -5,11 +5,11 @@ require "hashie"
 class ClientTest < Minitest::Test
   def setup
     @client = client
+    @bearer_token_client = X::Client.new(bearer_token: TEST_BEARER_TOKEN)
   end
 
-  # Define test cases for different HTTP methods using parameterized testing
   %i[get post put delete].each do |http_method|
-    define_method("test_#{http_method}_request_success") do
+    define_method("test_#{http_method}_oauth_request_success") do
       stub_request(http_method, "https://api.twitter.com/2/tweets")
         .with(headers: {"Authorization" => /OAuth/})
         .to_return(status: 200, headers: {"content-type" => "application/json"}, body: "{}")
@@ -19,6 +19,27 @@ class ClientTest < Minitest::Test
       assert_instance_of Hash, response
       assert_requested http_method, "https://api.twitter.com/2/tweets"
     end
+
+    define_method("test_#{http_method}_bearer_token_request_success") do
+      stub_request(http_method, "https://api.twitter.com/2/tweets")
+        .with(headers: {"Authorization" => /Bearer/})
+        .to_return(status: 200, headers: {"content-type" => "application/json"}, body: "{}")
+
+      response = @bearer_token_client.public_send(http_method, "tweets")
+
+      assert_instance_of Hash, response
+      assert_requested http_method, "https://api.twitter.com/2/tweets"
+    end
+  end
+
+  def test_bearer_token
+    assert_equal TEST_BEARER_TOKEN, @bearer_token_client.bearer_token
+  end
+
+  def test_set_bearer_token
+    @bearer_token_client.bearer_token = "xyz"
+
+    assert_equal "xyz", @bearer_token_client.bearer_token
   end
 
   def test_api_key

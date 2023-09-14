@@ -1,7 +1,13 @@
 module X
   VERSION: Gem::Version
 
-  class Authenticator
+  class BearerTokenAuthenticator
+    attr_accessor bearer_token: String
+    def initialize: (String bearer_token) -> void
+    def header: (Net::HTTPRequest _request) -> String
+  end
+
+  class OauthAuthenticator
     OAUTH_VERSION: String
     OAUTH_SIGNATURE_METHOD: String
     OAUTH_SIGNATURE_ALGORITHM: String
@@ -106,11 +112,11 @@ module X
     attr_accessor content_type: String
     attr_accessor user_agent: String
     def initialize: (?content_type: String, ?user_agent: String) -> void
-    def build: (Authenticator authenticator, Symbol http_method, URI::Generic url, ?body: String?) -> (Net::HTTPRequest)
+    def build: (BearerTokenAuthenticator | OauthAuthenticator authenticator, Symbol http_method, URI::Generic url, ?body: String?) -> (Net::HTTPRequest)
 
     private
     def create_request: (Symbol http_method, URI::Generic url, String? body) -> (Net::HTTPRequest)
-    def add_authorization: (Net::HTTPRequest request, Authenticator authenticator) -> void
+    def add_authorization: (Net::HTTPRequest request, BearerTokenAuthenticator | OauthAuthenticator authenticator) -> void
     def add_content_type: (Net::HTTPRequest request) -> void
     def add_user_agent: (Net::HTTPRequest request) -> void
   end
@@ -118,11 +124,11 @@ module X
   class RedirectHandler
     DEFAULT_MAX_REDIRECTS: Integer
 
-    attr_reader authenticator: Authenticator
+    attr_reader authenticator: BearerTokenAuthenticator | OauthAuthenticator
     attr_reader connection: Connection
     attr_reader request_builder: RequestBuilder
     attr_reader max_redirects: Integer
-    def initialize: (Authenticator authenticator, Connection connection, RequestBuilder request_builder, ?max_redirects: Integer) -> void
+    def initialize: (BearerTokenAuthenticator | OauthAuthenticator authenticator, Connection connection, RequestBuilder request_builder, ?max_redirects: Integer) -> void
     def handle_redirects: (Net::HTTPResponse response, Net::HTTPRequest original_request, URI::Generic | String original_base_url, ?Integer redirect_count) -> Net::HTTPResponse
 
     private
@@ -148,20 +154,21 @@ module X
 
   class Client
     extend Forwardable
-    @authenticator: Authenticator
+    @authenticator: BearerTokenAuthenticator | OauthAuthenticator
     @connection: Connection
     @request_builder: RequestBuilder
     @redirect_handler: RedirectHandler
     @response_handler: ResponseHandler
 
     attr_reader base_uri: URI::Generic
-    def initialize: (api_key: String, api_key_secret: String, access_token: String, access_token_secret: String, ?base_url: URI::Generic | String, ?content_type: String, ?user_agent: String, ?open_timeout: Float | Integer, ?read_timeout: Float | Integer, ?write_timeout: Float | Integer, ?debug_output: IO?, ?array_class: Class, ?object_class: Class, ?max_redirects: Integer) -> void
+    def initialize: (?bearer_token: String?, ?api_key: String?, ?api_key_secret: String?, ?access_token: String?, ?access_token_secret: String?, ?base_url: URI::Generic | String, ?content_type: String, ?user_agent: String, ?open_timeout: Float | Integer, ?read_timeout: Float | Integer, ?write_timeout: Float | Integer, ?debug_output: IO?, ?array_class: Class, ?object_class: Class, ?max_redirects: Integer) -> void
     def get: (String endpoint) -> Hash[String, untyped]
     def post: (String endpoint, ?nil body) -> Hash[String, untyped]
     def put: (String endpoint, ?nil body) -> Hash[String, untyped]
     def delete: (String endpoint) -> Hash[String, untyped]
 
     private
+    def initialize_authenticator: (String? bearer_token, String? api_key, String? api_key_secret, String? access_token, String? access_token_secret) -> (BearerTokenAuthenticator | OauthAuthenticator)
     def send_request: (Symbol http_method, String endpoint, ?nil body) -> Hash[String, untyped]
   end
 end
