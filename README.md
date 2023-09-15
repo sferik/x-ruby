@@ -74,6 +74,20 @@ The tests for the previous version of this library executed in about 2 seconds. 
 
 This code is not littered with comments that are intended to generate documentation. Rather, this code is intended to be simple enough to serve as its own documentation. If you want to understand how something works, don’t read the documentation—it might be wrong—read the code. The code is always right.
 
+## Sponsorship
+
+The X gem is free to use, but with X API pricing tiers, it actually costs money to develop and maintain. By contributing to the project, you help us:
+
+1. Maintain the library: Keeping it up-to-date and secure.
+2. Add new features: Enhancements that make your life easier.
+3. Provide support: Faster responses to issues and feature requests.
+
+⭐️ Bonus: Sponsors will get priority support and influence over the project roadmap. We will also list your name or your company's logo on our GitHub page.
+
+Building and maintaining an open-source project like this takes a considerable amount of time and effort. Your sponsorship can help sustain this project. Even a small monthly donation makes a huge difference!
+
+[Click here to sponsor this project.](https://github.com/sponsors/sferik)
+
 ## Development
 
 1. Checkout and repo:
