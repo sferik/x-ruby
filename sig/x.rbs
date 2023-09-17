@@ -82,23 +82,30 @@ module X
   end
 
   class Connection
-    extend Forwardable
-
     DEFAULT_BASE_URL: String
+    DEFAULT_HOST: String
+    DEFAULT_PORT: Integer
     DEFAULT_OPEN_TIMEOUT: Integer
     DEFAULT_READ_TIMEOUT: Integer
     DEFAULT_WRITE_TIMEOUT: Integer
     NETWORK_ERRORS: Array[(singleton(::Errno::ECONNREFUSED) | singleton(::Net::OpenTimeout) | singleton(::Net::ReadTimeout))]
+    extend Forwardable
     @http_client: Net::HTTP
 
     attr_reader base_uri: URI::Generic
-    attr_reader open_timeout: Float | Integer 
-    attr_reader read_timeout: Float | Integer 
-    attr_reader write_timeout: Float | Integer 
+    attr_reader open_timeout : Float | Integer
+    attr_reader read_timeout : Float | Integer
+    attr_reader write_timeout : Float | Integer
     def initialize: (?base_url: URI::Generic | String, ?open_timeout: Float | Integer, ?read_timeout: Float | Integer, ?write_timeout: Float | Integer, ?debug_output: IO?) -> void
     def send_request: (Net::HTTPRequest request) -> Net::HTTPResponse
-    def base_uri=: (URI::Generic | String base_url) -> URI::Generic
+    def base_uri=: (URI::Generic | String base_url) -> void
     def debug_output: -> IO?
+
+    private
+    def apply_http_client_settings: (open_timeout: Float | Integer, read_timeout: Float | Integer, write_timeout: Float | Integer, debug_output: IO?) -> untyped
+    def current_http_client_settings: -> {open_timeout: Float | Integer, read_timeout: Float | Integer, write_timeout: Float | Integer, debug_output: IO?}
+    def update_http_client_settings: -> untyped
+    def conditionally_apply_http_client_settings: { -> untyped } -> untyped
   end
 
   class RequestBuilder
