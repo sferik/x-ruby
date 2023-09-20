@@ -1,5 +1,9 @@
 ## [Unreleased]
 
+## [0.8.1] - 2023-09-20
+
+- Fix bug where setting Connection#base_uri= doesn't update the HTTP client (d5a89db)
+
 ## [0.8.0] - 2023-09-14
 
 - Add (back) bearer token authentication (62e141d)
