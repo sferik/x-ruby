@@ -22,7 +22,11 @@ Gem::Specification.new do |spec|
     "documentation_uri" => "https://rubydoc.info/gems/x/"
   }
 
-  spec.files = Dir["bin/*"] + Dir["lib/**/*.rb"] + Dir["sig/*.rbs"]
+  spec.files = Dir[
+    "bin/*",
+    "lib/**/*.rb",
+    "sig/*.rbs"
+  ]
   spec.files += ["LICENSE.txt"] + Dir["*.md"]
   spec.bindir = "exe"
   spec.executables = spec.files.grep(%r{\Aexe/}) { |f| File.basename(f) }
