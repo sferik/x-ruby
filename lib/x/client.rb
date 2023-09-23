@@ -26,6 +26,7 @@ module X
       open_timeout: Connection::DEFAULT_OPEN_TIMEOUT,
       read_timeout: Connection::DEFAULT_READ_TIMEOUT,
       write_timeout: Connection::DEFAULT_WRITE_TIMEOUT,
+      proxy_url: nil,
       content_type: RequestBuilder::DEFAULT_CONTENT_TYPE,
       user_agent: RequestBuilder::DEFAULT_USER_AGENT,
       debug_output: nil,
@@ -35,7 +36,7 @@ module X
 
       initialize_authenticator(bearer_token, api_key, api_key_secret, access_token, access_token_secret)
       @connection = Connection.new(base_url: base_url, open_timeout: open_timeout, read_timeout: read_timeout,
-        write_timeout: write_timeout, debug_output: debug_output)
+        write_timeout: write_timeout, debug_output: debug_output, proxy_url: proxy_url)
       @request_builder = RequestBuilder.new(content_type: content_type, user_agent: user_agent)
       @redirect_handler = RedirectHandler.new(@authenticator, @connection, @request_builder,
         max_redirects: max_redirects)

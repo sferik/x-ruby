@@ -20,14 +20,15 @@ module X
       Net::ReadTimeout
     ].freeze
 
-    attr_reader :base_uri, :http_client
+    attr_reader :base_uri, :proxy_uri, :http_client
 
     def_delegators :@http_client, :open_timeout, :read_timeout, :write_timeout
     def_delegators :@http_client, :open_timeout=, :read_timeout=, :write_timeout=
     def_delegator :@http_client, :set_debug_output, :debug_output=
 
     def initialize(base_url: DEFAULT_BASE_URL, open_timeout: DEFAULT_OPEN_TIMEOUT,
-      read_timeout: DEFAULT_READ_TIMEOUT, write_timeout: DEFAULT_WRITE_TIMEOUT, debug_output: nil)
+      read_timeout: DEFAULT_READ_TIMEOUT, write_timeout: DEFAULT_WRITE_TIMEOUT, proxy_url: nil, debug_output: nil)
+      @proxy_uri = URI(proxy_url) unless proxy_url.nil?
       self.base_uri = base_url
       apply_http_client_settings(
         open_timeout: open_timeout,
@@ -77,8 +78,16 @@ module X
       conditionally_apply_http_client_settings do
         host = @base_uri.host || DEFAULT_HOST
         port = @base_uri.port || DEFAULT_PORT
-        @http_client = Net::HTTP.new(host, port)
+        @http_client = build_http_client(host: host, port: port)
         @http_client.use_ssl = @base_uri.scheme == "https"
+      end
+    end
+
+    def build_http_client(host:, port:)
+      if @proxy_uri.nil?
+        Net::HTTP.new(host, port)
+      else
+        Net::HTTP.new(host, port, @proxy_uri&.host, @proxy_uri&.port, @proxy_uri&.user, @proxy_uri&.password)
       end
     end
 

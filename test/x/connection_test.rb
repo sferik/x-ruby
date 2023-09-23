@@ -22,4 +22,34 @@ class ConnectionTest < Minitest::Test
     assert_equal 10, @connection.http_client.read_timeout
     assert_equal 10, @connection.http_client.write_timeout
   end
+
+  def test_that_proxy_url_is_set_on_the_http_client
+    connection = X::Connection.new(proxy_url: "https://proxy.com:42")
+
+    assert_predicate connection.http_client, :proxy?
+    assert_equal "proxy.com", connection.http_client.proxy_address
+    assert_equal 42, connection.http_client.proxy_port
+  end
+
+  def test_that_authenticated_proxy_url_is_set_on_the_http_client
+    connection = X::Connection.new(proxy_url: "https://user:pass@proxy.com")
+
+    assert_predicate connection.http_client, :proxy?
+    assert_equal "user", connection.http_client.proxy_user
+    assert_equal "pass", connection.http_client.proxy_pass
+  end
+
+  def test_that_environment_variable_can_set_proxy_on_the_http_client
+    old_value = ENV.fetch("http_proxy", nil)
+
+    ENV["http_proxy"] = "https://proxy.com:42"
+
+    connection = X::Connection.new
+
+    assert_predicate connection.http_client, :proxy?
+    assert_equal "proxy.com", connection.http_client.proxy_address
+    assert_equal 42, connection.http_client.proxy_port
+  ensure
+    ENV["http_proxy"] = old_value
+  end
 end
