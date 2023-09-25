@@ -97,7 +97,7 @@ class ErrorsTest < Minitest::Test
     begin
       client.get("tweets")
     rescue X::BadRequestError => e
-      assert e.object["problem"]
+      assert_operator e.object, :[], "problem"
     end
   end
 end
