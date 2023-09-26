@@ -1,5 +1,9 @@
 ## [Unreleased]
 
+## [0.9.0] - 2023-09-26
+
+- Add support for HTTP proxies (3740f4f)
+
 ## [0.8.1] - 2023-09-20
 
 - Fix bug where setting Connection#base_uri= doesn't update the HTTP client (d5a89db)
