@@ -10,14 +10,24 @@ x_credentials = {
 
 upload_client = X::Client.new(base_url: "https://upload.twitter.com/1.1/", **x_credentials)
 
-file_path = "path/to/your/image.jpg"
 boundary = "AaB03x"
-
-post_body = "--#{boundary}\r\n" \
-            "Content-Disposition: form-data; name=\"media\"; filename=\"#{File.basename(file_path)}\"\r\n" \
-            "Content-Type: #{MIME::Types.type_for(file_path).first.content_type}\r\n\r\n" \
-            "File.read(file_path)\r\n" \
-            "--#{boundary}--\r\n"
+file_path = "path/to/your/media.jpg"
+media_category = "tweet_image" # other options include: tweet_video, tweet_gif, dm_image, dm_video, dm_gif, subtitles
 
 upload_client.content_type = "multipart/form-data, boundary=#{boundary}"
-upload_client.post("media/upload.json?media_category=tweet_image", post_body)
+
+upload_body = "--#{boundary}\r\n" \
+              "Content-Disposition: form-data; name=\"media\"; filename=\"#{File.basename(file_path)}\"\r\n" \
+              "Content-Type: #{MIME::Types.type_for(file_path).first.content_type}\r\n\r\n" \
+              "#{File.read(file_path)}\r\n" \
+              "--#{boundary}--\r\n"
+
+media = upload_client.post("media/upload.json?media_category=#{media_category}", upload_body)
+
+tweet_client = X::Client.new(**x_credentials)
+
+tweet_body = {text: "Posting media from @gem!", media: {media_ids: [media["media_id_string"]]}}
+
+tweet = tweet_client.post("tweets", tweet_body.to_json)
+
+puts tweet["data"]["id"]
