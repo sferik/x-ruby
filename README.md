@@ -56,6 +56,8 @@ ads_client = X::Client.new(base_url: "https://ads-api.twitter.com/12/", **x_cred
 ads_client.get("accounts")
 ```
 
+See other common usage [examples](https://github.com/sferik/x-ruby/tree/main/examples).
+
 ## History and Philosophy
 
 This library is a rewrite of the [Twitter Ruby library](https://github.com/sferik/twitter). Over 16 years of development, that library ballooned to over 3,000 lines of code (plus 7,500 lines of tests). At the time of writing, this library is about 300 lines of code (plus 200 test lines) and I’d like to keep it that way. That doesn’t mean new features won’t be added over time, but the benefits of more code must be weighted against the benefits of less:
