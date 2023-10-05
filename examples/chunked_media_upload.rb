@@ -34,6 +34,7 @@ media = upload_client.post("media/upload.json?command=FINALIZE&media_id=#{media[
 loop do
   status = upload_client.get("media/upload.json?command=STATUS&media_id=#{media["media_id"]}")
   break if status["processing_info"]["state"] == "succeeded"
+
   sleep status["processing_info"]["check_after_secs"].to_i
 end
 
