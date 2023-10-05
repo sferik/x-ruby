@@ -21,6 +21,14 @@ TEST_ACCESS_TOKEN = "TEST_ACCESS_TOKEN".freeze
 TEST_ACCESS_TOKEN_SECRET = "TEST_ACCESS_TOKEN_SECRET".freeze
 
 def client
-  X::Client.new(api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET, access_token: TEST_ACCESS_TOKEN,
-    access_token_secret: TEST_ACCESS_TOKEN_SECRET)
+  X::Client.new(**oauth_credentials)
+end
+
+def oauth_credentials
+  {
+    api_key: TEST_API_KEY,
+    api_key_secret: TEST_API_KEY_SECRET,
+    access_token: TEST_ACCESS_TOKEN,
+    access_token_secret: TEST_ACCESS_TOKEN_SECRET
+  }
 end

@@ -32,19 +32,23 @@ module X
     end
 
     def handle(response)
-      if successful_json_response?(response)
-        return JSON.parse(response.body, array_class: array_class, object_class: object_class)
+      if success?(response)
+        JSON.parse(response.body, array_class: array_class, object_class: object_class) if json?(response)
+      else
+        error_class = ERROR_CLASSES[response.code.to_i] || Error
+        error_message = "#{response.code} #{response.message}"
+        raise error_class.new(error_message, response: response)
       end
-
-      error_class = ERROR_CLASSES[response.code.to_i] || Error
-      error_message = "#{response.code} #{response.message}"
-      raise error_class.new(error_message, response: response)
     end
 
     private
 
-    def successful_json_response?(response)
-      response.is_a?(Net::HTTPSuccess) && response.body && JSON_CONTENT_TYPE_REGEXP.match?(response["content-type"])
+    def success?(response)
+      response.is_a?(Net::HTTPSuccess)
+    end
+
+    def json?(response)
+      response.body && JSON_CONTENT_TYPE_REGEXP.match?(response["content-type"])
     end
   end
 end

@@ -155,10 +155,11 @@ module X
     attr_accessor array_class: Class
     attr_accessor object_class: Class
     def initialize: (?array_class: Class, ?object_class: Class) -> void
-    def handle: (Net::HTTPResponse response) -> Hash[String, untyped]
+    def handle: (Net::HTTPResponse response) -> Hash[String, untyped]?
 
     private
-    def successful_json_response?: (Net::HTTPResponse response) -> bool
+    def success?: (Net::HTTPResponse response) -> bool
+    def json?: (Net::HTTPResponse response) -> bool
   end
 
   class Client
@@ -171,13 +172,13 @@ module X
 
     attr_reader base_uri: URI::Generic
     def initialize: (?bearer_token: String?, ?api_key: String?, ?api_key_secret: String?, ?access_token: String?, ?access_token_secret: String?, ?base_url: URI::Generic | String, ?content_type: String, ?user_agent: String, ?open_timeout: Float | Integer, ?read_timeout: Float | Integer, ?write_timeout: Float | Integer, ?proxy_url: URI::Generic? | String?, ?debug_output: IO?, ?array_class: Class, ?object_class: Class, ?max_redirects: Integer) -> void
-    def get: (String endpoint) -> Hash[String, untyped]
-    def post: (String endpoint, ?nil body) -> Hash[String, untyped]
-    def put: (String endpoint, ?nil body) -> Hash[String, untyped]
-    def delete: (String endpoint) -> Hash[String, untyped]
+    def get: (String endpoint) -> Hash[String, untyped]?
+    def post: (String endpoint, ?nil body) -> Hash[String, untyped]?
+    def put: (String endpoint, ?nil body) -> Hash[String, untyped]?
+    def delete: (String endpoint) -> Hash[String, untyped]?
 
     private
     def initialize_authenticator: (String? bearer_token, String? api_key, String? api_key_secret, String? access_token, String? access_token_secret) -> (BearerTokenAuthenticator | OauthAuthenticator)
-    def send_request: (Symbol http_method, String endpoint, ?nil body) -> Hash[String, untyped]
+    def send_request: (Symbol http_method, String endpoint, ?nil body) -> Hash[String, untyped]?
   end
 end
