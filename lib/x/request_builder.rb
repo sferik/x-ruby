@@ -12,7 +12,7 @@ module X
       delete: Net::HTTP::Delete
     }.freeze
     DEFAULT_CONTENT_TYPE = "application/json; charset=utf-8".freeze
-    DEFAULT_USER_AGENT = "X-Client/#{VERSION} Ruby/#{RUBY_VERSION}".freeze
+    DEFAULT_USER_AGENT = "X-Client/#{VERSION} #{RUBY_ENGINE}/#{RUBY_VERSION} (#{RUBY_PLATFORM})".freeze
     AUTHORIZATION_HEADER = "Authorization".freeze
     CONTENT_TYPE_HEADER = "Content-Type".freeze
     USER_AGENT_HEADER = "User-Agent".freeze
