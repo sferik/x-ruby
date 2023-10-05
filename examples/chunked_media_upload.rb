@@ -10,10 +10,14 @@ x_credentials = {
 
 upload_client = X::Client.new(base_url: "https://upload.twitter.com/1.1/", **x_credentials)
 
-file_path = "path/to/your/media.jpg"
+file_path = "path/to/your/media.mp4"
 file_name = File.basename(file_path)
 media_type = MIME::Types.type_for(file_path).first.content_type
-media_category = "tweet_image" # other options include: tweet_video, tweet_gif, dm_image, dm_video, dm_gif, subtitles
+total_bytes = File.size(file_path)
+media_category = "tweet_video" # other options include: tweet_image, tweet_gif, dm_image, dm_video, dm_gif, subtitles
+init_query_string = "command=INIT&media_type=#{media_type}&media_category=#{media_category}&total_bytes=#{total_bytes}"
+
+media = upload_client.post("media/upload.json?#{init_query_string}")
 
 boundary = "AaB03x"
 upload_body = "--#{boundary}\r\n" \
@@ -23,7 +27,15 @@ upload_body = "--#{boundary}\r\n" \
               "--#{boundary}--\r\n"
 
 upload_client.content_type = "multipart/form-data, boundary=#{boundary}"
-media = upload_client.post("media/upload.json?media_category=#{media_category}", upload_body)
+upload_client.post("media/upload.json?command=APPEND&media_id=#{media["media_id"]}&segment_index=0", upload_body)
+
+media = upload_client.post("media/upload.json?command=FINALIZE&media_id=#{media["media_id"]}")
+
+loop do
+  status = upload_client.get("media/upload.json?command=STATUS&media_id=#{media["media_id"]}")
+  break if status["processing_info"]["state"] == "succeeded"
+  sleep status["processing_info"]["check_after_secs"].to_i
+end
 
 tweet_client = X::Client.new(**x_credentials)
 
