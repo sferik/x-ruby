@@ -28,10 +28,9 @@ module X
     def generate_signature: (String method, String url, Hash[String, String] params) -> String
     def hmac_signature: (String base_string) -> String
     def signature_base_string: (String method, String url, Hash[String, String] params) -> String
-    def encode_params: (Hash[String, String] params) -> String
     def signing_key: -> String
     def format_oauth_header: (Hash[String, String] params) -> String
-    def encode: (String value) -> String
+    def escape: (String value) -> String
   end
 
   class Error < StandardError
@@ -121,13 +120,14 @@ module X
     attr_accessor content_type: String
     attr_accessor user_agent: String
     def initialize: (?content_type: String, ?user_agent: String) -> void
-    def build: (BearerTokenAuthenticator | OauthAuthenticator authenticator, Symbol http_method, URI::Generic url, ?body: String?) -> (Net::HTTPRequest)
+    def build: (BearerTokenAuthenticator | OauthAuthenticator authenticator, Symbol http_method, URI::Generic uri, ?body: String?) -> (Net::HTTPRequest)
 
     private
-    def create_request: (Symbol http_method, URI::Generic url, String? body) -> (Net::HTTPRequest)
+    def create_request: (Symbol http_method, URI::Generic uri, String? body) -> (Net::HTTPRequest)
     def add_authorization: (Net::HTTPRequest request, BearerTokenAuthenticator | OauthAuthenticator authenticator) -> void
     def add_content_type: (Net::HTTPRequest request) -> void
     def add_user_agent: (Net::HTTPRequest request) -> void
+    def escape_query_params: (URI::Generic uri) -> URI::Generic
   end
 
   class RedirectHandler

@@ -24,8 +24,8 @@ module X
       @user_agent = user_agent
     end
 
-    def build(authenticator, http_method, url, body: nil)
-      request = create_request(http_method, url, body)
+    def build(authenticator, http_method, uri, body: nil)
+      request = create_request(http_method, uri, body)
       add_authorization(request, authenticator)
       add_content_type(request)
       add_user_agent(request)
@@ -34,12 +34,13 @@ module X
 
     private
 
-    def create_request(http_method, url, body)
+    def create_request(http_method, uri, body)
       http_method_class = HTTP_METHODS[http_method]
 
       raise ArgumentError, "Unsupported HTTP method: #{http_method}" unless http_method_class
 
-      request = http_method_class.new(url)
+      escaped_uri = escape_query_params(uri)
+      request = http_method_class.new(escaped_uri)
       request.body = body if body && http_method != :get
       request
     end
@@ -54,6 +55,10 @@ module X
 
     def add_user_agent(request)
       request.add_field(USER_AGENT_HEADER, user_agent) if user_agent
+    end
+
+    def escape_query_params(uri)
+      URI(uri).tap { |u| u.query = URI.encode_www_form(URI.decode_www_form(uri.query)) if uri.query }
     end
   end
 end

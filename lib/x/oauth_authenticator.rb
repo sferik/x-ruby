@@ -72,22 +72,18 @@ module X
     end
 
     def signature_base_string(method, url, params)
-      "#{method}&#{encode(url)}&#{encode(encode_params(params))}"
-    end
-
-    def encode_params(params)
-      params.sort.map { |k, v| "#{k}=#{encode(v.to_s)}" }.join("&")
+      "#{method}&#{escape(url)}&#{escape(URI.encode_www_form(params.sort))}"
     end
 
     def signing_key
-      "#{encode(api_key_secret)}&#{encode(access_token_secret)}"
+      "#{escape(api_key_secret)}&#{escape(access_token_secret)}"
     end
 
     def format_oauth_header(params)
-      "OAuth #{params.sort.map { |k, v| "#{k}=\"#{encode(v.to_s)}\"" }.join(", ")}"
+      "OAuth #{params.sort.map { |k, v| "#{k}=\"#{escape(v.to_s)}\"" }.join(", ")}"
     end
 
-    def encode(value)
+    def escape(value)
       # TODO: Replace CGI.escape with CGI.escapeURIComponent when support for Ruby 3.1 is dropped
       CGI.escape(value.to_s).gsub("+", "%20")
     end
