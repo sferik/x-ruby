@@ -1,12 +1,13 @@
 require "json"
 require "net/http"
-require_relative "errors/bad_request_error"
 require_relative "errors/authentication_error"
+require_relative "errors/bad_request_error"
 require_relative "errors/forbidden_error"
 require_relative "errors/not_found_error"
-require_relative "errors/too_many_requests_error"
+require_relative "errors/payload_too_large_error"
 require_relative "errors/server_error"
 require_relative "errors/service_unavailable_error"
+require_relative "errors/too_many_requests_error"
 
 module X
   # Process HTTP responses
@@ -18,6 +19,7 @@ module X
       401 => AuthenticationError,
       403 => ForbiddenError,
       404 => NotFoundError,
+      413 => PayloadTooLargeError,
       429 => TooManyRequestsError,
       500 => ServerError,
       503 => ServiceUnavailableError

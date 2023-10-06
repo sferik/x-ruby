@@ -58,6 +58,9 @@ module X
   class NotFoundError < ClientError
   end
 
+  class PayloadTooLargeError < ClientError
+  end
+
   class TooManyRedirectsError < ClientError
   end
 
