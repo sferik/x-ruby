@@ -1,5 +1,11 @@
 ## [Unreleased]
 
+## [0.9.1] - 2023-10-06
+
+- Allow successful empty responses (06bf7db)
+- Update default User-Agent string (296b36a)
+- Move query parameter escaping into RequestBuilder (56d6bd2)
+
 ## [0.9.0] - 2023-09-26
 
 - Add support for HTTP proxies (3740f4f)
