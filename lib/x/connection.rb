@@ -1,5 +1,6 @@
 require "forwardable"
 require "net/http"
+require "openssl"
 require "uri"
 require_relative "errors/network_error"
 
@@ -16,8 +17,10 @@ module X
     DEFAULT_WRITE_TIMEOUT = 60 # seconds
     NETWORK_ERRORS = [
       Errno::ECONNREFUSED,
+      Errno::ECONNRESET,
       Net::OpenTimeout,
-      Net::ReadTimeout
+      Net::ReadTimeout,
+      OpenSSL::SSL::SSLError
     ].freeze
 
     attr_reader :base_uri, :proxy_uri, :http_client
@@ -39,9 +42,9 @@ module X
     end
 
     def send_request(request)
-      @http_client.request(request)
+      response = @http_client.request(request)
     rescue *NETWORK_ERRORS => e
-      raise NetworkError, "Network error: #{e.message}"
+      raise NetworkError.new("Network error: #{e.message}", response: response)
     end
 
     def base_uri=(base_url)
@@ -54,6 +57,17 @@ module X
 
     def debug_output
       @http_client.instance_variable_get(:@debug_output)
+    end
+
+    def configuration
+      {
+        base_url: base_uri.to_s,
+        open_timeout: open_timeout,
+        read_timeout: read_timeout,
+        write_timeout: write_timeout,
+        proxy_url: proxy_uri.to_s,
+        debug_output: debug_output
+      }
     end
 
     private
@@ -84,15 +98,15 @@ module X
     end
 
     def build_http_client(host:, port:)
-      if @proxy_uri.nil?
-        Net::HTTP.new(host, port)
-      else
+      if defined?(@proxy_uri)
         Net::HTTP.new(host, port, @proxy_uri&.host, @proxy_uri&.port, @proxy_uri&.user, @proxy_uri&.password)
+      else
+        Net::HTTP.new(host, port)
       end
     end
 
     def conditionally_apply_http_client_settings
-      if @http_client
+      if defined?(@http_client)
         settings = current_http_client_settings
         yield
         apply_http_client_settings(**settings)

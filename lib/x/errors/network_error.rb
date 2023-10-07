@@ -1,5 +1,5 @@
-require_relative "error"
+require_relative "server_error"
 
 module X
-  class NetworkError < StandardError; end
+  class NetworkError < Error; end
 end

@@ -32,6 +32,13 @@ module X
       request
     end
 
+    def configuration
+      {
+        content_type: content_type,
+        user_agent: user_agent
+      }
+    end
+
     private
 
     def create_request(http_method, uri, body)

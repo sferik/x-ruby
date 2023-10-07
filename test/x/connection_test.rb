@@ -8,6 +8,10 @@ module X
         write_timeout: 10)
     end
 
+    def test_configuration
+      assert_instance_of Hash, @connection.configuration
+    end
+
     def test_that_base_uri_changes_affect_http_client
       @connection.base_uri = "http://api.x.com/2/"
 

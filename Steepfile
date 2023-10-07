@@ -9,5 +9,5 @@ target :lib do
   library "openssl"
   library "securerandom"
   library "uri"
-  configure_code_diagnostics(Steep::Diagnostic::Ruby.strict)
+  configure_code_diagnostics(Steep::Diagnostic::Ruby.default) # strict or all_error
 end

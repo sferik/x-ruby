@@ -19,6 +19,9 @@ module X
     def_delegators :@request_builder, :content_type=, :user_agent=
     def_delegators :@response_handler, :array_class, :object_class
     def_delegators :@response_handler, :array_class=, :object_class=
+    alias_method :base_url, :base_uri
+    alias_method :base_url=, :base_uri=
+    attr_accessor :authenticator, :connection, :request_builder, :redirect_handler, :response_handler
 
     def initialize(bearer_token: nil,
       api_key: nil, api_key_secret: nil, access_token: nil, access_token_secret: nil,

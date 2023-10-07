@@ -5,7 +5,7 @@ require_relative "errors/bad_request_error"
 require_relative "errors/forbidden_error"
 require_relative "errors/not_found_error"
 require_relative "errors/payload_too_large_error"
-require_relative "errors/server_error"
+require_relative "errors/internal_server_error"
 require_relative "errors/service_unavailable_error"
 require_relative "errors/too_many_requests_error"
 
@@ -21,7 +21,7 @@ module X
       404 => NotFoundError,
       413 => PayloadTooLargeError,
       429 => TooManyRequestsError,
-      500 => ServerError,
+      500 => InternalServerError,
       503 => ServiceUnavailableError
     }.freeze
     JSON_CONTENT_TYPE_REGEXP = %r{application/(problem\+|)json}
@@ -41,6 +41,13 @@ module X
         error_message = "#{response.code} #{response.message}"
         raise error_class.new(error_message, response: response)
       end
+    end
+
+    def configuration
+      {
+        array_class: array_class,
+        object_class: object_class
+      }
     end
 
     private

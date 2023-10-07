@@ -47,9 +47,7 @@ module X
     end
 
     def send_new_request(new_uri, new_request)
-      @connection = Connection.new(base_url: new_uri, open_timeout: connection.open_timeout,
-        read_timeout: connection.read_timeout, write_timeout: connection.write_timeout,
-        debug_output: connection.debug_output, proxy_url: connection.proxy_uri)
+      @connection = Connection.new(**connection.configuration.merge(base_url: new_uri))
       connection.send_request(new_request)
     end
   end

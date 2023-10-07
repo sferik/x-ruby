@@ -42,6 +42,9 @@ Style/Alias:
   Enabled: true
   EnforcedStyle: prefer_alias_method
 
+Style/FrozenStringLiteralComment:
+  Enabled: false
+
 Style/StringLiterals:
   Enabled: true
   EnforcedStyle: double_quotes
@@ -50,5 +53,5 @@ Style/StringLiteralsInInterpolation:
   Enabled: true
   EnforcedStyle: double_quotes
 
-Style/FrozenStringLiteralComment:
+Style/TernaryParentheses:
   Enabled: false
