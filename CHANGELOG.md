@@ -1,4 +1,7 @@
-## [Unreleased]
+## [0.10.0] - 2023-10-08
+
+- Add media upload helper methods (6c6a267)
+- Add PayloadTooLargeError class (cd61850)
 
 ## [0.9.1] - 2023-10-06
 
