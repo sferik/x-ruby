@@ -112,9 +112,9 @@ module X
     private
     def apply_http_client_settings: (open_timeout: Float | Integer, read_timeout: Float | Integer, write_timeout: Float | Integer, debug_output: IO?) -> untyped
     def current_http_client_settings: -> {open_timeout: Float | Integer, read_timeout: Float | Integer, write_timeout: Float | Integer, debug_output: IO?}
-    def update_http_client_settings: -> untyped
-    def build_http_client: (host: String, port: Integer) -> (Net::HTTP)
-    def conditionally_apply_http_client_settings: { -> untyped } -> untyped
+    def update_http_client_settings: -> bool?
+    def build_http_client: (host: String, port: Integer) -> Net::HTTP
+    def conditionally_apply_http_client_settings: { -> bool } -> bool?
   end
 
   class RequestBuilder
@@ -202,7 +202,6 @@ module X
     attr_accessor redirect_handler: RedirectHandler
     attr_accessor response_handler: ResponseHandler
     alias base_url base_uri
-
 
     def initialize: (?bearer_token: String?, ?api_key: String?, ?api_key_secret: String?, ?access_token: String?, ?access_token_secret: String?, ?base_url: URI::Generic | String, ?content_type: String, ?user_agent: String, ?open_timeout: Float | Integer, ?read_timeout: Float | Integer, ?write_timeout: Float | Integer, ?proxy_url: URI::Generic? | String?, ?debug_output: IO?, ?array_class: Class, ?object_class: Class, ?max_redirects: Integer) -> void
     def get: (String endpoint) -> untyped
