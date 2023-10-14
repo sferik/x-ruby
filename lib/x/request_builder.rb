@@ -5,38 +5,22 @@ require_relative "version"
 module X
   # Creates HTTP requests
   class RequestBuilder
+    DEFAULT_HEADERS = {
+      "Content-Type" => "application/json; charset=utf-8",
+      "User-Agent" => "X-Client/#{VERSION} #{RUBY_ENGINE}/#{RUBY_VERSION} (#{RUBY_PLATFORM})"
+    }.freeze
     HTTP_METHODS = {
       get: Net::HTTP::Get,
       post: Net::HTTP::Post,
       put: Net::HTTP::Put,
       delete: Net::HTTP::Delete
     }.freeze
-    DEFAULT_CONTENT_TYPE = "application/json; charset=utf-8".freeze
-    DEFAULT_USER_AGENT = "X-Client/#{VERSION} #{RUBY_ENGINE}/#{RUBY_VERSION} (#{RUBY_PLATFORM})".freeze
-    AUTHORIZATION_HEADER = "Authorization".freeze
-    CONTENT_TYPE_HEADER = "Content-Type".freeze
-    USER_AGENT_HEADER = "User-Agent".freeze
 
-    attr_accessor :content_type, :user_agent
-
-    def initialize(content_type: DEFAULT_CONTENT_TYPE, user_agent: DEFAULT_USER_AGENT)
-      @content_type = content_type
-      @user_agent = user_agent
-    end
-
-    def build(authenticator, http_method, uri, body: nil)
+    def build(authenticator, http_method, uri, body: nil, headers: {})
       request = create_request(http_method, uri, body)
-      add_authorization(request, authenticator)
-      add_content_type(request)
-      add_user_agent(request)
+      add_headers(request, headers)
+      add_authentication(request, authenticator)
       request
-    end
-
-    def configuration
-      {
-        content_type: content_type,
-        user_agent: user_agent
-      }
     end
 
     private
@@ -52,16 +36,16 @@ module X
       request
     end
 
-    def add_authorization(request, authenticator)
-      request.add_field(AUTHORIZATION_HEADER, authenticator.header(request))
+    def add_authentication(request, authenticator)
+      authenticator.header(request).each do |key, value|
+        request.add_field(key, value)
+      end
     end
 
-    def add_content_type(request)
-      request.add_field(CONTENT_TYPE_HEADER, content_type) if content_type
-    end
-
-    def add_user_agent(request)
-      request.add_field(USER_AGENT_HEADER, user_agent) if user_agent
+    def add_headers(request, headers)
+      DEFAULT_HEADERS.merge(headers).each do |key, value|
+        request.add_field(key, value)
+      end
     end
 
     def escape_query_params(uri)

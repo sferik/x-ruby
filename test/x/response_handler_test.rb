@@ -8,10 +8,6 @@ module X
       @client = Client.new(base_url: "https://upload.twitter.com/1.1/", **oauth_credentials)
     end
 
-    def test_configuration
-      assert_instance_of Hash, @response_handler.configuration
-    end
-
     def test_that_it_handles_204_no_content_response
       stub_request(:post, "https://upload.twitter.com/1.1/media/upload.json")
         .to_return(status: 204)

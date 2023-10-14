@@ -43,13 +43,6 @@ module X
       end
     end
 
-    def configuration
-      {
-        array_class: array_class,
-        object_class: object_class
-      }
-    end
-
     private
 
     def success?(response)

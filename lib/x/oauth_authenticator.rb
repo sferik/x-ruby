@@ -23,7 +23,7 @@ module X
 
     def header(request)
       method, url, query_params = parse_request(request)
-      build_oauth_header(method, url, query_params)
+      {"Authorization" => build_oauth_header(method, url, query_params)}
     end
 
     private

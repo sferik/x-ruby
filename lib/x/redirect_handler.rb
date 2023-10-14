@@ -22,8 +22,9 @@ module X
         raise TooManyRedirectsError.new("Too many redirects", response: response) if redirect_count >= max_redirects
 
         new_uri = build_new_uri(response, original_base_url)
+
         new_request = build_request(original_request, new_uri)
-        new_response = send_new_request(new_uri, new_request)
+        new_response = connection.send_request(new_request)
 
         handle_redirects(new_response, new_request, original_base_url, redirect_count + 1)
       else
@@ -44,11 +45,6 @@ module X
       http_method = original_request.method.downcase.to_sym
       body = original_request.body if original_request.body
       request_builder.build(authenticator, http_method, new_uri, body: body)
-    end
-
-    def send_new_request(new_uri, new_request)
-      @connection = Connection.new(**connection.configuration.merge(base_url: new_uri))
-      connection.send_request(new_request)
     end
   end
 end

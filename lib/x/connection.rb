@@ -9,8 +9,7 @@ module X
   class Connection
     extend Forwardable
 
-    DEFAULT_BASE_URL = "https://api.twitter.com/2/".freeze
-    DEFAULT_HOST = "https://api.twitter.com".freeze
+    DEFAULT_HOST = "api.twitter.com".freeze
     DEFAULT_PORT = 443
     DEFAULT_OPEN_TIMEOUT = 60 # seconds
     DEFAULT_READ_TIMEOUT = 60 # seconds
@@ -23,96 +22,57 @@ module X
       OpenSSL::SSL::SSLError
     ].freeze
 
-    attr_reader :base_uri, :proxy_uri, :http_client
+    attr_accessor :open_timeout, :read_timeout, :write_timeout, :debug_output
+    attr_reader :proxy_uri
 
-    def_delegators :@http_client, :open_timeout, :read_timeout, :write_timeout
-    def_delegators :@http_client, :open_timeout=, :read_timeout=, :write_timeout=
-    def_delegator :@http_client, :set_debug_output, :debug_output=
+    def_delegator :proxy_uri, :host, :proxy_host
+    def_delegator :proxy_uri, :port, :proxy_port
+    def_delegator :proxy_uri, :user, :proxy_user
+    def_delegator :proxy_uri, :password, :proxy_pass
 
-    def initialize(base_url: DEFAULT_BASE_URL, open_timeout: DEFAULT_OPEN_TIMEOUT,
-      read_timeout: DEFAULT_READ_TIMEOUT, write_timeout: DEFAULT_WRITE_TIMEOUT, proxy_url: nil, debug_output: nil)
-      @proxy_uri = URI(proxy_url) unless proxy_url.nil?
-      self.base_uri = base_url
-      apply_http_client_settings(
-        open_timeout: open_timeout,
-        read_timeout: read_timeout,
-        write_timeout: write_timeout,
-        debug_output: debug_output
-      )
+    def initialize(open_timeout: DEFAULT_OPEN_TIMEOUT, read_timeout: DEFAULT_READ_TIMEOUT,
+      write_timeout: DEFAULT_WRITE_TIMEOUT, proxy_url: nil, debug_output: nil)
+      self.proxy_uri = proxy_url unless proxy_url.nil?
+      @open_timeout = open_timeout
+      @read_timeout = read_timeout
+      @write_timeout = write_timeout
+      @debug_output = debug_output
     end
 
     def send_request(request)
-      response = @http_client.request(request)
+      host = request.uri.host || DEFAULT_HOST
+      port = request.uri.port || DEFAULT_PORT
+      http_client = build_http_client(host, port)
+      http_client.use_ssl = request.uri.scheme == "https"
+      response = http_client.request(request)
     rescue *NETWORK_ERRORS => e
       raise NetworkError.new("Network error: #{e.message}", response: response)
     end
 
-    def base_uri=(base_url)
-      base_uri = URI(base_url)
-      raise ArgumentError, "Invalid base URL" unless base_uri.is_a?(URI::HTTPS) || base_uri.is_a?(URI::HTTP)
+    def proxy_uri=(proxy_url)
+      proxy_uri = URI(proxy_url)
+      raise ArgumentError, "Invalid proxy URL" unless proxy_uri.is_a?(URI::HTTPS) || proxy_uri.is_a?(URI::HTTP)
 
-      @base_uri = base_uri
-      update_http_client_settings
-    end
-
-    def debug_output
-      @http_client.instance_variable_get(:@debug_output)
-    end
-
-    def configuration
-      {
-        base_url: base_uri.to_s,
-        open_timeout: open_timeout,
-        read_timeout: read_timeout,
-        write_timeout: write_timeout,
-        proxy_url: proxy_uri.to_s,
-        debug_output: debug_output
-      }
+      @proxy_uri = proxy_uri
     end
 
     private
 
-    def apply_http_client_settings(open_timeout:, read_timeout:, write_timeout:, debug_output:)
-      @http_client.open_timeout = open_timeout
-      @http_client.read_timeout = read_timeout
-      @http_client.write_timeout = write_timeout
-      @http_client.set_debug_output(debug_output) if debug_output
-    end
-
-    def current_http_client_settings
-      {
-        open_timeout: @http_client.open_timeout,
-        read_timeout: @http_client.read_timeout,
-        write_timeout: @http_client.write_timeout,
-        debug_output: debug_output
-      }
-    end
-
-    def update_http_client_settings
-      conditionally_apply_http_client_settings do
-        host = @base_uri.host || DEFAULT_HOST
-        port = @base_uri.port || DEFAULT_PORT
-        @http_client = build_http_client(host: host, port: port)
-        @http_client.use_ssl = @base_uri.scheme == "https"
-      end
-    end
-
-    def build_http_client(host:, port:)
-      if defined?(@proxy_uri)
-        Net::HTTP.new(host, port, @proxy_uri&.host, @proxy_uri&.port, @proxy_uri&.user, @proxy_uri&.password)
+    def build_http_client(host = DEFAULT_HOST, port = DEFAULT_PORT)
+      http_client = if defined?(@proxy_uri)
+        Net::HTTP.new(host, port, proxy_host, proxy_port, proxy_user, proxy_pass)
       else
         Net::HTTP.new(host, port)
       end
+      configure_http_client(http_client)
     end
 
-    def conditionally_apply_http_client_settings
-      if defined?(@http_client)
-        settings = current_http_client_settings
-        yield
-        apply_http_client_settings(**settings)
-      else
-        yield
-      end
+    def configure_http_client(http_client)
+      http_client.open_timeout = open_timeout
+      http_client.read_timeout = read_timeout
+      http_client.write_timeout = write_timeout
+      http_client.set_debug_output(debug_output) if debug_output
+      http_client
     end
   end
 end

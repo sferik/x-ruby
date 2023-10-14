@@ -11,55 +11,53 @@ module X
   class Client
     extend Forwardable
 
+    DEFAULT_BASE_URL = "https://api.twitter.com/2/".freeze
+
+    attr_accessor :base_url
+
     def_delegators :@authenticator, :bearer_token, :api_key, :api_key_secret, :access_token, :access_token_secret
     def_delegators :@authenticator, :bearer_token=, :api_key=, :api_key_secret=, :access_token=, :access_token_secret=
-    def_delegators :@connection, :base_uri, :open_timeout, :read_timeout, :write_timeout, :debug_output
-    def_delegators :@connection, :base_uri=, :open_timeout=, :read_timeout=, :write_timeout=, :debug_output=
-    def_delegators :@request_builder, :content_type, :user_agent
-    def_delegators :@request_builder, :content_type=, :user_agent=
+    def_delegators :@connection, :open_timeout, :read_timeout, :write_timeout, :proxy_uri, :debug_output
+    def_delegators :@connection, :open_timeout=, :read_timeout=, :write_timeout=, :proxy_uri=, :debug_output=
     def_delegators :@response_handler, :array_class, :object_class
     def_delegators :@response_handler, :array_class=, :object_class=
-    alias_method :base_url, :base_uri
-    alias_method :base_url=, :base_uri=
-    attr_accessor :authenticator, :connection, :request_builder, :redirect_handler, :response_handler
 
     def initialize(bearer_token: nil,
       api_key: nil, api_key_secret: nil, access_token: nil, access_token_secret: nil,
-      base_url: Connection::DEFAULT_BASE_URL,
+      base_url: DEFAULT_BASE_URL,
       open_timeout: Connection::DEFAULT_OPEN_TIMEOUT,
       read_timeout: Connection::DEFAULT_READ_TIMEOUT,
       write_timeout: Connection::DEFAULT_WRITE_TIMEOUT,
       proxy_url: nil,
-      content_type: RequestBuilder::DEFAULT_CONTENT_TYPE,
-      user_agent: RequestBuilder::DEFAULT_USER_AGENT,
       debug_output: nil,
       array_class: ResponseHandler::DEFAULT_ARRAY_CLASS,
       object_class: ResponseHandler::DEFAULT_OBJECT_CLASS,
       max_redirects: RedirectHandler::DEFAULT_MAX_REDIRECTS)
 
+      @base_url = base_url
       initialize_authenticator(bearer_token, api_key, api_key_secret, access_token, access_token_secret)
-      @connection = Connection.new(base_url: base_url, open_timeout: open_timeout, read_timeout: read_timeout,
+      @connection = Connection.new(open_timeout: open_timeout, read_timeout: read_timeout,
         write_timeout: write_timeout, debug_output: debug_output, proxy_url: proxy_url)
-      @request_builder = RequestBuilder.new(content_type: content_type, user_agent: user_agent)
+      @request_builder = RequestBuilder.new
       @redirect_handler = RedirectHandler.new(@authenticator, @connection, @request_builder,
         max_redirects: max_redirects)
       @response_handler = ResponseHandler.new(array_class: array_class, object_class: object_class)
     end
 
-    def get(endpoint)
-      send_request(:get, endpoint)
+    def get(endpoint, headers: {})
+      send_request(:get, endpoint, headers: headers)
     end
 
-    def post(endpoint, body = nil)
-      send_request(:post, endpoint, body)
+    def post(endpoint, body = nil, headers: {})
+      send_request(:post, endpoint, body: body, headers: headers)
     end
 
-    def put(endpoint, body = nil)
-      send_request(:put, endpoint, body)
+    def put(endpoint, body = nil, headers: {})
+      send_request(:put, endpoint, body: body, headers: headers)
     end
 
-    def delete(endpoint)
-      send_request(:delete, endpoint)
+    def delete(endpoint, headers: {})
+      send_request(:delete, endpoint, headers: headers)
     end
 
     private
@@ -76,11 +74,11 @@ module X
       end
     end
 
-    def send_request(http_method, endpoint, body = nil)
-      uri = URI.join(base_uri.to_s, endpoint)
-      request = @request_builder.build(@authenticator, http_method, uri, body: body)
+    def send_request(http_method, endpoint, body: nil, headers: {})
+      uri = URI.join(base_url.to_s, endpoint)
+      request = @request_builder.build(@authenticator, http_method, uri, body: body, headers: headers)
       response = @connection.send_request(request)
-      final_response = @redirect_handler.handle_redirects(response, request, base_uri)
+      final_response = @redirect_handler.handle_redirects(response, request, base_url)
       @response_handler.handle(final_response)
     end
   end

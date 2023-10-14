@@ -34,12 +34,6 @@ module X
       end
     end
 
-    def test_set_invalid_base_uri
-      assert_raises ArgumentError do
-        @client.base_uri = "ftp://ftp.example.com"
-      end
-    end
-
     def test_rate_limit
       headers = {"content-type" => "application/json",
                  "x-rate-limit-limit" => "40000", "x-rate-limit-remaining" => "39999"}

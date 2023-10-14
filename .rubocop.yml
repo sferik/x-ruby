@@ -38,6 +38,9 @@ Layout/SpaceInsideHashLiteralBraces:
 Metrics/ParameterLists:
   CountKeywordArgs: false
 
+Minitest/MultipleAssertions:
+  Max: 5
+
 Style/Alias:
   Enabled: true
   EnforcedStyle: prefer_alias_method

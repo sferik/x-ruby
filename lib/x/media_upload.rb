@@ -18,16 +18,16 @@ module X
     def media_upload(client:, file_path:, media_category:, media_type: infer_media_type(file_path, media_category),
       boundary: SecureRandom.hex)
       validate!(file_path: file_path, media_category: media_category)
-      upload_client = client.dup.tap { |c| c.base_uri = "https://upload.twitter.com/1.1/" }
+      upload_client = client.dup.tap { |c| c.base_url = "https://upload.twitter.com/1.1/" }
       upload_body = construct_upload_body(file_path, media_type, boundary)
-      upload_client.content_type = "multipart/form-data, boundary=#{boundary}"
-      upload_client.post("media/upload.json?media_category=#{media_category}", upload_body)
+      headers = {"Content-Type" => "multipart/form-data, boundary=#{boundary}"}
+      upload_client.post("media/upload.json?media_category=#{media_category}", upload_body, headers: headers)
     end
 
     def chunked_media_upload(client:, file_path:, media_category:, media_type: infer_media_type(file_path,
       media_category), boundary: SecureRandom.hex, chunk_size_mb: 8)
       validate!(file_path: file_path, media_category: media_category)
-      upload_client = client.dup.tap { |c| c.base_uri = "https://upload.twitter.com/1.1/" }
+      upload_client = client.dup.tap { |c| c.base_url = "https://upload.twitter.com/1.1/" }
       media = init(upload_client, file_path, media_type, media_category)
       chunk_size = chunk_size_mb * BYTES_PER_MB
       chunk_paths = split(file_path, chunk_size)
@@ -36,7 +36,7 @@ module X
     end
 
     def await_processing(client:, media:)
-      upload_client = client.dup.tap { |c| c.base_uri = "https://upload.twitter.com/1.1/" }
+      upload_client = client.dup.tap { |c| c.base_url = "https://upload.twitter.com/1.1/" }
       loop do
         status = upload_client.get("media/upload.json?command=STATUS&media_id=#{media["media_id"]}")
         return status if status["processing_info"]["state"] == "succeeded"
@@ -89,18 +89,15 @@ module X
         Thread.new do
           upload_body = construct_upload_body(chunk_path, media_type, boundary)
           query = "command=APPEND&media_id=#{media["media_id"]}&segment_index=#{index}"
-          upload_chunk(upload_client, query, upload_body, chunk_path, boundary)
+          headers = {"Content-Type" => "multipart/form-data, boundary=#{boundary}"}
+          upload_chunk(upload_client, query, upload_body, chunk_path, headers)
         end
       end
       threads.each(&:join)
     end
 
-    def upload_chunk(upload_client, query, upload_body, chunk_path, boundary)
-      # Initialize a new client to avoid shared connection issues
-      client = upload_client.dup
-      client.connection = Connection.new(**upload_client.connection.configuration.merge(base_url: "https://upload.twitter.com/1.1/"))
-      client.content_type = "multipart/form-data, boundary=#{boundary}"
-      client.post("media/upload.json?#{query}", upload_body)
+    def upload_chunk(upload_client, query, upload_body, chunk_path, headers = {})
+      upload_client.post("media/upload.json?#{query}", upload_body, headers: headers)
     rescue NetworkError, ServerError
       retries ||= 0
       ((retries += 1) < MAX_RETRIES) ? retry : raise

@@ -69,25 +69,15 @@ module X
       assert_equal "def", @client.access_token_secret
     end
 
-    def test_default_base_uri
-      assert_equal URI.parse(Connection::DEFAULT_BASE_URL), @client.base_uri
+    def test_default_base_url
+      assert_equal Client::DEFAULT_BASE_URL, @client.base_url
     end
 
-    def test_set_base_uri
-      uri = URI("https://example.com")
-      @client.base_uri = uri
+    def test_set_base_url
+      url = "https://example.com"
+      @client.base_url = url
 
-      assert_equal uri, @client.base_uri
-    end
-
-    def test_default_user_agent
-      assert_equal RequestBuilder::DEFAULT_USER_AGENT, @client.user_agent
-    end
-
-    def test_set_user_agent
-      @client.user_agent = "Custom User Agent"
-
-      assert_equal "Custom User Agent", @client.user_agent
+      assert_equal url, @client.base_url
     end
 
     def test_default_timeouts

@@ -8,7 +8,7 @@ module X
     end
 
     def header(_request)
-      "Bearer #{bearer_token}"
+      {"Authorization" => "Bearer #{bearer_token}"}
     end
   end
 end
