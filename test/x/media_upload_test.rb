@@ -4,7 +4,7 @@ require_relative "../../lib/x/media_upload"
 module X
   # Tests for X::MediaUpload module
   class MediaUploadTest < Minitest::Test
-    TEST_MEDIA_ID = 1_234_567_890
+    cover Client
 
     def setup
       @client = client
@@ -68,10 +68,8 @@ module X
 
     def test_await_processing
       stub_request(:get, "https://upload.twitter.com/1.1/media/upload.json?command=STATUS&media_id=#{TEST_MEDIA_ID}")
-        .to_return({status: 200, headers: {"content-type" => "application/json"},
-                    body: '{"processing_info": {"state": "pending"}}'},
-          {status: 200, headers: {"content-type" => "application/json"},
-           body: '{"processing_info": {"state": "succeeded"}}'})
+        .to_return({headers: {"content-type" => "application/json"}, body: '{"processing_info": {"state": "pending"}}'},
+          {headers: {"content-type" => "application/json"}, body: '{"processing_info": {"state": "succeeded"}}'})
 
       status = MediaUpload.await_processing(client: @client, media: @media)
 

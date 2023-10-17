@@ -3,6 +3,7 @@ require_relative "../test_helper"
 module X
   # Tests for X::ResponseHandler class
   class ResponseHandlerTest < Minitest::Test
+    cover Client
     def setup
       @client = client
     end

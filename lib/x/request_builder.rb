@@ -1,5 +1,6 @@
 require "net/http"
 require "uri"
+require_relative "cgi"
 require_relative "version"
 
 module X
@@ -38,18 +39,20 @@ module X
 
     def add_authentication(request, authenticator)
       authenticator.header(request).each do |key, value|
+        request.delete(key)
         request.add_field(key, value)
       end
     end
 
     def add_headers(request, headers)
       DEFAULT_HEADERS.merge(headers).each do |key, value|
+        request.delete(key)
         request.add_field(key, value)
       end
     end
 
     def escape_query_params(uri)
-      URI(uri).tap { |u| u.query = URI.encode_www_form(URI.decode_www_form(uri.query)) if uri.query }
+      URI(uri).tap { |u| u.query = CGI.escape_params(URI.decode_www_form(u.query || "")) if u.query }
     end
   end
 end

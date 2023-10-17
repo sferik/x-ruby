@@ -1,13 +1,13 @@
 require "base64"
-require "cgi"
 require "json"
 require "openssl"
 require "securerandom"
 require "uri"
+require_relative "cgi"
 
 module X
   # Handles OAuth authentication
-  class OauthAuthenticator
+  class OAuthAuthenticator
     OAUTH_VERSION = "1.0".freeze
     OAUTH_SIGNATURE_METHOD = "HMAC-SHA1".freeze
     OAUTH_SIGNATURE_ALGORITHM = "sha1".freeze
@@ -54,7 +54,7 @@ module X
         "oauth_consumer_key" => api_key,
         "oauth_nonce" => SecureRandom.hex,
         "oauth_signature_method" => OAUTH_SIGNATURE_METHOD,
-        "oauth_timestamp" => Time.now.utc.to_i.to_s,
+        "oauth_timestamp" => Integer(Time.now).to_s,
         "oauth_token" => access_token,
         "oauth_version" => OAUTH_VERSION
       }
@@ -66,26 +66,20 @@ module X
     end
 
     def hmac_signature(base_string)
-      digest = OpenSSL::Digest.new(OAUTH_SIGNATURE_ALGORITHM)
-      hmac = OpenSSL::HMAC.digest(digest, signing_key, base_string)
+      hmac = OpenSSL::HMAC.digest(OAUTH_SIGNATURE_ALGORITHM, signing_key, base_string)
       Base64.strict_encode64(hmac)
     end
 
     def signature_base_string(method, url, params)
-      "#{method}&#{escape(url)}&#{escape(URI.encode_www_form(params.sort))}"
+      "#{method}&#{CGI.escape(url)}&#{CGI.escape(CGI.escape_params(params.sort))}"
     end
 
     def signing_key
-      "#{escape(api_key_secret)}&#{escape(access_token_secret)}"
+      "#{api_key_secret}&#{access_token_secret}"
     end
 
     def format_oauth_header(params)
-      "OAuth #{params.sort.map { |k, v| "#{k}=\"#{escape(v.to_s)}\"" }.join(", ")}"
-    end
-
-    def escape(value)
-      # TODO: Replace CGI.escape with CGI.escapeURIComponent when support for Ruby 3.1 is dropped
-      CGI.escape(value.to_s).gsub("+", "%20")
+      "OAuth #{params.sort.map { |k, v| "#{k}=\"#{CGI.escape(v)}\"" }.join(", ")}"
     end
   end
 end

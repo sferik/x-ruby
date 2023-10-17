@@ -39,7 +39,7 @@ Metrics/ParameterLists:
   CountKeywordArgs: false
 
 Minitest/MultipleAssertions:
-  Max: 5
+  Max: 6
 
 Style/Alias:
   Enabled: true

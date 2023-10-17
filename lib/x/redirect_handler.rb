@@ -1,14 +1,14 @@
 require "net/http"
 require "uri"
-require_relative "connection"
-require_relative "errors/too_many_redirects_error"
+require_relative "errors/too_many_redirects"
 
 module X
   # Handles HTTP redirects
   class RedirectHandler
     DEFAULT_MAX_REDIRECTS = 10
 
-    attr_reader :authenticator, :connection, :request_builder, :max_redirects
+    attr_accessor :max_redirects
+    attr_reader :authenticator, :connection, :request_builder
 
     def initialize(authenticator, connection, request_builder, max_redirects: DEFAULT_MAX_REDIRECTS)
       @authenticator = authenticator
@@ -19,7 +19,7 @@ module X
 
     def handle_redirects(response, original_request, original_base_url, redirect_count = 0)
       if response.is_a?(Net::HTTPRedirection)
-        raise TooManyRedirectsError.new("Too many redirects", response: response) if redirect_count >= max_redirects
+        raise TooManyRedirects.new("Too many redirects", response) if redirect_count >= max_redirects
 
         new_uri = build_new_uri(response, original_base_url)
 
@@ -35,9 +35,9 @@ module X
     private
 
     def build_new_uri(response, original_base_url)
-      location = response["location"].to_s
+      location = response.fetch("location")
       new_uri = URI.parse(location)
-      new_uri = URI.join(original_base_url.to_s, location) if new_uri.relative?
+      new_uri = URI.join(original_base_url, location) if new_uri.relative?
       new_uri
     end
 
