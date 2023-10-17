@@ -2,8 +2,8 @@ require_relative "client_error"
 
 module X
   # Rate limit error
-  class TooManyRequestsError < ClientError
-    def initialize(msg, response:)
+  class TooManyRequests < ClientError
+    def initialize(msg, response = {})
       @response = response
       super
     end
@@ -21,7 +21,7 @@ module X
     end
 
     def reset_in
-      [(reset_at - Time.now).ceil, 0].max if reset_at
+      [(reset_at - Time.now).ceil, 0].max
     end
 
     alias_method :retry_after, :reset_in

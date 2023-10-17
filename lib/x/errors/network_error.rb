@@ -1,4 +1,4 @@
-require_relative "server_error"
+require_relative "error"
 
 module X
   class NetworkError < Error; end
