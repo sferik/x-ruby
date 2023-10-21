@@ -1,9 +1,9 @@
 require "base64"
-require "cgi"
 require "json"
 require "openssl"
 require "securerandom"
 require "uri"
+require_relative "cgi"
 
 module X
   # Handles OAuth authentication
@@ -72,20 +72,15 @@ module X
     end
 
     def signature_base_string(method, url, params)
-      "#{method}&#{escape(url)}&#{escape(URI.encode_www_form(params.sort))}"
+      "#{method}&#{CGI.escape(url)}&#{CGI.escape(CGI.escape_params(params.sort))}"
     end
 
     def signing_key
-      "#{escape(api_key_secret)}&#{escape(access_token_secret)}"
+      "#{api_key_secret}&#{access_token_secret}"
     end
 
     def format_oauth_header(params)
-      "OAuth #{params.sort.map { |k, v| "#{k}=\"#{escape(v.to_s)}\"" }.join(", ")}"
-    end
-
-    def escape(value)
-      # TODO: Replace CGI.escape with CGI.escapeURIComponent when support for Ruby 3.1 is dropped
-      CGI.escape(value.to_s).gsub("+", "%20")
+      "OAuth #{params.sort.map { |k, v| "#{k}=\"#{CGI.escape(v)}\"" }.join(", ")}"
     end
   end
 end
