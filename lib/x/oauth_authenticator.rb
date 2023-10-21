@@ -7,7 +7,7 @@ require_relative "cgi"
 
 module X
   # Handles OAuth authentication
-  class OauthAuthenticator
+  class OAuthAuthenticator
     OAUTH_VERSION = "1.0".freeze
     OAUTH_SIGNATURE_METHOD = "HMAC-SHA1".freeze
     OAUTH_SIGNATURE_ALGORITHM = "sha1".freeze
@@ -54,7 +54,7 @@ module X
         "oauth_consumer_key" => api_key,
         "oauth_nonce" => SecureRandom.hex,
         "oauth_signature_method" => OAUTH_SIGNATURE_METHOD,
-        "oauth_timestamp" => Time.now.utc.to_i.to_s,
+        "oauth_timestamp" => Integer(Time.now).to_s,
         "oauth_token" => access_token,
         "oauth_version" => OAUTH_VERSION
       }
@@ -66,8 +66,7 @@ module X
     end
 
     def hmac_signature(base_string)
-      digest = OpenSSL::Digest.new(OAUTH_SIGNATURE_ALGORITHM)
-      hmac = OpenSSL::HMAC.digest(digest, signing_key, base_string)
+      hmac = OpenSSL::HMAC.digest(OAUTH_SIGNATURE_ALGORITHM, signing_key, base_string)
       Base64.strict_encode64(hmac)
     end
 

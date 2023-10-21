@@ -4,51 +4,22 @@ require_relative "../../lib/x/media_upload"
 module X
   # Tests for X::MediaUpload module
   class MediaUploadTest < Minitest::Test
-    TEST_MEDIA_ID = 1_234_567_890
+    cover MediaUpload
 
     def setup
       @client = client
+      @upload_client = client.tap { |c| c.base_url = "https://upload.twitter.com/1.1/" }
       @media = {"media_id" => TEST_MEDIA_ID}
     end
 
-    def test_gif_upload
-      stub_request(:post, "https://upload.twitter.com/1.1/media/upload.json?media_category=dm_gif")
-        .to_return(status: 201, headers: {"content-type" => "application/json"}, body: @media.to_json)
+    def test_media_upload
+      stub_request(:post, "https://upload.twitter.com/1.1/media/upload.json?media_category=#{MediaUpload::TWEET_IMAGE}")
+        .to_return(body: @media.to_json, headers: {"Content-Type" => "application/json"})
 
-      response = MediaUpload.media_upload(client: @client, file_path: "test/sample_files/sample.gif",
-        media_category: MediaUpload::DM_GIF)
+      result = MediaUpload.media_upload(client: @client, file_path: "test/sample_files/sample.jpg",
+        media_category: MediaUpload::TWEET_IMAGE, boundary: "AaB03x")
 
-      assert_equal TEST_MEDIA_ID, response["media_id"]
-    end
-
-    def test_jpg_upload
-      stub_request(:post, "https://upload.twitter.com/1.1/media/upload.json?media_category=tweet_image")
-        .to_return(status: 201, headers: {"content-type" => "application/json"}, body: @media.to_json)
-
-      response = MediaUpload.media_upload(client: @client, file_path: "test/sample_files/sample.jpg",
-        media_category: MediaUpload::TWEET_IMAGE)
-
-      assert_equal TEST_MEDIA_ID, response["media_id"]
-    end
-
-    def test_srt_upload
-      stub_request(:post, "https://upload.twitter.com/1.1/media/upload.json?media_category=subtitles")
-        .to_return(status: 201, headers: {"content-type" => "application/json"}, body: @media.to_json)
-
-      response = MediaUpload.media_upload(client: @client, file_path: "test/sample_files/sample.srt",
-        media_category: MediaUpload::SUBTITLES)
-
-      assert_equal TEST_MEDIA_ID, response["media_id"]
-    end
-
-    def test_webp_upload
-      stub_request(:post, "https://upload.twitter.com/1.1/media/upload.json?media_category=dm_image")
-        .to_return(status: 201, headers: {"content-type" => "application/json"}, body: @media.to_json)
-
-      response = MediaUpload.media_upload(client: @client, file_path: "test/sample_files/sample.webp",
-        media_category: MediaUpload::DM_IMAGE)
-
-      assert_equal TEST_MEDIA_ID, response["media_id"]
+      assert_equal TEST_MEDIA_ID, result["media_id"]
     end
 
     def test_chunked_media_upload
@@ -56,7 +27,7 @@ module X
       total_bytes = File.size(file_path)
       stub_request(:post, "https://upload.twitter.com/1.1/media/upload.json?command=INIT&media_category=tweet_video&media_type=video/mp4&total_bytes=#{total_bytes}")
         .to_return(status: 202, headers: {"content-type" => "application/json"}, body: @media.to_json)
-      2.times { |segment_index| stub_request(:post, "https://upload.twitter.com/1.1/media/upload.json?command=APPEND&media_id=1234567890&segment_index=#{segment_index}").to_return(status: 204) }
+      2.times { |segment_index| stub_request(:post, "https://upload.twitter.com/1.1/media/upload.json?command=APPEND&media_id=#{TEST_MEDIA_ID}&segment_index=#{segment_index}").to_return(status: 204) }
       stub_request(:post, "https://upload.twitter.com/1.1/media/upload.json?command=FINALIZE&media_id=#{TEST_MEDIA_ID}")
         .to_return(status: 201, headers: {"content-type" => "application/json"}, body: @media.to_json)
 
@@ -66,35 +37,96 @@ module X
       assert_equal TEST_MEDIA_ID, response["media_id"]
     end
 
-    def test_await_processing
-      stub_request(:get, "https://upload.twitter.com/1.1/media/upload.json?command=STATUS&media_id=#{TEST_MEDIA_ID}")
-        .to_return({status: 200, headers: {"content-type" => "application/json"},
-                    body: '{"processing_info": {"state": "pending"}}'},
-          {status: 200, headers: {"content-type" => "application/json"},
-           body: '{"processing_info": {"state": "succeeded"}}'})
+    def test_append_method
+      file_path = "test/sample_files/sample.mp4"
+      chunk_paths = MediaUpload.send(:split, file_path, File.size(file_path) - 1)
 
-      status = MediaUpload.await_processing(client: @client, media: @media)
+      chunk_paths.each_with_index do |_chunk_path, segment_index|
+        stub_request(:post, "https://upload.twitter.com/1.1/media/upload.json?command=APPEND&media_id=#{TEST_MEDIA_ID}&segment_index=#{segment_index}")
+          .with(headers: {"Content-Type" => "multipart/form-data, boundary=AaB03x"}).to_return(status: 204)
+      end
+      MediaUpload.send(:append, @upload_client, chunk_paths, @media, "video/mp4", "AaB03x")
 
-      assert_equal "succeeded", status["processing_info"]["state"]
+      chunk_paths.each_with_index do |_, segment_index|
+        assert_requested(:post, "https://upload.twitter.com/1.1/media/upload.json?command=APPEND&media_id=#{TEST_MEDIA_ID}&segment_index=#{segment_index}")
+      end
     end
 
-    def test_invalid_media_category
-      assert_raises ArgumentError do
-        MediaUpload.media_upload(client: @client, file_path: "test/sample_files/sample.png", media_category: "bad")
-      end
+    def test_await_processing
+      stub_request(:get, "https://upload.twitter.com/1.1/media/upload.json?command=STATUS&media_id=#{TEST_MEDIA_ID}")
+        .to_return(headers: {"content-type" => "application/json"}, body: '{"processing_info": {"state": "pending"}}')
+        .to_return(headers: {"content-type" => "application/json"}, body: '{"processing_info": {"state": "succeeded"}}')
+      result = MediaUpload.await_processing(client: @client, media: @media)
+
+      assert_equal "succeeded", result["processing_info"]["state"]
     end
 
     def test_retry
       file_path = "test/sample_files/sample.mp4"
       stub_request(:post, "https://upload.twitter.com/1.1/media/upload.json?command=INIT&media_category=tweet_video&media_type=video/mp4&total_bytes=#{File.size(file_path)}")
         .to_return(status: 202, headers: {"content-type" => "application/json"}, body: @media.to_json)
-      stub_request(:post, "https://upload.twitter.com/1.1/media/upload.json?command=APPEND&media_id=1234567890&segment_index=0")
-        .to_return({status: 500}, {status: 204})
+      stub_request(:post, "https://upload.twitter.com/1.1/media/upload.json?command=APPEND&media_id=#{TEST_MEDIA_ID}&segment_index=0")
+        .to_return(status: 500).to_return(status: 204)
       stub_request(:post, "https://upload.twitter.com/1.1/media/upload.json?command=FINALIZE&media_id=#{TEST_MEDIA_ID}")
         .to_return(status: 201, headers: {"content-type" => "application/json"}, body: @media.to_json)
 
       assert MediaUpload.chunked_media_upload(client: @client, file_path: file_path,
         media_category: MediaUpload::TWEET_VIDEO)
+    end
+
+    def test_validate_with_valid_params
+      file_path = "test/sample_files/sample.jpg"
+
+      assert_nil MediaUpload.send(:validate!, file_path: file_path, media_category: MediaUpload::TWEET_IMAGE)
+    end
+
+    def test_validate_with_invalid_file_path
+      file_path = "invalid/file/path"
+      assert_raises(RuntimeError) do
+        MediaUpload.send(:validate!, file_path: file_path, media_category: MediaUpload::TWEET_IMAGE)
+      end
+    end
+
+    def test_validate_with_invalid_media_category
+      file_path = "test/sample_files/sample.jpg"
+      assert_raises(ArgumentError) do
+        MediaUpload.send(:validate!, file_path: file_path, media_category: "invalid_category")
+      end
+    end
+
+    def test_infer_media_type_for_gif
+      assert_equal MediaUpload::GIF_MIME_TYPE,
+        MediaUpload.send(:infer_media_type, "test/sample_files/sample.gif", "tweet_gif")
+    end
+
+    def test_infer_media_type_for_jpg
+      assert_equal MediaUpload::JPEG_MIME_TYPE,
+        MediaUpload.send(:infer_media_type, "test/sample_files/sample.jpg", "tweet_image")
+    end
+
+    def test_infer_media_type_for_mp4
+      assert_equal MediaUpload::MP4_MIME_TYPE,
+        MediaUpload.send(:infer_media_type, "test/sample_files/sample.mp4", "tweet_video")
+    end
+
+    def test_infer_media_type_for_png
+      assert_equal MediaUpload::PNG_MIME_TYPE,
+        MediaUpload.send(:infer_media_type, "test/sample_files/sample.png", "tweet_image")
+    end
+
+    def test_infer_media_type_for_srt
+      assert_equal MediaUpload::SUBRIP_MIME_TYPE,
+        MediaUpload.send(:infer_media_type, "test/sample_files/sample.srt", "subtitles")
+    end
+
+    def test_infer_media_type_for_webp
+      assert_equal MediaUpload::WEBP_MIME_TYPE,
+        MediaUpload.send(:infer_media_type, "test/sample_files/sample.webp", "tweet_image")
+    end
+
+    def test_infer_media_type_with_default
+      assert_equal MediaUpload::DEFAULT_MIME_TYPE,
+        MediaUpload.send(:infer_media_type, "test/sample_files/sample.unknown", "tweet_image")
     end
   end
 end

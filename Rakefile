@@ -21,4 +21,11 @@ task :steep do
   Steep::CLI.new(argv: ["check"], stdout: $stdout, stderr: $stderr, stdin: $stdin).run
 end
 
-task default: %i[test rubocop standard steep]
+require "mutant"
+
+desc "Run mutant"
+task :mutant do
+  system(*%w[bundle exec mutant run]) or raise "Mutant task failed"
+end
+
+task default: %i[test rubocop standard mutant steep]

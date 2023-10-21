@@ -33,7 +33,7 @@ module X
 
       escaped_uri = escape_query_params(uri)
       request = http_method_class.new(escaped_uri)
-      request.body = body if body && http_method != :get
+      request.body = body
       request
     end
 
@@ -45,6 +45,7 @@ module X
 
     def add_headers(request, headers)
       DEFAULT_HEADERS.merge(headers).each do |key, value|
+        request.delete(key)
         request.add_field(key, value)
       end
     end

@@ -19,8 +19,6 @@ require_relative "errors/unprocessable_entity"
 module X
   # Process HTTP responses
   class ResponseHandler
-    DEFAULT_ARRAY_CLASS = Array
-    DEFAULT_OBJECT_CLASS = Hash
     ERROR_CLASSES = {
       400 => BadRequest,
       401 => Unauthorized,
@@ -41,7 +39,7 @@ module X
 
     attr_accessor :array_class, :object_class
 
-    def initialize(array_class: DEFAULT_ARRAY_CLASS, object_class: DEFAULT_OBJECT_CLASS)
+    def initialize(array_class: nil, object_class: nil)
       @array_class = array_class
       @object_class = object_class
     end
@@ -63,7 +61,7 @@ module X
     end
 
     def error_class(response)
-      ERROR_CLASSES[response.code.to_i] || Error
+      ERROR_CLASSES[Integer(response.code)] || Error
     end
 
     def error_message(response)
@@ -76,12 +74,12 @@ module X
 
     def message_from_json_response(response)
       response_object = JSON.parse(response.body)
-      if response_object["title"] || response_object["detail"]
-        "#{response_object["title"]}: #{response_object["detail"]}"
-      elsif response_object["error"]
-        response_object["error"]
-      elsif response_object["errors"].is_a?(Array)
-        response_object["errors"].map { |error| error["message"] }.join(", ")
+      if response_object.key?("title") && response_object.key?("detail")
+        "#{response_object.fetch("title")}: #{response_object.fetch("detail")}"
+      elsif response_object.key?("error")
+        response_object.fetch("error")
+      elsif response_object["errors"].instance_of?(Array)
+        response_object.fetch("errors").map { |error| error.fetch("message") }.join(", ")
       else
         response.message
       end

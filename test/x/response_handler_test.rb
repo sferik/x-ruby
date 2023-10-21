@@ -1,67 +1,138 @@
+require "hashie"
 require_relative "../test_helper"
 
 module X
-  # Tests for X::ResponseHandler class
   class ResponseHandlerTest < Minitest::Test
+    cover ResponseHandler
+
     def setup
-      @client = client
+      @response_handler = ResponseHandler.new
+      @uri = URI("http://example.com")
+    end
+
+    def get_http_response(uri = @uri)
+      Net::HTTP.get_response(uri)
+    end
+
+    def test_success_response
+      stub_request(:get, @uri.to_s).to_return(body: '{"message": "success"}',
+        headers: {"Content-Type" => "application/json"})
+
+      assert_equal({"message" => "success"}, @response_handler.handle(get_http_response))
+    end
+
+    def test_non_json_success_response
+      stub_request(:get, @uri.to_s).to_return(body: "<html></html>", headers: {"Content-Type" => "text/html"})
+
+      assert_nil @response_handler.handle(get_http_response)
     end
 
     def test_that_it_handles_204_no_content_response
-      @client = Client.new(base_url: "https://upload.twitter.com/1.1/", **oauth_credentials)
-      stub_request(:post, "https://upload.twitter.com/1.1/media/upload.json")
-        .to_return(status: 204)
+      stub_request(:get, @uri.to_s).to_return(status: 204, headers: {"Content-Type" => "application/json"})
 
-      response = @client.post("/1.1/media/upload.json")
-
-      assert_nil response
+      assert_nil @response_handler.handle(get_http_response)
     end
 
-    def test_that_it_sets_error_message_from_detail
-      body = {title: "title", detail: "detail"}.to_json
-      stub_request(:get, "https://api.twitter.com/2/tweets")
-        .to_return(status: 400, headers: {"content-type" => "application/json"}, body: body)
-
-      begin
-        @client.get("tweets")
-      rescue BadRequest => e
-        assert_equal "title: detail", e.message
-      end
+    def test_bad_request_error
+      stub_request(:get, @uri.to_s).to_return(status: 400)
+      assert_raises(BadRequest) { @response_handler.handle(get_http_response) }
     end
 
-    def test_that_it_sets_error_message_from_errors_array
-      body = {errors: [{message: "message 1"}, {message: "message 2"}]}.to_json
-      stub_request(:get, "https://api.twitter.com/2/tweets")
-        .to_return(status: 400, headers: {"content-type" => "application/json"}, body: body)
-
-      begin
-        @client.get("tweets")
-      rescue BadRequest => e
-        assert_equal "message 1, message 2", e.message
-      end
+    def test_unauthorized_error
+      stub_request(:get, @uri.to_s).to_return(status: 401)
+      assert_raises(Unauthorized) { @response_handler.handle(get_http_response) }
     end
 
-    def test_that_it_sets_error_message_from_error
-      body = {error: "error"}.to_json
-      stub_request(:get, "https://api.twitter.com/2/tweets")
-        .to_return(status: 400, headers: {"content-type" => "application/json"}, body: body)
-
-      begin
-        @client.get("tweets")
-      rescue BadRequest => e
-        assert_equal "error", e.message
-      end
+    def test_unknown_error_code
+      stub_request(:get, @uri.to_s).to_return(status: 418)
+      assert_raises(Error) { @response_handler.handle(get_http_response) }
     end
 
-    def test_that_it_sets_error_message_from_message
-      stub_request(:get, "https://api.twitter.com/2/tweets")
-        .to_return(status: [400, "Bad Request"], headers: {"content-type" => "application/json"}, body: {}.to_json)
+    def test_too_many_requests_with_headers
+      stub_request(:get, @uri.to_s).to_return(status: 429,
+        headers: {"x-rate-limit-remaining" => "0"})
+      exception = assert_raises(TooManyRequests) { @response_handler.handle(get_http_response) }
 
-      begin
-        @client.get("tweets")
-      rescue BadRequest => e
-        assert_equal "Bad Request", e.message
-      end
+      assert_predicate exception.remaining, :zero?
+    end
+
+    def test_error_with_title_only
+      stub_request(:get, @uri.to_s).to_return(status: [400, "Bad Request"], body: '{"title": "Some Error"}',
+        headers: {"Content-Type" => "application/json"})
+      exception = assert_raises(BadRequest) { @response_handler.handle(get_http_response) }
+
+      assert_equal "Bad Request", exception.message
+    end
+
+    def test_error_with_detail_only
+      stub_request(:get, @uri.to_s).to_return(status: [400, "Bad Request"], body: '{"detail": "Something went wrong"}',
+        headers: {"Content-Type" => "application/json"})
+      exception = assert_raises(BadRequest) { @response_handler.handle(get_http_response) }
+
+      assert_equal "Bad Request", exception.message
+    end
+
+    def test_error_with_title_and_detail_error_message
+      stub_request(:get, @uri.to_s).to_return(status: 400,
+        body: '{"title": "Some Error", "detail": "Something went wrong"}',
+        headers: {"Content-Type" => "application/json"})
+      exception = assert_raises(BadRequest) { @response_handler.handle(get_http_response) }
+
+      assert_equal("Some Error: Something went wrong", exception.message)
+    end
+
+    def test_error_with_error_message
+      stub_request(:get, @uri.to_s).to_return(status: 400, body: '{"error": "Some Error"}',
+        headers: {"Content-Type" => "application/json"})
+      exception = assert_raises(BadRequest) { @response_handler.handle(get_http_response) }
+
+      assert_equal("Some Error", exception.message)
+    end
+
+    def test_error_with_errors_array_message
+      stub_request(:get, @uri.to_s).to_return(status: 400,
+        body: '{"errors": [{"message": "Some Error"}, {"message": "Another Error"}]}',
+        headers: {"Content-Type" => "application/json"})
+      exception = assert_raises(BadRequest) { @response_handler.handle(get_http_response) }
+
+      assert_equal("Some Error, Another Error", exception.message)
+    end
+
+    def test_error_with_errors_message
+      stub_request(:get, @uri.to_s).to_return(status: 400, body: '{"errors": {"message": "Some Error"}}',
+        headers: {"Content-Type" => "application/json"})
+      exception = assert_raises(BadRequest) { @response_handler.handle(get_http_response) }
+
+      assert_empty exception.message
+    end
+
+    def test_non_json_error_response
+      stub_request(:get, @uri.to_s).to_return(status: [400, "Bad Request"], body: "<html>Bad Request</html>",
+        headers: {"Content-Type" => "text/html"})
+      exception = assert_raises(BadRequest) { @response_handler.handle(get_http_response) }
+
+      assert_equal "Bad Request", exception.message
+    end
+
+    def test_default_response_objects
+      stub_request(:get, @uri.to_s).to_return(body: '{"array": [1, 2, 2, 3]}',
+        headers: {"Content-Type" => "application/json"})
+      hash = @response_handler.handle(get_http_response)
+
+      assert_kind_of Hash, hash
+      assert_kind_of Array, hash["array"]
+      assert_equal [1, 2, 2, 3], hash["array"]
+    end
+
+    def test_custom_response_objects
+      response_handler = ResponseHandler.new(object_class: Hashie::Mash, array_class: Set)
+      stub_request(:get, @uri.to_s).to_return(body: '{"array": [1, 2, 2, 3]}',
+        headers: {"Content-Type" => "application/json"})
+      mash = response_handler.handle(get_http_response)
+
+      assert_kind_of Hashie::Mash, mash
+      assert_kind_of Set, mash.array
+      assert_equal Set.new([1, 2, 2, 3]), mash.array
     end
   end
 end

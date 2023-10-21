@@ -37,11 +37,11 @@ module X
     end
 
     def test_missing_credentials_message
-      e = assert_raises(ArgumentError) { Client.new }
+      exception = assert_raises(ArgumentError) { Client.new }
       error_message = "Client must be initialized with either a bearer_token or " \
                       "an api_key, api_key_secret, access_token, and access_token_secret"
 
-      assert_equal error_message, e.message
+      assert_equal error_message, exception.message
     end
 
     def test_rate_limit

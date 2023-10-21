@@ -1,67 +1,138 @@
 require_relative "../test_helper"
 
 module X
-  # Tests for X::RedirectHandler class
   class RedirectHandlerTest < Minitest::Test
+    cover RedirectHandler
+
     def setup
-      @client = client
+      @authenticator = BearerTokenAuthenticator.new(TEST_BEARER_TOKEN)
+      @connection = Connection.new
+      @request_builder = RequestBuilder.new
+      @redirect_handler = RedirectHandler.new(@authenticator, @connection, @request_builder)
     end
 
-    def test_follows_301_redirect
-      stub_request(:get, "https://api.twitter.com/old_endpoint")
-        .to_return(status: 301, headers: {"Location" => "https://api.twitter.com/new_endpoint"})
+    def test_handle_redirects_with_no_redirects
+      original_request = Net::HTTP::Get.new("/some_path")
 
-      stub_request(:get, "https://api.twitter.com/new_endpoint")
-        .to_return(status: 200, headers: {"content-type" => "application/json"}, body: '{"message":"success"}')
+      response = Net::HTTPSuccess.new("1.1", "200", "OK")
 
-      response = @client.get("/old_endpoint")
-
-      assert_equal("success", response["message"])
+      assert_equal(response, @redirect_handler.handle_redirects(response, original_request, "http://example.com"))
     end
 
-    def test_follows_302_redirect
-      stub_request(:get, "https://api.twitter.com/temp_redirect")
-        .to_return(status: 302, headers: {"Location" => "https://api.twitter.com/new_endpoint"})
+    def test_handle_redirects_with_one_redirect
+      original_request = Net::HTTP::Get.new("/")
+      stub_request(:get, "http://www.example.com/")
 
-      stub_request(:get, "https://api.twitter.com/new_endpoint")
-        .to_return(status: 200, headers: {"content-type" => "application/json"}, body: '{"message":"success"}')
+      response = Net::HTTPFound.new("1.1", "302", "Found")
+      response["Location"] = "http://www.example.com"
 
-      response = @client.get("/temp_redirect")
+      @redirect_handler.handle_redirects(response, original_request, "http://example.com")
 
-      assert_equal("success", response["message"])
+      assert_requested :get, "http://www.example.com"
     end
 
-    def test_follows_307_preserving_method_and_body
-      stub_request(:post, "https://api.twitter.com/temporary_redirect")
-        .to_return(status: 307, headers: {"Location" => "https://api.twitter.com/new_endpoint"})
+    def test_handle_redirects_with_two_redirects
+      original_request = Net::HTTP::Delete.new("/")
+      stub_request(:delete, "http://example.com/2").to_return(status: 307, headers: {"Location" => "http://example.com/3"})
+      stub_request(:delete, "http://example.com/3")
 
-      stub_request(:post, "https://api.twitter.com/new_endpoint")
-        .to_return(status: 200, headers: {"content-type" => "application/json"}, body: '{"message":"success"}')
+      response = Net::HTTPFound.new("1.1", "307", "Found")
+      response["Location"] = "http://example.com/2"
 
-      response = @client.post("/temporary_redirect", '{"key": "value"}')
+      @redirect_handler.handle_redirects(response, original_request, "http://example.com/1")
 
-      assert_equal("success", response["message"])
+      assert_requested :delete, "http://example.com/2"
+      assert_requested :delete, "http://example.com/3"
     end
 
-    def test_follows_308_preserving_method_and_body
-      stub_request(:post, "https://api.twitter.com/permanent_redirect")
-        .to_return(status: 308, headers: {"Location" => "https://api.twitter.com/new_endpoint"})
+    def test_handle_redirects_with_relative_url
+      original_request = Net::HTTP::Get.new("/some_path")
+      stub_request(:get, "http://example.com/some_relative_path")
 
-      stub_request(:post, "https://api.twitter.com/new_endpoint")
-        .to_return(status: 200, headers: {"content-type" => "application/json"}, body: '{"message":"success"}')
+      response = Net::HTTPFound.new("1.1", "302", "Found")
+      response["Location"] = "/some_relative_path"
 
-      response = @client.post("/permanent_redirect", '{"key": "value"}')
+      @redirect_handler.handle_redirects(response, original_request, "http://example.com")
 
-      assert_equal("success", response["message"])
+      assert_requested :get, "http://example.com/some_relative_path"
     end
 
-    def test_avoids_infinite_redirect_loop
-      stub_request(:get, "https://api.twitter.com/infinite_loop")
-        .to_return(status: 302, headers: {"Location" => "https://api.twitter.com/infinite_loop"})
+    def test_handle_redirects_with_301_moved_permanently
+      original_request = Net::HTTP::Get.new("/some_path")
+      stub_request(:get, "http://example.com/new_path")
 
-      assert_raises TooManyRedirectsError do
-        @client.get("/infinite_loop")
+      response = Net::HTTPMovedPermanently.new("1.1", "301", "Moved Permanently")
+      response["Location"] = "http://example.com/new_path"
+
+      @redirect_handler.handle_redirects(response, original_request, "http://example.com")
+
+      assert_requested :get, "http://example.com/new_path"
+    end
+
+    def test_handle_redirects_with_302_found
+      original_request = Net::HTTP::Get.new("/some_path")
+      stub_request(:get, "http://example.com/temp_path")
+
+      response = Net::HTTPFound.new("1.1", "302", "Found")
+      response["Location"] = "http://example.com/temp_path"
+
+      @redirect_handler.handle_redirects(response, original_request, "http://example.com")
+
+      assert_requested :get, "http://example.com/temp_path"
+    end
+
+    def test_handle_redirects_with_303_see_other
+      original_request = Net::HTTP::Post.new("/some_path")
+      stub_request(:post, "http://example.com/some_path")
+      stub_request(:get, "http://example.com/other_path")
+
+      response = Net::HTTPSeeOther.new("1.1", "303", "See Other")
+      response["Location"] = "http://example.com/other_path"
+
+      @redirect_handler.handle_redirects(response, original_request, "http://example.com")
+
+      assert_requested :get, "http://example.com/other_path"
+    end
+
+    def test_handle_redirects_with_307_temporary_redirect
+      original_request = Net::HTTP::Post.new("/some_path")
+      original_request.body = "request_body"
+      stub_request(:post, "http://example.com/temp_path")
+
+      response = Net::HTTPTemporaryRedirect.new("1.1", "307", "Temporary Redirect")
+      response["Location"] = "http://example.com/temp_path"
+
+      @redirect_handler.handle_redirects(response, original_request, "http://example.com")
+
+      assert_requested :post, "http://example.com/temp_path", body: "request_body"
+    end
+
+    def test_handle_redirects_with_308_permanent_redirect
+      original_request = Net::HTTP::Post.new("/some_path")
+      original_request.body = "request_body"
+      stub_request(:post, "http://example.com/new_path")
+
+      response = Net::HTTPPermanentRedirect.new("1.1", "308", "Permanent Redirect")
+      response["Location"] = "http://example.com/new_path"
+
+      @redirect_handler.handle_redirects(response, original_request, "http://example.com")
+
+      assert_requested :post, "http://example.com/new_path", body: "request_body"
+    end
+
+    def test_handle_redirects_with_too_many_redirects
+      original_request = Net::HTTP::Get.new("/some_path")
+      stub_request(:get, "http://example.com/some_path").to_return(status: 302, headers: {"Location" => "http://example.com/some_path"})
+
+      response = Net::HTTPFound.new("1.1", "302", "Found")
+      response["Location"] = "http://example.com/some_path"
+
+      e = assert_raises(TooManyRedirects) do
+        @redirect_handler.handle_redirects(response, original_request, "http://example.com")
       end
+
+      assert_equal "Too many redirects", e.message
+      assert_requested :get, "http://example.com/some_path", times: RedirectHandler::DEFAULT_MAX_REDIRECTS + 1
     end
   end
 end

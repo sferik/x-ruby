@@ -17,8 +17,10 @@ module X
 
     def_delegators :@authenticator, :bearer_token, :api_key, :api_key_secret, :access_token, :access_token_secret
     def_delegators :@authenticator, :bearer_token=, :api_key=, :api_key_secret=, :access_token=, :access_token_secret=
-    def_delegators :@connection, :open_timeout, :read_timeout, :write_timeout, :proxy_uri, :debug_output
-    def_delegators :@connection, :open_timeout=, :read_timeout=, :write_timeout=, :proxy_uri=, :debug_output=
+    def_delegators :@connection, :open_timeout, :read_timeout, :write_timeout, :proxy_url, :debug_output
+    def_delegators :@connection, :open_timeout=, :read_timeout=, :write_timeout=, :proxy_url=, :debug_output=
+    def_delegators :@redirect_handler, :max_redirects
+    def_delegators :@redirect_handler, :max_redirects=
     def_delegators :@response_handler, :array_class, :object_class
     def_delegators :@response_handler, :array_class=, :object_class=
 
@@ -30,8 +32,8 @@ module X
       write_timeout: Connection::DEFAULT_WRITE_TIMEOUT,
       proxy_url: nil,
       debug_output: nil,
-      array_class: ResponseHandler::DEFAULT_ARRAY_CLASS,
-      object_class: ResponseHandler::DEFAULT_OBJECT_CLASS,
+      array_class: nil,
+      object_class: nil,
       max_redirects: RedirectHandler::DEFAULT_MAX_REDIRECTS)
 
       @base_url = base_url
@@ -66,16 +68,15 @@ module X
       @authenticator = if bearer_token
         BearerTokenAuthenticator.new(bearer_token)
       elsif api_key && api_key_secret && access_token && access_token_secret
-        OauthAuthenticator.new(api_key, api_key_secret, access_token, access_token_secret)
+        OAuthAuthenticator.new(api_key, api_key_secret, access_token, access_token_secret)
       else
-        raise ArgumentError,
-          "Client must be initialized with either a bearer_token or " \
-          "an api_key, api_key_secret, access_token, and access_token_secret"
+        raise ArgumentError, "Client must be initialized with either a bearer_token or " \
+                             "an api_key, api_key_secret, access_token, and access_token_secret"
       end
     end
 
-    def send_request(http_method, endpoint, body: nil, headers: {})
-      uri = URI.join(base_url.to_s, endpoint)
+    def send_request(http_method, endpoint, headers:, body: nil)
+      uri = URI.join(base_url, endpoint)
       request = @request_builder.build(@authenticator, http_method, uri, body: body, headers: headers)
       response = @connection.send_request(request)
       final_response = @redirect_handler.handle_redirects(response, request, base_url)

@@ -7,7 +7,7 @@ module X
     def header: (Net::HTTPRequest _request) -> Hash[String, String]
   end
 
-  class OauthAuthenticator
+  class OAuthAuthenticator
     OAUTH_VERSION: String
     OAUTH_SIGNATURE_METHOD: String
     OAUTH_SIGNATURE_ALGORITHM: String
@@ -104,6 +104,7 @@ module X
     DEFAULT_OPEN_TIMEOUT: Integer
     DEFAULT_READ_TIMEOUT: Integer
     DEFAULT_WRITE_TIMEOUT: Integer
+    DEFAULT_DEBUG_OUTPUT: IO
     NETWORK_ERRORS: Array[(singleton(Errno::ECONNREFUSED) | singleton(Errno::ECONNRESET) | singleton(Net::OpenTimeout) | singleton(Net::ReadTimeout) | singleton(OpenSSL::SSL::SSLError))]
 
     extend Forwardable
@@ -111,7 +112,7 @@ module X
     attr_accessor open_timeout : Float | Integer
     attr_accessor read_timeout : Float | Integer
     attr_accessor write_timeout : Float | Integer
-    attr_accessor debug_output : IO?
+    attr_accessor debug_output : IO
 
     attr_reader proxy_uri: URI::Generic?
     attr_reader proxy_host : String?
@@ -119,8 +120,8 @@ module X
     attr_reader proxy_user : String?
     attr_reader proxy_pass : String?
 
-    def initialize: (?open_timeout: Float | Integer, ?read_timeout: Float | Integer, ?write_timeout: Float | Integer, ?proxy_url: URI::Generic? | String?, ?debug_output: IO?) -> void
-    def proxy_uri=: (URI::Generic | String proxy_url) -> void
+    def initialize: (?open_timeout: Float | Integer, ?read_timeout: Float | Integer, ?write_timeout: Float | Integer, ?proxy_url: URI::Generic? | String?, ?debug_output: IO) -> void
+    def proxy_url=: (URI::Generic | String proxy_url) -> void
     def send_request: (Net::HTTPRequest request) -> Net::HTTPResponse
 
     private
@@ -133,11 +134,11 @@ module X
     DEFAULT_HEADERS: Hash[String, String]
 
     def initialize: (?content_type: String, ?user_agent: String) -> void
-    def build: (BearerTokenAuthenticator | OauthAuthenticator authenticator, Symbol http_method, URI::Generic uri, ?body: String?, ?headers: Hash[String, String]) -> (Net::HTTPRequest)
+    def build: (BearerTokenAuthenticator | OAuthAuthenticator authenticator, Symbol http_method, URI::Generic uri, ?body: String?, ?headers: Hash[String, String]) -> (Net::HTTPRequest)
 
     private
     def create_request: (Symbol http_method, URI::Generic uri, String? body) -> (Net::HTTPRequest)
-    def add_authentication: (Net::HTTPRequest request, BearerTokenAuthenticator | OauthAuthenticator authenticator) -> void
+    def add_authentication: (Net::HTTPRequest request, BearerTokenAuthenticator | OAuthAuthenticator authenticator) -> void
     def add_headers: (Net::HTTPRequest request, Hash[String, String] headers) -> void
     def escape_query_params: (URI::Generic uri) -> URI::Generic
   end
@@ -145,16 +146,16 @@ module X
   class RedirectHandler
     DEFAULT_MAX_REDIRECTS: Integer
 
-    attr_reader authenticator: BearerTokenAuthenticator | OauthAuthenticator
+    attr_reader authenticator: BearerTokenAuthenticator | OAuthAuthenticator
     attr_reader connection: Connection
     attr_reader request_builder: RequestBuilder
     attr_reader max_redirects: Integer
-    def initialize: (BearerTokenAuthenticator | OauthAuthenticator authenticator, Connection connection, RequestBuilder request_builder, ?max_redirects: Integer) -> void
-    def handle_redirects: (Net::HTTPResponse response, Net::HTTPRequest original_request, URI::Generic | String original_base_url, ?Integer redirect_count) -> Net::HTTPResponse
+    def initialize: (BearerTokenAuthenticator | OAuthAuthenticator authenticator, Connection connection, RequestBuilder request_builder, ?max_redirects: Integer) -> void
+    def handle_redirects: (Net::HTTPResponse response, Net::HTTPRequest request, String base_url, ?Integer redirect_count) -> Net::HTTPResponse
 
     private
-    def build_new_uri: (Net::HTTPResponse response, URI::Generic | String original_base_url) -> URI::Generic
-    def build_request: (Net::HTTPRequest original_request, URI::Generic new_uri) -> Net::HTTPRequest
+    def build_new_uri: (Net::HTTPResponse response, String base_url) -> URI::Generic
+    def build_request: (Net::HTTPRequest request, URI::Generic new_uri, Integer response_code) -> Net::HTTPRequest
     def send_new_request: (URI::Generic new_uri, Net::HTTPRequest new_request) -> Net::HTTPResponse
   end
 
@@ -182,7 +183,7 @@ module X
     DEFAULT_BASE_URL: String
 
     extend Forwardable
-    @authenticator: BearerTokenAuthenticator | OauthAuthenticator
+    @authenticator: BearerTokenAuthenticator | OAuthAuthenticator
     @connection: Connection
     @request_builder: RequestBuilder
     @redirect_handler: RedirectHandler
@@ -193,30 +194,30 @@ module X
     attr_accessor api_key: String
     attr_accessor api_key_secret: String
     attr_accessor bearer_token: String
-    attr_accessor base_url: URI::Generic | String
+    attr_accessor base_url: String
     attr_accessor open_timeout: Float | Integer
     attr_accessor read_timeout: Float | Integer
     attr_accessor write_timeout: Float | Integer
     attr_accessor proxy_url: String
-    attr_accessor debug_output: IO?
+    attr_accessor debug_output: IO
     attr_accessor array_class: Class
     attr_accessor object_class: Class
     attr_accessor max_redirects: Integer
-    attr_accessor authenticator: BearerTokenAuthenticator | OauthAuthenticator
+    attr_accessor authenticator: BearerTokenAuthenticator | OAuthAuthenticator
     attr_accessor connection: Connection
     attr_accessor request_builder: RequestBuilder
     attr_accessor redirect_handler: RedirectHandler
     attr_accessor response_handler: ResponseHandler
 
-    def initialize: (?bearer_token: String?, ?api_key: String?, ?api_key_secret: String?, ?access_token: String?, ?access_token_secret: String?, ?base_url: URI::Generic | String, ?open_timeout: Float | Integer, ?read_timeout: Float | Integer, ?write_timeout: Float | Integer, ?proxy_url: URI::Generic? | String?, ?debug_output: IO?, ?array_class: Class, ?object_class: Class, ?max_redirects: Integer) -> void
+    def initialize: (?bearer_token: String?, ?api_key: String?, ?api_key_secret: String?, ?access_token: String?, ?access_token_secret: String?, ?base_url: String, ?open_timeout: Float | Integer, ?read_timeout: Float | Integer, ?write_timeout: Float | Integer, ?proxy_url: URI::Generic? | String?, ?debug_output: IO, ?array_class: Class, ?object_class: Class, ?max_redirects: Integer) -> void
     def get: (String endpoint, ?headers: Hash[String, String]) -> untyped
     def post: (String endpoint, ?String? body, ?headers: Hash[String, String]) -> untyped
     def put: (String endpoint, ?String? body, ?headers: Hash[String, String]) -> untyped
     def delete: (String endpoint, ?headers: Hash[String, String]) -> untyped
 
     private
-    def initialize_authenticator: (String? bearer_token, String? api_key, String? api_key_secret, String? access_token, String? access_token_secret) -> (BearerTokenAuthenticator | OauthAuthenticator)
-    def send_request: (Symbol http_method, String endpoint, ?body: String?, ?headers: Hash[String, String]) -> untyped
+    def initialize_authenticator: (String? bearer_token, String? api_key, String? api_key_secret, String? access_token, String? access_token_secret) -> (BearerTokenAuthenticator | OAuthAuthenticator)
+    def send_request: (Symbol http_method, String endpoint, headers: Hash[String, String], ?body: String?) -> untyped
   end
 
   module MediaUpload
@@ -255,6 +256,11 @@ module X
     def cleanup_chunk: (String chunk_path) -> Integer?
     def finalize: (Client upload_client, untyped media) -> untyped
     def construct_upload_body: (String file_path, String media_type, ?String boundary) -> String
+  end
+
+  class CGI
+    def self.escape: (String value) -> String
+    def self.escape_params: (Hash[String, String] | Array[[String, String]] params) -> String
   end
 end
 
