@@ -220,7 +220,7 @@ module X
     def send_request: (Symbol http_method, String endpoint, headers: Hash[String, String], ?body: String?) -> untyped
   end
 
-  module MediaUpload
+  module MediaUploader
     MAX_RETRIES: Integer
     BYTES_PER_MB: Integer
     MEDIA_CATEGORIES: Array[String]
@@ -240,7 +240,7 @@ module X
     SUBRIP_MIME_TYPE: String
     WEBP_MIME_TYPE: String
     MIME_TYPE_MAP: Hash[String, String]
-    extend MediaUpload
+    extend MediaUploader
 
     def media_upload: (client: Client, file_path: String, media_category: String, ?media_type: String, ?boundary: String) -> untyped
     def chunked_media_upload: (client: Client, file_path: String, media_category: String, ?media_type: String, ?boundary: String, ?chunk_size_mb: Integer) -> untyped

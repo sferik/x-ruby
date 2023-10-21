@@ -2,7 +2,7 @@ require "securerandom"
 
 module X
   # Helper module for uploading images and videos
-  module MediaUpload
+  module MediaUploader
     extend self
 
     MAX_RETRIES = 3

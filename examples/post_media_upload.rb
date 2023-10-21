@@ -1,5 +1,5 @@
 require "x"
-require "x/media_upload"
+require "x/media_uploader"
 
 x_credentials = {
   api_key: "INSERT YOUR X API KEY HERE",
@@ -12,7 +12,7 @@ client = X::Client.new(**x_credentials)
 file_path = "path/to/your/media.jpg"
 media_category = "tweet_image" # other options include: tweet_video, tweet_gif, dm_image, dm_video, dm_gif, subtitles
 
-media = X::MediaUpload.media_upload(client: client, file_path: file_path, media_category: media_category)
+media = X::MediaUploader.media_upload(client: client, file_path: file_path, media_category: media_category)
 
 tweet_body = {text: "Posting media from @gem!", media: {media_ids: [media["media_id_string"]]}}
 
