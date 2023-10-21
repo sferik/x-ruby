@@ -47,19 +47,19 @@ module X
     end
 
     def get(endpoint, headers: {})
-      send_request(:get, endpoint, headers: headers)
+      execute_request(:get, endpoint, headers: headers)
     end
 
     def post(endpoint, body = nil, headers: {})
-      send_request(:post, endpoint, body: body, headers: headers)
+      execute_request(:post, endpoint, body: body, headers: headers)
     end
 
     def put(endpoint, body = nil, headers: {})
-      send_request(:put, endpoint, body: body, headers: headers)
+      execute_request(:put, endpoint, body: body, headers: headers)
     end
 
     def delete(endpoint, headers: {})
-      send_request(:delete, endpoint, headers: headers)
+      execute_request(:delete, endpoint, headers: headers)
     end
 
     private
@@ -75,11 +75,11 @@ module X
       end
     end
 
-    def send_request(http_method, endpoint, headers:, body: nil)
+    def execute_request(http_method, endpoint, headers:, body: nil)
       uri = URI.join(base_url, endpoint)
       request = @request_builder.build(@authenticator, http_method, uri, body: body, headers: headers)
-      response = @connection.send_request(request)
-      final_response = @redirect_handler.handle_redirects(response, request, base_url)
+      response = @connection.perform(request)
+      final_response = @redirect_handler.handle(response, request, base_url)
       @response_handler.handle(final_response)
     end
   end

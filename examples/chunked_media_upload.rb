@@ -12,7 +12,7 @@ client = X::Client.new(**x_credentials)
 file_path = "path/to/your/media.mp4"
 media_category = "tweet_video" # other options include: tweet_image, tweet_gif, dm_image, dm_video, dm_gif, subtitles
 
-media = X::MediaUploader.chunked_media_upload(client: client, file_path: file_path, media_category: media_category)
+media = X::MediaUploader.chunked_upload(client: client, file_path: file_path, media_category: media_category)
 
 X::MediaUploader.await_processing(client: client, media: media)
 

@@ -17,16 +17,16 @@ module X
       @max_redirects = max_redirects
     end
 
-    def handle_redirects(response, request, base_url, redirect_count = 0)
+    def handle(response, request, base_url, redirect_count = 0)
       if response.is_a?(Net::HTTPRedirection)
         raise TooManyRedirects, "Too many redirects" if redirect_count > max_redirects
 
         new_uri = build_new_uri(response, base_url)
 
         new_request = build_request(request, new_uri, Integer(response.code))
-        new_response = connection.send_request(new_request)
+        new_response = connection.perform(new_request)
 
-        handle_redirects(new_response, new_request, base_url, redirect_count + 1)
+        handle(new_response, new_request, base_url, redirect_count + 1)
       else
         response
       end

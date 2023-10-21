@@ -12,17 +12,17 @@ module X
       @media = {"media_id" => TEST_MEDIA_ID}
     end
 
-    def test_media_upload
+    def test_upload
       stub_request(:post, "https://upload.twitter.com/1.1/media/upload.json?media_category=#{MediaUploader::TWEET_IMAGE}")
         .to_return(body: @media.to_json, headers: {"Content-Type" => "application/json"})
 
-      result = MediaUploader.media_upload(client: @client, file_path: "test/sample_files/sample.jpg",
+      result = MediaUploader.upload(client: @client, file_path: "test/sample_files/sample.jpg",
         media_category: MediaUploader::TWEET_IMAGE, boundary: "AaB03x")
 
       assert_equal TEST_MEDIA_ID, result["media_id"]
     end
 
-    def test_chunked_media_upload
+    def test_chunked_upload
       file_path = "test/sample_files/sample.mp4"
       total_bytes = File.size(file_path)
       stub_request(:post, "https://upload.twitter.com/1.1/media/upload.json?command=INIT&media_category=tweet_video&media_type=video/mp4&total_bytes=#{total_bytes}")
@@ -31,7 +31,7 @@ module X
       stub_request(:post, "https://upload.twitter.com/1.1/media/upload.json?command=FINALIZE&media_id=#{TEST_MEDIA_ID}")
         .to_return(status: 201, headers: {"content-type" => "application/json"}, body: @media.to_json)
 
-      response = MediaUploader.chunked_media_upload(client: @client, file_path: file_path,
+      response = MediaUploader.chunked_upload(client: @client, file_path: file_path,
         media_category: MediaUploader::TWEET_VIDEO, chunk_size_mb: (total_bytes - 1) / MediaUploader::BYTES_PER_MB.to_f)
 
       assert_equal TEST_MEDIA_ID, response["media_id"]
@@ -70,7 +70,7 @@ module X
       stub_request(:post, "https://upload.twitter.com/1.1/media/upload.json?command=FINALIZE&media_id=#{TEST_MEDIA_ID}")
         .to_return(status: 201, headers: {"content-type" => "application/json"}, body: @media.to_json)
 
-      assert MediaUploader.chunked_media_upload(client: @client, file_path: file_path,
+      assert MediaUploader.chunked_upload(client: @client, file_path: file_path,
         media_category: MediaUploader::TWEET_VIDEO)
     end
 

@@ -122,7 +122,7 @@ module X
 
     def initialize: (?open_timeout: Float | Integer, ?read_timeout: Float | Integer, ?write_timeout: Float | Integer, ?proxy_url: URI::Generic? | String?, ?debug_output: IO) -> void
     def proxy_url=: (URI::Generic | String proxy_url) -> void
-    def send_request: (Net::HTTPRequest request) -> Net::HTTPResponse
+    def perform: (Net::HTTPRequest request) -> Net::HTTPResponse
 
     private
     def build_http_client: (?String host, ?Integer port) -> Net::HTTP
@@ -151,7 +151,7 @@ module X
     attr_reader request_builder: RequestBuilder
     attr_reader max_redirects: Integer
     def initialize: (BearerTokenAuthenticator | OAuthAuthenticator authenticator, Connection connection, RequestBuilder request_builder, ?max_redirects: Integer) -> void
-    def handle_redirects: (Net::HTTPResponse response, Net::HTTPRequest request, String base_url, ?Integer redirect_count) -> Net::HTTPResponse
+    def handle: (Net::HTTPResponse response, Net::HTTPRequest request, String base_url, ?Integer redirect_count) -> Net::HTTPResponse
 
     private
     def build_new_uri: (Net::HTTPResponse response, String base_url) -> URI::Generic
@@ -217,7 +217,7 @@ module X
 
     private
     def initialize_authenticator: (String? bearer_token, String? api_key, String? api_key_secret, String? access_token, String? access_token_secret) -> (BearerTokenAuthenticator | OAuthAuthenticator)
-    def send_request: (Symbol http_method, String endpoint, headers: Hash[String, String], ?body: String?) -> untyped
+    def execute_request: (Symbol http_method, String endpoint, headers: Hash[String, String], ?body: String?) -> untyped
   end
 
   module MediaUploader
@@ -242,8 +242,8 @@ module X
     MIME_TYPE_MAP: Hash[String, String]
     extend MediaUploader
 
-    def media_upload: (client: Client, file_path: String, media_category: String, ?media_type: String, ?boundary: String) -> untyped
-    def chunked_media_upload: (client: Client, file_path: String, media_category: String, ?media_type: String, ?boundary: String, ?chunk_size_mb: Integer) -> untyped
+    def upload: (client: Client, file_path: String, media_category: String, ?media_type: String, ?boundary: String) -> untyped
+    def chunked_upload: (client: Client, file_path: String, media_category: String, ?media_type: String, ?boundary: String, ?chunk_size_mb: Integer) -> untyped
     def await_processing: (client: Client, media: untyped) -> untyped
 
     private

@@ -15,7 +15,7 @@ module X
     MIME_TYPE_MAP = {"gif" => GIF_MIME_TYPE, "jpg" => JPEG_MIME_TYPE, "jpeg" => JPEG_MIME_TYPE, "mp4" => MP4_MIME_TYPE,
                      "png" => PNG_MIME_TYPE, "srt" => SUBRIP_MIME_TYPE, "webp" => WEBP_MIME_TYPE}.freeze
 
-    def media_upload(client:, file_path:, media_category:, media_type: infer_media_type(file_path, media_category),
+    def upload(client:, file_path:, media_category:, media_type: infer_media_type(file_path, media_category),
       boundary: SecureRandom.hex)
       validate!(file_path: file_path, media_category: media_category)
       upload_client = client.dup.tap { |c| c.base_url = "https://upload.twitter.com/1.1/" }
@@ -24,7 +24,7 @@ module X
       upload_client.post("media/upload.json?media_category=#{media_category}", upload_body, headers: headers)
     end
 
-    def chunked_media_upload(client:, file_path:, media_category:, media_type: infer_media_type(file_path,
+    def chunked_upload(client:, file_path:, media_category:, media_type: infer_media_type(file_path,
       media_category), boundary: SecureRandom.hex, chunk_size_mb: 8)
       validate!(file_path: file_path, media_category: media_category)
       upload_client = client.dup.tap { |c| c.base_url = "https://upload.twitter.com/1.1/" }
