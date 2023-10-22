@@ -17,6 +17,10 @@ Layout/ArrayAlignment:
   Enabled: true
   EnforcedStyle: with_fixed_indentation
 
+Layout/CaseIndentation:
+  Enabled: true
+  EnforcedStyle: end
+
 Layout/EndAlignment:
   Enabled: true
   EnforcedStyleAlignWith: variable
