@@ -5,12 +5,14 @@ module X
     cover TooManyRequests
 
     def setup
-      rate_limit_headers = {
-        "x-rate-limit-limit" => "100",
-        "x-rate-limit-remaining" => "0",
-        "x-rate-limit-reset" => (Time.now + 60).to_i.to_s
-      }
-      @exception = TooManyRequests.new("Rate Limit Exceeded", rate_limit_headers)
+      Time.stub :now, Time.utc(1983, 11, 24) do
+        rate_limit_headers = {
+          "x-rate-limit-limit" => "100",
+          "x-rate-limit-remaining" => "0",
+          "x-rate-limit-reset" => (Time.now + 60).to_i.to_s
+        }
+        @exception = TooManyRequests.new("Rate Limit Exceeded", rate_limit_headers)
+      end
     end
 
     def test_initialize_with_empty_response
@@ -51,15 +53,21 @@ module X
     end
 
     def test_reset_at
-      assert_in_delta Time.now + 60, @exception.reset_at, 1
+      Time.stub :now, Time.utc(1983, 11, 24) do
+        assert_equal Time.now + 60, @exception.reset_at
+      end
     end
 
     def test_reset_in
-      assert_in_delta 60, @exception.reset_in, 1
+      Time.stub :now, Time.utc(1983, 11, 24) do
+        assert_equal 60, @exception.reset_in
+      end
     end
 
     def test_retry_after
-      assert_in_delta 60, @exception.retry_after, 1
+      Time.stub :now, Time.utc(1983, 11, 24) do
+        assert_equal 60, @exception.retry_after
+      end
     end
 
     def test_reset_in_minimum_value
