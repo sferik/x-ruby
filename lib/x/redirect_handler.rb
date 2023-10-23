@@ -1,6 +1,9 @@
 require "net/http"
 require "uri"
+require_relative "authenticator"
+require_relative "connection"
 require_relative "errors/too_many_redirects"
+require_relative "request_builder"
 
 module X
   # Handles HTTP redirects
@@ -10,7 +13,8 @@ module X
     attr_accessor :max_redirects
     attr_reader :authenticator, :connection, :request_builder
 
-    def initialize(authenticator:, connection:, request_builder:, max_redirects: DEFAULT_MAX_REDIRECTS)
+    def initialize(authenticator: Authenticator.new, connection: Connection.new, request_builder: RequestBuilder.new,
+      max_redirects: DEFAULT_MAX_REDIRECTS)
       @authenticator = authenticator
       @connection = connection
       @request_builder = request_builder

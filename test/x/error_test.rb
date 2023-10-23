@@ -29,21 +29,6 @@ module X
       end
     end
 
-    def test_missing_credentials
-      assert_raises(ArgumentError) { Client.new(**oauth_credentials.except(:api_key)) }
-      assert_raises(ArgumentError) { Client.new(**oauth_credentials.except(:api_key_secret)) }
-      assert_raises(ArgumentError) { Client.new(**oauth_credentials.except(:access_token)) }
-      assert_raises(ArgumentError) { Client.new(**oauth_credentials.except(:access_token_secret)) }
-    end
-
-    def test_missing_credentials_message
-      exception = assert_raises(ArgumentError) { Client.new }
-      error_message = "Client must be initialized with either a bearer_token or " \
-                      "an api_key, api_key_secret, access_token, and access_token_secret"
-
-      assert_equal error_message, exception.message
-    end
-
     def test_rate_limit
       headers = {"x-rate-limit-limit" => "40000", "x-rate-limit-remaining" => "39999"}
       stub_request(:get, "https://api.twitter.com/2/tweets")

@@ -49,6 +49,9 @@ Style/Alias:
   Enabled: true
   EnforcedStyle: prefer_alias_method
 
+Style/EmptyMethod:
+  Enabled: false
+
 Style/FrozenStringLiteralComment:
   Enabled: false
 

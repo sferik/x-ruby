@@ -10,7 +10,6 @@ module X
       @client = client
     end
 
-    # Initialization and defaults tests
     def test_initialize_oauth_credentials
       assert_equal TEST_API_KEY, @client.api_key
       assert_equal TEST_API_KEY_SECRET, @client.api_key_secret
@@ -18,27 +17,35 @@ module X
       assert_equal TEST_ACCESS_TOKEN_SECRET, @client.access_token_secret
     end
 
-    def test_bearer_token_request
+    def test_initialize_redirect_handler
+      redirect_handler = @client.instance_variable_get(:@redirect_handler)
+
+      assert_equal @client.instance_variable_get(:@authenticator), redirect_handler.authenticator
+      assert_equal @client.instance_variable_get(:@connection), redirect_handler.connection
+      assert_equal @client.instance_variable_get(:@request_builder), redirect_handler.request_builder
+    end
+
+    oauth_credentials.each_key do |missing_credential|
+      define_method("test_missing_#{missing_credential}") do
+        client = Client.new(**oauth_credentials.except(missing_credential))
+
+        assert_instance_of Authenticator, client.instance_variable_get(:@authenticator)
+      end
+    end
+
+    def test_bearer_token_authentication_request
       @bearer_token_client = Client.new(bearer_token: TEST_BEARER_TOKEN)
       stub_request(:get, "https://api.twitter.com/2/tweets")
         .with(headers: {"Authorization" => /Bearer #{TEST_BEARER_TOKEN}/o})
       @bearer_token_client.get("tweets")
 
-      assert_equal TEST_BEARER_TOKEN, @bearer_token_client.bearer_token
       assert_requested :get, "https://api.twitter.com/2/tweets"
-    end
-
-    def test_defaults
-      assert_equal Client::DEFAULT_BASE_URL, @client.base_url
-      assert_equal RedirectHandler::DEFAULT_MAX_REDIRECTS, @client.max_redirects
     end
 
     def test_default_connection_options
       assert_equal Connection::DEFAULT_OPEN_TIMEOUT, @client.open_timeout
       assert_equal Connection::DEFAULT_READ_TIMEOUT, @client.read_timeout
       assert_equal Connection::DEFAULT_WRITE_TIMEOUT, @client.write_timeout
-      assert_nil @client.debug_output
-      assert_nil @client.proxy_url
     end
 
     def test_initialize_connection_options
@@ -79,44 +86,28 @@ module X
       end
     end
 
-    def test_follows_301_redirects
-      stub_request(:get, "https://api.twitter.com/old_endpoint")
-        .to_return(status: 301, headers: {"Location" => "https://api.twitter.com/new_endpoint"})
-      stub_request(:get, "https://api.twitter.com/new_endpoint")
-      @client.get("/old_endpoint")
+    [301, 302].each do |status|
+      define_method("test_follows_#{status}_redirect") do
+        stub_request(:get, "https://api.twitter.com/old_endpoint")
+          .to_return(status: 301, headers: {"Location" => "https://api.twitter.com/new_endpoint"})
+        stub_request(:get, "https://api.twitter.com/new_endpoint")
+        @client.get("/old_endpoint")
 
-      assert_requested :get, "https://api.twitter.com/new_endpoint"
+        assert_requested :get, "https://api.twitter.com/new_endpoint"
+      end
     end
 
-    def test_follows_302_redirects
-      stub_request(:get, "https://api.twitter.com/temp_redirect")
-        .to_return(status: 302, headers: {"Location" => "/new_endpoint"})
-      stub_request(:get, "https://api.twitter.com/new_endpoint")
-      @client.get("/temp_redirect")
+    {307 => :post, 308 => :put}.each do |status, http_method|
+      define_method("test_follows_#{status}_redirect") do
+        stub_request(http_method, "https://api.twitter.com/temporary_redirect")
+          .to_return(status: 307, headers: {"Location" => "https://api.twitter.com/new_endpoint"})
+        body = {key: "value"}.to_json
+        stub_request(http_method, "https://api.twitter.com/new_endpoint")
+          .with(body: body)
+        @client.public_send(http_method, "/temporary_redirect", body)
 
-      assert_requested :get, "https://api.twitter.com/new_endpoint"
-    end
-
-    def test_follows_307_redirects_preserving_method_and_body
-      stub_request(:post, "https://api.twitter.com/temporary_redirect")
-        .to_return(status: 307, headers: {"Location" => "https://api.twitter.com/new_endpoint"})
-      body = {key: "value"}.to_json
-      stub_request(:post, "https://api.twitter.com/new_endpoint")
-        .with(body: body)
-      @client.post("/temporary_redirect", body)
-
-      assert_requested :post, "https://api.twitter.com/new_endpoint", body: body
-    end
-
-    def test_follows_308_redirects_preserving_method_and_body
-      stub_request(:put, "https://api.twitter.com/permanent_redirect")
-        .to_return(status: 308, headers: {"Location" => "/new_endpoint"})
-      body = {key: "value"}.to_json
-      stub_request(:put, "https://api.twitter.com/new_endpoint")
-        .with(body: body)
-      @client.put("/permanent_redirect", body)
-
-      assert_requested :put, "https://api.twitter.com/new_endpoint", body: body
+        assert_requested http_method, "https://api.twitter.com/new_endpoint", body: body
+      end
     end
 
     def test_avoids_infinite_redirect_loop

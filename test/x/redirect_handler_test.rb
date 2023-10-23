@@ -12,6 +12,14 @@ module X
         request_builder: @request_builder)
     end
 
+    def test_initialize_with_defaults
+      redirect_handler = RedirectHandler.new
+
+      assert_instance_of Authenticator, redirect_handler.authenticator
+      assert_instance_of Connection, redirect_handler.connection
+      assert_instance_of RequestBuilder, redirect_handler.request_builder
+    end
+
     def test_handle_with_no_redirects
       original_request = Net::HTTP::Get.new("/some_path")
 
@@ -22,7 +30,7 @@ module X
 
     def test_handle_with_one_redirect
       original_request = Net::HTTP::Get.new("/")
-      stub_request(:get, "http://www.example.com/")
+      stub_request(:get, "http://www.example.com/").with(headers: {"Authorization" => /Bearer #{TEST_BEARER_TOKEN}/o})
 
       response = Net::HTTPFound.new("1.1", "302", "Found")
       response["Location"] = "http://www.example.com"

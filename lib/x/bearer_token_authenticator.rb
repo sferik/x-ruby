@@ -1,9 +1,11 @@
+require_relative "authenticator"
+
 module X
   # Handles bearer token authentication
-  class BearerTokenAuthenticator
+  class BearerTokenAuthenticator < Authenticator
     attr_accessor :bearer_token
 
-    def initialize(bearer_token:)
+    def initialize(bearer_token:) # rubocop:disable Lint/MissingSuper
       @bearer_token = bearer_token
     end
 

@@ -49,6 +49,12 @@ module X
       assert_equal "Custom User Agent", request["User-Agent"]
     end
 
+    def test_build_without_authenticator_parameter
+      request = @request_builder.build(http_method: :get, uri: @uri)
+
+      assert_empty request["Authorization"]
+    end
+
     def test_unsupported_http_method
       exception = assert_raises ArgumentError do
         @request_builder.build(http_method: :unsupported, uri: @uri, authenticator: @authenticator)

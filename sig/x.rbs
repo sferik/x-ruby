@@ -1,6 +1,10 @@
 module X
   VERSION: Gem::Version
 
+  class Authenticator
+    def header: (Net::HTTPRequest? request) -> Hash[String, String]
+  end
+
   class BearerTokenAuthenticator
     attr_accessor bearer_token: String
     def initialize: (bearer_token: String) -> void
@@ -134,11 +138,11 @@ module X
     DEFAULT_HEADERS: Hash[String, String]
 
     def initialize: (?content_type: String, ?user_agent: String) -> void
-    def build: (authenticator: BearerTokenAuthenticator | OAuthAuthenticator, http_method: Symbol, uri: URI::Generic, ?body: String?, ?headers: Hash[String, String]) -> (Net::HTTPRequest)
+    def build: (authenticator: Authenticator, http_method: Symbol, uri: URI::Generic, ?body: String?, ?headers: Hash[String, String]) -> (Net::HTTPRequest)
 
     private
     def create_request: (http_method: Symbol, uri: URI::Generic, body: String?) -> (Net::HTTPRequest)
-    def add_authentication: (request: Net::HTTPRequest, authenticator: BearerTokenAuthenticator | OAuthAuthenticator) -> void
+    def add_authentication: (request: Net::HTTPRequest, authenticator: Authenticator) -> void
     def add_headers: (request: Net::HTTPRequest, headers: Hash[String, String]) -> void
     def escape_query_params: (URI::Generic uri) -> URI::Generic
   end
@@ -146,11 +150,11 @@ module X
   class RedirectHandler
     DEFAULT_MAX_REDIRECTS: Integer
 
-    attr_reader authenticator: BearerTokenAuthenticator | OAuthAuthenticator
+    attr_reader authenticator: Authenticator
     attr_reader connection: Connection
     attr_reader request_builder: RequestBuilder
     attr_reader max_redirects: Integer
-    def initialize: (authenticator: BearerTokenAuthenticator | OAuthAuthenticator, connection: Connection, request_builder: RequestBuilder, ?max_redirects: Integer) -> void
+    def initialize: (authenticator: Authenticator, connection: Connection, request_builder: RequestBuilder, ?max_redirects: Integer) -> void
     def handle: (response: Net::HTTPResponse, request: Net::HTTPRequest, base_url: String, ?redirect_count: Integer) -> Net::HTTPResponse
 
     private
@@ -183,7 +187,7 @@ module X
     DEFAULT_BASE_URL: String
 
     extend Forwardable
-    @authenticator: BearerTokenAuthenticator | OAuthAuthenticator
+    @authenticator: Authenticator
     @connection: Connection
     @request_builder: RequestBuilder
     @redirect_handler: RedirectHandler
@@ -203,7 +207,7 @@ module X
     attr_accessor array_class: Class
     attr_accessor object_class: Class
     attr_accessor max_redirects: Integer
-    attr_accessor authenticator: BearerTokenAuthenticator | OAuthAuthenticator
+    attr_accessor authenticator: Authenticator
     attr_accessor connection: Connection
     attr_accessor request_builder: RequestBuilder
     attr_accessor redirect_handler: RedirectHandler
@@ -216,7 +220,7 @@ module X
     def delete: (String endpoint, ?headers: Hash[String, String]) -> untyped
 
     private
-    def initialize_authenticator: (String? bearer_token, String? api_key, String? api_key_secret, String? access_token, String? access_token_secret) -> (BearerTokenAuthenticator | OAuthAuthenticator)
+    def initialize_authenticator: (String? bearer_token, String? api_key, String? api_key_secret, String? access_token, String? access_token_secret) -> (BearerTokenAuthenticator | OAuthAuthenticator | Authenticator)
     def execute_request: (Symbol http_method, String endpoint, headers: Hash[String, String], ?body: String?) -> untyped
   end
 

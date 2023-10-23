@@ -71,8 +71,7 @@ module X
         OAuthAuthenticator.new(api_key: api_key, api_key_secret: api_key_secret, access_token: access_token,
           access_token_secret: access_token_secret)
       else
-        raise ArgumentError, "Client must be initialized with either a bearer_token or " \
-                             "an api_key, api_key_secret, access_token, and access_token_secret"
+        Authenticator.new
       end
     end
 

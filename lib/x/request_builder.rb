@@ -1,5 +1,6 @@
 require "net/http"
 require "uri"
+require_relative "authenticator"
 require_relative "cgi"
 require_relative "version"
 
@@ -17,7 +18,7 @@ module X
       delete: Net::HTTP::Delete
     }.freeze
 
-    def build(authenticator:, http_method:, uri:, body: nil, headers: {})
+    def build(http_method:, uri:, body: nil, headers: {}, authenticator: Authenticator.new)
       request = create_request(http_method: http_method, uri: uri, body: body)
       add_headers(request: request, headers: headers)
       add_authentication(request: request, authenticator: authenticator)

@@ -3,18 +3,19 @@ require "json"
 require "openssl"
 require "securerandom"
 require "uri"
+require_relative "authenticator"
 require_relative "cgi"
 
 module X
   # Handles OAuth authentication
-  class OAuthAuthenticator
+  class OAuthAuthenticator < Authenticator
     OAUTH_VERSION = "1.0".freeze
     OAUTH_SIGNATURE_METHOD = "HMAC-SHA1".freeze
     OAUTH_SIGNATURE_ALGORITHM = "sha1".freeze
 
     attr_accessor :api_key, :api_key_secret, :access_token, :access_token_secret
 
-    def initialize(api_key:, api_key_secret:, access_token:, access_token_secret:)
+    def initialize(api_key:, api_key_secret:, access_token:, access_token_secret:) # rubocop:disable Lint/MissingSuper
       @api_key = api_key
       @api_key_secret = api_key_secret
       @access_token = access_token

@@ -28,7 +28,7 @@ module X
 
     def test_default_oauth_timestamp
       request = Net::HTTP::Get.new(URI("https://example.com/"))
-      Time.stub :now, Time.utc(1983, 11, 24) do # Avoid the Y2.286K bug
+      Time.stub :now, Time.utc(1983, 11, 24) do
         authorization = @authenticator.header(request)["Authorization"]
 
         assert_includes authorization, "oauth_timestamp=\"#{TEST_OAUTH_TIMESTAMP}\""
