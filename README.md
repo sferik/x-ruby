@@ -130,11 +130,15 @@ Pull requests will only be accepted if they meet all the following criteria:
 
        bundle exec rake standard
 
-2. For any new code paths, tests must be added to maintain 100% C0 code coverage. This can be verified with:
+2. 100% C0 code coverage. This can be verified with:
 
        bundle exec rake test
 
-3. For any new classes or methods, RBS type signatures must be added (to sig/x.rbs). This can be verified with:
+3. 100% mutation coverage. This can be verified with:
+
+       bundle exec rake mutant
+
+4. RBS type signatures (in `sig/x.rbs`). This can be verified with:
 
        bundle exec rake steep
 
