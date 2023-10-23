@@ -110,7 +110,7 @@ module X
     def test_perform
       stub_request(:get, "http://example.com:80")
       request = Net::HTTP::Get.new(URI("http://example.com:80"))
-      @connection.perform(request)
+      @connection.perform(request: request)
 
       assert_requested :get, "http://example.com:80"
     end
@@ -118,7 +118,7 @@ module X
     def test_network_error
       stub_request(:get, "https://example.com").to_raise(Errno::ECONNREFUSED)
       request = Net::HTTP::Get.new(URI("https://example.com"))
-      error = assert_raises(NetworkError) { @connection.perform(request) }
+      error = assert_raises(NetworkError) { @connection.perform(request: request) }
 
       assert_equal "Network error: Connection refused - Exception from WebMock", error.message
     end
@@ -126,7 +126,7 @@ module X
     def test_no_host_or_port
       stub_request(:get, "http://api.twitter.com:443/2/tweets")
       request = Net::HTTP::Get.new(URI("http://api.twitter.com:443/2/tweets"))
-      request.stub(:uri, URI("/2/tweets")) { @connection.perform(request) }
+      request.stub(:uri, URI("/2/tweets")) { @connection.perform(request: request) }
 
       assert_requested :get, "http://api.twitter.com:443/2/tweets"
     end

@@ -3,8 +3,8 @@ module X
 
   class BearerTokenAuthenticator
     attr_accessor bearer_token: String
-    def initialize: (String bearer_token) -> void
-    def header: (Net::HTTPRequest _request) -> Hash[String, String]
+    def initialize: (bearer_token: String) -> void
+    def header: (Net::HTTPRequest? request) -> Hash[String, String]
   end
 
   class OAuthAuthenticator
@@ -16,7 +16,7 @@ module X
     attr_accessor api_key_secret: String
     attr_accessor access_token: String
     attr_accessor access_token_secret: String
-    def initialize: (String api_key, String api_key_secret, String access_token, String access_token_secret) -> void
+    def initialize: (api_key: String, api_key_secret: String, access_token: String, access_token_secret: String) -> void
     def header: (Net::HTTPRequest request) -> Hash[String, String]
 
     private
@@ -85,7 +85,7 @@ module X
   class TooManyRequests < ClientError
     @response: Net::HTTPResponse
 
-    def initialize: (String msg, Net::HTTPResponse? response) -> void
+    def initialize: (String msg, Net::HTTPResponse response) -> void
     def limit: -> Integer
     def remaining: -> Integer
     def reset_at: -> Time
@@ -122,7 +122,7 @@ module X
 
     def initialize: (?open_timeout: Float | Integer, ?read_timeout: Float | Integer, ?write_timeout: Float | Integer, ?proxy_url: URI::Generic? | String?, ?debug_output: IO) -> void
     def proxy_url=: (URI::Generic | String proxy_url) -> void
-    def perform: (Net::HTTPRequest request) -> Net::HTTPResponse
+    def perform: (request: Net::HTTPRequest) -> Net::HTTPResponse
 
     private
     def build_http_client: (?String host, ?Integer port) -> Net::HTTP
@@ -134,12 +134,12 @@ module X
     DEFAULT_HEADERS: Hash[String, String]
 
     def initialize: (?content_type: String, ?user_agent: String) -> void
-    def build: (BearerTokenAuthenticator | OAuthAuthenticator authenticator, Symbol http_method, URI::Generic uri, ?body: String?, ?headers: Hash[String, String]) -> (Net::HTTPRequest)
+    def build: (authenticator: BearerTokenAuthenticator | OAuthAuthenticator, http_method: Symbol, uri: URI::Generic, ?body: String?, ?headers: Hash[String, String]) -> (Net::HTTPRequest)
 
     private
-    def create_request: (Symbol http_method, URI::Generic uri, String? body) -> (Net::HTTPRequest)
-    def add_authentication: (Net::HTTPRequest request, BearerTokenAuthenticator | OAuthAuthenticator authenticator) -> void
-    def add_headers: (Net::HTTPRequest request, Hash[String, String] headers) -> void
+    def create_request: (http_method: Symbol, uri: URI::Generic, body: String?) -> (Net::HTTPRequest)
+    def add_authentication: (request: Net::HTTPRequest, authenticator: BearerTokenAuthenticator | OAuthAuthenticator) -> void
+    def add_headers: (request: Net::HTTPRequest, headers: Hash[String, String]) -> void
     def escape_query_params: (URI::Generic uri) -> URI::Generic
   end
 
@@ -150,8 +150,8 @@ module X
     attr_reader connection: Connection
     attr_reader request_builder: RequestBuilder
     attr_reader max_redirects: Integer
-    def initialize: (BearerTokenAuthenticator | OAuthAuthenticator authenticator, Connection connection, RequestBuilder request_builder, ?max_redirects: Integer) -> void
-    def handle: (Net::HTTPResponse response, Net::HTTPRequest request, String base_url, ?Integer redirect_count) -> Net::HTTPResponse
+    def initialize: (authenticator: BearerTokenAuthenticator | OAuthAuthenticator, connection: Connection, request_builder: RequestBuilder, ?max_redirects: Integer) -> void
+    def handle: (response: Net::HTTPResponse, request: Net::HTTPRequest, base_url: String, ?redirect_count: Integer) -> Net::HTTPResponse
 
     private
     def build_new_uri: (Net::HTTPResponse response, String base_url) -> URI::Generic
@@ -168,7 +168,7 @@ module X
     attr_accessor array_class: Class
     attr_accessor object_class: Class
     def initialize: (?array_class: Class, ?object_class: Class) -> void
-    def handle: (Net::HTTPResponse response) -> untyped
+    def handle: (response: Net::HTTPResponse) -> untyped
 
     private
     def success?: (Net::HTTPResponse response) -> bool

@@ -62,7 +62,6 @@ module X
       assert_equal Set, @client.array_class
     end
 
-    # HTTP method request tests
     RequestBuilder::HTTP_METHODS.each_key do |http_method|
       define_method("test_#{http_method}_request") do
         stub_request(http_method, "https://api.twitter.com/2/tweets")
@@ -80,7 +79,6 @@ module X
       end
     end
 
-    # Redirects tests
     def test_follows_301_redirects
       stub_request(:get, "https://api.twitter.com/old_endpoint")
         .to_return(status: 301, headers: {"Location" => "https://api.twitter.com/new_endpoint"})

@@ -1,7 +1,7 @@
 require "forwardable"
 require_relative "bearer_token_authenticator"
-require_relative "oauth_authenticator"
 require_relative "connection"
+require_relative "oauth_authenticator"
 require_relative "redirect_handler"
 require_relative "request_builder"
 require_relative "response_handler"
@@ -41,8 +41,8 @@ module X
       @connection = Connection.new(open_timeout: open_timeout, read_timeout: read_timeout,
         write_timeout: write_timeout, debug_output: debug_output, proxy_url: proxy_url)
       @request_builder = RequestBuilder.new
-      @redirect_handler = RedirectHandler.new(@authenticator, @connection, @request_builder,
-        max_redirects: max_redirects)
+      @redirect_handler = RedirectHandler.new(authenticator: @authenticator, connection: @connection,
+        request_builder: @request_builder, max_redirects: max_redirects)
       @response_handler = ResponseHandler.new(array_class: array_class, object_class: object_class)
     end
 
@@ -66,9 +66,10 @@ module X
 
     def initialize_authenticator(bearer_token, api_key, api_key_secret, access_token, access_token_secret)
       @authenticator = if bearer_token
-        BearerTokenAuthenticator.new(bearer_token)
+        BearerTokenAuthenticator.new(bearer_token: bearer_token)
       elsif api_key && api_key_secret && access_token && access_token_secret
-        OAuthAuthenticator.new(api_key, api_key_secret, access_token, access_token_secret)
+        OAuthAuthenticator.new(api_key: api_key, api_key_secret: api_key_secret, access_token: access_token,
+          access_token_secret: access_token_secret)
       else
         raise ArgumentError, "Client must be initialized with either a bearer_token or " \
                              "an api_key, api_key_secret, access_token, and access_token_secret"
@@ -77,10 +78,11 @@ module X
 
     def execute_request(http_method, endpoint, headers:, body: nil)
       uri = URI.join(base_url, endpoint)
-      request = @request_builder.build(@authenticator, http_method, uri, body: body, headers: headers)
-      response = @connection.perform(request)
-      final_response = @redirect_handler.handle(response, request, base_url)
-      @response_handler.handle(final_response)
+      request = @request_builder.build(authenticator: @authenticator, http_method: http_method, uri: uri, body: body,
+        headers: headers)
+      response = @connection.perform(request: request)
+      response = @redirect_handler.handle(response: response, request: request, base_url: base_url)
+      @response_handler.handle(response: response)
     end
   end
 end

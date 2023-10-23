@@ -3,7 +3,7 @@ module X
   class BearerTokenAuthenticator
     attr_accessor :bearer_token
 
-    def initialize(bearer_token)
+    def initialize(bearer_token:)
       @bearer_token = bearer_token
     end
 

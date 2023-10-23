@@ -14,7 +14,7 @@ module X
 
     attr_accessor :api_key, :api_key_secret, :access_token, :access_token_secret
 
-    def initialize(api_key, api_key_secret, access_token, access_token_secret)
+    def initialize(api_key:, api_key_secret:, access_token:, access_token_secret:)
       @api_key = api_key
       @api_key_secret = api_key_secret
       @access_token = access_token

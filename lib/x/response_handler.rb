@@ -44,7 +44,7 @@ module X
       @object_class = object_class
     end
 
-    def handle(response)
+    def handle(response:)
       raise error(response) unless success?(response)
 
       JSON.parse(response.body, array_class: array_class, object_class: object_class) if json?(response)

@@ -6,7 +6,7 @@ module X
     cover BearerTokenAuthenticator
 
     def setup
-      @authenticator = BearerTokenAuthenticator.new(TEST_BEARER_TOKEN)
+      @authenticator = BearerTokenAuthenticator.new(bearer_token: TEST_BEARER_TOKEN)
     end
 
     def test_initialize

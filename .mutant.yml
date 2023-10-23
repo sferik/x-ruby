@@ -1,11 +1,11 @@
 ---
+fail_fast: true
 includes:
 - lib
-requires:
-- x
 integration:
   name: minitest
-fail_fast: true
 matcher:
   subjects:
   - X*
+requires:
+- x

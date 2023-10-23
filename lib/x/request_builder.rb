@@ -17,16 +17,16 @@ module X
       delete: Net::HTTP::Delete
     }.freeze
 
-    def build(authenticator, http_method, uri, body: nil, headers: {})
-      request = create_request(http_method, uri, body)
-      add_headers(request, headers)
-      add_authentication(request, authenticator)
+    def build(authenticator:, http_method:, uri:, body: nil, headers: {})
+      request = create_request(http_method: http_method, uri: uri, body: body)
+      add_headers(request: request, headers: headers)
+      add_authentication(request: request, authenticator: authenticator)
       request
     end
 
     private
 
-    def create_request(http_method, uri, body)
+    def create_request(http_method:, uri:, body:)
       http_method_class = HTTP_METHODS[http_method]
 
       raise ArgumentError, "Unsupported HTTP method: #{http_method}" unless http_method_class
@@ -37,13 +37,13 @@ module X
       request
     end
 
-    def add_authentication(request, authenticator)
+    def add_authentication(request:, authenticator:)
       authenticator.header(request).each do |key, value|
         request.add_field(key, value)
       end
     end
 
-    def add_headers(request, headers)
+    def add_headers(request:, headers:)
       DEFAULT_HEADERS.merge(headers).each do |key, value|
         request.delete(key)
         request.add_field(key, value)

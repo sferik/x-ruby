@@ -6,8 +6,8 @@ module X
     cover OAuthAuthenticator
 
     def setup
-      @authenticator = OAuthAuthenticator.new(TEST_API_KEY, TEST_API_KEY_SECRET, TEST_ACCESS_TOKEN,
-        TEST_ACCESS_TOKEN_SECRET)
+      @authenticator = OAuthAuthenticator.new(api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET,
+        access_token: TEST_ACCESS_TOKEN, access_token_secret: TEST_ACCESS_TOKEN_SECRET)
     end
 
     def test_initialization

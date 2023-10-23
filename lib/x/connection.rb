@@ -40,7 +40,7 @@ module X
       self.proxy_url = proxy_url unless proxy_url.nil?
     end
 
-    def perform(request)
+    def perform(request:)
       host = request.uri.host || DEFAULT_HOST
       port = request.uri.port || DEFAULT_PORT
       http_client = build_http_client(host, port)
