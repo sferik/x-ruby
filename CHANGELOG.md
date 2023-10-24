@@ -1,69 +1,82 @@
+## [0.11.0] - 2023-10-24
+
+* Add base Authenticator class (8c66ce2)
+* Consistently use keyword arguments (3beb271)
+* Use patern matching to build request (4d001c7)
+* Rename ResponseHandler to ResponseParser (498e890)
+* Rename methods to be more consistent (5b8c655)
+* Rename MediaUpload to MediaUploader (84f0c15)
+* Add mutant and kill mutants (b124968)
+* Fix authentication bug with request URLs that contain spaces (8de3174)
+* Refactor errors (853d39c)
+* Make Connection class threadsafe (d95d285)
+
 ## [0.10.0] - 2023-10-08
 
-- Add media upload helper methods (6c6a267)
-- Add PayloadTooLargeError class (cd61850)
+* Add media upload helper methods (6c6a267)
+* Add PayloadTooLargeError class (cd61850)
 
 ## [0.9.1] - 2023-10-06
 
-- Allow successful empty responses (06bf7db)
-- Update default User-Agent string (296b36a)
-- Move query parameter escaping into RequestBuilder (56d6bd2)
+* Allow successful empty responses (06bf7db)
+* Update default User-Agent string (296b36a)
+* Move query parameter escaping into RequestBuilder (56d6bd2)
 
 ## [0.9.0] - 2023-09-26
 
-- Add support for HTTP proxies (3740f4f)
+* Add support for HTTP proxies (3740f4f)
 
 ## [0.8.1] - 2023-09-20
 
-- Fix bug where setting Connection#base_uri= doesn't update the HTTP client (d5a89db)
+* Fix bug where setting Connection#base_uri= doesn't update the HTTP client (d5a89db)
 
 ## [0.8.0] - 2023-09-14
 
-- Add (back) bearer token authentication (62e141d)
-- Follow redirects (90a8c55)
-- Parse error responses with Content-Type: application/problem+json (0b697d9)
+* Add (back) bearer token authentication (62e141d)
+* Follow redirects (90a8c55)
+* Parse error responses with Content-Type: application/problem+json (0b697d9)
 
 ## [0.7.1] - 2023-09-02
 
-- Fix bug in X::Authenticator#split_uri (ebc9d5f)
+* Fix bug in X::Authenticator#split_uri (ebc9d5f)
 
 ## [0.7.0] - 2023-09-02
 
-- Remove OAuth gem (7c29bb1)
+* Remove OAuth gem (7c29bb1)
 
 ## [0.6.0] - 2023-08-30
 
-- Add configurable debug output stream for logging (fd2d4b0)
-- Remove bearer token authentication (efff940)
-- Define RBS type signatures (d7f63ba)
+* Add configurable debug output stream for logging (fd2d4b0)
+* Remove bearer token authentication (efff940)
+* Define RBS type signatures (d7f63ba)
 
 ## [0.5.1] - 2023-08-16
 
-- Fix bearer token authentication (1a1ca93)
+* Fix bearer token authentication (1a1ca93)
 
 ## [0.5.0] - 2023-08-10
 
-- Add configurable write timeout (2a31f84)
-- Use built-in Gem::Version class (066e0b6)
+* Add configurable write timeout (2a31f84)
+* Use built-in Gem::Version class (066e0b6)
 
 ## [0.4.0] - 2023-08-06
 
-- Refactor Client into Authenticator, RequestBuilder, Connection, ResponseHandler (6bee1e9)
-- Add configurable open timeout (1000f9d)
-- Allow configuration of content type (f33a732)
+* Refactor Client into Authenticator, RequestBuilder, Connection, ResponseHandler (6bee1e9)
+* Add configurable open timeout (1000f9d)
+* Allow configuration of content type (f33a732)
 
 ## [0.3.0] - 2023-08-04
 
-- Add accessors to X::Client (e61fa73)
-- Add configurable read timeout (41502b9)
-- Handle network-related errors (9ed1fb4)
-- Include response body in errors (a203e6a)
+* Add accessors to X::Client (e61fa73)
+* Add configurable read timeout (41502b9)
+* Handle network-related errors (9ed1fb4)
+* Include response body in errors (a203e6a)
 
 ## [0.2.0] - 2023-08-02
 
-- Allow configuration of base URL (4bc0531)
-- Improve error handling (14dc0cd)
+* Allow configuration of base URL (4bc0531)
+* Improve error handling (14dc0cd)
 
 ## [0.1.0] - 2023-08-02
 
-- Initial release
+* Initial release
