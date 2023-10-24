@@ -44,7 +44,7 @@ module X
       host = request.uri.host || DEFAULT_HOST
       port = request.uri.port || DEFAULT_PORT
       http_client = build_http_client(host, port)
-      http_client.use_ssl = request.uri.scheme == "https"
+      http_client.use_ssl = request.uri.scheme.eql?("https")
       http_client.request(request)
     rescue *NETWORK_ERRORS => e
       raise NetworkError, "Network error: #{e}"
