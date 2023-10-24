@@ -4,7 +4,7 @@ require_relative "connection"
 require_relative "oauth_authenticator"
 require_relative "redirect_handler"
 require_relative "request_builder"
-require_relative "response_handler"
+require_relative "response_parser"
 
 module X
   # Main public interface
@@ -21,8 +21,8 @@ module X
     def_delegators :@connection, :open_timeout=, :read_timeout=, :write_timeout=, :proxy_url=, :debug_output=
     def_delegators :@redirect_handler, :max_redirects
     def_delegators :@redirect_handler, :max_redirects=
-    def_delegators :@response_handler, :array_class, :object_class
-    def_delegators :@response_handler, :array_class=, :object_class=
+    def_delegators :@response_parser, :array_class, :object_class
+    def_delegators :@response_parser, :array_class=, :object_class=
 
     def initialize(bearer_token: nil,
       api_key: nil, api_key_secret: nil, access_token: nil, access_token_secret: nil,
@@ -43,7 +43,7 @@ module X
       @request_builder = RequestBuilder.new
       @redirect_handler = RedirectHandler.new(authenticator: @authenticator, connection: @connection,
         request_builder: @request_builder, max_redirects: max_redirects)
-      @response_handler = ResponseHandler.new(array_class: array_class, object_class: object_class)
+      @response_parser = ResponseParser.new(array_class: array_class, object_class: object_class)
     end
 
     def get(endpoint, headers: {})
@@ -81,7 +81,7 @@ module X
         headers: headers)
       response = @connection.perform(request: request)
       response = @redirect_handler.handle(response: response, request: request, base_url: base_url)
-      @response_handler.handle(response: response)
+      @response_parser.parse(response: response)
     end
   end
 end

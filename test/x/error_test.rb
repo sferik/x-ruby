@@ -9,7 +9,7 @@ module X
       @client = client
     end
 
-    ResponseHandler::ERROR_CLASSES.each do |status, error_class|
+    ResponseParser::ERROR_CLASSES.each do |status, error_class|
       define_method("test_#{error_class.name.split("::").last.downcase}_error") do
         stub_request(:get, "https://api.twitter.com/2/tweets").to_return(status: status)
 

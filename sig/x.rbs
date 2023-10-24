@@ -163,7 +163,7 @@ module X
     def send_new_request: (URI::Generic new_uri, Net::HTTPRequest new_request) -> Net::HTTPResponse
   end
 
-  class ResponseHandler
+  class ResponseParser
     DEFAULT_ARRAY_CLASS: Class
     DEFAULT_OBJECT_CLASS: Class
     ERROR_CLASSES: Hash[Integer, singleton(Unauthorized) | singleton(BadRequest) | singleton(Forbidden) | singleton(InternalServerError) | singleton(NotFound) | singleton(PayloadTooLarge) | singleton(ServiceUnavailable) | singleton(TooManyRequests)]
@@ -172,7 +172,7 @@ module X
     attr_accessor array_class: Class
     attr_accessor object_class: Class
     def initialize: (?array_class: Class, ?object_class: Class) -> void
-    def handle: (response: Net::HTTPResponse) -> untyped
+    def parse: (response: Net::HTTPResponse) -> untyped
 
     private
     def success?: (Net::HTTPResponse response) -> bool
@@ -191,7 +191,7 @@ module X
     @connection: Connection
     @request_builder: RequestBuilder
     @redirect_handler: RedirectHandler
-    @response_handler: ResponseHandler
+    @response_parser: ResponseParser
 
     attr_accessor access_token: String
     attr_accessor access_token_secret: String
@@ -211,7 +211,7 @@ module X
     attr_accessor connection: Connection
     attr_accessor request_builder: RequestBuilder
     attr_accessor redirect_handler: RedirectHandler
-    attr_accessor response_handler: ResponseHandler
+    attr_accessor response_parser: ResponseParser
 
     def initialize: (?bearer_token: String?, ?api_key: String?, ?api_key_secret: String?, ?access_token: String?, ?access_token_secret: String?, ?base_url: String, ?open_timeout: Float | Integer, ?read_timeout: Float | Integer, ?write_timeout: Float | Integer, ?proxy_url: URI::Generic? | String?, ?debug_output: IO, ?array_class: Class, ?object_class: Class, ?max_redirects: Integer) -> void
     def get: (String endpoint, ?headers: Hash[String, String]) -> untyped

@@ -18,7 +18,7 @@ require_relative "errors/unprocessable_entity"
 
 module X
   # Process HTTP responses
-  class ResponseHandler
+  class ResponseParser
     ERROR_CLASSES = {
       400 => BadRequest,
       401 => Unauthorized,
@@ -44,7 +44,7 @@ module X
       @object_class = object_class
     end
 
-    def handle(response:)
+    def parse(response:)
       raise error(response) unless success?(response)
 
       JSON.parse(response.body, array_class: array_class, object_class: object_class) if json?(response)
