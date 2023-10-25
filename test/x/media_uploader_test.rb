@@ -45,11 +45,10 @@ module X
         stub_request(:post, "https://upload.twitter.com/1.1/media/upload.json?command=APPEND&media_id=#{TEST_MEDIA_ID}&segment_index=#{segment_index}")
           .with(headers: {"Content-Type" => "multipart/form-data, boundary=AaB03x"}).to_return(status: 204)
       end
-      MediaUploader.send(:append, @upload_client, chunk_paths, @media, "video/mp4", "AaB03x")
+      MediaUploader.send(:append, upload_client: @upload_client, file_paths: chunk_paths, media: @media,
+        media_type: "video/mp4", boundary: "AaB03x")
 
-      chunk_paths.each_with_index do |_, segment_index|
-        assert_requested(:post, "https://upload.twitter.com/1.1/media/upload.json?command=APPEND&media_id=#{TEST_MEDIA_ID}&segment_index=#{segment_index}")
-      end
+      chunk_paths.each_with_index { |_, segment_index| assert_requested(:post, "https://upload.twitter.com/1.1/media/upload.json?command=APPEND&media_id=#{TEST_MEDIA_ID}&segment_index=#{segment_index}") }
     end
 
     def test_await_processing

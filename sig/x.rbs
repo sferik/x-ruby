@@ -224,14 +224,14 @@ module X
     attr_accessor redirect_handler: RedirectHandler
     attr_accessor response_parser: ResponseParser
 
-    def initialize: (?bearer_token: String?, ?api_key: String?, ?api_key_secret: String?, ?access_token: String?, ?access_token_secret: String?, ?base_url: String, ?open_timeout: Float | Integer, ?read_timeout: Float | Integer, ?write_timeout: Float | Integer, ?proxy_url: URI::Generic? | String?, ?debug_output: IO, ?array_class: Class, ?object_class: Class, ?max_redirects: Integer) -> void
+    def initialize: (?api_key: String?, ?api_key_secret: String?, ?access_token: String?, ?access_token_secret: String?, ?bearer_token: String?, ?base_url: String, ?open_timeout: Float | Integer, ?read_timeout: Float | Integer, ?write_timeout: Float | Integer, ?proxy_url: URI::Generic? | String?, ?debug_output: IO, ?array_class: Class, ?object_class: Class, ?max_redirects: Integer) -> void
     def get: (String endpoint, ?headers: Hash[String, String]) -> untyped
     def post: (String endpoint, ?String? body, ?headers: Hash[String, String]) -> untyped
     def put: (String endpoint, ?String? body, ?headers: Hash[String, String]) -> untyped
     def delete: (String endpoint, ?headers: Hash[String, String]) -> untyped
 
     private
-    def initialize_authenticator: (String? bearer_token, String? api_key, String? api_key_secret, String? access_token, String? access_token_secret) -> (BearerTokenAuthenticator | OAuthAuthenticator | Authenticator)
+    def initialize_authenticator: (api_key: String?, api_key_secret: String?, access_token: String?, access_token_secret: String?, bearer_token: String?) -> Authenticator
     def execute_request: (Symbol http_method, String endpoint, headers: Hash[String, String], ?body: String?) -> untyped
   end
 
@@ -264,13 +264,13 @@ module X
     private
     def validate!: (file_path: String, media_category: String) -> nil
     def infer_media_type: (String file_path, String media_category) -> String
-    def init: (Client upload_client, String file_path, String media_type, String media_category) -> untyped
     def split: (String file_path, Integer chunk_size) -> Array[String]
-    def append: (Client upload_client, Array[String] chunk_paths, untyped media, String media_type, ?String boundary) -> Array[String]
-    def upload_chunk: (Client upload_client, String query, String chunk_path, String media_type, ?Hash[String, String] headers) -> Integer?
-    def cleanup_chunk: (String chunk_path) -> Integer?
-    def finalize: (Client upload_client, untyped media) -> untyped
-    def construct_upload_body: (String file_path, String media_type, ?String boundary) -> String
+    def init: (upload_client: Client, file_path: String, media_type: String, media_category: String) -> untyped
+    def append: (upload_client: Client, file_paths: Array[String], media: untyped, media_type: String, ?boundary: String) -> Array[String]
+    def upload_chunk: (upload_client: Client, query: String, upload_body: String, file_path: String, ?headers: Hash[String, String]) -> Integer?
+    def cleanup_file: (String file_path) -> Integer?
+    def finalize: (upload_client: Client, media: untyped) -> untyped
+    def construct_upload_body: (file_path: String, media_type: String, ?boundary: String) -> String
   end
 
   class CGI

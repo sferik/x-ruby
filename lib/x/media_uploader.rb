@@ -19,7 +19,7 @@ module X
       boundary: SecureRandom.hex)
       validate!(file_path: file_path, media_category: media_category)
       upload_client = client.dup.tap { |c| c.base_url = "https://upload.twitter.com/1.1/" }
-      upload_body = construct_upload_body(file_path, media_type, boundary)
+      upload_body = construct_upload_body(file_path: file_path, media_type: media_type, boundary: boundary)
       headers = {"Content-Type" => "multipart/form-data, boundary=#{boundary}"}
       upload_client.post("media/upload.json?media_category=#{media_category}", upload_body, headers: headers)
     end
@@ -28,10 +28,11 @@ module X
       media_category), boundary: SecureRandom.hex, chunk_size_mb: 8)
       validate!(file_path: file_path, media_category: media_category)
       upload_client = client.dup.tap { |c| c.base_url = "https://upload.twitter.com/1.1/" }
-      media = init(upload_client, file_path, media_type, media_category)
+      media = init(upload_client: upload_client, file_path: file_path, media_type: media_type,
+        media_category: media_category)
       chunk_size = chunk_size_mb * BYTES_PER_MB
-      chunk_paths = split(file_path, chunk_size)
-      append(upload_client, chunk_paths, media, media_type, boundary)
+      append(upload_client: upload_client, file_paths: split(file_path, chunk_size), media: media,
+        media_type: media_type, boundary: boundary)
       upload_client.post("media/upload.json?command=FINALIZE&media_id=#{media["media_id"]}")
     end
 
@@ -64,19 +65,13 @@ module X
       end
     end
 
-    def init(upload_client, file_path, media_type, media_category)
-      total_bytes = File.size(file_path)
-      query = "command=INIT&media_type=#{media_type}&media_category=#{media_category}&total_bytes=#{total_bytes}"
-      upload_client.post("media/upload.json?#{query}")
-    end
-
     def split(file_path, chunk_size)
       file_number = -1
 
-      [].tap do |chunk_paths|
+      [].tap do |file_paths|
         File.open(file_path, "rb") do |f|
           while (chunk = f.read(chunk_size))
-            chunk_paths << "#{Dir.mktmpdir}/x#{format("%03d", file_number += 1)}".tap do |path|
+            file_paths << "#{Dir.mktmpdir}/x#{format("%03d", file_number += 1)}".tap do |path|
               File.write(path, chunk)
             end
           end
@@ -84,34 +79,41 @@ module X
       end
     end
 
-    def append(upload_client, chunk_paths, media, media_type, boundary = SecureRandom.hex)
-      threads = chunk_paths.map.with_index do |chunk_path, index|
+    def init(upload_client:, file_path:, media_type:, media_category:)
+      total_bytes = File.size(file_path)
+      query = "command=INIT&media_type=#{media_type}&media_category=#{media_category}&total_bytes=#{total_bytes}"
+      upload_client.post("media/upload.json?#{query}")
+    end
+
+    def append(upload_client:, file_paths:, media:, media_type:, boundary: SecureRandom.hex)
+      threads = file_paths.map.with_index do |file_path, index|
         Thread.new do
-          upload_body = construct_upload_body(chunk_path, media_type, boundary)
+          upload_body = construct_upload_body(file_path: file_path, media_type: media_type, boundary: boundary)
           query = "command=APPEND&media_id=#{media["media_id"]}&segment_index=#{index}"
           headers = {"Content-Type" => "multipart/form-data, boundary=#{boundary}"}
-          upload_chunk(upload_client, query, upload_body, chunk_path, headers)
+          upload_chunk(upload_client: upload_client, query: query, upload_body: upload_body, file_path: file_path,
+            headers: headers)
         end
       end
       threads.each(&:join)
     end
 
-    def upload_chunk(upload_client, query, upload_body, chunk_path, headers = {})
+    def upload_chunk(upload_client:, query:, upload_body:, file_path:, headers: {})
       upload_client.post("media/upload.json?#{query}", upload_body, headers: headers)
     rescue NetworkError, ServerError
       retries ||= 0
       ((retries += 1) < MAX_RETRIES) ? retry : raise
     ensure
-      cleanup_chunk(chunk_path)
+      cleanup_file(file_path)
     end
 
-    def cleanup_chunk(chunk_path)
-      dirname = File.dirname(chunk_path)
-      File.delete(chunk_path)
+    def cleanup_file(file_path)
+      dirname = File.dirname(file_path)
+      File.delete(file_path)
       Dir.delete(dirname) if Dir.empty?(dirname)
     end
 
-    def construct_upload_body(file_path, media_type, boundary = SecureRandom.hex)
+    def construct_upload_body(file_path:, media_type:, boundary: SecureRandom.hex)
       "--#{boundary}\r\n" \
         "Content-Disposition: form-data; name=\"media\"; filename=\"#{File.basename(file_path)}\"\r\n" \
         "Content-Type: #{media_type}\r\n\r\n" \

@@ -15,8 +15,8 @@ module X
 
     attr_accessor :base_url
 
-    def_delegators :@authenticator, :bearer_token, :api_key, :api_key_secret, :access_token, :access_token_secret
-    def_delegators :@authenticator, :bearer_token=, :api_key=, :api_key_secret=, :access_token=, :access_token_secret=
+    def_delegators :@authenticator, :api_key, :api_key_secret, :access_token, :access_token_secret, :bearer_token
+    def_delegators :@authenticator, :api_key=, :api_key_secret=, :access_token=, :access_token_secret=, :bearer_token=
     def_delegators :@connection, :open_timeout, :read_timeout, :write_timeout, :proxy_url, :debug_output
     def_delegators :@connection, :open_timeout=, :read_timeout=, :write_timeout=, :proxy_url=, :debug_output=
     def_delegators :@redirect_handler, :max_redirects
@@ -24,8 +24,8 @@ module X
     def_delegators :@response_parser, :array_class, :object_class
     def_delegators :@response_parser, :array_class=, :object_class=
 
-    def initialize(bearer_token: nil,
-      api_key: nil, api_key_secret: nil, access_token: nil, access_token_secret: nil,
+    def initialize(api_key: nil, api_key_secret: nil, access_token: nil, access_token_secret: nil,
+      bearer_token: nil,
       base_url: DEFAULT_BASE_URL,
       open_timeout: Connection::DEFAULT_OPEN_TIMEOUT,
       read_timeout: Connection::DEFAULT_READ_TIMEOUT,
@@ -37,7 +37,8 @@ module X
       max_redirects: RedirectHandler::DEFAULT_MAX_REDIRECTS)
 
       @base_url = base_url
-      initialize_authenticator(bearer_token, api_key, api_key_secret, access_token, access_token_secret)
+      initialize_authenticator(bearer_token: bearer_token, api_key: api_key, api_key_secret: api_key_secret,
+        access_token: access_token, access_token_secret: access_token_secret)
       @connection = Connection.new(open_timeout: open_timeout, read_timeout: read_timeout,
         write_timeout: write_timeout, debug_output: debug_output, proxy_url: proxy_url)
       @request_builder = RequestBuilder.new
@@ -64,12 +65,12 @@ module X
 
     private
 
-    def initialize_authenticator(bearer_token, api_key, api_key_secret, access_token, access_token_secret)
-      @authenticator = if bearer_token
-        BearerTokenAuthenticator.new(bearer_token: bearer_token)
-      elsif api_key && api_key_secret && access_token && access_token_secret
+    def initialize_authenticator(api_key:, api_key_secret:, access_token:, access_token_secret:, bearer_token:)
+      @authenticator = if api_key && api_key_secret && access_token && access_token_secret
         OAuthAuthenticator.new(api_key: api_key, api_key_secret: api_key_secret, access_token: access_token,
           access_token_secret: access_token_secret)
+      elsif bearer_token
+        BearerTokenAuthenticator.new(bearer_token: bearer_token)
       else
         Authenticator.new
       end
