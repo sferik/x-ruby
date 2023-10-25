@@ -2,16 +2,18 @@ module X
   VERSION: Gem::Version
 
   class Authenticator
+    AUTHENTICATION_HEADER: String
+
     def header: (Net::HTTPRequest? request) -> Hash[String, String]
   end
 
-  class BearerTokenAuthenticator
+  class BearerTokenAuthenticator < Authenticator
     attr_accessor bearer_token: String
     def initialize: (bearer_token: String) -> void
     def header: (Net::HTTPRequest? request) -> Hash[String, String]
   end
 
-  class OAuthAuthenticator
+  class OAuthAuthenticator < Authenticator
     OAUTH_VERSION: String
     OAUTH_SIGNATURE_METHOD: String
     OAUTH_SIGNATURE_ALGORITHM: String

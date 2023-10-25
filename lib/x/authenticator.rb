@@ -1,8 +1,10 @@
 module X
   # Base Authenticator class
   class Authenticator
+    AUTHENTICATION_HEADER = "Authorization".freeze
+
     def header(_request)
-      {"Authorization" => ""}
+      {AUTHENTICATION_HEADER => ""}
     end
   end
 end
