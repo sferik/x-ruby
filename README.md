@@ -1,3 +1,9 @@
+![Tests](https://github.com/sferik/x-ruby/actions/workflows/test.yml/badge.svg)
+![Linter](https://github.com/sferik/x-ruby/actions/workflows/lint.yml/badge.svg)
+![Mutant](https://github.com/sferik/x-ruby/actions/workflows/mutant.yml/badge.svg)
+![Typer Checker](https://github.com/sferik/x-ruby/actions/workflows/type_check.yml/badge.svg)
+[![Gem Version](https://badge.fury.io/rb/x.svg)](https://rubygems.org/gems/x)
+
 # A [Ruby](https://www.ruby-lang.org) interface to the [X API](https://developer.x.com)
 
 ## Follow

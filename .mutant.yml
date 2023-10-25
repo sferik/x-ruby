@@ -1,4 +1,6 @@
 ---
+coverage_criteria:
+  process_abort: true
 fail_fast: true
 includes:
 - lib
