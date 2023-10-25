@@ -50,7 +50,17 @@ module X
   end
 
   class Error < StandardError
-    def initialize: (String msg, ?Net::HTTPResponse? response) -> void
+    JSON_CONTENT_TYPE_REGEXP: Regexp
+
+    attr_reader response : Net::HTTPResponse
+    attr_reader code : String
+
+    def initialize: (response: Net::HTTPResponse) -> void
+
+    private
+    def error_message: (Net::HTTPResponse response) -> String
+    def message_from_json_response:  (Net::HTTPResponse response) -> String
+    def json?: (Net::HTTPResponse response) -> bool
   end
 
   class Forbidden < ClientError
@@ -65,7 +75,7 @@ module X
   class InternalServerError < ServerError
   end
 
-  class NetworkError < Error
+  class NetworkError < StandardError
   end
 
   class NotAcceptable < ClientError
@@ -89,7 +99,6 @@ module X
   class TooManyRequests < ClientError
     @response: Net::HTTPResponse
 
-    def initialize: (String msg, Net::HTTPResponse response) -> void
     def limit: -> Integer
     def remaining: -> Integer
     def reset_at: -> Time
@@ -166,7 +175,7 @@ module X
   class ResponseParser
     DEFAULT_ARRAY_CLASS: Class
     DEFAULT_OBJECT_CLASS: Class
-    ERROR_CLASSES: Hash[Integer, singleton(Unauthorized) | singleton(BadRequest) | singleton(Forbidden) | singleton(InternalServerError) | singleton(NotFound) | singleton(PayloadTooLarge) | singleton(ServiceUnavailable) | singleton(TooManyRequests)]
+    ERROR_MAP: Hash[Integer, singleton(Unauthorized) | singleton(BadRequest) | singleton(Forbidden) | singleton(InternalServerError) | singleton(NotFound) | singleton(PayloadTooLarge) | singleton(ServiceUnavailable) | singleton(TooManyRequests)]
     JSON_CONTENT_TYPE_REGEXP: Regexp
 
     attr_accessor array_class: Class
@@ -175,11 +184,8 @@ module X
     def parse: (response: Net::HTTPResponse) -> untyped
 
     private
-    def success?: (Net::HTTPResponse response) -> bool
     def error: (Net::HTTPResponse response) -> (Unauthorized | BadRequest | Forbidden | InternalServerError | NotFound | PayloadTooLarge | ServiceUnavailable | TooManyRequests)
     def error_class: (Net::HTTPResponse response) -> (singleton(Unauthorized) | singleton(BadRequest) | singleton(Forbidden) | singleton(InternalServerError) | singleton(NotFound) | singleton(PayloadTooLarge) | singleton(ServiceUnavailable) | singleton(TooManyRequests))
-    def error_message: (Net::HTTPResponse response) -> String
-    def message_from_json_response:  (Net::HTTPResponse response) -> String
     def json?: (Net::HTTPResponse response) -> bool
   end
 

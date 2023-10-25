@@ -1,5 +1,3 @@
-require_relative "client_error"
-
 module X
-  class TooManyRedirects < ClientError; end
+  class TooManyRedirects < StandardError; end
 end

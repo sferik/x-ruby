@@ -19,7 +19,7 @@ require_relative "errors/unprocessable_entity"
 module X
   # Process HTTP responses
   class ResponseParser
-    ERROR_CLASSES = {
+    ERROR_MAP = {
       400 => BadRequest,
       401 => Unauthorized,
       403 => Forbidden,
@@ -35,7 +35,7 @@ module X
       503 => ServiceUnavailable,
       504 => GatewayTimeout
     }.freeze
-    JSON_CONTENT_TYPE_REGEXP = %r{application/(problem\+|)json}
+    JSON_CONTENT_TYPE_REGEXP = %r{application/json}
 
     attr_accessor :array_class, :object_class
 
@@ -45,48 +45,25 @@ module X
     end
 
     def parse(response:)
-      raise error(response) unless success?(response)
+      raise error(response) unless response.is_a?(Net::HTTPSuccess)
 
-      JSON.parse(response.body, array_class: array_class, object_class: object_class) if json?(response)
+      return unless json?(response)
+
+      JSON.parse(response.body, array_class: array_class, object_class: object_class)
     end
 
     private
 
-    def success?(response)
-      response.is_a?(Net::HTTPSuccess)
-    end
-
     def error(response)
-      error_class(response).new(error_message(response), response)
+      error_class(response).new(response: response)
     end
 
     def error_class(response)
-      ERROR_CLASSES[Integer(response.code)] || Error
-    end
-
-    def error_message(response)
-      if json?(response)
-        message_from_json_response(response)
-      else
-        response.message
-      end
-    end
-
-    def message_from_json_response(response)
-      response_object = JSON.parse(response.body)
-      if response_object.key?("title") && response_object.key?("detail")
-        "#{response_object.fetch("title")}: #{response_object.fetch("detail")}"
-      elsif response_object.key?("error")
-        response_object.fetch("error")
-      elsif response_object["errors"].instance_of?(Array)
-        response_object.fetch("errors").map { |error| error.fetch("message") }.join(", ")
-      else
-        response.message
-      end
+      ERROR_MAP[Integer(response.code)] || Error
     end
 
     def json?(response)
-      response.body && JSON_CONTENT_TYPE_REGEXP.match?(response["content-type"])
+      JSON_CONTENT_TYPE_REGEXP.match?(response["content-type"])
     end
   end
 end
