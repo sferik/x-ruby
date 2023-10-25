@@ -3,7 +3,7 @@ require "net/http"
 require_relative "errors/bad_gateway"
 require_relative "errors/bad_request"
 require_relative "errors/connection_exception"
-require_relative "errors/error"
+require_relative "errors/http_error"
 require_relative "errors/forbidden"
 require_relative "errors/gateway_timeout"
 require_relative "errors/gone"
@@ -59,7 +59,7 @@ module X
     end
 
     def error_class(response)
-      ERROR_MAP[Integer(response.code)] || Error
+      ERROR_MAP[Integer(response.code)] || HTTPError
     end
 
     def json?(response)

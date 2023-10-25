@@ -37,7 +37,10 @@ module X
     def escape: (String value) -> String
   end
 
-  class ClientError < Error
+  class Error < StandardError
+  end
+
+  class ClientError < HTTPError
   end
 
   class BadGateway < ClientError
@@ -49,7 +52,7 @@ module X
   class ConnectionException < ClientError
   end
 
-  class Error < StandardError
+  class HTTPError < Error
     JSON_CONTENT_TYPE_REGEXP: Regexp
 
     attr_reader response : Net::HTTPResponse
@@ -75,7 +78,7 @@ module X
   class InternalServerError < ServerError
   end
 
-  class NetworkError < StandardError
+  class NetworkError < Error
   end
 
   class NotAcceptable < ClientError
@@ -87,13 +90,13 @@ module X
   class PayloadTooLarge < ClientError
   end
 
-  class ServerError < Error
+  class ServerError < HTTPError
   end
 
   class ServiceUnavailable < ServerError
   end
 
-  class TooManyRedirects < ClientError
+  class TooManyRedirects < Error
   end
 
   class TooManyRequests < ClientError

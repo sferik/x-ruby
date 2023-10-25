@@ -1,5 +1,5 @@
-require_relative "error"
+require_relative "http_error"
 
 module X
-  class ClientError < Error; end
+  class ClientError < HTTPError; end
 end

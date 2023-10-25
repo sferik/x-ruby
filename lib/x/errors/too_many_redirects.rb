@@ -1,3 +1,5 @@
+require_relative "error"
+
 module X
-  class TooManyRedirects < StandardError; end
+  class TooManyRedirects < Error; end
 end
