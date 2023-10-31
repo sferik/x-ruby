@@ -14,9 +14,8 @@ module X
     DEFAULT_BASE_URL = "https://api.twitter.com/2/".freeze
 
     attr_accessor :base_url
+    attr_reader :api_key, :api_key_secret, :access_token, :access_token_secret, :bearer_token
 
-    def_delegators :@authenticator, :api_key, :api_key_secret, :access_token, :access_token_secret, :bearer_token
-    def_delegators :@authenticator, :api_key=, :api_key_secret=, :access_token=, :access_token_secret=, :bearer_token=
     def_delegators :@connection, :open_timeout, :read_timeout, :write_timeout, :proxy_url, :debug_output
     def_delegators :@connection, :open_timeout=, :read_timeout=, :write_timeout=, :proxy_url=, :debug_output=
     def_delegators :@redirect_handler, :max_redirects
@@ -30,20 +29,21 @@ module X
       open_timeout: Connection::DEFAULT_OPEN_TIMEOUT,
       read_timeout: Connection::DEFAULT_READ_TIMEOUT,
       write_timeout: Connection::DEFAULT_WRITE_TIMEOUT,
+      debug_output: Connection::DEFAULT_DEBUG_OUTPUT,
       proxy_url: nil,
-      debug_output: nil,
       array_class: nil,
       object_class: nil,
       max_redirects: RedirectHandler::DEFAULT_MAX_REDIRECTS)
 
+      initialize_oauth(api_key, api_key_secret, access_token, access_token_secret)
+      @bearer_token = bearer_token
+      initialize_authenticator
       @base_url = base_url
-      initialize_authenticator(bearer_token: bearer_token, api_key: api_key, api_key_secret: api_key_secret,
-        access_token: access_token, access_token_secret: access_token_secret)
       @connection = Connection.new(open_timeout: open_timeout, read_timeout: read_timeout,
         write_timeout: write_timeout, debug_output: debug_output, proxy_url: proxy_url)
       @request_builder = RequestBuilder.new
-      @redirect_handler = RedirectHandler.new(authenticator: @authenticator, connection: @connection,
-        request_builder: @request_builder, max_redirects: max_redirects)
+      @redirect_handler = RedirectHandler.new(connection: @connection, request_builder: @request_builder,
+        max_redirects: max_redirects)
       @response_parser = ResponseParser.new(array_class: array_class, object_class: object_class)
     end
 
@@ -63,25 +63,60 @@ module X
       execute_request(:delete, endpoint, headers: headers)
     end
 
+    def api_key=(api_key)
+      @api_key = api_key
+      initialize_authenticator
+    end
+
+    def api_key_secret=(api_key_secret)
+      @api_key_secret = api_key_secret
+      initialize_authenticator
+    end
+
+    def access_token=(access_token)
+      @access_token = access_token
+      initialize_authenticator
+    end
+
+    def access_token_secret=(access_token_secret)
+      @access_token_secret = access_token_secret
+      initialize_authenticator
+    end
+
+    def bearer_token=(bearer_token)
+      @bearer_token = bearer_token
+      initialize_authenticator
+    end
+
     private
 
-    def initialize_authenticator(api_key:, api_key_secret:, access_token:, access_token_secret:, bearer_token:)
+    def initialize_oauth(api_key, api_key_secret, access_token, access_token_secret)
+      @api_key = api_key
+      @api_key_secret = api_key_secret
+      @access_token = access_token
+      @access_token_secret = access_token_secret
+    end
+
+    def initialize_authenticator
       @authenticator = if api_key && api_key_secret && access_token && access_token_secret
         OAuthAuthenticator.new(api_key: api_key, api_key_secret: api_key_secret, access_token: access_token,
           access_token_secret: access_token_secret)
       elsif bearer_token
         BearerTokenAuthenticator.new(bearer_token: bearer_token)
-      else
+      elsif @authenticator.nil?
         Authenticator.new
+      else
+        @authenticator
       end
     end
 
     def execute_request(http_method, endpoint, headers:, body: nil)
       uri = URI.join(base_url, endpoint)
-      request = @request_builder.build(authenticator: @authenticator, http_method: http_method, uri: uri, body: body,
-        headers: headers)
+      request = @request_builder.build(http_method: http_method, uri: uri, body: body, headers: headers,
+        authenticator: @authenticator)
       response = @connection.perform(request: request)
-      response = @redirect_handler.handle(response: response, request: request, base_url: base_url)
+      response = @redirect_handler.handle(response: response, request: request, base_url: base_url,
+        authenticator: @authenticator)
       @response_parser.parse(response: response)
     end
   end

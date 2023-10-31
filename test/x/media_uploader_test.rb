@@ -7,8 +7,8 @@ module X
     cover MediaUploader
 
     def setup
-      @client = client
-      @upload_client = client.tap { |c| c.base_url = "https://upload.twitter.com/1.1/" }
+      @client = Client.new
+      @upload_client = Client.new(base_url: "https://upload.twitter.com/1.1/")
       @media = {"media_id" => TEST_MEDIA_ID}
     end
 

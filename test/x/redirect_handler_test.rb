@@ -1,21 +1,19 @@
 require_relative "../test_helper"
 
 module X
+  # Tests for X::RedirectHandler class
   class RedirectHandlerTest < Minitest::Test
     cover RedirectHandler
 
     def setup
-      @authenticator = BearerTokenAuthenticator.new(bearer_token: TEST_BEARER_TOKEN)
       @connection = Connection.new
       @request_builder = RequestBuilder.new
-      @redirect_handler = RedirectHandler.new(authenticator: @authenticator, connection: @connection,
-        request_builder: @request_builder)
+      @redirect_handler = RedirectHandler.new(connection: @connection, request_builder: @request_builder)
     end
 
     def test_initialize_with_defaults
       redirect_handler = RedirectHandler.new
 
-      assert_instance_of Authenticator, redirect_handler.authenticator
       assert_instance_of Connection, redirect_handler.connection
       assert_instance_of RequestBuilder, redirect_handler.request_builder
     end
@@ -29,13 +27,15 @@ module X
     end
 
     def test_handle_with_one_redirect
+      authenticator = BearerTokenAuthenticator.new(bearer_token: TEST_BEARER_TOKEN)
       original_request = Net::HTTP::Get.new("/")
       stub_request(:get, "http://www.example.com/").with(headers: {"Authorization" => /Bearer #{TEST_BEARER_TOKEN}/o})
 
       response = Net::HTTPFound.new("1.1", "302", "Found")
       response["Location"] = "http://www.example.com"
 
-      @redirect_handler.handle(response: response, request: original_request, base_url: "http://example.com")
+      @redirect_handler.handle(response: response, request: original_request, base_url: "http://example.com",
+        authenticator: authenticator)
 
       assert_requested :get, "http://www.example.com"
     end

@@ -23,19 +23,6 @@ TEST_OAUTH_NONCE = "TEST_OAUTH_NONCE".freeze
 TEST_OAUTH_TIMESTAMP = Time.utc(1983, 11, 24).to_i.to_s
 TEST_MEDIA_ID = 1_234_567_890
 
-def client
-  X::Client.new(**oauth_credentials)
-end
-
-def oauth_credentials
-  {
-    api_key: TEST_API_KEY,
-    api_key_secret: TEST_API_KEY_SECRET,
-    access_token: TEST_ACCESS_TOKEN,
-    access_token_secret: TEST_ACCESS_TOKEN_SECRET
-  }
-end
-
 def test_oauth_params
   {
     "oauth_consumer_key" => TEST_API_KEY,

@@ -6,7 +6,7 @@ module X
     cover Client
 
     def setup
-      @client = client
+      @client = Client.new
     end
 
     ResponseParser::ERROR_MAP.each do |status, error_class|

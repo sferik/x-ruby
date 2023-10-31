@@ -168,12 +168,12 @@ module X
     attr_reader connection: Connection
     attr_reader request_builder: RequestBuilder
     attr_reader max_redirects: Integer
-    def initialize: (authenticator: Authenticator, connection: Connection, request_builder: RequestBuilder, ?max_redirects: Integer) -> void
-    def handle: (response: Net::HTTPResponse, request: Net::HTTPRequest, base_url: String, ?redirect_count: Integer) -> Net::HTTPResponse
+    def initialize: (connection: Connection, request_builder: RequestBuilder, ?max_redirects: Integer) -> void
+    def handle: (response: Net::HTTPResponse, request: Net::HTTPRequest, base_url: String, ?authenticator: Authenticator, ?redirect_count: Integer) -> Net::HTTPResponse
 
     private
     def build_new_uri: (Net::HTTPResponse response, String base_url) -> URI::Generic
-    def build_request: (Net::HTTPRequest request, URI::Generic new_uri, Integer response_code) -> Net::HTTPRequest
+    def build_request: (Net::HTTPRequest request, URI::Generic new_uri, Integer response_code, Authenticator authenticator) -> Net::HTTPRequest
     def send_new_request: (URI::Generic new_uri, Net::HTTPRequest new_request) -> Net::HTTPResponse
   end
 
@@ -231,7 +231,8 @@ module X
     def delete: (String endpoint, ?headers: Hash[String, String]) -> untyped
 
     private
-    def initialize_authenticator: (api_key: String?, api_key_secret: String?, access_token: String?, access_token_secret: String?, bearer_token: String?) -> Authenticator
+    def initialize_oauth: (String? api_key, String? api_key_secret, String? access_token, String? access_token_secret) -> void
+    def initialize_authenticator: -> Authenticator
     def execute_request: (Symbol http_method, String endpoint, headers: Hash[String, String], ?body: String?) -> untyped
   end
 

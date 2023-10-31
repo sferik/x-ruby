@@ -2,6 +2,7 @@ require "hashie"
 require_relative "../test_helper"
 
 module X
+  # Tests for X::ResponseParser class
   class ResponseParserTest < Minitest::Test
     cover ResponseParser
 

@@ -4,6 +4,7 @@ require "uri"
 require_relative "../test_helper"
 
 module X
+  # Tests for X::Connection class
   class ConnectionTest < Minitest::Test
     cover Connection
 
