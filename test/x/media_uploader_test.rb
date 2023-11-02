@@ -2,7 +2,6 @@ require_relative "../test_helper"
 require_relative "../../lib/x/media_uploader"
 
 module X
-  # Tests for X::MediaUploader module
   class MediaUploaderTest < Minitest::Test
     cover MediaUploader
 

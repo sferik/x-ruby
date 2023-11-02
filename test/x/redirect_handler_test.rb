@@ -1,7 +1,6 @@
 require_relative "../test_helper"
 
 module X
-  # Tests for X::RedirectHandler class
   class RedirectHandlerTest < Minitest::Test
     cover RedirectHandler
 

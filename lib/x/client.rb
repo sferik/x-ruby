@@ -7,7 +7,6 @@ require_relative "request_builder"
 require_relative "response_parser"
 
 module X
-  # Main public interface
   class Client
     extend Forwardable
 

@@ -1,7 +1,6 @@
 require_relative "client_error"
 
 module X
-  # Rate limit error class
   class TooManyRequests < ClientError
     def limit
       response["x-rate-limit-limit"].to_i

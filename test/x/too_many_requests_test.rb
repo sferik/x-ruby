@@ -1,7 +1,6 @@
 require_relative "../test_helper"
 
 module X
-  # Tests for X::TooManyRequests error class
   class TooManyRequestsTest < Minitest::Test
     cover TooManyRequests
 

@@ -5,7 +5,6 @@ require "uri"
 require_relative "errors/network_error"
 
 module X
-  # Sends HTTP requests
   class Connection
     extend Forwardable
 

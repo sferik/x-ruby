@@ -1,7 +1,6 @@
 require_relative "../test_helper"
 
 module X
-  # Tests for X::BearerTokenAuthenticator class
   class BearerTokenAuthenticatorTest < Minitest::Test
     cover BearerTokenAuthenticator
 

@@ -1,7 +1,6 @@
 require "cgi"
 
 module X
-  # Namespaced CGI class
   class CGI
     # TODO: Replace CGI.escape with CGI.escapeURIComponent when support for Ruby 3.1 is dropped
     def self.escape(value)

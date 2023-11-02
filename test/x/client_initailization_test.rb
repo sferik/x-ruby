@@ -2,7 +2,6 @@ require_relative "../test_helper"
 require "hashie"
 
 module X
-  # Initialization tests for X::Client class
   class ClientInitializationTest < Minitest::Test
     cover Client
 

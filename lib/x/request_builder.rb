@@ -5,7 +5,6 @@ require_relative "cgi"
 require_relative "version"
 
 module X
-  # Creates HTTP requests
   class RequestBuilder
     DEFAULT_HEADERS = {
       "Content-Type" => "application/json; charset=utf-8",

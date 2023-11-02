@@ -1,7 +1,6 @@
 require_relative "../test_helper"
 
 module X
-  # Tests for X::OAuthAuthenticator class
   class OAuthAuthenticatorTest < Minitest::Test
     cover OAuthAuthenticator
 

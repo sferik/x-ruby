@@ -6,7 +6,6 @@ require_relative "errors/too_many_redirects"
 require_relative "request_builder"
 
 module X
-  # Handles HTTP redirects
   class RedirectHandler
     DEFAULT_MAX_REDIRECTS = 10
 

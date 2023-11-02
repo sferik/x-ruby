@@ -1,7 +1,6 @@
 require "securerandom"
 
 module X
-  # Helper module for uploading images and videos
   module MediaUploader
     extend self
 

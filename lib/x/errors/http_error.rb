@@ -2,7 +2,6 @@ require "json"
 require_relative "error"
 
 module X
-  # Base HTTP error class
   class HTTPError < Error
     JSON_CONTENT_TYPE_REGEXP = %r{application/(problem\+|)json}
 

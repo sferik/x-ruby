@@ -1,7 +1,6 @@
 require_relative "authenticator"
 
 module X
-  # Handles bearer token authentication
   class BearerTokenAuthenticator < Authenticator
     attr_accessor :bearer_token
 

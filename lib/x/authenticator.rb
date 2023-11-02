@@ -1,5 +1,4 @@
 module X
-  # Base Authenticator class
   class Authenticator
     AUTHENTICATION_HEADER = "Authorization".freeze
 

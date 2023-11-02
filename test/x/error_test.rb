@@ -1,7 +1,6 @@
 require_relative "../test_helper"
 
 module X
-  # Tests for errors
   class ErrorsTest < Minitest::Test
     cover Client
 

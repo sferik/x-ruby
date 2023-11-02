@@ -1,7 +1,6 @@
 require_relative "../test_helper"
 
 module X
-  # Tests for X::CGI class
   class CGITest < Minitest::Test
     cover CGI
 

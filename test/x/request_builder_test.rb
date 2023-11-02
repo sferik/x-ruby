@@ -2,7 +2,6 @@ require "uri"
 require_relative "../test_helper"
 
 module X
-  # Tests for X::RequestBuilder class
   class RequestBuilderTest < Minitest::Test
     cover RequestBuilder
 

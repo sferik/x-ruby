@@ -7,7 +7,6 @@ require_relative "authenticator"
 require_relative "cgi"
 
 module X
-  # Handles OAuth authentication
   class OAuthAuthenticator < Authenticator
     OAUTH_VERSION = "1.0".freeze
     OAUTH_SIGNATURE_METHOD = "HMAC-SHA1".freeze

@@ -17,7 +17,6 @@ require_relative "errors/unauthorized"
 require_relative "errors/unprocessable_entity"
 
 module X
-  # Process HTTP responses
   class ResponseParser
     ERROR_MAP = {
       400 => BadRequest,

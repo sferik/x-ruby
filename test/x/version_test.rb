@@ -1,7 +1,6 @@
 require_relative "../test_helper"
 
 module X
-  # Tests for X::VERSION module
   class VersionTest < Minitest::Test
     def test_that_it_has_a_version_number
       refute_nil VERSION

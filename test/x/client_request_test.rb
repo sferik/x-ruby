@@ -1,7 +1,6 @@
 require_relative "../test_helper"
 
 module X
-  # Request tests for X::Client class
   class ClientRequestTest < Minitest::Test
     cover Client
 
