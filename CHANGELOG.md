@@ -1,3 +1,9 @@
+## [0.12.0] - 2023-11-02
+* Ensure Authenticator is passed to RedirectHandler (fc8557b)
+* Add AUTHENTICATION_HEADER to X::Authenticator base class (85a2818)
+* Introduce X::HTTPError (90ae132)
+* Add `code` attribute to error classes (b003639)
+
 ## [0.11.0] - 2023-10-24
 
 * Add base Authenticator class (8c66ce2)
