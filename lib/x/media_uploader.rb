@@ -71,7 +71,7 @@ module X
         File.open(file_path, "rb") do |f|
           while (chunk = f.read(chunk_size))
             file_paths << "#{Dir.mktmpdir}/x#{format("%03d", file_number += 1)}".tap do |path|
-              File.write(path, chunk)
+              File.binwrite(path, chunk)
             end
           end
         end
