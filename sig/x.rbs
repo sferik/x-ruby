@@ -279,7 +279,3 @@ module X
     def self.escape_params: (Hash[String, String] | Array[[String, String]] params) -> String
   end
 end
-
-class Dir
-  def self.mktmpdir: (?String? prefix_suffix) -> String
-end

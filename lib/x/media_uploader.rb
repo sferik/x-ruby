@@ -1,4 +1,5 @@
 require "securerandom"
+require "tmpdir"
 
 module X
   module MediaUploader
