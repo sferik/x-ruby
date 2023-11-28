@@ -1,3 +1,7 @@
+## [0.12.1] - 2023-11-28
+* Ensure split chunks are written as binary (c6e257f)
+* Require tmpdir in X::MediaUploader (9e7c7f1)
+
 ## [0.12.0] - 2023-11-02
 * Ensure Authenticator is passed to RedirectHandler (fc8557b)
 * Add AUTHENTICATION_HEADER to X::Authenticator base class (85a2818)
