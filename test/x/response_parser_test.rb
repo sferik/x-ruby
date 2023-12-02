@@ -51,7 +51,7 @@ module X
         headers: {"x-rate-limit-remaining" => "0"})
       exception = assert_raises(TooManyRequests) { @response_parser.parse(response: response) }
 
-      assert_predicate exception.remaining, :zero?
+      assert_predicate exception.rate_limits.first.remaining, :zero?
     end
 
     def test_error_with_title_only

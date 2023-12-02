@@ -102,12 +102,16 @@ module X
   end
 
   class TooManyRequests < ClientError
-    @response: Net::HTTPResponse
+    @rate_limits: Array[RateLimit]
+    @limit_types: Array[String]
 
-    def limit: -> Integer
-    def remaining: -> Integer
+    def rate_limit: -> RateLimit?
+    def rate_limits: -> Array[RateLimit]
     def reset_at: -> Time
     def reset_in: -> Integer?
+
+    private
+    def limit_types: -> Array[String]
   end
 
   class Unauthorized < ClientError
@@ -145,6 +149,16 @@ module X
     private
     def build_http_client: (?String host, ?Integer port) -> Net::HTTP
     def configure_http_client: (Net::HTTP http_client) -> Net::HTTP
+  end
+
+  class RateLimit
+    attr_accessor type: String
+    attr_accessor response: Net::HTTPResponse
+    def initialize: (type: String, response: Net::HTTPResponse) -> void
+    def limit: -> Integer
+    def remaining: -> Integer
+    def reset_at: -> Time
+    def reset_in: -> Integer?
   end
 
   class RequestBuilder

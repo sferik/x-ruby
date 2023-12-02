@@ -31,6 +31,11 @@ Layout/HashAlignment:
   EnforcedColonStyle: key
   EnforcedLastArgumentHashStyle: always_inspect
 
+Layout/MultilineMethodCallIndentation:
+  Enabled: true
+  EnforcedStyle: indented
+  IndentationWidth: ~
+
 Layout/ParameterAlignment:
   Enabled: true
   EnforcedStyle: with_fixed_indentation
