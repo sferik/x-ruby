@@ -142,11 +142,16 @@ Pull requests will only be accepted if they meet all the following criteria:
 
 3. 100% mutation coverage. This can be verified with:
 
+       git remote add upstream https://github.com/sferik/x-ruby # The upstream branch has to be added
        bundle exec rake mutant
 
 4. RBS type signatures (in `sig/x.rbs`). This can be verified with:
 
        bundle exec rake steep
+
+5. Code must conform to [RuboCop rules](https://github.com/rubocop/rubocop). This can be verified with:
+
+       bundle exec rubocop
 
 ## License
 
