@@ -132,26 +132,26 @@ Bug reports and pull requests are welcome on GitHub at https://github.com/sferik
 
 Pull requests will only be accepted if they meet all the following criteria:
 
-1. Code must conform to [Standard Ruby](https://github.com/standardrb/standard). This can be verified with:
-
-       bundle exec rake standard
-
-2. 100% C0 code coverage. This can be verified with:
+1. 100% C0 code coverage. This can be verified with:
 
        bundle exec rake test
 
-3. 100% mutation coverage. This can be verified with:
-
-       git remote add upstream https://github.com/sferik/x-ruby # The upstream branch has to be added
-       bundle exec rake mutant
-
-4. RBS type signatures (in `sig/x.rbs`). This can be verified with:
-
-       bundle exec rake steep
-
-5. Code must conform to [RuboCop rules](https://github.com/rubocop/rubocop). This can be verified with:
+2. Code must conform to [RuboCop rules](https://github.com/rubocop/rubocop). This can be verified with:
 
        bundle exec rubocop
+
+3. Code must conform to [Standard Ruby](https://github.com/standardrb/standard). This can be verified with:
+
+       bundle exec rake standard
+
+4. 100% mutation coverage. This can be verified with:
+
+       git remote add upstream https://github.com/sferik/x-ruby
+       bundle exec rake mutant
+
+5. RBS type signatures (in `sig/x.rbs`). This can be verified with:
+
+       bundle exec rake steep
 
 ## License
 

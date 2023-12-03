@@ -8,8 +8,9 @@ module X
     end
 
     def rate_limits
-      @rate_limits ||= limit_types.map { |type| RateLimit.new(type: type, response: response) }
-        .select { |limit| limit.remaining.zero? }
+      @rate_limits ||= RateLimit::TYPES.filter_map do |type|
+        RateLimit.new(type: type, response: response) if response["x-#{type}-remaining"].eql?("0")
+      end
     end
 
     def reset_at
@@ -21,11 +22,5 @@ module X
     end
 
     alias_method :retry_after, :reset_in
-
-    private
-
-    def limit_types
-      @limit_types ||= response.to_hash.keys.filter_map { |k| k.match(/x-(.+-limit.*)-remaining/)&.captures&.first }
-    end
   end
 end

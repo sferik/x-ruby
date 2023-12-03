@@ -103,15 +103,11 @@ module X
 
   class TooManyRequests < ClientError
     @rate_limits: Array[RateLimit]
-    @limit_types: Array[String]
 
     def rate_limit: -> RateLimit?
     def rate_limits: -> Array[RateLimit]
     def reset_at: -> Time
     def reset_in: -> Integer?
-
-    private
-    def limit_types: -> Array[String]
   end
 
   class Unauthorized < ClientError
@@ -152,6 +148,11 @@ module X
   end
 
   class RateLimit
+    RATE_LIMIT_TYPE: String
+    APP_LIMIT_TYPE: String
+    USER_LIMIT_TYPE: String
+    TYPES: [String, String, String]
+
     attr_accessor type: String
     attr_accessor response: Net::HTTPResponse
     def initialize: (type: String, response: Net::HTTPResponse) -> void

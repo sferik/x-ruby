@@ -1,5 +1,10 @@
 module X
   class RateLimit
+    RATE_LIMIT_TYPE = "rate-limit".freeze
+    APP_LIMIT_TYPE = "app-limit-24hour".freeze
+    USER_LIMIT_TYPE = "user-limit-24hour".freeze
+    TYPES = [RATE_LIMIT_TYPE, APP_LIMIT_TYPE, USER_LIMIT_TYPE].freeze
+
     attr_accessor :type, :response
 
     def initialize(type:, response:)
