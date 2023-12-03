@@ -10,7 +10,7 @@ module X
 
     ResponseParser::ERROR_MAP.each do |status, error_class|
       name = error_class.name.split("::").last
-      define_method("test_initialize_#{name.downcase}_error") do
+      define_method "test_initialize_#{name.downcase}_error" do
         response = Net::HTTPResponse::CODE_TO_OBJ[status.to_s].new("1.1", status, error_class.name)
         exception = error_class.new(response: response)
 
@@ -21,7 +21,7 @@ module X
     end
 
     Connection::NETWORK_ERRORS.each do |error_class|
-      define_method("test_#{error_class.name.split("::").last.downcase}_raises_network_error") do
+      define_method "test_#{error_class.name.split("::").last.downcase}_raises_network_error" do
         stub_request(:get, "https://api.twitter.com/2/tweets").to_raise(error_class)
 
         assert_raises NetworkError do

@@ -1,5 +1,5 @@
 [![Tests](https://github.com/sferik/x-ruby/actions/workflows/test.yml/badge.svg)](https://github.com/sferik/x-ruby/actions/workflows/test.yml)
-[![RuboCop](https://github.com/sferik/x-ruby/actions/workflows/rubocop.yml/badge.svg)](https://github.com/sferik/x-ruby/actions/workflows/rubocop.yml)
+[![Linter](https://github.com/sferik/x-ruby/actions/workflows/lint.yml/badge.svg)](https://github.com/sferik/x-ruby/actions/workflows/lint.yml)
 [![Mutant](https://github.com/sferik/x-ruby/actions/workflows/mutant.yml/badge.svg)](https://github.com/sferik/x-ruby/actions/workflows/mutant.yml)
 [![Typer Checker](https://github.com/sferik/x-ruby/actions/workflows/steep.yml/badge.svg)](https://github.com/sferik/x-ruby/actions/workflows/steep.yml)
 [![Gem Version](https://badge.fury.io/rb/x.svg)](https://rubygems.org/gems/x)
@@ -52,8 +52,15 @@ x_client.delete("tweets/#{post["data"]["id"]}")
 # Initialize an API v1.1 client
 v1_client = X::Client.new(base_url: "https://api.twitter.com/1.1/", **x_credentials)
 
-# Get your account settings
-v1_client.get("account/settings.json")
+# Define a custom response object
+Language = Struct.new(:code, :name, :local_name, :status, :debug)
+
+# Parse a response with custom array and object classes
+languages = v1_client.get("help/languages.json", object_class: Language, array_class: Set)
+# #<Set: {#<struct Language code="ur", name="Urdu", local_name="اردو", status="beta", debug=false>, …
+
+# Access data with dots instead of brackets
+languages.first.local_name
 
 # Initialize an Ads API client
 ads_client = X::Client.new(base_url: "https://ads-api.twitter.com/12/", **x_credentials)
@@ -149,20 +156,23 @@ Bug reports and pull requests are welcome on GitHub at https://github.com/sferik
 
 Pull requests will only be accepted if they meet all the following criteria:
 
-1. Code must conform to [RuboCop rules](https://github.com/rubocop/rubocop). This can be verified with:
+1. Code must conform to [Standard Ruby](https://github.com/standardrb/standard#readme). This can be verified with:
 
-       bundle exec rubocop
+       bundle exec rake standard
 
-2. 100% C0 code coverage. This can be verified with:
+2. Code must conform to the [RuboCop rules](https://github.com/rubocop/rubocop#readme). This can be verified with:
+
+       bundle exec rake rubocop
+
+3. 100% C0 code coverage. This can be verified with:
 
        bundle exec rake test
 
-3. 100% mutation coverage. This can be verified with:
+4. 100% mutation coverage. This can be verified with:
 
-       git remote add upstream https://github.com/sferik/x-ruby
        bundle exec rake mutant
 
-4. RBS type signatures (in `sig/x.rbs`). This can be verified with:
+5. RBS type signatures (in `sig/x.rbs`). This can be verified with:
 
        bundle exec rake steep
 
