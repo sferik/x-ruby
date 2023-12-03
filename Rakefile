@@ -28,7 +28,4 @@ task :mutant do
   system(*%w[bundle exec mutant run]) or raise "Mutant task failed"
 end
 
-desc "Run linters"
-task lint: %i[rubocop standard]
-
-task default: %i[test lint mutant steep]
+task default: %i[test rubocop mutant steep]
