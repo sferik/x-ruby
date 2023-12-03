@@ -1,5 +1,5 @@
+require "ostruct"
 require_relative "../test_helper"
-require "hashie"
 
 module X
   class ClientInitializationTest < Minitest::Test
@@ -106,12 +106,12 @@ module X
     end
 
     def test_overwrite_defaults
-      @client = Client.new(base_url: "https://api.twitter.com/1.1/", max_redirects: 0, object_class: Hashie::Mash,
+      @client = Client.new(base_url: "https://api.twitter.com/1.1/", max_redirects: 0, object_class: OpenStruct,
         array_class: Set)
 
       assert_equal "https://api.twitter.com/1.1/", @client.base_url
       assert_predicate @client.max_redirects, :zero?
-      assert_equal Hashie::Mash, @client.object_class
+      assert_equal OpenStruct, @client.object_class
       assert_equal Set, @client.array_class
     end
 

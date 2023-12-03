@@ -1,4 +1,4 @@
-require "hashie"
+require "ostruct"
 require_relative "../test_helper"
 
 module X
@@ -123,12 +123,12 @@ module X
     end
 
     def test_custom_response_objects
-      response_parser = ResponseParser.new(object_class: Hashie::Mash, array_class: Set)
+      response_parser = ResponseParser.new(object_class: OpenStruct, array_class: Set)
       stub_request(:get, @uri.to_s).to_return(body: '{"array": [1, 2, 2, 3]}',
         headers: {"Content-Type" => "application/json"})
       mash = response_parser.parse(response: response)
 
-      assert_kind_of Hashie::Mash, mash
+      assert_kind_of OpenStruct, mash
       assert_kind_of Set, mash.array
       assert_equal Set.new([1, 2, 2, 3]), mash.array
     end

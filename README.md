@@ -55,7 +55,7 @@ v1_client = X::Client.new(base_url: "https://api.twitter.com/1.1/", **x_credenti
 # Get your account settings
 v1_client.get("account/settings.json")
 
-# Initialize an X Ads API client
+# Initialize an Ads API client
 ads_client = X::Client.new(base_url: "https://ads-api.twitter.com/12/", **x_credentials)
 
 # Get your ad accounts
@@ -79,6 +79,23 @@ In the immortal words of [Ezra Zygmuntowicz](https://github.com/ezmobius) and hi
 The tests for the previous version of this library executed in about 2 seconds. That sounds pretty fast until you see that tests for this library run in one-twentieth of a second. This means you can automatically run the tests any time you write a file and receive immediate feedback. For such of workflows, 2 seconds feels painfully slow.
 
 This code is not littered with comments that are intended to generate documentation. Rather, this code is intended to be simple enough to serve as its own documentation. If you want to understand how something works, don’t read the documentation—it might be wrong—read the code. The code is always right.
+
+## Features
+
+If this entire library is implemented in just 500 lines of code, why should you use it at all vs. writing your own library that suits your needs? If you feel inspired to do that, don’t let me discourage you, but this library has some advanced features that may not be apparent without diving into the code:
+
+* OAuth 1.0 Revision A
+* OAuth 2.0 Bearer Token
+* Thread safety
+* HTTP redirect following
+* HTTP proxy support
+* HTTP logging
+* HTTP timeout configuration
+* HTTP error handling
+* Rate limit handling
+* Parsing JSON into custom response objects (e.g. OpenStruct)
+* Configurable base URLs for accessing different APIs/versions
+* Parallel uploading of large media files in chunks
 
 ## Sponsorship
 
