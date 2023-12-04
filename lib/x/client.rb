@@ -38,28 +38,28 @@ module X
       @bearer_token = bearer_token
       initialize_authenticator
       @base_url = base_url
-      @connection = Connection.new(open_timeout: open_timeout, read_timeout: read_timeout,
-        write_timeout: write_timeout, debug_output: debug_output, proxy_url: proxy_url)
+      @connection = Connection.new(open_timeout:, read_timeout:,
+        write_timeout:, debug_output:, proxy_url:)
       @request_builder = RequestBuilder.new
       @redirect_handler = RedirectHandler.new(connection: @connection, request_builder: @request_builder,
         max_redirects: max_redirects)
-      @response_parser = ResponseParser.new(array_class: array_class, object_class: object_class)
+      @response_parser = ResponseParser.new(array_class:, object_class:)
     end
 
     def get(endpoint, headers: {})
-      execute_request(:get, endpoint, headers: headers)
+      execute_request(:get, endpoint, headers:)
     end
 
     def post(endpoint, body = nil, headers: {})
-      execute_request(:post, endpoint, body: body, headers: headers)
+      execute_request(:post, endpoint, body:, headers:)
     end
 
     def put(endpoint, body = nil, headers: {})
-      execute_request(:put, endpoint, body: body, headers: headers)
+      execute_request(:put, endpoint, body:, headers:)
     end
 
     def delete(endpoint, headers: {})
-      execute_request(:delete, endpoint, headers: headers)
+      execute_request(:delete, endpoint, headers:)
     end
 
     def api_key=(api_key)
@@ -98,10 +98,9 @@ module X
 
     def initialize_authenticator
       @authenticator = if api_key && api_key_secret && access_token && access_token_secret
-        OAuthAuthenticator.new(api_key: api_key, api_key_secret: api_key_secret, access_token: access_token,
-          access_token_secret: access_token_secret)
+        OAuthAuthenticator.new(api_key:, api_key_secret:, access_token:, access_token_secret:)
       elsif bearer_token
-        BearerTokenAuthenticator.new(bearer_token: bearer_token)
+        BearerTokenAuthenticator.new(bearer_token:)
       elsif @authenticator.nil?
         Authenticator.new
       else
@@ -113,10 +112,10 @@ module X
       uri = URI.join(base_url, endpoint)
       request = @request_builder.build(http_method: http_method, uri: uri, body: body, headers: headers,
         authenticator: @authenticator)
-      response = @connection.perform(request: request)
+      response = @connection.perform(request:)
       response = @redirect_handler.handle(response: response, request: request, base_url: base_url,
         authenticator: @authenticator)
-      @response_parser.parse(response: response)
+      @response_parser.parse(response:)
     end
   end
 end
