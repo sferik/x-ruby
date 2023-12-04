@@ -1,3 +1,6 @@
+## [0.13.0] - 2023-12-04
+* Introduce X::RateLimit, which is returned with X::TooManyRequests errors (196caec)
+
 ## [0.12.1] - 2023-11-28
 * Ensure split chunks are written as binary (c6e257f)
 * Require tmpdir in X::MediaUploader (9e7c7f1)
