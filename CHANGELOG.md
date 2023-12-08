@@ -1,3 +1,6 @@
+## [0.14.0] - 2023-12-08
+* Allow passing custom objects per-request (768889f)
+
 ## [0.13.0] - 2023-12-04
 * Introduce X::RateLimit, which is returned with X::TooManyRequests errors (196caec)
 
