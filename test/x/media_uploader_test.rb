@@ -59,6 +59,15 @@ module X
       assert_equal "succeeded", result["processing_info"]["state"]
     end
 
+    def test_await_processing_and_failed
+      stub_request(:get, "https://upload.twitter.com/1.1/media/upload.json?command=STATUS&media_id=#{TEST_MEDIA_ID}")
+        .to_return(headers: {"content-type" => "application/json"}, body: '{"processing_info": {"state": "pending"}}')
+        .to_return(headers: {"content-type" => "application/json"}, body: '{"processing_info": {"state": "failed"}}')
+      result = MediaUploader.await_processing(client: @client, media: @media)
+
+      assert_equal "failed", result["processing_info"]["state"]
+    end
+
     def test_retry
       file_path = "test/sample_files/sample.mp4"
       stub_request(:post, "https://upload.twitter.com/1.1/media/upload.json?command=INIT&media_category=tweet_video&media_type=video/mp4&total_bytes=#{File.size(file_path)}")
