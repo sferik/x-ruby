@@ -1,3 +1,6 @@
+## [0.14.1] - 2023-12-20
+* Fix infinite loop when an upload fails (5dfc604)
+
 ## [0.14.0] - 2023-12-08
 * Allow passing custom objects per-request (768889f)
 
