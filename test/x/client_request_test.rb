@@ -9,14 +9,14 @@ module X
     end
 
     X::RequestBuilder::HTTP_METHODS.each_key do |http_method|
-      define_method "test_#{http_method}_request" do
+      define_method :"test_#{http_method}_request" do
         stub_request(http_method, "https://api.twitter.com/2/tweets")
         @client.public_send(http_method, "tweets")
 
         assert_requested http_method, "https://api.twitter.com/2/tweets"
       end
 
-      define_method "test_#{http_method}_request_with_headers" do
+      define_method :"test_#{http_method}_request_with_headers" do
         headers = {"User-Agent" => "Custom User Agent"}
         stub_request(http_method, "https://api.twitter.com/2/tweets")
         @client.public_send(http_method, "tweets", headers: headers)
@@ -24,7 +24,7 @@ module X
         assert_requested http_method, "https://api.twitter.com/2/tweets", headers: headers
       end
 
-      define_method "test_#{http_method}_request_with_custom_response_objects" do
+      define_method :"test_#{http_method}_request_with_custom_response_objects" do
         stub_request(http_method, "https://api.twitter.com/2/tweets")
           .to_return(body: '{"set": [1, 2, 2, 3]}', headers: {"Content-Type" => "application/json"})
         ostruct = @client.public_send(http_method, "tweets", object_class: OpenStruct, array_class: Set)
@@ -34,7 +34,7 @@ module X
         assert_equal Set.new([1, 2, 3]), ostruct.set
       end
 
-      define_method "test_#{http_method}_request_with_custom_response_objects_client_configuration" do
+      define_method :"test_#{http_method}_request_with_custom_response_objects_client_configuration" do
         stub_request(http_method, "https://api.twitter.com/2/tweets")
           .to_return(body: '{"set": [1, 2, 2, 3]}', headers: {"Content-Type" => "application/json"})
         client = Client.new(default_object_class: OpenStruct, default_array_class: Set)

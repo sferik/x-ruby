@@ -40,7 +40,7 @@ module X
 
     def test_setting_oauth_credentials
       oauth_credentials.each do |credential, value|
-        @client.public_send("#{credential}=", value)
+        @client.public_send(:"#{credential}=", value)
 
         assert_equal value, @client.public_send(credential)
       end
@@ -52,7 +52,7 @@ module X
       oauth_credentials.each do |credential, value|
         initialize_authenticator_called = false
         @client.stub :initialize_authenticator, -> { initialize_authenticator_called = true } do
-          @client.public_send("#{credential}=", value)
+          @client.public_send(:"#{credential}=", value)
         end
 
         assert_equal value, @client.public_send(credential)
