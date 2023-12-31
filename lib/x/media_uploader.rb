@@ -14,6 +14,7 @@ module X
     GIF_MIME_TYPE, JPEG_MIME_TYPE, MP4_MIME_TYPE, PNG_MIME_TYPE, SUBRIP_MIME_TYPE, WEBP_MIME_TYPE = MIME_TYPES
     MIME_TYPE_MAP = {"gif" => GIF_MIME_TYPE, "jpg" => JPEG_MIME_TYPE, "jpeg" => JPEG_MIME_TYPE, "mp4" => MP4_MIME_TYPE,
                      "png" => PNG_MIME_TYPE, "srt" => SUBRIP_MIME_TYPE, "webp" => WEBP_MIME_TYPE}.freeze
+    PROCESSING_INFO_STATES = %w[failed succeeded].freeze
 
     def upload(client:, file_path:, media_category:, media_type: infer_media_type(file_path, media_category),
       boundary: SecureRandom.hex)
@@ -40,7 +41,7 @@ module X
       upload_client = client.dup.tap { |c| c.base_url = "https://upload.twitter.com/1.1/" }
       loop do
         status = upload_client.get("media/upload.json?command=STATUS&media_id=#{media["media_id"]}")
-        return status if !status["processing_info"] || %w[failed succeeded].include?(status["processing_info"]["state"])
+        return status if !status["processing_info"] || PROCESSING_INFO_STATES.include?(status["processing_info"]["state"])
 
         sleep status["processing_info"]["check_after_secs"].to_i
       end
