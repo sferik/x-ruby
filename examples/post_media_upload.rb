@@ -10,7 +10,7 @@ x_credentials = {
 
 client = X::Client.new(**x_credentials)
 file_path = "path/to/your/media.jpg"
-media_category = "tweet_image" # other options include: tweet_video, tweet_gif, dm_image, dm_video, dm_gif, subtitles
+media_category = "tweet_image" # other options are: dm_image or subtitles; for videos or GIFs use chunked_upload
 
 media = X::MediaUploader.upload(client: client, file_path: file_path, media_category: media_category)
 

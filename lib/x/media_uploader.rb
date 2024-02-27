@@ -29,11 +29,10 @@ module X
       media_category), boundary: SecureRandom.hex, chunk_size_mb: 8)
       validate!(file_path: file_path, media_category: media_category)
       upload_client = client.dup.tap { |c| c.base_url = "https://upload.twitter.com/1.1/" }
-      media = init(upload_client: upload_client, file_path: file_path, media_type: media_type,
-        media_category: media_category)
+      media = init(upload_client: upload_client, file_path: file_path, media_type: media_type, media_category: media_category)
       chunk_size = chunk_size_mb * BYTES_PER_MB
-      append(upload_client: upload_client, file_paths: split(file_path, chunk_size), media: media,
-        media_type: media_type, boundary: boundary)
+      append(upload_client: upload_client, file_paths: split(file_path, chunk_size), media: media, media_type: media_type,
+        boundary: boundary)
       upload_client.post("media/upload.json?command=FINALIZE&media_id=#{media["media_id"]}")
     end
 
@@ -92,8 +91,7 @@ module X
           upload_body = construct_upload_body(file_path: file_path, media_type: media_type, boundary: boundary)
           query = "command=APPEND&media_id=#{media["media_id"]}&segment_index=#{index}"
           headers = {"Content-Type" => "multipart/form-data, boundary=#{boundary}"}
-          upload_chunk(upload_client: upload_client, query: query, upload_body: upload_body, file_path: file_path,
-            headers: headers)
+          upload_chunk(upload_client: upload_client, query: query, upload_body: upload_body, file_path: file_path, headers: headers)
         end
       end
       threads.each(&:join)

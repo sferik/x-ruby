@@ -42,7 +42,7 @@ module X
       URI.join(base_url, location)
     end
 
-    def build_request(request, new_uri, response_code, authenticator)
+    def build_request(request, uri, response_code, authenticator)
       http_method, body = case response_code
       in 307 | 308
         [request.method.downcase.to_sym, request.body]
@@ -50,7 +50,7 @@ module X
         [:get, nil]
       end
 
-      request_builder.build(http_method: http_method, uri: new_uri, body: body, authenticator: authenticator)
+      request_builder.build(http_method: http_method, uri: uri, body: body, authenticator: authenticator)
     end
   end
 end

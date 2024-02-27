@@ -65,7 +65,8 @@ module X
 
     def test_error_with_detail_only
       stub_request(:get, @uri.to_s)
-        .to_return(status: [400, "Bad Request"], body: '{"detail": "Something went wrong"}', headers: {"Content-Type" => "application/json"})
+        .to_return(status: [400, "Bad Request"], body: '{"detail": "Something went wrong"}',
+          headers: {"Content-Type" => "application/json"})
       exception = assert_raises(BadRequest) { @response_parser.parse(response: response) }
 
       assert_equal "Bad Request", exception.message
@@ -73,7 +74,8 @@ module X
 
     def test_error_with_title_and_detail_error_message
       stub_request(:get, @uri.to_s)
-        .to_return(status: 400, body: '{"title": "Some Error", "detail": "Something went wrong"}', headers: {"Content-Type" => "application/json"})
+        .to_return(status: 400,
+          body: '{"title": "Some Error", "detail": "Something went wrong"}', headers: {"Content-Type" => "application/json"})
       exception = assert_raises(BadRequest) { @response_parser.parse(response: response) }
 
       assert_equal("Some Error: Something went wrong", exception.message)
@@ -89,7 +91,8 @@ module X
 
     def test_error_with_errors_array_message
       stub_request(:get, @uri.to_s)
-        .to_return(status: 400, body: '{"errors": [{"message": "Some Error"}, {"message": "Another Error"}]}', headers: {"Content-Type" => "application/json"})
+        .to_return(status: 400,
+          body: '{"errors": [{"message": "Some Error"}, {"message": "Another Error"}]}', headers: {"Content-Type" => "application/json"})
       exception = assert_raises(BadRequest) { @response_parser.parse(response: response) }
 
       assert_equal("Some Error, Another Error", exception.message)
@@ -97,7 +100,8 @@ module X
 
     def test_error_with_errors_message
       stub_request(:get, @uri.to_s)
-        .to_return(status: 400, body: '{"errors": {"message": "Some Error"}}', headers: {"Content-Type" => "application/json"})
+        .to_return(status: 400,
+          body: '{"errors": {"message": "Some Error"}}', headers: {"Content-Type" => "application/json"})
       exception = assert_raises(BadRequest) { @response_parser.parse(response: response) }
 
       assert_empty exception.message

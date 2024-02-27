@@ -6,9 +6,5 @@ module X
     def self.escape(value)
       ::CGI.escape(value).gsub("+", "%20")
     end
-
-    def self.escape_params(params)
-      params.map { |k, v| "#{k}=#{escape(v)}" }.join("&")
-    end
   end
 end

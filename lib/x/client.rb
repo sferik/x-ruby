@@ -38,11 +38,10 @@ module X
       initialize_authenticator
       @base_url = base_url
       initialize_default_classes(default_array_class, default_object_class)
-      @connection = Connection.new(open_timeout: open_timeout, read_timeout: read_timeout,
-        write_timeout: write_timeout, debug_output: debug_output, proxy_url: proxy_url)
+      @connection = Connection.new(open_timeout: open_timeout, read_timeout: read_timeout, write_timeout: write_timeout,
+        debug_output: debug_output, proxy_url: proxy_url)
       @request_builder = RequestBuilder.new
-      @redirect_handler = RedirectHandler.new(connection: @connection, request_builder: @request_builder,
-        max_redirects: max_redirects)
+      @redirect_handler = RedirectHandler.new(connection: @connection, request_builder: @request_builder, max_redirects: max_redirects)
       @response_parser = ResponseParser.new
     end
 
@@ -51,13 +50,11 @@ module X
     end
 
     def post(endpoint, body = nil, headers: {}, array_class: default_array_class, object_class: default_object_class)
-      execute_request(:post, endpoint, body: body, headers: headers, array_class: array_class,
-        object_class: object_class)
+      execute_request(:post, endpoint, body: body, headers: headers, array_class: array_class, object_class: object_class)
     end
 
     def put(endpoint, body = nil, headers: {}, array_class: default_array_class, object_class: default_object_class)
-      execute_request(:put, endpoint, body: body, headers: headers, array_class: array_class,
-        object_class: object_class)
+      execute_request(:put, endpoint, body: body, headers: headers, array_class: array_class, object_class: object_class)
     end
 
     def delete(endpoint, headers: {}, array_class: default_array_class, object_class: default_object_class)
@@ -119,11 +116,9 @@ module X
 
     def execute_request(http_method, endpoint, body: nil, headers: {}, array_class: default_array_class, object_class: default_object_class)
       uri = URI.join(base_url, endpoint)
-      request = @request_builder.build(http_method: http_method, uri: uri, body: body, headers: headers,
-        authenticator: @authenticator)
+      request = @request_builder.build(http_method: http_method, uri: uri, body: body, headers: headers, authenticator: @authenticator)
       response = @connection.perform(request: request)
-      response = @redirect_handler.handle(response: response, request: request, base_url: base_url,
-        authenticator: @authenticator)
+      response = @redirect_handler.handle(response: response, request: request, base_url: base_url, authenticator: @authenticator)
       @response_parser.parse(response: response, array_class: array_class, object_class: object_class)
     end
   end

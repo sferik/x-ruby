@@ -29,9 +29,7 @@ module X
           .to_return(body: '{"set": [1, 2, 2, 3]}', headers: {"Content-Type" => "application/json"})
         ostruct = @client.public_send(http_method, "tweets", object_class: OpenStruct, array_class: Set)
 
-        assert_kind_of OpenStruct, ostruct
-        assert_kind_of Set, ostruct.set
-        assert_equal Set.new([1, 2, 3]), ostruct.set
+        assert_equal OpenStruct.new(set: Set.new([1, 2, 3])), ostruct
       end
 
       define_method :"test_#{http_method}_request_with_custom_response_objects_client_configuration" do
@@ -40,9 +38,7 @@ module X
         client = Client.new(default_object_class: OpenStruct, default_array_class: Set)
         ostruct = client.public_send(http_method, "tweets")
 
-        assert_kind_of OpenStruct, ostruct
-        assert_kind_of Set, ostruct.set
-        assert_equal Set.new([1, 2, 3]), ostruct.set
+        assert_equal OpenStruct.new(set: Set.new([1, 2, 3])), ostruct
       end
     end
 

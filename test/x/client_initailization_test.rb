@@ -9,17 +9,8 @@ module X
       @client = Client.new
     end
 
-    def oauth_credentials
-      {
-        api_key: TEST_API_KEY,
-        api_key_secret: TEST_API_KEY_SECRET,
-        access_token: TEST_ACCESS_TOKEN,
-        access_token_secret: TEST_ACCESS_TOKEN_SECRET
-      }
-    end
-
     def test_initialize_oauth_credentials
-      client = Client.new(**oauth_credentials)
+      client = Client.new(**test_oauth_credentials)
 
       authenticator = client.instance_variable_get(:@authenticator)
 
@@ -31,15 +22,15 @@ module X
     end
 
     def test_missing_oauth_credentials
-      oauth_credentials.each_key do |missing_credential|
-        client = Client.new(**oauth_credentials.except(missing_credential))
+      test_oauth_credentials.each_key do |missing_credential|
+        client = Client.new(**test_oauth_credentials.except(missing_credential))
 
         assert_instance_of Authenticator, client.instance_variable_get(:@authenticator)
       end
     end
 
     def test_setting_oauth_credentials
-      oauth_credentials.each do |credential, value|
+      test_oauth_credentials.each do |credential, value|
         @client.public_send(:"#{credential}=", value)
 
         assert_equal value, @client.public_send(credential)
@@ -49,7 +40,7 @@ module X
     end
 
     def test_setting_oauth_credentials_reinitializes_authenticator
-      oauth_credentials.each do |credential, value|
+      test_oauth_credentials.each do |credential, value|
         initialize_authenticator_called = false
         @client.stub :initialize_authenticator, -> { initialize_authenticator_called = true } do
           @client.public_send(:"#{credential}=", value)

@@ -284,6 +284,5 @@ module X
 
   class CGI
     def self.escape: (String value) -> String
-    def self.escape_params: (Hash[String, String] | Array[[String, String]] params) -> String
   end
 end

@@ -71,7 +71,7 @@ module X
     end
 
     def signature_base_string(method, url, params)
-      "#{method}&#{CGI.escape(url)}&#{CGI.escape(CGI.escape_params(params.sort))}"
+      "#{method}&#{CGI.escape(url)}&#{CGI.escape(URI.encode_www_form(params.sort))}"
     end
 
     def signing_key
