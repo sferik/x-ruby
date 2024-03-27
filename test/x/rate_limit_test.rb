@@ -11,7 +11,7 @@ module X
           "x-rate-limit-remaining" => "0",
           "x-rate-limit-reset" => (Time.now.to_i + 60).to_s
         }
-        @rate_limit = RateLimit.new(type: "rate-limit", response: response)
+        @rate_limit = RateLimit.new(type: "rate-limit", response:)
       end
     end
 

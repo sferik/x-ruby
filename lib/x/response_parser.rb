@@ -41,13 +41,13 @@ module X
 
       return unless json?(response)
 
-      JSON.parse(response.body, array_class: array_class, object_class: object_class)
+      JSON.parse(response.body, array_class:, object_class:)
     end
 
     private
 
     def error(response)
-      error_class(response).new(response: response)
+      error_class(response).new(response:)
     end
 
     def error_class(response)

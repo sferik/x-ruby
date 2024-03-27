@@ -281,8 +281,4 @@ module X
     def finalize: (upload_client: Client, media: untyped) -> untyped
     def construct_upload_body: (file_path: String, media_type: String, ?boundary: String) -> String
   end
-
-  class CGI
-    def self.escape: (String value) -> String
-  end
 end

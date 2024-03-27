@@ -11,13 +11,13 @@ module X
         response["x-rate-limit-remaining"] = "0"
         response["x-rate-limit-reset"] = (Time.now + 60).to_i.to_s
 
-        @exception = TooManyRequests.new(response: response)
+        @exception = TooManyRequests.new(response:)
       end
     end
 
     def test_initialize_with_empty_response
       response = Net::HTTPTooManyRequests.new("1.1", 429, "Too Many Requests")
-      exception = TooManyRequests.new(response: response)
+      exception = TooManyRequests.new(response:)
 
       assert_equal 0, exception.rate_limits.count
       assert_equal Time.at(0).utc, exception.reset_at

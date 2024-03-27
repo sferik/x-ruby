@@ -28,7 +28,7 @@ module X
         new_request = build_request(request, new_uri, Integer(response.code), authenticator)
         new_response = connection.perform(request: new_request)
 
-        handle(response: new_response, request: new_request, base_url: base_url, redirect_count: redirect_count + 1)
+        handle(response: new_response, request: new_request, base_url:, redirect_count: redirect_count + 1)
       else
         response
       end
@@ -50,7 +50,7 @@ module X
         [:get, nil]
       end
 
-      request_builder.build(http_method: http_method, uri: uri, body: body, authenticator: authenticator)
+      request_builder.build(http_method:, uri:, body:, authenticator:)
     end
   end
 end

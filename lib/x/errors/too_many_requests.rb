@@ -9,7 +9,7 @@ module X
 
     def rate_limits
       @rate_limits ||= RateLimit::TYPES.filter_map do |type|
-        RateLimit.new(type: type, response: response) if response["x-#{type}-remaining"].eql?("0")
+        RateLimit.new(type:, response:) if response["x-#{type}-remaining"].eql?("0")
       end
     end
 

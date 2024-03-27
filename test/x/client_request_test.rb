@@ -19,9 +19,9 @@ module X
       define_method :"test_#{http_method}_request_with_headers" do
         headers = {"User-Agent" => "Custom User Agent"}
         stub_request(http_method, "https://api.twitter.com/2/tweets")
-        @client.public_send(http_method, "tweets", headers: headers)
+        @client.public_send(http_method, "tweets", headers:)
 
-        assert_requested http_method, "https://api.twitter.com/2/tweets", headers: headers
+        assert_requested http_method, "https://api.twitter.com/2/tweets", headers:
       end
 
       define_method :"test_#{http_method}_request_with_custom_response_objects" do
@@ -89,10 +89,10 @@ module X
         .to_return(status: 307, headers: {"Location" => "https://api.twitter.com/new_endpoint"})
       body = {key: "value"}.to_json
       stub_request(:post, "https://api.twitter.com/new_endpoint")
-        .with(body: body)
+        .with(body:)
       @client.post("/temporary_redirect", body)
 
-      assert_requested :post, "https://api.twitter.com/new_endpoint", body: body
+      assert_requested :post, "https://api.twitter.com/new_endpoint", body:
     end
 
     def test_follows_308_redirect
@@ -100,10 +100,10 @@ module X
         .to_return(status: 308, headers: {"Location" => "https://api.twitter.com/new_endpoint"})
       body = {key: "value"}.to_json
       stub_request(:put, "https://api.twitter.com/new_endpoint")
-        .with(body: body)
+        .with(body:)
       @client.put("/temporary_redirect", body)
 
-      assert_requested :put, "https://api.twitter.com/new_endpoint", body: body
+      assert_requested :put, "https://api.twitter.com/new_endpoint", body:
     end
 
     def test_avoids_infinite_redirect_loop

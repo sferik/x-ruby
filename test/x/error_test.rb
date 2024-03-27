@@ -12,7 +12,7 @@ module X
       name = error_class.name.split("::").last
       define_method :"test_initialize_#{name.downcase}_error" do
         response = Net::HTTPResponse::CODE_TO_OBJ[status.to_s].new("1.1", status, error_class.name)
-        exception = error_class.new(response: response)
+        exception = error_class.new(response:)
 
         assert_equal error_class.name, exception.message
         assert_equal response, exception.response
@@ -41,7 +41,7 @@ module X
     def test_problem_json
       body = {error: "problem"}.to_json
       stub_request(:get, "https://api.twitter.com/2/tweets")
-        .to_return(status: 400, headers: {"content-type" => "application/problem+json"}, body: body)
+        .to_return(status: 400, headers: {"content-type" => "application/problem+json"}, body:)
 
       begin
         @client.get("tweets")

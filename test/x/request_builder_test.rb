@@ -64,7 +64,7 @@ module X
 
     def test_escape_query_params
       uri = "https://upload.twitter.com/1.1/media/upload.json?media_type=video/mp4"
-      request = @request_builder.build(http_method: :post, uri: uri, authenticator: @authenticator)
+      request = @request_builder.build(http_method: :post, uri:, authenticator: @authenticator)
 
       assert_equal "media_type=video%2Fmp4", request.uri.query
     end

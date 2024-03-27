@@ -22,7 +22,7 @@ module X
 
       response = Net::HTTPSuccess.new("1.1", "200", "OK")
 
-      assert_equal(response, @redirect_handler.handle(response: response, request: request, base_url: "http://example.com"))
+      assert_equal(response, @redirect_handler.handle(response:, request:, base_url: "http://example.com"))
     end
 
     def test_handle_with_one_redirect
@@ -33,8 +33,7 @@ module X
       response = Net::HTTPFound.new("1.1", "302", "Found")
       response["Location"] = "http://www.example.com"
 
-      @redirect_handler.handle(response: response, request: request, base_url: "http://example.com",
-        authenticator: authenticator)
+      @redirect_handler.handle(response:, request:, base_url: "http://example.com", authenticator:)
 
       assert_requested :get, "http://www.example.com"
     end
@@ -47,7 +46,7 @@ module X
       response = Net::HTTPFound.new("1.1", "307", "Found")
       response["Location"] = "http://example.com/2"
 
-      @redirect_handler.handle(response: response, request: request, base_url: "http://example.com")
+      @redirect_handler.handle(response:, request:, base_url: "http://example.com")
 
       assert_requested :delete, "http://example.com/2"
       assert_requested :delete, "http://example.com/3"
@@ -60,7 +59,7 @@ module X
       response = Net::HTTPFound.new("1.1", "302", "Found")
       response["Location"] = "/some_relative_path"
 
-      @redirect_handler.handle(response: response, request: request, base_url: "http://example.com")
+      @redirect_handler.handle(response:, request:, base_url: "http://example.com")
 
       assert_requested :get, "http://example.com/some_relative_path"
     end
@@ -72,7 +71,7 @@ module X
       response = Net::HTTPMovedPermanently.new("1.1", "301", "Moved Permanently")
       response["Location"] = "http://example.com/new_path"
 
-      @redirect_handler.handle(response: response, request: request, base_url: "http://example.com")
+      @redirect_handler.handle(response:, request:, base_url: "http://example.com")
 
       assert_requested :get, "http://example.com/new_path"
     end
@@ -84,7 +83,7 @@ module X
       response = Net::HTTPFound.new("1.1", "302", "Found")
       response["Location"] = "http://example.com/temp_path"
 
-      @redirect_handler.handle(response: response, request: request, base_url: "http://example.com")
+      @redirect_handler.handle(response:, request:, base_url: "http://example.com")
 
       assert_requested :get, "http://example.com/temp_path"
     end
@@ -97,7 +96,7 @@ module X
       response = Net::HTTPSeeOther.new("1.1", "303", "See Other")
       response["Location"] = "http://example.com/other_path"
 
-      @redirect_handler.handle(response: response, request: request, base_url: "http://example.com")
+      @redirect_handler.handle(response:, request:, base_url: "http://example.com")
 
       assert_requested :get, "http://example.com/other_path"
     end
@@ -110,7 +109,7 @@ module X
       response = Net::HTTPTemporaryRedirect.new("1.1", "307", "Temporary Redirect")
       response["Location"] = "http://example.com/temp_path"
 
-      @redirect_handler.handle(response: response, request: request, base_url: "http://example.com")
+      @redirect_handler.handle(response:, request:, base_url: "http://example.com")
 
       assert_requested :post, "http://example.com/temp_path", body: "request_body"
     end
@@ -123,7 +122,7 @@ module X
       response = Net::HTTPPermanentRedirect.new("1.1", "308", "Permanent Redirect")
       response["Location"] = "http://example.com/new_path"
 
-      @redirect_handler.handle(response: response, request: request, base_url: "http://example.com")
+      @redirect_handler.handle(response:, request:, base_url: "http://example.com")
 
       assert_requested :post, "http://example.com/new_path", body: "request_body"
     end
@@ -136,7 +135,7 @@ module X
       response["Location"] = "http://example.com/some_path"
 
       e = assert_raises(TooManyRedirects) do
-        @redirect_handler.handle(response: response, request: request, base_url: "http://example.com")
+        @redirect_handler.handle(response:, request:, base_url: "http://example.com")
       end
 
       assert_equal "Too many redirects", e.message

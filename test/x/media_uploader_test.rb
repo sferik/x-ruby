@@ -16,7 +16,7 @@ module X
       stub_request(:post, "https://upload.twitter.com/1.1/media/upload.json?media_category=#{MediaUploader::TWEET_IMAGE}")
         .to_return(body: @media.to_json, headers: {"Content-Type" => "application/json"})
 
-      result = MediaUploader.upload(client: @client, file_path: file_path, media_category: MediaUploader::TWEET_IMAGE, boundary: "AaB03x")
+      result = MediaUploader.upload(client: @client, file_path:, media_category: MediaUploader::TWEET_IMAGE, boundary: "AaB03x")
 
       assert_equal TEST_MEDIA_ID, result["media_id"]
     end
@@ -24,14 +24,14 @@ module X
     def test_chunked_upload
       file_path = "test/sample_files/sample.mp4"
       total_bytes = File.size(file_path)
+      chunk_size_mb = (total_bytes - 1) / MediaUploader::BYTES_PER_MB.to_f
       stub_request(:post, "https://upload.twitter.com/1.1/media/upload.json?command=INIT&media_category=tweet_video&media_type=video/mp4&total_bytes=#{total_bytes}")
         .to_return(status: 202, headers: {"content-type" => "application/json"}, body: @media.to_json)
       2.times { |segment_index| stub_request(:post, "https://upload.twitter.com/1.1/media/upload.json?command=APPEND&media_id=#{TEST_MEDIA_ID}&segment_index=#{segment_index}").to_return(status: 204) }
       stub_request(:post, "https://upload.twitter.com/1.1/media/upload.json?command=FINALIZE&media_id=#{TEST_MEDIA_ID}")
         .to_return(status: 201, headers: {"content-type" => "application/json"}, body: @media.to_json)
 
-      response = MediaUploader.chunked_upload(client: @client, file_path: file_path, media_category: MediaUploader::TWEET_VIDEO,
-        chunk_size_mb: (total_bytes - 1) / MediaUploader::BYTES_PER_MB.to_f)
+      response = MediaUploader.chunked_upload(client: @client, file_path:, media_category: MediaUploader::TWEET_VIDEO, chunk_size_mb:)
 
       assert_equal TEST_MEDIA_ID, response["media_id"]
     end
@@ -44,8 +44,7 @@ module X
         stub_request(:post, "https://upload.twitter.com/1.1/media/upload.json?command=APPEND&media_id=#{TEST_MEDIA_ID}&segment_index=#{segment_index}")
           .with(headers: {"Content-Type" => "multipart/form-data, boundary=AaB03x"}).to_return(status: 204)
       end
-      MediaUploader.send(:append, upload_client: @upload_client, file_paths: file_paths, media: @media,
-        media_type: "video/mp4", boundary: "AaB03x")
+      MediaUploader.send(:append, upload_client: @upload_client, file_paths:, media: @media, media_type: "video/mp4", boundary: "AaB03x")
 
       file_paths.each_with_index { |_, segment_index| assert_requested(:post, "https://upload.twitter.com/1.1/media/upload.json?command=APPEND&media_id=#{TEST_MEDIA_ID}&segment_index=#{segment_index}") }
     end
@@ -77,27 +76,26 @@ module X
       stub_request(:post, "https://upload.twitter.com/1.1/media/upload.json?command=FINALIZE&media_id=#{TEST_MEDIA_ID}")
         .to_return(status: 201, headers: {"content-type" => "application/json"}, body: @media.to_json)
 
-      assert MediaUploader.chunked_upload(client: @client, file_path: file_path,
-        media_category: MediaUploader::TWEET_VIDEO)
+      assert MediaUploader.chunked_upload(client: @client, file_path:, media_category: MediaUploader::TWEET_VIDEO)
     end
 
     def test_validate_with_valid_params
       file_path = "test/sample_files/sample.jpg"
 
-      assert_nil MediaUploader.send(:validate!, file_path: file_path, media_category: MediaUploader::TWEET_IMAGE)
+      assert_nil MediaUploader.send(:validate!, file_path:, media_category: MediaUploader::TWEET_IMAGE)
     end
 
     def test_validate_with_invalid_file_path
       file_path = "invalid/file/path"
       assert_raises(RuntimeError) do
-        MediaUploader.send(:validate!, file_path: file_path, media_category: MediaUploader::TWEET_IMAGE)
+        MediaUploader.send(:validate!, file_path:, media_category: MediaUploader::TWEET_IMAGE)
       end
     end
 
     def test_validate_with_invalid_media_category
       file_path = "test/sample_files/sample.jpg"
       assert_raises(ArgumentError) do
-        MediaUploader.send(:validate!, file_path: file_path, media_category: "invalid_category")
+        MediaUploader.send(:validate!, file_path:, media_category: "invalid_category")
       end
     end
 

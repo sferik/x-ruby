@@ -17,9 +17,9 @@ module X
     }.freeze
 
     def build(http_method:, uri:, body: nil, headers: {}, authenticator: Authenticator.new)
-      request = create_request(http_method: http_method, uri: uri, body: body)
-      add_headers(request: request, headers: headers)
-      add_authentication(request: request, authenticator: authenticator)
+      request = create_request(http_method:, uri:, body:)
+      add_headers(request:, headers:)
+      add_authentication(request:, authenticator:)
       request
     end
 

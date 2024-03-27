@@ -1,10 +1,10 @@
 require "base64"
+require "cgi"
 require "json"
 require "openssl"
 require "securerandom"
 require "uri"
 require_relative "authenticator"
-require_relative "cgi"
 
 module X
   class OAuthAuthenticator < Authenticator
@@ -71,7 +71,7 @@ module X
     end
 
     def signature_base_string(method, url, params)
-      "#{method}&#{CGI.escape(url)}&#{CGI.escape(URI.encode_www_form(params.sort))}"
+      "#{method}&#{CGI.escapeURIComponent(url)}&#{CGI.escapeURIComponent(URI.encode_www_form(params.sort))}"
     end
 
     def signing_key
@@ -79,7 +79,7 @@ module X
     end
 
     def format_oauth_header(params)
-      "OAuth #{params.sort.map { |k, v| "#{k}=\"#{CGI.escape(v)}\"" }.join(", ")}"
+      "OAuth #{params.sort.map { |k, v| "#{k}=\"#{CGI.escapeURIComponent(v)}\"" }.join(", ")}"
     end
   end
 end
