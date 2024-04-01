@@ -1,5 +1,5 @@
+require "ostruct"
 require_relative "../test_helper"
-require "hashie"
 
 module X
   class ClientInitializationTest < Minitest::Test
@@ -105,14 +105,23 @@ module X
       assert_equal "https://user:pass@proxy.com:42", connection.proxy_url
     end
 
+    def test_defaults
+      @client = Client.new
+
+      assert_equal "https://api.twitter.com/2/", @client.base_url
+      assert_equal 10, @client.max_redirects
+      assert_equal Hash, @client.default_object_class
+      assert_equal Array, @client.default_array_class
+    end
+
     def test_overwrite_defaults
-      @client = Client.new(base_url: "https://api.twitter.com/1.1/", max_redirects: 0, object_class: Hashie::Mash,
-        array_class: Set)
+      @client = Client.new(base_url: "https://api.twitter.com/1.1/", max_redirects: 5, default_object_class: OpenStruct,
+        default_array_class: Set)
 
       assert_equal "https://api.twitter.com/1.1/", @client.base_url
-      assert_predicate @client.max_redirects, :zero?
-      assert_equal Hashie::Mash, @client.object_class
-      assert_equal Set, @client.array_class
+      assert_equal 5, @client.max_redirects
+      assert_equal OpenStruct, @client.default_object_class
+      assert_equal Set, @client.default_array_class
     end
 
     def test_passes_options_to_redirect_handler

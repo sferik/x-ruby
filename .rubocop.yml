@@ -1,70 +1,19 @@
 require:
- - standard
- - standard-performance
  - rubocop-minitest
  - rubocop-performance
  - rubocop-rake
+ - standard
+ - standard-custom
+ - standard-performance
+
+inherit_gem:
+  standard: config/base.yml
+  standard-custom: config/base.yml
+  standard-performance: config/base.yml
 
 AllCops:
   NewCops: enable
   TargetRubyVersion: 3.0
 
-Layout/ArgumentAlignment:
-  Enabled: true
-  EnforcedStyle: with_fixed_indentation
-
-Layout/ArrayAlignment:
-  Enabled: true
-  EnforcedStyle: with_fixed_indentation
-
-Layout/CaseIndentation:
-  Enabled: true
-  EnforcedStyle: end
-
-Layout/EndAlignment:
-  Enabled: true
-  EnforcedStyleAlignWith: variable
-
-Layout/HashAlignment:
-  Enabled: true
-  EnforcedHashRocketStyle: key
-  EnforcedColonStyle: key
-  EnforcedLastArgumentHashStyle: always_inspect
-
-Layout/ParameterAlignment:
-  Enabled: true
-  EnforcedStyle: with_fixed_indentation
-  IndentationWidth: ~
-
-Layout/SpaceInsideHashLiteralBraces:
-  Enabled: false
-
-Metrics/ParameterLists:
-  CountKeywordArgs: false
-
 Minitest/MultipleAssertions:
   Max: 5
-
-Style/Alias:
-  Enabled: true
-  EnforcedStyle: prefer_alias_method
-
-Style/Documentation:
-  Enabled: false
-
-Style/EmptyMethod:
-  Enabled: false
-
-Style/FrozenStringLiteralComment:
-  Enabled: false
-
-Style/StringLiterals:
-  Enabled: true
-  EnforcedStyle: double_quotes
-
-Style/StringLiteralsInInterpolation:
-  Enabled: true
-  EnforcedStyle: double_quotes
-
-Style/TernaryParentheses:
-  Enabled: false

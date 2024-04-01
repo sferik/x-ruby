@@ -102,10 +102,10 @@ module X
   end
 
   class TooManyRequests < ClientError
-    @response: Net::HTTPResponse
+    @rate_limits: Array[RateLimit]
 
-    def limit: -> Integer
-    def remaining: -> Integer
+    def rate_limit: -> RateLimit?
+    def rate_limits: -> Array[RateLimit]
     def reset_at: -> Time
     def reset_in: -> Integer?
   end
@@ -147,6 +147,21 @@ module X
     def configure_http_client: (Net::HTTP http_client) -> Net::HTTP
   end
 
+  class RateLimit
+    RATE_LIMIT_TYPE: String
+    APP_LIMIT_TYPE: String
+    USER_LIMIT_TYPE: String
+    TYPES: [String, String, String]
+
+    attr_accessor type: String
+    attr_accessor response: Net::HTTPResponse
+    def initialize: (type: String, response: Net::HTTPResponse) -> void
+    def limit: -> Integer
+    def remaining: -> Integer
+    def reset_at: -> Time
+    def reset_in: -> Integer?
+  end
+
   class RequestBuilder
     HTTP_METHODS: Hash[Symbol, (singleton(Net::HTTP::Get) | singleton(Net::HTTP::Post) | singleton(Net::HTTP::Put) | singleton(Net::HTTP::Delete))]
     DEFAULT_HEADERS: Hash[String, String]
@@ -178,15 +193,10 @@ module X
   end
 
   class ResponseParser
-    DEFAULT_ARRAY_CLASS: Class
-    DEFAULT_OBJECT_CLASS: Class
     ERROR_MAP: Hash[Integer, singleton(Unauthorized) | singleton(BadRequest) | singleton(Forbidden) | singleton(InternalServerError) | singleton(NotFound) | singleton(PayloadTooLarge) | singleton(ServiceUnavailable) | singleton(TooManyRequests)]
     JSON_CONTENT_TYPE_REGEXP: Regexp
 
-    attr_accessor array_class: Class
-    attr_accessor object_class: Class
-    def initialize: (?array_class: Class, ?object_class: Class) -> void
-    def parse: (response: Net::HTTPResponse) -> untyped
+    def parse: (response: Net::HTTPResponse, ?array_class: Class?, ?object_class: Class?) -> untyped
 
     private
     def error: (Net::HTTPResponse response) -> (Unauthorized | BadRequest | Forbidden | InternalServerError | NotFound | PayloadTooLarge | ServiceUnavailable | TooManyRequests)
@@ -196,6 +206,8 @@ module X
 
   class Client
     DEFAULT_BASE_URL: String
+    DEFAULT_ARRAY_CLASS: Class
+    DEFAULT_OBJECT_CLASS: Class
 
     extend Forwardable
     @authenticator: Authenticator
@@ -215,8 +227,8 @@ module X
     attr_accessor write_timeout: Float | Integer
     attr_accessor proxy_url: String
     attr_accessor debug_output: IO
-    attr_accessor array_class: Class
-    attr_accessor object_class: Class
+    attr_accessor default_array_class: Class
+    attr_accessor default_object_class: Class
     attr_accessor max_redirects: Integer
     attr_accessor authenticator: Authenticator
     attr_accessor connection: Connection
@@ -224,16 +236,17 @@ module X
     attr_accessor redirect_handler: RedirectHandler
     attr_accessor response_parser: ResponseParser
 
-    def initialize: (?api_key: String?, ?api_key_secret: String?, ?access_token: String?, ?access_token_secret: String?, ?bearer_token: String?, ?base_url: String, ?open_timeout: Float | Integer, ?read_timeout: Float | Integer, ?write_timeout: Float | Integer, ?proxy_url: URI::Generic? | String?, ?debug_output: IO, ?array_class: Class, ?object_class: Class, ?max_redirects: Integer) -> void
-    def get: (String endpoint, ?headers: Hash[String, String]) -> untyped
-    def post: (String endpoint, ?String? body, ?headers: Hash[String, String]) -> untyped
-    def put: (String endpoint, ?String? body, ?headers: Hash[String, String]) -> untyped
-    def delete: (String endpoint, ?headers: Hash[String, String]) -> untyped
+    def initialize: (?api_key: String?, ?api_key_secret: String?, ?access_token: String?, ?access_token_secret: String?, ?bearer_token: String?, ?base_url: String, ?open_timeout: Float | Integer, ?read_timeout: Float | Integer, ?write_timeout: Float | Integer, ?proxy_url: URI::Generic? | String?, ?debug_output: IO, ?default_array_class: Class, ?default_object_class: Class, ?max_redirects: Integer) -> void
+    def get: (String endpoint, ?headers: Hash[String, String], ?array_class: Class, ?object_class: Class) -> untyped
+    def post: (String endpoint, ?String? body, ?headers: Hash[String, String], ?array_class: Class, ?object_class: Class) -> untyped
+    def put: (String endpoint, ?String? body, ?headers: Hash[String, String], ?array_class: Class, ?object_class: Class) -> untyped
+    def delete: (String endpoint, ?headers: Hash[String, String], ?array_class: Class, ?object_class: Class) -> untyped
 
     private
-    def initialize_oauth: (String? api_key, String? api_key_secret, String? access_token, String? access_token_secret) -> void
+    def initialize_oauth: (String? api_key, String? api_key_secret, String? access_token, String? access_token_secret, String? bearer_token) -> void
+    def initialize_default_classes: (Class? default_array_class, Class? default_object_class) -> void
     def initialize_authenticator: -> Authenticator
-    def execute_request: (Symbol http_method, String endpoint, headers: Hash[String, String], ?body: String?) -> untyped
+    def execute_request: (Symbol http_method, String endpoint, ?body: String?, ?headers: Hash[String, String], ?array_class: Class?, ?object_class: Class?) -> untyped
   end
 
   module MediaUploader

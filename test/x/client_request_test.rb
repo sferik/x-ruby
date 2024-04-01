@@ -8,64 +8,53 @@ module X
       @client = Client.new
     end
 
-    def test_get_request
+    X::RequestBuilder::HTTP_METHODS.each_key do |http_method|
+      define_method "test_#{http_method}_request" do
+        stub_request(http_method, "https://api.twitter.com/2/tweets")
+        @client.public_send(http_method, "tweets")
+
+        assert_requested http_method, "https://api.twitter.com/2/tweets"
+      end
+
+      define_method "test_#{http_method}_request_with_headers" do
+        headers = {"User-Agent" => "Custom User Agent"}
+        stub_request(http_method, "https://api.twitter.com/2/tweets")
+        @client.public_send(http_method, "tweets", headers: headers)
+
+        assert_requested http_method, "https://api.twitter.com/2/tweets", headers: headers
+      end
+
+      define_method "test_#{http_method}_request_with_custom_response_objects" do
+        stub_request(http_method, "https://api.twitter.com/2/tweets")
+          .to_return(body: '{"set": [1, 2, 2, 3]}', headers: {"Content-Type" => "application/json"})
+        ostruct = @client.public_send(http_method, "tweets", object_class: OpenStruct, array_class: Set)
+
+        assert_kind_of OpenStruct, ostruct
+        assert_kind_of Set, ostruct.set
+        assert_equal Set.new([1, 2, 3]), ostruct.set
+      end
+
+      define_method "test_#{http_method}_request_with_custom_response_objects_client_configuration" do
+        stub_request(http_method, "https://api.twitter.com/2/tweets")
+          .to_return(body: '{"set": [1, 2, 2, 3]}', headers: {"Content-Type" => "application/json"})
+        client = Client.new(default_object_class: OpenStruct, default_array_class: Set)
+        ostruct = client.public_send(http_method, "tweets")
+
+        assert_kind_of OpenStruct, ostruct
+        assert_kind_of Set, ostruct.set
+        assert_equal Set.new([1, 2, 3]), ostruct.set
+      end
+    end
+
+    def test_execute_request_with_custom_response_objects_client_configuration
       stub_request(:get, "https://api.twitter.com/2/tweets")
-      @client.get("tweets")
+        .to_return(body: '{"set": [1, 2, 2, 3]}', headers: {"Content-Type" => "application/json"})
+      client = Client.new(default_object_class: OpenStruct, default_array_class: Set)
+      ostruct = client.send(:execute_request, :get, "tweets")
 
-      assert_requested :get, "https://api.twitter.com/2/tweets"
-    end
-
-    def test_get_request_with_headers
-      headers = {"User-Agent" => "Custom User Agent"}
-      stub_request(:get, "https://api.twitter.com/2/tweets")
-      @client.get("tweets", headers: headers)
-
-      assert_requested :get, "https://api.twitter.com/2/tweets", headers: headers
-    end
-
-    def test_post_request
-      stub_request(:post, "https://api.twitter.com/2/tweets")
-      @client.post("tweets")
-
-      assert_requested :post, "https://api.twitter.com/2/tweets"
-    end
-
-    def test_post_request_with_headers
-      headers = {"User-Agent" => "Custom User Agent"}
-      stub_request(:post, "https://api.twitter.com/2/tweets")
-      @client.post("tweets", headers: headers)
-
-      assert_requested :post, "https://api.twitter.com/2/tweets", headers: headers
-    end
-
-    def test_put_request
-      stub_request(:put, "https://api.twitter.com/2/tweets")
-      @client.put("tweets")
-
-      assert_requested :put, "https://api.twitter.com/2/tweets"
-    end
-
-    def test_put_request_with_headers
-      headers = {"User-Agent" => "Custom User Agent"}
-      stub_request(:put, "https://api.twitter.com/2/tweets")
-      @client.put("tweets", headers: headers)
-
-      assert_requested :put, "https://api.twitter.com/2/tweets", headers: headers
-    end
-
-    def test_delete_request
-      stub_request(:delete, "https://api.twitter.com/2/tweets")
-      @client.delete("tweets")
-
-      assert_requested :delete, "https://api.twitter.com/2/tweets"
-    end
-
-    def test_delete_request_with_headers
-      headers = {"User-Agent" => "Custom User Agent"}
-      stub_request(:delete, "https://api.twitter.com/2/tweets")
-      @client.delete("tweets", headers: headers)
-
-      assert_requested :delete, "https://api.twitter.com/2/tweets", headers: headers
+      assert_kind_of OpenStruct, ostruct
+      assert_kind_of Set, ostruct.set
+      assert_equal Set.new([1, 2, 3]), ostruct.set
     end
 
     def test_redirect_handler_preserves_authentication

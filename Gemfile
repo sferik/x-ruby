@@ -3,7 +3,6 @@ source "https://rubygems.org"
 # Specify your gem's dependencies in x.gemspec
 gemspec
 
-gem "hashie", ">= 5"
 gem "minitest", ">= 5.19"
 gem "mutant-license", source: "https://oss:b78oB5NQSVVIXx8WVdyC4sYf4qvTUqso@gem.mutant.dev"
 gem "mutant-minitest", ">= 0.11.24"
