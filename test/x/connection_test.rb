@@ -1,3 +1,4 @@
+require "hashie"
 require "net/http"
 require "uri"
 require_relative "../test_helper"
