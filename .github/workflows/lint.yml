@@ -1,27 +1,12 @@
 name: Linter
-
-on:
-  push:
-    branches:
-      - main
-
-  pull_request:
-
+on: [push, pull_request]
 jobs:
   build:
     runs-on: ubuntu-latest
-    name: Ruby ${{ matrix.ruby }}
-    strategy:
-      matrix:
-        ruby:
-          - "3.2"
-
     steps:
-    - uses: actions/checkout@v3
-    - name: Set up Ruby
-      uses: ruby/setup-ruby@v1
+    - uses: actions/checkout@v4
+    - uses: ruby/setup-ruby@v1
       with:
-        ruby-version: ${{ matrix.ruby }}
+        ruby-version: "3.0"
         bundler-cache: true
-    - name: Run the default task
-      run: bundle exec rake lint
+    - run: bundle exec rake lint

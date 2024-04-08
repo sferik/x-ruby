@@ -1,7 +1,7 @@
-![Tests](https://github.com/sferik/x-ruby/actions/workflows/test.yml/badge.svg)
-![Linter](https://github.com/sferik/x-ruby/actions/workflows/lint.yml/badge.svg)
-![Mutant](https://github.com/sferik/x-ruby/actions/workflows/mutant.yml/badge.svg)
-![Typer Checker](https://github.com/sferik/x-ruby/actions/workflows/type_check.yml/badge.svg)
+[![Tests](https://github.com/sferik/x-ruby/actions/workflows/test.yml/badge.svg)](https://github.com/sferik/x-ruby/actions/workflows/test.yml)
+[![Linter](https://github.com/sferik/x-ruby/actions/workflows/lint.yml/badge.svg)](https://github.com/sferik/x-ruby/actions/workflows/lint.yml)
+[![Mutant](https://github.com/sferik/x-ruby/actions/workflows/mutant.yml/badge.svg)](https://github.com/sferik/x-ruby/actions/workflows/mutant.yml)
+[![Typer Checker](https://github.com/sferik/x-ruby/actions/workflows/steep.yml/badge.svg)](https://github.com/sferik/x-ruby/actions/workflows/steep.yml)
 [![Gem Version](https://badge.fury.io/rb/x.svg)](https://rubygems.org/gems/x)
 
 # A [Ruby](https://www.ruby-lang.org) interface to the [X API](https://developer.x.com)
@@ -52,10 +52,17 @@ x_client.delete("tweets/#{post["data"]["id"]}")
 # Initialize an API v1.1 client
 v1_client = X::Client.new(base_url: "https://api.twitter.com/1.1/", **x_credentials)
 
-# Get your account settings
-v1_client.get("account/settings.json")
+# Define a custom response object
+Language = Struct.new(:code, :name, :local_name, :status, :debug)
 
-# Initialize an X Ads API client
+# Parse a response with custom array and object classes
+languages = v1_client.get("help/languages.json", object_class: Language, array_class: Set)
+# #<Set: {#<struct Language code="ur", name="Urdu", local_name="اردو", status="beta", debug=false>, …
+
+# Access data with dots instead of brackets
+languages.first.local_name
+
+# Initialize an Ads API client
 ads_client = X::Client.new(base_url: "https://ads-api.twitter.com/12/", **x_credentials)
 
 # Get your ad accounts
@@ -79,6 +86,23 @@ In the immortal words of [Ezra Zygmuntowicz](https://github.com/ezmobius) and hi
 The tests for the previous version of this library executed in about 2 seconds. That sounds pretty fast until you see that tests for this library run in one-twentieth of a second. This means you can automatically run the tests any time you write a file and receive immediate feedback. For such of workflows, 2 seconds feels painfully slow.
 
 This code is not littered with comments that are intended to generate documentation. Rather, this code is intended to be simple enough to serve as its own documentation. If you want to understand how something works, don’t read the documentation—it might be wrong—read the code. The code is always right.
+
+## Features
+
+If this entire library is implemented in just 500 lines of code, why should you use it at all vs. writing your own library that suits your needs? If you feel inspired to do that, don’t let me discourage you, but this library has some advanced features that may not be apparent without diving into the code:
+
+* OAuth 1.0 Revision A
+* OAuth 2.0 Bearer Token
+* Thread safety
+* HTTP redirect following
+* HTTP proxy support
+* HTTP logging
+* HTTP timeout configuration
+* HTTP error handling
+* Rate limit handling
+* Parsing JSON into custom response objects (e.g. OpenStruct)
+* Configurable base URLs for accessing different APIs/versions
+* Parallel uploading of large media files in chunks
 
 ## Sponsorship
 
@@ -132,19 +156,23 @@ Bug reports and pull requests are welcome on GitHub at https://github.com/sferik
 
 Pull requests will only be accepted if they meet all the following criteria:
 
-1. Code must conform to [Standard Ruby](https://github.com/standardrb/standard). This can be verified with:
+1. Code must conform to [Standard Ruby](https://github.com/standardrb/standard#readme). This can be verified with:
 
        bundle exec rake standard
 
-2. 100% C0 code coverage. This can be verified with:
+2. Code must conform to the [RuboCop rules](https://github.com/rubocop/rubocop#readme). This can be verified with:
+
+       bundle exec rake rubocop
+
+3. 100% C0 code coverage. This can be verified with:
 
        bundle exec rake test
 
-3. 100% mutation coverage. This can be verified with:
+4. 100% mutation coverage. This can be verified with:
 
        bundle exec rake mutant
 
-4. RBS type signatures (in `sig/x.rbs`). This can be verified with:
+5. RBS type signatures (in `sig/x.rbs`). This can be verified with:
 
        bundle exec rake steep
 

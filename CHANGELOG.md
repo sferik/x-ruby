@@ -1,3 +1,12 @@
+## [0.14.1] - 2023-12-20
+* Fix infinite loop when an upload fails (5dfc604)
+
+## [0.14.0] - 2023-12-08
+* Allow passing custom objects per-request (768889f)
+
+## [0.13.0] - 2023-12-04
+* Introduce X::RateLimit, which is returned with X::TooManyRequests errors (196caec)
+
 ## [0.12.1] - 2023-11-28
 * Ensure split chunks are written as binary (c6e257f)
 * Require tmpdir in X::MediaUploader (9e7c7f1)

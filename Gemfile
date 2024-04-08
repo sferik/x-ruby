@@ -3,10 +3,9 @@ source "https://rubygems.org"
 # Specify your gem's dependencies in x.gemspec
 gemspec
 
-gem "hashie", ">= 5"
 gem "minitest", ">= 5.19"
-gem "mutant-license", source: "https://oss:b78oB5NQSVVIXx8WVdyC4sYf4qvTUqso@gem.mutant.dev"
-gem "mutant-minitest", ">= 0.11.24"
+# gem "mutant-license", source: "https://oss:b78oB5NQSVVIXx8WVdyC4sYf4qvTUqso@gem.mutant.dev"
+# gem "mutant-minitest", ">= 0.11.24"
 gem "rake", ">= 13.0.6"
 # gem "rbs", ">= 3.2.1"
 gem "rubocop", ">= 1.21"

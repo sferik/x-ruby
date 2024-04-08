@@ -40,7 +40,7 @@ module X
       upload_client = client.dup.tap { |c| c.base_url = "https://upload.twitter.com/1.1/" }
       loop do
         status = upload_client.get("media/upload.json?command=STATUS&media_id=#{media["media_id"]}")
-        return status if status["processing_info"]["state"] == "succeeded"
+        return status if !status["processing_info"] || %w[failed succeeded].include?(status["processing_info"]["state"])
 
         sleep status["processing_info"]["check_after_secs"].to_i
       end
