@@ -36,7 +36,14 @@ module X
     }.freeze
     JSON_CONTENT_TYPE_REGEXP = %r{application/json}
 
-    def parse(response:, array_class: nil, object_class: nil)
+    attr_accessor :array_class, :object_class
+
+    def initialize(array_class: nil, object_class: nil)
+      @array_class = array_class
+      @object_class = object_class
+    end
+
+    def parse(response:)
       raise error(response) unless response.is_a?(Net::HTTPSuccess)
 
       return unless json?(response)

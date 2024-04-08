@@ -1,20 +1,17 @@
 require_relative "client_error"
-require_relative "../rate_limit"
 
 module X
   class TooManyRequests < ClientError
-    def rate_limit
-      rate_limits.max_by(&:reset_at)
+    def limit
+      response["x-rate-limit-limit"].to_i
     end
 
-    def rate_limits
-      @rate_limits ||= RateLimit::TYPES.filter_map do |type|
-        RateLimit.new(type: type, response: response) if response["x-#{type}-remaining"].eql?("0")
-      end
+    def remaining
+      response["x-rate-limit-remaining"].to_i
     end
 
     def reset_at
-      rate_limit&.reset_at || Time.at(0)
+      Time.at(response["x-rate-limit-reset"].to_i)
     end
 
     def reset_in
