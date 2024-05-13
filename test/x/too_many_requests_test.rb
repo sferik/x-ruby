@@ -5,14 +5,37 @@ module X
     cover TooManyRequests
 
     def setup
-      Time.stub :now, Time.utc(1983, 11, 24) do
-        response = Net::HTTPTooManyRequests.new("1.1", 429, "Too Many Requests")
-        response["x-rate-limit-limit"] = "100"
-        response["x-rate-limit-remaining"] = "0"
-        response["x-rate-limit-reset"] = (Time.now + 60).to_i.to_s
+      response = Net::HTTPTooManyRequests.new("1.1", 429, "Too Many Requests")
 
-        @exception = TooManyRequests.new(response:)
+      rate_limit(response)
+      app_limit(response)
+      user_limit(response)
+
+      @exception = TooManyRequests.new(response:)
+    end
+
+    def rate_limit(response)
+      Time.stub :now, Time.utc(1983, 11, 24) do
+        response["x-rate-limit-reset"] = (Time.now + 60).to_i.to_s
       end
+      response["x-rate-limit-limit"] = "100"
+      response["x-rate-limit-remaining"] = "0"
+    end
+
+    def app_limit(response)
+      Time.stub :now, Time.utc(1983, 11, 24) do
+        response["x-app-limit-24hour-reset"] = (Time.now + 61).to_i.to_s
+      end
+      response["x-app-limit-24hour-limit"] = "100"
+      response["x-app-limit-24hour-remaining"] = "0"
+    end
+
+    def user_limit(response)
+      Time.stub :now, Time.utc(1983, 11, 24) do
+        response["x-user-limit-24hour-remaining"] = (Time.now + 60).to_i.to_s
+      end
+      response["x-user-limit-24hour-reset"] = "100"
+      response["x-user-limit-24hour-reset"] = "0"
     end
 
     def test_initialize_with_empty_response

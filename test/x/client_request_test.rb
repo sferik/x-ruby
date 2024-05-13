@@ -21,7 +21,7 @@ module X
         stub_request(http_method, "https://api.twitter.com/2/tweets")
         @client.public_send(http_method, "tweets", headers:)
 
-        assert_requested http_method, "https://api.twitter.com/2/tweets", headers: {"User-Agent" => "Custom User Agent"}
+        assert_requested http_method, "https://api.twitter.com/2/tweets", headers:
       end
 
       define_method :"test_#{http_method}_request_with_custom_response_objects" do
