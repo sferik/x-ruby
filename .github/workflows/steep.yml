@@ -1,4 +1,4 @@
-name: Type Checker
+name: type checker
 on: [push, pull_request]
 jobs:
   build:

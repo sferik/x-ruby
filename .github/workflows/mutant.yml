@@ -1,4 +1,4 @@
-name: Mutant
+name: mutation tests
 on: [push, pull_request]
 jobs:
   build:

@@ -1,4 +1,4 @@
-name: Tests
+name: tests
 on: [push, pull_request]
 jobs:
   build:
@@ -6,10 +6,25 @@ jobs:
       matrix:
         ruby: ["3.1", "3.2", "3.3"]
     runs-on: ubuntu-latest
+    environment: test
     steps:
-    - uses: actions/checkout@v4
-    - uses: ruby/setup-ruby@v1
-      with:
-        ruby-version: ${{ matrix.ruby }}
-        bundler-cache: true
-    - run: bundle exec rake test
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby }}
+          bundler-cache: true
+      - name: Set up Code Climate test reporter
+        run: |
+          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+          chmod +x ./cc-test-reporter
+      - name: Before build
+        run: ./cc-test-reporter before-build
+      - name: Run tests
+        run: bundle exec rake test
+      - name: After build
+        if: always() # Ensures that this step runs even if the test step fails
+        env:
+          CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
+        run: |
+          EXIT_CODE=${{ job.status == 'success' && '0' || '1' }}
+          ./cc-test-reporter after-build --exit-code $EXIT_CODE -t simplecov
