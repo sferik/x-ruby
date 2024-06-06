@@ -55,7 +55,7 @@ module X
     end
 
     def json?(response)
-      JSON_CONTENT_TYPE_REGEXP.match?(response["content-type"])
+      JSON_CONTENT_TYPE_REGEXP === response["content-type"]
     end
   end
 end
