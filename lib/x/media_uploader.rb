@@ -45,6 +45,13 @@ module X
       end
     end
 
+    def set_alt_text(client:, media_id:, alt_text:)
+      post_body = "{ \"media_id\" : \"#{media_id}\", \"alt_text\" : { \"text\" : \"#{alt_text}\" } }"
+      headers = {"Content-Type" => "application/json"}
+      upload_client = client.dup.tap { |c| c.base_url = "https://upload.twitter.com/1.1/" }
+      upload_client.post("media/metadata/create.json", post_body, headers:)
+    end
+
     private
 
     def validate!(file_path:, media_category:)
