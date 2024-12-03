@@ -1,10 +1,9 @@
-[![Tests](https://github.com/sferik/x-ruby/actions/workflows/test.yml/badge.svg)](https://github.com/sferik/x-ruby/actions/workflows/test.yml)
-[![Test Coverage](https://api.codeclimate.com/v1/badges/40bbddf2c9170742ca9e/test_coverage)](https://codeclimate.com/github/sferik/x-ruby/test_coverage)
-[![Mutant](https://github.com/sferik/x-ruby/actions/workflows/mutant.yml/badge.svg)](https://github.com/sferik/x-ruby/actions/workflows/mutant.yml)
-[![Linter](https://github.com/sferik/x-ruby/actions/workflows/lint.yml/badge.svg)](https://github.com/sferik/x-ruby/actions/workflows/lint.yml)
-[![Typer Checker](https://github.com/sferik/x-ruby/actions/workflows/steep.yml/badge.svg)](https://github.com/sferik/x-ruby/actions/workflows/steep.yml)
-[![Maintainability](https://api.codeclimate.com/v1/badges/40bbddf2c9170742ca9e/maintainability)](https://codeclimate.com/github/sferik/x-ruby/maintainability)
-[![Gem Version](https://badge.fury.io/rb/x.svg)](https://rubygems.org/gems/x)
+[![tests](https://github.com/sferik/x-ruby/actions/workflows/test.yml/badge.svg)](https://github.com/sferik/x-ruby/actions/workflows/test.yml)
+[![mutation tests](https://github.com/sferik/x-ruby/actions/workflows/mutant.yml/badge.svg)](https://github.com/sferik/x-ruby/actions/workflows/mutant.yml)
+[![linter](https://github.com/sferik/x-ruby/actions/workflows/lint.yml/badge.svg)](https://github.com/sferik/x-ruby/actions/workflows/lint.yml)
+[![typer checker](https://github.com/sferik/x-ruby/actions/workflows/steep.yml/badge.svg)](https://github.com/sferik/x-ruby/actions/workflows/steep.yml)
+[![maintainability](https://api.codeclimate.com/v1/badges/40bbddf2c9170742ca9e/maintainability)](https://codeclimate.com/github/sferik/x-ruby/maintainability)
+[![gem version](https://badge.fury.io/rb/x.svg)](https://rubygems.org/gems/x)
 
 # A [Ruby](https://www.ruby-lang.org) interface to the [X API](https://developer.x.com)
 
