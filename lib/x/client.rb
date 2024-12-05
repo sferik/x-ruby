@@ -33,7 +33,6 @@ module X
       default_array_class: DEFAULT_ARRAY_CLASS,
       default_object_class: DEFAULT_OBJECT_CLASS,
       max_redirects: RedirectHandler::DEFAULT_MAX_REDIRECTS)
-
       initialize_oauth(api_key, api_key_secret, access_token, access_token_secret, bearer_token)
       initialize_authenticator
       @base_url = base_url
