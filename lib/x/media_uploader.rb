@@ -66,16 +66,16 @@ module X
 
     def split(file_path, chunk_size)
       file_number = -1
+      file_paths = [] # @type var file_paths: Array[String]
 
-      [].tap do |file_paths|
-        File.open(file_path, "rb") do |f|
-          while (chunk = f.read(chunk_size))
-            file_paths << "#{Dir.mktmpdir}/x#{format("%03d", file_number += 1)}".tap do |path|
-              File.binwrite(path, chunk)
-            end
-          end
+      File.open(file_path, "rb") do |f|
+        while (chunk = f.read(chunk_size))
+          path = "#{Dir.mktmpdir}/x#{format("%03d", file_number += 1)}"
+          File.binwrite(path, chunk)
+          file_paths << path
         end
       end
+      file_paths
     end
 
     def init(upload_client:, file_path:, media_type:, media_category:)
