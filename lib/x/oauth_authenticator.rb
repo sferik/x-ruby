@@ -39,7 +39,7 @@ module X
     end
 
     def uri_without_query(uri)
-      uri.to_s.chomp("?#{uri.query}")
+      "#{uri.scheme}://#{uri.host}#{uri.path}"
     end
 
     def build_oauth_header(method, url, query_params)
