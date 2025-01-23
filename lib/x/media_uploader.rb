@@ -19,26 +19,23 @@ module X
     def upload(client:, file_path:, media_category:, media_type: infer_media_type(file_path, media_category),
       boundary: SecureRandom.hex)
       validate!(file_path:, media_category:)
-      upload_client = client.dup.tap { |c| c.base_url = "https://upload.twitter.com/1.1/" }
       upload_body = construct_upload_body(file_path:, media_type:, boundary:)
       headers = {"Content-Type" => "multipart/form-data, boundary=#{boundary}"}
-      upload_client.post("media/upload.json?media_category=#{media_category}", upload_body, headers:)
+      client.post("media/upload?media_category=#{media_category}", upload_body, headers:)
     end
 
     def chunked_upload(client:, file_path:, media_category:, media_type: infer_media_type(file_path,
       media_category), boundary: SecureRandom.hex, chunk_size_mb: 8)
       validate!(file_path:, media_category:)
-      upload_client = client.dup.tap { |c| c.base_url = "https://upload.twitter.com/1.1/" }
-      media = init(upload_client:, file_path:, media_type:, media_category:)
+      media = init(client:, file_path:, media_type:, media_category:)
       chunk_size = chunk_size_mb * BYTES_PER_MB
-      append(upload_client:, file_paths: split(file_path, chunk_size), media:, media_type:, boundary:)
-      upload_client.post("media/upload.json?command=FINALIZE&media_id=#{media["media_id"]}")
+      append(client:, file_paths: split(file_path, chunk_size), media:, media_type:, boundary:)
+      client.post("media/upload?command=FINALIZE&media_key=#{media["media_key"]}")
     end
 
     def await_processing(client:, media:)
-      upload_client = client.dup.tap { |c| c.base_url = "https://upload.twitter.com/1.1/" }
       loop do
-        status = upload_client.get("media/upload.json?command=STATUS&media_id=#{media["media_id"]}")
+        status = client.get("media/upload?command=STATUS&media_key=#{media["media_key"]}")
         return status if !status["processing_info"] || PROCESSING_INFO_STATES.include?(status["processing_info"]["state"])
 
         sleep status["processing_info"]["check_after_secs"].to_i
@@ -78,26 +75,26 @@ module X
       file_paths
     end
 
-    def init(upload_client:, file_path:, media_type:, media_category:)
+    def init(client:, file_path:, media_type:, media_category:)
       total_bytes = File.size(file_path)
       query = "command=INIT&media_type=#{media_type}&media_category=#{media_category}&total_bytes=#{total_bytes}"
-      upload_client.post("media/upload.json?#{query}")
+      client.post("media/upload?#{query}")
     end
 
-    def append(upload_client:, file_paths:, media:, media_type:, boundary: SecureRandom.hex)
+    def append(client:, file_paths:, media:, media_type:, boundary: SecureRandom.hex)
       threads = file_paths.map.with_index do |file_path, index|
         Thread.new do
           upload_body = construct_upload_body(file_path:, media_type:, boundary:)
-          query = "command=APPEND&media_id=#{media["media_id"]}&segment_index=#{index}"
+          query = "command=APPEND&media_key=#{media["media_key"]}&segment_index=#{index}"
           headers = {"Content-Type" => "multipart/form-data, boundary=#{boundary}"}
-          upload_chunk(upload_client:, query:, upload_body:, file_path:, headers:)
+          upload_chunk(client:, query:, upload_body:, file_path:, headers:)
         end
       end
       threads.each(&:join)
     end
 
-    def upload_chunk(upload_client:, query:, upload_body:, file_path:, headers: {})
-      upload_client.post("media/upload.json?#{query}", upload_body, headers:)
+    def upload_chunk(client:, query:, upload_body:, file_path:, headers: {})
+      client.post("media/upload?#{query}", upload_body, headers:)
     rescue NetworkError, ServerError
       retries ||= 0
       ((retries += 1) < MAX_RETRIES) ? retry : raise
