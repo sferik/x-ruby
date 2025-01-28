@@ -43,7 +43,7 @@ module X
 
       begin
         JSON.parse(response.body, array_class:, object_class:)
-      rescue JSON::ParserError
+      rescue JSON::ParserError # rubocop:disable Lint/SuppressedException
       end
     end
 
