@@ -25,17 +25,17 @@ module X
     end
 
     def chunked_upload(client:, file_path:, media_category:, media_type: infer_media_type(file_path,
-      media_category), boundary: SecureRandom.hex, chunk_size_mb: 8)
+      media_category), boundary: SecureRandom.hex, chunk_size_mb: 1)
       validate!(file_path:, media_category:)
       media = init(client:, file_path:, media_type:, media_category:)
       chunk_size = chunk_size_mb * BYTES_PER_MB
       append(client:, file_paths: split(file_path, chunk_size), media:, media_type:, boundary:)
-      client.post("media/upload?command=FINALIZE&media_key=#{media["media_key"]}")
+      client.post("media/upload?command=FINALIZE&media_key=#{media["media_key"]}")&.fetch('data')
     end
 
     def await_processing(client:, media:)
       loop do
-        status = client.get("media/upload?command=STATUS&media_key=#{media["media_key"]}")
+        status = client.get("media/upload?command=STATUS&media_key=#{media["media_key"]}")&.fetch('data')
         return status if !status["processing_info"] || PROCESSING_INFO_STATES.include?(status["processing_info"]["state"])
 
         sleep status["processing_info"]["check_after_secs"].to_i
@@ -78,7 +78,7 @@ module X
     def init(client:, file_path:, media_type:, media_category:)
       total_bytes = File.size(file_path)
       query = "command=INIT&media_type=#{media_type}&media_category=#{media_category}&total_bytes=#{total_bytes}"
-      client.post("media/upload?#{query}")
+      client.post("media/upload?#{query}")&.fetch('data')
     end
 
     def append(client:, file_paths:, media:, media_type:, boundary: SecureRandom.hex)

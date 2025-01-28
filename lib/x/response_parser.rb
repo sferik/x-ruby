@@ -39,6 +39,8 @@ module X
     def parse(response:, array_class: nil, object_class: nil)
       raise error(response) unless response.is_a?(Net::HTTPSuccess)
 
+      return if response.is_a?(Net::HTTPNoContent)
+
       begin
         JSON.parse(response.body, array_class:, object_class:)
       rescue JSON::ParserError
