@@ -39,7 +39,7 @@ module X
     def parse(response:, array_class: nil, object_class: nil)
       raise error(response) unless response.is_a?(Net::HTTPSuccess)
 
-      return if response.is_a?(Net::HTTPNoContent)
+      return if response.instance_of?(Net::HTTPNoContent)
 
       begin
         JSON.parse(response.body, array_class:, object_class:)
@@ -55,10 +55,6 @@ module X
 
     def error_class(response)
       ERROR_MAP[Integer(response.code)] || HTTPError
-    end
-
-    def json?(response)
-      JSON_CONTENT_TYPE_REGEXP === response["content-type"]
     end
   end
 end
