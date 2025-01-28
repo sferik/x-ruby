@@ -274,11 +274,11 @@ module X
     def validate!: (file_path: String, media_category: String) -> nil
     def infer_media_type: (String file_path, String media_category) -> String
     def split: (String file_path, Integer chunk_size) -> Array[String]
-    def init: (upload_client: Client, file_path: String, media_type: String, media_category: String) -> untyped
-    def append: (upload_client: Client, file_paths: Array[String], media: untyped, media_type: String, ?boundary: String) -> Array[String]
-    def upload_chunk: (upload_client: Client, query: String, upload_body: String, file_path: String, ?headers: Hash[String, String]) -> Integer?
+    def init: (client: Client, file_path: String, media_type: String, media_category: String) -> untyped
+    def append: (client: Client, file_paths: Array[String], media: untyped, media_type: String, ?boundary: String) -> Array[String]
+    def upload_chunk: (client: Client, query: String, upload_body: String, file_path: String, ?headers: Hash[String, String]) -> Integer?
     def cleanup_file: (String file_path) -> Integer?
-    def finalize: (upload_client: Client, media: untyped) -> untyped
+    def finalize: (client: Client, media: untyped) -> untyped
     def construct_upload_body: (file_path: String, media_type: String, ?boundary: String) -> String
   end
 end
