@@ -34,20 +34,23 @@ module X
       503 => ServiceUnavailable,
       504 => GatewayTimeout
     }.freeze
-    JSON_CONTENT_TYPE_REGEXP = %r{application/json}
 
     def parse(response:, array_class: nil, object_class: nil)
       raise error(response) unless response.is_a?(Net::HTTPSuccess)
 
-      return if response.instance_of?(Net::HTTPNoContent)
+      return if !json?(response) || response.instance_of?(Net::HTTPNoContent)
 
-      begin
-        JSON.parse(response.body, array_class:, object_class:)
-      rescue JSON::ParserError # rubocop:disable Lint/SuppressedException
-      end
+      JSON.parse(response.body, array_class:, object_class:)
     end
 
     private
+
+    def json?(response)
+      JSON.parse(response.body)
+      true
+    rescue JSON::ParserError, TypeError
+      false
+    end
 
     def error(response)
       error_class(response).new(response:)
