@@ -38,7 +38,7 @@ module X
     def parse(response:, array_class: nil, object_class: nil)
       raise error(response) unless response.is_a?(Net::HTTPSuccess)
 
-      return if !json?(response) || response.instance_of?(Net::HTTPNoContent)
+      return unless json?(response)
 
       JSON.parse(response.body, array_class:, object_class:)
     end
@@ -46,9 +46,11 @@ module X
     private
 
     def json?(response)
+      return false if response.instance_of?(Net::HTTPNoContent)
+
       JSON.parse(response.body)
       true
-    rescue JSON::ParserError, TypeError
+    rescue JSON::ParserError
       false
     end
 
