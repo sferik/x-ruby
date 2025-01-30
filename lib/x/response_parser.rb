@@ -38,21 +38,15 @@ module X
     def parse(response:, array_class: nil, object_class: nil)
       raise error(response) unless response.is_a?(Net::HTTPSuccess)
 
-      return unless json?(response)
+      return if response.instance_of?(Net::HTTPNoContent)
 
-      JSON.parse(response.body, array_class:, object_class:)
+      begin
+        JSON.parse(response.body, array_class:, object_class:)
+      rescue JSON::ParserError # rubocop:disable Lint/SuppressedException
+      end
     end
 
     private
-
-    def json?(response)
-      return false if response.instance_of?(Net::HTTPNoContent)
-
-      JSON.parse(response.body)
-      true
-    rescue JSON::ParserError
-      false
-    end
 
     def error(response)
       error_class(response).new(response:)
