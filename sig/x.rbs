@@ -196,7 +196,6 @@ module X
 
   class ResponseParser
     ERROR_MAP: Hash[Integer, singleton(BadGateway) | singleton(BadRequest) | singleton(ConnectionException) | singleton(Forbidden) | singleton(GatewayTimeout) | singleton(Gone) | singleton(InternalServerError) | singleton(NotAcceptable) | singleton(NotFound) | singleton(PayloadTooLarge) | singleton(ServiceUnavailable) | singleton(TooManyRequests) | singleton(Unauthorized) | singleton(UnprocessableEntity)]
-    JSON_CONTENT_TYPE_REGEXP: Regexp
 
     def parse: (response: Net::HTTPResponse, ?array_class: Class?, ?object_class: Class?) -> untyped
 
