@@ -1,3 +1,6 @@
+## [0.15.0] - 2025-02-06
+* Change media upload to use the API v2 endpoints (eca2b88)
+
 ## [0.14.1] - 2023-12-20
 * Fix infinite loop when an upload fails (5dfc604)
 

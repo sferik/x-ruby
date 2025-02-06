@@ -1,5 +1,5 @@
 require "rubygems/version"
 
 module X
-  VERSION = Gem::Version.create("0.14.1")
+  VERSION = Gem::Version.create("0.15.0")
 end
