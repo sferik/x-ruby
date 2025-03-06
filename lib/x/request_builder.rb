@@ -50,7 +50,9 @@ module X
     end
 
     def escape_query_params(uri)
-      URI(uri).tap { |u| u.query = URI.encode_www_form(URI.decode_www_form(u.query)) if u.query }
+      URI(uri).tap do |u|
+        u.query = URI.encode_www_form(URI.decode_www_form(u.query)).gsub("%2C", ",") if u.query
+      end
     end
   end
 end
