@@ -102,9 +102,18 @@ module X
 
     def test_parse_query_params
       query_string = "param1=value1&param2=value2"
-      expected_hash = {"param1" => "value1", "param2" => "value2"}
+      expected = {"param1" => "value1", "param2" => "value2"}
 
-      assert_equal expected_hash, @authenticator.send(:parse_query_params, query_string)
+      assert_equal expected, @authenticator.send(:parse_query_params, query_string)
+    end
+
+    def test_signature_base_string_with_spaces
+      method = "GET"
+      url = "https://api.twitter.com/2/tweets/search/recent"
+      params = {"query" => "ruby has:media -is:retweet"}
+      expected = "GET&https%3A%2F%2Fapi.twitter.com%2F2%2Ftweets%2Fsearch%2Frecent&query%3Druby%2520has%253Amedia%2520-is%253Aretweet"
+
+      assert_equal expected, @authenticator.send(:signature_base_string, method, url, params)
     end
   end
 end
