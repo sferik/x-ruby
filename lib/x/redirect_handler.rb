@@ -43,11 +43,10 @@ module X
     end
 
     def build_request(request, uri, response_code, authenticator)
-      http_method, body = case response_code
-      in 307 | 308
-        [request.method.downcase.to_sym, request.body]
-      else
-        [:get, nil]
+      http_method = :get
+      if [307, 308].include?(response_code)
+        http_method = request.method.downcase.to_sym
+        body = request.body
       end
 
       request_builder.build(http_method:, uri:, body:, authenticator:)
