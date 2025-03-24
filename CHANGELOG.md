@@ -1,3 +1,10 @@
+
+## [0.15.0] - 2025-03-24
+* Fix bug in MediaUploader#await_processing (136dff8)
+* Refactor RedirectHandler#build_request (fd379c3)
+* Escape space in query string as %20, not + (2d2df75)
+* Don't escape commas in query parameters (e7d9056)
+
 ## [0.15.0] - 2025-02-06
 * Change media upload to use the API v2 endpoints (eca2b88)
 
