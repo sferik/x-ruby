@@ -35,7 +35,7 @@ module X
 
     def await_processing(client:, media:)
       loop do
-        status = client.get("media/upload?command=STATUS&media_key=#{media["media_key"]}")&.fetch("data")
+        status = client.get("media/upload?command=STATUS&media_id=#{media["id"]}")&.fetch("data")
         return status if !status["processing_info"] || PROCESSING_INFO_STATES.include?(status["processing_info"]["state"])
 
         sleep status["processing_info"]["check_after_secs"].to_i

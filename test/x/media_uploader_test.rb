@@ -50,7 +50,7 @@ module X
     end
 
     def test_await_processing
-      stub_request(:get, "https://api.twitter.com/2/media/upload?command=STATUS&media_key=#{TEST_MEDIA_KEY}")
+      stub_request(:get, "https://api.twitter.com/2/media/upload?command=STATUS&media_id=#{TEST_MEDIA_ID}")
         .to_return(headers: {"content-type" => "application/json"}, body: '{"data":{"processing_info": {"state": "pending"}}}')
         .to_return(headers: {"content-type" => "application/json"}, body: '{"data":{"processing_info": {"state": "succeeded"}}}')
       result = MediaUploader.await_processing(client: @client, media: @media)
@@ -59,7 +59,7 @@ module X
     end
 
     def test_await_processing_and_failed
-      stub_request(:get, "https://api.twitter.com/2/media/upload?command=STATUS&media_key=#{TEST_MEDIA_KEY}")
+      stub_request(:get, "https://api.twitter.com/2/media/upload?command=STATUS&media_id=#{TEST_MEDIA_ID}")
         .to_return(headers: {"content-type" => "application/json"}, body: '{"data":{"processing_info": {"state": "pending"}}}')
         .to_return(headers: {"content-type" => "application/json"}, body: '{"data":{"processing_info": {"state": "failed"}}}')
       result = MediaUploader.await_processing(client: @client, media: @media)
