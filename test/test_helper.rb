@@ -22,7 +22,6 @@ TEST_ACCESS_TOKEN_SECRET = "TEST_ACCESS_TOKEN_SECRET".freeze
 TEST_OAUTH_NONCE = "TEST_OAUTH_NONCE".freeze
 TEST_OAUTH_TIMESTAMP = Time.utc(1983, 11, 24).to_i.to_s
 TEST_MEDIA_ID = "TEST_MEDIA_ID".freeze
-TEST_MEDIA_KEY = "TEST_MEDIA_KEY".freeze
 
 def test_oauth_credentials
   {

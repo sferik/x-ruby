@@ -30,12 +30,12 @@ module X
       media = init(client:, file_path:, media_type:, media_category:)
       chunk_size = chunk_size_mb * BYTES_PER_MB
       append(client:, file_paths: split(file_path, chunk_size), media:, media_type:, boundary:)
-      client.post("media/upload?command=FINALIZE&media_key=#{media["media_key"]}")&.fetch("data")
+      client.post("media/upload?command=FINALIZE&media_id=#{media["id"]}")&.fetch("data")
     end
 
     def await_processing(client:, media:)
       loop do
-        status = client.get("media/upload?command=STATUS&media_key=#{media["media_key"]}")&.fetch("data")
+        status = client.get("media/upload?command=STATUS&media_id=#{media["id"]}")&.fetch("data")
         return status if !status["processing_info"] || PROCESSING_INFO_STATES.include?(status["processing_info"]["state"])
 
         sleep status["processing_info"]["check_after_secs"].to_i
@@ -85,7 +85,7 @@ module X
       threads = file_paths.map.with_index do |file_path, index|
         Thread.new do
           upload_body = construct_upload_body(file_path:, media_type:, boundary:)
-          query = "command=APPEND&media_key=#{media["media_key"]}&segment_index=#{index}"
+          query = "command=APPEND&media_id=#{media["id"]}&segment_index=#{index}"
           headers = {"Content-Type" => "multipart/form-data, boundary=#{boundary}"}
           upload_chunk(client:, query:, upload_body:, file_path:, headers:)
         end
