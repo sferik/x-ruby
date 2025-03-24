@@ -14,7 +14,7 @@ media_category = "tweet_image" # other options are: dm_image or subtitles; for v
 
 media = X::MediaUploader.upload(client:, file_path:, media_category:)
 
-tweet_body = {text: "Posting media from @gem!", media: {media_ids: [media["media_id_string"]]}}
+tweet_body = {text: "Posting media from @gem!", media: {media_ids: [media["id"]]}}
 
 tweet = client.post("tweets", tweet_body.to_json)
 

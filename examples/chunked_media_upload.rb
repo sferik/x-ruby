@@ -16,7 +16,7 @@ media = X::MediaUploader.chunked_upload(client:, file_path:, media_category:)
 
 X::MediaUploader.await_processing(client:, media:)
 
-tweet_body = {text: "Posting media from @gem!", media: {media_ids: [media["media_id_string"]]}}
+tweet_body = {text: "Posting media from @gem!", media: {media_ids: [media["id"]]}}
 
 tweet = client.post("tweets", tweet_body.to_json)
 
