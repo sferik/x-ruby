@@ -1,5 +1,7 @@
+## [0.15.2] - 2025-03-28
+* Use media_id instead of media_key to upload media (f1dd577)
 
-## [0.15.0] - 2025-03-24
+## [0.15.1] - 2025-03-24
 * Fix bug in MediaUploader#await_processing (136dff8)
 * Refactor RedirectHandler#build_request (fd379c3)
 * Escape space in query string as %20, not + (2d2df75)
