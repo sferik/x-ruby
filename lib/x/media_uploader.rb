@@ -112,7 +112,7 @@ module X
       "--#{boundary}\r\n" \
         "Content-Disposition: form-data; name=\"media\"; filename=\"#{File.basename(file_path)}\"\r\n" \
         "Content-Type: #{media_type}\r\n\r\n" \
-        "#{File.read(file_path)}\r\n" \
+        "#{File.binread(file_path)}\r\n" \
         "--#{boundary}--\r\n"
     end
   end
