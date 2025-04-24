@@ -3,7 +3,6 @@ source "https://rubygems.org"
 # Specify your gem's dependencies in x.gemspec
 gemspec
 
-gem "base64", ">= 0.2"
 gem "fiddle", ">= 1.1.2"
 gem "irb", ">= 1.14.1"
 gem "minitest", ">= 5.19"
