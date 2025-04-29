@@ -14,12 +14,13 @@ Gem::Specification.new do |spec|
 
   spec.metadata = {
     "allowed_push_host" => "https://rubygems.org",
-    "rubygems_mfa_required" => "true",
-    "homepage_uri" => spec.homepage,
-    "source_code_uri" => "https://github.com/sferik/x-ruby",
-    "changelog_uri" => "https://github.com/sferik/x-ruby/blob/master/CHANGELOG.md",
     "bug_tracker_uri" => "https://github.com/sferik/x-ruby/issues",
-    "documentation_uri" => "https://rubydoc.info/gems/x/"
+    "changelog_uri" => "https://github.com/sferik/x-ruby/blob/master/CHANGELOG.md",
+    "documentation_uri" => "https://rubydoc.info/gems/x/",
+    "funding_uri" => "https://github.com/sponsors/sferik/",
+    "homepage_uri" => spec.homepage,
+    "rubygems_mfa_required" => "true",
+    "source_code_uri" => "https://github.com/sferik/x-ruby"
   }
 
   spec.files = Dir[
