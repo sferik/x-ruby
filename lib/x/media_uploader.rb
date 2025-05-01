@@ -109,11 +109,7 @@ module X
 
     def construct_upload_body(file_path:, media_type:, segment_index: nil, boundary: SecureRandom.hex)
       body = ""
-      if segment_index
-        body += "--#{boundary}\r\n" \
-          "Content-Disposition: form-data; name=\"segment_index\"\r\n\r\n" \
-          "#{segment_index}\r\n"
-      end
+      body += "--#{boundary}\r\nContent-Disposition: form-data; name=\"segment_index\"\r\n\r\n#{segment_index}\r\n" if segment_index
       "#{body}--#{boundary}\r\n" \
         "Content-Disposition: form-data; name=\"media\"; filename=\"#{File.basename(file_path)}\"\r\n" \
         "Content-Type: #{media_type}\r\n\r\n" \
