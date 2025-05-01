@@ -27,12 +27,12 @@ module X
       chunk_size_mb = (total_bytes - 1) / MediaUploader::BYTES_PER_MB.to_f
       stub_request(:post, "https://api.twitter.com/2/media/upload/initialize").with(
         body: {
-          media_type: 'video/mp4',
-          media_category: 'tweet_video',
+          media_type: "video/mp4",
+          media_category: "tweet_video",
           total_bytes: total_bytes
         }.to_json
       ).to_return(status: 202, headers: {"content-type" => "application/json"}, body: @data.to_json)
-      2.times { |segment_index| stub_request(:post, "https://api.twitter.com/2/media/upload/#{TEST_MEDIA_ID}/append").to_return(status: 204) }
+      stub_request(:post, "https://api.twitter.com/2/media/upload/#{TEST_MEDIA_ID}/append").to_return(status: 204)
       stub_request(:post, "https://api.twitter.com/2/media/upload/#{TEST_MEDIA_ID}/finalize")
         .to_return(status: 201, headers: {"content-type" => "application/json"}, body: @data.to_json)
 
@@ -45,10 +45,8 @@ module X
       file_path = "test/sample_files/sample.mp4"
       file_paths = MediaUploader.send(:split, file_path, File.size(file_path) - 1)
 
-      file_paths.each_with_index do |_chunk_path, segment_index|
-        stub_request(:post, "https://api.twitter.com/2/media/upload/#{TEST_MEDIA_ID}/append")
-          .with(headers: {"Content-Type" => "multipart/form-data, boundary=AaB03x"}).to_return(status: 204)
-      end
+      stub_request(:post, "https://api.twitter.com/2/media/upload/#{TEST_MEDIA_ID}/append")
+        .with(headers: {"Content-Type" => "multipart/form-data, boundary=AaB03x"}).to_return(status: 204)
       MediaUploader.send(:append, client: @client, file_paths:, media: @media, media_type: "video/mp4", boundary: "AaB03x")
 
       bodies = []
@@ -83,8 +81,8 @@ module X
       file_path = "test/sample_files/sample.mp4"
       stub_request(:post, "https://api.twitter.com/2/media/upload/initialize").with(
         body: {
-          media_type: 'video/mp4',
-          media_category: 'tweet_video',
+          media_type: "video/mp4",
+          media_category: "tweet_video",
           total_bytes: File.size(file_path)
         }.to_json
       ).to_return(status: 202, headers: {"content-type" => "application/json"}, body: @data.to_json)
