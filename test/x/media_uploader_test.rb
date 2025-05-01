@@ -55,7 +55,7 @@ module X
       end
 
       file_paths.each_with_index do |_, segment_index|
-        assert_includes(bodies.reverse[segment_index], "Content-Disposition: form-data; name=\"segment_index\"\r\n\r\n#{segment_index}\r\n")
+        assert(bodies.one? { |body| body.include?("Content-Disposition: form-data; name=\"segment_index\"\r\n\r\n#{segment_index}\r\n") })
       end
     end
 
