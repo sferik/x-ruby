@@ -30,7 +30,7 @@ module X
       media = init(client:, file_path:, media_type:, media_category:)
       chunk_size = chunk_size_mb * BYTES_PER_MB
       append(client:, file_paths: split(file_path, chunk_size), media:, media_type:, boundary:)
-      client.post("media/upload?command=FINALIZE&media_id=#{media["id"]}")&.fetch("data")
+      client.post("media/upload/#{media["id"]}/finalize")&.fetch("data")
     end
 
     def await_processing(client:, media:)
@@ -77,24 +77,23 @@ module X
 
     def init(client:, file_path:, media_type:, media_category:)
       total_bytes = File.size(file_path)
-      query = "command=INIT&media_type=#{media_type}&media_category=#{media_category}&total_bytes=#{total_bytes}"
-      client.post("media/upload?#{query}")&.fetch("data")
+      data = {media_type:, media_category:, total_bytes:}.to_json
+      client.post("media/upload/initialize", data)&.fetch("data")
     end
 
     def append(client:, file_paths:, media:, media_type:, boundary: SecureRandom.hex)
       threads = file_paths.map.with_index do |file_path, index|
         Thread.new do
-          upload_body = construct_upload_body(file_path:, media_type:, boundary:)
-          query = "command=APPEND&media_id=#{media["id"]}&segment_index=#{index}"
+          upload_body = construct_upload_body(file_path:, media_type:, segment_index: index, boundary:)
           headers = {"Content-Type" => "multipart/form-data, boundary=#{boundary}"}
-          upload_chunk(client:, query:, upload_body:, file_path:, headers:)
+          upload_chunk(client:, media_id: media["id"], upload_body:, file_path:, headers:)
         end
       end
       threads.each(&:join)
     end
 
-    def upload_chunk(client:, query:, upload_body:, file_path:, headers: {})
-      client.post("media/upload?#{query}", upload_body, headers:)
+    def upload_chunk(client:, media_id:, upload_body:, file_path:, headers: {})
+      client.post("media/upload/#{media_id}/append", upload_body, headers:)
     rescue NetworkError, ServerError
       retries ||= 0
       ((retries += 1) < MAX_RETRIES) ? retry : raise
@@ -108,8 +107,14 @@ module X
       Dir.delete(dirname) if Dir.empty?(dirname)
     end
 
-    def construct_upload_body(file_path:, media_type:, boundary: SecureRandom.hex)
-      "--#{boundary}\r\n" \
+    def construct_upload_body(file_path:, media_type:, segment_index: nil, boundary: SecureRandom.hex)
+      body = ""
+      if segment_index
+        body = "--#{boundary}\r\n" \
+          "Content-Disposition: form-data; name=\"segment_index\"\r\n\r\n" \
+          "#{segment_index}\r\n"
+      end
+      body += "--#{boundary}\r\n" \
         "Content-Disposition: form-data; name=\"media\"; filename=\"#{File.basename(file_path)}\"\r\n" \
         "Content-Type: #{media_type}\r\n\r\n" \
         "#{File.binread(file_path)}\r\n" \
