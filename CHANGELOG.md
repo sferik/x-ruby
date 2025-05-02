@@ -1,3 +1,6 @@
+## [0.15.4] - 2025-05-02
+* Use dedicated endpoints for chunked media upload (d54d0d0)
+
 ## [0.15.3] - 2025-04-24
 * Add missing base64 dependency (3ca8512)
 * Set binary read for media files to be uploaded (fd066e6)
