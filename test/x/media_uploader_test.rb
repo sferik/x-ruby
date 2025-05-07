@@ -72,6 +72,25 @@ module X
       assert_equal "failed", response["processing_info"]["state"]
     end
 
+    def test_await_processing!
+      stub_request(:get, "https://api.twitter.com/2/media/upload?command=STATUS&media_id=#{TEST_MEDIA_ID}")
+        .to_return(headers: {"content-type" => "application/json"}, body: '{"data":{"processing_info": {"state": "pending"}}}')
+        .to_return(headers: {"content-type" => "application/json"}, body: '{"data":{"processing_info": {"state": "succeeded"}}}')
+            
+      result = MediaUploader.await_processing!(client: @client, media: @media)
+      assert_equal "succeeded", result["processing_info"]["state"]
+    end
+
+    def test_await_processing_and_failed!
+      stub_request(:get, "https://api.twitter.com/2/media/upload?command=STATUS&media_id=#{TEST_MEDIA_ID}")
+        .to_return(headers: {"content-type" => "application/json"}, body: '{"data":{"processing_info": {"state": "pending"}}}')
+        .to_return(headers: {"content-type" => "application/json"}, body: '{"data":{"processing_info": {"state": "failed"}}}')
+      assert_raises(RuntimeError, "Media processing failed") do
+        MediaUploader.await_processing!(client: @client, media: @media)
+      end
+      assert_requested(:get, "https://api.twitter.com/2/media/upload?command=STATUS&media_id=#{TEST_MEDIA_ID}", times: 2)
+    end
+
     def test_retry
       file_path = "test/sample_files/sample.mp4"
       body_json = {media_type: "video/mp4", media_category: "tweet_video", total_bytes: File.size(file_path)}.to_json

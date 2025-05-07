@@ -42,6 +42,12 @@ module X
       end
     end
 
+    def await_processing!(client:, media:)
+      await_processing(client:, media:).tap do |status|
+        raise "Media processing failed" if status["processing_info"]["state"] == "failed"
+      end
+    end
+
     private
 
     def validate!(file_path:, media_category:)
