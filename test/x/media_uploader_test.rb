@@ -72,8 +72,9 @@ module X
       stub_request(:get, "https://api.twitter.com/2/media/upload?command=STATUS&media_id=#{TEST_MEDIA_ID}")
         .to_return(headers: {"content-type" => "application/json"}, body: '{"data":{"processing_info": {"state": "pending"}}}')
         .to_return(headers: {"content-type" => "application/json"}, body: '{"data":{"processing_info": {"state": "succeeded"}}}')
-            
-      result = MediaUploader.await_processing!(client: @client, media: @media)
+
+      result = MediaUploader.await_processing!(client: @client, media: MEDIA)
+
       assert_equal "succeeded", result["processing_info"]["state"]
     end
 
@@ -82,7 +83,7 @@ module X
         .to_return(headers: {"content-type" => "application/json"}, body: '{"data":{"processing_info": {"state": "pending"}}}')
         .to_return(headers: {"content-type" => "application/json"}, body: '{"data":{"processing_info": {"state": "failed"}}}')
       assert_raises(RuntimeError, "Media processing failed") do
-        MediaUploader.await_processing!(client: @client, media: @media)
+        MediaUploader.await_processing!(client: @client, media: MEDIA)
       end
       assert_requested(:get, "https://api.twitter.com/2/media/upload?command=STATUS&media_id=#{TEST_MEDIA_ID}", times: 2)
     end
