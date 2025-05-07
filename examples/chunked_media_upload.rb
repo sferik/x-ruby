@@ -14,7 +14,7 @@ media_category = "tweet_video" # other options include: tweet_image, tweet_gif, 
 
 media = X::MediaUploader.chunked_upload(client:, file_path:, media_category:)
 
-X::MediaUploader.await_processing(client:, media:)
+X::MediaUploader.await_processing(client:, media:) # or X::MediaUploader.await_processing!(client:, media:) to raise an error if processing fails
 
 tweet_body = {text: "Posting media from @gem!", media: {media_ids: [media["id"]]}}
 
