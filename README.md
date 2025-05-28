@@ -39,15 +39,15 @@ x_credentials = {
 x_client = X::Client.new(**x_credentials)
 
 # Get data about yourself
-x_client.get("users/me")
+x_client.get("2/users/me")
 # {"data"=>{"id"=>"7505382", "name"=>"Erik Berlin", "username"=>"sferik"}}
 
 # Post
-post = x_client.post("tweets", '{"text":"Hello, World! (from @gem)"}')
+post = x_client.post("2/tweets", '{"text":"Hello, World! (from @gem)"}')
 # {"data"=>{"edit_history_tweet_ids"=>["1234567890123456789"], "id"=>"1234567890123456789", "text"=>"Hello, World! (from @gem)"}}
 
 # Delete the post
-x_client.delete("tweets/#{post["data"]["id"]}")
+x_client.delete("2/tweets/#{post["data"]["id"]}")
 # {"data"=>{"deleted"=>true}}
 
 # Initialize an API v1.1 client
