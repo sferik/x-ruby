@@ -20,7 +20,7 @@ module X
       response = MediaUploader.upload(client: @client, file_path:, media_category: MediaUploader::TWEET_IMAGE, boundary: BOUNDARY)
 
       assert_requested(:post, "https://api.twitter.com/2/media/upload", times: 1) do |request|
-        assert(request.body.include?("Content-Disposition: form-data; name=\"media_category\"\r\n\r\n#{MediaUploader::TWEET_IMAGE}"))
+        assert_includes(request.body, "Content-Disposition: form-data; name=\"media_category\"\r\n\r\n#{MediaUploader::TWEET_IMAGE}")
       end
 
       assert_equal TEST_MEDIA_ID, response["id"]
