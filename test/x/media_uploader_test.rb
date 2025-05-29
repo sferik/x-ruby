@@ -16,10 +16,10 @@ module X
 
     def test_upload
       file_path = "test/sample_files/sample.jpg"
-      stub_request(:post, BASE_URL).to_return(body: MEDIA.to_json, headers: JSON_HEADERS)
+      stub_request(:post, BASE_URL).to_return(body: JSON_BODY, headers: JSON_HEADERS)
       response = MediaUploader.upload(client: @client, file_path:, media_category: MediaUploader::TWEET_IMAGE, boundary: BOUNDARY)
 
-      assert_requested(:post, "https://api.twitter.com/2/media/upload", times: 1) do |request|
+      assert_requested(:post, "https://api.twitter.com/2/media/upload") do |request|
         assert_includes(request.body, "Content-Disposition: form-data; name=\"media_category\"\r\n\r\n#{MediaUploader::TWEET_IMAGE}")
       end
 

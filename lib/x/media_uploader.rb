@@ -21,7 +21,7 @@ module X
       validate!(file_path:, media_category:)
       upload_body = construct_upload_body(file_path:, media_type:, media_category:, boundary:)
       headers = {"Content-Type" => "multipart/form-data, boundary=#{boundary}"}
-      client.post("media/upload", upload_body, headers:)
+      client.post("media/upload", upload_body, headers:)&.fetch("data")
     end
 
     def chunked_upload(client:, file_path:, media_category:, media_type: infer_media_type(file_path,
