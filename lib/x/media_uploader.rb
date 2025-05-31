@@ -63,7 +63,7 @@ module X
       when TWEET_GIF, DM_GIF then GIF_MIME_TYPE
       when TWEET_VIDEO, DM_VIDEO then MP4_MIME_TYPE
       when SUBTITLES then SUBRIP_MIME_TYPE
-      else MIME_TYPE_MAP[File.extname(file_path).delete(".").downcase] || DEFAULT_MIME_TYPE
+      else MIME_TYPE_MAP.fetch(File.extname(file_path).delete(".").downcase, DEFAULT_MIME_TYPE)
       end
     end
 
