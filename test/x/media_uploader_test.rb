@@ -1,3 +1,4 @@
+require "json"
 require_relative "../test_helper"
 require_relative "../../lib/x/media_uploader"
 

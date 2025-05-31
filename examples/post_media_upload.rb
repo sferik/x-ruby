@@ -1,3 +1,4 @@
+require "json"
 require "x"
 require "x/media_uploader"
 
