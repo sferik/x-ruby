@@ -44,9 +44,10 @@ module X
     end
 
     def await_processing!(client:, media:)
-      await_processing(client:, media:).tap do |status|
-        raise "Media processing failed" if status["processing_info"]["state"] == "failed"
-      end
+      status = await_processing(client:, media:)
+      raise "Media processing failed" if status["processing_info"]["state"] == "failed"
+
+      status
     end
 
     private
@@ -69,17 +70,13 @@ module X
     end
 
     def split(file_path, chunk_size)
-      file_number = -1
-      file_paths = [] # @type var file_paths: Array[String]
-
-      File.open(file_path, "rb") do |f|
-        while (chunk = f.read(chunk_size))
-          path = "#{Dir.mktmpdir}/x#{format("%03d", file_number += 1)}"
-          File.binwrite(path, chunk)
-          file_paths << path
-        end
+      file_size = File.size(file_path)
+      segment_count = (file_size.to_f / chunk_size).ceil
+      (0...segment_count).map do |segment_index|
+        segment_path = "#{Dir.mktmpdir}/x#{format("%03d", segment_index + 1)}"
+        File.binwrite(segment_path, File.binread(file_path, chunk_size, segment_index * chunk_size))
+        segment_path
       end
-      file_paths
     end
 
     def init(client:, file_path:, media_type:, media_category:)

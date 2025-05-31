@@ -19,11 +19,9 @@ module X
       file_path = "test/sample_files/sample.jpg"
       stub_request(:post, BASE_URL).to_return(body: JSON_BODY, headers: JSON_HEADERS)
       response = MediaUploader.upload(client: @client, file_path:, media_category: MediaUploader::TWEET_IMAGE, boundary: BOUNDARY)
-
-      assert_requested(:post, "https://api.twitter.com/2/media/upload") do |request|
+      assert_requested(:post, BASE_URL) do |request|
         assert_includes(request.body, "Content-Disposition: form-data; name=\"media_category\"\r\n\r\n#{MediaUploader::TWEET_IMAGE}")
       end
-
       assert_equal TEST_MEDIA_ID, response["id"]
     end
 
@@ -46,51 +44,40 @@ module X
       headers = {"Content-Type" => "multipart/form-data, boundary=#{BOUNDARY}"}
       stub_request(:post, "#{BASE_URL}/#{TEST_MEDIA_ID}/append").with(headers:).to_return(status: 204)
       MediaUploader.send(:append, client: @client, file_paths:, media: MEDIA, media_type: "video/mp4", boundary: BOUNDARY)
-
       bodies = []
-      assert_requested(:post, "https://api.twitter.com/2/media/upload/#{TEST_MEDIA_ID}/append", times: 2) { |request| bodies << request.body }
-
+      assert_requested(:post, "#{BASE_URL}/#{TEST_MEDIA_ID}/append", times: 2) { |request| bodies << request.body }
       file_paths.each_index do |segment_index|
         assert(bodies.one? { |body| body.include?("Content-Disposition: form-data; name=\"segment_index\"\r\n\r\n#{segment_index}\r\n") })
       end
     end
 
     def test_await_processing
-      stub_request(:get, "https://api.twitter.com/2/media/upload?command=STATUS&media_id=#{TEST_MEDIA_ID}")
-        .to_return(headers: JSON_HEADERS, body: '{"data":{"processing_info": {"state": "pending"}}}')
-        .to_return(headers: JSON_HEADERS, body: '{"data":{"processing_info": {"state": "succeeded"}}}')
-      response = MediaUploader.await_processing(client: @client, media: MEDIA)
+      {"succeeded" => '{"data":{"processing_info":{"state":"succeeded"}}}',
+       "failed" => '{"data":{"processing_info":{"state":"failed"}}}'}.each do |expected_state, body|
+        stub_request(:get, "#{BASE_URL}?command=STATUS&media_id=#{TEST_MEDIA_ID}")
+          .to_return(headers: JSON_HEADERS, body: '{"data":{"processing_info":{"state":"pending"}}}')
+          .to_return(headers: JSON_HEADERS, body: body)
+        response = MediaUploader.await_processing(client: @client, media: MEDIA)
 
-      assert_equal "succeeded", response["processing_info"]["state"]
-    end
-
-    def test_await_processing_failed
-      stub_request(:get, "https://api.twitter.com/2/media/upload?command=STATUS&media_id=#{TEST_MEDIA_ID}")
-        .to_return(headers: JSON_HEADERS, body: '{"data":{"processing_info": {"state": "pending"}}}')
-        .to_return(headers: JSON_HEADERS, body: '{"data":{"processing_info": {"state": "failed"}}}')
-      response = MediaUploader.await_processing(client: @client, media: MEDIA)
-
-      assert_equal "failed", response["processing_info"]["state"]
+        assert_equal expected_state, response["processing_info"]["state"]
+      end
     end
 
     def test_await_processing!
-      stub_request(:get, "https://api.twitter.com/2/media/upload?command=STATUS&media_id=#{TEST_MEDIA_ID}")
-        .to_return(headers: {"content-type" => "application/json"}, body: '{"data":{"processing_info": {"state": "pending"}}}')
-        .to_return(headers: {"content-type" => "application/json"}, body: '{"data":{"processing_info": {"state": "succeeded"}}}')
-
+      stub_request(:get, "#{BASE_URL}?command=STATUS&media_id=#{TEST_MEDIA_ID}")
+        .to_return(headers: JSON_HEADERS, body: '{"data":{"processing_info":{"state":"pending"}}}')
+        .to_return(headers: JSON_HEADERS, body: '{"data":{"processing_info":{"state":"succeeded"}}}')
       result = MediaUploader.await_processing!(client: @client, media: MEDIA)
 
       assert_equal "succeeded", result["processing_info"]["state"]
     end
 
-    def test_await_processing_and_failed!
-      stub_request(:get, "https://api.twitter.com/2/media/upload?command=STATUS&media_id=#{TEST_MEDIA_ID}")
-        .to_return(headers: {"content-type" => "application/json"}, body: '{"data":{"processing_info": {"state": "pending"}}}')
-        .to_return(headers: {"content-type" => "application/json"}, body: '{"data":{"processing_info": {"state": "failed"}}}')
-      assert_raises(RuntimeError, "Media processing failed") do
-        MediaUploader.await_processing!(client: @client, media: MEDIA)
-      end
-      assert_requested(:get, "https://api.twitter.com/2/media/upload?command=STATUS&media_id=#{TEST_MEDIA_ID}", times: 2)
+    def test_await_processing_raises!
+      stub_request(:get, "#{BASE_URL}?command=STATUS&media_id=#{TEST_MEDIA_ID}")
+        .to_return(headers: JSON_HEADERS, body: '{"data":{"processing_info":{"state":"pending"}}}')
+        .to_return(headers: JSON_HEADERS, body: '{"data":{"processing_info":{"state":"failed"}}}')
+      assert_raises(RuntimeError, "Media processing failed") { MediaUploader.await_processing!(client: @client, media: MEDIA) }
+      assert_requested(:get, "#{BASE_URL}?command=STATUS&media_id=#{TEST_MEDIA_ID}", times: 2)
     end
 
     def test_retry
@@ -107,40 +94,22 @@ module X
       file_path = "test/sample_files/sample.jpg"
 
       assert_nil MediaUploader.send(:validate!, file_path:, media_category: MediaUploader::TWEET_IMAGE)
-      assert_raises(RuntimeError) do
-        MediaUploader.send(:validate!, file_path: "bad/path", media_category: MediaUploader::TWEET_IMAGE)
-      end
+      assert_raises(RuntimeError) { MediaUploader.send(:validate!, file_path: "bad/path", media_category: MediaUploader::TWEET_IMAGE) }
       assert_raises(ArgumentError) do
         MediaUploader.send(:validate!, file_path:, media_category: "invalid_category")
       end
     end
 
-    def test_infer_media_type_for_gif
-      assert_equal MediaUploader::GIF_MIME_TYPE, MediaUploader.send(:infer_media_type, "test/sample_files/sample.gif", "tweet_gif")
-    end
-
-    def test_infer_media_type_for_jpg
-      assert_equal MediaUploader::JPEG_MIME_TYPE, MediaUploader.send(:infer_media_type, "test/sample_files/sample.jpg", "tweet_image")
-    end
-
-    def test_infer_media_type_for_mp4
-      assert_equal MediaUploader::MP4_MIME_TYPE, MediaUploader.send(:infer_media_type, "test/sample_files/sample.mp4", "tweet_video")
-    end
-
-    def test_infer_media_type_for_png
-      assert_equal MediaUploader::PNG_MIME_TYPE, MediaUploader.send(:infer_media_type, "test/sample_files/sample.png", "tweet_image")
-    end
-
-    def test_infer_media_type_for_srt
-      assert_equal MediaUploader::SUBRIP_MIME_TYPE, MediaUploader.send(:infer_media_type, "test/sample_files/sample.srt", "subtitles")
-    end
-
-    def test_infer_media_type_for_webp
-      assert_equal MediaUploader::WEBP_MIME_TYPE, MediaUploader.send(:infer_media_type, "test/sample_files/sample.webp", "tweet_image")
-    end
-
-    def test_infer_media_type_with_default
-      assert_equal MediaUploader::DEFAULT_MIME_TYPE, MediaUploader.send(:infer_media_type, "test/sample_files/sample.dne", "tweet_image")
+    def test_infer_media_type
+      {"test/sample_files/sample.gif" => ["tweet_gif", MediaUploader::GIF_MIME_TYPE],
+       "test/sample_files/sample.jpg" => ["tweet_image", MediaUploader::JPEG_MIME_TYPE],
+       "test/sample_files/sample.mp4" => ["tweet_video", MediaUploader::MP4_MIME_TYPE],
+       "test/sample_files/sample.png" => ["tweet_image", MediaUploader::PNG_MIME_TYPE],
+       "test/sample_files/sample.srt" => ["subtitles", MediaUploader::SUBRIP_MIME_TYPE],
+       "test/sample_files/sample.webp" => ["tweet_image", MediaUploader::WEBP_MIME_TYPE],
+       "test/sample_files/sample.dne" => ["tweet_image", MediaUploader::DEFAULT_MIME_TYPE]}.each do |path, (category, expected)|
+        assert_equal expected, MediaUploader.send(:infer_media_type, path, category)
+      end
     end
   end
 end
