@@ -268,6 +268,7 @@ module X
     def upload: (client: Client, file_path: String, media_category: String, ?media_type: String, ?boundary: String) -> untyped
     def chunked_upload: (client: Client, file_path: String, media_category: String, ?media_type: String, ?boundary: String, ?chunk_size_mb: Integer) -> untyped
     def await_processing: (client: Client, media: untyped) -> untyped
+    def await_processing!: (client: Client, media: untyped) -> untyped
 
     private
     def validate!: (file_path: String, media_category: String) -> nil
