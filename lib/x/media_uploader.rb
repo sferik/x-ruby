@@ -21,7 +21,7 @@ module X
       boundary: SecureRandom.hex)
       validate!(file_path:, media_category:)
       upload_body = construct_upload_body(file_path:, media_type:, media_category:, boundary:)
-      headers = {"Content-Type" => "multipart/form-data, boundary=#{boundary}"}
+      headers = {"Content-Type" => "multipart/form-data; boundary=#{boundary}"}
       client.post("media/upload", upload_body, headers:)&.fetch("data")
     end
 
@@ -88,8 +88,8 @@ module X
     def append(client:, file_paths:, media:, media_type:, boundary: SecureRandom.hex)
       threads = file_paths.map.with_index do |file_path, index|
         Thread.new do
-          upload_body = construct_upload_body(file_path:, media_type:, segment_index: index, boundary:)
-          headers = {"Content-Type" => "multipart/form-data, boundary=#{boundary}"}
+          upload_body = construct_upload_body(file_path:, segment_index: index, boundary:)
+          headers = {"Content-Type" => "multipart/form-data; boundary=#{boundary}"}
           upload_chunk(client:, media_id: media["id"], upload_body:, file_path:, headers:)
         end
       end
@@ -111,14 +111,15 @@ module X
       Dir.delete(dirname) if Dir.empty?(dirname)
     end
 
-    def construct_upload_body(file_path:, media_type:, media_category: nil, segment_index: nil,
+    def construct_upload_body(file_path:, media_type: nil, media_category: nil, segment_index: nil,
       boundary: SecureRandom.hex)
       body = ""
       body += "--#{boundary}\r\nContent-Disposition: form-data; name=\"segment_index\"\r\n\r\n#{segment_index}\r\n" if segment_index
       body += "--#{boundary}\r\nContent-Disposition: form-data; name=\"media_category\"\r\n\r\n#{media_category}\r\n" if media_category
+      body += "--#{boundary}\r\nContent-Disposition: form-data; name=\"media_type\"\r\n\r\n#{media_type}\r\n" if media_type
       "#{body}--#{boundary}\r\n" \
         "Content-Disposition: form-data; name=\"media\"; filename=\"#{File.basename(file_path)}\"\r\n" \
-        "Content-Type: #{media_type}\r\n\r\n" \
+        "Content-Type: application/octet-stream\r\n\r\n" \
         "#{File.binread(file_path)}\r\n" \
         "--#{boundary}--\r\n"
     end
