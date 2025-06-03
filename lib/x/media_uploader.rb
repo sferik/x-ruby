@@ -30,7 +30,7 @@ module X
       validate!(file_path:, media_category:)
       media = init(client:, file_path:, media_type:, media_category:)
       chunk_size = chunk_size_mb * BYTES_PER_MB
-      append(client:, file_paths: split(file_path, chunk_size), media:, media_type:, boundary:)
+      append(client:, file_paths: split(file_path, chunk_size), media:, boundary:)
       client.post("media/upload/#{media["id"]}/finalize")&.fetch("data")
     end
 
@@ -46,7 +46,6 @@ module X
     def await_processing!(client:, media:)
       status = await_processing(client:, media:)
       raise "Media processing failed" if status["processing_info"]["state"] == "failed"
-
       status
     end
 
@@ -54,9 +53,7 @@ module X
 
     def validate!(file_path:, media_category:)
       raise "File not found: #{file_path}" unless File.exist?(file_path)
-
       return if MEDIA_CATEGORIES.include?(media_category.downcase)
-
       raise ArgumentError, "Invalid media_category: #{media_category}. Valid values: #{MEDIA_CATEGORIES.join(", ")}"
     end
 
@@ -85,7 +82,7 @@ module X
       client.post("media/upload/initialize", data)&.fetch("data")
     end
 
-    def append(client:, file_paths:, media:, media_type:, boundary: SecureRandom.hex)
+    def append(client:, file_paths:, media:, boundary: SecureRandom.hex)
       threads = file_paths.map.with_index do |file_path, index|
         Thread.new do
           upload_body = construct_upload_body(file_path:, segment_index: index, boundary:)

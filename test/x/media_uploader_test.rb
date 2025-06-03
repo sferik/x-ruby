@@ -43,7 +43,7 @@ module X
       file_paths = MediaUploader.send(:split, file_path, File.size(file_path) - 1)
       headers = {"Content-Type" => "multipart/form-data; boundary=#{BOUNDARY}"}
       stub_request(:post, "#{BASE_URL}/#{TEST_MEDIA_ID}/append").with(headers:).to_return(status: 204)
-      MediaUploader.send(:append, client: @client, file_paths:, media: MEDIA, media_type: "video/mp4", boundary: BOUNDARY)
+      MediaUploader.send(:append, client: @client, file_paths:, media: MEDIA, boundary: BOUNDARY)
       bodies = []
       assert_requested(:post, "#{BASE_URL}/#{TEST_MEDIA_ID}/append", times: 2) { |request| bodies << request.body }
       file_paths.each_index do |segment_index|
