@@ -119,7 +119,7 @@ module X
       body += "--#{boundary}\r\nContent-Disposition: form-data; name=\"media_type\"\r\n\r\n#{media_type}\r\n" if media_type
       "#{body}--#{boundary}\r\n" \
         "Content-Disposition: form-data; name=\"media\"; filename=\"#{File.basename(file_path)}\"\r\n" \
-        "Content-Type: application/octet-stream\r\n\r\n" \
+        "Content-Type: #{DEFAULT_MIME_TYPE}\r\n\r\n" \
         "#{File.binread(file_path)}\r\n" \
         "--#{boundary}--\r\n"
     end
