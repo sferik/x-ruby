@@ -41,7 +41,7 @@ module X
     def test_append_method
       file_path = "test/sample_files/sample.mp4"
       file_paths = MediaUploader.send(:split, file_path, File.size(file_path) - 1)
-      headers = {"Content-Type" => "multipart/form-data, boundary=#{BOUNDARY}"}
+      headers = {"Content-Type" => "multipart/form-data; boundary=#{BOUNDARY}"}
       stub_request(:post, "#{BASE_URL}/#{TEST_MEDIA_ID}/append").with(headers:).to_return(status: 204)
       MediaUploader.send(:append, client: @client, file_paths:, media: MEDIA, media_type: "video/mp4", boundary: BOUNDARY)
       bodies = []
