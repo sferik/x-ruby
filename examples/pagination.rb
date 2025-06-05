@@ -16,7 +16,7 @@ follower_ids = []
 
 loop do
   response = client.get("followers/ids.json?screen_name=#{screen_name}&count=#{count}&cursor=#{cursor}")
-  follower_ids << response["ids"]
+  follower_ids.concat(response["ids"])
   cursor = response["next_cursor"]
   break if cursor.zero?
 rescue X::TooManyRequests => e
