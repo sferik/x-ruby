@@ -88,6 +88,8 @@ module X
       stub_request(:post, "#{BASE_URL}/#{TEST_MEDIA_ID}/finalize").to_return(status: 201, headers: JSON_HEADERS, body: JSON_BODY)
 
       assert MediaUploader.chunked_upload(client: @client, file_path:, media_category: MediaUploader::TWEET_VIDEO)
+      assert_requested(:post, "#{BASE_URL}/#{TEST_MEDIA_ID}/append", times: 2)
+      assert_requested(:post, "#{BASE_URL}/#{TEST_MEDIA_ID}/finalize", times: 1)
     end
 
     def test_validate
