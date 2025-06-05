@@ -131,9 +131,9 @@ Many thanks to our sponsors (listed in order of when they sponsored this project
 
 ## Development
 
-1. Checkout and repo:
+1. Clone the repo:
 
-       git checkout git@github.com:sferik/x-ruby.git
+       git clone git@github.com:sferik/x-ruby.git
 
 2. Enter the repo’s directory:
 
