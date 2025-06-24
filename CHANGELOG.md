@@ -1,3 +1,9 @@
+## [0.16.0] - 2025-06-24
+* Remove media_type parameter from non-chunked upload and append methods (f1f38b5)
+* Fix media upload (dcb418a)
+* Add await_processing! method to handle media upload failures (6cfc973)
+* Move media_category in body for media upload (b790636)
+
 ## [0.15.4] - 2025-05-02
 * Use dedicated endpoints for chunked media upload (d54d0d0)
 
