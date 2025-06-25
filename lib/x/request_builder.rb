@@ -38,14 +38,13 @@ module X
 
     def add_authentication(request:, authenticator:)
       authenticator.header(request).each do |key, value|
-        request.add_field(key, value)
+        request[key] = value
       end
     end
 
     def add_headers(request:, headers:)
       DEFAULT_HEADERS.merge(headers).each do |key, value|
-        request.delete(key)
-        request.add_field(key, value)
+        request[key] = value
       end
     end
 
