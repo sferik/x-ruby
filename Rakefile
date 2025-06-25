@@ -19,9 +19,9 @@ Steep::RakeTask.new(:steep)
 
 require "mutant"
 
-desc "Run mutant"
+desc "Run mutation tests"
 task :mutant do
-  system(*%w[bundle exec mutant run]) or raise "Mutant task failed"
+  sh "bundle exec mutant run"
 end
 
 desc "Run linters"
