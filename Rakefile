@@ -13,13 +13,9 @@ require "rubocop/rake_task"
 
 RuboCop::RakeTask.new
 
-require "steep"
-require "steep/cli"
+require "steep/rake_task"
 
-desc "Type check with Steep"
-task :steep do
-  Steep::CLI.new(argv: ["check"], stdout: $stdout, stderr: $stderr, stdin: $stdin).run
-end
+Steep::RakeTask.new(:steep)
 
 require "mutant"
 
