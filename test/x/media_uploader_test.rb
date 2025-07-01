@@ -25,6 +25,14 @@ module X
       assert_equal TEST_MEDIA_ID, response["id"]
     end
 
+    def test_upload_non_ascii_chars_in_filename
+      file_path = "test/sample_files/sample_éè.png"
+      stub_request(:post, BASE_URL).to_return(body: JSON_BODY, headers: JSON_HEADERS)
+      response = MediaUploader.upload(client: @client, file_path:, media_category: MediaUploader::TWEET_IMAGE, boundary: BOUNDARY)
+
+      assert_equal TEST_MEDIA_ID, response["id"]
+    end
+
     def test_chunked_upload
       file_path = "test/sample_files/sample.mp4"
       total_bytes = File.size(file_path)
