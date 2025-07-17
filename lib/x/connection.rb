@@ -13,7 +13,7 @@ module X
     DEFAULT_OPEN_TIMEOUT = 60 # seconds
     DEFAULT_READ_TIMEOUT = 60 # seconds
     DEFAULT_WRITE_TIMEOUT = 60 # seconds
-    DEFAULT_DEBUG_OUTPUT = IO::NULL
+    DEFAULT_DEBUG_OUTPUT = File.open(IO::NULL, "w")
     NETWORK_ERRORS = [
       Errno::ECONNREFUSED,
       Errno::ECONNRESET,
