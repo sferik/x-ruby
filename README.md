@@ -23,7 +23,8 @@ Or, if Bundler is not being used to manage dependencies:
 
 ## Usage
 
-First, obtain X credentials from <https://developer.x.com>.
+> [!NOTE]
+> First, obtain X credentials from <https://developer.x.com>.
 
 ```ruby
 require "x"
