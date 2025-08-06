@@ -115,7 +115,7 @@ module X
       body += "--#{boundary}\r\nContent-Disposition: form-data; name=\"segment_index\"\r\n\r\n#{segment_index}\r\n" if segment_index
       body += "--#{boundary}\r\nContent-Disposition: form-data; name=\"media_category\"\r\n\r\n#{media_category}\r\n" if media_category
       "#{body}--#{boundary}\r\n" \
-        "Content-Disposition: form-data; name=\"media\"; filename=\"#{File.basename(file_path)}\"\r\n" \
+        "Content-Disposition: form-data; name=\"media\"\r\n" \
         "Content-Type: #{DEFAULT_MIME_TYPE}\r\n\r\n" \
         "#{File.binread(file_path)}\r\n" \
         "--#{boundary}--\r\n"
