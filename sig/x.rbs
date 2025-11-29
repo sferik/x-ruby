@@ -266,12 +266,15 @@ module X
     extend MediaUploader
 
     def upload: (client: Client, file_path: String, media_category: String, ?boundary: String) -> untyped
+    def upload_binary: (client: Client, content: String, media_category: String, ?boundary: String) -> untyped
     def chunked_upload: (client: Client, file_path: String, media_category: String, ?media_type: String, ?boundary: String, ?chunk_size_mb: Integer) -> untyped
     def await_processing: (client: Client, media: untyped) -> untyped
     def await_processing!: (client: Client, media: untyped) -> untyped
 
     private
     def validate!: (file_path: String, media_category: String) -> nil
+    def validate_file_path!: (file_path: String) -> nil
+    def validate_media_category!: (media_category: String) -> nil
     def infer_media_type: (String file_path, String media_category) -> String
     def split: (String file_path, Integer chunk_size) -> Array[String]
     def init: (client: Client, file_path: String, media_type: String, media_category: String) -> untyped
@@ -279,6 +282,6 @@ module X
     def upload_chunk: (client: Client, media_id: String, upload_body: String, file_path: String, ?headers: Hash[String, String]) -> Integer?
     def cleanup_file: (String file_path) -> Integer?
     def finalize: (client: Client, media: untyped) -> untyped
-    def construct_upload_body: (file_path: String, ?media_category: String, ?segment_index: Integer, ?boundary: String) -> String
+    def construct_upload_body: (content: String, ?media_category: String, ?segment_index: Integer, ?boundary: String) -> String
   end
 end

@@ -18,8 +18,13 @@ module X
     PROCESSING_INFO_STATES = %w[failed succeeded].freeze
 
     def upload(client:, file_path:, media_category:, boundary: SecureRandom.hex)
-      validate!(file_path:, media_category:)
-      upload_body = construct_upload_body(file_path:, media_category:, boundary:)
+      validate_file_path!(file_path:)
+      upload_binary(client:, content: File.binread(file_path), media_category:, boundary:)
+    end
+
+    def upload_binary(client:, content:, media_category:, boundary: SecureRandom.hex)
+      validate_media_category!(media_category:)
+      upload_body = construct_upload_body(content:, media_category:, boundary:)
       headers = {"Content-Type" => "multipart/form-data; boundary=#{boundary}"}
       client.post("media/upload", upload_body, headers:)&.fetch("data")
     end
@@ -52,8 +57,15 @@ module X
     private
 
     def validate!(file_path:, media_category:)
-      raise "File not found: #{file_path}" unless File.exist?(file_path)
+      validate_file_path!(file_path:)
+      validate_media_category!(media_category:)
+    end
 
+    def validate_file_path!(file_path:)
+      raise "File not found: #{file_path}" unless File.exist?(file_path)
+    end
+
+    def validate_media_category!(media_category:)
       return if MEDIA_CATEGORIES.include?(media_category.downcase)
 
       raise ArgumentError, "Invalid media_category: #{media_category}. Valid values: #{MEDIA_CATEGORIES.join(", ")}"
@@ -87,7 +99,7 @@ module X
     def append(client:, file_paths:, media:, boundary: SecureRandom.hex)
       threads = file_paths.map.with_index do |file_path, index|
         Thread.new do
-          upload_body = construct_upload_body(file_path:, segment_index: index, boundary:)
+          upload_body = construct_upload_body(content: File.binread(file_path), segment_index: index, boundary:)
           headers = {"Content-Type" => "multipart/form-data; boundary=#{boundary}"}
           upload_chunk(client:, media_id: media["id"], upload_body:, file_path:, headers:)
         end
@@ -110,14 +122,14 @@ module X
       Dir.delete(dirname) if Dir.empty?(dirname)
     end
 
-    def construct_upload_body(file_path:, media_category: nil, segment_index: nil, boundary: SecureRandom.hex)
+    def construct_upload_body(content:, media_category: nil, segment_index: nil, boundary: SecureRandom.hex)
       body = ""
       body += "--#{boundary}\r\nContent-Disposition: form-data; name=\"segment_index\"\r\n\r\n#{segment_index}\r\n" if segment_index
       body += "--#{boundary}\r\nContent-Disposition: form-data; name=\"media_category\"\r\n\r\n#{media_category}\r\n" if media_category
       "#{body}--#{boundary}\r\n" \
         "Content-Disposition: form-data; name=\"media\"\r\n" \
         "Content-Type: #{DEFAULT_MIME_TYPE}\r\n\r\n" \
-        "#{File.binread(file_path)}\r\n" \
+        "#{content}\r\n" \
         "--#{boundary}--\r\n"
     end
   end
