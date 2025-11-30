@@ -245,7 +245,6 @@ module X
   module MediaUploader
     MAX_RETRIES: Integer
     BYTES_PER_MB: Integer
-    MEDIA_CATEGORIES: Array[String]
     DM_GIF: String
     DM_IMAGE: String
     DM_VIDEO: String
@@ -272,9 +271,6 @@ module X
     def await_processing!: (client: Client, media: untyped) -> untyped
 
     private
-    def validate!: (file_path: String, media_category: String) -> nil
-    def validate_file_path!: (file_path: String) -> nil
-    def validate_media_category!: (media_category: String) -> nil
     def infer_media_type: (String file_path, String media_category) -> String
     def split: (String file_path, Integer chunk_size) -> Array[String]
     def init: (client: Client, file_path: String, media_type: String, media_category: String) -> untyped
@@ -283,5 +279,13 @@ module X
     def cleanup_file: (String file_path) -> Integer?
     def finalize: (client: Client, media: untyped) -> untyped
     def construct_upload_body: (content: String, ?media_category: String, ?segment_index: Integer, ?boundary: String) -> String
+  end
+
+  module MediaUploadValidator
+    MEDIA_CATEGORIES: Array[String]
+    extend MediaUploadValidator
+
+    def validate_file_path!: (file_path: String) -> nil
+    def validate_media_category!: (media_category: String) -> nil
   end
 end

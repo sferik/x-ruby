@@ -1,6 +1,7 @@
 require "json"
 require "securerandom"
 require "tmpdir"
+require_relative "media_upload_validator"
 
 module X
   module MediaUploader
@@ -8,8 +9,7 @@ module X
 
     MAX_RETRIES = 3
     BYTES_PER_MB = 1_048_576
-    MEDIA_CATEGORIES = %w[dm_gif dm_image dm_video subtitles tweet_gif tweet_image tweet_video].freeze
-    DM_GIF, DM_IMAGE, DM_VIDEO, SUBTITLES, TWEET_GIF, TWEET_IMAGE, TWEET_VIDEO = MEDIA_CATEGORIES
+    DM_GIF, DM_IMAGE, DM_VIDEO, SUBTITLES, TWEET_GIF, TWEET_IMAGE, TWEET_VIDEO = MediaUploadValidator::MEDIA_CATEGORIES
     DEFAULT_MIME_TYPE = "application/octet-stream".freeze
     MIME_TYPES = %w[image/gif image/jpeg video/mp4 image/png application/x-subrip image/webp].freeze
     GIF_MIME_TYPE, JPEG_MIME_TYPE, MP4_MIME_TYPE, PNG_MIME_TYPE, SUBRIP_MIME_TYPE, WEBP_MIME_TYPE = MIME_TYPES
@@ -18,12 +18,12 @@ module X
     PROCESSING_INFO_STATES = %w[failed succeeded].freeze
 
     def upload(client:, file_path:, media_category:, boundary: SecureRandom.hex)
-      validate_file_path!(file_path:)
+      MediaUploadValidator.validate_file_path!(file_path:)
       upload_binary(client:, content: File.binread(file_path), media_category:, boundary:)
     end
 
     def upload_binary(client:, content:, media_category:, boundary: SecureRandom.hex)
-      validate_media_category!(media_category:)
+      MediaUploadValidator.validate_media_category!(media_category:)
       upload_body = construct_upload_body(content:, media_category:, boundary:)
       headers = {"Content-Type" => "multipart/form-data; boundary=#{boundary}"}
       client.post("media/upload", upload_body, headers:)&.fetch("data")
@@ -31,7 +31,8 @@ module X
 
     def chunked_upload(client:, file_path:, media_category:, media_type: infer_media_type(file_path, media_category),
       boundary: SecureRandom.hex, chunk_size_mb: 1)
-      validate!(file_path:, media_category:)
+      MediaUploadValidator.validate_file_path!(file_path:)
+      MediaUploadValidator.validate_media_category!(media_category:)
       media = init(client:, file_path:, media_type:, media_category:)
       chunk_size = chunk_size_mb * BYTES_PER_MB
       append(client:, file_paths: split(file_path, chunk_size), media:, boundary:)
@@ -55,21 +56,6 @@ module X
     end
 
     private
-
-    def validate!(file_path:, media_category:)
-      validate_file_path!(file_path:)
-      validate_media_category!(media_category:)
-    end
-
-    def validate_file_path!(file_path:)
-      raise "File not found: #{file_path}" unless File.exist?(file_path)
-    end
-
-    def validate_media_category!(media_category:)
-      return if MEDIA_CATEGORIES.include?(media_category.downcase)
-
-      raise ArgumentError, "Invalid media_category: #{media_category}. Valid values: #{MEDIA_CATEGORIES.join(", ")}"
-    end
 
     def infer_media_type(file_path, media_category)
       case media_category.downcase

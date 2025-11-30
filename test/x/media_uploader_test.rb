@@ -108,16 +108,6 @@ module X
       assert_requested(:post, "#{BASE_URL}/#{TEST_MEDIA_ID}/finalize", times: 1)
     end
 
-    def test_validate
-      file_path = "test/sample_files/sample.jpg"
-
-      assert_nil MediaUploader.send(:validate!, file_path:, media_category: MediaUploader::TWEET_IMAGE)
-      assert_raises(RuntimeError) { MediaUploader.send(:validate!, file_path: "bad/path", media_category: MediaUploader::TWEET_IMAGE) }
-      assert_raises(ArgumentError) do
-        MediaUploader.send(:validate!, file_path:, media_category: "invalid_category")
-      end
-    end
-
     def test_infer_media_type
       {"test/sample_files/sample.gif" => ["tweet_gif", MediaUploader::GIF_MIME_TYPE],
        "test/sample_files/sample.jpg" => ["tweet_image", MediaUploader::JPEG_MIME_TYPE],
