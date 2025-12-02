@@ -1,5 +1,5 @@
 require "base64"
-require "cgi"
+require "cgi/escape"
 require "json"
 require "openssl"
 require "securerandom"
