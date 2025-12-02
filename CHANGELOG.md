@@ -1,3 +1,7 @@
+## [0.17.0] - 2025-12-02
+* Add MediaUploader.upload_binary method (9f2f108)
+* Don't forward filename during media upload (492214d)
+
 ## [0.16.0] - 2025-06-24
 * Remove media_type parameter from non-chunked upload and append methods (f1f38b5)
 * Fix media upload (dcb418a)
