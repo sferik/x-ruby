@@ -1,0 +1,31 @@
+name: Push gem to RubyGems
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  push:
+    if: github.repository == 'sferik/x-ruby'
+    runs-on: ubuntu-latest
+    environment:
+      name: rubygems.org
+      url: https://rubygems.org/gems/x
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ruby
+          bundler-cache: true
+      - uses: rubygems/configure-rubygems-credentials@v1.0.0
+      - name: Build gem
+        run: gem build x.gemspec
+      - name: Push gem
+        run: gem push x-*.gem
