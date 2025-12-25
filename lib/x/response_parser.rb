@@ -17,7 +17,10 @@ require_relative "errors/unauthorized"
 require_relative "errors/unprocessable_entity"
 
 module X
+  # Parses HTTP responses from the X API
+  # @api public
   class ResponseParser
+    # Mapping of HTTP status codes to error classes
     ERROR_MAP = {
       400 => BadRequest,
       401 => Unauthorized,
@@ -35,6 +38,16 @@ module X
       504 => GatewayTimeout
     }.freeze
 
+    # Parse an HTTP response
+    #
+    # @api public
+    # @param response [Net::HTTPResponse] the HTTP response to parse
+    # @param array_class [Class, nil] the class for parsing JSON arrays
+    # @param object_class [Class, nil] the class for parsing JSON objects
+    # @return [Hash, Array, nil] the parsed response body
+    # @raise [HTTPError] if the response is not successful
+    # @example Parse a response
+    #   parser.parse(response: response)
     def parse(response:, array_class: nil, object_class: nil)
       raise error(response) unless response.is_a?(Net::HTTPSuccess)
 
@@ -49,10 +62,18 @@ module X
 
     private
 
+    # Create an error from a response
+    # @api private
+    # @param response [Net::HTTPResponse] the HTTP response
+    # @return [HTTPError] the error
     def error(response)
       error_class(response).new(response:)
     end
 
+    # Get the error class for a response
+    # @api private
+    # @param response [Net::HTTPResponse] the HTTP response
+    # @return [Class] the error class
     def error_class(response)
       ERROR_MAP[Integer(response.code)] || HTTPError
     end

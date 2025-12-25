@@ -29,7 +29,25 @@ task :mutant do
   sh "bundle exec mutant run"
 end
 
+require "yard"
+
+YARD::Rake::YardocTask.new(:yard) do |t|
+  t.files = ["lib/**/*.rb"]
+  t.options = ["--no-private"]
+end
+
+require "yardstick/rake/measurement"
+require "yardstick/rake/verify"
+
+Yardstick::Rake::Measurement.new(:yardstick_measure) do |measurement|
+  measurement.output = "doc/coverage.txt"
+end
+
+Yardstick::Rake::Verify.new(:yardstick) do |verify|
+  verify.threshold = 100
+end
+
 desc "Run linters"
 task lint: %i[rubocop standard]
 
-task default: %i[test lint mutant steep]
+task default: %i[test lint mutant steep yardstick]
