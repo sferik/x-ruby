@@ -208,22 +208,53 @@ module X
     def json?: (Net::HTTPResponse response) -> bool
   end
 
+  class OAuth2Authenticator < Authenticator
+    TOKEN_URL: String
+    TOKEN_HOST: String
+    TOKEN_PORT: Integer
+    REFRESH_GRANT_TYPE: String
+
+    attr_accessor client_id: String
+    attr_accessor client_secret: String
+    attr_accessor access_token: String
+    attr_accessor refresh_token: String
+    attr_accessor expires_at: Time?
+    def initialize: (client_id: String, client_secret: String, access_token: String, refresh_token: String, ?expires_at: Time?) -> void
+    def header: (Net::HTTPRequest? request) -> Hash[String, String]
+    def token_expired?: -> bool
+    def refresh_token!: -> Hash[String, untyped]
+
+    private
+    def send_token_request: -> Net::HTTPResponse
+    def build_http_client: -> Net::HTTP
+    def build_token_request: -> Net::HTTP::Post
+    def handle_token_response: (Net::HTTPResponse response) -> Hash[String, untyped]
+    def update_tokens: (Hash[String, untyped] token_response) -> void
+  end
+
   module ClientCredentials
     attr_reader api_key: String?
     attr_reader api_key_secret: String?
     attr_reader access_token: String?
     attr_reader access_token_secret: String?
     attr_reader bearer_token: String?
+    attr_reader client_id: String?
+    attr_reader client_secret: String?
+    attr_reader refresh_token: String?
     def api_key=: (String api_key) -> void
     def api_key_secret=: (String api_key_secret) -> void
     def access_token=: (String access_token) -> void
     def access_token_secret=: (String access_token_secret) -> void
     def bearer_token=: (String bearer_token) -> void
+    def client_id=: (String client_id) -> void
+    def client_secret=: (String client_secret) -> void
+    def refresh_token=: (String refresh_token) -> void
 
     private
-    def initialize_credentials: (api_key: String?, api_key_secret: String?, access_token: String?, access_token_secret: String?, bearer_token: String?) -> void
-    def initialize_authenticator: -> (Authenticator | BearerTokenAuthenticator | OAuthAuthenticator)
+    def initialize_credentials: (api_key: String?, api_key_secret: String?, access_token: String?, access_token_secret: String?, bearer_token: String?, client_id: String?, client_secret: String?, refresh_token: String?) -> void
+    def initialize_authenticator: -> (Authenticator | BearerTokenAuthenticator | OAuthAuthenticator | OAuth2Authenticator)
     def oauth_authenticator: -> OAuthAuthenticator?
+    def oauth2_authenticator: -> OAuth2Authenticator?
     def bearer_authenticator: -> BearerTokenAuthenticator?
   end
 
@@ -234,7 +265,7 @@ module X
     DEFAULT_ARRAY_CLASS: singleton(Array)
     DEFAULT_OBJECT_CLASS: singleton(Hash)
     extend Forwardable
-    @authenticator: Authenticator | BearerTokenAuthenticator | OAuthAuthenticator
+    @authenticator: Authenticator | BearerTokenAuthenticator | OAuthAuthenticator | OAuth2Authenticator
     @connection: Connection
     @request_builder: RequestBuilder
     @redirect_handler: RedirectHandler
@@ -243,7 +274,7 @@ module X
     attr_accessor base_url: String
     attr_accessor default_array_class: singleton(Array)
     attr_accessor default_object_class: singleton(Hash)
-    def initialize: (?api_key: String?, ?api_key_secret: String?, ?access_token: String?, ?access_token_secret: String?, ?bearer_token: String?, ?base_url: String, ?open_timeout: Integer, ?read_timeout: Integer, ?write_timeout: Integer, ?debug_output: untyped, ?proxy_url: String?, ?default_array_class: singleton(Array), ?default_object_class: singleton(Hash), ?max_redirects: Integer) -> void
+    def initialize: (?api_key: String?, ?api_key_secret: String?, ?access_token: String?, ?access_token_secret: String?, ?bearer_token: String?, ?client_id: String?, ?client_secret: String?, ?refresh_token: String?, ?base_url: String, ?open_timeout: Integer, ?read_timeout: Integer, ?write_timeout: Integer, ?debug_output: untyped, ?proxy_url: String?, ?default_array_class: singleton(Array), ?default_object_class: singleton(Hash), ?max_redirects: Integer) -> void
     def get: (String endpoint, ?headers: Hash[String, String], ?array_class: Class, ?object_class: Class) -> untyped
     def post: (String endpoint, ?String? body, ?headers: Hash[String, String], ?array_class: Class, ?object_class: Class) -> untyped
     def put: (String endpoint, ?String? body, ?headers: Hash[String, String], ?array_class: Class, ?object_class: Class) -> untyped

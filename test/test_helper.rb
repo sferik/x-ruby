@@ -23,6 +23,9 @@ TEST_ACCESS_TOKEN_SECRET = "TEST_ACCESS_TOKEN_SECRET".freeze
 TEST_OAUTH_NONCE = "TEST_OAUTH_NONCE".freeze
 TEST_OAUTH_TIMESTAMP = Time.utc(1983, 11, 24).to_i.to_s
 TEST_MEDIA_ID = "TEST_MEDIA_ID".freeze
+TEST_CLIENT_ID = "TEST_CLIENT_ID".freeze
+TEST_CLIENT_SECRET = "TEST_CLIENT_SECRET".freeze
+TEST_REFRESH_TOKEN = "TEST_REFRESH_TOKEN".freeze
 
 def test_oauth_credentials
   {
@@ -30,6 +33,15 @@ def test_oauth_credentials
     api_key_secret: TEST_API_KEY_SECRET,
     access_token: TEST_ACCESS_TOKEN,
     access_token_secret: TEST_ACCESS_TOKEN_SECRET
+  }
+end
+
+def test_oauth2_credentials
+  {
+    client_id: TEST_CLIENT_ID,
+    client_secret: TEST_CLIENT_SECRET,
+    access_token: TEST_ACCESS_TOKEN,
+    refresh_token: TEST_REFRESH_TOKEN
   }
 end
 
