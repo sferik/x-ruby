@@ -227,7 +227,7 @@ module X
     attr_reader access_token: String?
     attr_reader access_token_secret: String?
     attr_reader bearer_token: String?
-    def initialize: (?api_key: nil, ?api_key_secret: nil, ?access_token: nil, ?access_token_secret: nil, ?bearer_token: nil, ?base_url: String, ?open_timeout: Integer, ?read_timeout: Integer, ?write_timeout: Integer, ?debug_output: untyped, ?proxy_url: nil, ?default_array_class: singleton(Array), ?default_object_class: singleton(Hash), ?max_redirects: Integer) -> void
+    def initialize: (?api_key: String?, ?api_key_secret: String?, ?access_token: String?, ?access_token_secret: String?, ?bearer_token: String?, ?base_url: String, ?open_timeout: Integer, ?read_timeout: Integer, ?write_timeout: Integer, ?debug_output: untyped, ?proxy_url: String?, ?default_array_class: singleton(Array), ?default_object_class: singleton(Hash), ?max_redirects: Integer) -> void
     def get: (String endpoint, ?headers: Hash[String, String], ?array_class: Class, ?object_class: Class) -> untyped
     def post: (String endpoint, ?String? body, ?headers: Hash[String, String], ?array_class: Class, ?object_class: Class) -> untyped
     def put: (String endpoint, ?String? body, ?headers: Hash[String, String], ?array_class: Class, ?object_class: Class) -> untyped
@@ -289,5 +289,24 @@ module X
 
     def validate_file_path!: (file_path: String) -> nil
     def validate_media_category!: (media_category: String) -> nil
+  end
+
+  module AccountUploader
+    V1_BASE_URL: String
+    SUPPORTED_EXTENSIONS: Array[String]
+    MIME_TYPE_MAP: Hash[String, String]
+    extend AccountUploader
+
+    def update_profile_image: (client: Client, file_path: String, ?boundary: String) -> untyped
+    def upload_profile_image_binary: (client: Client, content: String, ?boundary: String) -> untyped
+    def update_profile_banner: (client: Client, file_path: String, ?width: Integer?, ?height: Integer?, ?offset_left: Integer?, ?offset_top: Integer?, ?boundary: String) -> untyped
+    def upload_profile_banner_binary: (client: Client, content: String, ?width: Integer?, ?height: Integer?, ?offset_left: Integer?, ?offset_top: Integer?, ?boundary: String) -> untyped
+
+    private
+    def v1_client: (Client client) -> Client
+    def validate_file!: (String file_path) -> nil
+    def construct_multipart_body: (field_name: String, content: String, boundary: String) -> String
+    def construct_banner_body: (content: String, width: Integer?, height: Integer?, offset_left: Integer?, offset_top: Integer?, boundary: String) -> String
+    def multipart_field: (String name, untyped value, String boundary) -> String
   end
 end
