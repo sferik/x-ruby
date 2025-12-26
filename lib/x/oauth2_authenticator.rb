@@ -9,9 +9,9 @@ module X
   # @api public
   class OAuth2Authenticator < Authenticator
     # URL for the OAuth 2.0 token endpoint
-    TOKEN_URL = "https://api.x.com/2/oauth2/token".freeze
+    TOKEN_URL = "https://api.twitter.com/2/oauth2/token".freeze
     # Host for token refresh requests
-    TOKEN_HOST = "api.x.com".freeze
+    TOKEN_HOST = "api.twitter.com".freeze
     # Port for token refresh requests
     TOKEN_PORT = 443
     # Grant type for token refresh
