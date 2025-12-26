@@ -59,12 +59,12 @@ module X
     #   error.message_from_json_response(response)
     def message_from_json_response(response)
       response_object = JSON.parse(response.body)
-      if response_object.key?("title") && response_object.key?("detail")
+      if response_object["errors"].instance_of?(Array)
+        response_object.fetch("errors").map { |error| error.fetch("message") }.join(", ")
+      elsif response_object.key?("title") && response_object.key?("detail")
         "#{response_object.fetch("title")}: #{response_object.fetch("detail")}"
       elsif response_object.key?("error")
         response_object.fetch("error")
-      elsif response_object["errors"].instance_of?(Array)
-        response_object.fetch("errors").map { |error| error.fetch("message") }.join(", ")
       else
         response.message
       end
