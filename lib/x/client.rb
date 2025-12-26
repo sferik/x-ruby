@@ -4,6 +4,7 @@ require_relative "bearer_token_authenticator"
 require_relative "client_credentials"
 require_relative "connection"
 require_relative "oauth_authenticator"
+require_relative "oauth2_authenticator"
 require_relative "redirect_handler"
 require_relative "request_builder"
 require_relative "response_parser"
@@ -54,6 +55,9 @@ module X
     # @param access_token [String, nil] the access token for OAuth authentication
     # @param access_token_secret [String, nil] the access token secret for OAuth 1.0a authentication
     # @param bearer_token [String, nil] the bearer token for authentication
+    # @param client_id [String, nil] the OAuth 2.0 client ID
+    # @param client_secret [String, nil] the OAuth 2.0 client secret
+    # @param refresh_token [String, nil] the OAuth 2.0 refresh token
     # @param base_url [String] the base URL for API requests
     # @param open_timeout [Integer] the timeout for opening connections in seconds
     # @param read_timeout [Integer] the timeout for reading responses in seconds
@@ -69,7 +73,7 @@ module X
     # @example Create a client with OAuth 1.0a authentication
     #   client = X::Client.new(api_key: "key", api_key_secret: "secret", access_token: "token", access_token_secret: "token_secret")
     def initialize(api_key: nil, api_key_secret: nil, access_token: nil, access_token_secret: nil,
-      bearer_token: nil,
+      bearer_token: nil, client_id: nil, client_secret: nil, refresh_token: nil,
       base_url: DEFAULT_BASE_URL,
       open_timeout: Connection::DEFAULT_OPEN_TIMEOUT,
       read_timeout: Connection::DEFAULT_READ_TIMEOUT,
@@ -79,7 +83,8 @@ module X
       default_array_class: DEFAULT_ARRAY_CLASS,
       default_object_class: DEFAULT_OBJECT_CLASS,
       max_redirects: RedirectHandler::DEFAULT_MAX_REDIRECTS)
-      initialize_credentials(api_key:, api_key_secret:, access_token:, access_token_secret:, bearer_token:)
+      initialize_credentials(api_key:, api_key_secret:, access_token:, access_token_secret:, bearer_token:,
+        client_id:, client_secret:, refresh_token:)
       initialize_authenticator
       @base_url = base_url
       @default_array_class = default_array_class
