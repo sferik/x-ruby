@@ -8,8 +8,8 @@ module X
   # Handles OAuth 2.0 authentication with token refresh capability
   # @api public
   class OAuth2Authenticator < Authenticator
-    # URL for the OAuth 2.0 token endpoint
-    TOKEN_URL = "https://api.twitter.com/2/oauth2/token".freeze
+    # Path for the OAuth 2.0 token endpoint
+    TOKEN_PATH = "/2/oauth2/token".freeze
     # Host for token refresh requests
     TOKEN_HOST = "api.twitter.com".freeze
     # Port for token refresh requests
@@ -131,7 +131,7 @@ module X
     # @api private
     # @return [Net::HTTP::Post] the POST request
     def build_token_request
-      request = Net::HTTP::Post.new(TOKEN_URL)
+      request = Net::HTTP::Post.new(TOKEN_PATH)
       request["Content-Type"] = "application/x-www-form-urlencoded"
       request["Authorization"] = "Basic #{Base64.strict_encode64("#{client_id}:#{client_secret}")}"
       request.body = URI.encode_www_form(grant_type: REFRESH_GRANT_TYPE, refresh_token: refresh_token)
@@ -145,10 +145,11 @@ module X
     # @raise [Error] if the response indicates an error
     def handle_token_response(response)
       body = JSON.parse(response.body)
-      unless response.is_a?(Net::HTTPSuccess)
-        error_message = body["error_description"] || body["error"] || "Token refresh failed"
-        raise Error, error_message
-      end
+    rescue JSON::ParserError
+      raise Error, "Token refresh failed"
+    else
+      raise Error, body["error_description"] || body["error"] || "Token refresh failed" unless response.is_a?(Net::HTTPSuccess)
+
       update_tokens(body)
       body
     end

@@ -1,6 +1,8 @@
 require_relative "../test_helper"
 
 module X
+  TOKEN_URL = "https://#{OAuth2Authenticator::TOKEN_HOST}#{OAuth2Authenticator::TOKEN_PATH}".freeze
+
   class OAuth2AuthenticatorInitializationTest < Minitest::Test
     cover OAuth2Authenticator
 
@@ -75,7 +77,7 @@ module X
 
     def test_refresh_token_sends_correct_content_type
       authenticator = OAuth2Authenticator.new(**test_oauth2_credentials)
-      stub_request(:post, OAuth2Authenticator::TOKEN_URL)
+      stub_request(:post, TOKEN_URL)
         .with(headers: {"Content-Type" => "application/x-www-form-urlencoded"})
         .to_return(status: 200, body: {access_token: "new"}.to_json)
 
@@ -85,7 +87,7 @@ module X
     def test_refresh_token_sends_basic_auth_header
       authenticator = OAuth2Authenticator.new(**test_oauth2_credentials)
       expected_auth = "Basic #{Base64.strict_encode64("#{TEST_CLIENT_ID}:#{TEST_CLIENT_SECRET}")}"
-      stub_request(:post, OAuth2Authenticator::TOKEN_URL)
+      stub_request(:post, TOKEN_URL)
         .with(headers: {"Authorization" => expected_auth})
         .to_return(status: 200, body: {access_token: "new"}.to_json)
 
@@ -95,7 +97,7 @@ module X
     def test_refresh_token_sends_correct_request_body
       authenticator = OAuth2Authenticator.new(**test_oauth2_credentials)
       expected_body = "grant_type=refresh_token&refresh_token=#{TEST_REFRESH_TOKEN}"
-      stub_request(:post, OAuth2Authenticator::TOKEN_URL)
+      stub_request(:post, TOKEN_URL)
         .with(body: expected_body)
         .to_return(status: 200, body: {access_token: "new"}.to_json)
 
@@ -104,7 +106,7 @@ module X
 
     def test_refresh_token_updates_access_token
       authenticator = OAuth2Authenticator.new(**test_oauth2_credentials)
-      stub_request(:post, OAuth2Authenticator::TOKEN_URL)
+      stub_request(:post, TOKEN_URL)
         .to_return(status: 200, body: {access_token: "NEW_ACCESS_TOKEN"}.to_json)
 
       authenticator.refresh_token!
@@ -114,7 +116,7 @@ module X
 
     def test_refresh_token_updates_refresh_token
       authenticator = OAuth2Authenticator.new(**test_oauth2_credentials)
-      stub_request(:post, OAuth2Authenticator::TOKEN_URL)
+      stub_request(:post, TOKEN_URL)
         .to_return(status: 200, body: {access_token: "new", refresh_token: "NEW_REFRESH"}.to_json)
 
       authenticator.refresh_token!
@@ -124,7 +126,7 @@ module X
 
     def test_refresh_token_returns_response_body
       authenticator = OAuth2Authenticator.new(**test_oauth2_credentials)
-      stub_request(:post, OAuth2Authenticator::TOKEN_URL)
+      stub_request(:post, TOKEN_URL)
         .to_return(status: 200, body: {access_token: "new"}.to_json)
 
       result = authenticator.refresh_token!
@@ -134,7 +136,7 @@ module X
 
     def test_refresh_token_updates_expires_at
       authenticator = OAuth2Authenticator.new(**test_oauth2_credentials)
-      stub_request(:post, OAuth2Authenticator::TOKEN_URL)
+      stub_request(:post, TOKEN_URL)
         .to_return(status: 200, body: {access_token: "new", expires_in: 7200}.to_json)
 
       before_refresh = Time.now
@@ -145,7 +147,7 @@ module X
 
     def test_refresh_token_keeps_old_refresh_token_when_not_returned
       authenticator = OAuth2Authenticator.new(**test_oauth2_credentials)
-      stub_request(:post, OAuth2Authenticator::TOKEN_URL)
+      stub_request(:post, TOKEN_URL)
         .to_return(status: 200, body: {access_token: "new"}.to_json)
 
       authenticator.refresh_token!
@@ -160,7 +162,7 @@ module X
     def test_refresh_token_raises_on_error_with_description
       authenticator = OAuth2Authenticator.new(**test_oauth2_credentials)
 
-      stub_request(:post, OAuth2Authenticator::TOKEN_URL)
+      stub_request(:post, TOKEN_URL)
         .to_return(status: 400, body: {error: "invalid_grant", error_description: "Token expired"}.to_json)
 
       error = assert_raises(Error) { authenticator.refresh_token! }
@@ -170,7 +172,7 @@ module X
     def test_refresh_token_raises_on_error_without_description
       authenticator = OAuth2Authenticator.new(**test_oauth2_credentials)
 
-      stub_request(:post, OAuth2Authenticator::TOKEN_URL)
+      stub_request(:post, TOKEN_URL)
         .to_return(status: 400, body: {error: "invalid_grant"}.to_json)
 
       error = assert_raises(Error) { authenticator.refresh_token! }
@@ -180,8 +182,18 @@ module X
     def test_refresh_token_raises_on_error_with_default_message
       authenticator = OAuth2Authenticator.new(**test_oauth2_credentials)
 
-      stub_request(:post, OAuth2Authenticator::TOKEN_URL)
+      stub_request(:post, TOKEN_URL)
         .to_return(status: 500, body: {}.to_json)
+
+      error = assert_raises(Error) { authenticator.refresh_token! }
+      assert_equal "Token refresh failed", error.message
+    end
+
+    def test_refresh_token_raises_on_invalid_json_response
+      authenticator = OAuth2Authenticator.new(**test_oauth2_credentials)
+
+      stub_request(:post, TOKEN_URL)
+        .to_return(status: 500, body: "Internal Server Error")
 
       error = assert_raises(Error) { authenticator.refresh_token! }
       assert_equal "Token refresh failed", error.message
