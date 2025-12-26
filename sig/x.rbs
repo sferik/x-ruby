@@ -101,6 +101,9 @@ module X
   class TooManyRedirects < Error
   end
 
+  class InvalidMediaType < Error
+  end
+
   class TooManyRequests < ClientError
     @rate_limits: Array[RateLimit]
 
@@ -252,7 +255,6 @@ module X
     TWEET_GIF: String
     TWEET_IMAGE: String
     TWEET_VIDEO: String
-    DEFAULT_MIME_TYPE: String
     MIME_TYPES: Array[String]
     GIF_MIME_TYPE: String
     JPEG_MIME_TYPE: String
@@ -269,9 +271,9 @@ module X
     def chunked_upload: (client: Client, file_path: String, media_category: String, ?media_type: String, ?boundary: String, ?chunk_size_mb: Integer) -> untyped
     def await_processing: (client: Client, media: untyped) -> untyped
     def await_processing!: (client: Client, media: untyped) -> untyped
+    def infer_media_type: (String file_path, String media_category) -> String
 
     private
-    def infer_media_type: (String file_path, String media_category) -> String
     def split: (String file_path, Integer chunk_size) -> Array[String]
     def init: (client: Client, file_path: String, media_type: String, media_category: String) -> untyped
     def append: (client: Client, file_paths: Array[String], media: untyped, ?boundary: String) -> Array[String]

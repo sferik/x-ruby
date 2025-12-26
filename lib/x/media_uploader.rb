@@ -1,6 +1,7 @@
 require "json"
 require "securerandom"
 require "tmpdir"
+require_relative "errors/invalid_media_type"
 require_relative "media_upload_validator"
 
 module X
@@ -15,8 +16,6 @@ module X
     BYTES_PER_MB = 1_048_576
     # Media category constants
     DM_GIF, DM_IMAGE, DM_VIDEO, SUBTITLES, TWEET_GIF, TWEET_IMAGE, TWEET_VIDEO = MediaUploadValidator::MEDIA_CATEGORIES
-    # Default MIME type for uploads
-    DEFAULT_MIME_TYPE = "application/octet-stream".freeze
     # Supported MIME types
     MIME_TYPES = %w[image/gif image/jpeg video/mp4 image/png application/x-subrip image/webp].freeze
     # MIME type constants
@@ -118,21 +117,28 @@ module X
       status
     end
 
-    private
-
     # Infer the media type from file path and category
-    # @api private
+    #
+    # @api public
     # @param file_path [String] the file path
     # @param media_category [String] the media category
     # @return [String] the inferred MIME type
+    # @raise [InvalidMediaType] if the MIME type cannot be determined
+    # @example MediaUploader.infer_media_type("image.png", "tweet_image") #=> "image/png"
     def infer_media_type(file_path, media_category)
       case media_category.downcase
       when TWEET_GIF, DM_GIF then GIF_MIME_TYPE
       when TWEET_VIDEO, DM_VIDEO then MP4_MIME_TYPE
       when SUBTITLES then SUBRIP_MIME_TYPE
-      else MIME_TYPE_MAP.fetch(File.extname(file_path).delete(".").downcase, DEFAULT_MIME_TYPE)
+      else
+        extension = File.extname(file_path).delete(".").downcase
+        MIME_TYPE_MAP.fetch(extension) do
+          raise InvalidMediaType, "unable to determine MIME type from file extension: #{file_path.inspect}"
+        end
       end
     end
+
+    private
 
     # Split a file into chunks
     # @api private
@@ -220,7 +226,7 @@ module X
       body += "--#{boundary}\r\nContent-Disposition: form-data; name=\"media_category\"\r\n\r\n#{media_category}\r\n" if media_category
       "#{body}--#{boundary}\r\n" \
         "Content-Disposition: form-data; name=\"media\"\r\n" \
-        "Content-Type: #{DEFAULT_MIME_TYPE}\r\n\r\n" \
+        "Content-Type: application/octet-stream\r\n\r\n" \
         "#{content}\r\n" \
         "--#{boundary}--\r\n"
     end
