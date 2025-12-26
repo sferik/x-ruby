@@ -209,7 +209,7 @@ module X
   end
 
   class OAuth2Authenticator < Authenticator
-    TOKEN_URL: String
+    TOKEN_PATH: String
     TOKEN_HOST: String
     TOKEN_PORT: Integer
     REFRESH_GRANT_TYPE: String
