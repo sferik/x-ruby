@@ -211,7 +211,6 @@ module X
   class OAuth2Authenticator < Authenticator
     TOKEN_PATH: String
     TOKEN_HOST: String
-    TOKEN_PORT: Integer
     REFRESH_GRANT_TYPE: String
 
     attr_accessor client_id: String
@@ -219,14 +218,14 @@ module X
     attr_accessor access_token: String
     attr_accessor refresh_token: String
     attr_accessor expires_at: Time?
-    def initialize: (client_id: String, client_secret: String, access_token: String, refresh_token: String, ?expires_at: Time?) -> void
+    attr_accessor connection: Connection
+    def initialize: (client_id: String, client_secret: String, access_token: String, refresh_token: String, ?expires_at: Time?, ?connection: Connection) -> void
     def header: (Net::HTTPRequest? request) -> Hash[String, String]
     def token_expired?: -> bool
     def refresh_token!: -> Hash[String, untyped]
 
     private
     def send_token_request: -> Net::HTTPResponse
-    def build_http_client: -> Net::HTTP
     def build_token_request: -> Net::HTTP::Post
     def handle_token_response: (Net::HTTPResponse response) -> Hash[String, untyped]
     def update_tokens: (Hash[String, untyped] token_response) -> void

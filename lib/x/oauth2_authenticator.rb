@@ -3,6 +3,7 @@ require "json"
 require "net/http"
 require "uri"
 require_relative "authenticator"
+require_relative "connection"
 
 module X
   # Handles OAuth 2.0 authentication with token refresh capability
@@ -12,8 +13,6 @@ module X
     TOKEN_PATH = "/2/oauth2/token".freeze
     # Host for token refresh requests
     TOKEN_HOST = "api.twitter.com".freeze
-    # Port for token refresh requests
-    TOKEN_PORT = 443
     # Grant type for token refresh
     REFRESH_GRANT_TYPE = "refresh_token".freeze
 
@@ -48,6 +47,13 @@ module X
     #   authenticator.expires_at
     attr_accessor :expires_at
 
+    # The connection for making token requests
+    # @api public
+    # @return [Connection] the connection instance
+    # @example Get the connection
+    #   authenticator.connection
+    attr_accessor :connection
+
     # Initialize a new OAuth 2.0 authenticator
     #
     # @api public
@@ -56,6 +62,7 @@ module X
     # @param access_token [String] the OAuth 2.0 access token
     # @param refresh_token [String] the OAuth 2.0 refresh token
     # @param expires_at [Time, nil] the expiration time of the access token
+    # @param connection [Connection] the connection for making token requests
     # @return [OAuth2Authenticator] a new authenticator instance
     # @example Create an authenticator
     #   authenticator = X::OAuth2Authenticator.new(
@@ -64,12 +71,14 @@ module X
     #     access_token: "token",
     #     refresh_token: "refresh"
     #   )
-    def initialize(client_id:, client_secret:, access_token:, refresh_token:, expires_at: nil)
+    def initialize(client_id:, client_secret:, access_token:, refresh_token:, expires_at: nil,
+      connection: Connection.new)
       @client_id = client_id
       @client_secret = client_secret
       @access_token = access_token
       @refresh_token = refresh_token
       @expires_at = expires_at
+      @connection = connection
     end
 
     # Generate the authentication header
@@ -113,25 +122,16 @@ module X
     # @api private
     # @return [Net::HTTPResponse] the HTTP response
     def send_token_request
-      http = build_http_client
       request = build_token_request
-      http.request(request)
-    end
-
-    # Build the HTTP client for token refresh
-    # @api private
-    # @return [Net::HTTP] the HTTP client
-    def build_http_client
-      http = Net::HTTP.new(TOKEN_HOST, TOKEN_PORT)
-      http.use_ssl = true
-      http
+      connection.perform(request: request)
     end
 
     # Build the token refresh request
     # @api private
     # @return [Net::HTTP::Post] the POST request
     def build_token_request
-      request = Net::HTTP::Post.new(TOKEN_PATH)
+      uri = URI::HTTPS.build(host: TOKEN_HOST, path: TOKEN_PATH)
+      request = Net::HTTP::Post.new(uri)
       request["Content-Type"] = "application/x-www-form-urlencoded"
       request["Authorization"] = "Basic #{Base64.strict_encode64("#{client_id}:#{client_secret}")}"
       request.body = URI.encode_www_form(grant_type: REFRESH_GRANT_TYPE, refresh_token: refresh_token)
