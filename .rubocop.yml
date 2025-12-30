@@ -31,6 +31,9 @@ Layout/ParameterAlignment:
 Layout/SpaceInsideHashLiteralBraces:
   EnforcedStyle: no_space
 
+Lint/MissingSuper:
+  Enabled: false
+
 Metrics/ParameterLists:
   CountKeywordArgs: false
 
@@ -39,9 +42,6 @@ Minitest/MultipleAssertions:
 
 Style/Alias:
   EnforcedStyle: prefer_alias_method
-
-Style/Documentation:
-  Enabled: false
 
 Style/FrozenStringLiteralComment:
   EnforcedStyle: never
