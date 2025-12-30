@@ -64,7 +64,7 @@ module X
     #     access_token: "token",
     #     refresh_token: "refresh"
     #   )
-    def initialize(client_id:, client_secret:, access_token:, refresh_token:, expires_at: nil) # rubocop:disable Lint/MissingSuper
+    def initialize(client_id:, client_secret:, access_token:, refresh_token:, expires_at: nil)
       @client_id = client_id
       @client_secret = client_secret
       @access_token = access_token

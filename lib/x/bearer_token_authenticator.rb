@@ -18,7 +18,7 @@ module X
     # @return [BearerTokenAuthenticator] a new instance
     # @example Create a new bearer token authenticator
     #   authenticator = X::BearerTokenAuthenticator.new(bearer_token: "token")
-    def initialize(bearer_token:) # rubocop:disable Lint/MissingSuper
+    def initialize(bearer_token:)
       @bearer_token = bearer_token
     end
 
