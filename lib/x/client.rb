@@ -29,12 +29,14 @@ module X
     # @example Get or set the base URL
     #   client.base_url = "https://api.twitter.com/1.1/"
     attr_accessor :base_url
+
     # The default class for parsing JSON arrays
     # @api public
     # @return [Class] the default class for parsing JSON arrays
     # @example Get or set the default array class
     #   client.default_array_class = Set
     attr_accessor :default_array_class
+
     # The default class for parsing JSON objects
     # @api public
     # @return [Class] the default class for parsing JSON objects
