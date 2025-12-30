@@ -15,6 +15,8 @@ module X
     TOKEN_HOST = "api.twitter.com".freeze
     # Grant type for token refresh
     REFRESH_GRANT_TYPE = "refresh_token".freeze
+    # Buffer time in seconds to account for clock skew and network latency
+    EXPIRATION_BUFFER = 30
 
     # The OAuth 2.0 client ID
     # @api public
@@ -92,16 +94,16 @@ module X
       {AUTHENTICATION_HEADER => "Bearer #{access_token}"}
     end
 
-    # Check if the access token has expired
+    # Check if the access token has expired or will expire soon
     #
     # @api public
-    # @return [Boolean] true if the token has expired
+    # @return [Boolean] true if the token has expired or will expire within the buffer period
     # @example Check expiration
     #   authenticator.token_expired?
     def token_expired?
       return false if expires_at.nil?
 
-      Time.now >= expires_at
+      Time.now >= expires_at - EXPIRATION_BUFFER
     end
 
     # Refresh the access token using the refresh token

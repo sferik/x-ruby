@@ -70,6 +70,36 @@ module X
         assert_predicate authenticator, :token_expired?
       end
     end
+
+    def test_token_expired_returns_true_at_buffer_boundary
+      now = Time.now
+      expires_at = now + OAuth2Authenticator::EXPIRATION_BUFFER
+      authenticator = OAuth2Authenticator.new(**test_oauth2_credentials, expires_at: expires_at)
+
+      Time.stub :now, now do
+        assert_predicate authenticator, :token_expired?
+      end
+    end
+
+    def test_token_expired_returns_true_within_buffer
+      now = Time.now
+      expires_at = now + (OAuth2Authenticator::EXPIRATION_BUFFER - 1)
+      authenticator = OAuth2Authenticator.new(**test_oauth2_credentials, expires_at: expires_at)
+
+      Time.stub :now, now do
+        assert_predicate authenticator, :token_expired?
+      end
+    end
+
+    def test_token_expired_returns_false_just_outside_buffer
+      now = Time.now
+      expires_at = now + OAuth2Authenticator::EXPIRATION_BUFFER + 1
+      authenticator = OAuth2Authenticator.new(**test_oauth2_credentials, expires_at: expires_at)
+
+      Time.stub :now, now do
+        refute_predicate authenticator, :token_expired?
+      end
+    end
   end
 
   class OAuth2AuthenticatorRefreshTokenTest < Minitest::Test
