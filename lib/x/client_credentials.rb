@@ -8,42 +8,49 @@ module X
     # @example Get the API key
     #   client.api_key
     attr_reader :api_key
+
     # The API key secret for OAuth 1.0a authentication
     # @api public
     # @return [String, nil] the API key secret for OAuth 1.0a authentication
     # @example Get the API key secret
     #   client.api_key_secret
     attr_reader :api_key_secret
+
     # The access token for OAuth authentication
     # @api public
     # @return [String, nil] the access token for OAuth authentication
     # @example Get the access token
     #   client.access_token
     attr_reader :access_token
+
     # The access token secret for OAuth 1.0a authentication
     # @api public
     # @return [String, nil] the access token secret for OAuth 1.0a authentication
     # @example Get the access token secret
     #   client.access_token_secret
     attr_reader :access_token_secret
+
     # The bearer token for authentication
     # @api public
     # @return [String, nil] the bearer token for authentication
     # @example Get the bearer token
     #   client.bearer_token
     attr_reader :bearer_token
+
     # The OAuth 2.0 client ID
     # @api public
     # @return [String, nil] the OAuth 2.0 client ID
     # @example Get the client ID
     #   client.client_id
     attr_reader :client_id
+
     # The OAuth 2.0 client secret
     # @api public
     # @return [String, nil] the OAuth 2.0 client secret
     # @example Get the client secret
     #   client.client_secret
     attr_reader :client_secret
+
     # The OAuth 2.0 refresh token
     # @api public
     # @return [String, nil] the OAuth 2.0 refresh token
