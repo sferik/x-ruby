@@ -12,7 +12,7 @@ module X
     # Path for the OAuth 2.0 token endpoint
     TOKEN_PATH = "/2/oauth2/token".freeze
     # Host for token refresh requests
-    TOKEN_HOST = "api.twitter.com".freeze
+    TOKEN_HOST = "api.x.com".freeze
     # Grant type for token refresh
     REFRESH_GRANT_TYPE = "refresh_token".freeze
     # Buffer time in seconds to account for clock skew and network latency
