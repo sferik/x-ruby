@@ -44,6 +44,13 @@ module X
     #   client.default_object_class = OpenStruct
     attr_accessor :default_object_class
 
+    # The authenticator for API requests
+    # @api public
+    # @return [Authenticator] the authenticator instance
+    # @example Check if the OAuth 2.0 token has expired
+    #   client.authenticator.token_expired?
+    attr_reader :authenticator
+
     def_delegators :@connection, :open_timeout, :read_timeout, :write_timeout, :proxy_url, :debug_output
     def_delegators :@connection, :open_timeout=, :read_timeout=, :write_timeout=, :proxy_url=, :debug_output=
     def_delegators :@redirect_handler, :max_redirects
@@ -144,9 +151,9 @@ module X
     # @return [Hash, Array, nil] the parsed response body
     def execute_request(http_method, endpoint, body: nil, headers: {}, array_class: default_array_class, object_class: default_object_class)
       uri = URI.join(base_url, endpoint)
-      request = @request_builder.build(http_method:, uri:, body:, headers:, authenticator: @authenticator)
+      request = @request_builder.build(http_method:, uri:, body:, headers:, authenticator:)
       response = @connection.perform(request:)
-      response = @redirect_handler.handle(response:, request:, base_url:, authenticator: @authenticator)
+      response = @redirect_handler.handle(response:, request:, base_url:, authenticator:)
       @response_parser.parse(response:, array_class:, object_class:)
     end
   end

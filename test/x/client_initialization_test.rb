@@ -8,7 +8,7 @@ module X
     def test_initialize_oauth_credentials
       client = Client.new(**test_oauth_credentials)
 
-      authenticator = client.instance_variable_get(:@authenticator)
+      authenticator = client.authenticator
 
       assert_instance_of OAuthAuthenticator, authenticator
       assert_equal TEST_API_KEY, authenticator.api_key
@@ -21,7 +21,7 @@ module X
       test_oauth_credentials.each_key do |missing_credential|
         client = Client.new(**test_oauth_credentials.except(missing_credential))
 
-        assert_instance_of Authenticator, client.instance_variable_get(:@authenticator)
+        assert_instance_of Authenticator, client.authenticator
       end
     end
 
@@ -33,7 +33,7 @@ module X
         assert_equal value, client.public_send(credential)
       end
 
-      assert_instance_of OAuthAuthenticator, client.instance_variable_get(:@authenticator)
+      assert_instance_of OAuthAuthenticator, client.authenticator
     end
 
     def test_setting_oauth_credentials_reinitializes_authenticator
@@ -55,7 +55,7 @@ module X
     def test_initialize_oauth2_credentials
       client = Client.new(**test_oauth2_credentials)
 
-      authenticator = client.instance_variable_get(:@authenticator)
+      authenticator = client.authenticator
 
       assert_instance_of OAuth2Authenticator, authenticator
       assert_equal TEST_CLIENT_ID, authenticator.client_id
@@ -68,7 +68,7 @@ module X
       test_oauth2_credentials.each_key do |missing_credential|
         client = Client.new(**test_oauth2_credentials.except(missing_credential))
 
-        assert_instance_of Authenticator, client.instance_variable_get(:@authenticator)
+        assert_instance_of Authenticator, client.authenticator
       end
     end
 
@@ -80,7 +80,7 @@ module X
         assert_equal value, client.public_send(credential)
       end
 
-      assert_instance_of OAuth2Authenticator, client.instance_variable_get(:@authenticator)
+      assert_instance_of OAuth2Authenticator, client.authenticator
     end
 
     def test_setting_oauth2_credentials_reinitializes_authenticator
@@ -103,13 +103,13 @@ module X
       client = Client.new(**test_oauth_credentials, client_id: TEST_CLIENT_ID, client_secret: TEST_CLIENT_SECRET,
         refresh_token: TEST_REFRESH_TOKEN)
 
-      assert_instance_of OAuthAuthenticator, client.instance_variable_get(:@authenticator)
+      assert_instance_of OAuthAuthenticator, client.authenticator
     end
 
     def test_oauth2_takes_precedence_over_bearer_token
       client = Client.new(**test_oauth2_credentials, bearer_token: TEST_BEARER_TOKEN)
 
-      assert_instance_of OAuth2Authenticator, client.instance_variable_get(:@authenticator)
+      assert_instance_of OAuth2Authenticator, client.authenticator
     end
 
     def test_setting_bearer_token
@@ -117,17 +117,39 @@ module X
       client.bearer_token = "bearer_token"
 
       assert_equal "bearer_token", client.bearer_token
-      assert_instance_of BearerTokenAuthenticator, client.instance_variable_get(:@authenticator)
+      assert_instance_of BearerTokenAuthenticator, client.authenticator
     end
 
     def test_authenticator_remains_unchanged_if_no_new_credentials
       client = Client.new
-      initial_authenticator = client.instance_variable_get(:@authenticator)
+      initial_authenticator = client.authenticator
 
       client.api_key = nil
       client.bearer_token = nil
 
-      assert_equal initial_authenticator, client.instance_variable_get(:@authenticator)
+      assert_equal initial_authenticator, client.authenticator
+    end
+
+    def test_initialize_authenticator_uses_instance_variable_not_accessor
+      client = Client.new(**test_oauth_credentials)
+      original_authenticator = client.authenticator
+      clear_all_credentials(client)
+
+      # If code uses accessor (nil), falls through to Authenticator.new; if @authenticator, preserves original
+      client.stub(:authenticator, nil) { client.send(:initialize_authenticator) }
+
+      assert_equal original_authenticator, client.authenticator
+    end
+
+    private
+
+    def clear_all_credentials(client)
+      %i[@api_key @api_key_secret @access_token @access_token_secret].each do |var|
+        client.instance_variable_set(var, nil)
+      end
+      %i[@bearer_token @client_id @client_secret @refresh_token].each do |var|
+        client.instance_variable_set(var, nil)
+      end
     end
   end
 
