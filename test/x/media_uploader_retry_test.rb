@@ -74,7 +74,7 @@ module X
     end
 
     def create_temp_files(dir, count)
-      count.times.map do |i|
+      Array.new(count) do |i|
         path = File.join(dir, "file#{i}.tmp")
         File.write(path, "content#{i}")
         path
