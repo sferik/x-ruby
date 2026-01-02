@@ -2,7 +2,7 @@
 [![mutation tests](https://github.com/sferik/x-ruby/actions/workflows/mutant.yml/badge.svg)](https://github.com/sferik/x-ruby/actions/workflows/mutant.yml)
 [![linter](https://github.com/sferik/x-ruby/actions/workflows/lint.yml/badge.svg)](https://github.com/sferik/x-ruby/actions/workflows/lint.yml)
 [![typer checker](https://github.com/sferik/x-ruby/actions/workflows/steep.yml/badge.svg)](https://github.com/sferik/x-ruby/actions/workflows/steep.yml)
-[![maintainability](https://api.codeclimate.com/v1/badges/40bbddf2c9170742ca9e/maintainability)](https://codeclimate.com/github/sferik/x-ruby/maintainability)
+[![maintainability](https://qlty.sh/gh/sferik/projects/x-ruby/maintainability.svg)](https://qlty.sh/gh/sferik/projects/x-ruby)
 [![gem version](https://badge.fury.io/rb/x.svg)](https://rubygems.org/gems/x)
 
 # A [Ruby](https://www.ruby-lang.org) interface to the [X API](https://developer.x.com)
