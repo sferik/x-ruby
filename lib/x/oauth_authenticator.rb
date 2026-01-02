@@ -60,7 +60,7 @@ module X
     #     access_token: "token",
     #     access_token_secret: "token_secret"
     #   )
-    def initialize(api_key:, api_key_secret:, access_token:, access_token_secret:) # rubocop:disable Lint/MissingSuper
+    def initialize(api_key:, api_key_secret:, access_token:, access_token_secret:)
       @api_key = api_key
       @api_key_secret = api_key_secret
       @access_token = access_token
