@@ -1,6 +1,6 @@
 $LOAD_PATH.unshift File.expand_path("../lib", __dir__)
 
-unless $PROGRAM_NAME.end_with?("mutant")
+unless $PROGRAM_NAME.include?("mutant")
   require "simplecov"
 
   SimpleCov.start do
@@ -11,6 +11,7 @@ unless $PROGRAM_NAME.end_with?("mutant")
 end
 
 require "minitest/autorun"
+require "minitest/mock"
 require "mutant/minitest/coverage"
 require "webmock/minitest"
 require "x"
