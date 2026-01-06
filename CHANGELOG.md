@@ -1,3 +1,9 @@
+## [0.18.0] - 2026-01-06
+* Add OAuth 2.0 authentication with token refresh support (d4c03cb)
+* Add AccountUploader for profile image and banner uploads (7833dd2)
+* Raise InvalidMediaType error for unsupported file extensions (2b6eacc)
+* Prioritize errors array over title/detail in error messages (75279b9)
+
 ## [0.17.0] - 2025-12-02
 * Add MediaUploader.upload_binary method (9f2f108)
 * Don't forward filename during media upload (492214d)

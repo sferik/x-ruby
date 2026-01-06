@@ -75,7 +75,7 @@ See other common usage [examples](https://github.com/sferik/x-ruby/tree/main/exa
 
 ## History and Philosophy
 
-This library is a rewrite of the [Twitter Ruby library](https://github.com/sferik/twitter). Over 16 years of development, that library ballooned to over 3,000 lines of code (plus 7,500 lines of tests), not counting dependencies. This library is about 500 lines of code (plus 1000 test lines) and has no runtime dependencies. That doesn’t mean new features won’t be added over time, but the benefits of more code must be weighed against the benefits of less:
+This library is a rewrite of the [Twitter Ruby library](https://github.com/sferik/twitter). Over 16 years of development, that library ballooned to over 3,000 lines of code (plus 7,500 lines of tests), not counting dependencies. This library is about 750 lines of code (plus 1335 test lines) and has no runtime dependencies. That doesn’t mean new features won’t be added over time, but the benefits of more code must be weighed against the benefits of less:
 
 * Less code is easier to maintain.
 * Less code means fewer bugs.
@@ -91,10 +91,10 @@ This code is not littered with comments that are intended to generate documentat
 
 ## Features
 
-If this entire library is implemented in just 500 lines of code, why should you use it at all vs. writing your own library that suits your needs? If you feel inspired to do that, don’t let me discourage you, but this library has some advanced features that may not be apparent without diving into the code:
+If this entire library is implemented in just 750 lines of code, why should you use it at all vs. writing your own library that suits your needs? If you feel inspired to do that, don’t let me discourage you, but this library has some advanced features that may not be apparent without diving into the code:
 
 * OAuth 1.0 Revision A
-* OAuth 2.0 Bearer Token
+* OAuth 2.0
 * Thread safety
 * HTTP redirect following
 * HTTP proxy support
