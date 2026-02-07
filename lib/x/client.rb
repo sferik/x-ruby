@@ -8,6 +8,7 @@ require_relative "oauth2_authenticator"
 require_relative "redirect_handler"
 require_relative "request_builder"
 require_relative "response_parser"
+require_relative "users"
 
 module X
   # A client for interacting with the X API
@@ -15,6 +16,7 @@ module X
   class Client
     extend Forwardable
     include ClientCredentials
+    include Users
 
     # Default base URL for the X API
     DEFAULT_BASE_URL = "https://api.twitter.com/2/".freeze
