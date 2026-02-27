@@ -87,7 +87,7 @@ module X
       open_timeout: Connection::DEFAULT_OPEN_TIMEOUT,
       read_timeout: Connection::DEFAULT_READ_TIMEOUT,
       write_timeout: Connection::DEFAULT_WRITE_TIMEOUT,
-      debug_output: Connection::DEFAULT_DEBUG_OUTPUT,
+      debug_output: nil,
       proxy_url: nil,
       default_array_class: DEFAULT_ARRAY_CLASS,
       default_object_class: DEFAULT_OBJECT_CLASS,

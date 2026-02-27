@@ -20,8 +20,6 @@ module X
     DEFAULT_READ_TIMEOUT = 60 # seconds
     # Default timeout for writing requests in seconds
     DEFAULT_WRITE_TIMEOUT = 60 # seconds
-    # Default debug output destination
-    DEFAULT_DEBUG_OUTPUT = File.open(IO::NULL, "w")
     # Network errors that should be wrapped in NetworkError
     NETWORK_ERRORS = [
       Errno::ECONNREFUSED,
@@ -92,7 +90,7 @@ module X
     # @example Create a connection with custom timeouts
     #   connection = X::Connection.new(open_timeout: 30, read_timeout: 30)
     def initialize(open_timeout: DEFAULT_OPEN_TIMEOUT, read_timeout: DEFAULT_READ_TIMEOUT,
-      write_timeout: DEFAULT_WRITE_TIMEOUT, debug_output: DEFAULT_DEBUG_OUTPUT, proxy_url: nil)
+      write_timeout: DEFAULT_WRITE_TIMEOUT, debug_output: nil, proxy_url: nil)
       @open_timeout = open_timeout
       @read_timeout = read_timeout
       @write_timeout = write_timeout

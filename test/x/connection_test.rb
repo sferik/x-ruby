@@ -14,7 +14,7 @@ module X
       assert_equal Connection::DEFAULT_OPEN_TIMEOUT, @connection.open_timeout
       assert_equal Connection::DEFAULT_READ_TIMEOUT, @connection.read_timeout
       assert_equal Connection::DEFAULT_WRITE_TIMEOUT, @connection.write_timeout
-      assert_equal Connection::DEFAULT_DEBUG_OUTPUT, @connection.debug_output
+      assert_nil @connection.debug_output
       assert_nil @connection.proxy_url
     end
 
@@ -42,7 +42,7 @@ module X
     def test_debug_output
       http_client = @connection.send(:build_http_client)
 
-      assert_equal Connection::DEFAULT_DEBUG_OUTPUT, http_client.instance_variable_get(:@debug_output)
+      assert_nil http_client.instance_variable_get(:@debug_output)
     end
 
     def test_proxy
