@@ -1,3 +1,6 @@
+## [0.19.0] - 2026-03-01
+* Add streaming support for filtered stream and volume stream endpoints
+
 ## [0.18.0] - 2026-01-06
 * Add OAuth 2.0 authentication with token refresh support (d4c03cb)
 * Add AccountUploader for profile image and banner uploads (7833dd2)
