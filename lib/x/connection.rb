@@ -116,6 +116,25 @@ module X
       raise NetworkError, "Network error: #{e}"
     end
 
+    # Perform a streaming HTTP request
+    #
+    # @api public
+    # @param request [Net::HTTPRequest] the HTTP request to perform
+    # @yield [Net::HTTPResponse] the HTTP response for streaming
+    # @return [void]
+    # @raise [NetworkError] if a network error occurs
+    # @example Perform a streaming request
+    #   connection.perform_stream(request: request) { |response| response.read_body { |chunk| } }
+    def perform_stream(request:, &)
+      host = request.uri.host || DEFAULT_HOST
+      port = request.uri.port || DEFAULT_PORT
+      http_client = build_http_client(host, port)
+      http_client.use_ssl = request.uri.scheme.eql?("https")
+      http_client.request(request, &)
+    rescue *NETWORK_ERRORS => e
+      raise NetworkError, "Network error: #{e}"
+    end
+
     # Set the proxy URL for requests
     #
     # @api public

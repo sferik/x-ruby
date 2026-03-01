@@ -71,11 +71,23 @@ ads_client = X::Client.new(base_url: "https://ads-api.twitter.com/12/", **x_cred
 ads_client.get("accounts")
 ```
 
+### Streaming
+
+```ruby
+# Set up rules for filtered stream
+x_client.post("tweets/search/stream/rules", '{"add": [{"value": "ruby"}]}')
+
+# Stream matching posts in real time
+x_client.stream("tweets/search/stream") do |tweet|
+  puts tweet["data"]["text"]
+end
+```
+
 See other common usage [examples](https://github.com/sferik/x-ruby/tree/main/examples).
 
 ## History and Philosophy
 
-This library is a rewrite of the [Twitter Ruby library](https://github.com/sferik/twitter). Over 16 years of development, that library ballooned to over 3,000 lines of code (plus 7,500 lines of tests), not counting dependencies. This library is about 750 lines of code (plus 1335 test lines) and has no runtime dependencies. That doesn’t mean new features won’t be added over time, but the benefits of more code must be weighed against the benefits of less:
+This library is a rewrite of the [Twitter Ruby library](https://github.com/sferik/twitter). Over 16 years of development, that library ballooned to over 3,000 lines of code (plus 7,500 lines of tests), not counting dependencies. This library is less than 1,000 lines of code (plus 2,000 test lines) and has no runtime dependencies. That doesn’t mean new features won’t be added over time, but the benefits of more code must be weighed against the benefits of less:
 
 * Less code is easier to maintain.
 * Less code means fewer bugs.
@@ -91,7 +103,7 @@ This code is not littered with comments that are intended to generate documentat
 
 ## Features
 
-If this entire library is implemented in just 750 lines of code, why should you use it at all vs. writing your own library that suits your needs? If you feel inspired to do that, don’t let me discourage you, but this library has some advanced features that may not be apparent without diving into the code:
+If this entire library is implemented in under 1,000 lines of code, why should you use it at all vs. writing your own library that suits your needs? If you feel inspired to do that, don’t let me discourage you, but this library has some advanced features that may not be apparent without diving into the code:
 
 * OAuth 1.0 Revision A
 * OAuth 2.0
@@ -102,6 +114,7 @@ If this entire library is implemented in just 750 lines of code, why should you 
 * HTTP timeout configuration
 * HTTP error handling
 * Rate limit handling
+* Streaming (filtered stream, volume stream)
 * Parsing JSON into custom response objects (e.g. OpenStruct)
 * Configurable base URLs for accessing different APIs/versions
 * Parallel uploading of large media files in chunks

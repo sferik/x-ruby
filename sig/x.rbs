@@ -146,6 +146,7 @@ module X
     def initialize: (?open_timeout: Float | Integer, ?read_timeout: Float | Integer, ?write_timeout: Float | Integer, ?proxy_url: URI::Generic? | String?, ?debug_output: IO) -> void
     def proxy_url=: (URI::Generic | String proxy_url) -> void
     def perform: (request: Net::HTTPRequest) -> Net::HTTPResponse
+    def perform_stream: (request: Net::HTTPRequest) { (Net::HTTPResponse) -> void } -> void
 
     private
     def build_http_client: (?String host, ?Integer port) -> Net::HTTP
@@ -206,6 +207,17 @@ module X
     def error: (Net::HTTPResponse response) -> HTTPError
     def error_class: (Net::HTTPResponse response) -> (singleton(BadGateway) | singleton(BadRequest) | singleton(ConnectionException) | singleton(Forbidden) | singleton(GatewayTimeout) | singleton(Gone) | singleton(InternalServerError) | singleton(NotAcceptable) | singleton(NotFound) | singleton(PayloadTooLarge) | singleton(ServiceUnavailable) | singleton(TooManyRequests) | singleton(Unauthorized) | singleton(UnprocessableEntity))
     def json?: (Net::HTTPResponse response) -> bool
+  end
+
+  class StreamParser
+    LINE_DELIMITER: String
+
+    def process: (response: Net::HTTPResponse, response_parser: ResponseParser, ?array_class: Class?, ?object_class: Class?) { (untyped) -> void } -> void
+
+    private
+    def process_buffer: (buffer: String, array_class: Class?, object_class: Class?) { (untyped) -> void } -> void
+    def process_remaining: (buffer: String, array_class: Class?, object_class: Class?) { (untyped) -> void } -> void
+    def yield_json: (line: String, array_class: Class?, object_class: Class?) { (untyped) -> void } -> void
   end
 
   class OAuth2Authenticator < Authenticator
@@ -270,6 +282,7 @@ module X
     @request_builder: RequestBuilder
     @redirect_handler: RedirectHandler
     @response_parser: ResponseParser
+    @stream_parser: StreamParser
 
     attr_accessor base_url: String
     attr_accessor default_array_class: singleton(Array)
@@ -280,8 +293,10 @@ module X
     def post: (String endpoint, ?String? body, ?headers: Hash[String, String], ?array_class: Class, ?object_class: Class) -> untyped
     def put: (String endpoint, ?String? body, ?headers: Hash[String, String], ?array_class: Class, ?object_class: Class) -> untyped
     def delete: (String endpoint, ?headers: Hash[String, String], ?array_class: Class, ?object_class: Class) -> untyped
+    def stream: (String endpoint, ?headers: Hash[String, String], ?array_class: Class, ?object_class: Class) { (untyped) -> void } -> void
 
     private
+    def initialize_default_classes: (default_array_class: singleton(Array), default_object_class: singleton(Hash)) -> void
     def execute_request: (:delete | :get | :post | :put http_method, String endpoint, ?body: String?, ?headers: Hash[String, String], ?array_class: Class, ?object_class: Class) -> nil
   end
 

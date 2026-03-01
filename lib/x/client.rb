@@ -8,6 +8,7 @@ require_relative "oauth2_authenticator"
 require_relative "redirect_handler"
 require_relative "request_builder"
 require_relative "response_parser"
+require_relative "stream_parser"
 
 module X
   # A client for interacting with the X API
@@ -96,12 +97,12 @@ module X
         client_id:, client_secret:, refresh_token:)
       initialize_authenticator
       @base_url = base_url
-      @default_array_class = default_array_class
-      @default_object_class = default_object_class
+      initialize_default_classes(default_array_class:, default_object_class:)
       @connection = Connection.new(open_timeout:, read_timeout:, write_timeout:, debug_output:, proxy_url:)
       @request_builder = RequestBuilder.new
       @redirect_handler = RedirectHandler.new(connection: @connection, request_builder: @request_builder, max_redirects:)
       @response_parser = ResponseParser.new
+      @stream_parser = StreamParser.new
     end
 
     # Perform a GET request to the X API
@@ -144,7 +145,37 @@ module X
       execute_request(:delete, endpoint, headers:, array_class:, object_class:)
     end
 
+    # Stream data from the X API
+    #
+    # @api public
+    # @param endpoint [String] the streaming API endpoint
+    # @param headers [Hash] additional headers for the request
+    # @param array_class [Class] the class for parsing JSON arrays
+    # @param object_class [Class] the class for parsing JSON objects
+    # @yield [Hash, Array] each parsed JSON object from the stream
+    # @return [void]
+    # @raise [HTTPError] if the response is not successful
+    # @example Stream filtered tweets
+    #   client.stream("tweets/search/stream") { |tweet| puts tweet }
+    def stream(endpoint, headers: {}, array_class: default_array_class, object_class: default_object_class, &block)
+      uri = URI.join(base_url, endpoint)
+      request = @request_builder.build(http_method: :get, uri:, headers:, authenticator:)
+      @connection.perform_stream(request:) do |response|
+        @stream_parser.process(response:, response_parser: @response_parser, array_class:, object_class:, &block)
+      end
+    end
+
     private
+
+    # Initialize default JSON parsing classes
+    # @api private
+    # @param default_array_class [Class] the default class for parsing JSON arrays
+    # @param default_object_class [Class] the default class for parsing JSON objects
+    # @return [void]
+    def initialize_default_classes(default_array_class:, default_object_class:)
+      @default_array_class = default_array_class
+      @default_object_class = default_object_class
+    end
 
     # Execute an HTTP request to the X API
     # @api private
