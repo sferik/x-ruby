@@ -3,11 +3,7 @@ $LOAD_PATH.unshift File.expand_path("../lib", __dir__)
 unless $PROGRAM_NAME.include?("mutant")
   require "simplecov"
 
-  SimpleCov.start do
-    enable_coverage :branch
-    enable_coverage :method
-    minimum_coverage line: 100, branch: 100, method: 100
-  end
+  SimpleCov.start "strict"
 end
 
 require "minitest/autorun"
