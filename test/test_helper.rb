@@ -5,8 +5,8 @@ unless $PROGRAM_NAME.include?("mutant")
 
   SimpleCov.start do
     enable_coverage :branch
-    skip "test"
-    minimum_coverage line: 100, branch: 100
+    enable_coverage :method
+    minimum_coverage line: 100, branch: 100, method: 100
   end
 end
 
