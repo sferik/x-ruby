@@ -24,6 +24,6 @@ puts "Added rules: #{result}"
 
 # Connect to the filtered stream
 puts "Streaming..."
-client.stream("tweets/search/stream?tweet.fields=created_at&expansions=author_id") do |tweet|
-  puts "@#{tweet["includes"]["users"].first["username"]}: #{tweet["data"]["text"]}"
+client.stream("tweets/search/stream?tweet.fields=created_at&expansions=author_id") do |post|
+  puts "@#{post["includes"]["users"].first["username"]}: #{post["data"]["text"]}"
 end

@@ -1,9 +1,23 @@
 require "bundler/gem_tasks"
 
-# Override release task to skip gem push (handled by GitHub Actions with attestations)
+# The gems in this repository, in dependency order, released in lockstep
+GEMS = {"x-core" => "x-core", "x-objects" => "x-objects", "x" => "."}.freeze
+
+# Build every gem into the pkg directory (gem push is handled by GitHub Actions with attestations)
+Rake::Task["build"].clear
+desc "Build x-core, x-objects, and x into the pkg directory"
+task :build do
+  mkdir_p "pkg"
+  GEMS.each do |name, dir|
+    path = Bundler::GemHelper.new(File.expand_path(dir, __dir__), name).build_gem
+    mv path, "pkg" unless File.dirname(path).eql?(File.expand_path("pkg", __dir__))
+  end
+end
+
 Rake::Task["release"].clear
-desc "Build gem and create tag (gem push handled by CI)"
+desc "Build gems and create tag (gem push handled by CI)"
 task release: %w[build release:guard_clean release:source_control_push]
+
 require "rake/testtask"
 
 Rake::TestTask.new(:test) do |t|
@@ -30,7 +44,7 @@ end
 require "yard"
 
 YARD::Rake::YardocTask.new(:yard) do |t|
-  t.files = ["lib/**/*.rb"]
+  t.files = ["lib/**/*.rb", "x-core/lib/**/*.rb", "x-objects/lib/**/*.rb"]
   t.options = ["--no-private"]
 end
 
@@ -38,10 +52,12 @@ require "yardstick/rake/measurement"
 require "yardstick/rake/verify"
 
 Yardstick::Rake::Measurement.new(:yardstick_measure) do |measurement|
+  measurement.path = "{lib,x-core/lib,x-objects/lib}/**/*.rb"
   measurement.output = "doc/coverage.txt"
 end
 
 Yardstick::Rake::Verify.new(:yardstick) do |verify|
+  verify.path = "{lib,x-core/lib,x-objects/lib}/**/*.rb"
   verify.threshold = 100
 end
 

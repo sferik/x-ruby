@@ -27,11 +27,13 @@ jobs:
       - uses: rubygems/configure-rubygems-credentials@v2.1.0
       - name: Update RubyGems
         run: gem update --system
-      - name: Build gem
+      - name: Build gems
         run: bundle exec rake build
-      - name: Sign gem with Sigstore
-        run: gem exec sigstore-cli sign pkg/*.gem --bundle pkg/x.gem.sigstore.json
-      - name: Push gem
-        run: gem push pkg/*.gem --attestation pkg/x.gem.sigstore.json
-      - name: Wait for release
-        run: gem exec rubygems-await pkg/*.gem
+      - name: Sign, push, and await each gem in dependency order
+        run: |
+          for name in x-core x-objects x; do
+            file=$(ls pkg/$name-[0-9]*.gem)
+            gem exec sigstore-cli sign "$file" --bundle "pkg/$name.gem.sigstore.json"
+            gem push "$file" --attestation "pkg/$name.gem.sigstore.json"
+            gem exec rubygems-await "$file"
+          done

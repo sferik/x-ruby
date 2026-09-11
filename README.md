@@ -21,6 +21,17 @@ Or, if Bundler is not being used to manage dependencies:
 
     gem install x
 
+## Architecture
+
+The `x` gem is a thin meta-gem that combines two gems, which are released from this repository in lockstep:
+
+| Gem | What it does | Runtime dependencies |
+| --- | --- | --- |
+| [`x-core`](x-core) | HTTP: authentication, requests, redirects, errors, rate limits, streaming, and media uploads | `base64` |
+| [`x-objects`](x-objects) | Resources: `User`, `Post`, `List`, `DirectMessage`, `Space`, `Media`, `Poll`, `Place`, and cursors | none |
+
+`require "x"` loads both and mixes the object methods (`find_user`, `find_posts`, `search`, …) into `X::Client`. If you only want raw JSON, depend on `x-core` alone. If you want the objects with your own HTTP client, depend on `x-objects` alone.
+
 ## Usage
 
 > [!NOTE]
@@ -38,7 +49,78 @@ x_credentials = {
 
 # Initialize an X API client with your OAuth credentials
 x_client = X::Client.new(**x_credentials)
+```
 
+### Objects
+
+Every lookup requests all public fields and expansions, and returns immutable, thread-safe objects.
+
+```ruby
+user = x_client.find_user("sferik")    # a String is a username, an Integer is an ID
+user.name                              # => "Erik Berlin"
+user.followers_count                   # => 12345
+
+post = x_client.find_post(1234567890)  # X::Post
+post.text
+post.created_at                        # => 2026-09-11 12:00:00 UTC
+```
+
+**Identity.** Resources with the same class and ID are equal (`==`, `eql?`, and `hash`), even when they come from different requests.
+
+```ruby
+post.author == x_client.find_user("sferik") # => true
+[post.author, user].uniq.size          # => 1
+```
+
+**References.** Foreign keys have accessors that return objects. When the response included the referenced object, you get it with its fields. Otherwise, you get a stub that holds only the ID. `hydrate` fetches the full object once and memoizes it. `refresh` fetches it again.
+
+```ruby
+post.author                            # => #<X::User id="7505382" name="Erik Berlin" username="sferik" ...>
+post.replied_to                        # => #<X::Post id="1234567889">, a stub
+post.replied_to.hydrate.text           # one request
+post.replied_to.hydrate.text           # memoized, no request
+post.replied_to.refresh.text           # forces a new request
+```
+
+Within one response, every reference to the same resource is the same object, so hydrating a user from one post hydrates it for every post on that page.
+
+**Pagination.** Collections are `X::Cursor` objects, which include `Enumerable`, remember the client that fetched them, request the maximum page size, and fetch pages lazily. Pages are cached, so iterating twice costs no extra requests. `refresh` returns a cursor with an empty cache.
+
+```ruby
+followers = user.followers             # max_results=1000 per page
+followers.first(10)                    # one request
+followers.count                        # fetches the remaining pages
+followers.count                        # cached, no requests
+followers.refresh.count                # starts over
+
+x_client.search("ruby -is:retweet").each { |post| puts post.text }
+```
+
+**Parallel requests.** Batch lookups split the IDs into groups of 100, the API maximum, and request the groups in parallel. Paginated endpoints return a token for the next page with each page, so their pages must be fetched in order. `prefetch` fetches the next page in a background thread while you process the current one. It is opt-in because it spends one extra request when you stop iterating early.
+
+```ruby
+x_client.find_users(follower_ids)                       # parallel batches of 100
+user.followers.prefetch.each { |follower| process(follower) }
+```
+
+**Actions.** Actions are taken as the authenticated user.
+
+```ruby
+me = x_client.me
+me.follow(user)
+me.like(post)
+me.repost(post)
+
+x_client.like(post)                    # the same, via the client
+post = x_client.create_post("Hello, World! (from @gem)")
+post.delete
+```
+
+### Raw JSON
+
+`X::Client` still speaks raw JSON, for endpoints without objects or when you want full control.
+
+```ruby
 # Get data about yourself
 x_client.get("users/me")
 # {"data"=>{"id"=>"7505382", "name"=>"Erik Berlin", "username"=>"sferik"}}
@@ -78,8 +160,8 @@ ads_client.get("accounts")
 x_client.post("tweets/search/stream/rules", '{"add": [{"value": "ruby"}]}')
 
 # Stream matching posts in real time
-x_client.stream("tweets/search/stream") do |tweet|
-  puts tweet["data"]["text"]
+x_client.stream("tweets/search/stream") do |post|
+  puts post["data"]["text"]
 end
 ```
 
@@ -87,7 +169,7 @@ See other common usage [examples](https://github.com/sferik/x-ruby/tree/main/exa
 
 ## History and Philosophy
 
-This library is a rewrite of the [Twitter Ruby library](https://github.com/sferik/twitter). Over 16 years of development, that library ballooned to over 3,000 lines of code (plus 7,500 lines of tests), not counting dependencies. This library is less than 1,000 lines of code (plus 2,000 test lines) and has no runtime dependencies. That doesn’t mean new features won’t be added over time, but the benefits of more code must be weighed against the benefits of less:
+This library is a rewrite of the [Twitter Ruby library](https://github.com/sferik/twitter). Over 16 years of development, that library ballooned to over 3,000 lines of code (plus 7,500 lines of tests), not counting dependencies. The HTTP layer of this library, `x-core`, is less than 1,000 lines of code (plus 2,000 test lines), and the object layer, `x-objects`, is less than 1,000 more. Neither depends on anything outside the Ruby standard library, apart from the `base64` gem. That doesn’t mean new features won’t be added over time, but the benefits of more code must be weighed against the benefits of less:
 
 * Less code is easier to maintain.
 * Less code means fewer bugs.
@@ -97,13 +179,13 @@ In the immortal words of [Ezra Zygmuntowicz](https://github.com/ezmobius) and hi
 
 > No code is faster than no code.
 
-The tests for the previous version of this library executed in about 2 seconds. That sounds pretty fast until you see that tests for this library run in one-twentieth of a second. This means you can automatically run the tests any time you write a file and receive immediate feedback. For such of workflows, 2 seconds feels painfully slow.
+The tests for the previous version of this library executed in about 2 seconds. That sounds pretty fast until you see that the tests for this library, including the tests that exercise its concurrency, run in less than half a second. This means you can automatically run the tests any time you write a file and receive immediate feedback. For such of workflows, 2 seconds feels painfully slow.
 
 This code is not littered with comments that are intended to generate documentation. Rather, this code is intended to be simple enough to serve as its own documentation. If you want to understand how something works, don’t read the documentation—it might be wrong—read the code. The code is always right.
 
 ## Features
 
-If this entire library is implemented in under 1,000 lines of code, why should you use it at all vs. writing your own library that suits your needs? If you feel inspired to do that, don’t let me discourage you, but this library has some advanced features that may not be apparent without diving into the code:
+If this entire library is implemented in under 2,000 lines of code, why should you use it at all vs. writing your own library that suits your needs? If you feel inspired to do that, don’t let me discourage you, but this library has some advanced features that may not be apparent without diving into the code:
 
 * OAuth 1.0 Revision A
 * OAuth 2.0
@@ -118,6 +200,9 @@ If this entire library is implemented in under 1,000 lines of code, why should y
 * Parsing JSON into custom response objects (e.g. OpenStruct)
 * Configurable base URLs for accessing different APIs/versions
 * Parallel uploading of large media files in chunks
+* Immutable, thread-safe resource objects with identity, references, and hydration
+* Lazy, cached, Enumerable cursors that request the maximum page size
+* Parallel batch lookups
 
 ## Sponsorship
 
@@ -187,7 +272,7 @@ Pull requests will only be accepted if they meet all the following criteria:
 
        bundle exec rake mutant
 
-5. RBS type signatures (in `sig/x.rbs`). This can be verified with:
+5. RBS type signatures (in `x-core/sig`, `x-objects/sig`, and `sig`). This can be verified with:
 
        bundle exec rake steep
 

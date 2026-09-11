@@ -17,8 +17,8 @@ media = X::MediaUploader.chunked_upload(client:, file_path:, media_category:)
 
 X::MediaUploader.await_processing(client:, media:) # or X::MediaUploader.await_processing!(client:, media:) to raise an error if fails
 
-tweet_body = {text: "Posting media from @gem!", media: {media_ids: [media["id"]]}}
+post_body = {text: "Posting media from @gem!", media: {media_ids: [media["id"]]}}
 
-tweet = client.post("tweets", tweet_body.to_json)
+post = client.post("tweets", post_body.to_json)
 
-puts tweet["data"]["id"]
+puts post["data"]["id"]

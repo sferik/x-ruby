@@ -4,6 +4,8 @@ coverage_criteria:
 fail_fast: true
 includes:
 - lib
+- x-core/lib
+- x-objects/lib
 integration:
   name: minitest
 matcher:

@@ -8,10 +8,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+* Split the gem into three gems released in lockstep: `x-core` (the HTTP client), `x-objects` (resource objects), and `x` (a meta-gem that depends on both and mixes the object methods into `X::Client`)
+* Add immutable, thread-safe resource classes: `X::User`, `X::Post` (aliased as `X::Tweet`), `X::List`, `X::DirectMessage`, `X::Space`, `X::Media`, `X::Poll`, and `X::Place`
+* Compare resources by class and ID with `==`, `eql?`, and `hash`, so the same resource fetched in different requests is equal
+* Resolve references such as `post.author` and `post.replied_to` to included objects or ID stubs, sharing one object per resource within a response
+* Add `hydrate`, which fetches and memoizes the full resource, and `refresh`, which fetches it again
+* Add `X::Cursor`, an `Enumerable` collection that requests the maximum page size, fetches pages lazily, caches them, and offers `refresh` and `prefetch`
+* Look up users and posts by ID in parallel batches of 100 with `X::User.find_all` and `X::Post.find_all`
+* Add `find_user`, `find_users`, `me`, `find_post`, `find_posts`, `search`, `search_all`, `create_post`, `delete_post`, `find_list`, `find_space`, `direct_messages`, `create_direct_message`, `follow`, `unfollow`, `like`, `unlike`, `repost`, and `unrepost` to `X::Client`
+* Look up a user by identifier when given an Integer and by username when given a String, so an account whose username is all digits is found by name
+* Name the interface after posts rather than tweets, including `post_count`, `pinned_post_id`, `most_recent_post_id`, `edit_history_post_ids`, `note_post`, and `repost_count`; the tweet-named methods, such as `create_tweet`, `tweets`, and `retweet_count`, remain as aliases
 * Add `inspect` to `Client` and the authenticators that never reveals credentials
 * Preserve custom headers passed to `get`, `post`, `put`, and `delete` across redirects
 
 ### Changed
+* Move the HTTP client into `x-core`, under `lib/x/core`; `require "x/media_uploader"` and `require "x/account_uploader"` still work
 * Wrap `EOFError`, `SocketError`, `Net::WriteTimeout`, `Errno::ETIMEDOUT`, and `Errno::EHOSTUNREACH` in `NetworkError`
 * Stop following redirects after exactly `max_redirects` hops instead of one more
 

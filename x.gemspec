@@ -33,5 +33,6 @@ Gem::Specification.new do |spec|
   spec.bindir = "exe"
   spec.executables = spec.files.grep(%r{\Aexe/}) { |f| File.basename(f) }
   spec.require_paths = ["lib"]
-  spec.add_dependency("base64", ">= 0.2")
+  spec.add_dependency("x-core", X::VERSION.to_s)
+  spec.add_dependency("x-objects", X::VERSION.to_s)
 end

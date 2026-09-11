@@ -1,7 +1,10 @@
 source "https://rubygems.org"
 
-# Specify your gem's dependencies in x.gemspec
+# Specify the meta-gem's dependencies in x.gemspec
 gemspec
+
+gem "x-core", path: "x-core"
+gem "x-objects", path: "x-objects"
 
 gem "fiddle", ">= 1.1.2"
 gem "irb", ">= 1.14.1"
