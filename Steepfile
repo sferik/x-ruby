@@ -10,5 +10,5 @@ target :lib do
   library "securerandom"
   library "tmpdir"
   library "uri"
-  configure_code_diagnostics(Steep::Diagnostic::Ruby.default) # strict or all_error
+  configure_code_diagnostics(Steep::Diagnostic::Ruby.strict)
 end

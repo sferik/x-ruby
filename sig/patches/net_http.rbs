@@ -1,0 +1,6 @@
+# Widen Net::HTTP#set_debug_output to accept nil, which disables debug output
+module Net
+  class HTTP
+    def set_debug_output: (IO? output) -> void
+  end
+end

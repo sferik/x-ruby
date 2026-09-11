@@ -136,7 +136,7 @@ module X
     attr_accessor open_timeout : Float | Integer
     attr_accessor read_timeout : Float | Integer
     attr_accessor write_timeout : Float | Integer
-    attr_accessor debug_output : IO
+    attr_accessor debug_output : IO?
 
     attr_reader proxy_uri: URI::Generic?
     attr_reader proxy_host : String?
@@ -144,7 +144,7 @@ module X
     attr_reader proxy_user : String?
     attr_reader proxy_pass : String?
 
-    def initialize: (?open_timeout: Float | Integer, ?read_timeout: Float | Integer, ?write_timeout: Float | Integer, ?proxy_url: URI::Generic? | String?, ?debug_output: IO) -> void
+    def initialize: (?open_timeout: Float | Integer, ?read_timeout: Float | Integer, ?write_timeout: Float | Integer, ?proxy_url: URI::Generic? | String?, ?debug_output: IO?) -> void
     def proxy_url=: (URI::Generic | String proxy_url) -> void
     def perform: (request: Net::HTTPRequest) -> Net::HTTPResponse
     def perform_stream: (request: Net::HTTPRequest) { (Net::HTTPResponse) -> void } -> void
@@ -247,6 +247,8 @@ module X
   end
 
   module ClientCredentials
+    @authenticator: Authenticator | BearerTokenAuthenticator | OAuthAuthenticator | OAuth2Authenticator
+
     attr_reader api_key: String?
     attr_reader api_key_secret: String?
     attr_reader access_token: String?
@@ -338,7 +340,7 @@ module X
     def upload_chunk: (client: Client, media_id: String, upload_body: String, file_path: String, ?headers: Hash[String, String]) -> Integer?
     def cleanup_file: (String file_path) -> Integer?
     def finalize: (client: Client, media: untyped) -> untyped
-    def construct_upload_body: (content: String, ?media_category: String, ?segment_index: Integer, ?boundary: String) -> String
+    def construct_upload_body: (content: String, ?media_category: String?, ?segment_index: Integer?, ?boundary: String) -> String
   end
 
   module MediaUploadValidator
