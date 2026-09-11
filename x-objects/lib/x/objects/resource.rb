@@ -112,7 +112,7 @@ module X
         # @return [Resource, nil] the resource or nil if it was not found
         # @example Look up a user by identifier
         #   X::User.find("7505382", client: client)
-        def find(id, client:, **params) # steep:ignore MethodBodyTypeMismatch
+        def find(id, client:, **params)
           lookup("#{endpoint!}/#{Utils.id_of(id)}", client:, **params)
         end
 
@@ -139,7 +139,7 @@ module X
         # @return [Resource, nil] the resource or nil if the response has no data
         # @example Fetch the authenticated user
         #   X::User.lookup("users/me", client: client)
-        def lookup(path, client:, **params) # steep:ignore MethodBodyTypeMismatch
+        def lookup(path, client:, **params)
           from_response(get(path, client:, params:), client:)
         end
 
@@ -152,7 +152,7 @@ module X
         # @return [Array<Resource>] the resources
         # @example Fetch users by username
         #   X::User.lookup_all("users/by", client: client, usernames: ["sferik", "gem"])
-        def lookup_all(path, client:, **params) # steep:ignore MethodBodyTypeMismatch
+        def lookup_all(path, client:, **params)
           collection_from_response(get(path, client:, params:), client:)
         end
 
@@ -165,7 +165,7 @@ module X
         # @return [Resource, nil] the resource or nil if the response has no data
         # @example Build a user from a response
         #   X::User.from_response({"data" => {"id" => "7505382"}}, client: client)
-        def from_response(body, client:, hydrated: true) # steep:ignore MethodBodyTypeMismatch
+        def from_response(body, client:, hydrated: true)
           body = body.to_h
           data = body["data"]
           return unless data.is_a?(Hash)
@@ -181,7 +181,7 @@ module X
         # @return [Array<Resource>] the resources
         # @example Build users from a response
         #   X::User.collection_from_response({"data" => [{"id" => "7505382"}]}, client: client)
-        def collection_from_response(body, client:) # steep:ignore MethodBodyTypeMismatch
+        def collection_from_response(body, client:)
           body = body.to_h
           data = body["data"]
           data = nil unless data.is_a?(Array)
@@ -283,7 +283,7 @@ module X
       # Fetch the full resource from the API
       # @api private
       # @return [Resource, nil] the full resource or nil if it no longer exists
-      def fetch # steep:ignore MethodBodyTypeMismatch
+      def fetch
         self.class.lookup("#{self.class.endpoint!}/#{id}", client: client!)
       end
 

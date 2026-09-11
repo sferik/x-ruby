@@ -32,7 +32,7 @@ module X
       end
 
       def test_attribute_with_explicit_key
-        klass = Class.new(Resource) { attribute :label, key: "name" }
+        klass = Class.new(Resource) { attribute :label, key: %w[name] }
 
         assert_equal "w", klass.new(ATTRS).label
         refute_respond_to klass.new(ATTRS), :name
@@ -83,6 +83,18 @@ module X
         assert_equal 5, @widget.count
         assert_nil @klass.new({"id" => "1"}).count
         assert_nil @klass.new({"id" => "1", "metrics" => {}}).count
+      end
+
+      def test_string_keys_are_rejected
+        error = assert_raises(ArgumentError) { Class.new(Resource) { attribute :name, key: "name" } }
+
+        assert_equal 'key must be an Array of keys, not "name"', error.message
+      end
+
+      def test_array_subclass_keys_are_accepted
+        klass = Class.new(Resource) { attribute :label, key: Class.new(Array).new(["name"]) }
+
+        assert_equal "w", klass.new(ATTRS).label
       end
 
       def test_unknown_type

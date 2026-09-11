@@ -319,7 +319,7 @@ module X
     #   @return [User, nil] the author
     #   @example Get the author's username
     #     post.author.username
-    reference :author, :User, key: "author_id"
+    reference :author, :User, key: %w[author_id]
 
     # @!method in_reply_to_user
     #   The user being replied to, resolved from the includes or built as a stub
@@ -327,7 +327,7 @@ module X
     #   @return [User, nil] the replied-to user
     #   @example Get the replied-to user
     #     post.in_reply_to_user
-    reference :in_reply_to_user, :User, key: "in_reply_to_user_id"
+    reference :in_reply_to_user, :User, key: %w[in_reply_to_user_id]
 
     # @!method place
     #   The tagged place, from the includes or as a stub holding only its identifier

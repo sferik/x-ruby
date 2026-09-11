@@ -9,13 +9,18 @@ module X
         @client = FakeClient.new
         @includes = Includes.new({"users" => [{"id" => "2", "username" => "two"}]})
         @klass = Class.new(Resource) do
-          reference :owner, :User, key: "owner_id"
+          reference :owner, :User, key: %w[owner_id]
           reference :nested_owner, :User, key: %w[meta owner_id]
-          references :members, :User, key: "member_ids"
+          references :members, :User, key: %w[member_ids]
           references :nested_members, :User, key: %w[meta member_ids]
         end
         @widget = @klass.new({"id" => "1", "owner_id" => "9", "meta" => {"owner_id" => "8", "member_ids" => ["7"]},
                               "member_ids" => %w[2 3]}, client: @client, includes: @includes)
+      end
+
+      def test_string_keys_are_rejected
+        assert_raises(ArgumentError) { Class.new(Resource) { reference :owner, :User, key: "owner_id" } }
+        assert_raises(ArgumentError) { Class.new(Resource) { references :members, :User, key: "member_ids" } }
       end
 
       def test_reference_builds_stub

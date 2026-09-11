@@ -103,7 +103,7 @@ module X
     #   @return [User, nil] the owner
     #   @example Get the owner's username
     #     list.owner.username
-    reference :owner, :User, key: "owner_id"
+    reference :owner, :User, key: %w[owner_id]
 
     # The members of this list
     #

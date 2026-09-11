@@ -61,7 +61,7 @@ module X
       # @example Look up a user by username
       #   X::User.find("sferik", client: client)
       def find(id_or_username, client:, **params)
-        return super if Objects::Utils.id?(id_or_username) # steep:ignore ReturnTypeMismatch
+        return super if Objects::Utils.id?(id_or_username)
 
         lookup("users/by/username/#{id_or_username}", client:, **params)
       end
@@ -78,7 +78,7 @@ module X
       # @example Look up many users by username
       #   X::User.find_all(["sferik", "gem"], client: client)
       def find_all(ids_or_usernames, client:, **params)
-        return super if ids_or_usernames.all? { |value| Objects::Utils.id?(value) } # steep:ignore ReturnTypeMismatch
+        return super if ids_or_usernames.all? { |value| Objects::Utils.id?(value) }
 
         batches = ids_or_usernames.each_slice(Objects::Resource::MAX_BATCH_SIZE)
         Objects::Parallel.map(batches) { |batch| lookup_all("users/by", client:, usernames: batch, **params) }.flatten
@@ -277,7 +277,7 @@ module X
     #   @return [Post, nil] the pinned post
     #   @example Get the pinned post
     #     user.pinned_post
-    reference :pinned_post, :Post, key: "pinned_tweet_id"
+    reference :pinned_post, :Post, key: %w[pinned_tweet_id]
 
     # @!method most_recent_post
     #   The most recent post, from the includes or as a stub holding only its identifier
@@ -285,7 +285,7 @@ module X
     #   @return [Post, nil] the most recent post
     #   @example Get the most recent post
     #     user.most_recent_post
-    reference :most_recent_post, :Post, key: "most_recent_tweet_id"
+    reference :most_recent_post, :Post, key: %w[most_recent_tweet_id]
 
     alias_method :tweet_count, :post_count
     alias_method :pinned_tweet_id, :pinned_post_id

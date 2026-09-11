@@ -34,8 +34,6 @@ require "steep/rake_task"
 
 Steep::RakeTask.new(:steep)
 
-require "mutant"
-
 desc "Run mutation tests"
 task :mutant do
   sh "bundle exec mutant run"

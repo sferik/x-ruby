@@ -151,7 +151,7 @@ module X
     #   @return [User, nil] the sender
     #   @example Get the sender's username
     #     message.sender.username
-    reference :sender, :User, key: "sender_id"
+    reference :sender, :User, key: %w[sender_id]
 
     # @!method participants
     #   The participants who joined or left, from the includes or as stubs
@@ -159,7 +159,7 @@ module X
     #   @return [Array<User>] the participants
     #   @example Get the participants
     #     message.participants
-    references :participants, :User, key: "participant_ids"
+    references :participants, :User, key: %w[participant_ids]
 
     # @!method media
     #   The attached media, from the includes or as stubs holding only their keys

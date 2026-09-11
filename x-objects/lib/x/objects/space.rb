@@ -176,7 +176,7 @@ module X
     #   @return [User, nil] the creator
     #   @example Get the creator's username
     #     space.creator.username
-    reference :creator, :User, key: "creator_id"
+    reference :creator, :User, key: %w[creator_id]
 
     # @!method hosts
     #   The hosts, resolved from the includes or as stubs holding only their identifiers
@@ -184,7 +184,7 @@ module X
     #   @return [Array<User>] the hosts
     #   @example Get the hosts
     #     space.hosts
-    references :hosts, :User, key: "host_ids"
+    references :hosts, :User, key: %w[host_ids]
 
     # @!method speakers
     #   The speakers, from the includes or as stubs holding only their identifiers
@@ -192,7 +192,7 @@ module X
     #   @return [Array<User>] the speakers
     #   @example Get the speakers
     #     space.speakers
-    references :speakers, :User, key: "speaker_ids"
+    references :speakers, :User, key: %w[speaker_ids]
 
     # @!method invited_users
     #   The invited users, from the includes or as stubs holding only their identifiers
@@ -200,7 +200,7 @@ module X
     #   @return [Array<User>] the invited users
     #   @example Get the invited users
     #     space.invited_users
-    references :invited_users, :User, key: "invited_user_ids"
+    references :invited_users, :User, key: %w[invited_user_ids]
 
     # @!method ticketed?
     #   Alias for is_ticketed?, checks whether the space requires a ticket

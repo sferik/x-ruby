@@ -7,7 +7,7 @@ module X
     type query = Hash[String, untyped]
     type body = Hash[String, untyped]?
     type id = String | Integer | Resource
-    type key = String | Array[String]
+    type key = Array[String]
 
     interface _Client
       def get: (String endpoint, **untyped) -> untyped
@@ -62,12 +62,31 @@ module X
       def index: (singleton(Resource) klass) -> Hash[untyped, attrs]
     end
 
-    module Attributes
+    module Attributes : Module
       CONVERTERS: Hash[Symbol, ^(untyped) -> untyped]
 
       def attribute: (Symbol name, ?Symbol type, ?key: key) -> void
       def reference: (Symbol name, Symbol klass_name, key: key) -> void
       def references: (Symbol name, Symbol klass_name, key: key) -> void
+
+      private
+      def key_path: (untyped key) -> key
+    end
+
+    # The class-side lookups of a concrete resource class, typed with that class
+    interface _Lookup[R]
+      def find: (id id, client: _Client, **untyped params) -> R?
+      def find_all: (Array[id] ids, client: _Client, **untyped params) -> Array[R]
+      def lookup: (String path, client: _Client, **untyped params) -> R?
+      def lookup_all: (String path, client: _Client, **untyped params) -> Array[R]
+      def from_response: (body body, client: _Client?, ?hydrated: bool) -> R?
+      def collection_from_response: (body body, client: _Client?) -> Array[R]
+    end
+
+    # The instance-side hydration of a concrete resource class, typed with that class
+    interface _Hydration[R]
+      def hydrate: () -> R?
+      def refresh: () -> R?
     end
 
     interface _Identifiable
@@ -114,24 +133,24 @@ module X
       def self.default_params: () -> Hash[String, Array[String]]
       def self.hydratable?: () -> bool
       def self.endpoint!: () -> String
-      def self.find: (id id, client: _Client, **untyped params) -> instance?
-      def self.find_all: (Array[id] ids, client: _Client, **untyped params) -> Array[instance]
-      def self.lookup: (String path, client: _Client, **untyped params) -> instance?
-      def self.lookup_all: (String path, client: _Client, **untyped params) -> Array[instance]
-      def self.from_response: (body body, client: _Client?, ?hydrated: bool) -> instance?
-      def self.collection_from_response: (body body, client: _Client?) -> Array[instance]
+      def self.find: (id id, client: _Client, **untyped params) -> Resource?
+      def self.find_all: (Array[id] ids, client: _Client, **untyped params) -> Array[Resource]
+      def self.lookup: (String path, client: _Client, **untyped params) -> Resource?
+      def self.lookup_all: (String path, client: _Client, **untyped params) -> Array[Resource]
+      def self.from_response: (body body, client: _Client?, ?hydrated: bool) -> Resource?
+      def self.collection_from_response: (body body, client: _Client?) -> Array[Resource]
       private def self.get: (String path, client: _Client, params: params) -> body
 
       def initialize: (Hash[untyped, untyped] attrs, ?client: _Client?, ?includes: Includes, ?hydrated: bool) -> void
       def id: () -> String
       def to_h: () -> attrs
       def hydrated?: () -> bool
-      def hydrate: () -> self?
-      def refresh: () -> self?
+      def hydrate: () -> Resource?
+      def refresh: () -> Resource?
       def inspect: () -> String
 
       private
-      def fetch: () -> self?
+      def fetch: () -> Resource?
       def client!: () -> _Client
       def resolve: (singleton(Resource) klass, untyped id) -> Resource?
       def cursor: (singleton(Resource) klass, String path, max_results: Integer, **untyped params) -> Cursor
@@ -236,6 +255,8 @@ module X
   end
 
   class Media < Objects::Resource
+    extend Objects::_Lookup[Media]
+    include Objects::_Hydration[Media]
     FIELDS: Array[String]
 
     def self.id_key: () -> String
@@ -254,6 +275,8 @@ module X
   end
 
   class Poll < Objects::Resource
+    extend Objects::_Lookup[Poll]
+    include Objects::_Hydration[Poll]
     FIELDS: Array[String]
 
     def self.includes_key: () -> String
@@ -264,6 +287,8 @@ module X
   end
 
   class Place < Objects::Resource
+    extend Objects::_Lookup[Place]
+    include Objects::_Hydration[Place]
     FIELDS: Array[String]
 
     def self.includes_key: () -> String
@@ -277,6 +302,8 @@ module X
   end
 
   class User < Objects::Resource
+    extend Objects::_Lookup[User]
+    include Objects::_Hydration[User]
     include Objects::Actions
 
     FIELDS: Array[String]
@@ -287,8 +314,6 @@ module X
     def self.endpoint: () -> String
     def self.includes_key: () -> String
     def self.default_params: () -> Hash[String, Array[String]]
-    def self.find: (Objects::id | String id_or_username, client: Objects::_Client, **untyped params) -> User?
-    def self.find_all: (Array[Objects::id | String] ids_or_usernames, client: Objects::_Client, **untyped params) -> Array[User]
     def self.me: (client: Objects::_Client, **untyped params) -> User?
 
     def name: () -> String?
@@ -334,6 +359,8 @@ module X
   end
 
   class Post < Objects::Resource
+    extend Objects::_Lookup[Post]
+    include Objects::_Hydration[Post]
     include Objects::ReferencedPosts
 
     FIELDS: Array[String]
@@ -392,6 +419,8 @@ module X
   class Tweet = Post
 
   class List < Objects::Resource
+    extend Objects::_Lookup[List]
+    include Objects::_Hydration[List]
     FIELDS: Array[String]
     EXPANSIONS: Array[String]
     MAX_RESULTS: Integer
@@ -415,6 +444,8 @@ module X
   end
 
   class DirectMessage < Objects::Resource
+    extend Objects::_Lookup[DirectMessage]
+    include Objects::_Hydration[DirectMessage]
     FIELDS: Array[String]
     EXPANSIONS: Array[String]
     MAX_RESULTS: Integer
@@ -441,6 +472,8 @@ module X
   end
 
   class Space < Objects::Resource
+    extend Objects::_Lookup[Space]
+    include Objects::_Hydration[Space]
     FIELDS: Array[String]
     EXPANSIONS: Array[String]
     MAX_RESULTS: Integer
