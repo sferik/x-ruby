@@ -127,7 +127,7 @@ module X
     DEFAULT_READ_TIMEOUT: Integer
     DEFAULT_WRITE_TIMEOUT: Integer
 
-    NETWORK_ERRORS: Array[(singleton(Errno::ECONNREFUSED) | singleton(Errno::ECONNRESET) | singleton(Net::OpenTimeout) | singleton(Net::ReadTimeout) | singleton(OpenSSL::SSL::SSLError))]
+    NETWORK_ERRORS: Array[(singleton(EOFError) | singleton(Errno::ECONNREFUSED) | singleton(Errno::ECONNRESET) | singleton(Errno::EHOSTUNREACH) | singleton(Errno::ETIMEDOUT) | singleton(Net::OpenTimeout) | singleton(Net::ReadTimeout) | singleton(Net::WriteTimeout) | singleton(OpenSSL::SSL::SSLError) | singleton(SocketError))]
 
     @proxy_url: URI::Generic | String
 

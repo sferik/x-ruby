@@ -22,11 +22,16 @@ module X
     DEFAULT_WRITE_TIMEOUT = 60 # seconds
     # Network errors that should be wrapped in NetworkError
     NETWORK_ERRORS = [
+      EOFError,
       Errno::ECONNREFUSED,
       Errno::ECONNRESET,
+      Errno::EHOSTUNREACH,
+      Errno::ETIMEDOUT,
       Net::OpenTimeout,
       Net::ReadTimeout,
-      OpenSSL::SSL::SSLError
+      Net::WriteTimeout,
+      OpenSSL::SSL::SSLError,
+      SocketError
     ].freeze
 
     # The timeout for opening connections in seconds
