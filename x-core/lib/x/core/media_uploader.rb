@@ -81,7 +81,7 @@ module X
       media = init(client:, file_path:, media_type:, media_category:)
       chunk_size = chunk_size_mb * BYTES_PER_MB
       append(client:, file_paths: split(file_path, chunk_size), media:, boundary:)
-      client.post("media/upload/#{media["id"]}/finalize")&.fetch("data")
+      client.post("media/upload/#{media.fetch("id")}/finalize")&.fetch("data")
     end
 
     # Wait for media processing to complete
@@ -94,10 +94,11 @@ module X
     #   MediaUploader.await_processing(client: client, media: media)
     def await_processing(client:, media:)
       loop do
-        status = client.get("media/upload?command=STATUS&media_id=#{media["id"]}")&.fetch("data")
-        return status if status.nil? || !status["processing_info"] || PROCESSING_INFO_STATES.include?(status["processing_info"]["state"])
+        status = client.get("media/upload?command=STATUS&media_id=#{media.fetch("id")}")&.fetch("data")
+        processing_info = status&.dig("processing_info")
+        return status if processing_info.nil? || PROCESSING_INFO_STATES.include?(processing_info["state"])
 
-        sleep status["processing_info"]["check_after_secs"].to_i
+        sleep processing_info["check_after_secs"].to_i
       end
     end
 
@@ -112,7 +113,7 @@ module X
     #   MediaUploader.await_processing!(client: client, media: media)
     def await_processing!(client:, media:)
       status = await_processing(client:, media:)
-      raise "Media processing failed" if status&.dig("processing_info", "state") == "failed"
+      raise "Media processing failed" if status&.dig("processing_info", "state").eql?("failed")
 
       status
     end
@@ -140,17 +141,15 @@ module X
 
     private
 
-    # Split a file into chunks
+    # Split a file into chunks, each in its own temporary directory
     # @api private
     # @param file_path [String] the file path
     # @param chunk_size [Integer] the chunk size in bytes
     # @return [Array<String>] the paths to the chunk files
     def split(file_path, chunk_size)
-      file_size = File.size(file_path)
-      segment_count = (file_size.to_f / chunk_size).ceil
-      (0...segment_count).map do |segment_index|
-        segment_path = "#{Dir.mktmpdir}/x#{format("%03d", segment_index + 1)}"
-        File.binwrite(segment_path, File.binread(file_path, chunk_size, segment_index * chunk_size))
+      (0...File.size(file_path)).step(chunk_size).map do |offset|
+        segment_path = File.join(Dir.mktmpdir, "segment")
+        File.binwrite(segment_path, File.binread(file_path, chunk_size, offset))
         segment_path
       end
     end
@@ -175,12 +174,12 @@ module X
     # @param media [Hash] the media object
     # @param boundary [String] the multipart boundary
     # @return [void]
-    def append(client:, file_paths:, media:, boundary: SecureRandom.hex)
+    def append(client:, file_paths:, media:, boundary:)
       threads = file_paths.map.with_index do |file_path, index|
         Thread.new do
           upload_body = construct_upload_body(content: File.binread(file_path), segment_index: index, boundary:)
           headers = {"Content-Type" => "multipart/form-data; boundary=#{boundary}"}
-          upload_chunk(client:, media_id: media["id"], upload_body:, file_path:, headers:)
+          upload_chunk(client:, media_id: media.fetch("id"), upload_body:, file_path:, headers:)
         end
       end
       threads.each(&:join)
@@ -194,7 +193,7 @@ module X
     # @param file_path [String] the chunk file path
     # @param headers [Hash] the request headers
     # @return [void]
-    def upload_chunk(client:, media_id:, upload_body:, file_path:, headers: {})
+    def upload_chunk(client:, media_id:, upload_body:, file_path:, headers:)
       client.post("media/upload/#{media_id}/append", upload_body, headers:)
     rescue NetworkError, ServerError
       retries ||= 0
@@ -220,7 +219,7 @@ module X
     # @param segment_index [Integer, nil] the segment index
     # @param boundary [String] the multipart boundary
     # @return [String] the upload body
-    def construct_upload_body(content:, media_category: nil, segment_index: nil, boundary: SecureRandom.hex)
+    def construct_upload_body(content:, boundary:, media_category: nil, segment_index: nil)
       body = ""
       body += "--#{boundary}\r\nContent-Disposition: form-data; name=\"segment_index\"\r\n\r\n#{segment_index}\r\n" if segment_index
       body += "--#{boundary}\r\nContent-Disposition: form-data; name=\"media_category\"\r\n\r\n#{media_category}\r\n" if media_category

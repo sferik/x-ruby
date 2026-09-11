@@ -16,4 +16,6 @@ mutation:
   timeout: 10.0
 requires:
 - x
+- x/account_uploader
+- x/media_uploader
 usage: opensource

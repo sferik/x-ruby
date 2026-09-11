@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Move the HTTP client into `x-core`, under `lib/x/core`; `require "x/media_uploader"` and `require "x/account_uploader"` still work
 * Wrap `EOFError`, `SocketError`, `Net::WriteTimeout`, `Errno::ETIMEDOUT`, and `Errno::EHOSTUNREACH` in `NetworkError`
 * Stop following redirects after exactly `max_redirects` hops instead of one more
+* Raise `KeyError` from `MediaUploader.chunked_upload` and `MediaUploader.await_processing` when the media has no `"id"`, instead of requesting a URL with an empty ID
 
 ### Fixed
 * Send the authenticator on every redirected request, not only the first

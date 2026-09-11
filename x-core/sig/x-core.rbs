@@ -338,11 +338,11 @@ module X
     private
     def split: (String file_path, Integer chunk_size) -> Array[String]
     def init: (client: Client, file_path: String, media_type: String, media_category: String) -> untyped
-    def append: (client: Client, file_paths: Array[String], media: untyped, ?boundary: String) -> Array[String]
-    def upload_chunk: (client: Client, media_id: String, upload_body: String, file_path: String, ?headers: Hash[String, String]) -> Integer?
+    def append: (client: Client, file_paths: Array[String], media: untyped, boundary: String) -> Array[String]
+    def upload_chunk: (client: Client, media_id: String, upload_body: String, file_path: String, headers: Hash[String, String]) -> Integer?
     def cleanup_file: (String file_path) -> Integer?
     def finalize: (client: Client, media: untyped) -> untyped
-    def construct_upload_body: (content: String, ?media_category: String?, ?segment_index: Integer?, ?boundary: String) -> String
+    def construct_upload_body: (content: String, boundary: String, ?media_category: String?, ?segment_index: Integer?) -> String
   end
 
   module MediaUploadValidator

@@ -2,7 +2,7 @@ module X
   # Validates media upload parameters
   # @api public
   module MediaUploadValidator
-    module_function
+    extend self
 
     # Valid media category values
     MEDIA_CATEGORIES = %w[dm_gif dm_image dm_video subtitles tweet_gif tweet_image tweet_video].freeze
