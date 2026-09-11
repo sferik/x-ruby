@@ -4,3 +4,5 @@ IFS=$'\n\t'
 set -vx
 
 bundle install
+(cd x-core && bundle install)
+(cd x-objects && bundle install)

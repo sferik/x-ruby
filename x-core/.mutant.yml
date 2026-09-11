@@ -4,8 +4,6 @@ coverage_criteria:
 fail_fast: true
 includes:
 - lib
-- x-core/lib
-- x-objects/lib
 integration:
   name: minitest
 matcher:
@@ -15,7 +13,7 @@ mutation:
   operators: full
   timeout: 10.0
 requires:
-- x
-- x/account_uploader
-- x/media_uploader
+- x/core
+- x/core/account_uploader
+- x/core/media_uploader
 usage: opensource

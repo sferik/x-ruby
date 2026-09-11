@@ -1,5 +1,25 @@
 name: linter
-on: [push, pull_request]
+on:
+  push:
+    paths:
+      - "**.rb"
+      - "**/Gemfile"
+      - "**/Rakefile"
+      - "**/Steepfile"
+      - "**.gemspec"
+      - "bin/**"
+      - ".rubocop.yml"
+      - ".github/workflows/lint.yml"
+  pull_request:
+    paths:
+      - "**.rb"
+      - "**/Gemfile"
+      - "**/Rakefile"
+      - "**/Steepfile"
+      - "**.gemspec"
+      - "bin/**"
+      - ".rubocop.yml"
+      - ".github/workflows/lint.yml"
 jobs:
   build:
     runs-on: ubuntu-latest

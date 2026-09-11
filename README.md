@@ -1,7 +1,7 @@
-[![tests](https://github.com/sferik/x-ruby/actions/workflows/test.yml/badge.svg)](https://github.com/sferik/x-ruby/actions/workflows/test.yml)
-[![mutation tests](https://github.com/sferik/x-ruby/actions/workflows/mutant.yml/badge.svg)](https://github.com/sferik/x-ruby/actions/workflows/mutant.yml)
+[![x-core](https://github.com/sferik/x-ruby/actions/workflows/x-core.yml/badge.svg)](https://github.com/sferik/x-ruby/actions/workflows/x-core.yml)
+[![x-objects](https://github.com/sferik/x-ruby/actions/workflows/x-objects.yml/badge.svg)](https://github.com/sferik/x-ruby/actions/workflows/x-objects.yml)
+[![x](https://github.com/sferik/x-ruby/actions/workflows/x.yml/badge.svg)](https://github.com/sferik/x-ruby/actions/workflows/x.yml)
 [![linter](https://github.com/sferik/x-ruby/actions/workflows/lint.yml/badge.svg)](https://github.com/sferik/x-ruby/actions/workflows/lint.yml)
-[![typer checker](https://github.com/sferik/x-ruby/actions/workflows/steep.yml/badge.svg)](https://github.com/sferik/x-ruby/actions/workflows/steep.yml)
 [![maintainability](https://qlty.sh/gh/sferik/projects/x-ruby/maintainability.svg)](https://qlty.sh/gh/sferik/projects/x-ruby)
 [![gem version](https://badge.fury.io/rb/x.svg)](https://rubygems.org/gems/x)
 
@@ -246,6 +246,14 @@ Many thanks to our sponsors (listed in order of when they sponsored this project
 
        bundle exec rake
 
+   Each of `x-core` and `x-objects` has its own `Gemfile`, `Rakefile`, `Steepfile`, signatures, test suite, and mutation config, and can be checked on its own:
+
+       cd x-core && bundle exec rake
+
+   From the root, `rake test`, `rake mutant`, `rake steep`, and `rake yardstick` run each gem's task inside that gem's directory, with that gem's bundle. Append a gem's name to run one, as in `rake test:x-core`, `rake steep:x-objects`, or `rake yardstick:x`.
+
+   On GitHub, each gem's workflow runs only when that gem changes. The `x` workflow runs when the meta-gem or the code and signatures of either gem change, and the linter runs when any Ruby file changes.
+
 5. Create a new branch for your feature or bug fix:
 
        git checkout -b my-new-branch
@@ -264,17 +272,21 @@ Pull requests will only be accepted if they meet all the following criteria:
 
        bundle exec rake rubocop
 
-3. 100% C0 code coverage. This can be verified with:
+3. 100% line, branch, and method coverage in each gem. This can be verified with:
 
        bundle exec rake test
 
-4. 100% mutation coverage. This can be verified with:
+4. 100% mutation coverage in `x-core` and `x-objects`. This can be verified with:
 
        bundle exec rake mutant
 
-5. RBS type signatures (in `x-core/sig`, `x-objects/sig`, and `sig`). This can be verified with:
+5. RBS type signatures (in each gem's `sig` directory). This can be verified with:
 
        bundle exec rake steep
+
+6. 100% documentation coverage. This can be verified with:
+
+       bundle exec rake yardstick
 
 ## License
 

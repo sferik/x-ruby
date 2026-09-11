@@ -50,6 +50,16 @@ X::Post.search("ruby", client:)
 * **Cursors.** Pages are fetched lazily under a lock and cached, so concurrent iteration fetches each page once. `refresh` returns a cursor with an empty cache. `prefetch` returns a cursor that fetches the next page in a background thread.
 * **Parallelism.** `find_all` splits IDs into batches of 100 and fetches the batches on up to 8 threads, preserving order.
 
+## Development
+
+This gem has its own `Gemfile`, `Steepfile`, signatures, test suite, and mutation config, and does not load the other gems in this repository:
+
+    bundle install
+    bundle exec rake test
+    bundle exec rake mutant
+    bundle exec rake steep
+    bundle exec rake yardstick
+
 ## License
 
 The gem is available as open source under the terms of the [MIT License](https://opensource.org/licenses/MIT).

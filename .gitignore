@@ -1,9 +1,9 @@
-/.bundle/
-/.mutant/
-/.yardoc
+.bundle/
+.mutant/
+.yardoc
 /_yardoc/
-/coverage/
-/doc/
+coverage/
+doc/
 pkg/
 /spec/reports/
 /tmp/

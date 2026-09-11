@@ -1,0 +1,59 @@
+name: x-core
+on:
+  push:
+    paths:
+      - "x-core/**"
+      - "!x-core/**.md"
+      - ".github/workflows/x-core.yml"
+  pull_request:
+    paths:
+      - "x-core/**"
+      - "!x-core/**.md"
+      - ".github/workflows/x-core.yml"
+defaults:
+  run:
+    working-directory: x-core
+jobs:
+  test:
+    strategy:
+      matrix:
+        ruby: ["3.2", "3.3", "3.4", "4.0"]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v7
+    - uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: ${{ matrix.ruby }}
+        bundler-cache: true
+        working-directory: x-core
+    - run: bundle exec rake test
+  mutant:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v7
+    - uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: "3.4"
+        bundler-cache: true
+        working-directory: x-core
+    - run: bundle exec rake mutant
+  steep:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v7
+    - uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: "3.4"
+        bundler-cache: true
+        working-directory: x-core
+    - run: bundle exec rake steep
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v7
+    - uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: "3.4"
+        bundler-cache: true
+        working-directory: x-core
+    - run: bundle exec rake yardstick

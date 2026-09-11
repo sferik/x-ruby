@@ -33,6 +33,16 @@ media = X::MediaUploader.upload(client:, file_path: "cat.jpg", media_category: X
 
 See the [`x` README](https://github.com/sferik/x-ruby#readme) for more examples.
 
+## Development
+
+This gem has its own `Gemfile`, `Steepfile`, signatures, test suite, and mutation config, and does not load the other gems in this repository:
+
+    bundle install
+    bundle exec rake test
+    bundle exec rake mutant
+    bundle exec rake steep
+    bundle exec rake yardstick
+
 ## License
 
 The gem is available as open source under the terms of the [MIT License](https://opensource.org/licenses/MIT).

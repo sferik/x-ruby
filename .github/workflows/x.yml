@@ -1,0 +1,65 @@
+name: x
+on:
+  push:
+    paths:
+      - "lib/**"
+      - "sig/**"
+      - "test/**"
+      - "Gemfile"
+      - "Rakefile"
+      - "Steepfile"
+      - "x.gemspec"
+      - "x-core/lib/**"
+      - "x-core/sig/*.rbs"
+      - "x-core/x-core.gemspec"
+      - "x-objects/lib/**"
+      - "x-objects/sig/*.rbs"
+      - "x-objects/x-objects.gemspec"
+      - ".github/workflows/x.yml"
+  pull_request:
+    paths:
+      - "lib/**"
+      - "sig/**"
+      - "test/**"
+      - "Gemfile"
+      - "Rakefile"
+      - "Steepfile"
+      - "x.gemspec"
+      - "x-core/lib/**"
+      - "x-core/sig/*.rbs"
+      - "x-core/x-core.gemspec"
+      - "x-objects/lib/**"
+      - "x-objects/sig/*.rbs"
+      - "x-objects/x-objects.gemspec"
+      - ".github/workflows/x.yml"
+jobs:
+  test:
+    strategy:
+      matrix:
+        ruby: ["3.2", "3.3", "3.4", "4.0"]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v7
+    - uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: ${{ matrix.ruby }}
+        bundler-cache: true
+    - run: bundle exec rake test:x
+  steep:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v7
+    - uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: "3.4"
+        bundler-cache: true
+    - run: bundle exec rake steep:x
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v7
+    - uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: "3.4"
+        bundler-cache: true
+    - run: bundle exec rake yardstick:x

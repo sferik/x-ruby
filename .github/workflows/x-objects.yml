@@ -1,0 +1,59 @@
+name: x-objects
+on:
+  push:
+    paths:
+      - "x-objects/**"
+      - "!x-objects/**.md"
+      - ".github/workflows/x-objects.yml"
+  pull_request:
+    paths:
+      - "x-objects/**"
+      - "!x-objects/**.md"
+      - ".github/workflows/x-objects.yml"
+defaults:
+  run:
+    working-directory: x-objects
+jobs:
+  test:
+    strategy:
+      matrix:
+        ruby: ["3.2", "3.3", "3.4", "4.0"]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v7
+    - uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: ${{ matrix.ruby }}
+        bundler-cache: true
+        working-directory: x-objects
+    - run: bundle exec rake test
+  mutant:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v7
+    - uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: "3.4"
+        bundler-cache: true
+        working-directory: x-objects
+    - run: bundle exec rake mutant
+  steep:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v7
+    - uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: "3.4"
+        bundler-cache: true
+        working-directory: x-objects
+    - run: bundle exec rake steep
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v7
+    - uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: "3.4"
+        bundler-cache: true
+        working-directory: x-objects
+    - run: bundle exec rake yardstick
