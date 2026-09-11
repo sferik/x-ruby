@@ -1,59 +1,49 @@
-require:
- - standard
-
 plugins:
- - rubocop-minitest
- - rubocop-performance
- - rubocop-rake
- - standard-performance
+  - rubocop-minitest
+  - rubocop-performance
+  - rubocop-rake
+  - standard-custom
+  - standard-performance
+
+inherit_gem:
+  standard: config/base.yml
+  standard-custom: config/base.yml
+  standard-performance: config/base.yml
 
 AllCops:
   NewCops: enable
-  TargetRubyVersion: 3.2
 
-Layout/ArgumentAlignment:
-  EnforcedStyle: with_fixed_indentation
-  IndentationWidth: 2
+# Standard disables the Metrics cops; enforce them at RuboCop's defaults
+Metrics/AbcSize:
+  Enabled: true
 
-Layout/CaseIndentation:
-  EnforcedStyle: end
+Metrics/BlockLength:
+  Enabled: true
 
-Layout/EndAlignment:
-  EnforcedStyleAlignWith: start_of_line
+Metrics/BlockNesting:
+  Enabled: true
 
-Layout/LineLength:
-  Max: 140
+Metrics/ClassLength:
+  Enabled: true
 
-Layout/ParameterAlignment:
-  EnforcedStyle: with_fixed_indentation
-  IndentationWidth: 2
+Metrics/CollectionLiteralLength:
+  Enabled: true
 
-Layout/SpaceInsideHashLiteralBraces:
-  EnforcedStyle: no_space
+Metrics/CyclomaticComplexity:
+  Enabled: true
 
-Lint/MissingSuper:
-  Enabled: false
+Metrics/MethodLength:
+  Enabled: true
+
+Metrics/ModuleLength:
+  Enabled: true
 
 Metrics/ParameterLists:
+  Enabled: true
   CountKeywordArgs: false
+
+Metrics/PerceivedComplexity:
+  Enabled: true
 
 Minitest/MultipleAssertions:
   Max: 5
-
-Style/Alias:
-  EnforcedStyle: prefer_alias_method
-
-Style/FrozenStringLiteralComment:
-  EnforcedStyle: never
-
-Style/OpenStructUse:
-  Enabled: false
-
-Style/StringLiterals:
-  EnforcedStyle: double_quotes
-
-Style/StringLiteralsInInterpolation:
-  EnforcedStyle: double_quotes
-
-Style/TernaryParentheses:
-  EnforcedStyle: require_parentheses
