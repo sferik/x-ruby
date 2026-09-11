@@ -15,6 +15,12 @@ module X
       assert_equal TEST_REFRESH_TOKEN, authenticator.refresh_token
     end
 
+    def test_inspect_hides_the_secrets
+      authenticator = OAuth2Authenticator.new(**test_oauth2_credentials)
+
+      assert_equal "#<X::OAuth2Authenticator client_id=\"#{TEST_CLIENT_ID}\" expires_at=nil>", authenticator.inspect
+    end
+
     def test_initialize_with_expires_at
       expires_at = Time.now + 7200
       authenticator = OAuth2Authenticator.new(**test_oauth2_credentials, expires_at: expires_at)

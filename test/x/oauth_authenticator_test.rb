@@ -9,6 +9,10 @@ module X
         access_token: TEST_ACCESS_TOKEN, access_token_secret: TEST_ACCESS_TOKEN_SECRET)
     end
 
+    def test_inspect_hides_the_secrets
+      assert_equal "#<X::OAuthAuthenticator>", @authenticator.inspect
+    end
+
     def test_initialization
       assert_equal TEST_API_KEY, @authenticator.api_key
       assert_equal TEST_API_KEY_SECRET, @authenticator.api_key_secret

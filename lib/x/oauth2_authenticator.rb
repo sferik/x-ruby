@@ -94,6 +94,16 @@ module X
       {AUTHENTICATION_HEADER => "Bearer #{access_token}"}
     end
 
+    # Summarize the authenticator for the console without revealing credentials
+    #
+    # @api public
+    # @return [String] the class name, client ID, and expiration time
+    # @example Inspect an authenticator
+    #   authenticator.inspect # => #<X::OAuth2Authenticator client_id="id" expires_at=nil>
+    def inspect
+      "#<#{self.class} client_id=#{client_id.inspect} expires_at=#{expires_at.inspect}>"
+    end
+
     # Check if the access token has expired or will expire soon
     #
     # @api public

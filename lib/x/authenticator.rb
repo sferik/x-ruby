@@ -17,5 +17,15 @@ module X
     def header(_request)
       {AUTHENTICATION_HEADER => ""}
     end
+
+    # Summarize the authenticator for the console without revealing credentials
+    #
+    # @api public
+    # @return [String] the class name
+    # @example Inspect an authenticator
+    #   authenticator.inspect # => #<X::BearerTokenAuthenticator>
+    def inspect
+      "#<#{self.class}>"
+    end
   end
 end

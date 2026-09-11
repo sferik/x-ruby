@@ -12,5 +12,9 @@ module X
       assert_kind_of Hash, @authenticator.header(nil)
       assert_empty @authenticator.header(nil)["Authorization"]
     end
+
+    def test_inspect
+      assert_equal "#<X::Authenticator>", @authenticator.inspect
+    end
   end
 end

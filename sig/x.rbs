@@ -5,6 +5,7 @@ module X
     AUTHENTICATION_HEADER: String
 
     def header: (Net::HTTPRequest? request) -> Hash[String, String]
+    def inspect: () -> String
   end
 
   class BearerTokenAuthenticator < Authenticator
@@ -234,6 +235,7 @@ module X
     attr_accessor connection: Connection
     def initialize: (client_id: String, client_secret: String, access_token: String, refresh_token: String, ?expires_at: Time?, ?connection: Connection) -> void
     def header: (Net::HTTPRequest? request) -> Hash[String, String]
+    def inspect: () -> String
     def token_expired?: -> bool
     def refresh_token!: -> Hash[String, untyped]
 
@@ -289,6 +291,7 @@ module X
     attr_accessor default_object_class: singleton(Hash)
     attr_reader authenticator: Authenticator | BearerTokenAuthenticator | OAuthAuthenticator | OAuth2Authenticator
     def initialize: (?api_key: String?, ?api_key_secret: String?, ?access_token: String?, ?access_token_secret: String?, ?bearer_token: String?, ?client_id: String?, ?client_secret: String?, ?refresh_token: String?, ?base_url: String, ?open_timeout: Integer, ?read_timeout: Integer, ?write_timeout: Integer, ?debug_output: untyped, ?proxy_url: String?, ?default_array_class: singleton(Array), ?default_object_class: singleton(Hash), ?max_redirects: Integer) -> void
+    def inspect: () -> String
     def get: (String endpoint, ?headers: Hash[String, String], ?array_class: Class, ?object_class: Class) -> untyped
     def post: (String endpoint, ?String? body, ?headers: Hash[String, String], ?array_class: Class, ?object_class: Class) -> untyped
     def put: (String endpoint, ?String? body, ?headers: Hash[String, String], ?array_class: Class, ?object_class: Class) -> untyped

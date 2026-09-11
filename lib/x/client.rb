@@ -105,6 +105,16 @@ module X
       @stream_parser = StreamParser.new
     end
 
+    # Summarize the client for the console without revealing credentials
+    #
+    # @api public
+    # @return [String] the class name, base URL, and authenticator
+    # @example Inspect a client
+    #   client.inspect # => #<X::Client base_url="https://api.twitter.com/2/" authenticator=#<X::BearerTokenAuthenticator>>
+    def inspect
+      "#<#{self.class} base_url=#{base_url.inspect} authenticator=#{authenticator.inspect}>"
+    end
+
     # Perform a GET request to the X API
     #
     # @api public

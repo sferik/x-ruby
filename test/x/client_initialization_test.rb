@@ -17,6 +17,12 @@ module X
       assert_equal TEST_ACCESS_TOKEN_SECRET, authenticator.access_token_secret
     end
 
+    def test_inspect_hides_the_credentials
+      client = Client.new(**test_oauth_credentials)
+
+      assert_equal "#<X::Client base_url=\"https://api.twitter.com/2/\" authenticator=#<X::OAuthAuthenticator>>", client.inspect
+    end
+
     def test_missing_oauth_credentials
       test_oauth_credentials.each_key do |missing_credential|
         client = Client.new(**test_oauth_credentials.except(missing_credential))
