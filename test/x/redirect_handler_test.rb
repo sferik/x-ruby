@@ -84,6 +84,19 @@ module X
       assert_requested :get, "http://example.com/some_relative_path"
     end
 
+    def test_handle_preserves_custom_headers_across_redirects
+      headers = {"X-Custom" => "value"}
+      stub_request(:get, "http://example.com/2")
+        .with(headers:)
+        .to_return(status: 302, headers: {"Location" => "http://example.com/3"})
+      stub_request(:get, "http://example.com/3").with(headers:)
+
+      @redirect_handler.handle(response: redirect_to("http://example.com/2"), request: Net::HTTP::Get.new("/"),
+        base_url: "http://example.com", headers:)
+
+      assert_requested :get, "http://example.com/3", headers:
+    end
+
     def test_handle_with_too_many_redirects
       request = Net::HTTP::Get.new("/some_path")
       stub_request(:get, "http://example.com/some_path").to_return(status: 302, headers: {"Location" => "http://example.com/some_path"})

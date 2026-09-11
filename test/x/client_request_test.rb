@@ -67,6 +67,17 @@ module X
       assert_requested :get, "https://api.twitter.com/new_endpoint"
     end
 
+    def test_redirect_handler_preserves_custom_headers
+      headers = {"X-Custom" => "value"}
+      stub_request(:get, "https://api.twitter.com/old_endpoint")
+        .with(headers:)
+        .to_return(status: 301, headers: {"Location" => "https://api.twitter.com/new_endpoint"})
+      stub_request(:get, "https://api.twitter.com/new_endpoint").with(headers:)
+      @client.get("/old_endpoint", headers:)
+
+      assert_requested :get, "https://api.twitter.com/new_endpoint", headers:
+    end
+
     def test_follows_301_redirect
       stub_request(:get, "https://api.twitter.com/old_endpoint")
         .to_return(status: 301, headers: {"Location" => "https://api.twitter.com/new_endpoint"})

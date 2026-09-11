@@ -55,22 +55,24 @@ module X
     # @param response [Net::HTTPResponse] the HTTP response to handle
     # @param request [Net::HTTPRequest] the original HTTP request
     # @param base_url [String] the base URL for the request
+    # @param headers [Hash] additional headers to send with redirected requests
     # @param authenticator [Authenticator] the authenticator for requests
     # @param redirect_count [Integer] the current redirect count
     # @return [Net::HTTPResponse] the final HTTP response after following redirects
     # @raise [TooManyRedirects] if the maximum number of redirects is exceeded
     # @example Handle a response
     #   response = handler.handle(response: resp, request: req, base_url: url)
-    def handle(response:, request:, base_url:, authenticator: Authenticator.new, redirect_count: 0)
+    def handle(response:, request:, base_url:, headers: {}, authenticator: Authenticator.new, redirect_count: 0)
       if response.is_a?(Net::HTTPRedirection)
         raise TooManyRedirects, "Too many redirects" if redirect_count >= max_redirects
 
         new_uri = build_new_uri(response, base_url)
 
-        new_request = build_request(request, new_uri, Integer(response.code), authenticator)
+        new_request = build_request(request, new_uri, Integer(response.code), headers, authenticator)
         new_response = connection.perform(request: new_request)
 
-        handle(response: new_response, request: new_request, base_url:, authenticator:, redirect_count: redirect_count + 1)
+        handle(response: new_response, request: new_request, base_url:, headers:, authenticator:,
+          redirect_count: redirect_count + 1)
       else
         response
       end
@@ -94,16 +96,17 @@ module X
     # @param request [Net::HTTPRequest] the original request
     # @param uri [URI] the new URI
     # @param response_code [Integer] the HTTP response code
+    # @param headers [Hash] additional headers for the request
     # @param authenticator [Authenticator] the authenticator
     # @return [Net::HTTPRequest] the new request
-    def build_request(request, uri, response_code, authenticator)
+    def build_request(request, uri, response_code, headers, authenticator)
       http_method = :get
       if [307, 308].include?(response_code)
         http_method = request.method.downcase.to_sym
         body = request.body
       end
 
-      request_builder.build(http_method:, uri:, body:, authenticator:)
+      request_builder.build(http_method:, uri:, body:, headers:, authenticator:)
     end
   end
 end

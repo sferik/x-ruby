@@ -194,7 +194,7 @@ module X
       uri = URI.join(base_url, endpoint)
       request = @request_builder.build(http_method:, uri:, body:, headers:, authenticator:)
       response = @connection.perform(request:)
-      response = @redirect_handler.handle(response:, request:, base_url:, authenticator:)
+      response = @redirect_handler.handle(response:, request:, base_url:, headers:, authenticator:)
       @response_parser.parse(response:, array_class:, object_class:)
     end
   end

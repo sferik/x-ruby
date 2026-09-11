@@ -191,11 +191,11 @@ module X
     attr_reader request_builder: RequestBuilder
     attr_reader max_redirects: Integer
     def initialize: (?connection: Connection, ?request_builder: RequestBuilder, ?max_redirects: Integer) -> void
-    def handle: (response: Net::HTTPResponse, request: Net::HTTPRequest, base_url: String, ?authenticator: Authenticator, ?redirect_count: Integer) -> Net::HTTPResponse
+    def handle: (response: Net::HTTPResponse, request: Net::HTTPRequest, base_url: String, ?headers: Hash[String, String], ?authenticator: Authenticator, ?redirect_count: Integer) -> Net::HTTPResponse
 
     private
     def build_new_uri: (Net::HTTPResponse response, String base_url) -> URI::Generic
-    def build_request: (Net::HTTPRequest request, URI::Generic new_uri, Integer response_code, Authenticator authenticator) -> Net::HTTPRequest
+    def build_request: (Net::HTTPRequest request, URI::Generic new_uri, Integer response_code, Hash[String, String] headers, Authenticator authenticator) -> Net::HTTPRequest
     def send_new_request: (URI::Generic new_uri, Net::HTTPRequest new_request) -> Net::HTTPResponse
   end
 
