@@ -242,6 +242,10 @@ Many thanks to our sponsors (listed in order of when they sponsored this project
 
        bin/setup
 
+   The root, `x-core`, and `x-objects` each have their own bundle, so `bundle update` in the root updates only the root bundle. To update all three:
+
+       bin/update
+
 4. Run the default Rake task to ensure all tests pass:
 
        bundle exec rake

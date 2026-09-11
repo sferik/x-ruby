@@ -23,10 +23,13 @@ require "rake/testtask"
 # The gems with their own directory, Gemfile, test suite, and mutation config
 SUBGEMS = %w[x-core x-objects].freeze
 
-# Run a command inside a gem's directory with that gem's own bundle
+# Run a command inside a gem's directory with that gem's own bundle, installing the bundle if needed
 def in_gem(dir, *command)
   Bundler.with_unbundled_env do
-    Dir.chdir(File.expand_path(dir, __dir__)) { sh(*command) }
+    Dir.chdir(File.expand_path(dir, __dir__)) do
+      sh "bundle", "install" unless system("bundle", "check", out: File::NULL)
+      sh(*command)
+    end
   end
 end
 
