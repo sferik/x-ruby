@@ -10,6 +10,12 @@ module X
       @redirect_handler = RedirectHandler.new(connection: @connection, request_builder: @request_builder)
     end
 
+    def redirect_to(location)
+      response = Net::HTTPFound.new("1.1", "302", "Found")
+      response["Location"] = location
+      response
+    end
+
     def test_initialize_with_defaults
       redirect_handler = RedirectHandler.new
 
@@ -52,6 +58,20 @@ module X
       assert_requested :delete, "http://example.com/3"
     end
 
+    def test_handle_preserves_authentication_across_redirects
+      authenticator = BearerTokenAuthenticator.new(bearer_token: TEST_BEARER_TOKEN)
+      authorization = {"Authorization" => /Bearer #{TEST_BEARER_TOKEN}/o}
+      stub_request(:get, "http://example.com/2")
+        .with(headers: authorization)
+        .to_return(status: 302, headers: {"Location" => "http://example.com/3"})
+      stub_request(:get, "http://example.com/3").with(headers: authorization)
+
+      @redirect_handler.handle(response: redirect_to("http://example.com/2"), request: Net::HTTP::Get.new("/"),
+        base_url: "http://example.com", authenticator:)
+
+      assert_requested :get, "http://example.com/3", headers: authorization
+    end
+
     def test_handle_with_relative_url
       request = Net::HTTP::Get.new("/some_path")
       stub_request(:get, "http://example.com/some_relative_path")
@@ -62,6 +82,43 @@ module X
       @redirect_handler.handle(response:, request:, base_url: "http://example.com")
 
       assert_requested :get, "http://example.com/some_relative_path"
+    end
+
+    def test_handle_with_too_many_redirects
+      request = Net::HTTP::Get.new("/some_path")
+      stub_request(:get, "http://example.com/some_path").to_return(status: 302, headers: {"Location" => "http://example.com/some_path"})
+
+      response = Net::HTTPFound.new("1.1", "302", "Found")
+      response["Location"] = "http://example.com/some_path"
+
+      e = assert_raises(TooManyRedirects) do
+        @redirect_handler.handle(response:, request:, base_url: "http://example.com")
+      end
+
+      assert_equal "Too many redirects", e.message
+      assert_requested :get, "http://example.com/some_path", times: RedirectHandler::DEFAULT_MAX_REDIRECTS
+    end
+
+    def test_handle_beyond_max_redirects
+      request = Net::HTTP::Get.new("/some_path")
+      response = Net::HTTPFound.new("1.1", "302", "Found")
+      response["Location"] = "http://example.com/some_path"
+      redirect_count = RedirectHandler::DEFAULT_MAX_REDIRECTS + 1
+
+      assert_raises(TooManyRedirects) do
+        @redirect_handler.handle(response:, request:, base_url: "http://example.com", redirect_count:)
+      end
+      assert_not_requested :get, "http://example.com/some_path"
+    end
+  end
+
+  class RedirectHandlerStatusTest < Minitest::Test
+    cover RedirectHandler
+
+    def setup
+      @connection = Connection.new
+      @request_builder = RequestBuilder.new
+      @redirect_handler = RedirectHandler.new(connection: @connection, request_builder: @request_builder)
     end
 
     def test_handle_with_301_moved_permanently
@@ -125,21 +182,6 @@ module X
       @redirect_handler.handle(response:, request:, base_url: "http://example.com")
 
       assert_requested :post, "http://example.com/new_path", body: "request_body"
-    end
-
-    def test_handle_with_too_many_redirects
-      request = Net::HTTP::Get.new("/some_path")
-      stub_request(:get, "http://example.com/some_path").to_return(status: 302, headers: {"Location" => "http://example.com/some_path"})
-
-      response = Net::HTTPFound.new("1.1", "302", "Found")
-      response["Location"] = "http://example.com/some_path"
-
-      e = assert_raises(TooManyRedirects) do
-        @redirect_handler.handle(response:, request:, base_url: "http://example.com")
-      end
-
-      assert_equal "Too many redirects", e.message
-      assert_requested :get, "http://example.com/some_path", times: RedirectHandler::DEFAULT_MAX_REDIRECTS + 1
     end
   end
 end

@@ -63,14 +63,14 @@ module X
     #   response = handler.handle(response: resp, request: req, base_url: url)
     def handle(response:, request:, base_url:, authenticator: Authenticator.new, redirect_count: 0)
       if response.is_a?(Net::HTTPRedirection)
-        raise TooManyRedirects, "Too many redirects" if redirect_count > max_redirects
+        raise TooManyRedirects, "Too many redirects" if redirect_count >= max_redirects
 
         new_uri = build_new_uri(response, base_url)
 
         new_request = build_request(request, new_uri, Integer(response.code), authenticator)
         new_response = connection.perform(request: new_request)
 
-        handle(response: new_response, request: new_request, base_url:, redirect_count: redirect_count + 1)
+        handle(response: new_response, request: new_request, base_url:, authenticator:, redirect_count: redirect_count + 1)
       else
         response
       end
