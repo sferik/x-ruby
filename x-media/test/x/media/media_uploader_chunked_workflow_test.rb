@@ -1,6 +1,6 @@
 require "tmpdir"
 require_relative "../../test_helper"
-require "x/core/media_uploader"
+require "x/media/media_uploader"
 
 module X
   class MediaUploaderChunkedWorkflowTest < Minitest::Test

@@ -1,7 +1,7 @@
 require "fileutils"
 require "tmpdir"
 require_relative "../../test_helper"
-require "x/core/account_uploader"
+require "x/media/account_uploader"
 
 module X
   class AccountUploaderClientTest < Minitest::Test

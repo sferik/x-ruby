@@ -1,8 +1,8 @@
 require "simplecov"
 
 SimpleCov.start "strict" do
-  # x-core and x-objects measure their own coverage in their own suites
-  skip %r{\A/?x-(core|objects)/}
+  # x-core, x-media, and x-objects measure their own coverage in their own suites
+  skip %r{\A/?x-(core|media|objects)/}
 end
 
 require "minitest/autorun"

@@ -1,11 +1,11 @@
 require "bundler/gem_tasks"
 
 # The gems in this repository, in dependency order, released in lockstep
-GEMS = {"x-core" => "x-core", "x-objects" => "x-objects", "x" => "."}.freeze
+GEMS = {"x-core" => "x-core", "x-media" => "x-media", "x-objects" => "x-objects", "x" => "."}.freeze
 
 # Build every gem into the pkg directory (gem push is handled by GitHub Actions with attestations)
 Rake::Task["build"].clear
-desc "Build x-core, x-objects, and x into the pkg directory"
+desc "Build x-core, x-media, x-objects, and x into the pkg directory"
 task :build do
   mkdir_p "pkg"
   GEMS.each do |name, dir|
@@ -21,7 +21,7 @@ task release: %w[build release:guard_clean release:source_control_push]
 require "rake/testtask"
 
 # The gems with their own directory, Gemfile, test suite, and mutation config
-SUBGEMS = %w[x-core x-objects].freeze
+SUBGEMS = %w[x-core x-media x-objects].freeze
 
 # Run a command inside a gem's directory with that gem's own bundle, installing the bundle if needed
 def in_gem(dir, *command)
@@ -88,7 +88,7 @@ task steep: SUBGEMS.map { |name| "steep:#{name}" } + ["steep:x"]
 require "yard"
 
 YARD::Rake::YardocTask.new(:yard) do |t|
-  t.files = ["lib/**/*.rb", "x-core/lib/**/*.rb", "x-objects/lib/**/*.rb"]
+  t.files = ["lib/**/*.rb", "x-core/lib/**/*.rb", "x-media/lib/**/*.rb", "x-objects/lib/**/*.rb"]
   t.options = ["--no-private"]
 end
 

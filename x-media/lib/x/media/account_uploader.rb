@@ -1,6 +1,6 @@
-require "base64"
 require "securerandom"
-require_relative "errors/invalid_media_type"
+require "x/core"
+require_relative "invalid_media_type"
 
 module X
   # Uploads profile images and banners to the X API v1.1

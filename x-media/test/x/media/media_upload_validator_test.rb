@@ -1,5 +1,5 @@
 require_relative "../../test_helper"
-require "x/core/media_upload_validator"
+require "x/media/media_upload_validator"
 
 module X
   class MediaUploadValidatorTest < Minitest::Test

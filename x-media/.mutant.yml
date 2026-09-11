@@ -7,11 +7,14 @@ includes:
 integration:
   name: minitest
 matcher:
+  # x-core is loaded too, and is mutated in its own suite
   subjects:
-  - X*
+  - X::AccountUploader*
+  - X::MediaUploadValidator*
+  - X::MediaUploader*
 mutation:
   operators: full
   timeout: 10.0
 requires:
-- x/core
+- x/media
 usage: opensource

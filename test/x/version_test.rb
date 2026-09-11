@@ -1,4 +1,5 @@
 require_relative "../test_helper"
+require "x/media/version"
 
 module X
   class MetaVersionTest < Minitest::Test
@@ -16,6 +17,7 @@ module X
 
     def test_lockstep_versions
       assert_equal VERSION, Core::VERSION
+      assert_equal VERSION, MediaUploader::VERSION
       assert_equal VERSION, Objects::VERSION
     end
   end

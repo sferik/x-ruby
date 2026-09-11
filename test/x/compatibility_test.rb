@@ -6,6 +6,7 @@ module X
       require "x/media_uploader"
 
       assert_respond_to MediaUploader, :chunked_upload
+      assert_equal VERSION, MediaUploader::VERSION
     end
 
     def test_account_uploader_require_path

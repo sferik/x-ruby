@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-* Split the gem into three gems released in lockstep: `x-core` (the HTTP client), `x-objects` (resource objects), and `x` (a meta-gem that depends on both and mixes the object methods into `X::Client`)
+* Split the gem into gems released in lockstep: `x-core` (the HTTP client), `x-media` (media, profile image, and banner uploads), `x-objects` (resource objects), and `x` (a meta-gem that depends on all three and mixes the object methods into `X::Client`)
 * Add immutable, thread-safe resource classes: `X::User`, `X::Post` (aliased as `X::Tweet`), `X::List`, `X::DirectMessage`, `X::Space`, `X::Media`, `X::Poll`, and `X::Place`
 * Compare resources by class and ID with `==`, `eql?`, and `hash`, so the same resource fetched in different requests is equal
 * Resolve references such as `post.author` and `post.replied_to` to included objects or ID stubs, sharing one object per resource within a response
@@ -22,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Preserve custom headers passed to `get`, `post`, `put`, and `delete` across redirects
 
 ### Changed
-* Move the HTTP client into `x-core`, under `lib/x/core`; `require "x/media_uploader"` and `require "x/account_uploader"` still work
+* Move the HTTP client into `x-core`, under `lib/x/core`, and the uploaders into `x-media`, under `lib/x/media`; `require "x/media_uploader"` and `require "x/account_uploader"` still work
 * Wrap `EOFError`, `SocketError`, `Net::WriteTimeout`, `Errno::ETIMEDOUT`, and `Errno::EHOSTUNREACH` in `NetworkError`
 * Stop following redirects after exactly `max_redirects` hops instead of one more
 * Raise `KeyError` from `MediaUploader.chunked_upload` and `MediaUploader.await_processing` when the media has no `"id"`, instead of requesting a URL with an empty ID

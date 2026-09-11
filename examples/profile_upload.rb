@@ -1,5 +1,5 @@
 require "x"
-require "x/account_uploader"
+require "x/media"
 
 x_credentials = {
   api_key: "INSERT YOUR X API KEY HERE",

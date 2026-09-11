@@ -1,6 +1,6 @@
 require "json"
 require "x"
-require "x/media_uploader"
+require "x/media"
 
 x_credentials = {
   api_key: "INSERT YOUR X API KEY HERE",

@@ -1,8 +1,10 @@
 require "json"
 require "securerandom"
 require "tmpdir"
-require_relative "errors/invalid_media_type"
+require "x/core"
+require_relative "invalid_media_type"
 require_relative "media_upload_validator"
+require_relative "version"
 
 module X
   # Uploads media files to the X API

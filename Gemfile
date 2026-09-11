@@ -4,6 +4,7 @@ source "https://rubygems.org"
 gemspec
 
 gem "x-core", path: "x-core"
+gem "x-media", path: "x-media"
 gem "x-objects", path: "x-objects"
 
 gem "fiddle", ">= 1.1.2"
