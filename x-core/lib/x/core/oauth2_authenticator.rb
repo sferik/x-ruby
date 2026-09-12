@@ -1,6 +1,5 @@
-require "base64"
-require "json"
 require "net/http"
+require "simple_oauth"
 require "uri"
 require_relative "authenticator"
 require_relative "connection"
@@ -13,10 +12,10 @@ module X
     TOKEN_PATH = "/2/oauth2/token".freeze
     # Host for token refresh requests
     TOKEN_HOST = "api.x.com".freeze
-    # Grant type for token refresh
-    REFRESH_GRANT_TYPE = "refresh_token".freeze
     # Buffer time in seconds to account for clock skew and network latency
     EXPIRATION_BUFFER = 30
+    # The message raised when the token endpoint describes no reason for the failure
+    DEFAULT_ERROR_MESSAGE = "Token refresh failed".freeze
 
     # The OAuth 2.0 client ID
     # @api public
@@ -130,23 +129,35 @@ module X
 
     private
 
+    # The client for the token endpoint
+    # @api private
+    # @return [SimpleOAuth::OAuth2::Client] the OAuth 2.0 client
+    def oauth2_client
+      SimpleOAuth::OAuth2::Client.new(client_id:, client_secret:, token_endpoint: token_endpoint)
+    end
+
+    # The URL of the token endpoint
+    # @api private
+    # @return [String] the token endpoint URL
+    def token_endpoint
+      "https://#{TOKEN_HOST}#{TOKEN_PATH}"
+    end
+
     # Send the token refresh request
     # @api private
     # @return [Net::HTTPResponse] the HTTP response
     def send_token_request
-      request = build_token_request
-      connection.perform(request: request)
+      connection.perform(request: build_token_request)
     end
 
     # Build the token refresh request
     # @api private
     # @return [Net::HTTP::Post] the POST request
     def build_token_request
-      uri = URI::HTTPS.build(host: TOKEN_HOST, path: TOKEN_PATH)
-      request = Net::HTTP::Post.new(uri)
-      request["Content-Type"] = "application/x-www-form-urlencoded"
-      request["Authorization"] = "Basic #{Base64.strict_encode64("#{client_id}:#{client_secret}")}"
-      request.body = URI.encode_www_form(grant_type: REFRESH_GRANT_TYPE, refresh_token: refresh_token)
+      token_request = oauth2_client.refresh_token_request(refresh_token:)
+      request = Net::HTTP::Post.new(URI(token_request.url))
+      token_request.headers.each { |name, value| request[name] = value }
+      request.body = token_request.body
       request
     end
 
@@ -156,24 +167,21 @@ module X
     # @return [Hash{String => Object}] the parsed response body
     # @raise [Error] if the response indicates an error
     def handle_token_response(response)
-      body = JSON.parse(response.body)
-    rescue JSON::ParserError
-      raise Error, "Token refresh failed"
-    else
-      raise Error, body["error_description"] || body["error"] || "Token refresh failed" unless response.is_a?(Net::HTTPSuccess)
-
-      update_tokens(body)
-      body
+      token = SimpleOAuth::OAuth2::Token.from_response(status: response.code, body: response.body)
+      update_tokens(token)
+      token.params
+    rescue SimpleOAuth::OAuth2::Error => e
+      raise Error, e.description || e.code || DEFAULT_ERROR_MESSAGE
     end
 
     # Update tokens from the response
     # @api private
-    # @param token_response [Hash{String => Object}] the token response
+    # @param token [SimpleOAuth::OAuth2::Token] the token the endpoint returned
     # @return [void]
-    def update_tokens(token_response)
-      @access_token = token_response.fetch("access_token")
-      @refresh_token = token_response.fetch("refresh_token") if token_response.key?("refresh_token")
-      @expires_at = Time.now + token_response.fetch("expires_in") if token_response.key?("expires_in")
+    def update_tokens(token)
+      @access_token = token.access_token
+      @refresh_token = token.refresh_token if token.refresh_token
+      @expires_at = token.expires_at if token.expires_at
     end
   end
 end

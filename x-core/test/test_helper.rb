@@ -6,6 +6,7 @@ unless $PROGRAM_NAME.include?("mutant")
   SimpleCov.start "strict"
 end
 
+require "securerandom"
 require "minitest/autorun"
 require "minitest/mock"
 require "mutant/minitest/coverage"
@@ -41,13 +42,14 @@ def test_oauth2_credentials
   }
 end
 
-def test_oauth_params
-  {
-    "oauth_consumer_key" => TEST_API_KEY,
-    "oauth_nonce" => TEST_OAUTH_NONCE,
-    "oauth_signature_method" => X::OAuthAuthenticator::OAUTH_SIGNATURE_METHOD,
-    "oauth_timestamp" => TEST_OAUTH_TIMESTAMP,
-    "oauth_token" => TEST_ACCESS_TOKEN,
-    "oauth_version" => X::OAuthAuthenticator::OAUTH_VERSION
-  }
+# Fix the nonce and the timestamp that OAuth headers are signed with, so signatures are deterministic
+def with_fixed_oauth_params(nonce: TEST_OAUTH_NONCE, time: Time.utc(1983, 11, 24), &block)
+  SecureRandom.stub(:hex, nonce) do
+    Time.stub(:now, time, &block)
+  end
+end
+
+# Build a GET request for the given URL
+def get_request(url = "https://example.com/")
+  Net::HTTP::Get.new(URI(url))
 end

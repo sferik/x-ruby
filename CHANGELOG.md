@@ -26,9 +26,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Wrap `EOFError`, `SocketError`, `Net::WriteTimeout`, `Errno::ETIMEDOUT`, and `Errno::EHOSTUNREACH` in `NetworkError`
 * Stop following redirects after exactly `max_redirects` hops instead of one more
 * Raise `KeyError` from `MediaUploader.chunked_upload` and `MediaUploader.await_processing` when the media has no `"id"`, instead of requesting a URL with an empty ID
+* Sign OAuth 1.0a requests with the [simple_oauth](https://github.com/laserlemon/simple_oauth) gem, in place of the signing code `X::OAuthAuthenticator` carried; it keeps the same credentials and produces the same header
+* Build and parse the OAuth 2.0 token refresh with simple_oauth, in place of the request and response handling `X::OAuth2Authenticator` carried; it sends the same request and still returns the token response and raises `X::Error`
+
+### Removed
+* Remove `X::OAuthAuthenticator::OAUTH_SIGNATURE_ALGORITHM`, which named the digest of the signing code that is gone
+* Remove `X::OAuth2Authenticator::REFRESH_GRANT_TYPE`, which named the grant type simple_oauth now sends
+* Remove the `base64` dependency from `x-core`, which encodes no Base64 of its own now that simple_oauth builds the Basic credentials
 
 ### Fixed
 * Send the authenticator on every redirected request, not only the first
+* Sign a form-encoded request body, which OAuth 1.0a requires and the signature left out, so such a request no longer fails to authenticate
+* Sign a query parameter that repeats once per value, rather than signing only one of the values
+* Sign the normalized URL, so a request to a host with no path signs the `/` the server sees
+* Form-encode the client credentials before Basic authentication on token refresh, as RFC 6749 Section 2.3.1 requires, so a client ID or secret containing a reserved character authenticates
 
 ## [0.19.0] - 2026-03-01
 * Add streaming support for filtered stream and volume stream endpoints

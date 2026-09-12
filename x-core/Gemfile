@@ -3,6 +3,7 @@ source "https://rubygems.org"
 # Specify the gem's dependencies in x-core.gemspec
 gemspec
 
+gem "base64", ">= 0.2"
 gem "minitest", ">= 6"
 gem "minitest-mock", ">= 5.27"
 gem "mutant-minitest", ">= 0.14.1"

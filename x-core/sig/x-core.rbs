@@ -19,7 +19,7 @@ module X
   class OAuthAuthenticator < Authenticator
     OAUTH_VERSION: String
     OAUTH_SIGNATURE_METHOD: String
-    OAUTH_SIGNATURE_ALGORITHM: String
+    FORM_CONTENT_TYPE: String
 
     attr_accessor api_key: String
     attr_accessor api_key_secret: String
@@ -29,17 +29,10 @@ module X
     def header: (Net::HTTPRequest request) -> Hash[String, String]
 
     private
-    def parse_request: (Net::HTTPRequest request) -> [String, String, Hash[String, String]]
-    def parse_query_params: (String query_string) -> Hash[String, String]
-    def uri_without_query: (URI::Generic uri) -> String
-    def build_oauth_header: (String method, String url, Hash[String, String] query_params) -> String
-    def default_oauth_params: -> Hash[String, String]
-    def generate_signature: (String method, String url, Hash[String, String] params) -> String
-    def hmac_signature: (String base_string) -> String
-    def signature_base_string: (String method, String url, Hash[String, String] params) -> String
-    def signing_key: -> String
-    def format_oauth_header: (Hash[String, String] params) -> String
-    def escape: (String value) -> String
+    def credentials: -> Hash[Symbol, String]
+    def form_params: (Net::HTTPRequest request) -> Array[[String, String]]
+    def form_body: (Net::HTTPRequest request) -> String
+    def form_encoded?: (Net::HTTPRequest request) -> bool
   end
 
   class Error < StandardError
@@ -223,8 +216,8 @@ module X
   class OAuth2Authenticator < Authenticator
     TOKEN_PATH: String
     TOKEN_HOST: String
-    REFRESH_GRANT_TYPE: String
     EXPIRATION_BUFFER: Integer
+    DEFAULT_ERROR_MESSAGE: String
 
     attr_accessor client_id: String
     attr_accessor client_secret: String
@@ -239,10 +232,12 @@ module X
     def refresh_token!: -> Hash[String, untyped]
 
     private
+    def oauth2_client: -> SimpleOAuth::OAuth2::Client
+    def token_endpoint: -> String
     def send_token_request: -> Net::HTTPResponse
     def build_token_request: -> Net::HTTP::Post
     def handle_token_response: (Net::HTTPResponse response) -> Hash[String, untyped]
-    def update_tokens: (Hash[String, untyped] token_response) -> void
+    def update_tokens: (SimpleOAuth::OAuth2::Token token) -> void
   end
 
   module ClientCredentials

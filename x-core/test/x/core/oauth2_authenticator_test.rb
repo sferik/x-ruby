@@ -1,3 +1,4 @@
+require "base64"
 require_relative "../../test_helper"
 
 module X
@@ -179,6 +180,16 @@ module X
       authenticator.refresh_token!
 
       assert_operator authenticator.expires_at, :>=, before_refresh + 7200
+    end
+
+    def test_refresh_token_keeps_expires_at_when_no_lifetime_is_returned
+      expires_at = Time.now + 3600
+      authenticator = OAuth2Authenticator.new(**test_oauth2_credentials, expires_at: expires_at)
+      stub_request(:post, TOKEN_URL).to_return(status: 200, body: {access_token: "new"}.to_json)
+
+      authenticator.refresh_token!
+
+      assert_equal expires_at, authenticator.expires_at
     end
 
     def test_refresh_token_keeps_old_refresh_token_when_not_returned

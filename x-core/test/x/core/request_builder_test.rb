@@ -14,9 +14,9 @@ module X
 
     def test_build_get_request
       expected = "OAuth oauth_consumer_key=\"TEST_API_KEY\", oauth_nonce=\"TEST_OAUTH_NONCE\", " \
-                 "oauth_signature=\"mnm1SUSsJ0X4aBwAAkwpsTf01gg%3D\", oauth_signature_method=\"HMAC-SHA1\", " \
+                 "oauth_signature=\"YF2HnkQuY39Db8GywIJy%2BUfFxnc%3D\", oauth_signature_method=\"HMAC-SHA1\", " \
                  "oauth_timestamp=\"438480000\", oauth_token=\"TEST_ACCESS_TOKEN\", oauth_version=\"1.0\""
-      @authenticator.stub :default_oauth_params, test_oauth_params do
+      with_fixed_oauth_params do
         request = @request_builder.build(http_method: :get, uri: @uri, authenticator: @authenticator)
 
         assert_equal "GET", request.method
@@ -28,10 +28,10 @@ module X
 
     def test_build_post_request
       expected = "OAuth oauth_consumer_key=\"TEST_API_KEY\", oauth_nonce=\"TEST_OAUTH_NONCE\", " \
-                 "oauth_signature=\"pcXcvPVpQINrqI3H3lCg8N1ayG0%3D\", oauth_signature_method=\"HMAC-SHA1\", " \
+                 "oauth_signature=\"5TTQPQ7SqAxR74YSGbm%2FCmuts2I%3D\", oauth_signature_method=\"HMAC-SHA1\", " \
                  "oauth_timestamp=\"438480000\", oauth_token=\"TEST_ACCESS_TOKEN\", oauth_version=\"1.0\""
 
-      @authenticator.stub :default_oauth_params, test_oauth_params do
+      with_fixed_oauth_params do
         request = @request_builder.build(http_method: :post, uri: @uri, body: "{}", authenticator: @authenticator)
 
         assert_equal "POST", request.method

@@ -28,7 +28,7 @@ The `x` gem is a thin meta-gem that combines three gems, which are released from
 
 | Gem | What it does | Runtime dependencies |
 | --- | --- | --- |
-| [`x-core`](x-core) | HTTP: authentication, requests, redirects, errors, rate limits, and streaming | `base64` |
+| [`x-core`](x-core) | HTTP: authentication, requests, redirects, errors, rate limits, and streaming | `simple_oauth` |
 | [`x-media`](x-media) | Uploads: images, GIFs, videos, and subtitles, in chunks when large, plus profile images and banners | `x-core` |
 | [`x-objects`](x-objects) | Resources: `User`, `Post`, `List`, `DirectMessage`, `Space`, `Media`, `Poll`, `Place`, and cursors | none |
 
@@ -184,7 +184,7 @@ See other common usage [examples](https://github.com/sferik/x-ruby/tree/main/exa
 
 ## History and Philosophy
 
-This library is a rewrite of the [Twitter Ruby library](https://github.com/sferik/twitter). Over 16 years of development, that library ballooned to over 3,000 lines of code (plus 7,500 lines of tests), not counting dependencies. The HTTP layer of this library, `x-core`, is less than 1,000 lines of code (plus 1,500 test lines), and the media uploads in `x-media` and the object layer in `x-objects` are each smaller still. Neither depends on anything outside the Ruby standard library, apart from the `base64` gem. That doesn’t mean new features won’t be added over time, but the benefits of more code must be weighed against the benefits of less:
+This library is a rewrite of the [Twitter Ruby library](https://github.com/sferik/twitter). Over 16 years of development, that library ballooned to over 3,000 lines of code (plus 7,500 lines of tests), not counting dependencies. The HTTP layer of this library, `x-core`, is less than 1,000 lines of code (plus 1,500 test lines), and the media uploads in `x-media` and the object layer in `x-objects` are each smaller still. Neither depends on anything outside the Ruby standard library, apart from the `simple_oauth` gem, which signs OAuth 1.0a requests and builds OAuth 2.0 ones, and which has no dependencies of its own. That doesn’t mean new features won’t be added over time, but the benefits of more code must be weighed against the benefits of less:
 
 * Less code is easier to maintain.
 * Less code means fewer bugs.

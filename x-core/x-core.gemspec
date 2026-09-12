@@ -30,5 +30,5 @@ Gem::Specification.new do |spec|
     "LICENSE.txt"
   ]
   spec.require_paths = ["lib"]
-  spec.add_dependency("base64", ">= 0.2")
+  spec.add_dependency("simple_oauth", "~> 1.0")
 end
