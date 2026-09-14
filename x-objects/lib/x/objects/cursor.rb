@@ -161,7 +161,7 @@ module X
       return if page_params.nil?
 
       body = client.get(Objects::Utils.path(path, page_params), **Objects::Utils::JSON_CLASSES)
-      Page.new(items: klass.collection_from_response(body, client:), meta: body.to_h["meta"].to_h)
+      Page.new(items: klass.collection_from_response(body, client:, hydrated: true), meta: body.to_h["meta"].to_h)
     end
 
     # Build the query parameters for a page, including the previous page token

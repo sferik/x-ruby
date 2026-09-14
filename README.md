@@ -32,7 +32,7 @@ The `x` gem is a thin meta-gem that combines three gems, which are released from
 | [`x-media`](x-media) | Uploads: images, GIFs, videos, and subtitles, in chunks when large, plus profile images and banners | `x-core` |
 | [`x-objects`](x-objects) | Resources: `User`, `Post`, `List`, `DirectMessage`, `Space`, `Media`, `Poll`, `Place`, and cursors | none |
 
-`require "x"` loads `x-core` and `x-objects`, and mixes the object methods (`find_user`, `find_posts`, `search`, …) into `X::Client`. Media uploads are loaded on demand with `require "x/media"`. If you only want raw JSON, depend on `x-core` alone. If you want the objects with your own HTTP client, depend on `x-objects` alone.
+`require "x"` loads `x-core` and `x-objects`, and mixes the object methods (`find_user`, `find_posts`, `search`, …) into `X::Client`. Any other request can return objects too, given a resource class as its `object_class`. Media uploads are loaded on demand with `require "x/media"`. If you only want raw JSON, depend on `x-core` alone. If you want the objects with your own HTTP client, depend on `x-objects` alone.
 
 ## Usage
 
@@ -65,6 +65,16 @@ user.followers_count                   # => 12345
 post = x_client.find_post(1234567890)  # X::Post
 post.text
 post.created_at                        # => 2026-09-11 12:00:00 UTC
+```
+
+**Any endpoint.** For an endpoint without a method, pass a resource class as the `object_class` of a request. A response that holds one resource comes back as an object, and one that holds a list comes back as an array of the page you requested. The object holds only the fields you asked for, so `hydrate` fetches the rest.
+
+```ruby
+user = x_client.get("users/by/username/sferik", object_class: X::User)
+user.followers_count                   # => nil, since the request didn't ask for it
+user.hydrate.followers_count           # => 12345
+
+x_client.get("users/#{user.id}/blocking", object_class: X::User) # => [#<X::User ...>, ...]
 ```
 
 **Identity.** Resources with the same class and ID are equal (`==`, `eql?`, and `hash`), even when they come from different requests.

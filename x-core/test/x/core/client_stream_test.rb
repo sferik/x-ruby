@@ -3,6 +3,8 @@ require_relative "../../test_helper"
 
 module X
   class ClientStreamTest < Minitest::Test
+    include StreamHelpers
+
     cover Client
 
     def setup
@@ -88,39 +90,6 @@ module X
       end
 
       assert_equal URI("https://api.twitter.com/2/tweets/search/stream"), request.uri
-    end
-
-    private
-
-    def stream_and_collect(endpoint, client: @client, **options)
-      results = []
-      client.stream(endpoint, **options) { |json| results << json }
-      results
-    end
-
-    def with_stubbed_stream(chunks:, client: @client, &test_block)
-      mock_response = mock_streaming_response(chunks:)
-      connection = client.instance_variable_get(:@connection)
-      connection.stub(:perform_stream, ->(**_, &block) { block.call(mock_response) }, &test_block)
-    end
-
-    def with_stream_request(mock_response, client: @client, &test_block)
-      captured_request = nil
-      connection = client.instance_variable_get(:@connection)
-      connection.stub(:perform_stream, lambda { |request:, &block|
-        captured_request = request
-        block.call(mock_response)
-      }, &test_block)
-      captured_request
-    end
-
-    def mock_streaming_response(chunks:)
-      response = Minitest::Mock.new
-      response.expect(:is_a?, true, [Net::HTTPSuccess])
-      response.expect(:read_body, nil) do |&block|
-        chunks.each { |chunk| block.call(chunk) }
-      end
-      response
     end
   end
 end

@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Add `X::Cursor`, an `Enumerable` collection that requests the maximum page size, fetches pages lazily, caches them, and offers `refresh` and `prefetch`
 * Look up users and posts by ID in parallel batches of 100 with `X::User.find_all` and `X::Post.find_all`
 * Add `find_user`, `find_users`, `me`, `find_post`, `find_posts`, `search`, `search_all`, `create_post`, `delete_post`, `find_list`, `find_space`, `direct_messages`, `create_direct_message`, `follow`, `unfollow`, `like`, `unlike`, `repost`, and `unrepost` to `X::Client`
+* Pass a resource class, such as `X::User`, as the `object_class` of any request to build objects from the response, or an array of them from a list; a client passes the parsed body and itself to any `object_class` that responds to `from_response`, and the objects it builds hydrate to the full resource, since a request may have asked for only some fields
 * Look up a user by identifier when given an Integer and by username when given a String, so an account whose username is all digits is found by name
 * Name the interface after posts rather than tweets, including `post_count`, `pinned_post_id`, `most_recent_post_id`, `edit_history_post_ids`, `note_post`, and `repost_count`; the tweet-named methods, such as `create_tweet`, `tweets`, and `retweet_count`, remain as aliases
 * Add `inspect` to `Client` and the authenticators that never reveals credentials

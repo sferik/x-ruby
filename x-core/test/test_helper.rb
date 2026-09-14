@@ -53,3 +53,43 @@ end
 def get_request(url = "https://example.com/")
   Net::HTTP::Get.new(URI(url))
 end
+
+# A class that builds objects from a whole response, as the object layer's resources do
+class ResponseBuilder
+  # Return what it was given, so a test can see the body and the client
+  def self.from_response(body, client:) = {body:, client:}
+end
+
+# Stub a client's streaming connection and collect what it yields
+module StreamHelpers
+  def stream_and_collect(endpoint, client: @client, **options)
+    results = []
+    client.stream(endpoint, **options) { |json| results << json }
+    results
+  end
+
+  def with_stubbed_stream(chunks:, client: @client, &test_block)
+    mock_response = mock_streaming_response(chunks:)
+    connection = client.instance_variable_get(:@connection)
+    connection.stub(:perform_stream, ->(**_, &block) { block.call(mock_response) }, &test_block)
+  end
+
+  def with_stream_request(mock_response, client: @client, &test_block)
+    captured_request = nil
+    connection = client.instance_variable_get(:@connection)
+    connection.stub(:perform_stream, lambda { |request:, &block|
+      captured_request = request
+      block.call(mock_response)
+    }, &test_block)
+    captured_request
+  end
+
+  def mock_streaming_response(chunks:)
+    response = Minitest::Mock.new
+    response.expect(:is_a?, true, [Net::HTTPSuccess])
+    response.expect(:read_body, nil) do |&block|
+      chunks.each { |chunk| block.call(chunk) }
+    end
+    response
+  end
+end

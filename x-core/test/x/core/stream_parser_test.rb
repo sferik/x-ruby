@@ -85,6 +85,14 @@ module X
       assert_kind_of Set, results[0]["ids"]
     end
 
+    def test_process_builds_each_document_with_a_response_builder
+      results = process_and_collect(chunks: ["{\"data\":{\"id\":\"1\"}}\r\n{\"data\":{\"id\":\"2\"}}"],
+        object_class: ResponseBuilder, client: :client)
+
+      assert_equal [{"data" => {"id" => "1"}}, {"data" => {"id" => "2"}}], results.map { |built| built[:body] }
+      assert_equal %i[client client], results.map { |built| built[:client] }
+    end
+
     def test_process_remaining_strips_trailing_whitespace
       assert_equal 1, process_and_collect(chunks: ["{\"data\":{\"id\":\"1\"}}\r\n\r"]).length
     end

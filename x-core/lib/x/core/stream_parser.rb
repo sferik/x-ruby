@@ -13,23 +13,26 @@ module X
     #
     # @api public
     # @param response [Net::HTTPResponse] the HTTP response to stream
-    # @param response_parser [ResponseParser] the response parser for error handling
+    # @param response_parser [ResponseParser] the response parser for errors and decoding
     # @param array_class [Class, nil] the class for parsing JSON arrays
-    # @param object_class [Class, nil] the class for parsing JSON objects
-    # @yield [Hash, Array] each parsed JSON object from the stream
+    # @param object_class [Class, nil] the class for parsing JSON objects, or a class that builds objects from
+    #   each whole document (see {ResponseParser#decode})
+    # @param client [Client, nil] the client that made the request
+    # @yield [Object] each decoded JSON document from the stream
     # @return [void]
     # @raise [HTTPError] if the response is not successful
     # @example Process a streaming response
     #   handler.process(response: response, response_parser: parser) { |json| puts json }
-    def process(response:, response_parser:, array_class: nil, object_class: nil, &block)
+    def process(response:, response_parser:, array_class: nil, object_class: nil, client: nil, &block)
       response_parser.parse(response:) unless response.is_a?(Net::HTTPSuccess)
 
+      decode = ->(line) { response_parser.decode(line, array_class:, object_class:, client:) }
       buffer = +""
       response.read_body do |chunk|
         buffer << chunk
-        process_buffer(buffer:, array_class:, object_class:, &block)
+        process_buffer(buffer:, decode:, &block)
       end
-      process_remaining(buffer:, array_class:, object_class:, &block)
+      process_remaining(buffer:, decode:, &block)
     end
 
     private
@@ -37,39 +40,36 @@ module X
     # Process complete lines from the buffer
     # @api private
     # @param buffer [String] the accumulated data buffer
-    # @param array_class [Class, nil] the class for parsing JSON arrays
-    # @param object_class [Class, nil] the class for parsing JSON objects
-    # @yield [Hash, Array] each parsed JSON object
+    # @param decode [Proc] decodes a line of JSON
+    # @yield [Object] each decoded JSON document
     # @return [void]
-    def process_buffer(buffer:, array_class:, object_class:, &)
+    def process_buffer(buffer:, decode:, &)
       while (line_end = buffer.index(LINE_DELIMITER))
         line = buffer.slice!(0, line_end) # : String
         buffer.delete_prefix!(LINE_DELIMITER)
-        yield_json(line:, array_class:, object_class:, &) unless line.empty?
+        yield_json(line:, decode:, &) unless line.empty?
       end
     end
 
     # Process any remaining data after the stream ends
     # @api private
     # @param buffer [String] the remaining data buffer
-    # @param array_class [Class, nil] the class for parsing JSON arrays
-    # @param object_class [Class, nil] the class for parsing JSON objects
-    # @yield [Hash, Array] the parsed JSON object
+    # @param decode [Proc] decodes a line of JSON
+    # @yield [Object] the decoded JSON document
     # @return [void]
-    def process_remaining(buffer:, array_class:, object_class:, &)
+    def process_remaining(buffer:, decode:, &)
       buffer.strip!
-      yield_json(line: buffer, array_class:, object_class:, &) unless buffer.empty?
+      yield_json(line: buffer, decode:, &) unless buffer.empty?
     end
 
-    # Parse a line as JSON and yield the result
+    # Decode a line of JSON and yield the result
     # @api private
-    # @param line [String] the JSON line to parse
-    # @param array_class [Class, nil] the class for parsing JSON arrays
-    # @param object_class [Class, nil] the class for parsing JSON objects
-    # @yield [Hash, Array] the parsed JSON object
+    # @param line [String] the JSON line to decode
+    # @param decode [Proc] decodes a line of JSON
+    # @yield [Object] the decoded JSON document
     # @return [void]
-    def yield_json(line:, array_class:, object_class:)
-      yield JSON.parse(line, array_class:, object_class:)
+    def yield_json(line:, decode:)
+      yield decode.call(line)
     end
   end
 end

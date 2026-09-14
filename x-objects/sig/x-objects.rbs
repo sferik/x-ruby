@@ -79,8 +79,9 @@ module X
       def find_all: (Array[id] ids, client: _Client, **untyped params) -> Array[R]
       def lookup: (String path, client: _Client, **untyped params) -> R?
       def lookup_all: (String path, client: _Client, **untyped params) -> Array[R]
-      def from_response: (body body, client: _Client?, ?hydrated: bool) -> R?
-      def collection_from_response: (body body, client: _Client?) -> Array[R]
+      def from_response: (body body, client: _Client?, ?hydrated: bool) -> (R | Array[R])?
+      def resource_from_response: (body body, client: _Client?, ?hydrated: bool) -> R?
+      def collection_from_response: (body body, client: _Client?, ?hydrated: bool) -> Array[R]
     end
 
     # The instance-side hydration of a concrete resource class, typed with that class
@@ -137,8 +138,9 @@ module X
       def self.find_all: (Array[id] ids, client: _Client, **untyped params) -> Array[Resource]
       def self.lookup: (String path, client: _Client, **untyped params) -> Resource?
       def self.lookup_all: (String path, client: _Client, **untyped params) -> Array[Resource]
-      def self.from_response: (body body, client: _Client?, ?hydrated: bool) -> Resource?
-      def self.collection_from_response: (body body, client: _Client?) -> Array[Resource]
+      def self.from_response: (body body, client: _Client?, ?hydrated: bool) -> (Resource | Array[Resource])?
+      def self.resource_from_response: (body body, client: _Client?, ?hydrated: bool) -> Resource?
+      def self.collection_from_response: (body body, client: _Client?, ?hydrated: bool) -> Array[Resource]
       private def self.get: (String path, client: _Client, params: params) -> body
 
       def initialize: (Hash[untyped, untyped] attrs, ?client: _Client?, ?includes: Includes, ?hydrated: bool) -> void

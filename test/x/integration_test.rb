@@ -23,12 +23,46 @@ module X
       assert_same @client, user.client
     end
 
-    def test_objects_ignore_default_object_class
+    def test_resource_class_as_object_class
+      stub_json(:get, "users/by/username/sferik", {data: {id: "7505382", username: "sferik", pinned_tweet_id: "1"},
+                                                   includes: {tweets: [{id: "1", text: "pinned"}]}})
+      user = @client.get("users/by/username/sferik", object_class: User)
+
+      assert_equal "sferik", user.username
+      assert_equal "pinned", user.pinned_post.text
+      assert_same @client, user.client
+    end
+
+    def test_resource_class_as_object_class_for_a_list
+      stub_json(:get, "users/by", {data: [{id: "7505382", username: "sferik"}, {id: "1", username: "gem"}]})
+
+      assert_equal %w[sferik gem], @client.get("users/by?usernames=sferik,gem", object_class: User).map(&:username)
+    end
+
+    def test_objects_ignore_the_default_classes
       client = Client.new(bearer_token: TEST_BEARER_TOKEN, default_object_class: OpenStruct, default_array_class: Set)
       stub_json(:get, "users/by/username/sferik", {data: {id: "7505382", username: "sferik"}})
 
       assert_equal "sferik", client.find_user("sferik").username
+      assert_equal "sferik", client.get("users/by/username/sferik", object_class: User).username
       assert_kind_of OpenStruct, client.get("users/by/username/sferik")
+    end
+
+    def test_a_requested_object_hydrates_to_the_full_resource
+      stub_json(:get, "users/by/username/sferik", {data: {id: "7505382", username: "sferik"}})
+      stub_json(:get, "users/7505382", {data: {id: "7505382", public_metrics: {followers_count: 12_345}}})
+      user = @client.get("users/by/username/sferik", object_class: User)
+
+      assert_nil user.followers_count
+      assert_equal 12_345, user.hydrate.followers_count
+      assert_requested :get, %r{users/7505382\?.*user\.fields=}, times: 1
+    end
+
+    def test_a_looked_up_object_is_already_hydrated
+      stub_json(:get, "users/by/username/sferik", {data: {id: "7505382", username: "sferik"}})
+      user = @client.find_user("sferik")
+
+      assert_same user, user.hydrate
     end
 
     def test_hydrate_memoizes_across_requests
@@ -41,11 +75,11 @@ module X
       assert_requested :get, %r{users/7505382}, times: 1
     end
 
-    def test_equality_across_requests
+    def test_equality_across_requests_and_entry_points
       stub_json(:get, "tweets/1", {data: {id: "1", author_id: "7505382"}})
       stub_json(:get, "users/by/username/sferik", {data: {id: "7505382", username: "sferik"}})
 
-      assert_equal @client.find_user("sferik"), @client.find_post(1).author
+      assert_equal @client.find_user("sferik"), @client.get("tweets/1", object_class: Post).author
     end
 
     def test_followers_paginate_with_maximum_page_size

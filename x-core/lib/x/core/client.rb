@@ -118,7 +118,7 @@ module X
     # Perform a GET request to the X API
     #
     # @api public
-    # @return [Hash, Array, nil] the parsed response body
+    # @return [Object, nil] the parsed response body, or what an object_class that responds to from_response builds
     # @example Get a user by username
     #   client.get("users/by/username/sferik")
     def get(endpoint, headers: {}, array_class: default_array_class, object_class: default_object_class)
@@ -128,7 +128,7 @@ module X
     # Perform a POST request to the X API
     #
     # @api public
-    # @return [Hash, Array, nil] the parsed response body
+    # @return [Object, nil] the parsed response body, or what an object_class that responds to from_response builds
     # @example Create a post
     #   client.post("tweets", '{"text": "Hello, World!"}')
     def post(endpoint, body = nil, headers: {}, array_class: default_array_class, object_class: default_object_class)
@@ -138,7 +138,7 @@ module X
     # Perform a PUT request to the X API
     #
     # @api public
-    # @return [Hash, Array, nil] the parsed response body
+    # @return [Object, nil] the parsed response body, or what an object_class that responds to from_response builds
     # @example Update a resource
     #   client.put("some/endpoint", '{"key": "value"}')
     def put(endpoint, body = nil, headers: {}, array_class: default_array_class, object_class: default_object_class)
@@ -148,7 +148,7 @@ module X
     # Perform a DELETE request to the X API
     #
     # @api public
-    # @return [Hash, Array, nil] the parsed response body
+    # @return [Object, nil] the parsed response body, or what an object_class that responds to from_response builds
     # @example Delete a post
     #   client.delete("tweets/1234567890")
     def delete(endpoint, headers: {}, array_class: default_array_class, object_class: default_object_class)
@@ -161,7 +161,8 @@ module X
     # @param endpoint [String] the streaming API endpoint
     # @param headers [Hash] additional headers for the request
     # @param array_class [Class] the class for parsing JSON arrays
-    # @param object_class [Class] the class for parsing JSON objects
+    # @param object_class [Class] the class for parsing JSON objects, or one that responds to from_response
+    #   and builds objects from the whole response (see {ResponseParser#decode})
     # @yield [Hash, Array] each parsed JSON object from the stream
     # @return [void]
     # @raise [HTTPError] if the response is not successful
@@ -171,7 +172,7 @@ module X
       uri = URI.join(base_url, endpoint)
       request = @request_builder.build(http_method: :get, uri:, headers:, authenticator:)
       @connection.perform_stream(request:) do |response|
-        @stream_parser.process(response:, response_parser: @response_parser, array_class:, object_class:, &block)
+        @stream_parser.process(response:, response_parser: @response_parser, array_class:, object_class:, client: self, &block)
       end
     end
 
@@ -189,13 +190,13 @@ module X
 
     # Execute an HTTP request to the X API
     # @api private
-    # @return [Hash, Array, nil] the parsed response body
+    # @return [Object, nil] the parsed response body, or what an object_class that responds to from_response builds
     def execute_request(http_method, endpoint, body: nil, headers: {}, array_class: default_array_class, object_class: default_object_class)
       uri = URI.join(base_url, endpoint)
       request = @request_builder.build(http_method:, uri:, body:, headers:, authenticator:)
       response = @connection.perform(request:)
       response = @redirect_handler.handle(response:, request:, base_url:, headers:, authenticator:)
-      @response_parser.parse(response:, array_class:, object_class:)
+      @response_parser.parse(response:, array_class:, object_class:, client: self)
     end
   end
 end

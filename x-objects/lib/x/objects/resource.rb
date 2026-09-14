@@ -140,7 +140,7 @@ module X
         # @example Fetch the authenticated user
         #   X::User.lookup("users/me", client: client)
         def lookup(path, client:, **params)
-          from_response(get(path, client:, params:), client:)
+          resource_from_response(get(path, client:, params:), client:, hydrated: true)
         end
 
         # Fetch a list of resources from an endpoint without paginating
@@ -153,7 +153,30 @@ module X
         # @example Fetch users by username
         #   X::User.lookup_all("users/by", client: client, usernames: ["sferik", "gem"])
         def lookup_all(path, client:, **params)
-          collection_from_response(get(path, client:, params:), client:)
+          collection_from_response(get(path, client:, params:), client:, hydrated: true)
+        end
+
+        # Build the resource or resources a response holds
+        #
+        # A response whose data is an object builds one resource, and one whose data is an array builds
+        # one for each element. A client calls this when a resource class is the object_class of a request.
+        #
+        # A response holds only the fields its request asked for, so what this builds is not hydrated
+        # unless told otherwise, and hydrate fetches the full resource.
+        #
+        # @api public
+        # @param body [Hash, nil] the parsed response body
+        # @param client [Object] the client used to make the request
+        # @param hydrated [Boolean] whether the response holds every field the object layer requests
+        # @return [Resource, Array<Resource>, nil] the resource or resources, or nil if the response has no data
+        # @example Build a user from a response
+        #   X::User.from_response({"data" => {"id" => "7505382"}}, client: client)
+        # @example Build users from a client request
+        #   client.get("users/by?usernames=sferik,gem", object_class: X::User)
+        def from_response(body, client:, hydrated: false)
+          return collection_from_response(body, client:, hydrated:) if body.to_h["data"].is_a?(Array)
+
+          resource_from_response(body, client:, hydrated:)
         end
 
         # Build a resource from a response with a single data object
@@ -161,11 +184,11 @@ module X
         # @api public
         # @param body [Hash, nil] the parsed response body
         # @param client [Object] the client used to make the request
-        # @param hydrated [Boolean] whether the resource holds every requested field
+        # @param hydrated [Boolean] whether the response holds every field the object layer requests
         # @return [Resource, nil] the resource or nil if the response has no data
         # @example Build a user from a response
-        #   X::User.from_response({"data" => {"id" => "7505382"}}, client: client)
-        def from_response(body, client:, hydrated: true)
+        #   X::User.resource_from_response({"data" => {"id" => "7505382"}}, client: client)
+        def resource_from_response(body, client:, hydrated: false)
           body = body.to_h
           data = body["data"]
           return unless data.is_a?(Hash)
@@ -178,15 +201,16 @@ module X
         # @api public
         # @param body [Hash, nil] the parsed response body
         # @param client [Object] the client used to make the request
+        # @param hydrated [Boolean] whether the response holds every field the object layer requests
         # @return [Array<Resource>] the resources
         # @example Build users from a response
         #   X::User.collection_from_response({"data" => [{"id" => "7505382"}]}, client: client)
-        def collection_from_response(body, client:)
+        def collection_from_response(body, client:, hydrated: false)
           body = body.to_h
           data = body["data"]
           data = nil unless data.is_a?(Array)
           includes = Includes.new(body["includes"])
-          Array(data).map { |attrs| new(attrs, client:, includes:, hydrated: true) }.freeze
+          Array(data).map { |attrs| new(attrs, client:, includes:, hydrated:) }.freeze
         end
 
         private

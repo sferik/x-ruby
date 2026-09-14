@@ -50,6 +50,10 @@ module X
       assert_equal %w[1000 1000 1000], @client.queries.map { |query| query["max_results"] }
     end
 
+    def test_items_are_hydrated
+      assert(@cursor.all?(&:hydrated?))
+    end
+
     def test_each_returns_self
       assert_same @cursor, @cursor.each { |_user| nil }
     end

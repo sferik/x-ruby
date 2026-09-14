@@ -13,8 +13,26 @@ module X
         assert_nil User.from_response(nil, client: @client)
       end
 
-      def test_from_response_with_array_data
-        assert_nil User.from_response({"data" => [{"id" => "1"}]}, client: @client)
+      def test_from_response_with_array_data_builds_each_resource
+        users = User.from_response({"data" => [{"id" => "1"}, {"id" => "2"}]}, client: @client)
+
+        assert_equal %w[1 2], users.map(&:id)
+        assert_predicate users, :frozen?
+        assert_same @client, users.first.client
+      end
+
+      def test_from_response_accepts_array_subclasses
+        data = Class.new(Array).new([{"id" => "1"}])
+
+        assert_equal ["1"], User.from_response({"data" => data}, client: @client).map(&:id)
+      end
+
+      def test_resource_from_response_with_array_data
+        assert_nil User.resource_from_response({"data" => [{"id" => "1"}]}, client: @client)
+      end
+
+      def test_resource_from_response_is_not_hydrated_by_default
+        refute_predicate User.resource_from_response({"data" => {"id" => "1"}}, client: @client), :hydrated?
       end
 
       def test_from_response_with_includes
@@ -22,12 +40,17 @@ module X
         user = User.from_response(body, client: @client)
 
         assert_equal "hi", user.pinned_post.text
-        assert_predicate user, :hydrated?
         assert_same @client, user.client
       end
 
-      def test_from_response_not_hydrated
-        refute_predicate User.from_response({"data" => {"id" => "1"}}, client: @client, hydrated: false), :hydrated?
+      def test_from_response_is_not_hydrated_by_default
+        refute_predicate User.from_response({"data" => {"id" => "1"}}, client: @client), :hydrated?
+        refute User.from_response({"data" => [{"id" => "1"}]}, client: @client).any?(&:hydrated?)
+      end
+
+      def test_from_response_hydrated
+        assert_predicate User.from_response({"data" => {"id" => "1"}}, client: @client, hydrated: true), :hydrated?
+        assert User.from_response({"data" => [{"id" => "1"}]}, client: @client, hydrated: true).all?(&:hydrated?)
       end
 
       def test_collection_from_response
@@ -37,7 +60,13 @@ module X
         assert_equal %w[1 2], posts.map(&:id)
         assert_predicate posts, :frozen?
         assert_same @client, posts.first.client
-        assert(posts.all?(&:hydrated?))
+        refute(posts.any?(&:hydrated?))
+      end
+
+      def test_collection_from_response_hydrated
+        body = {"data" => [{"id" => "1"}, {"id" => "2"}]}
+
+        assert(Post.collection_from_response(body, client: @client, hydrated: true).all?(&:hydrated?))
       end
 
       def test_collection_from_response_shares_includes

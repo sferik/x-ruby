@@ -89,7 +89,7 @@ module X
       #   X::Post.create("Hello, World!", client: client)
       def create(text, client:, **params)
         body = client.post("tweets", JSON.generate({text:, **params}), **Objects::Utils::JSON_CLASSES)
-        from_response(body, client:, hydrated: false)
+        resource_from_response(body, client:)
       end
 
       # Delete a post as the authenticated user

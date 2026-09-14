@@ -41,6 +41,16 @@ X::Post.find_all(ids, client:)
 X::Post.search("ruby", client:)
 ```
 
+## Building objects from any response
+
+`from_response` builds a resource from a parsed response, or an array of them when its data is a list. `X::Client` from `x-core` calls it when a resource class is the `object_class` of a request, passing the parsed body and itself:
+
+```ruby
+user = client.get("users/by/username/sferik", object_class: X::User)
+```
+
+An object built this way is not hydrated, because the request may have asked for only some fields, so `hydrate` fetches the full resource. The lookups, batch lookups, and cursors in this gem request every field, so what they return is already hydrated.
+
 ## How it works
 
 * **Immutability.** Resources, pages, and cursors are frozen. Their attributes are deep-frozen copies of the response.
