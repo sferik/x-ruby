@@ -5,7 +5,7 @@ require "rubygems/version"
 module X
   # The current version of the X gem
   # @api public
-  VERSION = "0.19.0"
+  VERSION = "1.0.0"
 
   # The version as a Gem::Version, which compares one release with another
   #

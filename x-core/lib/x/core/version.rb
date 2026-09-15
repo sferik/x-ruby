@@ -8,7 +8,7 @@ module X
   module Core
     # The current version of the x-core gem
     # @api public
-    VERSION = "0.19.0"
+    VERSION = "1.0.0"
 
     # The version as a Gem::Version, which compares one release with another
     #
