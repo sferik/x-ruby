@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 `x-uploader` is released in lockstep with the other gems of the [x-ruby](https://github.com/sferik/x-ruby) repository, at one version across `x-core`, `x-uploader`, `x-objects`, and `x`. This file holds the changes to the uploads; [the changelog of the repository](https://github.com/sferik/x-ruby/blob/main/CHANGELOG.md) holds the changes to every gem.
 
-## [1.0.0] - 2026-09-20
+## [1.0.0] - 2026-09-25
 
 The first release of `x-uploader`, which 1.0.0 split out of the `x` gem. The entries below are the changes since `x` 0.19, the last release before the split; see [UPGRADING.md](https://github.com/sferik/x-ruby/blob/main/UPGRADING.md) for the changes that code written for 0.19 needs.
 

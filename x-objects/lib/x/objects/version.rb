@@ -6,7 +6,7 @@ module X
   # The object layer of the X gem
   module Objects
     # The current version of the x-objects gem
-    VERSION = "0.19.0"
+    VERSION = "1.0.0"
 
     # The version as a Gem::Version, which compares one release with another
     #
