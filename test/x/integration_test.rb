@@ -9,6 +9,11 @@ module X
       @client = Client.new(bearer_token: TEST_BEARER_TOKEN)
     end
 
+    def test_require_x_loads_the_uploaders
+      assert_respond_to Uploader::Media, :upload
+      assert_respond_to Uploader::Account, :update_profile_image
+    end
+
     def test_client_includes_objects_api
       assert_includes Client.ancestors, Objects::API
     end

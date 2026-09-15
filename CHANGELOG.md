@@ -14,17 +14,70 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Resolve references such as `post.author` and `post.replied_to` to included objects or ID stubs, sharing one object per resource within a response
 * Add `hydrate`, which fetches and memoizes the full resource, and `refresh`, which fetches it again
 * Add `X::Cursor`, an `Enumerable` collection that requests the maximum page size, fetches pages lazily, caches them, and offers `refresh` and `prefetch`
-* Look up users and posts by ID in parallel batches of 100 with `X::User.find_all` and `X::Post.find_all`
-* Add `find_user`, `find_users`, `me`, `find_post`, `find_posts`, `search`, `search_all`, `create_post`, `delete_post`, `find_list`, `find_space`, `direct_messages`, `create_direct_message`, `follow`, `unfollow`, `like`, `unlike`, `repost`, and `unrepost` to `X::Client`
+* Look up users and posts by ID in parallel batches of 100 with `X::User.find_all` and `X::Post.find_all`, asking for each ID once
+* Add `find_user`, `find_users`, `current_user`, `find_post`, `find_posts`, `search_posts`, `search_all_posts`, `create_post`, `delete_post`, `find_list`, `find_space`, `direct_messages`, `create_direct_message`, `follow`, `unfollow`, `like`, `unlike`, `repost`, and `unrepost` to `X::Client`; the finders have `find_tweet` aliases and `search` is short for `search_posts`
 * Pass a resource class, such as `X::User`, as the `object_class` of any request to build objects from the response, or an array of them from a list; a client passes the parsed body and itself to any `object_class` that responds to `from_response`, and the objects it builds hydrate to the full resource, since a request may have asked for only some fields
+* Pass query parameters to `get`, `post`, `put`, `delete`, and `stream` as `params:`, which drops nil values and joins arrays with commas, so callers no longer build query strings by hand
+* Encode a Hash passed as the body of `post` or `put` as JSON, and encode `form:` fields as a form body with the matching content type
+* Authenticate as an app when a client is given an `api_key` and `api_key_secret` without access tokens: `X::AppOnlyAuthenticator` fetches a bearer token with the client credentials grant on the first request and keeps it
+* Page an endpoint that names its page token differently with the `token_param:` of `X::Cursor`, and search users with `X::User.search` and `client.search_users`, which page with `next_token`
+* Request nothing but identifiers from a cursor with `ids`, as in `user.followers.ids`
+* Refer to a resource without a request with `X::User.from_id` and its equivalents, and tell such stubs and unexpanded references apart from expanded ones with `stub?`
+* Add `home_timeline`, `reposts_of_me`, `blocking`, and `muting` cursors to `X::User`
+* Add `block`, `unblock`, `mute`, and `unmute` to the actions of `X::User` and `X::Client`
+* Add `X::List.create`, `X::List.delete`, `list.add_member`, `list.remove_member`, and `list.delete`, with `create_list` and `delete_list` on the client
+* Add `X::DirectMessage.delete`, `message.delete`, and `delete_direct_message` on the client, and `message.peer`, the other participant of a one-to-one conversation
+* Make `current_user`, the memoized authenticated user, public on the client, in place of `me`, which made a request every call
+* Look up a mix of identifiers and usernames with `find_users`, which batches each kind separately instead of treating everything as a username, and returns the users in the order they were asked for
+* Look up a direct message with `find_direct_message`, many spaces with `find_spaces`, and the conversation with a user with `direct_messages_with`
+* Add `X::Community`, looked up with `find_community` and `find_community!`, searched with `search_communities`, referred to by `post.community`, and posted in with the `community:` of `create_post`
+* Shorten every client method named for direct messages with a `dm` alias: `find_dm`, `find_dm!`, `dms`, `dms_with`, `create_dm`, and `delete_dm`
+* Build the `reply` and `media` fields of a new post from the `reply_to:` and `media_ids:` of `create_post`
+* Describe uploaded media with alt text, through the `alt_text:` of `X::Uploader::Media.upload` or `X::Uploader::Metadata.add_alt_text`, and attach uploaded subtitles to a video with `X::Uploader::Metadata.add_subtitles`
+* Upload a GIF with a single frame as an image, since X fails to process it as a GIF, telling a still GIF from an animated one with `X::Uploader::Gif.animated?`
+* Request a page no larger than needed from `X::Cursor#first` and `X::Cursor#take`, raised to the endpoint's minimum, since the API bills each resource returned, and ask each page after the first for no more than the pages before it left
+* Check `list.member?` by scanning the smaller of a public list's members and the lists the user is on, comparing `member_count` with `listed_count`; a private list still scans its members
+* Check `follows?` with one lookup of `connection_status` when either user is the authenticated user, instead of scanning every user followed, and read that field with `X::User#connection_status`
+* Infer the media category of an upload from the file extension, and upload a video in chunks and wait for it to be processed, so `X::Uploader::Media.upload("cat.mp4", client:)` handles any file
+* Take the file path, content, or media as the positional argument of the `X::Uploader::Media`, `X::Uploader::Validator`, and `X::Uploader::Account` methods, with `client:` as a keyword, as the object layer does
+* Copy a client with some options changed with `X::Client#copy`, such as `client.copy(base_url: "https://api.x.com/1.1/")` for the v1.1 API or `client.copy(access_token: nil, access_token_secret: nil)` for an app-only client
+* Raise `X::ResourceNotFound`, an `X::Error`, from `current_user` and the new `find!`, `find_user!`, `find_post!`, `find_list!`, `find_space!`, and `find_direct_message!`, so a missing resource is an error a caller can rescue in one place
+* Replace the stubs among some resources with the full resources in parallel batches with `X::User.hydrate_all` and its equivalents
+* Accept a username with a leading at sign in `find_user`, `find_users`, and `X::User.find_all_by_username`
+* Add `X::DirectMessage#from?`, `X::Post#coordinates`, `permalink`, the x.com address of a post, user, list, or community, and `uri`, the same address as a `URI`
+* Accept the responses of `X::Uploader::Media.upload` directly as the `media_ids:` of `create_post`
+* Load `x-uploader` from `require "x"`, so `X::Uploader::Media` and `X::Uploader::Account` need no further require
+* Scan a cursor with nothing but identifiers with `stubs`, and check a relationship without fetching every page with `user.follows?` and `list.member?`
+* Resolve the posts a post or direct message refers to with `references`, and pair `liked_by` with `reposted_by` on `X::Post`
+* Add `X::Post#urls` and `X::Post#expanded_text`, the text with every shortened link replaced by the URL it stands for
 * Look up a user by identifier when given an Integer and by username when given a String, so an account whose username is all digits is found by name
 * Name the interface after posts rather than tweets, including `post_count`, `pinned_post_id`, `most_recent_post_id`, `edit_history_post_ids`, `note_post`, `referenced_posts`, and `repost_count`; the tweet-named methods, such as `create_tweet`, `tweets`, and `retweet_count`, remain as aliases
 * Add `inspect` to `Client` and the authenticators that never reveals credentials
 * Preserve custom headers passed to `get`, `post`, `put`, and `delete` across redirects
+* Count the posts that match a query with `X::Post.count` and `X::Post.count_all`, or by period with `X::Post.counts` and `X::Post.counts_all`, and on a client with `count_posts`, `count_all_posts`, `post_counts`, and `all_post_counts`, which have tweet-named aliases; a client that signs with OAuth 1.0a counts with a copy that authenticates as the app, since the counts endpoints refuse OAuth 1.0a
+* Report the partial errors of a successful response as `X::Problem` objects: `problems` on a resource and on each page of a cursor, a block given to a finder, which receives each problem, and `X::ResourceNotFound#problems`, whose first problem explains the message
+* Pass an `X::Response` to the `on_response` of a client after every request, and for each object a stream delivers, which counts the resources the response returned with `resource_counts` and reads its rate limits with `rate_limits` and `rate_limit`
+* Retry a request refused for a rate limit after the limit resets, up to `max_rate_limit_retries` times, which is 0 by default, for a limit that resets within `max_rate_limit_wait` seconds, which is 900 by default; a refusal that does not say when its limit resets waits a minute, doubling for each retry after
+* Authenticate as the app with `X::Client#app_only`, a copy of a client that signs with OAuth 1.0a, which fetches the app's bearer token once and reuses it
+* Stream with app-only authentication from a client that signs with OAuth 1.0a, since the stream endpoints refuse it
+* Reconnect a stream that ends or drops, backing off as X recommends, up to `max_stream_reconnects` times in a row, which is unlimited by default; a rate limit waits until it resets, or from a minute, doubling each attempt
+* Read a stream with its own `stream_read_timeout`, 20 seconds by default, the interval of the keep-alive X sends, so a stream that goes quiet reconnects rather than waiting for the timeout of an ordinary request
+* Report how many posts the app's project has read with `X::Usage.find` and `client.usage`, including its monthly cap and its usage by day and by app
+* Take the authenticated user's ID for actions from the prefix of an OAuth 1.0a access token, with `current_user_id`, instead of requesting `users/me`
 
 ### Changed
+* Split the object methods of the client into `X::Objects::API::Lookups` and `X::Objects::API::Actions`, which `X::Objects::API` includes together, and `X::Objects::API::Actions` into one module per kind of action: `Posts`, `Lists`, `DirectMessages`, `Relationships`, and `Engagement`
+* Raise `X::ResourceNotFound` instead of `KeyError` from `current_user` when the API returns no user
+* Read only the rate limits a response reports in full, with a limit, remaining requests, and reset time, so `X::TooManyRequests#retry_after` no longer raises `KeyError` for a response without a reset time
+* Return the identifiers of users, posts, lists, direct messages, communities, and polls as Integers, along with the attributes that refer to them, such as `author_id`, `owner_id`, and `participant_ids`; space and place identifiers, media keys, and `dm_conversation_id`, which are not numbers, remain Strings
+* Use the names the X API documentation gives: request `post.fields` and the `referenced_posts`, `edit_history_post_ids`, `pinned_post_id`, and `most_recent_post_id` expansions, and read `referenced_posts`, `edit_history_post_ids`, `note_post`, `pinned_post_id`, `most_recent_post_id`, `repost_count`, `post_count`, and included `posts`; the identifiers of referenced resources come with their expansions rather than as fields, and the authors of referenced posts are no longer expanded, since the documentation offers no expansion for them
+* Rename `X::User.me` to `X::User.current`, the request behind `current_user`
+* Rename `X::Objects::Actions`, the follow, block, mute, like, and repost methods of `X::User`, to `X::Objects::Relationships`, so it no longer shares a name with `X::Objects::API::Actions`
+* Raise `NotImplementedError` from `X::List.find_all`, since the API has no batch lookup of lists, instead of sending a request that fails
+* Take the recipient and text of a direct message as the positional arguments of `create_direct_message`, in place of `to:` and `text:`, since both are required
+* Derive the v1.1 client of `X::Uploader::Account` from the client it is given with `copy`, so it keeps the timeouts, proxy, and other settings
 * Rename `X::OAuthAuthenticator` to `X::OAuth1Authenticator`, beside `X::OAuth2Authenticator`; `X::OAuthAuthenticator` remains as an alias
-* Move the HTTP client into `x-core`, under `lib/x/core`, and the uploaders into `x-uploader`, under `lib/x/uploader`; `require "x/media_uploader"` and `require "x/account_uploader"` still work
+* Move the HTTP client into `x-core`, under `lib/x/core`, and the uploaders into `x-uploader`, under `lib/x/uploader`
 * Rename `X::MediaUploader` to `X::Uploader::Media`, `X::AccountUploader` to `X::Uploader::Account`, and `X::MediaUploadValidator` to `X::Uploader::Validator`, under an `X::Uploader` module that holds the gem's version, since `X::Media` is the media resource
 * Rename `upload_profile_image_binary` and `upload_profile_banner_binary` to `update_profile_image_binary` and `update_profile_banner_binary`, the binary forms of `update_profile_image` and `update_profile_banner`
 * Wrap `EOFError`, `SocketError`, `Net::WriteTimeout`, `Errno::ETIMEDOUT`, and `Errno::EHOSTUNREACH` in `NetworkError`
@@ -34,11 +87,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Build and parse the OAuth 2.0 token refresh with simple_oauth, in place of the request and response handling `X::OAuth2Authenticator` carried; it sends the same request and still returns the token response and raises `X::Error`
 
 ### Removed
+* Remove `require "x/media_uploader"` and `require "x/account_uploader"`; require `x`, `x/uploader/media`, or `x/uploader/account` instead
 * Remove `X::OAuthAuthenticator::OAUTH_SIGNATURE_ALGORITHM`, which named the digest of the signing code that is gone
 * Remove `X::OAuth2Authenticator::REFRESH_GRANT_TYPE`, which named the grant type simple_oauth now sends
 * Remove the `base64` dependency from `x-core`, which encodes no Base64 of its own now that simple_oauth builds the Basic credentials
 
 ### Fixed
+* Upload subtitles as `text/srt` in chunks, as the API requires, instead of as `application/x-subrip` in one request, which it rejects
 * Send the authenticator on every redirected request, not only the first
 * Sign a form-encoded request body, which OAuth 1.0a requires and the signature left out, so such a request no longer fails to authenticate
 * Sign a query parameter that repeats once per value, rather than signing only one of the values

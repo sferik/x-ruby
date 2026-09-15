@@ -1,4 +1,5 @@
 require "x/core"
+require "x/uploader"
 require "x/objects"
 require_relative "x/version"
 

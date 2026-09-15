@@ -3,6 +3,7 @@
 target :lib do
   signature "sig"
   signature "x-core/sig/x-core.rbs"
+  signature "x-uploader/sig/x-uploader.rbs"
   signature "x-objects/sig/x-objects.rbs"
   check "lib"
   library "forwardable"
