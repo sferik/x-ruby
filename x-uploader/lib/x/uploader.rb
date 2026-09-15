@@ -1,0 +1,5 @@
+require_relative "uploader/version"
+require_relative "uploader/account"
+require_relative "uploader/gif"
+require_relative "uploader/media"
+require_relative "uploader/metadata"

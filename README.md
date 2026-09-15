@@ -1,5 +1,5 @@
 [![x-core](https://github.com/sferik/x-ruby/actions/workflows/x-core.yml/badge.svg)](https://github.com/sferik/x-ruby/actions/workflows/x-core.yml)
-[![x-media](https://github.com/sferik/x-ruby/actions/workflows/x-media.yml/badge.svg)](https://github.com/sferik/x-ruby/actions/workflows/x-media.yml)
+[![x-uploader](https://github.com/sferik/x-ruby/actions/workflows/x-uploader.yml/badge.svg)](https://github.com/sferik/x-ruby/actions/workflows/x-uploader.yml)
 [![x-objects](https://github.com/sferik/x-ruby/actions/workflows/x-objects.yml/badge.svg)](https://github.com/sferik/x-ruby/actions/workflows/x-objects.yml)
 [![x](https://github.com/sferik/x-ruby/actions/workflows/x.yml/badge.svg)](https://github.com/sferik/x-ruby/actions/workflows/x.yml)
 [![linter](https://github.com/sferik/x-ruby/actions/workflows/lint.yml/badge.svg)](https://github.com/sferik/x-ruby/actions/workflows/lint.yml)
@@ -29,10 +29,10 @@ The `x` gem is a thin meta-gem that combines three gems, which are released from
 | Gem | What it does | Runtime dependencies |
 | --- | --- | --- |
 | [`x-core`](x-core) | HTTP: authentication, requests, redirects, errors, rate limits, and streaming | `simple_oauth` |
-| [`x-media`](x-media) | Uploads: images, GIFs, videos, and subtitles, in chunks when large, plus profile images and banners | `x-core` |
+| [`x-uploader`](x-uploader) | Uploads: images, GIFs, videos, and subtitles, in chunks when large, plus profile images and banners | `x-core` |
 | [`x-objects`](x-objects) | Resources: `User`, `Post`, `List`, `DirectMessage`, `Space`, `Media`, `Poll`, `Place`, and cursors | none |
 
-`require "x"` loads `x-core` and `x-objects`, and mixes the object methods (`find_user`, `find_posts`, `search`, …) into `X::Client`. Any other request can return objects too, given a resource class as its `object_class`. Media uploads are loaded on demand with `require "x/media"`. If you only want raw JSON, depend on `x-core` alone. If you want the objects with your own HTTP client, depend on `x-objects` alone.
+`require "x"` loads `x-core` and `x-objects`, and mixes the object methods (`find_user`, `find_posts`, `search`, …) into `X::Client`. Any other request can return objects too, given a resource class as its `object_class`. Media uploads are loaded on demand with `require "x/uploader"`. If you only want raw JSON, depend on `x-core` alone. If you want the objects with your own HTTP client, depend on `x-objects` alone.
 
 ## Usage
 
@@ -168,14 +168,14 @@ ads_client.get("accounts")
 ### Media
 
 ```ruby
-require "x/media"
+require "x/uploader"
 
-media = X::MediaUploader.upload(client: x_client, file_path: "cat.jpg", media_category: X::MediaUploader::TWEET_IMAGE)
+media = X::Uploader::Media.upload(client: x_client, file_path: "cat.jpg", media_category: X::Uploader::Media::TWEET_IMAGE)
 x_client.create_post("Look at this cat", media: {media_ids: [media["id"]]})
 
 # Large files are uploaded in parallel chunks
-video = X::MediaUploader.chunked_upload(client: x_client, file_path: "cat.mp4", media_category: X::MediaUploader::TWEET_VIDEO)
-X::MediaUploader.await_processing!(client: x_client, media: video)
+video = X::Uploader::Media.chunked_upload(client: x_client, file_path: "cat.mp4", media_category: X::Uploader::Media::TWEET_VIDEO)
+X::Uploader::Media.await_processing!(client: x_client, media: video)
 ```
 
 ### Streaming
@@ -194,7 +194,7 @@ See other common usage [examples](https://github.com/sferik/x-ruby/tree/main/exa
 
 ## History and Philosophy
 
-This library is a rewrite of the [Twitter Ruby library](https://github.com/sferik/twitter). Over 16 years of development, that library ballooned to over 3,000 lines of code (plus 7,500 lines of tests), not counting dependencies. The HTTP layer of this library, `x-core`, is less than 1,000 lines of code (plus 1,500 test lines), and the media uploads in `x-media` and the object layer in `x-objects` are each smaller still. Neither depends on anything outside the Ruby standard library, apart from the `simple_oauth` gem, which signs OAuth 1.0a requests and builds OAuth 2.0 ones, and which has no dependencies of its own. That doesn’t mean new features won’t be added over time, but the benefits of more code must be weighed against the benefits of less:
+This library is a rewrite of the [Twitter Ruby library](https://github.com/sferik/twitter). Over 16 years of development, that library ballooned to over 3,000 lines of code (plus 7,500 lines of tests), not counting dependencies. The HTTP layer of this library, `x-core`, is less than 1,000 lines of code (plus 1,500 test lines), and the media uploads in `x-uploader` and the object layer in `x-objects` are each smaller still. Neither depends on anything outside the Ruby standard library, apart from the `simple_oauth` gem, which signs OAuth 1.0a requests and builds OAuth 2.0 ones, and which has no dependencies of its own. That doesn’t mean new features won’t be added over time, but the benefits of more code must be weighed against the benefits of less:
 
 * Less code is easier to maintain.
 * Less code means fewer bugs.
@@ -267,7 +267,7 @@ Many thanks to our sponsors (listed in order of when they sponsored this project
 
        bin/setup
 
-   The root, `x-core`, `x-media`, and `x-objects` each have their own bundle, so `bundle update` in the root updates only the root bundle. To update them all:
+   The root, `x-core`, `x-uploader`, and `x-objects` each have their own bundle, so `bundle update` in the root updates only the root bundle. To update them all:
 
        bin/update
 
@@ -275,7 +275,7 @@ Many thanks to our sponsors (listed in order of when they sponsored this project
 
        bundle exec rake
 
-   Each of `x-core`, `x-media`, and `x-objects` has its own `Gemfile`, `Rakefile`, `Steepfile`, signatures, test suite, and mutation config, and can be checked on its own:
+   Each of `x-core`, `x-uploader`, and `x-objects` has its own `Gemfile`, `Rakefile`, `Steepfile`, signatures, test suite, and mutation config, and can be checked on its own:
 
        cd x-core && bundle exec rake
 
@@ -305,7 +305,7 @@ Pull requests will only be accepted if they meet all the following criteria:
 
        bundle exec rake test
 
-4. 100% mutation coverage in `x-core`, `x-media`, and `x-objects`. This can be verified with:
+4. 100% mutation coverage in `x-core`, `x-uploader`, and `x-objects`. This can be verified with:
 
        bundle exec rake mutant
 

@@ -1,0 +1,70 @@
+require_relative "../../test_helper"
+require "x/uploader/media"
+
+module X
+  class MediaProcessingStatusTest < Minitest::Test
+    cover Uploader::Media
+
+    STATUS_URL = "https://api.twitter.com/2/media/upload?command=STATUS&media_id=#{TEST_MEDIA_ID}".freeze
+
+    def setup
+      @client = Client.new
+      @sleeps = []
+    end
+
+    def test_status_without_processing_info_is_final
+      stub_statuses({"id" => TEST_MEDIA_ID})
+
+      assert_equal({"id" => TEST_MEDIA_ID}, await)
+      assert_requested(:get, STATUS_URL, times: 1)
+    end
+
+    def test_status_with_null_processing_info_is_final
+      stub_statuses({"processing_info" => nil})
+
+      assert_equal({"processing_info" => nil}, await)
+    end
+
+    def test_status_without_state_keeps_polling
+      stub_statuses({"processing_info" => {"check_after_secs" => 1}}, {"processing_info" => {"state" => "succeeded"}})
+
+      assert_equal "succeeded", await.dig("processing_info", "state")
+      assert_equal [1], @sleeps
+    end
+
+    def test_sleeps_for_check_after_secs_between_polls
+      stub_statuses({"processing_info" => {"state" => "pending", "check_after_secs" => 2}},
+        {"processing_info" => {"state" => "in_progress", "check_after_secs" => 3}},
+        {"processing_info" => {"state" => "failed"}})
+
+      assert_equal "failed", await.dig("processing_info", "state")
+      assert_equal [2, 3], @sleeps
+    end
+
+    def test_sleeps_zero_seconds_without_check_after_secs
+      stub_statuses({"processing_info" => {"state" => "pending"}}, {"processing_info" => {"state" => "succeeded"}})
+      await
+
+      assert_equal [0], @sleeps
+    end
+
+    def test_media_without_id
+      error = assert_raises(KeyError) { Uploader::Media.await_processing({}, client: @client) }
+
+      assert_equal 'key not found: "id"', error.message
+    end
+
+    private
+
+    def await
+      Uploader::Media.stub(:sleep, ->(seconds) { @sleeps << seconds }) do
+        Uploader::Media.await_processing({"id" => TEST_MEDIA_ID}, client: @client)
+      end
+    end
+
+    def stub_statuses(*statuses)
+      responses = statuses.map { |data| {headers: {"content-type" => "application/json"}, body: {data:}.to_json} }
+      stub_request(:get, STATUS_URL).to_return(*responses)
+    end
+  end
+end

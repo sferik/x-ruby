@@ -1,0 +1,18 @@
+---
+coverage_criteria:
+  process_abort: true
+fail_fast: true
+includes:
+- lib
+integration:
+  name: minitest
+matcher:
+  # x-core is loaded too, and is mutated in its own suite
+  subjects:
+  - X::Uploader*
+mutation:
+  operators: full
+  timeout: 10.0
+requires:
+- x/uploader
+usage: opensource

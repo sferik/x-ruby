@@ -1,6 +1,6 @@
 require "json"
 require "x"
-require "x/media"
+require "x/uploader"
 
 x_credentials = {
   api_key: "INSERT YOUR X API KEY HERE",
@@ -13,9 +13,9 @@ client = X::Client.new(**x_credentials)
 file_path = "path/to/your/media.mp4"
 media_category = "tweet_video" # other options include: tweet_image, tweet_gif, dm_image, dm_video, dm_gif, subtitles
 
-media = X::MediaUploader.chunked_upload(client:, file_path:, media_category:)
+media = X::Uploader::Media.chunked_upload(file_path, client:, media_category:)
 
-X::MediaUploader.await_processing(client:, media:) # or X::MediaUploader.await_processing!(client:, media:) to raise an error if fails
+X::Uploader::Media.await_processing(media, client:) # or X::Uploader::Media.await_processing!(media, client:) to raise an error if fails
 
 post_body = {text: "Posting media from @gem!", media: {media_ids: [media["id"]]}}
 

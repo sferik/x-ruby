@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-* Split the gem into gems released in lockstep: `x-core` (the HTTP client), `x-media` (media, profile image, and banner uploads), `x-objects` (resource objects), and `x` (a meta-gem that depends on all three and mixes the object methods into `X::Client`)
+* Split the gem into gems released in lockstep: `x-core` (the HTTP client), `x-uploader` (media, profile image, and banner uploads), `x-objects` (resource objects), and `x` (a meta-gem that depends on all three and mixes the object methods into `X::Client`)
 * Add immutable, thread-safe resource classes: `X::User`, `X::Post` (aliased as `X::Tweet`), `X::List`, `X::DirectMessage`, `X::Space`, `X::Media`, `X::Poll`, and `X::Place`
 * Compare resources by class and ID with `==`, `eql?`, and `hash`, so the same resource fetched in different requests is equal
 * Resolve references such as `post.author` and `post.replied_to` to included objects or ID stubs, sharing one object per resource within a response
@@ -24,10 +24,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 * Rename `X::OAuthAuthenticator` to `X::OAuth1Authenticator`, beside `X::OAuth2Authenticator`; `X::OAuthAuthenticator` remains as an alias
-* Move the HTTP client into `x-core`, under `lib/x/core`, and the uploaders into `x-media`, under `lib/x/media`; `require "x/media_uploader"` and `require "x/account_uploader"` still work
+* Move the HTTP client into `x-core`, under `lib/x/core`, and the uploaders into `x-uploader`, under `lib/x/uploader`; `require "x/media_uploader"` and `require "x/account_uploader"` still work
+* Rename `X::MediaUploader` to `X::Uploader::Media`, `X::AccountUploader` to `X::Uploader::Account`, and `X::MediaUploadValidator` to `X::Uploader::Validator`, under an `X::Uploader` module that holds the gem's version, since `X::Media` is the media resource
+* Rename `upload_profile_image_binary` and `upload_profile_banner_binary` to `update_profile_image_binary` and `update_profile_banner_binary`, the binary forms of `update_profile_image` and `update_profile_banner`
 * Wrap `EOFError`, `SocketError`, `Net::WriteTimeout`, `Errno::ETIMEDOUT`, and `Errno::EHOSTUNREACH` in `NetworkError`
 * Stop following redirects after exactly `max_redirects` hops instead of one more
-* Raise `KeyError` from `MediaUploader.chunked_upload` and `MediaUploader.await_processing` when the media has no `"id"`, instead of requesting a URL with an empty ID
+* Raise `KeyError` from `X::Uploader::Media.chunked_upload` and `X::Uploader::Media.await_processing` when the media has no `"id"`, instead of requesting a URL with an empty ID
 * Sign OAuth 1.0a requests with the [simple_oauth](https://github.com/laserlemon/simple_oauth) gem, in place of the signing code `X::OAuthAuthenticator` carried; it keeps the same credentials and produces the same header
 * Build and parse the OAuth 2.0 token refresh with simple_oauth, in place of the request and response handling `X::OAuth2Authenticator` carried; it sends the same request and still returns the token response and raises `X::Error`
 

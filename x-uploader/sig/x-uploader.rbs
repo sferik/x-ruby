@@ -1,0 +1,108 @@
+module X
+  class InvalidMediaType < Error
+  end
+
+  module Uploader
+    VERSION: Gem::Version
+
+    module Media
+      MAX_RETRIES: Integer
+      BYTES_PER_MB: Integer
+      DM_GIF: String
+      DM_IMAGE: String
+      DM_VIDEO: String
+      SUBTITLES: String
+      TWEET_GIF: String
+      TWEET_IMAGE: String
+      TWEET_VIDEO: String
+      MIME_TYPES: Array[String]
+      GIF_MIME_TYPE: String
+      JPEG_MIME_TYPE: String
+      MP4_MIME_TYPE: String
+      PNG_MIME_TYPE: String
+      SUBRIP_MIME_TYPE: String
+      WEBP_MIME_TYPE: String
+      MIME_TYPE_MAP: Hash[String, String]
+      PROCESSING_INFO_STATES: Array[String]
+      VIDEO_CATEGORIES: Array[String]
+      CHUNKED_CATEGORIES: Array[String]
+      CATEGORY_MAP: Hash[String, String]
+      CATEGORY_MIME_TYPES: Hash[String, String]
+      extend Media
+
+      def upload: (String file_path, client: Client, ?media_category: String, ?alt_text: String?, ?boundary: String, **untyped options) -> untyped
+      def infer_media_category: (String file_path) -> String
+      def upload_binary: (String content, String media_category, client: Client, ?boundary: String) -> untyped
+      def chunked_upload: (String file_path, client: Client, ?media_category: String, ?media_type: String, ?boundary: String, ?chunk_size_mb: Integer) -> untyped
+      def await_processing: (untyped media, client: Client) -> untyped
+      def await_processing!: (untyped media, client: Client) -> untyped
+      def infer_media_type: (String file_path, String media_category) -> String
+
+      private
+      def transfer: (String file_path, String media_category, client: Client, boundary: String, **untyped options) -> untyped
+      def chunked?: (String media_category) -> bool
+      def still_gif?: (String file_path) -> bool
+      def extension: (String file_path) -> String
+      def split: (String file_path, Integer chunk_size) -> Array[String]
+      def init: (client: Client, file_path: String, media_type: String, media_category: String) -> untyped
+      def append: (client: Client, file_paths: Array[String], media: untyped, boundary: String) -> Array[String]
+      def upload_chunk: (client: Client, media_id: String, upload_body: String, file_path: String, headers: Hash[String, String]) -> Integer?
+      def cleanup_file: (String file_path) -> Integer?
+      def finalize: (client: Client, media: untyped) -> untyped
+      def construct_upload_body: (content: String, boundary: String, ?media_category: String?, ?segment_index: Integer?) -> String
+    end
+
+    module Gif
+      HEADER_SIZE: Integer
+      EXTENSION_INTRODUCER: Integer
+      IMAGE_SEPARATOR: Integer
+      IMAGE_DESCRIPTOR_SIZE: Integer
+      extend Gif
+
+      def animated?: (String file_path) -> bool
+
+      private
+      def after_block: (String data, Integer position, Integer block) -> Integer
+      def skip_color_table: (Integer position, Integer flags) -> Integer
+      def skip_sub_blocks: (String data, Integer position) -> Integer
+    end
+
+    module Metadata
+      SUBTITLED_MEDIA_CATEGORY: String
+      extend Metadata
+
+      def add_alt_text: (untyped media, String text, client: Client) -> untyped
+      def add_subtitles: (untyped video, untyped subtitles, String language_code, client: Client, ?display_name: String?) -> untyped
+
+      private
+      def media_id: (untyped media) -> String
+    end
+
+    module Validator
+      MEDIA_CATEGORIES: Array[String]
+      extend Validator
+
+      def validate_file_path!: (String file_path) -> nil
+      def validate_media_category!: (String media_category) -> nil
+    end
+
+    module Account
+      V1_BASE_URL: String
+      SUPPORTED_EXTENSIONS: Array[String]
+      MIME_TYPE_MAP: Hash[String, String]
+      extend Account
+
+      def update_profile_image: (String file_path, client: Client, ?boundary: String) -> untyped
+      def update_profile_image_binary: (String content, client: Client, ?boundary: String) -> untyped
+      def update_profile_banner: (String file_path, client: Client, ?width: Integer?, ?height: Integer?, ?offset_left: Integer?, ?offset_top: Integer?, ?boundary: String) -> untyped
+      def update_profile_banner_binary: (String content, client: Client, ?width: Integer?, ?height: Integer?, ?offset_left: Integer?, ?offset_top: Integer?, ?boundary: String) -> untyped
+
+      private
+      def v1_client: (Client client) -> Client
+      def validate_file!: (String file_path) -> nil
+      def construct_multipart_body: (field_name: String, content: String, boundary: String) -> String
+      def construct_banner_body: (content: String, width: Integer?, height: Integer?, offset_left: Integer?, offset_top: Integer?, boundary: String) -> String
+      def multipart_field: (String name, untyped value, String boundary) -> String
+    end
+  end
+end
