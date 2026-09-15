@@ -15,6 +15,10 @@ module X
       assert_kind_of String, VERSION.to_s
     end
 
+    def test_version_file
+      assert_equal File.read(File.expand_path("../../VERSION", __dir__)).strip, VERSION.to_s
+    end
+
     def test_lockstep_versions
       assert_equal VERSION, Core::VERSION
       assert_equal VERSION, Uploader::VERSION

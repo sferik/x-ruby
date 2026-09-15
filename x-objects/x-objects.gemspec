@@ -1,8 +1,9 @@
-require_relative "lib/x/objects/version"
+# The version every gem in this repository is released at
+version = File.read(File.expand_path("../VERSION", __dir__)).strip
 
 Gem::Specification.new do |spec|
   spec.name = "x-objects"
-  spec.version = X::Objects::VERSION
+  spec.version = version
   spec.authors = ["Erik Berlin"]
   spec.email = ["sferik@gmail.com"]
 

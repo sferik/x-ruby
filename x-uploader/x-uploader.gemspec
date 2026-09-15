@@ -1,8 +1,9 @@
-require_relative "lib/x/uploader/version"
+# The version every gem in this repository is released at
+version = File.read(File.expand_path("../VERSION", __dir__)).strip
 
 Gem::Specification.new do |spec|
   spec.name = "x-uploader"
-  spec.version = X::Uploader::VERSION
+  spec.version = version
   spec.authors = ["Erik Berlin"]
   spec.email = ["sferik@gmail.com"]
 
@@ -30,5 +31,5 @@ Gem::Specification.new do |spec|
     "LICENSE.txt"
   ]
   spec.require_paths = ["lib"]
-  spec.add_dependency("x-core", X::Uploader::VERSION.to_s)
+  spec.add_dependency("x-core", version)
 end

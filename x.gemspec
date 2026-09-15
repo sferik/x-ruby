@@ -1,8 +1,9 @@
-require_relative "lib/x/version"
+# The version every gem in this repository is released at
+version = File.read(File.expand_path("VERSION", __dir__)).strip
 
 Gem::Specification.new do |spec|
   spec.name = "x"
-  spec.version = X::VERSION
+  spec.version = version
   spec.authors = ["Erik Berlin"]
   spec.email = ["sferik@gmail.com"]
 
@@ -33,7 +34,7 @@ Gem::Specification.new do |spec|
   spec.bindir = "exe"
   spec.executables = spec.files.grep(%r{\Aexe/}) { |f| File.basename(f) }
   spec.require_paths = ["lib"]
-  spec.add_dependency("x-core", X::VERSION.to_s)
-  spec.add_dependency("x-uploader", X::VERSION.to_s)
-  spec.add_dependency("x-objects", X::VERSION.to_s)
+  spec.add_dependency("x-core", version)
+  spec.add_dependency("x-uploader", version)
+  spec.add_dependency("x-objects", version)
 end
