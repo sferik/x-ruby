@@ -5,6 +5,6 @@ module X
   # @api public
   module Uploader
     # The current version of the x-uploader gem
-    VERSION = Gem::Version.create("0.19.0")
+    VERSION = Gem::Version.create("1.0.0")
   end
 end
