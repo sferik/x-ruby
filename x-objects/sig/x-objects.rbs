@@ -568,6 +568,7 @@ module X
     EXPANSIONS: Array[String]
     MAX_FOLLOW_RESULTS: Integer
     MAX_RESULTS: Integer
+    MAX_SEARCH_RESULTS: Integer
 
     def self.endpoint: () -> String
     def self.includes_key: () -> String
@@ -635,6 +636,7 @@ module X
     FIELDS: Array[String]
     EXPANSIONS: Array[String]
     MAX_RESULTS: Integer
+    MAX_ARCHIVE_RESULTS: Integer
 
     def self.endpoint: () -> String
     def self.includes_key: () -> String
@@ -642,6 +644,7 @@ module X
     def self.default_params: () -> Hash[String, Array[String]]
     def self.search: (String query, client: Objects::_Client, **untyped params) -> Cursor
     def self.search_all: (String query, client: Objects::_Client, **untyped params) -> Cursor
+    def self.context_annotations?: (Hash[Symbol, untyped] params) -> bool
     def self.create: (String text, client: Objects::_Client, ?reply_to: Objects::id?, ?media_ids: Array[String | Integer | Hash[String, untyped]]?, ?community: Objects::id?, **untyped params) -> Post?
     def self.delete: (Objects::id post, client: Objects::_Client) -> bool
 

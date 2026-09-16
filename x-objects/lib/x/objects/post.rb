@@ -18,6 +18,8 @@ module X
       entities.mentions.username geo.place_id in_reply_to_user_id referenced_posts].freeze
     # Maximum number of posts or users per page
     MAX_RESULTS = 100
+    # Maximum number of posts per page of full-archive search, which allows only MAX_RESULTS with context annotations
+    MAX_ARCHIVE_RESULTS = 500
 
     include Objects::References
     extend Objects::PostCounts
@@ -77,6 +79,8 @@ module X
 
       # Search the full archive of posts
       #
+      # A page holds up to 500 posts, or 100 when the request asks for context annotations, as the default fields do.
+      #
       # @api public
       # @param query [String] the search query
       # @param client [Object] the client used to make the requests
@@ -84,8 +88,11 @@ module X
       # @return [Cursor] a cursor over the matching posts
       # @example Print every post about Ruby
       #   X::Post.search_all("ruby -is:retweet", client: client).each { |post| puts post.text }
+      # @example Page through every post about Ruby 500 at a time, without context annotations
+      #   X::Post.search_all("ruby", client: client, "post.fields": %w[author_id created_at text])
       def search_all(query, client:, **params)
-        Cursor.new(self, "tweets/search/all", client:, params: {query:, max_results: MAX_RESULTS}.merge(params), min_results: 10)
+        max_results = context_annotations?(params) ? MAX_RESULTS : MAX_ARCHIVE_RESULTS
+        Cursor.new(self, "tweets/search/all", client:, params: {query:, max_results:}.merge(params), min_results: 10)
       end
 
       # Create a post as the authenticated user
@@ -125,6 +132,16 @@ module X
       def delete(post, client:)
         body = client.delete("tweets/#{Objects::Utils.id_of(post)}", **Objects::Utils::JSON_CLASSES)
         body.to_h.dig("data", "deleted").eql?(true)
+      end
+
+      private
+
+      # Check whether a request asks for the context annotations of its posts
+      # @api private
+      # @param params [Hash] query parameters merged over the default parameters
+      # @return [Boolean] true if the post fields include context_annotations
+      def context_annotations?(params)
+        Objects::Utils.merge_params(default_params, params)["post.fields"].to_s.split(",").include?("context_annotations")
       end
     end
 

@@ -44,6 +44,20 @@ module X
       assert_same @client, cursor.client
     end
 
+    def test_search_all_pages_by_500_without_context_annotations
+      assert_equal [500, 500, 500], [{"post.fields": %w[id text]}, {"post.fields" => "id,text"}, {"post.fields": nil}]
+        .map { |params| Post.search_all("ruby", client: @client, **params).params["max_results"] }
+    end
+
+    def test_search_all_pages_by_100_with_context_annotations
+      assert_equal 100, Post.search_all("ruby", client: @client, "post.fields": %w[context_annotations text]).params["max_results"]
+      assert_equal 100, Post.search_all("ruby", client: @client, "post.fields": "id,context_annotations").params["max_results"]
+    end
+
+    def test_search_all_does_not_mistake_a_similar_field_for_context_annotations
+      assert_equal 500, Post.search_all("ruby", client: @client, "post.fields": "context_annotations_v2").params["max_results"]
+    end
+
     def test_create
       @client.stub(:post, "tweets", {"data" => {"id" => "1", "text" => "Hello"}})
       post = Post.create("Hello", client: @client, reply: {in_reply_to_tweet_id: "2"})

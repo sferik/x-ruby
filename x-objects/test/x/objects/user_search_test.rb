@@ -27,7 +27,7 @@ module X
       cursor = User.search("ruby", client: @client)
 
       assert_equal User, cursor.klass
-      assert_equal 100, cursor.params["max_results"]
+      assert_equal 1000, cursor.params["max_results"]
       assert_equal User::FIELDS.join(","), cursor.params["user.fields"]
     end
   end

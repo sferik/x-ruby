@@ -20,6 +20,8 @@ module X
     MAX_FOLLOW_RESULTS = 1000
     # Maximum number of posts or lists per page
     MAX_RESULTS = 100
+    # Maximum number of users per page of a user search
+    MAX_SEARCH_RESULTS = 1000
 
     class << self
       # The API endpoint used to look up users by identifier
@@ -66,7 +68,7 @@ module X
       # @example Print the users matching a query
       #   X::User.search("ruby", client: client).each { |user| puts user.username }
       def search(query, client:, **params)
-        Cursor.new(self, "users/search", client:, params: {query:, max_results: MAX_RESULTS}.merge(params), token_param: "next_token")
+        Cursor.new(self, "users/search", client:, params: {query:, max_results: MAX_SEARCH_RESULTS}.merge(params), token_param: "next_token")
       end
 
       # Look up the authenticated user

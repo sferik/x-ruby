@@ -109,6 +109,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Remove the `base64` dependency from `x-core`, which encodes no Base64 of its own now that simple_oauth builds the Basic credentials
 
 ### Fixed
+* Request the largest page each search allows: 500 posts from `search_all_posts`, or 100 when the request asks for context annotations, as the default fields do, and 1,000 users from `search_users`, instead of 100 from each
 * Accept the `amplify_video` media category, which the API documents and the validator rejected, uploading it in chunks and awaiting its processing, and subtitle such a video with the `media_category: "AmplifyVideo"` of `add_subtitles`
 * Upload every media type the API documents: WebM, QuickTime, and MPEG-TS videos, WebVTT subtitles, BMP, TIFF, and progressive JPEG images, and glTF and USDZ models, instead of sending any video as MP4 and any subtitles as SubRip whatever the file
 * Give up waiting for media to process after ten minutes, or the `timeout:` of `await_processing` and the `processing_timeout:` of `upload`, raising `X::Uploader::MediaProcessingTimeout` with the last status, and wait at least a second between checks when X asks for no wait, instead of polling in a tight loop forever
