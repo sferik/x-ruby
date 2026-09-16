@@ -28,29 +28,33 @@ module X
     # Get the time when the rate limit resets
     #
     # @api public
-    # @return [Time] the reset time
+    # @return [Time, nil] the reset time, or nil if the response does not say when the limit resets
     # @example Get the reset time
     #   error.reset_at
     def reset_at
-      rate_limit&.reset_at || Time.at(0)
+      rate_limit&.reset_at
     end
 
     # Get the seconds until the rate limit resets
     #
     # @api public
-    # @return [Integer] the seconds until reset
+    # @return [Integer, nil] the seconds until reset, or nil if the response does not say when the limit resets
     # @example Get the time until reset
     #   error.reset_in
     def reset_in
-      [(reset_at - Time.now).ceil, 0].max
+      rate_limit&.reset_in
     end
 
     # @!method retry_after
     #   Alias for reset_in, returns the seconds to wait before retrying
+    #
+    #   X recommends waiting a minute, doubling the wait for each retry after, when it does not say when the limit
+    #   resets.
+    #
     #   @api public
-    #   @return [Integer] the seconds to wait before retrying
-    #   @example Get the retry delay
-    #     error.retry_after
+    #   @return [Integer, nil] the seconds to wait before retrying, or nil if the response does not say
+    #   @example Wait before retrying
+    #     sleep(error.retry_after || 60)
     alias_method :retry_after, :reset_in
   end
 end

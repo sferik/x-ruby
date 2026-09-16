@@ -177,9 +177,9 @@ module X
 
     def rate_limit: -> RateLimit?
     def rate_limits: -> Array[RateLimit]
-    def reset_at: -> Time
+    def reset_at: -> Time?
     def reset_in: -> Integer?
-    def retry_after: -> Integer
+    def retry_after: -> Integer?
   end
 
   class Unauthorized < ClientError

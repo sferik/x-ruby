@@ -43,8 +43,9 @@ module X
       exception = TooManyRequests.new(response:)
 
       assert_equal 0, exception.rate_limits.count
-      assert_equal Time.at(0).utc, exception.reset_at
-      assert_equal 0, exception.reset_in
+      assert_nil exception.reset_at
+      assert_nil exception.reset_in
+      assert_nil exception.retry_after
       assert_equal "Too Many Requests", exception.message
     end
 
@@ -96,6 +97,13 @@ module X
 
         assert_equal 200, @exception.reset_in
       end
+    end
+
+    def test_reset_in_is_never_negative
+      @exception.response["x-rate-limit-reset"] = (Time.now - 60).to_i.to_s
+      @exception.response["x-app-limit-24hour-reset"] = (Time.now - 61).to_i.to_s
+
+      assert_equal 0, @exception.reset_in
     end
 
     def test_reset_in_ceil

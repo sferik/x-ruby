@@ -76,7 +76,7 @@ module X
     def wait_before_retry(error, retries)
       raise if retries > max_rate_limit_retries
 
-      wait = error.rate_limit ? error.retry_after : UNREPORTED_RESET_WAIT << (retries - 1)
+      wait = error.retry_after || UNREPORTED_RESET_WAIT << (retries - 1)
       raise if wait > max_rate_limit_wait
 
       wait

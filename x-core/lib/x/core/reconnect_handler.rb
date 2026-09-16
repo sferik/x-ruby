@@ -136,7 +136,7 @@ module X
     # @return [Integer] the seconds to wait
     def rate_limit_backoff(error, reconnects)
       backoff = [RATE_LIMIT_BACKOFF_START << (reconnects - 1), MAX_HTTP_BACKOFF].min
-      [error.retry_after, backoff].max
+      [error.retry_after, backoff].compact.max #: Integer
     end
 
     # The wait before a reconnect after a dropped connection

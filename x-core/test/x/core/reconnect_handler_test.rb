@@ -43,6 +43,11 @@ module X
       assert_equal [60, 120, 240, 1000, 1000, 1000, 1000, 1000], @sleeps
     end
 
+    def test_a_rate_limit_that_resets_sooner_still_backs_off_from_a_minute
+      assert_raises(TooManyRequests) { stream_with(ReconnectHandler.new(max_reconnects: 2)) { refused(10) } }
+      assert_equal [60, 120], @sleeps
+    end
+
     def test_delivering_an_object_starts_the_count_over
       handler = ReconnectHandler.new(max_reconnects: 1)
       stream_with(handler) do |deliver|

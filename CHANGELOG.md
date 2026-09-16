@@ -112,6 +112,7 @@ See [UPGRADING.md](UPGRADING.md) for the changes that code written for 0.19 need
 * Raise `X::InvalidResponse`, an `X::Error` that holds the response, for a successful response whose body is not JSON, such as the page of a proxy or captive portal, instead of returning nil as though the response had no body; a successful response without a body still returns nil
 * Move `stream` from `X::Client` to `X::StreamingClient`, so that the client carries no streaming settings
 * Raise `X::AuthorizationError`, an `X::Error`, when X refuses to refresh an OAuth 2.0 token or to issue an app-only bearer token, rather than a bare `X::Error`, with the OAuth 2.0 error `code`, such as `invalid_request` for a refresh token that was revoked or already used, and the HTTP `status`, which tells a refusal from a failure of the token endpoint
+* Return nil from `X::TooManyRequests#reset_at`, `#reset_in`, and `#retry_after` when the response does not say when the limit resets, instead of `Time.at(0)` and 0, which told a caller to retry at once
 ### Removed
 * Remove `X::Uploader::Account::MIME_TYPE_MAP`, which nothing read
 * Make `X::HTTPError#error_message`, `#message_from_json_response`, and `#json?` private; they build the message an error is initialized with, which `message` returns

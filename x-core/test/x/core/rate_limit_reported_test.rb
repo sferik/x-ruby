@@ -19,7 +19,7 @@ module X
 
       assert_empty error.rate_limits
       assert_nil error.rate_limit
-      assert_equal 0, error.retry_after
+      assert_nil error.retry_after
     end
 
     def test_a_summary_leaves_out_a_limit_without_every_header
