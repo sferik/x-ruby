@@ -27,6 +27,7 @@ Gem::Specification.new do |spec|
   spec.files = Dir[
     "lib/**/*.rb",
     "sig/*.rbs",
+    "sig/manifest.yaml",
     "*.md",
     "LICENSE.txt"
   ]
