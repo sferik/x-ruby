@@ -52,7 +52,10 @@ module X
           User.find_all(ids_or_usernames, client: self, **params, &)
         end
 
-        # The authenticated user, fetched once per client
+        # The authenticated user, fetched once per client and credentials
+        #
+        # A client whose credentials change authenticates as someone else, so a client that has an authenticator
+        # fetches the user again once the authenticator is replaced.
         #
         # @api public
         # @return [User] the authenticated user
@@ -60,10 +63,14 @@ module X
         # @example Print the home timeline of the authenticated user
         #   client.current_user.home_timeline.each { |post| puts post.text }
         def current_user
-          @current_user ||= begin
-            problems = [] #: Array[Problem]
-            User.current(client: self) { |problem| problems << problem } || raise(ResourceNotFound.new("users/me returned no user", problems:))
-          end
+          authenticator = Utils.authenticator_of(self)
+          owner, user = @current_user
+          return user if user && owner.equal?(authenticator)
+
+          problems = [] #: Array[Problem]
+          user = User.current(client: self) { |problem| problems << problem } || raise(ResourceNotFound.new("users/me returned no user", problems:))
+          @current_user = [authenticator, user]
+          user
         end
 
         # The identifier of the authenticated user, from an OAuth 1.0a token if possible

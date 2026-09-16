@@ -23,6 +23,17 @@ module X
       def test_media_id_of_a_response_without_an_id
         assert_raises(KeyError) { Utils.media_id_of({"media_key" => "3_3"}) }
       end
+
+      def test_authenticator_of_a_client_with_one
+        authenticator = Object.new
+        client = Struct.new(:authenticator).new(authenticator)
+
+        assert_same authenticator, Utils.authenticator_of(client)
+      end
+
+      def test_authenticator_of_a_client_without_one
+        assert_nil Utils.authenticator_of(Object.new)
+      end
     end
   end
 end

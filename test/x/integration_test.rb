@@ -14,6 +14,16 @@ module X
       assert_respond_to Uploader::Account, :update_profile_image
     end
 
+    def test_current_user_follows_a_change_of_credentials
+      stub_current_user(TEST_BEARER_TOKEN, "9")
+      stub_current_user("OTHER", "12")
+
+      assert_equal 9, @client.current_user.id
+      @client.bearer_token = "OTHER"
+
+      assert_equal 12, @client.current_user.id
+    end
+
     def test_client_includes_objects_api
       assert_includes Client.ancestors, Objects::API
     end
@@ -98,6 +108,11 @@ module X
     end
 
     private
+
+    def stub_current_user(bearer_token, id)
+      stub_request(:get, /users\/me/).with(headers: {"Authorization" => "Bearer #{bearer_token}"})
+        .to_return(headers: {"content-type" => "application/json"}, body: {data: {id:}}.to_json)
+    end
 
     def stub_json(method, path, body)
       stub_request(method, /\A#{Regexp.escape(BASE + path)}(\?.*)?\z/)

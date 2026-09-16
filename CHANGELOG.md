@@ -109,6 +109,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Remove the `base64` dependency from `x-core`, which encodes no Base64 of its own now that simple_oauth builds the Basic credentials
 
 ### Fixed
+* Look up `current_user` again once the client's credentials change, rather than keep returning the user of the credentials it had when first asked
 * Stop the batches of a parallel lookup, such as `find_users`, that have not begun once one fails, and raise its error after the batches already begun have finished, instead of sending every remaining batch, which the API bills, before raising
 * Request the largest page each search allows: 500 posts from `search_all_posts`, or 100 when the request asks for context annotations, as the default fields do, and 1,000 users from `search_users`, instead of 100 from each
 * Accept the `amplify_video` media category, which the API documents and the validator rejected, uploading it in chunks and awaiting its processing, and subtitle such a video with the `media_category: "AmplifyVideo"` of `add_subtitles`

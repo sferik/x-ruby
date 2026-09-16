@@ -16,6 +16,25 @@ module X
         assert_equal ["users/me"], @client.paths
       end
 
+      def test_current_user_is_kept_while_the_authenticator_is
+        client = client_with_authenticator
+        first = client.current_user
+        client.stub(:get, "users/me", {"data" => {"id" => "12", "username" => "jack"}})
+
+        assert_same first, client.current_user
+        assert_equal ["users/me"], client.paths
+      end
+
+      def test_current_user_is_fetched_again_for_a_new_authenticator
+        client = client_with_authenticator
+        client.current_user
+        client.stub(:get, "users/me", {"data" => {"id" => "12", "username" => "jack"}})
+        client.authenticator = Object.new
+
+        assert_equal %w[jack jack], [client.current_user.username, client.current_user.username]
+        assert_equal ["users/me"] * 2, client.paths
+      end
+
       def test_current_user_missing
         @client.stub(:get, "users/me", {"errors" => []})
         error = assert_raises(ResourceNotFound) { @client.current_user }
@@ -30,6 +49,15 @@ module X
         assert_equal ["ruby", 10, "next_token"], [cursor.params["query"], cursor.params["max_results"], cursor.token_param]
         assert_equal User, cursor.klass
         assert_same @client, cursor.client
+      end
+
+      private
+
+      def client_with_authenticator
+        client = Class.new(FakeClient) { attr_accessor :authenticator }.new
+        client.stub(:get, "users/me", {"data" => {"id" => "9", "username" => "sferik"}})
+        client.authenticator = Object.new
+        client
       end
     end
   end

@@ -87,6 +87,15 @@ module X
         Integer(prefix, 10) if prefix
       end
 
+      # The authenticator of a client, which is replaced whenever its credentials change
+      #
+      # @api private
+      # @param client [Object] the client, which may have an authenticator
+      # @return [Object, nil] the authenticator, or nil if the client has none
+      def authenticator_of(client)
+        client.authenticator if client.respond_to?(:authenticator)
+      end
+
       # The client for an endpoint that takes app-only authentication
       #
       # @api private

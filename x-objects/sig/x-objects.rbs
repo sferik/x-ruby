@@ -76,6 +76,7 @@ module X
       def integer: (String | Integer | nil value) -> Integer?
       def oauth1_user_id: (untyped client) -> Integer?
       def app_client: (untyped client) -> untyped
+      def authenticator_of: (untyped client) -> untyped
       def id?: (untyped value) -> bool
       def time: (String? value) -> Time?
     end
@@ -351,7 +352,7 @@ module X
       include API::Actions
 
       module Lookups : _Client
-        @current_user: User?
+        @current_user: [untyped, User]?
 
         def find_user: (id | String id_or_username, **untyped params) ?{ (Problem problem) -> void } -> User?
         def find_user!: (id | String id_or_username, **untyped params) -> User
