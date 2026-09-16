@@ -87,6 +87,15 @@ module X
         Integer(prefix, 10) if prefix
       end
 
+      # The client for an endpoint that takes app-only authentication
+      #
+      # @api private
+      # @param client [Object] the client
+      # @return [Object] the client's app-only client, which reuses its bearer token, or the client itself
+      def app_client(client)
+        client.respond_to?(:app_only) ? client.app_only : client
+      end
+
       # Read a numeric identifier as an Integer
       #
       # @api private

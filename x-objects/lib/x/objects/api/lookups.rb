@@ -152,6 +152,68 @@ module X
           Post.search_all(query, client: self, **params)
         end
 
+        # Count the recent posts that match a query, without reading them
+        #
+        # The API bills a count by the request, not by the post, and refuses OAuth 1.0a for it, so a client that signs
+        # with OAuth 1.0a counts with a copy that authenticates as the app.
+        #
+        # @api public
+        # @param query [String] the search query
+        # @param params [Hash] query parameters, such as start_time and end_time
+        # @return [Integer] the number of matching posts
+        # @example Count the recent posts about Ruby with an app-only client
+        #   client.count_posts("ruby")
+        def count_posts(query, **params) = Post.count(query, client: self, **params)
+
+        # Count the posts from the full archive that match a query, without reading them
+        #
+        # The API bills a count by the request, not by the post, and refuses OAuth 1.0a for it, so a client that signs
+        # with OAuth 1.0a counts with a copy that authenticates as the app.
+        #
+        # @api public
+        # @param query [String] the search query
+        # @param params [Hash] query parameters, such as start_time and end_time
+        # @return [Integer] the number of matching posts
+        # @example Count every post about Ruby from 2024
+        #   client.count_all_posts("ruby", start_time: "2024-01-01T00:00:00Z", end_time: "2025-01-01T00:00:00Z")
+        def count_all_posts(query, **params) = Post.count_all(query, client: self, **params)
+
+        # Count the posts from the last seven days that match a query, by period
+        #
+        # The API bills a count by the request, not by the post, and refuses OAuth 1.0a for it, so a client that signs
+        # with OAuth 1.0a counts with a copy that authenticates as the app.
+        #
+        # @api public
+        # @param query [String] the search query
+        # @param params [Hash] query parameters, such as granularity, which is day by default
+        # @return [Hash{Time => Integer}] the number of matching posts, keyed by the start of each period
+        # @example Count the recent posts about Ruby by hour
+        #   client.post_counts("ruby", granularity: "hour")
+        def post_counts(query, **params) = Post.counts(query, client: self, **params)
+
+        # Count the posts from the full archive that match a query, by period
+        #
+        # The API bills a count by the request, not by the post, and refuses OAuth 1.0a for it, so a client that signs
+        # with OAuth 1.0a counts with a copy that authenticates as the app.
+        #
+        # @api public
+        # @param query [String] the search query
+        # @param params [Hash] query parameters, such as granularity, which is day by default
+        # @return [Hash{Time => Integer}] the number of matching posts, keyed by the start of each period
+        # @example Count the posts about Ruby by day in 2024
+        #   client.all_post_counts("ruby", start_time: "2024-01-01T00:00:00Z", end_time: "2025-01-01T00:00:00Z")
+        def all_post_counts(query, **params) = Post.counts_all(query, client: self, **params)
+
+        # Look up how many posts the app's project has read
+        #
+        # @api public
+        # @param params [Hash] query parameters, such as days, the number of days to report, which is 7 by default
+        # @return [Usage] the usage
+        # @example Check how much of the monthly cap remains
+        #   usage = client.usage
+        #   usage.project_cap - usage.project_usage
+        def usage(**params) = Usage.find(client: self, **params)
+
         # Look up a list by identifier
         #
         # @api public
@@ -321,6 +383,10 @@ module X
         alias_method :find_tweets, :find_posts
         alias_method :search_tweets, :search_posts
         alias_method :search_all_tweets, :search_all_posts
+        alias_method :count_tweets, :count_posts
+        alias_method :count_all_tweets, :count_all_posts
+        alias_method :tweet_counts, :post_counts
+        alias_method :all_tweet_counts, :all_post_counts
         alias_method :find_dm, :find_direct_message
         alias_method :find_dm!, :find_direct_message!
         alias_method :dms, :direct_messages

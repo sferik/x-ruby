@@ -25,6 +25,26 @@ module X
     def inspect: () -> String
   end
 
+  class Usage
+    ENDPOINT: String
+    FIELDS: Array[String]
+
+    attr_reader attrs: Hash[String, untyped]
+
+    def self.find: (client: Objects::_Client, **untyped params) -> Usage
+    def initialize: (Hash[String, untyped] attrs) -> void
+    def to_h: () -> Hash[String, untyped]
+    def project_id: () -> Integer?
+    def project_usage: () -> Integer?
+    def project_cap: () -> Integer?
+    def cap_reset_day: () -> Integer?
+    def daily: () -> Hash[Time?, Integer]
+    def daily_by_app: () -> Hash[Integer?, Hash[Time?, Integer]]
+
+    private
+    def days: (untyped entries) -> Hash[Time?, Integer]
+  end
+
   module Objects
     VERSION: Gem::Version
 
@@ -55,6 +75,7 @@ module X
       def media_id_of: (untyped value) -> String
       def integer: (String | Integer | nil value) -> Integer?
       def oauth1_user_id: (untyped client) -> Integer?
+      def app_client: (untyped client) -> untyped
       def id?: (untyped value) -> bool
       def time: (String? value) -> Time?
     end
@@ -197,6 +218,22 @@ module X
       def reporting: (body body) ?{ (Problem problem) -> void } -> body
     end
 
+    module PostCounts
+      RECENT_ENDPOINT: String
+      ALL_ENDPOINT: String
+      DEFAULT_GRANULARITY: String
+
+      def count: (String query, client: _Client, **untyped params) -> Integer
+      def count_all: (String query, client: _Client, **untyped params) -> Integer
+      def counts: (String query, client: _Client, **untyped params) -> Hash[Time?, Integer?]
+      def counts_all: (String query, client: _Client, **untyped params) -> Hash[Time?, Integer?]
+
+      private
+      def pages: (String path, String query, client: _Client, **untyped params) -> Array[Hash[String, untyped]]
+      def total: (Array[Hash[String, untyped]] bodies) -> Integer
+      def periods: (Array[Hash[String, untyped]] bodies) -> Hash[Time?, Integer]
+    end
+
     class Resource
       extend Attributes
       extend Finders
@@ -292,6 +329,15 @@ module X
         def search_tweets: (String query, **untyped params) -> Cursor
         def search_all_posts: (String query, **untyped params) -> Cursor
         def search_all_tweets: (String query, **untyped params) -> Cursor
+        def usage: (**untyped params) -> Usage
+        def count_posts: (String query, **untyped params) -> Integer
+        def count_tweets: (String query, **untyped params) -> Integer
+        def count_all_posts: (String query, **untyped params) -> Integer
+        def count_all_tweets: (String query, **untyped params) -> Integer
+        def post_counts: (String query, **untyped params) -> Hash[Time?, Integer?]
+        def tweet_counts: (String query, **untyped params) -> Hash[Time?, Integer?]
+        def all_post_counts: (String query, **untyped params) -> Hash[Time?, Integer?]
+        def all_tweet_counts: (String query, **untyped params) -> Hash[Time?, Integer?]
         def find_list: (id id, **untyped params) ?{ (Problem problem) -> void } -> List?
         def find_list!: (id id, **untyped params) -> List
         def find_space: (id id, **untyped params) ?{ (Problem problem) -> void } -> Space?
@@ -543,6 +589,7 @@ module X
 
   class Post < Objects::Resource
     extend Objects::_Lookup[Post]
+    extend Objects::PostCounts
     include Objects::_Hydration[Post]
     include Objects::References
     def id: () -> Integer

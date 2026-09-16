@@ -2,6 +2,7 @@ require "json"
 require "uri"
 require_relative "community"
 require_relative "cursor"
+require_relative "post_counts"
 require_relative "references"
 require_relative "resource"
 
@@ -19,6 +20,7 @@ module X
     MAX_RESULTS = 100
 
     include Objects::References
+    extend Objects::PostCounts
 
     class << self
       # The API endpoint used to look up posts by identifier
