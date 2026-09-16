@@ -1,0 +1,70 @@
+require_relative "../../test_helper"
+
+module X
+  class PatternMatchingTest < Minitest::Test
+    cover Objects::Identity
+    cover Objects::Attributes
+    cover Objects::Resource
+    cover Post
+    cover User
+
+    def setup
+      @user = User.new({"id" => "7505382", "username" => "sferik", "created_at" => "2007-07-16T12:59:01.000Z"})
+      @post = Post.new({"id" => "1", "public_metrics" => {"like_count" => 100}})
+    end
+
+    def test_a_resource_matches_an_array_pattern_by_identifier
+      matched = case @user
+      in [7505382] then :found
+      end
+
+      assert_equal :found, matched
+      assert_equal [7505382], @user.deconstruct
+    end
+
+    def test_a_resource_matches_a_hash_pattern_as_its_readers_read_it
+      matched = case @user
+      in {username: "sferik", id: Integer => id, created_at: Time} then id
+      end
+
+      assert_equal 7505382, matched
+    end
+
+    def test_a_pattern_reads_an_attribute_the_api_nests
+      matched = case @post
+      in {like_count: 50..} then :popular
+      end
+
+      assert_equal :popular, matched
+    end
+
+    def test_a_pattern_asking_for_every_attribute_reads_every_attribute
+      matched = case @user
+      in {**attributes} then attributes
+      end
+
+      assert_equal({id: 7505382, username: "sferik", created_at: Time.utc(2007, 7, 16, 12, 59, 1)}, matched.compact)
+      assert_equal User.attribute_names.size, matched.size
+    end
+
+    def test_deconstruct_keys_reads_the_attributes_it_is_asked_for
+      assert_equal({username: "sferik"}, @user.deconstruct_keys([:username]))
+      assert_empty @user.deconstruct_keys([:nothing_of_the_sort])
+    end
+
+    def test_declaring_an_attribute_records_its_name_after_the_ones_it_inherits
+      klass = Class.new(User) { attribute :nickname }
+
+      assert_equal User.attribute_names + [:nickname], klass.attribute_names
+      refute_includes User.attribute_names, :nickname
+      assert_equal [:id], Class.new { extend Objects::Attributes }.attribute_names
+    end
+
+    def test_every_resource_declares_its_identifier_and_its_own_attributes
+      assert_equal [:id], Objects::Resource.attribute_names
+      assert_equal :id, User.attribute_names.first
+      assert_includes User.attribute_names, :username
+      refute_includes Post.attribute_names, :username
+    end
+  end
+end

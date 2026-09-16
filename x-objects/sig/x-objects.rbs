@@ -150,10 +150,13 @@ module X
       def index: (singleton(Resource) klass) -> Hash[untyped, attrs]
     end
 
-    module Attributes : Module
+    module Attributes : Class
       CONVERTERS: Hash[Symbol, ^(untyped) -> untyped]
 
+      @attribute_names: Array[Symbol]?
+
       def attribute: (Symbol name, ?Symbol type, ?key: key) -> void
+      def attribute_names: () -> Array[Symbol]
       def reference: (Symbol name, Symbol klass_name, key: key) -> void
       def references: (Symbol name, Symbol klass_name, key: key) -> void
 
@@ -183,12 +186,15 @@ module X
 
     interface _Identifiable
       def id: () -> (Integer | String)
+      def class: () -> singleton(Resource)
     end
 
     module Identity : _Identifiable
       def ==: (untyped other) -> bool
       def eql?: (untyped other) -> bool
       def hash: () -> Integer
+      def deconstruct: () -> Array[untyped]
+      def deconstruct_keys: (Array[Symbol]? keys) -> Hash[Symbol, untyped]
     end
 
     interface _Following

@@ -22,6 +22,7 @@ module X
       # @param key [Array<String>] the key path
       # @return [void]
       def attribute(name, type = :raw, key: [name.to_s])
+        attribute_names << name
         path = key_path(key)
         converter = CONVERTERS.fetch(type)
         define_method(name) do
@@ -34,6 +35,17 @@ module X
           # @type self: Resource
           attrs.dig(*path).eql?(true)
         end
+      end
+
+      # The names of the attributes declared on this class, which pattern matching reads
+      #
+      # @api private
+      # @return [Array<Symbol>] the attribute names
+      # @example Get the attributes of a user
+      #   X::User.attribute_names
+      def attribute_names
+        parent = superclass
+        @attribute_names ||= parent.is_a?(Attributes) ? parent.attribute_names.dup : [:id]
       end
 
       # Define a reader that resolves a referenced resource

@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.0.0] - 2026-09-16
 
 ### Added
 * Split the gem into gems released in lockstep: `x-core` (the HTTP client), `x-uploader` (media, profile image, and banner uploads), `x-objects` (resource objects), and `x` (a meta-gem that depends on all three and mixes the object methods into `X::Client`)
@@ -47,6 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Replace the stubs among some resources with the full resources in parallel batches with `X::User.hydrate_all` and its equivalents
 * Accept a username with a leading at sign in `find_user`, `find_users`, and `X::User.find_all_by_username`
 * Add `X::DirectMessage#from?`, `X::Post#coordinates`, `permalink`, the x.com address of a post, user, list, or community, and `uri`, the same address as a `URI`
+* Match resources against `case/in` patterns: `deconstruct` gives the identifier and `deconstruct_keys` every attribute the resource declares, read as its own method reads it, so `post in {like_count: 100..}` matches a metric the API nests
 * Accept the responses of `X::Uploader::Media.upload` directly as the `media_ids:` of `create_post`
 * Load `x-uploader` from `require "x"`, so `X::Uploader::Media` and `X::Uploader::Account` need no further require
 * Scan a cursor with nothing but identifiers with `stubs`, and check a relationship without fetching every page with `user.follows?` and `list.member?`
@@ -232,6 +233,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Initial release
 
 [unreleased]: https://github.com/sferik/x-ruby/compare/v0.19.0...HEAD
+[1.0.0]: https://github.com/sferik/x-ruby/compare/v0.19.0...v1.0.0
 [0.19.0]: https://github.com/sferik/x-ruby/compare/v0.18.0...v0.19.0
 [0.18.0]: https://github.com/sferik/x-ruby/compare/v0.17.0...v0.18.0
 [0.17.0]: https://github.com/sferik/x-ruby/compare/v0.16.0...v0.17.0
