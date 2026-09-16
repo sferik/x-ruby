@@ -273,8 +273,8 @@ ads_client.get("accounts")
 media = X::Uploader::Media.upload("cat.jpg", client: x_client, alt_text: "A cat asleep on a keyboard")
 x_client.create_post("Look at this cat", media_ids: [media])
 
-# A video is uploaded in chunks, four at a time unless concurrency says otherwise, and upload waits until it has
-# been processed, for up to ten minutes unless processing_timeout says otherwise
+# A video is uploaded in chunks, four at a time unless concurrency says otherwise, and upload waits until a video or
+# an animated GIF has been processed, for up to ten minutes unless processing_timeout says otherwise
 video = X::Uploader::Media.upload("cat.mp4", client: x_client)
 subtitles = X::Uploader::Media.upload("cat.srt", client: x_client)
 X::Uploader::Metadata.add_subtitles(video, subtitles, "EN", client: x_client, display_name: "English")

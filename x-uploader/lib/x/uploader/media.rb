@@ -71,12 +71,12 @@ module X
       # @param media_category [String] the media category, inferred from the file by default
       # @param alt_text [String, nil] alt text describing the media, for people who cannot see it
       # @param boundary [String] the multipart boundary
-      # @param processing_timeout [Integer] the seconds to wait for a video to process
+      # @param processing_timeout [Integer] the seconds to wait for media, such as a video or an animated GIF, to process
       # @param options [Hash] options for a chunked upload, such as media_type, chunk_size_mb, and concurrency
-      # @return [Hash, nil] the upload response data, or the processing status of a video
+      # @return [Hash, nil] the upload response data, or the processing status of media that X processes
       # @raise [Errno::ENOENT] if the file does not exist
-      # @raise [MediaProcessingFailed] if a video fails to process
-      # @raise [MediaProcessingTimeout] if a video is still processing after processing_timeout seconds
+      # @raise [MediaProcessingFailed] if the media fails to process
+      # @raise [MediaProcessingTimeout] if the media is still processing after processing_timeout seconds
       # @example Upload an image
       #   Uploader::Media.upload("image.png", client: client)
       # @example Upload an image with alt text
@@ -220,9 +220,11 @@ module X
       # @param options [Hash] options for a chunked upload
       # @return [Hash, nil] the upload response data, or the processing status
       def transfer(file_path, media_category, client:, boundary:, processing_timeout:, **options)
-        return upload_binary(File.binread(file_path), media_category, client:, boundary:) unless chunked?(media_category)
-
-        media = chunked_upload(file_path, client:, media_category:, boundary:, **options)
+        media = if chunked?(media_category)
+          chunked_upload(file_path, client:, media_category:, boundary:, **options)
+        else
+          upload_binary(File.binread(file_path), media_category, client:, boundary:)
+        end
         media&.key?("processing_info") ? await_processing!(media, client:, timeout: processing_timeout) : media
       end
 
