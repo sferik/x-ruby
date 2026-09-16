@@ -604,6 +604,7 @@ module X
     def post_count: () -> Integer?
     def listed_count: () -> Integer?
     def like_count: () -> Integer?
+    def media_count: () -> Integer?
     def pinned_post: () -> Post?
     def pinned_tweet: () -> Post?
     def most_recent_post: () -> Post?

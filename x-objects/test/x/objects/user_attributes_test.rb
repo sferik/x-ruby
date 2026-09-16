@@ -11,7 +11,7 @@ module X
              "verified_type" => "blue", "pinned_post_id" => "2", "most_recent_post_id" => "3",
              "entities" => {"url" => {}}, "withheld" => {"country_codes" => []},
              "public_metrics" => {"followers_count" => 10, "following_count" => 20, "post_count" => 30,
-                                  "listed_count" => 40, "like_count" => 50}}.freeze
+                                  "listed_count" => 40, "like_count" => 50, "media_count" => 60}}.freeze
 
     def setup
       @user = User.new(ATTRS)
@@ -63,6 +63,10 @@ module X
       assert_equal 30, @user.post_count
       assert_equal 40, @user.listed_count
       assert_equal 50, @user.like_count
+    end
+
+    def test_media_count
+      assert_equal 60, @user.media_count
     end
 
     def test_tweet_aliases

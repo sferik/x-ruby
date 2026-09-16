@@ -267,6 +267,14 @@ module X
     #     user.like_count
     attribute :like_count, key: %w[public_metrics like_count]
 
+    # @!attribute [r] media_count
+    #   The number of photos and videos the user has posted
+    #   @api public
+    #   @return [Integer, nil] the media count
+    #   @example Get the media count
+    #     user.media_count
+    attribute :media_count, key: %w[public_metrics media_count]
+
     # @!method pinned_post
     #   The pinned post, from the includes or as a stub holding only its identifier
     #   @api public
