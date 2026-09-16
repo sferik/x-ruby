@@ -43,6 +43,19 @@ module X
          "media.fields" => Media::FIELDS, "expansions" => EXPANSIONS}
       end
 
+      # Refuse a batch lookup, which the API does not offer for direct message events
+      #
+      # @api public
+      # @param ids [Array<String, Integer, DirectMessage>] the identifiers
+      # @param client [Object] the client, which is not used
+      # @return [void]
+      # @raise [UnsupportedOperation] always, since direct message events can only be looked up one at a time
+      # @example Look direct message events up one at a time instead
+      #   ids.map { |id| X::DirectMessage.find(id, client: client) }
+      def find_all(ids, client:, **)
+        raise UnsupportedOperation, "#{self} cannot be fetched in batches; find #{ids.size} direct messages one at a time"
+      end
+
       # The most recent direct message events across every conversation
       #
       # @api public

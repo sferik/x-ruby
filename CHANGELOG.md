@@ -150,6 +150,7 @@ See [UPGRADING.md](UPGRADING.md) for the changes that code written for 0.19 need
 * Leave the user and password of a proxy out of the message of an invalid proxy URL, and out of `X::Connection#inspect`, which now summarizes the proxy URL and timeouts; raise `ArgumentError` rather than `URI::InvalidURIError` for a proxy URL that cannot be parsed; and keep the proxy an invalid URL would have replaced
 * Remove a proxy by setting `proxy_url` to nil, which raised `ArgumentError`, and decode a percent-encoded proxy user and password, which were sent to the proxy still encoded
 * Raise `X::HTTPError` for a redirect that cannot be followed, such as 304 Not Modified or one whose location is missing, is not a valid URL, or is not an HTTP or HTTPS URL, instead of `KeyError`, `URI::InvalidURIError`, or `ArgumentError`
+* Raise `X::UnsupportedOperation` from `X::DirectMessage.find_all`, and so from `hydrate_all`, since the API has no batch lookup of direct message events, instead of sending an `ids` parameter the endpoint does not take
 
 ## [0.19.0] - 2026-03-01
 * Add streaming support for filtered stream and volume stream endpoints

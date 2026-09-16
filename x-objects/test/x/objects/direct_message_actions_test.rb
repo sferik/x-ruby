@@ -13,6 +13,13 @@ module X
       assert_equal "dm_event.fields", DirectMessage.fields_key
     end
 
+    def test_find_all_is_not_supported
+      error = assert_raises(UnsupportedOperation) { DirectMessage.find_all([1, 2], client: @client) }
+
+      assert_equal "X::DirectMessage cannot be fetched in batches; find 2 direct messages one at a time", error.message
+      assert_empty @client.requests
+    end
+
     def test_delete
       @client.stub(:delete, "dm_events/1", {"data" => {"deleted" => true}})
 
