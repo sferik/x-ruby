@@ -45,25 +45,6 @@ module X
       assert_nil http_client.instance_variable_get(:@debug_output)
     end
 
-    def test_proxy
-      @connection.proxy_url = "http://user:pass@example.com:8080"
-
-      assert_equal URI("http://user:pass@example.com:8080"), @connection.proxy_uri
-      assert_equal "example.com", @connection.proxy_host
-      assert_equal "user", @connection.proxy_user
-      assert_equal "pass", @connection.proxy_pass
-      assert_equal 8080, @connection.proxy_port
-    end
-
-    def test_host_port_with_proxy
-      connection = Connection.new(proxy_url: "https://user:pass@example.com")
-      http_client = connection.send(:build_http_client, "example.com", 8080)
-
-      assert_predicate http_client, :proxy?
-      assert_equal "example.com", http_client.address
-      assert_equal 8080, http_client.port
-    end
-
     def test_client_properties
       connection = Connection.new(open_timeout: 10, read_timeout: 20, write_timeout: 30, debug_output: $stderr,
         proxy_url: "https://proxy.com")
@@ -74,36 +55,6 @@ module X
       assert_equal 20, http_client.read_timeout
       assert_equal 30, http_client.write_timeout
       assert_equal $stderr, http_client.instance_variable_get(:@debug_output)
-    end
-
-    def test_invalid_proxy_url
-      error = assert_raises(ArgumentError) { @connection.proxy_url = "ftp://ftp.twitter.com/" }
-
-      assert_equal "Invalid proxy URL: ftp://ftp.twitter.com/", error.message
-    end
-
-    def test_proxy_settings_are_respected_in_http_client
-      @connection.proxy_url = "http://user:pass@example.com:8080"
-      http_client = @connection.send(:build_http_client)
-
-      assert_equal "example.com", http_client.proxy_address
-      assert_equal 8080, http_client.proxy_port
-      assert_equal "user", http_client.proxy_user
-      assert_equal "pass", http_client.proxy_pass
-    end
-
-    def test_set_env_proxy
-      old_value = ENV.fetch("http_proxy", nil)
-      ENV["http_proxy"] = "https://user:pass@example.com:8080"
-      http_client = Connection.new.send(:build_http_client)
-
-      assert_predicate http_client, :proxy?
-      assert_equal "user", http_client.proxy_user
-      assert_equal "pass", http_client.proxy_pass
-      assert_equal "example.com", http_client.proxy_address
-      assert_equal 8080, http_client.proxy_port
-    ensure
-      ENV["http_proxy"] = old_value
     end
 
     def test_perform

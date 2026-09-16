@@ -146,6 +146,8 @@ See [UPGRADING.md](UPGRADING.md) for the changes that code written for 0.19 need
 * Sign a query parameter that repeats once per value, rather than signing only one of the values
 * Sign the normalized URL, so a request to a host with no path signs the `/` the server sees
 * Form-encode the client credentials before Basic authentication on token refresh, as RFC 6749 Section 2.3.1 requires, so a client ID or secret containing a reserved character authenticates
+* Leave the user and password of a proxy out of the message of an invalid proxy URL, and out of `X::Connection#inspect`, which now summarizes the proxy URL and timeouts; raise `ArgumentError` rather than `URI::InvalidURIError` for a proxy URL that cannot be parsed; and keep the proxy an invalid URL would have replaced
+* Remove a proxy by setting `proxy_url` to nil, which raised `ArgumentError`, and decode a percent-encoded proxy user and password, which were sent to the proxy still encoded
 
 ## [0.19.0] - 2026-03-01
 * Add streaming support for filtered stream and volume stream endpoints

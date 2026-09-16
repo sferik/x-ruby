@@ -1,8 +1,8 @@
-require "forwardable"
 require "net/http"
 require "openssl"
 require "uri"
 require_relative "connection_pool"
+require_relative "connection_proxy"
 require_relative "errors/network_error"
 
 module X
@@ -13,7 +13,7 @@ module X
   #
   # @api public
   class Connection
-    extend Forwardable
+    include ConnectionProxy
 
     # Default host for the X API
     DEFAULT_HOST = "api.x.com".freeze
@@ -74,25 +74,6 @@ module X
     #   connection.debug_output
     attr_reader :debug_output
 
-    # The proxy URL for requests
-    # @api public
-    # @return [String, nil] the proxy URL for requests
-    # @example Get the proxy URL
-    #   connection.proxy_url
-    attr_reader :proxy_url
-
-    # The parsed proxy URI
-    # @api public
-    # @return [URI, nil] the parsed proxy URI
-    # @example Get the proxy URI
-    #   connection.proxy_uri
-    attr_reader :proxy_uri
-
-    def_delegator :proxy_uri, :host, :proxy_host
-    def_delegator :proxy_uri, :port, :proxy_port
-    def_delegator :proxy_uri, :user, :proxy_user
-    def_delegator :proxy_uri, :password, :proxy_pass
-
     # Initialize a new connection
     #
     # @api public
@@ -113,7 +94,18 @@ module X
       @write_timeout = write_timeout
       @debug_output = debug_output
       @pool = ConnectionPool.new
-      self.proxy_url = proxy_url unless proxy_url.nil?
+      self.proxy_url = proxy_url
+    end
+
+    # Summarize the connection for the console without revealing proxy credentials
+    #
+    # @api public
+    # @return [String] the class name, proxy URL, and timeouts
+    # @example Inspect a connection
+    #   connection.inspect # => #<X::Connection proxy_url="http://proxy.example.com:8080" open_timeout=60 ...>
+    def inspect
+      "#<#{self.class} proxy_url=#{redacted_proxy_url.inspect} open_timeout=#{open_timeout} " \
+        "read_timeout=#{read_timeout} write_timeout=#{write_timeout}>"
     end
 
     # Perform an HTTP request
@@ -175,23 +167,6 @@ module X
     # @example Close the connections before a long pause
     #   connection.close
     def close
-      @pool.clear
-    end
-
-    # Set the proxy URL for requests
-    #
-    # @api public
-    # @param proxy_url [String] the proxy URL
-    # @return [void]
-    # @raise [ArgumentError] if the proxy URL is invalid
-    # @example Set the proxy URL
-    #   connection.proxy_url = "http://proxy.example.com:8080"
-    def proxy_url=(proxy_url)
-      @proxy_url = proxy_url
-      proxy_uri = URI(proxy_url)
-      raise ArgumentError, "Invalid proxy URL: #{proxy_uri}" unless proxy_uri.is_a?(URI::HTTP)
-
-      @proxy_uri = proxy_uri
       @pool.clear
     end
 

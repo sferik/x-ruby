@@ -194,23 +194,15 @@ module X
 
     NETWORK_ERRORS: Array[(singleton(Errno::ECONNREFUSED) | singleton(Errno::ECONNRESET) | singleton(Errno::EHOSTUNREACH) | singleton(Errno::ENETUNREACH) | singleton(Errno::EPIPE) | singleton(Errno::ETIMEDOUT) | singleton(IOError) | singleton(Net::HTTPBadResponse) | singleton(Net::OpenTimeout) | singleton(Net::ReadTimeout) | singleton(Net::WriteTimeout) | singleton(OpenSSL::SSL::SSLError) | singleton(SocketError))]
 
-    @proxy_url: URI::Generic | String
-
-    extend Forwardable
+    include ConnectionProxy
 
     attr_accessor open_timeout : Float | Integer
     attr_accessor read_timeout : Float | Integer
     attr_accessor write_timeout : Float | Integer
     attr_reader debug_output : IO?
 
-    attr_reader proxy_uri: URI::Generic?
-    attr_reader proxy_host : String?
-    attr_reader proxy_port : Integer?
-    attr_reader proxy_user : String?
-    attr_reader proxy_pass : String?
-
     def initialize: (?open_timeout: Float | Integer, ?read_timeout: Float | Integer, ?write_timeout: Float | Integer, ?proxy_url: URI::Generic? | String?, ?debug_output: IO?) -> void
-    def proxy_url=: (URI::Generic | String proxy_url) -> void
+    def inspect: () -> String
     def perform: (request: Net::HTTPRequest) -> Net::HTTPResponse
     def perform_stream: (request: Net::HTTPRequest) { (Net::HTTPResponse) -> void } -> void
 
@@ -223,6 +215,27 @@ module X
     def build_http_client: (?String host, ?Integer port) -> Net::HTTP
     def configure_http_client: (Net::HTTP http_client) -> Net::HTTP
     def configure_timeouts: (Net::HTTP http_client) -> Net::HTTP
+  end
+
+  module ConnectionProxy
+    extend Forwardable
+
+    @proxy_url: (URI::Generic | String)?
+    @pool: ConnectionPool
+
+    attr_reader proxy_url: (URI::Generic | String)?
+    attr_reader proxy_uri: URI::Generic?
+    attr_reader proxy_host : String?
+    attr_reader proxy_port : Integer?
+
+    def proxy_user: () -> String?
+    def proxy_pass: () -> String?
+    def proxy_url=: (URI::Generic? | String? proxy_url) -> void
+
+    private
+    def redacted_proxy_url: () -> String?
+    def parse_proxy_url: (URI::Generic | String proxy_url) -> URI::Generic
+    def redact: (URI::Generic | String proxy_url) -> String
   end
 
   class ConnectionPool
@@ -367,7 +380,7 @@ module X
     def open_timeout=: (Float | Integer timeout) -> (Float | Integer)
     def read_timeout=: (Float | Integer timeout) -> (Float | Integer)
     def write_timeout=: (Float | Integer timeout) -> (Float | Integer)
-    def proxy_url=: (String proxy_url) -> void
+    def proxy_url=: (String? proxy_url) -> void
     def debug_output=: (IO? debug_output) -> IO?
     def max_reconnects: () -> (Integer | Float)
     def max_reconnects=: (Integer | Float max_reconnects) -> (Integer | Float)
