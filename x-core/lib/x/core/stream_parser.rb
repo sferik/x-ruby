@@ -4,14 +4,17 @@ require_relative "response_parser"
 
 module X
   # Handles streaming responses from the X API
-  # @api public
+  #
+  # Internal to x-core: StreamingClient reads streams with it.
+  #
+  # @api private
   class StreamParser
     # Line delimiter for streaming responses
     LINE_DELIMITER = "\r\n".freeze
 
     # Process a streaming response and yield parsed JSON objects
     #
-    # @api public
+    # @api private
     # @param response [Net::HTTPResponse] the HTTP response to stream
     # @param response_parser [ResponseParser] the response parser for errors and decoding
     # @param array_class [Class, nil] the class for parsing JSON arrays

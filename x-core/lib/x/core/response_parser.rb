@@ -18,7 +18,10 @@ require_relative "errors/unprocessable_entity"
 
 module X
   # Parses HTTP responses from the X API
-  # @api public
+  #
+  # Internal to x-core: Client and StreamingClient parse responses with it.
+  #
+  # @api private
   class ResponseParser
     # Mapping of HTTP status codes to error classes
     ERROR_MAP = {
@@ -42,7 +45,7 @@ module X
 
     # Parse an HTTP response
     #
-    # @api public
+    # @api private
     # @param response [Net::HTTPResponse] the HTTP response to parse
     # @param array_class [Class, nil] the class for parsing JSON arrays
     # @param object_class [Class, nil] the class for parsing JSON objects, or a class that builds objects from
@@ -70,7 +73,7 @@ module X
     # models a whole response instead responds to from_response, which receives the document
     # parsed into Hashes and Arrays along with the client, and whatever it returns is the result.
     #
-    # @api public
+    # @api private
     # @param json [String] the JSON document
     # @param array_class [Class, nil] the class for parsing JSON arrays
     # @param object_class [Class, #from_response, nil] the class for parsing JSON objects, or one that

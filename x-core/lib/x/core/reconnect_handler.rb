@@ -11,7 +11,9 @@ module X
   # doubling each attempt, up to 320 seconds. A rate limit waits until it resets, or from a minute, doubling
   # each attempt. Delivering an object starts the count over.
   #
-  # @api public
+  # Internal to x-core: StreamingClient reconnects with it, and max_reconnects is set on the streaming client.
+  #
+  # @api private
   class ReconnectHandler
     # Default maximum number of reconnects in a row, which is unlimited, since a stream is meant to run until stopped
     DEFAULT_MAX_RECONNECTS = Float::INFINITY
@@ -33,7 +35,7 @@ module X
     private_constant :ConsumerError
 
     # The maximum number of times in a row to reconnect without delivering an object
-    # @api public
+    # @api private
     # @return [Integer, Float] the maximum number of reconnects, or Float::INFINITY for no limit
     # @example Get or set the maximum reconnects
     #   handler.max_reconnects = 5
@@ -41,7 +43,7 @@ module X
 
     # Initialize a new reconnect handler
     #
-    # @api public
+    # @api private
     # @param max_reconnects [Integer, Float] the maximum number of reconnects in a row, or Float::INFINITY
     # @return [ReconnectHandler] a new instance
     # @example Create a reconnect handler
@@ -54,7 +56,7 @@ module X
     #
     # An error raised by the consumer stops the stream, even one that would otherwise reconnect.
     #
-    # @api public
+    # @api private
     # @param consumer [Proc] the block that receives each object
     # @yield [deliver] runs the stream once
     # @yieldparam deliver [Proc] the block to pass each object to, which passes it on to the consumer

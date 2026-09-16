@@ -7,27 +7,30 @@ require_relative "request_builder"
 
 module X
   # Handles HTTP redirects for API requests
-  # @api public
+  #
+  # Internal to x-core: Client follows redirects with it, and max_redirects is set on the client.
+  #
+  # @api private
   class RedirectHandler
     # Default maximum number of redirects to follow
     DEFAULT_MAX_REDIRECTS = 10
 
     # The maximum number of redirects to follow
-    # @api public
+    # @api private
     # @return [Integer] the maximum number of redirects to follow
     # @example Get or set the maximum redirects
     #   handler.max_redirects = 5
     attr_accessor :max_redirects
 
     # The connection for making requests
-    # @api public
+    # @api private
     # @return [Connection] the connection for making requests
     # @example Get the connection
     #   handler.connection
     attr_reader :connection
 
     # The request builder for creating requests
-    # @api public
+    # @api private
     # @return [RequestBuilder] the request builder for creating requests
     # @example Get the request builder
     #   handler.request_builder
@@ -35,7 +38,7 @@ module X
 
     # Initialize a new RedirectHandler
     #
-    # @api public
+    # @api private
     # @param connection [Connection] the connection for making requests
     # @param request_builder [RequestBuilder] the request builder for creating requests
     # @param max_redirects [Integer] the maximum number of redirects to follow
@@ -54,7 +57,7 @@ module X
     # A redirect to another scheme, host, or port drops the credentials, the authenticator's and any
     # Authorization header among the headers, so that they never reach a host they were not meant for.
     #
-    # @api public
+    # @api private
     # @param response [Net::HTTPResponse] the HTTP response to handle
     # @param request [Net::HTTPRequest] the original HTTP request
     # @param base_url [String] the base URL for the request

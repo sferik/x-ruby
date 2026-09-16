@@ -86,6 +86,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Raise `NotImplementedError` from `X::List.find_all`, since the API has no batch lookup of lists, instead of sending a request that fails
 * Take the recipient and text of a direct message as the positional arguments of `create_direct_message`, in place of `to:` and `text:`, since both are required
 * Derive the v1.1 client of `X::Uploader::Account` from the client it is given with `copy`, so it keeps the timeouts, proxy, and other settings
+* Mark `X::RequestBuilder`, `X::RedirectHandler`, `X::ResponseParser`, `X::StreamParser`, `X::RateLimitHandler`, and `X::ReconnectHandler` as `@api private`, the internals of `X::Client` and `X::StreamingClient`, whose settings they expose, so that they can change within 1.x
 * Rename `X::ConnectionException`, the error for 409 Conflict, to `X::Conflict`, after its status like every other HTTP error; `X::ConnectionException` remains as a deprecated alias
 * Rename `X::OAuthAuthenticator` to `X::OAuth1Authenticator`, beside `X::OAuth2Authenticator`; `X::OAuthAuthenticator` remains as an alias
 * Move the HTTP client into `x-core`, under `lib/x/core`, and the uploaders into `x-uploader`, under `lib/x/uploader`

@@ -5,7 +5,10 @@ require_relative "version"
 
 module X
   # Builds HTTP requests for the X API
-  # @api public
+  #
+  # Internal to x-core: Client and StreamingClient build their requests with it.
+  #
+  # @api private
   class RequestBuilder
     # Default headers for API requests
     DEFAULT_HEADERS = {
@@ -22,7 +25,7 @@ module X
 
     # Build an HTTP request
     #
-    # @api public
+    # @api private
     # @param http_method [Symbol] the HTTP method (:get, :post, :put, :delete)
     # @param uri [URI] the request URI
     # @param body [String, nil] the request body

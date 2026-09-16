@@ -77,7 +77,7 @@ module X
     # @param headers [Hash] additional headers for the request
     # @param array_class [Class] the class for parsing JSON arrays
     # @param object_class [Class] the class for parsing JSON objects, or one that responds to from_response
-    #   and builds objects from the whole response (see {ResponseParser#decode})
+    #   and builds objects from each whole object the stream delivers, which it receives with the client
     # @yield [Hash, Array] each parsed JSON object from the stream
     # @return [nil] once the stream ends with no reconnects left
     # @raise [HTTPError] if the response is not successful and the stream may not reconnect
