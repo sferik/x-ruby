@@ -224,7 +224,7 @@ module X
 
     def test_a_copy_without_oauth2_shares_nothing
       client = Client.new(**test_oauth2_credentials)
-      copy = client.copy(client_id: nil, bearer_token: TEST_BEARER_TOKEN)
+      copy = client.copy(client_id: nil, access_token: nil, refresh_token: nil, bearer_token: TEST_BEARER_TOKEN)
 
       assert_instance_of BearerTokenAuthenticator, copy.authenticator
       oauth1 = Client.new(**test_oauth_credentials)

@@ -6,6 +6,7 @@ require_relative "bearer_token_authenticator"
 require_relative "client_credentials"
 require_relative "client_settings"
 require_relative "connection"
+require_relative "credential_validator"
 require_relative "oauth1_authenticator"
 require_relative "oauth2_authenticator"
 require_relative "rate_limit_handler"
@@ -77,6 +78,8 @@ module X
     # @param on_token_refresh [#call, nil] a callable passed the OAuth 2.0 authenticator after each refresh, to store
     #   its new tokens
     # @return [Client] a new client instance
+    # @raise [ArgumentError] if credentials are given that do not form a complete set, which would send requests
+    #   without them, or authenticate as the app rather than a user
     # @example Create a client with bearer token authentication
     #   client = X::Client.new(bearer_token: "your_bearer_token")
     # @example Create a client with OAuth 2.0 authentication that stores the tokens of each refresh
@@ -109,6 +112,7 @@ module X
       initialize_credentials(api_key:, api_key_secret:, access_token:, access_token_secret:, bearer_token:, client_id:, client_secret:, refresh_token:, expires_at:)
       @on_token_refresh = on_token_refresh
       initialize_authenticator
+      CredentialValidator.validate!(authenticator, credentials)
       initialize_settings(base_url:, default_array_class:, default_object_class:, on_response:, max_redirects:, max_rate_limit_retries:, max_rate_limit_wait:)
     end
 

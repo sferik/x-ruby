@@ -101,6 +101,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Raise `KeyError` from `X::Uploader::Media.chunked_upload` and `X::Uploader::Media.await_processing` when the media has no `"id"`, instead of requesting a URL with an empty ID
 * Sign OAuth 1.0a requests with the [simple_oauth](https://github.com/laserlemon/simple_oauth) gem, in place of the signing code `X::OAuthAuthenticator` carried; it keeps the same credentials and produces the same header
 * Build and parse the OAuth 2.0 token refresh with simple_oauth, in place of the request and response handling `X::OAuth2Authenticator` carried; it sends the same request and still returns the token response and raises `X::Error`
+* Raise `ArgumentError` from `X::Client.new`, and so from `copy`, for credentials that do not form a complete set, instead of sending requests without credentials, or authenticating as the app when an access token lacks its secret; the setters still change one credential at a time, keeping the authenticator until a set is complete
 
 ### Removed
 * Remove `X::Uploader::Account::MIME_TYPE_MAP`, which nothing read

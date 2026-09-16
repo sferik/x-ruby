@@ -25,18 +25,14 @@ module X
 
     def test_missing_api_key_or_secret
       %i[api_key api_key_secret].each do |missing_credential|
-        client = Client.new(**test_oauth_credentials.except(missing_credential))
-
-        assert_instance_of Authenticator, client.authenticator
+        assert_raises(ArgumentError) { Client.new(**test_oauth_credentials.except(missing_credential)) }
       end
     end
 
-    def test_missing_access_token_or_secret_authenticates_as_the_app
-      %i[access_token access_token_secret].each do |missing_credential|
-        client = Client.new(**test_oauth_credentials.except(missing_credential))
+    def test_missing_access_token_and_secret_authenticates_as_the_app
+      client = Client.new(**test_oauth_credentials.except(:access_token, :access_token_secret))
 
-        assert_instance_of AppOnlyAuthenticator, client.authenticator
-      end
+      assert_instance_of AppOnlyAuthenticator, client.authenticator
     end
 
     def test_setting_oauth_credentials
@@ -88,9 +84,7 @@ module X
 
     def test_missing_oauth2_credentials
       %i[client_id access_token refresh_token].each do |missing_credential|
-        client = Client.new(**test_oauth2_credentials.except(missing_credential))
-
-        assert_instance_of Authenticator, client.authenticator
+        assert_raises(ArgumentError) { Client.new(**test_oauth2_credentials.except(missing_credential)) }
       end
     end
 
