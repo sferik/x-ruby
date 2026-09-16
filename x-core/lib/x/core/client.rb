@@ -295,7 +295,7 @@ module X
     # @return [Object, nil] the parsed response body, or what an object_class that responds to from_response builds
     def perform(http_method, uri, body:, headers:, array_class:, object_class:)
       request = @request_builder.build(http_method:, uri:, body:, headers:, authenticator:)
-      response = @redirect_handler.handle(response: @connection.perform(request:), request:, base_url:, headers:, authenticator:)
+      response = @redirect_handler.handle(response: @connection.perform(request:), request:, headers:, authenticator:)
       report(http_method, uri, response)
       @response_parser.parse(response:, array_class:, object_class:, client: self)
     end

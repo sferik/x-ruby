@@ -24,35 +24,35 @@ module X
     end
 
     def test_handle_with_no_redirects
-      request = Net::HTTP::Get.new("/some_path")
+      request = Net::HTTP::Get.new(URI("http://example.com/some_path"))
 
       response = Net::HTTPSuccess.new("1.1", "200", "OK")
 
-      assert_equal(response, @redirect_handler.handle(response:, request:, base_url: "http://example.com"))
+      assert_equal(response, @redirect_handler.handle(response:, request:))
     end
 
     def test_handle_with_one_redirect
       authenticator = BearerTokenAuthenticator.new(bearer_token: TEST_BEARER_TOKEN)
-      request = Net::HTTP::Get.new("/")
+      request = Net::HTTP::Get.new(URI("http://example.com/"))
       stub_request(:get, "http://example.com/2").with(headers: {"Authorization" => /Bearer #{TEST_BEARER_TOKEN}/o})
 
       response = Net::HTTPFound.new("1.1", "302", "Found")
       response["Location"] = "http://example.com/2"
 
-      @redirect_handler.handle(response:, request:, base_url: "http://example.com", authenticator:)
+      @redirect_handler.handle(response:, request:, authenticator:)
 
       assert_requested :get, "http://example.com/2"
     end
 
     def test_handle_with_two_redirects
-      request = Net::HTTP::Delete.new("/")
+      request = Net::HTTP::Delete.new(URI("http://example.com/"))
       stub_request(:delete, "http://example.com/2").to_return(status: 307, headers: {"Location" => "http://example.com/3"})
       stub_request(:delete, "http://example.com/3")
 
       response = Net::HTTPFound.new("1.1", "307", "Found")
       response["Location"] = "http://example.com/2"
 
-      @redirect_handler.handle(response:, request:, base_url: "http://example.com")
+      @redirect_handler.handle(response:, request:)
 
       assert_requested :delete, "http://example.com/2"
       assert_requested :delete, "http://example.com/3"
@@ -66,20 +66,19 @@ module X
         .to_return(status: 302, headers: {"Location" => "http://example.com/3"})
       stub_request(:get, "http://example.com/3").with(headers: authorization)
 
-      @redirect_handler.handle(response: redirect_to("http://example.com/2"), request: Net::HTTP::Get.new("/"),
-        base_url: "http://example.com", authenticator:)
+      @redirect_handler.handle(response: redirect_to("http://example.com/2"), request: Net::HTTP::Get.new(URI("http://example.com/")), authenticator:)
 
       assert_requested :get, "http://example.com/3", headers: authorization
     end
 
     def test_handle_with_relative_url
-      request = Net::HTTP::Get.new("/some_path")
+      request = Net::HTTP::Get.new(URI("http://example.com/some_path"))
       stub_request(:get, "http://example.com/some_relative_path")
 
       response = Net::HTTPFound.new("1.1", "302", "Found")
       response["Location"] = "/some_relative_path"
 
-      @redirect_handler.handle(response:, request:, base_url: "http://example.com")
+      @redirect_handler.handle(response:, request:)
 
       assert_requested :get, "http://example.com/some_relative_path"
     end
@@ -91,21 +90,20 @@ module X
         .to_return(status: 302, headers: {"Location" => "http://example.com/3"})
       stub_request(:get, "http://example.com/3").with(headers:)
 
-      @redirect_handler.handle(response: redirect_to("http://example.com/2"), request: Net::HTTP::Get.new("/"),
-        base_url: "http://example.com", headers:)
+      @redirect_handler.handle(response: redirect_to("http://example.com/2"), request: Net::HTTP::Get.new(URI("http://example.com/")), headers:)
 
       assert_requested :get, "http://example.com/3", headers:
     end
 
     def test_handle_with_too_many_redirects
-      request = Net::HTTP::Get.new("/some_path")
+      request = Net::HTTP::Get.new(URI("http://example.com/some_path"))
       stub_request(:get, "http://example.com/some_path").to_return(status: 302, headers: {"Location" => "http://example.com/some_path"})
 
       response = Net::HTTPFound.new("1.1", "302", "Found")
       response["Location"] = "http://example.com/some_path"
 
       e = assert_raises(TooManyRedirects) do
-        @redirect_handler.handle(response:, request:, base_url: "http://example.com")
+        @redirect_handler.handle(response:, request:)
       end
 
       assert_equal "Too many redirects", e.message
@@ -113,13 +111,13 @@ module X
     end
 
     def test_handle_beyond_max_redirects
-      request = Net::HTTP::Get.new("/some_path")
+      request = Net::HTTP::Get.new(URI("http://example.com/some_path"))
       response = Net::HTTPFound.new("1.1", "302", "Found")
       response["Location"] = "http://example.com/some_path"
       redirect_count = RedirectHandler::DEFAULT_MAX_REDIRECTS + 1
 
       assert_raises(TooManyRedirects) do
-        @redirect_handler.handle(response:, request:, base_url: "http://example.com", redirect_count:)
+        @redirect_handler.handle(response:, request:, redirect_count:)
       end
       assert_not_requested :get, "http://example.com/some_path"
     end
@@ -138,7 +136,7 @@ module X
     def redirect(from, to, headers: {})
       response = Net::HTTPFound.new("1.1", "302", "Found")
       response["Location"] = to
-      @redirect_handler.handle(response:, request: Net::HTTP::Get.new(URI(from)), base_url: from, headers:,
+      @redirect_handler.handle(response:, request: Net::HTTP::Get.new(URI(from)), headers:,
         authenticator: @authenticator)
     end
 
@@ -191,23 +189,31 @@ module X
       assert_equal [nil], authorizations_sent_to("https://api.x.com:443/2/users")
     end
 
-    def test_compares_with_the_request_rather_than_the_base_url
+    def test_compares_origins_with_the_request
       stub_request(:get, "https://upload.x.com:443/next")
       response = Net::HTTPFound.new("1.1", "302", "Found")
       response["Location"] = "https://upload.x.com/next"
-      @redirect_handler.handle(response:, request: Net::HTTP::Get.new(URI("https://upload.x.com/media")),
-        base_url: "https://api.x.com/2/", authenticator: @authenticator)
+      @redirect_handler.handle(response:, request: Net::HTTP::Get.new(URI("https://upload.x.com/media")), authenticator: @authenticator)
 
       assert_equal [AUTHORIZATION], authorizations_sent_to("https://upload.x.com:443/next")
     end
 
-    def test_compares_a_relative_request_with_the_base_url
-      stub_request(:get, "https://api.x.com:443/2/next")
+    def test_resolves_a_relative_location_against_the_host_of_the_request
+      stub_request(:get, "https://upload.x.com:443/2/media/next")
       response = Net::HTTPFound.new("1.1", "302", "Found")
-      response["Location"] = "/2/next"
-      @redirect_handler.handle(response:, request: Net::HTTP::Get.new("/2/users"), base_url: "https://api.x.com/", authenticator: @authenticator)
+      response["Location"] = "next"
+      @redirect_handler.handle(response:, request: Net::HTTP::Get.new(URI("https://upload.x.com/2/media/upload")), authenticator: @authenticator)
 
-      assert_equal [AUTHORIZATION], authorizations_sent_to("https://api.x.com:443/2/next")
+      assert_equal [AUTHORIZATION], authorizations_sent_to("https://upload.x.com:443/2/media/next")
+    end
+
+    def test_resolves_a_relative_location_against_the_path_of_the_request
+      stub_request(:get, "https://api.x.com:443/2/users/next")
+      response = Net::HTTPFound.new("1.1", "302", "Found")
+      response["Location"] = "next"
+      @redirect_handler.handle(response:, request: Net::HTTP::Get.new(URI("https://api.x.com/2/users/me")), authenticator: @authenticator)
+
+      assert_equal [AUTHORIZATION], authorizations_sent_to("https://api.x.com:443/2/users/next")
     end
   end
 
@@ -221,64 +227,64 @@ module X
     end
 
     def test_handle_with_301_moved_permanently
-      request = Net::HTTP::Get.new("/some_path")
+      request = Net::HTTP::Get.new(URI("http://example.com/some_path"))
       stub_request(:get, "http://example.com/new_path")
 
       response = Net::HTTPMovedPermanently.new("1.1", "301", "Moved Permanently")
       response["Location"] = "http://example.com/new_path"
 
-      @redirect_handler.handle(response:, request:, base_url: "http://example.com")
+      @redirect_handler.handle(response:, request:)
 
       assert_requested :get, "http://example.com/new_path"
     end
 
     def test_handle_with_302_found
-      request = Net::HTTP::Get.new("/some_path")
+      request = Net::HTTP::Get.new(URI("http://example.com/some_path"))
       stub_request(:get, "http://example.com/temp_path")
 
       response = Net::HTTPFound.new("1.1", "302", "Found")
       response["Location"] = "http://example.com/temp_path"
 
-      @redirect_handler.handle(response:, request:, base_url: "http://example.com")
+      @redirect_handler.handle(response:, request:)
 
       assert_requested :get, "http://example.com/temp_path"
     end
 
     def test_handle_with_303_see_other
-      request = Net::HTTP::Post.new("/some_path")
+      request = Net::HTTP::Post.new(URI("http://example.com/some_path"))
       stub_request(:post, "http://example.com/some_path")
       stub_request(:get, "http://example.com/other_path")
 
       response = Net::HTTPSeeOther.new("1.1", "303", "See Other")
       response["Location"] = "http://example.com/other_path"
 
-      @redirect_handler.handle(response:, request:, base_url: "http://example.com")
+      @redirect_handler.handle(response:, request:)
 
       assert_requested :get, "http://example.com/other_path"
     end
 
     def test_handle_with_307_temporary_redirect
-      request = Net::HTTP::Post.new("/some_path")
+      request = Net::HTTP::Post.new(URI("http://example.com/some_path"))
       request.body = "request_body"
       stub_request(:post, "http://example.com/temp_path")
 
       response = Net::HTTPTemporaryRedirect.new("1.1", "307", "Temporary Redirect")
       response["Location"] = "http://example.com/temp_path"
 
-      @redirect_handler.handle(response:, request:, base_url: "http://example.com")
+      @redirect_handler.handle(response:, request:)
 
       assert_requested :post, "http://example.com/temp_path", body: "request_body"
     end
 
     def test_handle_with_308_permanent_redirect
-      request = Net::HTTP::Post.new("/some_path")
+      request = Net::HTTP::Post.new(URI("http://example.com/some_path"))
       request.body = "request_body"
       stub_request(:post, "http://example.com/new_path")
 
       response = Net::HTTPPermanentRedirect.new("1.1", "308", "Permanent Redirect")
       response["Location"] = "http://example.com/new_path"
 
-      @redirect_handler.handle(response:, request:, base_url: "http://example.com")
+      @redirect_handler.handle(response:, request:)
 
       assert_requested :post, "http://example.com/new_path", body: "request_body"
     end

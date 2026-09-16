@@ -59,37 +59,39 @@ module X
     #
     # @api private
     # @param response [Net::HTTPResponse] the HTTP response to handle
-    # @param request [Net::HTTPRequest] the original HTTP request
-    # @param base_url [String] the base URL for the request
+    # @param request [Net::HTTPRequest] the request the response answers, built from a URI
     # @param headers [Hash] additional headers to send with redirected requests
     # @param authenticator [Authenticator] the authenticator for requests
     # @param redirect_count [Integer] the current redirect count
     # @return [Net::HTTPResponse] the final HTTP response after following redirects
     # @raise [TooManyRedirects] if the maximum number of redirects is exceeded
     # @example Handle a response
-    #   response = handler.handle(response: resp, request: req, base_url: url)
-    def handle(response:, request:, base_url:, headers: {}, authenticator: Authenticator.new, redirect_count: 0)
+    #   response = handler.handle(response: resp, request: req)
+    def handle(response:, request:, headers: {}, authenticator: Authenticator.new, redirect_count: 0)
       return response unless response.is_a?(Net::HTTPRedirection)
       raise TooManyRedirects, "Too many redirects" if redirect_count >= max_redirects
 
-      new_uri = build_new_uri(response, base_url)
-      authenticator, headers = credentials_for(request.uri || URI(base_url), new_uri, authenticator, headers)
+      uri = request.uri #: URI::Generic
+      new_uri = build_new_uri(response, uri)
+      authenticator, headers = credentials_for(uri, new_uri, authenticator, headers)
       new_request = build_request(request, new_uri, Integer(response.code), headers, authenticator)
-      handle(response: connection.perform(request: new_request), request: new_request, base_url:, headers:,
-        authenticator:, redirect_count: redirect_count + 1)
+      handle(response: connection.perform(request: new_request), request: new_request, headers:, authenticator:,
+        redirect_count: redirect_count + 1)
     end
 
     private
 
     # Build a new URI from the redirect response
+    #
+    # A relative location is relative to the request that was redirected, as RFC 9110 Section 10.2.2 requires,
+    # which need not share the base URL: a request can name a URL of its own.
+    #
     # @api private
     # @param response [Net::HTTPResponse] the redirect response
-    # @param base_url [String] the base URL
+    # @param uri [URI::Generic] the URI of the request that was redirected
     # @return [URI] the new URI
-    def build_new_uri(response, base_url)
-      location = response.fetch("location")
-      # If location is relative, it will join with the original base URL, otherwise it will overwrite it
-      URI.join(base_url, location)
+    def build_new_uri(response, uri)
+      URI.join(uri, response.fetch("location"))
     end
 
     # The authenticator and headers of a redirect, dropping credentials off origin
