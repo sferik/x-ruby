@@ -5,7 +5,7 @@ module X
   module Objects
     module API
       module Actions
-        # Create, delete, follow, and pin lists as the authenticated user
+        # Create, update, delete, follow, and pin lists as the authenticated user
         # @api public
         module Lists
           # Create a list owned by the authenticated user
@@ -18,6 +18,18 @@ module X
           #   client.create_list("Rubyists", private: true)
           def create_list(name, **params)
             List.create(name, client: self, **params)
+          end
+
+          # Update the name, description, or privacy of a list as the authenticated user
+          #
+          # @api public
+          # @param list [List, String, Integer] the list or its identifier
+          # @param params [Hash] the request body fields to change: name, description, and private
+          # @return [Boolean] true if the list was updated
+          # @example Make a list private
+          #   client.update_list("1234567890", private: true)
+          def update_list(list, **params)
+            List.update(list, client: self, **params)
           end
 
           # Delete a list as the authenticated user

@@ -19,6 +19,13 @@ module X
         assert_equal({name: "Rubyists", private: true}.to_json, @client.requests.first[:body])
       end
 
+      def test_update_list
+        @client.stub(:put, "lists/1", {"data" => {"updated" => true}})
+
+        assert @client.update_list("1", name: "Rubyists")
+        assert_equal [{method: :put, path: "lists/1", query: {}, body: {name: "Rubyists"}.to_json}], @client.requests
+      end
+
       def test_delete_list
         @client.stub(:delete, "lists/1", {"data" => {"deleted" => true}})
 

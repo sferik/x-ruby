@@ -440,6 +440,7 @@ module X
 
         module Lists : _Client, _CurrentUser
           def create_list: (String name, **untyped params) -> List?
+          def update_list: (id list, **untyped params) -> bool
           def delete_list: (id list) -> bool
           def follow_list: (id list) -> bool
           def unfollow_list: (id list) -> bool
@@ -771,6 +772,7 @@ module X
     def self.fields_key: () -> String
     def self.default_params: () -> Hash[String, Array[String]]
     def self.create: (String name, client: Objects::_Client, **untyped params) -> List?
+    def self.update: (Objects::id list, client: Objects::_Client, **untyped params) -> bool
     def self.delete: (Objects::id list, client: Objects::_Client) -> bool
 
     def name: () -> String?
@@ -790,6 +792,7 @@ module X
     def uri: () -> URI::Generic
     def member?: (Objects::id user) -> bool
     def add_member: (Objects::id user) -> bool
+    def update: (**untyped params) -> bool
     def remove_member: (Objects::id user) -> bool
     def delete: () -> bool
 

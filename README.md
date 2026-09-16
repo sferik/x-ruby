@@ -198,6 +198,7 @@ x_client.hide_reply(reply)              # as the author of the post it replies t
 post.delete
 
 list = x_client.create_list("Rubyists", private: true)
+list.update(description: "People who write Ruby") # also name and private
 list.add_member(user)
 me.pin_list(list)                      # also unpin_list, follow_list, and unfollow_list
 list.delete

@@ -57,6 +57,20 @@ module X
         resource_from_response(body, client:)
       end
 
+      # Update the name, description, or privacy of a list as the authenticated user
+      #
+      # @api public
+      # @param list [List, String, Integer] the list or its identifier
+      # @param client [Object] the client used to make the request
+      # @param params [Hash] the request body fields to change: name, description, and private
+      # @return [Boolean] true if the list was updated
+      # @example Rename a list and make it private
+      #   X::List.update("1234567890", client: client, name: "Rubyists", private: true)
+      def update(list, client:, **params)
+        body = client.put("lists/#{Objects::Utils.id_of(list)}", JSON.generate(params), **Objects::Utils::JSON_CLASSES)
+        body.to_h.dig("data", "updated").eql?(true)
+      end
+
       # Refuse a batch lookup, which the API does not offer for lists
       #
       # @api public
@@ -245,6 +259,19 @@ module X
     def remove_member(user)
       body = client!.delete("lists/#{id}/members/#{Objects::Utils.id_of(user)}", **Objects::Utils::JSON_CLASSES)
       body.to_h.dig("data", "is_member").eql?(false)
+    end
+
+    # Update the name, description, or privacy of this list as the authenticated user
+    #
+    # The list keeps the attributes it was built with, so refresh it to read the new ones.
+    #
+    # @api public
+    # @param params [Hash] the request body fields to change: name, description, and private
+    # @return [Boolean] true if the list was updated
+    # @example Change the description of a list
+    #   list.update(description: "People who write Ruby")
+    def update(**params)
+      self.class.update(self, client: client!, **params)
     end
 
     # Delete this list as the authenticated user
