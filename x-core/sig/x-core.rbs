@@ -399,6 +399,7 @@ module X
 
     private
     def refresh: -> Hash[String, untyped]
+    def report_refresh: -> void
     def oauth2_client: -> SimpleOAuth::OAuth2::Client
     def token_endpoint: -> String
     def send_token_request: -> Net::HTTPResponse

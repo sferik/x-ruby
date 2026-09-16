@@ -106,7 +106,8 @@ module X
     # @example Get the header
     #   authenticator.header(request)
     def header(_request)
-      @mutex.synchronize { refresh if token_expired? }
+      refreshed = @mutex.synchronize { refresh if token_expired? }
+      report_refresh if refreshed
       {AUTHENTICATION_HEADER => "Bearer #{access_token}"}
     end
 
@@ -140,7 +141,7 @@ module X
     # @example Refresh the token
     #   authenticator.refresh_token!
     def refresh_token!
-      @mutex.synchronize { refresh }
+      @mutex.synchronize { refresh }.tap { report_refresh }
     end
 
     # Refresh an access token the API rejected, unless it was already replaced
@@ -154,10 +155,11 @@ module X
     # @example Refresh a token the API rejected, and retry
     #   retry if authenticator.refresh_rejected_token!(token)
     def refresh_rejected_token!(rejected_token)
-      @mutex.synchronize do
-        refresh if access_token.eql?(rejected_token)
-        !access_token.eql?(rejected_token)
+      refreshed, replaced = @mutex.synchronize do
+        [(refresh if access_token.eql?(rejected_token)), !access_token.eql?(rejected_token)]
       end
+      report_refresh if refreshed
+      replaced
     end
 
     # Run a request, again if the API rejects a token that a refresh replaces
@@ -182,12 +184,23 @@ module X
 
     private
 
-    # Refresh the access token and pass the authenticator to on_refresh
+    # Refresh the access token, holding the lock
     # @api private
     # @return [Hash{String => Object}] the token response
     # @raise [Error] if token refresh fails
     def refresh
-      handle_token_response(send_token_request).tap { on_refresh&.call(self) }
+      handle_token_response(send_token_request)
+    end
+
+    # Pass the authenticator to on_refresh, once the lock is released
+    #
+    # The callable can make a request of its own, such as looking up the user whose tokens it stores, which
+    # asks this authenticator for a header and so takes the lock again.
+    #
+    # @api private
+    # @return [void]
+    def report_refresh
+      on_refresh&.call(self)
     end
 
     # The client for the token endpoint

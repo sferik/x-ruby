@@ -110,6 +110,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Remove the `base64` dependency from `x-core`, which encodes no Base64 of its own now that simple_oauth builds the Basic credentials
 
 ### Fixed
+* Call `on_token_refresh`, and the `on_refresh` of `X::OAuth2Authenticator`, once the refresh releases its lock, so the callable can send a request with the client, such as looking up the user whose tokens it stores, rather than raise `ThreadError` for recursive locking
 * Resolve a relative redirect against the URL of the request it redirects, rather than the base URL, so a redirect from a request to another host, such as `upload.x.com`, stays on that host with its credentials
 * Build the message of an `X::HTTPError` from a body that is not the JSON its content type claims, such as an empty or HTML body, or whose errors have no `message`, instead of raising `JSON::ParserError`, `KeyError`, or `TypeError` in place of the error, so a stream reconnects and a chunk upload retries after such a server error; an error without a `message` gives its `detail` or `title`
 * Look up `current_user` again once the client's credentials change, rather than keep returning the user of the credentials it had when first asked
