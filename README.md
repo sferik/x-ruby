@@ -323,7 +323,7 @@ In the immortal words of [Ezra Zygmuntowicz](https://github.com/ezmobius) and hi
 
 > No code is faster than no code.
 
-The tests for the previous version of this library executed in about 2 seconds. That sounds pretty fast until you see that the tests for this library run in a fraction of a second. This means you can automatically run the tests any time you write a file and receive immediate feedback. For such of workflows, 2 seconds feels painfully slow.
+The tests for the previous version of this library executed in about 2 seconds. That sounds pretty fast until you see that the tests for this library run in a fraction of a second. This means you can automatically run the tests any time you write a file and receive immediate feedback. For such workflows, 2 seconds feels painfully slow.
 
 This code is not littered with comments that are intended to generate documentation. Rather, this code is intended to be simple enough to serve as its own documentation. If you want to understand how something works, don’t read the documentation—it might be wrong—read the code. The code is always right.
 
