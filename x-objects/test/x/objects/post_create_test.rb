@@ -3,6 +3,7 @@ require_relative "../../test_helper"
 module X
   class PostCreateTest < Minitest::Test
     cover Post
+    cover Objects::PostWrites
 
     def setup
       @client = FakeClient.new
@@ -35,6 +36,26 @@ module X
       Post.create("Hello", client: @client, media_ids: [{"id" => "3", "media_key" => "3_3"}, 4])
 
       assert_equal({text: "Hello", media: {media_ids: %w[3 4]}}.to_json, @client.requests.first[:body])
+    end
+
+    def test_create_a_quote
+      Post.create("Worth reading", client: @client, quote: Post.new({"id" => "2"}))
+      Post.create("Worth reading", client: @client, quote: 2)
+
+      assert_equal [{text: "Worth reading", quote_tweet_id: "2"}.to_json] * 2, @client.requests.map { |request| request[:body] }
+    end
+
+    def test_create_a_quote_in_reply_with_media_in_a_community
+      Post.create("Hello", client: @client, reply_to: 2, quote: 3, media_ids: [4], community: 5)
+
+      assert_equal({text: "Hello", reply: {in_reply_to_tweet_id: "2"}, quote_tweet_id: "3", media: {media_ids: ["4"]}, community_id: "5"}.to_json,
+        @client.requests.first[:body])
+    end
+
+    def test_create_returns_the_post
+      post = Post.create("Hello", client: @client)
+
+      assert_equal [1, "Hello", @client], [post.id, post.text, post.client]
     end
 
     def test_create_in_a_community

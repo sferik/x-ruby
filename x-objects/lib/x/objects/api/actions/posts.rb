@@ -13,12 +13,14 @@ module X
           #
           # @api public
           # @param text [String] the text of the post
-          # @param params [Hash] additional request body fields, such as reply_to, media_ids, or poll
+          # @param params [Hash] additional request body fields, such as reply_to, quote, media_ids, or poll
           # @return [Post, nil] the created post, holding only its identifier and text
           # @example Create a post
           #   client.create_post("Hello, World!")
           # @example Reply to a post with an image
           #   client.create_post("Hello!", reply_to: post, media_ids: [media["id"]])
+          # @example Quote a post
+          #   client.create_post("Worth reading", quote: post)
           def create_post(text, **params)
             Post.create(text, client: self, **params)
           end

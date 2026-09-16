@@ -191,6 +191,7 @@ me.bookmark(post)
 x_client.like(post)                    # the same, via the client
 post = x_client.create_post("Hello, World! (from @gem)")
 reply = x_client.create_post("Hello back!", reply_to: post, media_ids: [media["id"]])
+quote = x_client.create_post("Worth reading", quote: post)
 post.delete
 
 list = x_client.create_list("Rubyists", private: true)

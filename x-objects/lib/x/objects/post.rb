@@ -3,6 +3,7 @@ require "uri"
 require_relative "community"
 require_relative "cursor"
 require_relative "post_counts"
+require_relative "post_writes"
 require_relative "references"
 require_relative "resource"
 
@@ -23,6 +24,7 @@ module X
 
     include Objects::References
     extend Objects::PostCounts
+    extend Objects::PostWrites
 
     class << self
       # The API endpoint used to look up posts by identifier
@@ -93,45 +95,6 @@ module X
       def search_all(query, client:, **params)
         max_results = context_annotations?(params) ? MAX_RESULTS : MAX_ARCHIVE_RESULTS
         Cursor.new(self, "tweets/search/all", client:, params: {query:, max_results:}.merge(params), min_results: 10)
-      end
-
-      # Create a post as the authenticated user
-      #
-      # The API bills each post created, and bills a post whose text holds a URL more than ten times as much.
-      #
-      # @api public
-      # @param text [String] the text of the post
-      # @param client [Object] the client used to make the request
-      # @param reply_to [Post, String, Integer, nil] the post to reply to or its identifier
-      # @param media_ids [Array<String, Integer, Hash>, nil] the identifiers of uploaded media to attach, or the upload responses
-      # @param community [Community, String, Integer, nil] the community to post in or its identifier
-      # @param params [Hash] additional request body fields, such as poll or reply_settings
-      # @return [Post, nil] the created post, holding only its identifier and text
-      # @example Create a post
-      #   X::Post.create("Hello, World!", client: client)
-      # @example Reply to a post with an image
-      #   X::Post.create("Hello!", client: client, reply_to: post, media_ids: [media["id"]])
-      # @example Post in a community
-      #   X::Post.create("Hello, Rubyists!", client: client, community: community)
-      def create(text, client:, reply_to: nil, media_ids: nil, community: nil, **params)
-        params[:reply] = {in_reply_to_tweet_id: Objects::Utils.id_of(reply_to)} unless reply_to.nil?
-        params[:media] = {media_ids: media_ids.map { |media| Objects::Utils.media_id_of(media) }} unless media_ids.nil?
-        params[:community_id] = Objects::Utils.id_of(community) unless community.nil?
-        body = client.post("tweets", JSON.generate({text:, **params}), **Objects::Utils::JSON_CLASSES)
-        resource_from_response(body, client:)
-      end
-
-      # Delete a post as the authenticated user
-      #
-      # @api public
-      # @param post [Post, String, Integer] the post or its identifier
-      # @param client [Object] the client used to make the request
-      # @return [Boolean] true if the post was deleted
-      # @example Delete a post
-      #   X::Post.delete("1234567890", client: client)
-      def delete(post, client:)
-        body = client.delete("tweets/#{Objects::Utils.id_of(post)}", **Objects::Utils::JSON_CLASSES)
-        body.to_h.dig("data", "deleted").eql?(true)
       end
 
       private
