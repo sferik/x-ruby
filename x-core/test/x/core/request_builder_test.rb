@@ -70,7 +70,7 @@ module X
     end
 
     def test_escape_query_params_with_commas
-      uri = "https://api.twitter.com/2/tweets/search/recent?query=%23ruby&expansions=author_id&user.fields=id,name,username"
+      uri = "https://api.x.com/2/tweets/search/recent?query=%23ruby&expansions=author_id&user.fields=id,name,username"
       request = @request_builder.build(http_method: :post, uri:, authenticator: @authenticator)
 
       assert_equal "query=%23ruby&expansions=author_id&user.fields=id,name,username", request.uri.query

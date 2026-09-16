@@ -4,7 +4,7 @@ module X
   class ClientRateLimitRetriesTest < Minitest::Test
     cover Client
 
-    URL = "https://api.twitter.com/2/users/me".freeze
+    URL = "https://api.x.com/2/users/me".freeze
     SUCCESS = {status: 200, body: '{"data":{"id":"1"}}', headers: {"Content-Type" => "application/json"}}.freeze
 
     def setup
@@ -39,10 +39,10 @@ module X
 
     def test_a_request_without_retries_raises_at_once
       client = Client.new
-      stub_request(:post, "https://api.twitter.com/2/tweets").to_return(refused)
+      stub_request(:post, "https://api.x.com/2/tweets").to_return(refused)
 
       assert_raises(TooManyRequests) { without_sleeping(client) { client.post("tweets", {text: "hi"}) } }
-      assert_requested(:post, "https://api.twitter.com/2/tweets", times: 1)
+      assert_requested(:post, "https://api.x.com/2/tweets", times: 1)
       assert_empty @sleeps
     end
 

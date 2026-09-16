@@ -25,7 +25,7 @@ module X
     include RequestEncoding
 
     # Default base URL for the X API
-    DEFAULT_BASE_URL = "https://api.twitter.com/2/".freeze
+    DEFAULT_BASE_URL = "https://api.x.com/2/".freeze
     # Default class for parsing JSON arrays
     DEFAULT_ARRAY_CLASS = Array
     # Default class for parsing JSON objects
@@ -37,7 +37,7 @@ module X
     # @api public
     # @return [String] the base URL for API requests
     # @example Get or set the base URL
-    #   client.base_url = "https://api.twitter.com/1.1/"
+    #   client.base_url = "https://api.x.com/1.1/"
     attr_accessor :base_url
 
     # The default class for parsing JSON arrays
@@ -135,7 +135,7 @@ module X
     # @api public
     # @return [String] the class name, base URL, and authenticator
     # @example Inspect a client
-    #   client.inspect # => #<X::Client base_url="https://api.twitter.com/2/" authenticator=#<X::BearerTokenAuthenticator>>
+    #   client.inspect # => #<X::Client base_url="https://api.x.com/2/" authenticator=#<X::BearerTokenAuthenticator>>
     def inspect
       "#<#{self.class} base_url=#{base_url.inspect} authenticator=#{authenticator.inspect}>"
     end
@@ -146,7 +146,7 @@ module X
     # @param options [Hash] the options to change, as accepted by initialize
     # @return [Client] a new client with the same credentials and settings, apart from the options given
     # @example Derive an API v1.1 client
-    #   v1_client = client.copy(base_url: "https://api.twitter.com/1.1/")
+    #   v1_client = client.copy(base_url: "https://api.x.com/1.1/")
     # @example Derive an app-only client from the API key and secret
     #   app_client = client.copy(access_token: nil, access_token_secret: nil)
     def copy(**options)

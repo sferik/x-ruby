@@ -11,7 +11,7 @@ module X
     end
 
     def test_copy_copies_the_credentials
-      copy = @client.copy(base_url: "https://api.twitter.com/1.1/")
+      copy = @client.copy(base_url: "https://api.x.com/1.1/")
 
       assert_instance_of OAuth1Authenticator, copy.authenticator
       assert_equal [TEST_API_KEY, TEST_API_KEY_SECRET, TEST_ACCESS_TOKEN, TEST_ACCESS_TOKEN_SECRET],
@@ -20,7 +20,7 @@ module X
 
     def test_copy_copies_the_other_credentials
       client = Client.new(**test_oauth2_credentials)
-      copy = client.copy(base_url: "https://api.twitter.com/1.1/")
+      copy = client.copy(base_url: "https://api.x.com/1.1/")
 
       assert_equal [TEST_CLIENT_ID, TEST_CLIENT_SECRET, TEST_REFRESH_TOKEN], [copy.client_id, copy.client_secret, copy.refresh_token]
       assert_equal TEST_BEARER_TOKEN, Client.new(bearer_token: TEST_BEARER_TOKEN).copy(max_redirects: 1).bearer_token
@@ -35,9 +35,9 @@ module X
     end
 
     def test_copy_changes_the_base_url
-      copy = @client.copy(base_url: "https://api.twitter.com/1.1/")
+      copy = @client.copy(base_url: "https://api.x.com/1.1/")
 
-      assert_equal "https://api.twitter.com/1.1/", copy.base_url
+      assert_equal "https://api.x.com/1.1/", copy.base_url
       assert_equal "https://api.x.com/2/", @client.base_url
       refute_same @client, copy
     end

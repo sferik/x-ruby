@@ -5,7 +5,7 @@ module X
     cover Client
     cover StreamingClient
 
-    STREAM_URL = "https://api.twitter.com/2/tweets/sample/stream".freeze
+    STREAM_URL = "https://api.x.com/2/tweets/sample/stream".freeze
 
     def setup
       @token_request = stub_request(:post, AppOnlyAuthenticator::TOKEN_URL)

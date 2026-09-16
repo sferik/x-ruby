@@ -35,15 +35,15 @@ module X
     end
 
     def test_perform_stream_no_host_or_port
-      stub_request(:get, "http://api.twitter.com:443/2/tweets")
-      request = Net::HTTP::Get.new(URI("http://api.twitter.com:443/2/tweets"))
+      stub_request(:get, "http://api.x.com:443/2/tweets")
+      request = Net::HTTP::Get.new(URI("http://api.x.com:443/2/tweets"))
       request.stub(:uri, URI("/2/tweets")) do
         @connection.perform_stream(request:) do |response|
           assert_kind_of Net::HTTPSuccess, response
         end
       end
 
-      assert_requested :get, "http://api.twitter.com:443/2/tweets"
+      assert_requested :get, "http://api.x.com:443/2/tweets"
     end
   end
 end

@@ -8,7 +8,7 @@ module X
     cover Uploader::Media
     cover Uploader::Chunks
 
-    UPLOAD_URL = "https://api.twitter.com/2/media/upload".freeze
+    UPLOAD_URL = "https://api.x.com/2/media/upload".freeze
     BOUNDARY = "AaB03x".freeze
     CONTENT = "\x89PNG\r\n\x1A\n\x00\x00\x00...".b.freeze
     GIF_FILE = "test/sample_files/sample.gif".freeze

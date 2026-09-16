@@ -98,10 +98,10 @@ module X
     end
 
     def test_process_raises_on_error_response
-      stub_request(:get, "https://api.twitter.com/2/tweets/search/stream")
+      stub_request(:get, "https://api.x.com/2/tweets/search/stream")
         .to_return(status: 401, body: '{"errors":[{"message":"Unauthorized"}]}',
           headers: {"Content-Type" => "application/json"})
-      response = Net::HTTP.get_response(URI("https://api.twitter.com/2/tweets/search/stream"))
+      response = Net::HTTP.get_response(URI("https://api.x.com/2/tweets/search/stream"))
 
       assert_raises(Unauthorized) do
         @stream_parser.process(response:, response_parser: @response_parser) do |_json|

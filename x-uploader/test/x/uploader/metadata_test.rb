@@ -5,8 +5,8 @@ module X
   class MetadataTest < Minitest::Test
     cover Uploader::Metadata
 
-    METADATA_URL = "https://api.twitter.com/2/media/metadata".freeze
-    SUBTITLES_URL = "https://api.twitter.com/2/media/subtitles".freeze
+    METADATA_URL = "https://api.x.com/2/media/metadata".freeze
+    SUBTITLES_URL = "https://api.x.com/2/media/subtitles".freeze
     JSON_HEADERS = {"content-type" => "application/json"}.freeze
 
     def setup

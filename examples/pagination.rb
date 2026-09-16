@@ -7,7 +7,7 @@ x_credentials = {
   access_token_secret: "INSERT YOUR X ACCESS TOKEN SECRET HERE"
 }
 
-client = X::Client.new(base_url: "https://api.twitter.com/1.1/", **x_credentials)
+client = X::Client.new(base_url: "https://api.x.com/1.1/", **x_credentials)
 
 screen_name = "sferik"
 count = 5000

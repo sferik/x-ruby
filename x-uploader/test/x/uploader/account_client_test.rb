@@ -32,7 +32,7 @@ module X
       v1_client = Uploader::Account.send(:v1_client, client)
 
       assert_equal [Uploader::Account::V1_BASE_URL, 9, 1], [v1_client.base_url, v1_client.read_timeout, v1_client.max_redirects]
-      assert_equal "https://api.twitter.com/2/", client.base_url
+      assert_equal "https://api.x.com/2/", client.base_url
     end
 
     def test_missing_file_message

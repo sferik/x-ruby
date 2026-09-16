@@ -61,7 +61,7 @@ module X
     end
 
     def status_url
-      "https://api.twitter.com/2/media/upload?command=STATUS&media_id=#{TEST_MEDIA_ID}"
+      "https://api.x.com/2/media/upload?command=STATUS&media_id=#{TEST_MEDIA_ID}"
     end
 
     def json_headers

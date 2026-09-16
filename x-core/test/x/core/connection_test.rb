@@ -115,11 +115,11 @@ module X
     end
 
     def test_no_host_or_port
-      stub_request(:get, "http://api.twitter.com:443/2/tweets")
-      request = Net::HTTP::Get.new(URI("http://api.twitter.com:443/2/tweets"))
+      stub_request(:get, "http://api.x.com:443/2/tweets")
+      request = Net::HTTP::Get.new(URI("http://api.x.com:443/2/tweets"))
       request.stub(:uri, URI("/2/tweets")) { @connection.perform(request:) }
 
-      assert_requested :get, "http://api.twitter.com:443/2/tweets"
+      assert_requested :get, "http://api.x.com:443/2/tweets"
     end
   end
 

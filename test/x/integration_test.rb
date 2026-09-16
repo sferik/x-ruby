@@ -3,7 +3,7 @@ require_relative "../test_helper"
 
 module X
   class IntegrationTest < Minitest::Test
-    BASE = "https://api.twitter.com/2/".freeze
+    BASE = "https://api.x.com/2/".freeze
 
     def setup
       @client = Client.new(bearer_token: TEST_BEARER_TOKEN)

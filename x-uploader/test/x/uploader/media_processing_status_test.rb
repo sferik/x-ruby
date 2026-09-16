@@ -5,7 +5,7 @@ module X
   class MediaProcessingStatusTest < Minitest::Test
     cover Uploader::Media
 
-    STATUS_URL = "https://api.twitter.com/2/media/upload?command=STATUS&media_id=#{TEST_MEDIA_ID}".freeze
+    STATUS_URL = "https://api.x.com/2/media/upload?command=STATUS&media_id=#{TEST_MEDIA_ID}".freeze
 
     def setup
       @client = Client.new

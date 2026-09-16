@@ -64,7 +64,7 @@ module X
     # @api public
     # @return [String, nil] the type
     # @example Get the type
-    #   problem.type # => "https://api.twitter.com/2/problems/resource-not-found"
+    #   problem.type # => "https://api.x.com/2/problems/resource-not-found"
     def type = attrs["type"]
 
     # The kind of resource the problem concerns

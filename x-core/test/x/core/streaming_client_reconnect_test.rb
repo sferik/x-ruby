@@ -5,7 +5,7 @@ module X
   class StreamingClientReconnectTest < Minitest::Test
     cover StreamingClient
 
-    STREAM_URL = "https://api.twitter.com/2/tweets/sample/stream".freeze
+    STREAM_URL = "https://api.x.com/2/tweets/sample/stream".freeze
 
     def setup
       @client = Client.new(bearer_token: TEST_BEARER_TOKEN)

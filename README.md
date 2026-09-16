@@ -221,7 +221,7 @@ x_client.delete("tweets/#{post["data"]["id"]}")
 # {"data"=>{"deleted"=>true}}
 
 # Derive an API v1.1 client
-v1_client = x_client.copy(base_url: "https://api.twitter.com/1.1/")
+v1_client = x_client.copy(base_url: "https://api.x.com/1.1/")
 
 # Post a form
 v1_client.post("account/settings.json", form: {lang: "en"})
@@ -240,7 +240,7 @@ languages = v1_client.get("help/languages.json", object_class: Language, array_c
 languages.first.local_name
 
 # Initialize an Ads API client
-ads_client = X::Client.new(base_url: "https://ads-api.twitter.com/12/", **x_credentials)
+ads_client = X::Client.new(base_url: "https://ads-api.x.com/12/", **x_credentials)
 
 # Get your ad accounts
 ads_client.get("accounts")

@@ -23,7 +23,7 @@ module X
 
     Connection::NETWORK_ERRORS.each do |error_class|
       define_method "test_#{error_class.name.split("::").last.downcase}_raises_network_error" do
-        stub_request(:get, "https://api.twitter.com/2/tweets").to_raise(error_class)
+        stub_request(:get, "https://api.x.com/2/tweets").to_raise(error_class)
 
         assert_raises NetworkError do
           @client.get("tweets")
@@ -32,7 +32,7 @@ module X
     end
 
     def test_unexpected_response
-      stub_request(:get, "https://api.twitter.com/2/tweets").to_return(status: 600)
+      stub_request(:get, "https://api.x.com/2/tweets").to_return(status: 600)
 
       assert_raises Error do
         @client.get("tweets")
@@ -41,7 +41,7 @@ module X
 
     def test_problem_json
       body = {error: "problem"}.to_json
-      stub_request(:get, "https://api.twitter.com/2/tweets")
+      stub_request(:get, "https://api.x.com/2/tweets")
         .to_return(status: 400, headers: {"content-type" => "application/problem+json"}, body:)
 
       begin

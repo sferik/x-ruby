@@ -5,13 +5,13 @@ module X
     cover Problem
     cover ResourceNotFound
 
-    NOT_FOUND = {"title" => "Not Found Error", "detail" => "Could not find tweet with pinned_tweet_id: [1].", "type" => "https://api.twitter.com/2/problems/resource-not-found",
+    NOT_FOUND = {"title" => "Not Found Error", "detail" => "Could not find tweet with pinned_tweet_id: [1].", "type" => "https://api.x.com/2/problems/resource-not-found",
                  "resource_type" => "tweet", "resource_id" => "1", "parameter" => "pinned_tweet_id", "value" => "1"}.freeze
 
     def test_attributes
       problem = Problem.new(NOT_FOUND)
 
-      assert_equal ["Not Found Error", "Could not find tweet with pinned_tweet_id: [1].", "https://api.twitter.com/2/problems/resource-not-found"], [problem.title, problem.detail, problem.type]
+      assert_equal ["Not Found Error", "Could not find tweet with pinned_tweet_id: [1].", "https://api.x.com/2/problems/resource-not-found"], [problem.title, problem.detail, problem.type]
       assert_equal %w[tweet 1 pinned_tweet_id 1], [problem.resource_type, problem.resource_id, problem.parameter, problem.value]
       assert_equal NOT_FOUND, problem.to_h
       assert_predicate problem, :frozen?
@@ -20,7 +20,7 @@ module X
 
     def test_not_found
       assert_predicate Problem.new(NOT_FOUND), :not_found?
-      refute_predicate Problem.new({"type" => "https://api.twitter.com/2/problems/not-authorized-for-resource"}), :not_found?
+      refute_predicate Problem.new({"type" => "https://api.x.com/2/problems/not-authorized-for-resource"}), :not_found?
       refute_predicate Problem.new({}), :not_found?
     end
 

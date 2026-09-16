@@ -7,7 +7,7 @@ module X
     cover Uploader::Media
     cover Uploader::Chunks
 
-    BASE_URL = "https://api.twitter.com/2/media/upload".freeze
+    BASE_URL = "https://api.x.com/2/media/upload".freeze
     APPEND_URL = "#{BASE_URL}/#{TEST_MEDIA_ID}/append".freeze
     BOUNDARY = "AaB03x".freeze
     VIDEO_FILE = "test/sample_files/sample.mp4".freeze

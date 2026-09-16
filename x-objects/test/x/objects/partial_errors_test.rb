@@ -13,7 +13,7 @@ module X
       cover X::Objects::UserFinders
       cover X::Page
 
-      PINNED_MISSING = {"title" => "Not Found Error", "detail" => "Could not find tweet with pinned_tweet_id: [9].", "type" => "https://api.twitter.com/2/problems/resource-not-found", "parameter" => "pinned_tweet_id"}.freeze
+      PINNED_MISSING = {"title" => "Not Found Error", "detail" => "Could not find tweet with pinned_tweet_id: [9].", "type" => "https://api.x.com/2/problems/resource-not-found", "parameter" => "pinned_tweet_id"}.freeze
       USER_MISSING = {"title" => "Not Found Error", "detail" => "Could not find user with ids: [5].", "resource_id" => "5", "parameter" => "ids"}.freeze
 
       def setup

@@ -6,7 +6,7 @@ module X
     cover Uploader::Media
     cover Uploader::Chunks
 
-    BASE_URL = "https://api.twitter.com/2/media/upload".freeze
+    BASE_URL = "https://api.x.com/2/media/upload".freeze
     JSON_HEADERS = {"content-type" => "application/json"}.freeze
 
     def setup
@@ -97,18 +97,18 @@ module X
 
     def test_upload_with_alt_text
       stub_request(:post, BASE_URL).to_return(headers: JSON_HEADERS, body: {data: {id: TEST_MEDIA_ID}}.to_json)
-      stub_request(:post, "https://api.twitter.com/2/media/metadata").to_return(headers: JSON_HEADERS, body: {data: {id: TEST_MEDIA_ID}}.to_json)
+      stub_request(:post, "https://api.x.com/2/media/metadata").to_return(headers: JSON_HEADERS, body: {data: {id: TEST_MEDIA_ID}}.to_json)
       response = Uploader::Media.upload("test/sample_files/sample.png", client: @client, alt_text: "A pixel")
 
       assert_equal({"id" => TEST_MEDIA_ID}, response)
-      assert_requested :post, "https://api.twitter.com/2/media/metadata", body: {id: TEST_MEDIA_ID, metadata: {alt_text: {text: "A pixel"}}}.to_json
+      assert_requested :post, "https://api.x.com/2/media/metadata", body: {id: TEST_MEDIA_ID, metadata: {alt_text: {text: "A pixel"}}}.to_json
     end
 
     def test_upload_without_alt_text_sends_no_metadata
       stub_request(:post, BASE_URL).to_return(headers: JSON_HEADERS, body: {data: {id: TEST_MEDIA_ID}}.to_json)
       Uploader::Media.upload("test/sample_files/sample.png", client: @client)
 
-      assert_not_requested :post, "https://api.twitter.com/2/media/metadata"
+      assert_not_requested :post, "https://api.x.com/2/media/metadata"
     end
 
     def test_upload_rejects_a_missing_video_before_requesting

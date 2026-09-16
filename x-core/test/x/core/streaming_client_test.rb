@@ -56,7 +56,7 @@ module X
     end
 
     def test_raises_on_error
-      stub_request(:get, "https://api.twitter.com/2/tweets/search/stream")
+      stub_request(:get, "https://api.x.com/2/tweets/search/stream")
         .to_return(status: 401, body: '{"errors":[{"message":"Unauthorized"}]}',
           headers: {"Content-Type" => "application/json"})
 
@@ -89,7 +89,7 @@ module X
         streaming.stream("tweets/sample/stream", params: {"tweet.fields": %w[id text], expansions: nil}) { |_json| flunk "unexpected yield" }
       end
 
-      assert_equal URI("https://api.twitter.com/2/tweets/sample/stream?tweet.fields=id,text"), request.uri
+      assert_equal URI("https://api.x.com/2/tweets/sample/stream?tweet.fields=id,text"), request.uri
     end
 
     def test_uses_base_url
@@ -98,7 +98,7 @@ module X
         streaming.stream("tweets/search/stream") { |_json| flunk "unexpected yield" }
       end
 
-      assert_equal URI("https://api.twitter.com/2/tweets/search/stream"), request.uri
+      assert_equal URI("https://api.x.com/2/tweets/search/stream"), request.uri
     end
   end
 end

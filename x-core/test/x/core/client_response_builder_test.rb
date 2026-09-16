@@ -13,7 +13,7 @@ module X
 
     X::RequestBuilder::HTTP_METHODS.each_key do |http_method|
       define_method :"test_#{http_method}_request_passes_itself_to_a_response_builder" do
-        stub_request(http_method, "https://api.twitter.com/2/tweets")
+        stub_request(http_method, "https://api.x.com/2/tweets")
           .to_return(body: '{"data": {"id": "1"}}', headers: {"Content-Type" => "application/json"})
         built = @client.public_send(http_method, "tweets", object_class: ResponseBuilder)
 

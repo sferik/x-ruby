@@ -11,7 +11,7 @@ module X
     extend Forwardable
 
     # Default host for the X API
-    DEFAULT_HOST = "api.twitter.com".freeze
+    DEFAULT_HOST = "api.x.com".freeze
     # Default port for HTTPS connections
     DEFAULT_PORT = 443
     # Default timeout for opening connections in seconds

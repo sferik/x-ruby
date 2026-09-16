@@ -21,8 +21,8 @@ module X
     end
 
     def test_process_calls_on_body_before_raising
-      stub_request(:get, "https://api.twitter.com/2/tweets/search/stream").to_return(status: 401, body: "{}", headers: {"Content-Type" => "application/json"})
-      response = Net::HTTP.get_response(URI("https://api.twitter.com/2/tweets/search/stream"))
+      stub_request(:get, "https://api.x.com/2/tweets/search/stream").to_return(status: 401, body: "{}", headers: {"Content-Type" => "application/json"})
+      response = Net::HTTP.get_response(URI("https://api.x.com/2/tweets/search/stream"))
       calls = []
 
       assert_raises(Unauthorized) { @stream_parser.process(response:, response_parser: @response_parser, on_body: ->(*args) { calls << args }) }
