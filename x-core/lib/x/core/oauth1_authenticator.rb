@@ -121,4 +121,5 @@ module X
 
   # The name of OAuth1Authenticator before OAuth2Authenticator joined it
   OAuthAuthenticator = OAuth1Authenticator
+  deprecate_constant :OAuthAuthenticator
 end
