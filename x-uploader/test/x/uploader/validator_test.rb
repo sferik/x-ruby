@@ -19,6 +19,10 @@ module X
       assert_nil Uploader::Validator.validate_media_category!("tweet_image")
     end
 
+    def test_validate_amplify_video
+      assert_nil Uploader::Validator.validate_media_category!("amplify_video")
+    end
+
     def test_validate_media_category_ignores_case
       assert_nil Uploader::Validator.validate_media_category!("TWEET_IMAGE")
     end
@@ -26,7 +30,7 @@ module X
     def test_validate_media_category_raises_for_invalid_category
       error = assert_raises(ArgumentError) { Uploader::Validator.validate_media_category!("bogus") }
 
-      assert_equal "Invalid media_category: bogus. Valid values: dm_gif, dm_image, dm_video, subtitles, tweet_gif, " \
+      assert_equal "Invalid media_category: bogus. Valid values: amplify_video, dm_gif, dm_image, dm_video, subtitles, tweet_gif, " \
         "tweet_image, tweet_video", error.message
     end
   end

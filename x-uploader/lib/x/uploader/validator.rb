@@ -6,7 +6,7 @@ module X
       extend self
 
       # Valid media category values
-      MEDIA_CATEGORIES = %w[dm_gif dm_image dm_video subtitles tweet_gif tweet_image tweet_video].freeze
+      MEDIA_CATEGORIES = %w[amplify_video dm_gif dm_image dm_video subtitles tweet_gif tweet_image tweet_video].freeze
 
       # Validate that a file path exists
       #

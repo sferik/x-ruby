@@ -106,7 +106,8 @@ module X
         %w[tweet_video video/mp4] => "test/sample_files/sample.mp4",
         %w[tweet_image image/png] => "test/sample_files/sample.png",
         %w[subtitles text/srt] => "test/sample_files/sample.srt",
-        %w[tweet_image image/webp] => "test/sample_files/sample.webp"
+        %w[tweet_image image/webp] => "test/sample_files/sample.webp",
+        %w[amplify_video video/mp4] => "test/sample_files/sample.png"
       }
     end
   end

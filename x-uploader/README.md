@@ -29,7 +29,7 @@ X::Uploader::Metadata.add_subtitles(video, subtitles, "EN", client:, display_nam
 X::Uploader::Account.update_profile_image("avatar.png", client:)
 ```
 
-`upload` infers the media category from the file. A GIF with a single frame is an image, because X processes only animated GIFs as GIFs, and `X::Uploader::Gif.animated?` tells the two apart. Subtitles are `.srt` files, uploaded in chunks as `text/srt`.
+`upload` infers the media category from the file. A GIF with a single frame is an image, because X processes only animated GIFs as GIFs, and `X::Uploader::Gif.animated?` tells the two apart. Videos are MP4, QuickTime, WebM, or MPEG-TS files and subtitles are SubRip (`.srt`) or WebVTT (`.vtt`) files, each uploaded in chunks as the type its extension names.
 
 ## Development
 

@@ -24,6 +24,14 @@ module X
       assert_requested(:post, INIT_URL, body: {media_type: "image/png", media_category: "tweet_image", total_bytes: 68}.to_json)
     end
 
+    def test_upload_an_amplify_video_in_chunks_as_mp4
+      stub_workflow
+      Uploader::Media.upload("test/sample_files/sample.png", client: @client, media_category: "amplify_video")
+
+      assert_requested(:post, INIT_URL, body: {media_type: "video/mp4", media_category: "amplify_video", total_bytes: 68}.to_json)
+      assert_not_requested(:post, BASE_URL)
+    end
+
     def test_missing_file_is_rejected_before_requesting
       error = assert_raises(Errno::ENOENT) do
         Uploader::Media.chunked_upload("nope.mp4", client: @client, media_category: "tweet_video")

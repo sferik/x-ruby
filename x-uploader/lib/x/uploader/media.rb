@@ -21,13 +21,26 @@ module X
       # Number of bytes per megabyte
       BYTES_PER_MB = 1_048_576
       # Media category constants
-      DM_GIF, DM_IMAGE, DM_VIDEO, SUBTITLES, TWEET_GIF, TWEET_IMAGE, TWEET_VIDEO = Uploader::Validator::MEDIA_CATEGORIES
-      # Supported MIME types
-      MIME_TYPES = %w[image/gif image/jpeg video/mp4 image/png text/srt image/webp].freeze
+      AMPLIFY_VIDEO, DM_GIF, DM_IMAGE, DM_VIDEO, SUBTITLES, TWEET_GIF, TWEET_IMAGE, TWEET_VIDEO = Uploader::Validator::MEDIA_CATEGORIES
+      # Supported MIME types: every media type the API documents for an upload
+      MIME_TYPES = %w[image/bmp image/gif image/jpeg image/pjpeg image/png image/tiff image/webp model/gltf-binary
+        model/vnd.usdz+zip text/srt text/vtt video/mp2t video/mp4 video/quicktime video/webm].freeze
       # MIME type constants
-      GIF_MIME_TYPE, JPEG_MIME_TYPE, MP4_MIME_TYPE, PNG_MIME_TYPE, SUBRIP_MIME_TYPE, WEBP_MIME_TYPE = MIME_TYPES
+      BMP_MIME_TYPE, GIF_MIME_TYPE, JPEG_MIME_TYPE, PJPEG_MIME_TYPE, PNG_MIME_TYPE, TIFF_MIME_TYPE, WEBP_MIME_TYPE,
+        GLTF_BINARY_MIME_TYPE, USDZ_MIME_TYPE, SUBRIP_MIME_TYPE, WEBVTT_MIME_TYPE, MPEG_TS_MIME_TYPE, MP4_MIME_TYPE,
+        QUICKTIME_MIME_TYPE, WEBM_MIME_TYPE = MIME_TYPES
       # Mapping of file extensions to MIME types
-      MIME_TYPE_MAP = {"gif" => GIF_MIME_TYPE, "jpg" => JPEG_MIME_TYPE, "jpeg" => JPEG_MIME_TYPE, "mp4" => MP4_MIME_TYPE, "png" => PNG_MIME_TYPE, "srt" => SUBRIP_MIME_TYPE, "webp" => WEBP_MIME_TYPE}.freeze
+      MIME_TYPE_MAP = {
+        "bmp" => BMP_MIME_TYPE, "gif" => GIF_MIME_TYPE, "jpg" => JPEG_MIME_TYPE, "jpeg" => JPEG_MIME_TYPE, "pjp" => PJPEG_MIME_TYPE,
+        "pjpeg" => PJPEG_MIME_TYPE, "png" => PNG_MIME_TYPE, "tif" => TIFF_MIME_TYPE, "tiff" => TIFF_MIME_TYPE, "webp" => WEBP_MIME_TYPE,
+        "glb" => GLTF_BINARY_MIME_TYPE, "usdz" => USDZ_MIME_TYPE, "srt" => SUBRIP_MIME_TYPE, "vtt" => WEBVTT_MIME_TYPE,
+        "m2ts" => MPEG_TS_MIME_TYPE, "mts" => MPEG_TS_MIME_TYPE, "ts" => MPEG_TS_MIME_TYPE, "mp4" => MP4_MIME_TYPE,
+        "mov" => QUICKTIME_MIME_TYPE, "qt" => QUICKTIME_MIME_TYPE, "webm" => WEBM_MIME_TYPE
+      }.freeze
+      # MIME types of the videos the API takes, the first of which a video of no known type is uploaded as
+      VIDEO_MIME_TYPES = [MP4_MIME_TYPE, QUICKTIME_MIME_TYPE, WEBM_MIME_TYPE, MPEG_TS_MIME_TYPE].freeze
+      # MIME types of the subtitles the API takes, the first of which subtitles of no known type are uploaded as
+      SUBTITLES_MIME_TYPES = [SUBRIP_MIME_TYPE, WEBVTT_MIME_TYPE].freeze
       # Processing states that indicate completion
       PROCESSING_INFO_STATES = %w[failed succeeded].freeze
       # Default number of seconds await_processing waits between checks before it gives up
@@ -35,13 +48,19 @@ module X
       # Fewest seconds to wait between checks, for a status that asks for no wait
       MIN_CHECK_AFTER_SECS = 1
       # Media categories that are uploaded in chunks and processed after the upload
-      VIDEO_CATEGORIES = [DM_VIDEO, TWEET_VIDEO].freeze
+      VIDEO_CATEGORIES = [AMPLIFY_VIDEO, DM_VIDEO, TWEET_VIDEO].freeze
       # Media categories uploaded in chunks: videos, and subtitles, which the API takes no other way
       CHUNKED_CATEGORIES = [*VIDEO_CATEGORIES, SUBTITLES].freeze
       # Mapping of file extensions to the media categories of posts; any other extension is an image
-      CATEGORY_MAP = {"gif" => TWEET_GIF, "mp4" => TWEET_VIDEO, "srt" => SUBTITLES}.freeze
-      # Mapping of media categories to the MIME types they imply; images are typed by their extension
-      CATEGORY_MIME_TYPES = {TWEET_GIF => GIF_MIME_TYPE, DM_GIF => GIF_MIME_TYPE, TWEET_VIDEO => MP4_MIME_TYPE, DM_VIDEO => MP4_MIME_TYPE, SUBTITLES => SUBRIP_MIME_TYPE}.freeze
+      CATEGORY_MAP = {
+        "gif" => TWEET_GIF, "m2ts" => TWEET_VIDEO, "mov" => TWEET_VIDEO, "mp4" => TWEET_VIDEO, "mts" => TWEET_VIDEO,
+        "qt" => TWEET_VIDEO, "ts" => TWEET_VIDEO, "webm" => TWEET_VIDEO, "srt" => SUBTITLES, "vtt" => SUBTITLES
+      }.freeze
+      # Mapping of media categories to the MIME types they take, the first by default; images are typed by their extension
+      CATEGORY_MIME_TYPES = {
+        TWEET_GIF => [GIF_MIME_TYPE], DM_GIF => [GIF_MIME_TYPE], TWEET_VIDEO => VIDEO_MIME_TYPES, DM_VIDEO => VIDEO_MIME_TYPES,
+        AMPLIFY_VIDEO => VIDEO_MIME_TYPES, SUBTITLES => SUBTITLES_MIME_TYPES
+      }.freeze
 
       # Upload a file, in chunks for video and subtitles, awaiting any processing
       #
@@ -76,7 +95,7 @@ module X
       #
       # @api public
       # @param file_path [String] the path to the file
-      # @return [String] tweet_gif, tweet_video, subtitles, or tweet_image
+      # @return [String] tweet_gif, tweet_video for MP4, QuickTime, WebM, or MPEG-TS, subtitles for SubRip or WebVTT, or tweet_image
       # @example Infer the category of a video
       #   Uploader::Media.infer_media_category("cat.mp4") # => "tweet_video"
       def infer_media_category(file_path) = still_gif?(file_path) ? TWEET_IMAGE : CATEGORY_MAP.fetch(extension(file_path), TWEET_IMAGE)
@@ -170,18 +189,22 @@ module X
 
       # Infer the media type from file path and category
       #
+      # A file whose extension names a type the category takes is uploaded as that type. A GIF category takes only
+      # GIFs, and a video or subtitles category otherwise takes its first type, MP4 or SubRip, whatever the file is
+      # named. Any other category, an image, is typed by its extension alone.
+      #
       # @api public
       # @param file_path [String] the file path
       # @param media_category [String] the media category
       # @return [String] the inferred MIME type
       # @raise [InvalidMediaType] if the MIME type cannot be determined
       # @example Uploader::Media.infer_media_type("image.png", "tweet_image") #=> "image/png"
+      # @example Uploader::Media.infer_media_type("clip.webm", "tweet_video") #=> "video/webm"
       def infer_media_type(file_path, media_category)
-        CATEGORY_MIME_TYPES.fetch(media_category.downcase) do
-          MIME_TYPE_MAP.fetch(extension(file_path)) do
-            raise InvalidMediaType, "unable to determine MIME type from file extension: #{file_path.inspect}"
-          end
-        end
+        from_extension = MIME_TYPE_MAP[extension(file_path)]
+        taken = CATEGORY_MIME_TYPES.fetch(media_category.downcase, [from_extension])
+        (taken.include?(from_extension) ? from_extension : taken.first) ||
+          raise(InvalidMediaType, "unable to determine MIME type from file extension: #{file_path.inspect}")
       end
 
       private

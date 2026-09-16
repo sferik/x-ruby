@@ -51,5 +51,12 @@ module X
       assert_nil Uploader::Metadata.add_subtitles(7, 8, "FR", client: @client)
       assert_requested :post, SUBTITLES_URL, body: {id: "7", media_category: "TweetVideo", subtitles: {id: "8", language_code: "FR"}}.to_json
     end
+
+    def test_add_subtitles_to_an_amplify_video
+      stub_request(:post, SUBTITLES_URL).to_return(status: 204)
+      Uploader::Metadata.add_subtitles(7, 8, "EN", client: @client, media_category: Uploader::Metadata::AMPLIFY_SUBTITLED_MEDIA_CATEGORY)
+
+      assert_requested :post, SUBTITLES_URL, body: {id: "7", media_category: "AmplifyVideo", subtitles: {id: "8", language_code: "EN"}}.to_json
+    end
   end
 end

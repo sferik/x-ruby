@@ -35,6 +35,7 @@ module X
 
     module Media
       BYTES_PER_MB: Integer
+      AMPLIFY_VIDEO: String
       DM_GIF: String
       DM_IMAGE: String
       DM_VIDEO: String
@@ -43,20 +44,31 @@ module X
       TWEET_IMAGE: String
       TWEET_VIDEO: String
       MIME_TYPES: Array[String]
+      BMP_MIME_TYPE: String
       GIF_MIME_TYPE: String
       JPEG_MIME_TYPE: String
-      MP4_MIME_TYPE: String
+      PJPEG_MIME_TYPE: String
       PNG_MIME_TYPE: String
-      SUBRIP_MIME_TYPE: String
+      TIFF_MIME_TYPE: String
       WEBP_MIME_TYPE: String
+      GLTF_BINARY_MIME_TYPE: String
+      USDZ_MIME_TYPE: String
+      SUBRIP_MIME_TYPE: String
+      WEBVTT_MIME_TYPE: String
+      MPEG_TS_MIME_TYPE: String
+      MP4_MIME_TYPE: String
+      QUICKTIME_MIME_TYPE: String
+      WEBM_MIME_TYPE: String
       MIME_TYPE_MAP: Hash[String, String]
+      VIDEO_MIME_TYPES: Array[String]
+      SUBTITLES_MIME_TYPES: Array[String]
       PROCESSING_INFO_STATES: Array[String]
       DEFAULT_PROCESSING_TIMEOUT: Integer
       MIN_CHECK_AFTER_SECS: Integer
       VIDEO_CATEGORIES: Array[String]
       CHUNKED_CATEGORIES: Array[String]
       CATEGORY_MAP: Hash[String, String]
-      CATEGORY_MIME_TYPES: Hash[String, String]
+      CATEGORY_MIME_TYPES: Hash[String, Array[String]]
       include Chunks
       extend Chunks
       extend Media
@@ -94,10 +106,11 @@ module X
 
     module Metadata
       SUBTITLED_MEDIA_CATEGORY: String
+      AMPLIFY_SUBTITLED_MEDIA_CATEGORY: String
       extend Metadata
 
       def add_alt_text: (untyped media, String text, client: Client) -> untyped
-      def add_subtitles: (untyped video, untyped subtitles, String language_code, client: Client, ?display_name: String?) -> untyped
+      def add_subtitles: (untyped video, untyped subtitles, String language_code, client: Client, ?display_name: String?, ?media_category: String) -> untyped
 
       private
       def media_id: (untyped media) -> String
