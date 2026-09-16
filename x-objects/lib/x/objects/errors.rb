@@ -27,4 +27,8 @@ module X
       @problems = problems.dup.freeze
     end
   end
+
+  # Raised when the API offers no way to do what was asked, such as looking up lists in a batch
+  # @api public
+  class UnsupportedOperation < Error; end
 end

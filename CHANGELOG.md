@@ -92,7 +92,7 @@ See [UPGRADING.md](UPGRADING.md) for the changes that code written for 0.19 need
 * Send requests to `api.x.com` rather than `api.twitter.com` by default, the host of the token endpoints, the uploads, and the API's documentation
 * Rename `X::User.me` to `X::User.current`, the request behind `current_user`
 * Rename `X::Objects::Actions`, the follow, block, mute, like, and repost methods of `X::User`, to `X::Objects::Relationships`, so it no longer shares a name with `X::Objects::API::Actions`
-* Raise `NotImplementedError` from `X::List.find_all`, since the API has no batch lookup of lists, instead of sending a request that fails
+* Raise `X::UnsupportedOperation`, an `X::Error`, from `X::List.find_all`, since the API has no batch lookup of lists, instead of sending a request that fails; the object layer raises it for anything else the API offers no way to do, such as hydrating `X::Media` or requesting the identifiers alone of a resource without a fields parameter
 * Take the recipient and text of a direct message as the positional arguments of `create_direct_message`, in place of `to:` and `text:`, since both are required
 * Derive the v1.1 client of `X::Uploader::Account` from the client it is given with `copy`, so it keeps the timeouts, proxy, and other settings
 * Mark `X::RequestBuilder`, `X::RedirectHandler`, `X::ResponseParser`, `X::StreamParser`, `X::RateLimitHandler`, and `X::ReconnectHandler` as `@api private`, the internals of `X::Client` and `X::StreamingClient`, whose settings they expose, so that they can change within 1.x

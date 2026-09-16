@@ -63,11 +63,11 @@ module X
       # @param ids [Array<String, Integer, List>] the identifiers
       # @param client [Object] the client, which is not used
       # @return [void]
-      # @raise [NotImplementedError] always, since lists can only be looked up one at a time
+      # @raise [UnsupportedOperation] always, since lists can only be looked up one at a time
       # @example Look lists up one at a time instead
       #   ids.map { |id| X::List.find(id, client: client) }
       def find_all(ids, client:, **)
-        raise NotImplementedError, "#{self} cannot be fetched in batches; find #{ids.size} lists one at a time"
+        raise UnsupportedOperation, "#{self} cannot be fetched in batches; find #{ids.size} lists one at a time"
       end
 
       # Delete a list as the authenticated user

@@ -154,7 +154,7 @@ module X
     #
     # @api public
     # @return [Cursor] a new cursor
-    # @raise [NotImplementedError] if the resource class has no fields parameter
+    # @raise [UnsupportedOperation] if the resource class has no fields parameter
     # @example Check whether a user is among thousands of followers without fetching their fields
     #   user.followers.stubs.any?(other)
     def stubs = self.class.new(klass, path, client:, params: id_only_params, token_param:, min_results:, total: @total)
@@ -264,7 +264,7 @@ module X
     #
     # @api public
     # @return [Array<Integer, String>] the identifiers, Integers unless the resource's identifiers are not numbers
-    # @raise [NotImplementedError] if the resource class has no fields parameter
+    # @raise [UnsupportedOperation] if the resource class has no fields parameter
     # @example Get the identifiers of every follower
     #   user.followers.ids
     def ids = stubs.map(&:id)
@@ -312,9 +312,9 @@ module X
     # The query parameters that select nothing but the identifier
     # @api private
     # @return [Hash{String => Object}] the query parameters
-    # @raise [NotImplementedError] if the resource class has no fields parameter
+    # @raise [UnsupportedOperation] if the resource class has no fields parameter
     def id_only_params
-      fields_key = klass.fields_key || raise(NotImplementedError, "#{klass} has no fields parameter")
+      fields_key = klass.fields_key || raise(UnsupportedOperation, "#{klass} has no fields parameter")
       dropped = {} #: Hash[String, nil]
       klass.default_params.each_key { |key| dropped[key] = nil }
       params.merge(dropped, fields_key => klass.id_key)

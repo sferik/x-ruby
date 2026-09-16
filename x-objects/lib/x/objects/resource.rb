@@ -122,10 +122,10 @@ module X
         #
         # @api public
         # @return [String] the endpoint
-        # @raise [NotImplementedError] if the resource cannot be looked up by identifier
+        # @raise [UnsupportedOperation] if the resource cannot be looked up by identifier
         # @example Get the lookup endpoint
         #   X::User.endpoint! # => "users"
-        def endpoint! = endpoint || raise(NotImplementedError, "#{self} cannot be fetched by #{id_key}")
+        def endpoint! = endpoint || raise(UnsupportedOperation, "#{self} cannot be fetched by #{id_key}")
 
         # Build the resource or resources a response holds
         #
@@ -251,7 +251,7 @@ module X
       #
       # @api public
       # @return [Resource, nil] the full resource or nil if it no longer exists
-      # @raise [NotImplementedError] if the resource cannot be looked up by identifier
+      # @raise [UnsupportedOperation] if the resource cannot be looked up by identifier
       # @raise [ArgumentError] if the resource has no client
       # @example Fetch the full author of a post
       #   post.author.hydrate.description
@@ -263,7 +263,7 @@ module X
       #
       # @api public
       # @return [Resource, nil] the fresh resource or nil if it no longer exists
-      # @raise [NotImplementedError] if the resource cannot be looked up by identifier
+      # @raise [UnsupportedOperation] if the resource cannot be looked up by identifier
       # @raise [ArgumentError] if the resource has no client
       # @example Refresh a user's follower count
       #   user.refresh.followers_count

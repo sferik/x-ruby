@@ -8,6 +8,9 @@ module X
     def initialize: (?String? message, ?problems: Array[Problem]) -> void
   end
 
+  class UnsupportedOperation < Error
+  end
+
   class Problem
     attr_reader attrs: Hash[String, untyped]
 

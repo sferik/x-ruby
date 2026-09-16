@@ -58,14 +58,14 @@ module X
       end
 
       def test_hydrate_without_endpoint
-        error = assert_raises(NotImplementedError) { Media.new({"media_key" => "3_1"}, client: @client).hydrate }
+        error = assert_raises(UnsupportedOperation) { Media.new({"media_key" => "3_1"}, client: @client).hydrate }
 
         assert_equal "X::Media cannot be fetched by media_key", error.message
         assert_empty @client.requests
       end
 
       def test_hydrate_without_endpoint_or_client
-        assert_raises(NotImplementedError) { Media.new({"media_key" => "3_1"}).hydrate }
+        assert_raises(UnsupportedOperation) { Media.new({"media_key" => "3_1"}).hydrate }
       end
 
       def test_refresh_fetches_again_and_replaces_memo

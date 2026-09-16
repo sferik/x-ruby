@@ -67,7 +67,7 @@ module X
     end
 
     def test_find_all_is_not_supported
-      error = assert_raises(NotImplementedError) { Community.find_all([1, 2], client: @client) }
+      error = assert_raises(UnsupportedOperation) { Community.find_all([1, 2], client: @client) }
 
       assert_equal "X::Community cannot be fetched in batches; find 2 communities one at a time", error.message
       assert_empty @client.requests

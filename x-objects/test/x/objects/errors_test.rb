@@ -17,6 +17,10 @@ module X
         assert_operator X::Error, :<, StandardError
       end
 
+      def test_unsupported_operation_is_an_x_error
+        assert_operator UnsupportedOperation, :<, X::Error
+      end
+
       def test_find_bang
         @client.stub(:get, "users/1", {"data" => {"id" => "1", "username" => "sferik"}})
 

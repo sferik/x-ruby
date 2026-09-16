@@ -56,11 +56,11 @@ module X
       # @param ids [Array<String, Integer, Community>] the identifiers
       # @param client [Object] the client, which is not used
       # @return [void]
-      # @raise [NotImplementedError] always, since communities can only be looked up one at a time
+      # @raise [UnsupportedOperation] always, since communities can only be looked up one at a time
       # @example Look communities up one at a time instead
       #   ids.map { |id| X::Community.find(id, client: client) }
       def find_all(ids, client:, **)
-        raise NotImplementedError, "#{self} cannot be fetched in batches; find #{ids.size} communities one at a time"
+        raise UnsupportedOperation, "#{self} cannot be fetched in batches; find #{ids.size} communities one at a time"
       end
     end
 

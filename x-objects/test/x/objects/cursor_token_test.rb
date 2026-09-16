@@ -70,7 +70,7 @@ module X
     end
 
     def test_ids_without_a_fields_parameter
-      error = assert_raises(NotImplementedError) { Cursor.new(Media, "media", client: @client).ids }
+      error = assert_raises(UnsupportedOperation) { Cursor.new(Media, "media", client: @client).ids }
 
       assert_equal "X::Media has no fields parameter", error.message
       assert_empty @client.requests
