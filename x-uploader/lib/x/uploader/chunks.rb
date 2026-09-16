@@ -42,6 +42,7 @@ module X
       def append(client:, file_paths:, media:, boundary:)
         threads = file_paths.map.with_index do |file_path, index|
           Thread.new do
+            Thread.current.report_on_exception = false
             upload_body = construct_upload_body(content: File.binread(file_path), segment_index: index, boundary:)
             headers = {"Content-Type" => "multipart/form-data; boundary=#{boundary}"}
             upload_chunk(client:, media_id: media.fetch("id"), upload_body:, file_path:, headers:)

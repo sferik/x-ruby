@@ -48,6 +48,31 @@ module X
       chunk_paths.each_index { |i| assert_segment_in_bodies(bodies, i) }
     end
 
+    def test_append_does_not_report_exceptions_on_stderr
+      chunk_paths = Uploader::Media.send(:split, VIDEO_FILE, @video_size)
+      stub_request(:post, append_url).to_return(status: 401)
+
+      _, err = capture_subprocess_io do
+        assert_raises(Unauthorized) do
+          Uploader::Media.send(:append, client: @client, file_paths: chunk_paths, media: media_hash, boundary: TEST_BOUNDARY)
+        end
+      end
+
+      assert_empty err
+    end
+
+    def test_append_leaves_global_exception_reporting_alone
+      chunk_paths = Uploader::Media.send(:split, VIDEO_FILE, @video_size)
+      stub_append_request
+      previous = Thread.report_on_exception
+      Thread.report_on_exception = true
+      Uploader::Media.send(:append, client: @client, file_paths: chunk_paths, media: media_hash, boundary: TEST_BOUNDARY)
+
+      assert Thread.report_on_exception
+    ensure
+      Thread.report_on_exception = previous
+    end
+
     private
 
     def media_hash = {"id" => TEST_MEDIA_ID}
