@@ -379,15 +379,6 @@ module X
       cursor(Post, "users/#{id}/timelines/reverse_chronological", max_results: MAX_RESULTS, **params)
     end
 
-    # The posts of this user, the authenticated user, that other users have reposted
-    #
-    # @api public
-    # @param params [Hash] query parameters merged over the default parameters
-    # @return [Cursor] a cursor over the reposted posts
-    # @example Print the reposted posts
-    #   client.current_user.reposts_of_me.each { |post| puts post.text }
-    def reposts_of_me(**params) = cursor(Post, "users/reposts_of_me", max_results: MAX_RESULTS, **params)
-
     # The posts mentioning this user
     #
     # @api public

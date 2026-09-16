@@ -391,6 +391,7 @@ module X
         def search: (String query, **untyped params) -> Cursor
         def search_tweets: (String query, **untyped params) -> Cursor
         def search_all_posts: (String query, **untyped params) -> Cursor
+        def reposts_of_me: (**untyped params) -> Cursor
         def search_all_tweets: (String query, **untyped params) -> Cursor
         def usage: (**untyped params) -> Usage
         def count_posts: (String query, **untyped params) -> Integer
@@ -647,7 +648,6 @@ module X
     def posts: (**untyped params) -> Cursor
     def tweets: (**untyped params) -> Cursor
     def home_timeline: (**untyped params) -> Cursor
-    def reposts_of_me: (**untyped params) -> Cursor
     def mentions: (**untyped params) -> Cursor
     def liked_posts: (**untyped params) -> Cursor
     def liked_tweets: (**untyped params) -> Cursor
@@ -677,6 +677,7 @@ module X
     def self.default_params: () -> Hash[String, Array[String]]
     def self.search: (String query, client: Objects::_Client, **untyped params) -> Cursor
     def self.search_all: (String query, client: Objects::_Client, **untyped params) -> Cursor
+    def self.reposts_of_me: (client: Objects::_Client, **untyped params) -> Cursor
     def self.context_annotations?: (Hash[Symbol, untyped] params) -> bool
 
     def text: () -> String?

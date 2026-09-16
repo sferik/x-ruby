@@ -7,7 +7,6 @@ module X
 
     PATHS = {followers: "users/1/followers", following: "users/1/following", blocking: "users/1/blocking",
              muting: "users/1/muting", posts: "users/1/tweets", home_timeline: "users/1/timelines/reverse_chronological",
-             reposts_of_me: "users/reposts_of_me",
              mentions: "users/1/mentions", liked_posts: "users/1/liked_tweets", bookmarks: "users/1/bookmarks",
              owned_lists: "users/1/owned_lists", list_memberships: "users/1/list_memberships",
              followed_lists: "users/1/followed_lists"}.freeze
@@ -44,14 +43,14 @@ module X
       assert_equal Post, @user.bookmarks.klass
     end
 
-    def test_reposts_of_me_cursor_class
-      assert_equal Post, @user.reposts_of_me.klass
-    end
-
     def test_list_cursor_classes
       assert_equal List, @user.owned_lists.klass
       assert_equal List, @user.list_memberships.klass
       assert_equal List, @user.followed_lists.klass
+    end
+
+    def test_reposts_of_me_belongs_to_the_client_rather_than_a_user
+      refute_respond_to @user, :reposts_of_me
     end
 
     def test_default_max_results

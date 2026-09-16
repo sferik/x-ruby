@@ -4,6 +4,7 @@ module X
   module Objects
     class APITimelinesTest < Minitest::Test
       cover API::Lookups
+      cover Post
 
       def setup
         @client = FakeClient.new
@@ -49,6 +50,17 @@ module X
         assert_equal ["ruby", 10, "next_token"], [cursor.params["query"], cursor.params["max_results"], cursor.token_param]
         assert_equal User, cursor.klass
         assert_same @client, cursor.client
+      end
+
+      def test_reposts_of_me
+        cursor = @client.reposts_of_me(max_results: 10)
+
+        assert_equal ["users/reposts_of_me", 10, Post], [cursor.path, cursor.params["max_results"], cursor.klass]
+        assert_same @client, cursor.client
+      end
+
+      def test_reposts_of_me_requests_the_largest_page
+        assert_equal 100, @client.reposts_of_me.params["max_results"]
       end
 
       private

@@ -147,6 +147,17 @@ module X
           Post.search(query, client: self, **params)
         end
 
+        # The posts of the authenticated user that other users have reposted
+        #
+        # @api public
+        # @param params [Hash] query parameters merged over the default parameters
+        # @return [Cursor] a cursor over the reposted posts
+        # @example Print the reposted posts
+        #   client.reposts_of_me.each { |post| puts post.text }
+        def reposts_of_me(**params)
+          Post.reposts_of_me(client: self, **params)
+        end
+
         # Search the full archive of posts
         #
         # @api public

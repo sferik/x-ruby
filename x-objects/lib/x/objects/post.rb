@@ -97,6 +97,20 @@ module X
         Cursor.new(self, "tweets/search/all", client:, params: {query:, max_results:}.merge(params), min_results: 10)
       end
 
+      # The posts of the authenticated user that other users have reposted
+      #
+      # The endpoint names no user, so these are always the posts of the user the client authenticates as.
+      #
+      # @api public
+      # @param client [Object] the client used to make the requests
+      # @param params [Hash] query parameters merged over the default parameters
+      # @return [Cursor] a cursor over the reposted posts
+      # @example Print the reposted posts
+      #   X::Post.reposts_of_me(client: client).each { |post| puts post.text }
+      def reposts_of_me(client:, **params)
+        Cursor.new(self, "users/reposts_of_me", client:, params: {max_results: MAX_RESULTS}.merge(params))
+      end
+
       private
 
       # Check whether a request asks for the context annotations of its posts

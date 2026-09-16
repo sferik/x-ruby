@@ -27,7 +27,7 @@ See [UPGRADING.md](UPGRADING.md) for the changes that code written for 0.19 need
 * Page an endpoint that names its page token differently with the `token_param:` of `X::Cursor`, and search users with `X::User.search` and `client.search_users`, which page with `next_token`
 * Request nothing but identifiers from a cursor with `ids`, as in `user.followers.ids`
 * Refer to a resource without a request with `X::User.from_id` and its equivalents, and tell such stubs and unexpanded references apart from expanded ones with `stub?`
-* Add `home_timeline`, `reposts_of_me`, `blocking`, and `muting` cursors to `X::User`
+* Add `home_timeline`, `blocking`, and `muting` cursors to `X::User`, and read the authenticated user's posts that others have reposted with `reposts_of_me` on the client and `X::Post.reposts_of_me`
 * Add `block`, `unblock`, `mute`, and `unmute` to the actions of `X::User` and `X::Client`
 * Add `X::List.create`, `X::List.delete`, `list.add_member`, `list.remove_member`, and `list.delete`, with `create_list` and `delete_list` on the client
 * Add `X::DirectMessage.delete`, `message.delete`, and `delete_direct_message` on the client, and `message.peer`, the other participant of a one-to-one conversation
