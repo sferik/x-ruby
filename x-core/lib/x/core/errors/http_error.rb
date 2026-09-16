@@ -15,11 +15,11 @@ module X
     #   error.response
     attr_reader :response
 
-    # The HTTP status code
+    # The HTTP status code, as the String Net::HTTP reads
     # @api public
     # @return [String] the HTTP status code
     # @example Get the status code
-    #   error.code
+    #   error.code # => "404"
     attr_reader :code
 
     # Initialize a new HTTPError
@@ -34,6 +34,14 @@ module X
       @response = response
       @code = response.code
     end
+
+    # The HTTP status code, as an Integer like X::Response#status
+    #
+    # @api public
+    # @return [Integer] the HTTP status code
+    # @example Handle a status the errors do not name
+    #   retry if error.status.eql?(408)
+    def status = Integer(code)
 
     # Get the error message from the response
     #

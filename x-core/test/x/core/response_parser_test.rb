@@ -42,6 +42,7 @@ module X
 
       assert_kind_of Net::HTTPBadRequest, exception.response
       assert_equal "400", exception.code
+      assert_equal 400, exception.status
     end
 
     def test_unknown_error_code

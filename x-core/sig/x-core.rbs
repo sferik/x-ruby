@@ -78,6 +78,7 @@ module X
     attr_reader code : String
 
     def initialize: (response: Net::HTTPResponse) -> void
+    def status: () -> Integer
 
     private
     def error_message: (Net::HTTPResponse response) -> String

@@ -62,6 +62,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Pass an `X::Response` to the `on_response` of a client after every request, and for each object a stream delivers, which counts the resources the response returned with `resource_counts` and reads its rate limits with `rate_limits` and `rate_limit`
 * Retry a request refused for a rate limit after the limit resets, up to `max_rate_limit_retries` times, which is 0 by default, for a limit that resets within `max_rate_limit_wait` seconds, which is 900 by default; a refusal that does not say when its limit resets waits a minute, doubling for each retry after
 * Refresh an OAuth 2.0 access token when it expires, given the `expires_at:` of `X::Client`, or when the API rejects it with 401 Unauthorized, sending the request again with the new token; a lock lets requests on several threads refresh once, and `on_token_refresh:`, or the `on_refresh` of `X::OAuth2Authenticator`, receives the authenticator after each refresh to store its tokens
+* Read the status of an `X::HTTPError` as an Integer with `status`, as `X::Response#status` reads it, beside `code`, the String that `Net::HTTP` gives
 * Authenticate as the app with `X::Client#app_only`, a copy of a client that signs with OAuth 1.0a, which fetches the app's bearer token once and reuses it
 * Stream with app-only authentication from a client that signs with OAuth 1.0a, since the stream endpoints refuse it
 * Move `stream` from `X::Client` to `X::StreamingClient`, so that the client carries no streaming settings

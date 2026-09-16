@@ -18,6 +18,7 @@ module X
         assert_equal error_class.name, exception.message
         assert_equal response, exception.response
         assert_equal status, exception.code
+        assert_equal status, exception.status
       end
     end
 
