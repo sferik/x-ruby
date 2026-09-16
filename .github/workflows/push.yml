@@ -31,8 +31,14 @@ jobs:
         run: bundle exec rake build
       - name: Sign, push, and await each gem in dependency order
         run: |
+          version=$(cat VERSION)
           for name in x-core x-uploader x-objects x; do
             file=$(ls pkg/$name-[0-9]*.gem)
+            # A rerun after a failed push skips the gems the failed run already published
+            if curl --silent --fail --output /dev/null "https://rubygems.org/api/v2/rubygems/$name/versions/$version.json"; then
+              echo "$name $version is already published"
+              continue
+            fi
             gem exec sigstore-cli sign "$file" --bundle "pkg/$name.gem.sigstore.json"
             gem push "$file" --attestation "pkg/$name.gem.sigstore.json"
             gem exec rubygems-await "$file"
