@@ -178,6 +178,13 @@ module X
       assert_equal ["Value passed for the authorization code was invalid.", "invalid_grant"], [error.message, error.code]
     end
 
+    def test_a_redirect_that_is_not_a_valid_url_raises
+      error = assert_raises(AuthorizationError) { authorization.credentials("https://exa mple.com/callback?state=STATE&code=CODE") }
+
+      assert_equal ["The redirect back from X is not a valid URL", nil], [error.message, error.code]
+      assert_not_requested :post, "https://api.x.com/2/oauth2/token"
+    end
+
     def test_a_failure_without_a_reason_raises_the_default_message
       stub_request(:post, "https://api.x.com/2/oauth2/token").to_return(status: 500, body: "")
       error = assert_raises(AuthorizationError) { authorization.credentials("state=STATE&code=CODE") }

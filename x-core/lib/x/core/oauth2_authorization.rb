@@ -26,6 +26,8 @@ module X
     STATE_BYTES = 32
     # The message raised when X describes no reason for a failed authorization
     DEFAULT_ERROR_MESSAGE = "Authorization failed".freeze
+    # The message raised for a redirect back from X that is not a valid URL
+    INVALID_CALLBACK_MESSAGE = "The redirect back from X is not a valid URL".freeze
 
     # The OAuth 2.0 client ID of the app
     # @api public
@@ -136,7 +138,8 @@ module X
     # @return [Hash{Symbol => String, Time, nil}] the credentials, as Client#initialize accepts them: the client ID,
     #   client secret, access token, refresh token, and expiration time, or the access token alone as a bearer token
     #   without offline.access
-    # @raise [AuthorizationError] if the user denied the app, the state does not match, or X refuses the code
+    # @raise [AuthorizationError] if the user denied the app, the state does not match, X refuses the code, or the
+    #   redirect is not a valid URL
     # @example Store the credentials of the user
     #   store.save(authorization.credentials(request.url))
     def credentials(callback)
@@ -153,7 +156,8 @@ module X
     # @param callback [String, Hash] the redirect back from X: its URL, its query string, or its query parameters
     # @param options [Hash] other options of Client#initialize, such as on_token_refresh
     # @return [Client] a client with the user's credentials
-    # @raise [AuthorizationError] if the user denied the app, the state does not match, or X refuses the code
+    # @raise [AuthorizationError] if the user denied the app, the state does not match, X refuses the code, or the
+    #   redirect is not a valid URL
     # @example Act for the user who authorized the app
     #   client = authorization.client(request.url, on_token_refresh: ->(auth) { store.save(auth.refresh_token) })
     def client(callback, **options)
@@ -174,8 +178,11 @@ module X
     # @api private
     # @param callback [String, Hash] the redirect: its URL, its query string, or its query parameters
     # @return [String, Hash] the query string, or the query parameters
+    # @raise [AuthorizationError] if the redirect is not a valid URL
     def query_of(callback)
       String.try_convert(callback)&.then { |url| URI(url).query } || callback
+    rescue URI::InvalidURIError
+      raise AuthorizationError.new(INVALID_CALLBACK_MESSAGE, code: nil)
     end
 
     # The credentials of a client from the token X returned

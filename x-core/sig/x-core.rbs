@@ -22,6 +22,7 @@ module X
     DEFAULT_SCOPES: Array[String]
     STATE_BYTES: Integer
     DEFAULT_ERROR_MESSAGE: String
+    INVALID_CALLBACK_MESSAGE: String
 
     @pkce: SimpleOAuth::OAuth2::PKCE
 
