@@ -3,9 +3,14 @@ require "simple_oauth"
 require "uri"
 require_relative "authenticator"
 require_relative "connection"
+require_relative "errors/unauthorized"
 
 module X
-  # Handles OAuth 2.0 authentication with token refresh capability
+  # Handles OAuth 2.0 authentication, refreshing the access token when it expires
+  #
+  # X issues a new refresh token with each access token and accepts a refresh token once, so an authenticator
+  # refreshes under a lock, and calls on_refresh with itself so that the new tokens can be stored.
+  #
   # @api public
   class OAuth2Authenticator < Authenticator
     # Path for the OAuth 2.0 token endpoint
@@ -55,6 +60,13 @@ module X
     #   authenticator.connection
     attr_accessor :connection
 
+    # A callable passed the authenticator after each refresh, to store its new tokens
+    # @api public
+    # @return [#call, nil] the callable, or nil for none
+    # @example Store the tokens of each refresh
+    #   authenticator.on_refresh = ->(auth) { store.save(auth.access_token, auth.refresh_token, auth.expires_at) }
+    attr_accessor :on_refresh
+
     # Initialize a new OAuth 2.0 authenticator
     #
     # @api public
@@ -64,6 +76,7 @@ module X
     # @param refresh_token [String] the OAuth 2.0 refresh token
     # @param expires_at [Time, nil] the expiration time of the access token
     # @param connection [Connection] the connection for making token requests
+    # @param on_refresh [#call, nil] a callable passed the authenticator after each refresh
     # @return [OAuth2Authenticator] a new authenticator instance
     # @example Create an authenticator
     #   authenticator = X::OAuth2Authenticator.new(
@@ -73,23 +86,27 @@ module X
     #     refresh_token: "refresh"
     #   )
     def initialize(client_id:, client_secret:, access_token:, refresh_token:, expires_at: nil,
-      connection: Connection.new)
+      connection: Connection.new, on_refresh: nil)
       @client_id = client_id
       @client_secret = client_secret
       @access_token = access_token
       @refresh_token = refresh_token
       @expires_at = expires_at
       @connection = connection
+      @on_refresh = on_refresh
+      @mutex = Mutex.new
     end
 
-    # Generate the authentication header
+    # Generate the authentication header, refreshing an expired token first
     #
     # @api public
     # @param _request [Net::HTTPRequest, nil] the HTTP request (unused)
     # @return [Hash{String => String}] the authentication header
+    # @raise [Error] if the token has expired and cannot be refreshed
     # @example Get the header
     #   authenticator.header(request)
     def header(_request)
+      @mutex.synchronize { refresh if token_expired? }
       {AUTHENTICATION_HEADER => "Bearer #{access_token}"}
     end
 
@@ -123,11 +140,55 @@ module X
     # @example Refresh the token
     #   authenticator.refresh_token!
     def refresh_token!
-      response = send_token_request
-      handle_token_response(response)
+      @mutex.synchronize { refresh }
+    end
+
+    # Refresh an access token the API rejected, unless it was already replaced
+    #
+    # Requests that were sent with the same token, and rejected together, refresh it once between them.
+    #
+    # @api public
+    # @param rejected_token [String] the access token the API rejected
+    # @return [Boolean] true if the access token is no longer the one rejected
+    # @raise [Error] if token refresh fails
+    # @example Refresh a token the API rejected, and retry
+    #   retry if authenticator.refresh_rejected_token!(token)
+    def refresh_rejected_token!(rejected_token)
+      @mutex.synchronize do
+        refresh if access_token.eql?(rejected_token)
+        !access_token.eql?(rejected_token)
+      end
+    end
+
+    # Run a request, again if the API rejects a token that a refresh replaces
+    #
+    # X rejects an expired access token with 401 Unauthorized, which an authenticator that does not know when
+    # its token expires learns only from the rejection.
+    #
+    # @api private
+    # @yield runs the request
+    # @return [Object] what the block returns
+    # @raise [Unauthorized] if the request is rejected again, or a refresh does not replace the access token
+    def retrying_rejected_token
+      token = access_token
+      begin
+        yield
+      rescue Unauthorized
+        raise unless refresh_rejected_token!(token)
+
+        yield
+      end
     end
 
     private
+
+    # Refresh the access token and pass the authenticator to on_refresh
+    # @api private
+    # @return [Hash{String => Object}] the token response
+    # @raise [Error] if token refresh fails
+    def refresh
+      handle_token_response(send_token_request).tap { on_refresh&.call(self) }
+    end
 
     # The client for the token endpoint
     # @api private

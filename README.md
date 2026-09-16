@@ -229,6 +229,11 @@ v1_client.post("account/settings.json", form: {lang: "en"})
 # Authenticate as the app, with a bearer token fetched once with the API key and secret
 x_client.app_only.get("tweets/search/stream/rules")
 
+# Authenticate with OAuth 2.0, refreshing the access token when it expires or the API rejects it,
+# and store the tokens of each refresh, since X accepts a refresh token only once
+oauth2_client = X::Client.new(client_id: "ID", client_secret: "SECRET", access_token: "TOKEN", refresh_token: "REFRESH",
+  expires_at: Time.now + 7200, on_token_refresh: ->(auth) { store(auth.access_token, auth.refresh_token, auth.expires_at) })
+
 # Define a custom response object
 Language = Struct.new(:code, :name, :local_name, :status, :debug)
 

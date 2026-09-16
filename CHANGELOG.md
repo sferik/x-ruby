@@ -61,6 +61,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Report the partial errors of a successful response as `X::Problem` objects: `problems` on a resource and on each page of a cursor, a block given to a finder, which receives each problem, and `X::ResourceNotFound#problems`, whose first problem explains the message
 * Pass an `X::Response` to the `on_response` of a client after every request, and for each object a stream delivers, which counts the resources the response returned with `resource_counts` and reads its rate limits with `rate_limits` and `rate_limit`
 * Retry a request refused for a rate limit after the limit resets, up to `max_rate_limit_retries` times, which is 0 by default, for a limit that resets within `max_rate_limit_wait` seconds, which is 900 by default; a refusal that does not say when its limit resets waits a minute, doubling for each retry after
+* Refresh an OAuth 2.0 access token when it expires, given the `expires_at:` of `X::Client`, or when the API rejects it with 401 Unauthorized, sending the request again with the new token; a lock lets requests on several threads refresh once, and `on_token_refresh:`, or the `on_refresh` of `X::OAuth2Authenticator`, receives the authenticator after each refresh to store its tokens
 * Authenticate as the app with `X::Client#app_only`, a copy of a client that signs with OAuth 1.0a, which fetches the app's bearer token once and reuses it
 * Stream with app-only authentication from a client that signs with OAuth 1.0a, since the stream endpoints refuse it
 * Move `stream` from `X::Client` to `X::StreamingClient`, so that the client carries no streaming settings
@@ -101,6 +102,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Remove the `base64` dependency from `x-core`, which encodes no Base64 of its own now that simple_oauth builds the Basic credentials
 
 ### Fixed
+* Read the tokens of the last OAuth 2.0 refresh from `X::Client#access_token`, `refresh_token`, and `expires_at`, and share the authenticator with a copy that holds the same credentials, so that neither `copy` nor a changed credential brings back a refresh token X no longer accepts
 * Fetch an app-only bearer token and refresh an OAuth 2.0 token over the client's connection, so the proxy, timeouts, and debug output of a client apply to token requests as they do to every other request
 * Drop the credentials, and any `Authorization` header passed in `headers:`, when a redirect leads to another scheme, host, or port, so a redirect cannot send them to a host they were not meant for
 * Send no `Authorization` header from a client without credentials, rather than an empty one

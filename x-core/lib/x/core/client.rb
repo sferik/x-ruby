@@ -1,10 +1,10 @@
-require "forwardable"
 require "json"
 require "uri"
 require_relative "app_only_authenticator"
 require_relative "authenticator"
 require_relative "bearer_token_authenticator"
 require_relative "client_credentials"
+require_relative "client_settings"
 require_relative "connection"
 require_relative "oauth1_authenticator"
 require_relative "oauth2_authenticator"
@@ -20,8 +20,8 @@ module X
   # A client for interacting with the X API
   # @api public
   class Client
-    extend Forwardable
     include ClientCredentials
+    include ClientSettings
     include RequestEncoding
 
     # Default base URL for the X API
@@ -33,27 +33,6 @@ module X
     # Content type of a form-encoded request body
     FORM_CONTENT_TYPE = "application/x-www-form-urlencoded; charset=utf-8".freeze
 
-    # The base URL for API requests
-    # @api public
-    # @return [String] the base URL for API requests
-    # @example Get or set the base URL
-    #   client.base_url = "https://api.x.com/1.1/"
-    attr_accessor :base_url
-
-    # The default class for parsing JSON arrays
-    # @api public
-    # @return [Class] the default class for parsing JSON arrays
-    # @example Get or set the default array class
-    #   client.default_array_class = Set
-    attr_accessor :default_array_class
-
-    # The default class for parsing JSON objects
-    # @api public
-    # @return [Class] the default class for parsing JSON objects
-    # @example Get or set the default object class
-    #   client.default_object_class = OpenStruct
-    attr_accessor :default_object_class
-
     # The authenticator for API requests
     # @api public
     # @return [Authenticator] the authenticator instance
@@ -61,17 +40,12 @@ module X
     #   client.authenticator.token_expired?
     attr_reader :authenticator
 
-    # A callable passed an X::Response after each request and streamed object
+    # A callable passed the OAuth 2.0 authenticator after each refresh
     # @api public
     # @return [#call, nil] the callable, or nil for none
-    # @example Total the resources a client reads
-    #   client.on_response = ->(response) { total += response.resource_count }
-    attr_accessor :on_response
-
-    def_delegators :@connection, :open_timeout, :read_timeout, :write_timeout, :proxy_url, :debug_output
-    def_delegators :@connection, :open_timeout=, :read_timeout=, :write_timeout=, :proxy_url=, :debug_output=
-    def_delegators :@redirect_handler, :max_redirects, :max_redirects=
-    def_delegators :@rate_limit_handler, :max_rate_limit_retries, :max_rate_limit_retries=, :max_rate_limit_wait, :max_rate_limit_wait=
+    # @example Store the tokens of each refresh
+    #   client.on_token_refresh = ->(auth) { store.save(auth.access_token, auth.refresh_token, auth.expires_at) }
+    attr_accessor :on_token_refresh
 
     # Initialize a new X API client
     #
@@ -84,6 +58,7 @@ module X
     # @param client_id [String, nil] the OAuth 2.0 client ID
     # @param client_secret [String, nil] the OAuth 2.0 client secret
     # @param refresh_token [String, nil] the OAuth 2.0 refresh token
+    # @param expires_at [Time, nil] the time the OAuth 2.0 access token expires, after which a request refreshes it
     # @param base_url [String] the base URL for API requests
     # @param open_timeout [Integer] the timeout for opening connections in seconds
     # @param read_timeout [Integer] the timeout for reading responses in seconds
@@ -99,9 +74,14 @@ module X
     #   whose limit resets later raises TooManyRequests at once
     # @param on_response [#call, nil] a callable passed an X::Response after every request, failed ones included, and
     #   every object a stream delivers
+    # @param on_token_refresh [#call, nil] a callable passed the OAuth 2.0 authenticator after each refresh, to store
+    #   its new tokens
     # @return [Client] a new client instance
     # @example Create a client with bearer token authentication
     #   client = X::Client.new(bearer_token: "your_bearer_token")
+    # @example Create a client with OAuth 2.0 authentication that stores the tokens of each refresh
+    #   client = X::Client.new(client_id: "id", client_secret: "secret", access_token: "token", refresh_token: "refresh",
+    #     expires_at: Time.now + 7200, on_token_refresh: ->(auth) { store.save(auth.refresh_token) })
     # @example Create a client with OAuth 1.0a authentication
     #   client = X::Client.new(api_key: "key", api_key_secret: "secret", access_token: "token", access_token_secret: "token_secret")
     # @example Create a client that fetches an app-only bearer token with the API key and secret
@@ -109,7 +89,7 @@ module X
     # @example Create a client that retries a rate-limited request up to three times
     #   client = X::Client.new(bearer_token: "your_bearer_token", max_rate_limit_retries: 3)
     def initialize(api_key: nil, api_key_secret: nil, access_token: nil, access_token_secret: nil,
-      bearer_token: nil, client_id: nil, client_secret: nil, refresh_token: nil,
+      bearer_token: nil, client_id: nil, client_secret: nil, refresh_token: nil, expires_at: nil,
       base_url: DEFAULT_BASE_URL,
       open_timeout: Connection::DEFAULT_OPEN_TIMEOUT,
       read_timeout: Connection::DEFAULT_READ_TIMEOUT,
@@ -121,13 +101,15 @@ module X
       max_redirects: RedirectHandler::DEFAULT_MAX_REDIRECTS,
       max_rate_limit_retries: RateLimitHandler::DEFAULT_MAX_RETRIES,
       max_rate_limit_wait: RateLimitHandler::DEFAULT_MAX_WAIT,
-      on_response: nil)
+      on_response: nil,
+      on_token_refresh: nil)
       @connection = Connection.new(open_timeout:, read_timeout:, write_timeout:, debug_output:, proxy_url:)
-      initialize_credentials(api_key:, api_key_secret:, access_token:, access_token_secret:, bearer_token:, client_id:, client_secret:, refresh_token:)
+      @request_builder = RequestBuilder.new
+      @response_parser = ResponseParser.new
+      initialize_credentials(api_key:, api_key_secret:, access_token:, access_token_secret:, bearer_token:, client_id:, client_secret:, refresh_token:, expires_at:)
+      @on_token_refresh = on_token_refresh
       initialize_authenticator
-      @base_url = base_url
-      initialize_response_handling(default_array_class:, default_object_class:, on_response:)
-      initialize_handlers(max_redirects:, max_rate_limit_retries:, max_rate_limit_wait:)
+      initialize_settings(base_url:, default_array_class:, default_object_class:, on_response:, max_redirects:, max_rate_limit_retries:, max_rate_limit_wait:)
     end
 
     # Summarize the client for the console without revealing credentials
@@ -142,6 +124,9 @@ module X
 
     # Copy the client with some of its options changed
     #
+    # A copy with the same OAuth 2.0 credentials shares the client's authenticator, so that a refresh by either
+    # client reaches the other, since X accepts a refresh token once.
+    #
     # @api public
     # @param options [Hash] the options to change, as accepted by initialize
     # @return [Client] a new client with the same credentials and settings, apart from the options given
@@ -150,7 +135,7 @@ module X
     # @example Derive an app-only client from the API key and secret
     #   app_client = client.copy(access_token: nil, access_token_secret: nil)
     def copy(**options)
-      self.class.new(**credentials, **settings, **options)
+      self.class.new(**credentials, **settings, **options).tap { |copy| copy.share_authenticator(authenticator) }
     end
 
     # Perform a GET request to the X API
@@ -232,41 +217,64 @@ module X
       StreamingClient.new(self, **options)
     end
 
+    protected
+
+    # Share an OAuth 2.0 authenticator that holds the same credentials
+    #
+    # A refresh by either client then reaches both. X accepts a refresh token once, so a copy that refreshed with
+    # an authenticator of its own would leave the original client with a refresh token that no longer works.
+    #
+    # @api private
+    # @param other [Authenticator] the authenticator of the client this one was copied from
+    # @return [void]
+    def share_authenticator(other)
+      current = oauth2_authenticator_in_use
+      return unless current && other.is_a?(OAuth2Authenticator)
+      return unless oauth2_credentials_of(current).eql?(oauth2_credentials_of(other))
+
+      @authenticator = other
+    end
+
+    # The OAuth 2.0 authenticator, if the client authenticates with one
+    # @api private
+    # @return [OAuth2Authenticator, nil] the authenticator or nil
+    def oauth2_authenticator_in_use
+      current = @authenticator
+      current if current.is_a?(OAuth2Authenticator)
+    end
+
+    # Build an OAuth 2.0 authenticator on the client's connection, given credentials
+    # @api private
+    # @return [OAuth2Authenticator, nil] the OAuth 2.0 authenticator or nil
+    def oauth2_authenticator
+      client_id = @client_id
+      client_secret = @client_secret
+      access_token = @access_token
+      refresh_token = @refresh_token
+      return unless client_id && client_secret && access_token && refresh_token
+
+      OAuth2Authenticator.new(client_id:, client_secret:, access_token:, refresh_token:, expires_at: @expires_at,
+        connection: @connection, on_refresh: ->(authenticator) { on_token_refresh&.call(authenticator) })
+    end
+
     private
 
-    # Initialize how responses are parsed and reported
+    # The credentials an OAuth 2.0 authenticator holds
     # @api private
-    # @param default_array_class [Class] the default class for parsing JSON arrays
-    # @param default_object_class [Class] the default class for parsing JSON objects
-    # @param on_response [#call, nil] the callable passed an X::Response after every request and streamed object
-    # @return [void]
-    def initialize_response_handling(default_array_class:, default_object_class:, on_response:)
-      @default_array_class = default_array_class
-      @default_object_class = default_object_class
-      @on_response = on_response
+    # @param authenticator [OAuth2Authenticator] the authenticator
+    # @return [Array<String, Time, nil>] the client ID and secret, the tokens, and the expiration time
+    def oauth2_credentials_of(authenticator)
+      [authenticator.client_id, authenticator.client_secret, authenticator.access_token, authenticator.refresh_token,
+        authenticator.expires_at]
     end
 
-    # Pass a response to on_response, if there is one
+    # Run a request, again if a refresh replaces an OAuth 2.0 token the API rejects
     # @api private
-    # @param http_method [Symbol] the HTTP method of the request
-    # @param uri [URI::Generic] the URI of the request
-    # @param response [Net::HTTPResponse] the HTTP response
-    # @return [void]
-    def report(http_method, uri, response)
-      on_response&.call(Response.new(http_method, uri, response))
-    end
-
-    # Initialize the objects that build requests and handle responses
-    # @api private
-    # @param max_redirects [Integer] the maximum number of redirects to follow
-    # @param max_rate_limit_retries [Integer] the maximum number of times to retry a request refused for a rate limit
-    # @param max_rate_limit_wait [Integer] the maximum number of seconds to wait for a rate limit to reset
-    # @return [void]
-    def initialize_handlers(max_redirects:, max_rate_limit_retries:, max_rate_limit_wait:)
-      @request_builder = RequestBuilder.new
-      @redirect_handler = RedirectHandler.new(connection: @connection, request_builder: @request_builder, max_redirects:)
-      @rate_limit_handler = RateLimitHandler.new(max_rate_limit_retries:, max_rate_limit_wait:)
-      @response_parser = ResponseParser.new
+    # @yield runs the request
+    # @return [Object] what the block returns
+    def refreshing_rejected_token(&)
+      current = oauth2_authenticator_in_use
+      current.nil? ? yield : current.retrying_rejected_token(&)
     end
 
     # Execute an HTTP request to the X API
@@ -276,19 +284,20 @@ module X
       uri = URI.join(base_url, endpoint_with(endpoint, params))
       headers = {"Content-Type" => FORM_CONTENT_TYPE}.merge(headers) unless form.nil?
       @rate_limit_handler.handle do
-        request = @request_builder.build(http_method:, uri:, body: encode_body(body, form), headers:, authenticator:)
-        response = @redirect_handler.handle(response: @connection.perform(request:), request:, base_url:, headers:, authenticator:)
-        report(http_method, uri, response)
-        @response_parser.parse(response:, array_class:, object_class:, client: self)
+        refreshing_rejected_token do
+          perform(http_method, uri, body: encode_body(body, form), headers:, array_class:, object_class:)
+        end
       end
     end
 
-    # The settings other than credentials, as initialize accepts them
+    # Perform a request once, following redirects and parsing the response
     # @api private
-    # @return [Hash{Symbol => Object}] the settings
-    def settings
-      {base_url:, open_timeout:, read_timeout:, write_timeout:, debug_output:, proxy_url:, default_array_class:,
-       default_object_class:, max_redirects:, max_rate_limit_retries:, max_rate_limit_wait:, on_response:}
+    # @return [Object, nil] the parsed response body, or what an object_class that responds to from_response builds
+    def perform(http_method, uri, body:, headers:, array_class:, object_class:)
+      request = @request_builder.build(http_method:, uri:, body:, headers:, authenticator:)
+      response = @redirect_handler.handle(response: @connection.perform(request:), request:, base_url:, headers:, authenticator:)
+      report(http_method, uri, response)
+      @response_parser.parse(response:, array_class:, object_class:, client: self)
     end
   end
 end

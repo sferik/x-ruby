@@ -203,6 +203,176 @@ module X
     end
   end
 
+  class OAuth2AuthenticatorAutomaticRefreshTest < Minitest::Test
+    cover OAuth2Authenticator
+
+    def setup
+      @refresh = stub_request(:post, TOKEN_URL)
+        .to_return(status: 200, body: {access_token: "NEW_ACCESS_TOKEN", refresh_token: "NEW_REFRESH_TOKEN"}.to_json)
+    end
+
+    def test_header_refreshes_an_expired_token
+      authenticator = OAuth2Authenticator.new(**test_oauth2_credentials, expires_at: Time.now - 1)
+
+      assert_equal({"Authorization" => "Bearer NEW_ACCESS_TOKEN"}, authenticator.header(nil))
+      assert_requested @refresh, times: 1
+    end
+
+    def test_header_keeps_an_unexpired_token
+      authenticator = OAuth2Authenticator.new(**test_oauth2_credentials, expires_at: Time.now + 3600)
+
+      assert_equal({"Authorization" => "Bearer #{TEST_ACCESS_TOKEN}"}, authenticator.header(nil))
+      assert_not_requested @refresh
+    end
+
+    def test_on_refresh_receives_the_authenticator_after_its_tokens_change
+      tokens = []
+      authenticator = OAuth2Authenticator.new(**test_oauth2_credentials, on_refresh: ->(auth) { tokens << [auth, auth.refresh_token] })
+      authenticator.refresh_token!
+
+      assert_equal [[authenticator, "NEW_REFRESH_TOKEN"]], tokens
+    end
+
+    def test_on_refresh_defaults_to_nil
+      assert_nil OAuth2Authenticator.new(**test_oauth2_credentials).on_refresh
+    end
+
+    def test_refresh_rejected_token_refreshes_the_token_that_was_rejected
+      authenticator = OAuth2Authenticator.new(**test_oauth2_credentials)
+
+      assert authenticator.refresh_rejected_token!(TEST_ACCESS_TOKEN)
+      assert_equal "NEW_ACCESS_TOKEN", authenticator.access_token
+      assert_requested @refresh, times: 1
+    end
+
+    def test_refresh_rejected_token_skips_a_token_already_replaced
+      authenticator = OAuth2Authenticator.new(**test_oauth2_credentials)
+
+      assert authenticator.refresh_rejected_token!("OLDER_ACCESS_TOKEN")
+      assert_not_requested @refresh
+    end
+
+    def test_refresh_rejected_token_reports_a_refresh_that_returned_the_same_token
+      stub_request(:post, TOKEN_URL).to_return(status: 200, body: {access_token: TEST_ACCESS_TOKEN}.to_json)
+      authenticator = OAuth2Authenticator.new(**test_oauth2_credentials)
+
+      refute authenticator.refresh_rejected_token!(TEST_ACCESS_TOKEN)
+    end
+
+    def unauthorized
+      Unauthorized.new(response: Net::HTTPUnauthorized.new("1.1", "401", "Unauthorized"))
+    end
+
+    def test_retrying_rejected_token_returns_what_the_request_returns
+      authenticator = OAuth2Authenticator.new(**test_oauth2_credentials)
+
+      assert_equal :ok, authenticator.retrying_rejected_token { :ok }
+      assert_not_requested @refresh
+    end
+
+    def test_retrying_rejected_token_refreshes_and_runs_the_request_again
+      authenticator = OAuth2Authenticator.new(**test_oauth2_credentials)
+      tokens = []
+      result = authenticator.retrying_rejected_token do
+        tokens << authenticator.access_token
+        raise unauthorized if tokens.one?
+
+        :ok
+      end
+
+      assert_equal [:ok, [TEST_ACCESS_TOKEN, "NEW_ACCESS_TOKEN"]], [result, tokens]
+    end
+
+    def test_retrying_rejected_token_refreshes_the_token_the_request_was_sent_with
+      authenticator = OAuth2Authenticator.new(**test_oauth2_credentials)
+      attempts = 0
+      result = authenticator.retrying_rejected_token do
+        attempts += 1
+        authenticator.access_token = "REPLACED" if attempts.eql?(1)
+        raise unauthorized if attempts.eql?(1)
+
+        :ok
+      end
+
+      assert_equal [:ok, 2, "REPLACED"], [result, attempts, authenticator.access_token]
+      assert_not_requested @refresh
+    end
+
+    def test_retrying_rejected_token_raises_a_second_rejection
+      authenticator = OAuth2Authenticator.new(**test_oauth2_credentials)
+      attempts = 0
+
+      assert_raises(Unauthorized) do
+        authenticator.retrying_rejected_token do
+          attempts += 1
+          raise unauthorized
+        end
+      end
+      assert_equal 2, attempts
+    end
+
+    def test_retrying_rejected_token_raises_when_a_refresh_keeps_the_token
+      stub_request(:post, TOKEN_URL).to_return(status: 200, body: {access_token: TEST_ACCESS_TOKEN}.to_json)
+      authenticator = OAuth2Authenticator.new(**test_oauth2_credentials)
+      attempts = 0
+
+      assert_raises(Unauthorized) do
+        authenticator.retrying_rejected_token do
+          attempts += 1
+          raise unauthorized
+        end
+      end
+      assert_equal 1, attempts
+    end
+  end
+
+  class OAuth2AuthenticatorConcurrentRefreshTest < Minitest::Test
+    cover OAuth2Authenticator
+
+    # Answer the token endpoint slowly, so that concurrent callers overlap the refresh
+    def stub_slow_refresh
+      stub_request(:post, TOKEN_URL).to_return do
+        sleep 0.05
+        {status: 200, body: {access_token: "NEW_ACCESS_TOKEN", expires_in: 7200}.to_json}
+      end
+    end
+
+    # Run a block in several threads at once, each after the first has begun
+    def concurrently(count = 4, &block)
+      first = Thread.new(&block)
+      sleep 0.01
+      [first, *Array.new(count - 1) { Thread.new(&block) }].each(&:join)
+    end
+
+    def test_concurrent_refreshes_of_a_rejected_token_refresh_once
+      stub_slow_refresh
+      authenticator = OAuth2Authenticator.new(**test_oauth2_credentials)
+      concurrently { authenticator.refresh_rejected_token!(TEST_ACCESS_TOKEN) }
+
+      assert_requested :post, TOKEN_URL, times: 1
+    end
+
+    def test_concurrent_headers_refresh_an_expired_token_once
+      stub_slow_refresh
+      authenticator = OAuth2Authenticator.new(**test_oauth2_credentials, expires_at: Time.now - 1)
+      concurrently { authenticator.header(nil) }
+
+      assert_requested :post, TOKEN_URL, times: 1
+    end
+
+    def test_a_header_waits_for_a_refresh_in_progress
+      stub_slow_refresh
+      authenticator = OAuth2Authenticator.new(**test_oauth2_credentials, expires_at: Time.now - 1)
+      refreshing = Thread.new { authenticator.refresh_token! }
+      sleep 0.01
+
+      assert_equal({"Authorization" => "Bearer NEW_ACCESS_TOKEN"}, authenticator.header(nil))
+      refreshing.join
+
+      assert_requested :post, TOKEN_URL, times: 1
+    end
+  end
+
   class OAuth2AuthenticatorRefreshTokenErrorTest < Minitest::Test
     cover OAuth2Authenticator
 

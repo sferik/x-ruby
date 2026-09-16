@@ -16,13 +16,6 @@ module X
     #   client.api_key_secret
     attr_reader :api_key_secret
 
-    # The access token for OAuth authentication
-    # @api public
-    # @return [String, nil] the access token for OAuth authentication
-    # @example Get the access token
-    #   client.access_token
-    attr_reader :access_token
-
     # The access token secret for OAuth 1.0a authentication
     # @api public
     # @return [String, nil] the access token secret for OAuth 1.0a authentication
@@ -51,12 +44,29 @@ module X
     #   client.client_secret
     attr_reader :client_secret
 
-    # The OAuth 2.0 refresh token
+    # The access token for OAuth authentication, as last refreshed
+    #
+    # @api public
+    # @return [String, nil] the access token for OAuth authentication
+    # @example Get the access token
+    #   client.access_token
+    def access_token = oauth2_authenticator_in_use&.access_token || @access_token
+
+    # The OAuth 2.0 refresh token, as last refreshed
+    #
     # @api public
     # @return [String, nil] the OAuth 2.0 refresh token
     # @example Get the refresh token
     #   client.refresh_token
-    attr_reader :refresh_token
+    def refresh_token = oauth2_authenticator_in_use&.refresh_token || @refresh_token
+
+    # The time the OAuth 2.0 access token expires, as last refreshed
+    #
+    # @api public
+    # @return [Time, nil] the expiration time, or nil if it is not known
+    # @example Get the expiration time
+    #   client.expires_at
+    def expires_at = oauth2_authenticator_in_use&.expires_at || @expires_at
 
     # Set the API key for OAuth 1.0a authentication
     #
@@ -66,8 +76,7 @@ module X
     # @example Set the API key
     #   client.api_key = "new_key"
     def api_key=(api_key)
-      @api_key = api_key
-      initialize_authenticator
+      update_credentials(api_key:)
     end
 
     # Set the API key secret for OAuth 1.0a authentication
@@ -78,8 +87,7 @@ module X
     # @example Set the API key secret
     #   client.api_key_secret = "new_secret"
     def api_key_secret=(api_key_secret)
-      @api_key_secret = api_key_secret
-      initialize_authenticator
+      update_credentials(api_key_secret:)
     end
 
     # Set the access token for OAuth authentication
@@ -90,8 +98,7 @@ module X
     # @example Set the access token
     #   client.access_token = "new_token"
     def access_token=(access_token)
-      @access_token = access_token
-      initialize_authenticator
+      update_credentials(access_token:)
     end
 
     # Set the access token secret for OAuth 1.0a authentication
@@ -102,8 +109,7 @@ module X
     # @example Set the access token secret
     #   client.access_token_secret = "new_secret"
     def access_token_secret=(access_token_secret)
-      @access_token_secret = access_token_secret
-      initialize_authenticator
+      update_credentials(access_token_secret:)
     end
 
     # Set the bearer token for authentication
@@ -114,8 +120,7 @@ module X
     # @example Set the bearer token
     #   client.bearer_token = "new_token"
     def bearer_token=(bearer_token)
-      @bearer_token = bearer_token
-      initialize_authenticator
+      update_credentials(bearer_token:)
     end
 
     # Set the OAuth 2.0 client ID
@@ -126,8 +131,7 @@ module X
     # @example Set the client ID
     #   client.client_id = "new_id"
     def client_id=(client_id)
-      @client_id = client_id
-      initialize_authenticator
+      update_credentials(client_id:)
     end
 
     # Set the OAuth 2.0 client secret
@@ -138,8 +142,7 @@ module X
     # @example Set the client secret
     #   client.client_secret = "new_secret"
     def client_secret=(client_secret)
-      @client_secret = client_secret
-      initialize_authenticator
+      update_credentials(client_secret:)
     end
 
     # Set the OAuth 2.0 refresh token
@@ -150,8 +153,20 @@ module X
     # @example Set the refresh token
     #   client.refresh_token = "new_token"
     def refresh_token=(refresh_token)
-      @refresh_token = refresh_token
-      initialize_authenticator
+      update_credentials(refresh_token:)
+    end
+
+    # Set the time the OAuth 2.0 access token expires
+    #
+    # The first request after that time, less a buffer for clock skew, refreshes the token.
+    #
+    # @api public
+    # @param expires_at [Time, nil] the expiration time, or nil if it is not known
+    # @return [void]
+    # @example Set the expiration time
+    #   client.expires_at = Time.now + 7200
+    def expires_at=(expires_at)
+      update_credentials(expires_at:)
     end
 
     # A client that authenticates as the app, for the endpoints that refuse OAuth 1.0a
@@ -171,6 +186,15 @@ module X
     end
 
     private
+
+    # Replace some credentials, keeping the tokens of the last refresh
+    # @api private
+    # @param changes [Hash{Symbol => Object}] the credentials to change
+    # @return [void]
+    def update_credentials(**changes)
+      initialize_credentials(**credentials, **changes)
+      initialize_authenticator
+    end
 
     # The app-only bearer token, fetched once with the API key and secret
     # @api private
@@ -193,14 +217,14 @@ module X
     # @return [Hash{Symbol => String, nil}] the credentials
     def credentials
       {api_key:, api_key_secret:, access_token:, access_token_secret:, bearer_token:, client_id:, client_secret:,
-       refresh_token:}
+       refresh_token:, expires_at:}
     end
 
     # Initialize credential instance variables
     # @api private
     # @return [void]
     def initialize_credentials(api_key:, api_key_secret:, access_token:, access_token_secret:, bearer_token:,
-      client_id:, client_secret:, refresh_token:)
+      client_id:, client_secret:, refresh_token:, expires_at:)
       @api_key = api_key
       @api_key_secret = api_key_secret
       @access_token = access_token
@@ -209,6 +233,7 @@ module X
       @client_id = client_id
       @client_secret = client_secret
       @refresh_token = refresh_token
+      @expires_at = expires_at
     end
 
     # Initialize the appropriate authenticator based on available credentials
@@ -224,18 +249,10 @@ module X
     # @api private
     # @return [OAuth1Authenticator, nil] the OAuth 1.0a authenticator or nil
     def oauth1_authenticator
+      access_token = @access_token
       return unless api_key && api_key_secret && access_token && access_token_secret
 
       OAuth1Authenticator.new(api_key:, api_key_secret:, access_token:, access_token_secret:)
-    end
-
-    # Build an OAuth 2.0 authenticator on the client's connection, given credentials
-    # @api private
-    # @return [OAuth2Authenticator, nil] the OAuth 2.0 authenticator or nil
-    def oauth2_authenticator
-      return unless client_id && client_secret && access_token && refresh_token
-
-      OAuth2Authenticator.new(client_id:, client_secret:, access_token:, refresh_token:, connection: @connection)
     end
 
     # Build an app-only authenticator on the client's connection, given API keys

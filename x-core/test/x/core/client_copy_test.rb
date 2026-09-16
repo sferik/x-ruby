@@ -5,7 +5,7 @@ module X
     cover Client
 
     def setup
-      @client = Client.new(**test_oauth_credentials, base_url: "https://api.x.com/2/", open_timeout: 5, read_timeout: 6,
+      @client = Client.new(**test_oauth_credentials, base_url: "https://example.com/2/", open_timeout: 5, read_timeout: 6,
         write_timeout: 7, debug_output: $stdout, proxy_url: "http://proxy.example.com:8080", default_array_class: Set,
         default_object_class: OpenStruct, max_redirects: 3)
     end
@@ -29,16 +29,24 @@ module X
     def test_copy_copies_the_settings
       copy = @client.copy(read_timeout: 60)
 
-      assert_equal ["https://api.x.com/2/", 5, 60, 7, $stdout, "http://proxy.example.com:8080", Set, OpenStruct, 3],
+      assert_equal ["https://example.com/2/", 5, 60, 7, $stdout, "http://proxy.example.com:8080", Set, OpenStruct, 3],
         [copy.base_url, copy.open_timeout, copy.read_timeout, copy.write_timeout, copy.debug_output, copy.proxy_url,
           copy.default_array_class, copy.default_object_class, copy.max_redirects]
+    end
+
+    def test_copy_copies_the_hooks
+      on_response = ->(_) {}
+      on_token_refresh = ->(_) {}
+      copy = Client.new(on_response:, on_token_refresh:).copy
+
+      assert_equal [on_response, on_token_refresh], [copy.on_response, copy.on_token_refresh]
     end
 
     def test_copy_changes_the_base_url
       copy = @client.copy(base_url: "https://api.x.com/1.1/")
 
       assert_equal "https://api.x.com/1.1/", copy.base_url
-      assert_equal "https://api.x.com/2/", @client.base_url
+      assert_equal "https://example.com/2/", @client.base_url
       refute_same @client, copy
     end
 
