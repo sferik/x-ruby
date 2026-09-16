@@ -9,7 +9,7 @@ module X
     # @return [String] the bearer token
     # @example Get the bearer token
     #   authenticator.bearer_token
-    attr_accessor :bearer_token
+    attr_reader :bearer_token
 
     # Initialize a new BearerTokenAuthenticator
     #

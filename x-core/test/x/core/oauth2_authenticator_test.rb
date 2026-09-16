@@ -299,7 +299,7 @@ module X
       attempts = 0
       result = authenticator.retrying_rejected_token do
         attempts += 1
-        authenticator.access_token = "REPLACED" if attempts.eql?(1)
+        authenticator.instance_variable_set(:@access_token, "REPLACED") if attempts.eql?(1)
         raise unauthorized if attempts.eql?(1)
 
         :ok

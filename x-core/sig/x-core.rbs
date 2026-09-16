@@ -11,7 +11,7 @@ module X
   end
 
   class BearerTokenAuthenticator < Authenticator
-    attr_accessor bearer_token: String
+    attr_reader bearer_token: String
     def initialize: (bearer_token: String) -> void
     def header: (Net::HTTPRequest? request) -> Hash[String, String]
   end
@@ -40,10 +40,10 @@ module X
     OAUTH_SIGNATURE_METHOD: String
     FORM_CONTENT_TYPE: String
 
-    attr_accessor api_key: String
-    attr_accessor api_key_secret: String
-    attr_accessor access_token: String
-    attr_accessor access_token_secret: String
+    attr_reader api_key: String
+    attr_reader api_key_secret: String
+    attr_reader access_token: String
+    attr_reader access_token_secret: String
     def initialize: (api_key: String, api_key_secret: String, access_token: String, access_token_secret: String) -> void
     def header: (Net::HTTPRequest request) -> Hash[String, String]
 
@@ -229,8 +229,8 @@ module X
     USER_LIMIT_TYPE: String
     TYPES: Array[String]
 
-    attr_accessor type: String
-    attr_accessor response: Net::HTTPResponse
+    attr_reader type: String
+    attr_reader response: Net::HTTPResponse
     def self.reported?: (String type, Net::HTTPResponse response) -> bool
     def initialize: (type: String, response: Net::HTTPResponse) -> void
     def limit: -> Integer
@@ -381,13 +381,13 @@ module X
     EXPIRATION_BUFFER: Integer
     DEFAULT_ERROR_MESSAGE: String
 
-    attr_accessor client_id: String
-    attr_accessor client_secret: String?
-    attr_accessor access_token: String
-    attr_accessor refresh_token: String
-    attr_accessor expires_at: Time?
-    attr_accessor connection: Connection
-    attr_accessor on_refresh: _TokenRefreshHook?
+    attr_reader client_id: String
+    attr_reader client_secret: String?
+    attr_reader access_token: String
+    attr_reader refresh_token: String
+    attr_reader expires_at: Time?
+    attr_reader connection: Connection
+    attr_reader on_refresh: _TokenRefreshHook?
     @mutex: Thread::Mutex
     def initialize: (client_id: String, access_token: String, refresh_token: String, ?client_secret: String?, ?expires_at: Time?, ?connection: Connection, ?on_refresh: _TokenRefreshHook?) -> void
     def header: (Net::HTTPRequest? request) -> Hash[String, String]

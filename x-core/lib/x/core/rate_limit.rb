@@ -14,16 +14,16 @@ module X
     # The type of rate limit
     # @api public
     # @return [String] the type of rate limit
-    # @example Get or set the rate limit type
-    #   rate_limit.type = "rate-limit"
-    attr_accessor :type
+    # @example Get the rate limit type
+    #   rate_limit.type # => "rate-limit"
+    attr_reader :type
 
     # The HTTP response containing rate limit headers
     # @api public
     # @return [Net::HTTPResponse] the HTTP response containing rate limit headers
-    # @example Get or set the response
-    #   rate_limit.response = http_response
-    attr_accessor :response
+    # @example Read a header of the response
+    #   rate_limit.response["x-rate-limit-limit"]
+    attr_reader :response
 
     # Check whether a response has the limit, remaining, and reset of a rate limit
     #

@@ -16,30 +16,30 @@ module X
     # The API key (consumer key)
     # @api public
     # @return [String] the API key (consumer key)
-    # @example Get or set the API key
-    #   authenticator.api_key = "key"
-    attr_accessor :api_key
+    # @example Get the API key
+    #   authenticator.api_key
+    attr_reader :api_key
 
     # The API key secret (consumer secret)
     # @api public
     # @return [String] the API key secret (consumer secret)
-    # @example Get or set the API key secret
-    #   authenticator.api_key_secret = "secret"
-    attr_accessor :api_key_secret
+    # @example Get the API key secret
+    #   authenticator.api_key_secret
+    attr_reader :api_key_secret
 
     # The access token
     # @api public
     # @return [String] the access token
-    # @example Get or set the access token
-    #   authenticator.access_token = "token"
-    attr_accessor :access_token
+    # @example Get the access token
+    #   authenticator.access_token
+    attr_reader :access_token
 
     # The access token secret
     # @api public
     # @return [String] the access token secret
-    # @example Get or set the access token secret
-    #   authenticator.access_token_secret = "token_secret"
-    attr_accessor :access_token_secret
+    # @example Get the access token secret
+    #   authenticator.access_token_secret
+    attr_reader :access_token_secret
 
     # Initialize a new OAuth1Authenticator
     #

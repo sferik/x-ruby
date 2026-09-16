@@ -110,6 +110,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Remove `X::OAuthAuthenticator::OAUTH_SIGNATURE_ALGORITHM`, which named the digest of the signing code that is gone
 * Remove `X::OAuth2Authenticator::REFRESH_GRANT_TYPE`, which named the grant type simple_oauth now sends
 * Remove the `base64` dependency from `x-core`, which encodes no Base64 of its own now that simple_oauth builds the Basic credentials
+* Remove the setters of `X::RateLimit`, `X::BearerTokenAuthenticator`, `X::OAuth1Authenticator`, and `X::OAuth2Authenticator`, whose attributes are now read-only; change a credential with the setters of `X::Client`, which build a new authenticator, and a token refresh replaces the tokens of an OAuth 2.0 authenticator under its lock
 
 ### Fixed
 * Parse the responses of the uploaders into Hashes and Arrays whatever the `default_object_class` and `default_array_class` of the client, so a client that defaults to another class, such as `OpenStruct`, uploads media, adds metadata, and updates a profile image or banner instead of raising `NoMethodError`

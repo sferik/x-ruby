@@ -27,45 +27,45 @@ module X
     # @return [String] the client ID
     # @example Get the client ID
     #   authenticator.client_id
-    attr_accessor :client_id
+    attr_reader :client_id
     # The OAuth 2.0 client secret
     # @api public
-    # @return [String] the client secret
+    # @return [String, nil] the client secret, or nil for a public client
     # @example Get the client secret
     #   authenticator.client_secret
-    attr_accessor :client_secret
+    attr_reader :client_secret
     # The OAuth 2.0 access token
     # @api public
     # @return [String] the access token
     # @example Get the access token
     #   authenticator.access_token
-    attr_accessor :access_token
+    attr_reader :access_token
     # The OAuth 2.0 refresh token
     # @api public
     # @return [String] the refresh token
     # @example Get the refresh token
     #   authenticator.refresh_token
-    attr_accessor :refresh_token
+    attr_reader :refresh_token
     # The expiration time of the access token
     # @api public
     # @return [Time, nil] the expiration time
     # @example Get the expiration time
     #   authenticator.expires_at
-    attr_accessor :expires_at
+    attr_reader :expires_at
 
     # The connection for making token requests
     # @api public
     # @return [Connection] the connection instance
     # @example Get the connection
     #   authenticator.connection
-    attr_accessor :connection
+    attr_reader :connection
 
     # A callable passed the authenticator after each refresh, to store its new tokens
     # @api public
     # @return [#call, nil] the callable, or nil for none
-    # @example Store the tokens of each refresh
-    #   authenticator.on_refresh = ->(auth) { store.save(auth.access_token, auth.refresh_token, auth.expires_at) }
-    attr_accessor :on_refresh
+    # @example Get the callable
+    #   authenticator.on_refresh
+    attr_reader :on_refresh
 
     # Initialize a new OAuth 2.0 authenticator
     #

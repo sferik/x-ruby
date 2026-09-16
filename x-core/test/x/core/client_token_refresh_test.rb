@@ -69,7 +69,7 @@ module X
       client = Client.new(**test_oauth2_credentials)
       authenticator = client.authenticator
       authenticator.stub(:header, ->(_) { {"Authorization" => "Bearer #{authenticator.access_token}"} }) do
-        client.on_response = ->(_) { authenticator.access_token = "REPLACED" }
+        client.on_response = ->(_) { authenticator.instance_variable_set(:@access_token, "REPLACED") }
         client.get("users/me")
       end
 
