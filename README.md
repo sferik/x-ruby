@@ -192,7 +192,7 @@ me.bookmark(post)
 
 x_client.like(post)                    # the same, via the client
 post = x_client.create_post("Hello, World! (from @gem)")
-reply = x_client.create_post("Hello back!", reply_to: post, media_ids: [media["id"]])
+reply = x_client.create_post("Hello back!", reply_to: post, media_ids: [media])
 quote = x_client.create_post("Worth reading", quote: post)
 x_client.hide_reply(reply)              # as the author of the post it replies to
 post.delete

@@ -20,7 +20,7 @@ Most applications should install [`x`](https://rubygems.org/gems/x), which wires
 
 ## The client contract
 
-Any object that responds to `get`, `post`, and `delete` can be the client. Each method takes a path relative to the API base URL and keyword options, and returns the parsed JSON body. The object layer always passes `array_class: Array, object_class: Hash`, so a client's own parsing defaults can't change what it receives. `X::Client` from `x-core` satisfies this contract.
+Any object that responds to `get`, `post`, `put`, and `delete` can be the client. Each method takes a path relative to the API base URL and keyword options, and returns the parsed JSON body. `post` and `put` also take the request body, a JSON String, as an optional second argument. The object layer always passes `array_class: Array, object_class: Hash`, so a client's own parsing defaults can't change what it receives. `X::Client` from `x-core` satisfies this contract.
 
 ```ruby
 require "x/objects"
@@ -30,6 +30,7 @@ class MyClient
 
   def get(path, **options) = ...
   def post(path, body = nil, **options) = ...
+  def put(path, body = nil, **options) = ...
   def delete(path, **options) = ...
 end
 ```
