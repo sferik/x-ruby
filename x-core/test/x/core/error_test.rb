@@ -32,13 +32,8 @@ module X
       end
     end
 
-    def test_connection_exception_is_a_deprecated_name_for_conflict
-      deprecated = Warning[:deprecated]
-      Warning[:deprecated] = true
-
-      assert_output(nil, /constant X::ConnectionException is deprecated/) { assert_same Conflict, X::ConnectionException }
-    ensure
-      Warning[:deprecated] = deprecated
+    def test_connection_exception_is_gone
+      refute X.const_defined?(:ConnectionException)
     end
 
     def test_unexpected_response

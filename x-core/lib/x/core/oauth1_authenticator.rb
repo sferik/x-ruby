@@ -118,8 +118,4 @@ module X
       request["Content-Type"].to_s.split(";").first.to_s.strip.downcase.eql?(FORM_CONTENT_TYPE)
     end
   end
-
-  # The name of OAuth1Authenticator before OAuth2Authenticator joined it
-  OAuthAuthenticator = OAuth1Authenticator
-  deprecate_constant :OAuthAuthenticator
 end

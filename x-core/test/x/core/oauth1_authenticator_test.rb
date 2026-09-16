@@ -10,13 +10,8 @@ module X
         access_token: TEST_ACCESS_TOKEN, access_token_secret: TEST_ACCESS_TOKEN_SECRET)
     end
 
-    def test_old_name_is_a_deprecated_alias
-      deprecated = Warning[:deprecated]
-      Warning[:deprecated] = true
-
-      assert_output(nil, /constant X::OAuthAuthenticator is deprecated/) { assert_same OAuth1Authenticator, X::OAuthAuthenticator }
-    ensure
-      Warning[:deprecated] = deprecated
+    def test_old_name_is_gone
+      refute X.const_defined?(:OAuthAuthenticator)
     end
 
     def test_inspect_hides_the_secrets

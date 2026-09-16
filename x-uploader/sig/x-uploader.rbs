@@ -1,6 +1,4 @@
 module X
-  InvalidMediaType: singleton(Uploader::InvalidMediaType)
-
   module Uploader
     VERSION: Gem::Version
     JSON_CLASSES: Hash[Symbol, singleton(Array) | singleton(Hash)]

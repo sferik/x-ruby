@@ -6,8 +6,4 @@ module X
     # @api public
     class InvalidMediaType < Error; end
   end
-
-  # The name of Uploader::InvalidMediaType before the uploaders moved under X::Uploader
-  InvalidMediaType = Uploader::InvalidMediaType
-  deprecate_constant :InvalidMediaType
 end

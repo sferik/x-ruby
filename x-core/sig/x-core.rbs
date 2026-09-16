@@ -69,8 +69,6 @@ module X
   class Conflict < ClientError
   end
 
-  ConnectionException: singleton(Conflict)
-
   class HTTPError < Error
     JSON_CONTENT_TYPE_REGEXP: Regexp
 
@@ -373,7 +371,6 @@ module X
     def yield_json: (line: String, decode: ^(String) -> untyped) { (untyped) -> void } -> void
   end
 
-  class OAuthAuthenticator = OAuth1Authenticator
 
   class OAuth2Authenticator < Authenticator
     TOKEN_PATH: String

@@ -31,13 +31,8 @@ module X
   end
 
   class UploaderInvalidMediaTypeTest < Minitest::Test
-    def test_the_old_name_is_a_deprecated_alias
-      deprecated = Warning[:deprecated]
-      Warning[:deprecated] = true
-
-      assert_output(nil, /constant X::InvalidMediaType is deprecated/) { assert_same Uploader::InvalidMediaType, X::InvalidMediaType }
-    ensure
-      Warning[:deprecated] = deprecated
+    def test_the_old_name_is_gone
+      refute X.const_defined?(:InvalidMediaType)
     end
   end
 end
