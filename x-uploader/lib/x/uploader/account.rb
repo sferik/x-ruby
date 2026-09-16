@@ -1,6 +1,7 @@
 require "securerandom"
 require "x/core"
 require_relative "invalid_media_type"
+require_relative "validator"
 
 module X
   module Uploader
@@ -13,8 +14,6 @@ module X
       V1_BASE_URL = "https://api.x.com/1.1/".freeze
       # Supported image extensions for profile uploads
       SUPPORTED_EXTENSIONS = %w[gif jpg jpeg png].freeze
-      # Mapping of file extensions to MIME types
-      MIME_TYPE_MAP = {"gif" => "image/gif", "jpg" => "image/jpeg", "jpeg" => "image/jpeg", "png" => "image/png"}.freeze
 
       # Update the authenticating user's profile image
       #
@@ -23,7 +22,7 @@ module X
       # @param client [Client] the X API client
       # @param boundary [String] the multipart boundary
       # @return [Hash, nil] the updated user object
-      # @raise [RuntimeError] if the file does not exist
+      # @raise [Errno::ENOENT] if the file does not exist
       # @raise [InvalidMediaType] if the file type is not supported
       # @example Update profile image from a file
       #   Uploader::Account.update_profile_image("avatar.png", client: client)
@@ -58,7 +57,7 @@ module X
       # @param offset_top [Integer, nil] the top offset of the banner
       # @param boundary [String] the multipart boundary
       # @return [Hash, nil] nil on success (204 No Content)
-      # @raise [RuntimeError] if the file does not exist
+      # @raise [Errno::ENOENT] if the file does not exist
       # @raise [InvalidMediaType] if the file type is not supported
       # @example Update profile banner from a file
       #   Uploader::Account.update_profile_banner("banner.png", client: client)
@@ -105,10 +104,10 @@ module X
       # @api private
       # @param file_path [String] the file path
       # @return [nil]
-      # @raise [RuntimeError] if the file does not exist
+      # @raise [Errno::ENOENT] if the file does not exist
       # @raise [InvalidMediaType] if the file type is not supported
       def validate_file!(file_path)
-        raise "File not found: #{file_path}" unless File.exist?(file_path)
+        Validator.validate_file_path!(file_path)
 
         extension = File.extname(file_path).delete(".").downcase
         return if SUPPORTED_EXTENSIONS.include?(extension)

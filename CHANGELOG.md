@@ -87,6 +87,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Take the recipient and text of a direct message as the positional arguments of `create_direct_message`, in place of `to:` and `text:`, since both are required
 * Derive the v1.1 client of `X::Uploader::Account` from the client it is given with `copy`, so it keeps the timeouts, proxy, and other settings
 * Mark `X::RequestBuilder`, `X::RedirectHandler`, `X::ResponseParser`, `X::StreamParser`, `X::RateLimitHandler`, and `X::ReconnectHandler` as `@api private`, the internals of `X::Client` and `X::StreamingClient`, whose settings they expose, so that they can change within 1.x
+* Raise `Errno::ENOENT` from the uploaders for a file that does not exist, and `X::Uploader::MediaProcessingFailed`, an `X::Error` whose `status` holds what X reported and whose message is its reason, for media that fails to process, instead of `RuntimeError`
+* Move `X::InvalidMediaType` to `X::Uploader::InvalidMediaType`, beside the uploaders that raise it; `X::InvalidMediaType` remains as a deprecated alias
 * Rename `X::ConnectionException`, the error for 409 Conflict, to `X::Conflict`, after its status like every other HTTP error; `X::ConnectionException` remains as a deprecated alias
 * Rename `X::OAuthAuthenticator` to `X::OAuth1Authenticator`, beside `X::OAuth2Authenticator`; `X::OAuthAuthenticator` remains as a deprecated alias, which warns when deprecation warnings are enabled
 * Move the HTTP client into `x-core`, under `lib/x/core`, and the uploaders into `x-uploader`, under `lib/x/uploader`
@@ -99,6 +101,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Build and parse the OAuth 2.0 token refresh with simple_oauth, in place of the request and response handling `X::OAuth2Authenticator` carried; it sends the same request and still returns the token response and raises `X::Error`
 
 ### Removed
+* Remove `X::Uploader::Account::MIME_TYPE_MAP`, which nothing read
 * Make `X::HTTPError#error_message`, `#message_from_json_response`, and `#json?` private; they build the message an error is initialized with, which `message` returns
 * Remove `require "x/media_uploader"` and `require "x/account_uploader"`; require `x`, `x/uploader/media`, or `x/uploader/account` instead
 * Remove `X::OAuthAuthenticator::OAUTH_SIGNATURE_ALGORITHM`, which named the digest of the signing code that is gone

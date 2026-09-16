@@ -36,13 +36,13 @@ module X
     end
 
     def test_missing_file_message
-      error = assert_raises(RuntimeError) { Uploader::Account.update_profile_image("nope.png", client: @client) }
+      error = assert_raises(Errno::ENOENT) { Uploader::Account.update_profile_image("nope.png", client: @client) }
 
-      assert_equal "File not found: nope.png", error.message
+      assert_equal "No such file or directory - nope.png", error.message
     end
 
     def test_unsupported_file_type_message
-      error = assert_raises(InvalidMediaType) do
+      error = assert_raises(Uploader::InvalidMediaType) do
         Uploader::Account.update_profile_banner("test/sample_files/sample.mp4", client: @client)
       end
 

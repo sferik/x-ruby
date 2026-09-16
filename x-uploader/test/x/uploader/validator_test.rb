@@ -10,9 +10,9 @@ module X
     end
 
     def test_validate_file_path_raises_for_missing_file
-      error = assert_raises(RuntimeError) { Uploader::Validator.validate_file_path!("bad/path") }
+      error = assert_raises(Errno::ENOENT) { Uploader::Validator.validate_file_path!("bad/path") }
 
-      assert_equal "File not found: bad/path", error.message
+      assert_equal "No such file or directory - bad/path", error.message
     end
 
     def test_validate_media_category

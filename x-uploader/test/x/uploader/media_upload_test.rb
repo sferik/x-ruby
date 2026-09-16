@@ -68,7 +68,7 @@ module X
     def test_upload_raises_when_video_processing_fails
       stub_chunked_workflow(state: "failed")
 
-      assert_raises(RuntimeError) { Uploader::Media.upload("test/sample_files/sample.mp4", client: @client) }
+      assert_raises(Uploader::MediaProcessingFailed) { Uploader::Media.upload("test/sample_files/sample.mp4", client: @client) }
     end
 
     def test_upload_a_still_gif_as_an_image
@@ -112,9 +112,9 @@ module X
     end
 
     def test_upload_rejects_a_missing_video_before_requesting
-      error = assert_raises(RuntimeError) { Uploader::Media.upload("nope.mp4", client: @client) }
+      error = assert_raises(Errno::ENOENT) { Uploader::Media.upload("nope.mp4", client: @client) }
 
-      assert_equal "File not found: nope.mp4", error.message
+      assert_equal "No such file or directory - nope.mp4", error.message
       assert_not_requested :post, "#{BASE_URL}/initialize"
     end
 

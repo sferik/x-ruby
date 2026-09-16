@@ -1,9 +1,18 @@
 module X
-  class InvalidMediaType < Error
-  end
+  InvalidMediaType: singleton(Uploader::InvalidMediaType)
 
   module Uploader
     VERSION: Gem::Version
+
+    class InvalidMediaType < Error
+    end
+
+    class MediaProcessingFailed < Error
+      DEFAULT_MESSAGE: String
+
+      attr_reader status: Hash[String, untyped]
+      def initialize: (Hash[String, untyped] status) -> void
+    end
 
     module Chunks
       MAX_RETRIES: Integer
@@ -96,7 +105,6 @@ module X
     module Account
       V1_BASE_URL: String
       SUPPORTED_EXTENSIONS: Array[String]
-      MIME_TYPE_MAP: Hash[String, String]
       extend Account
 
       def update_profile_image: (String file_path, client: Client, ?boundary: String) -> untyped

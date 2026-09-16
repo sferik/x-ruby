@@ -31,13 +31,13 @@ module X
     end
 
     def test_update_profile_image_raises_for_missing_file
-      error = assert_raises(RuntimeError) { update_profile_image("nonexistent.png") }
+      error = assert_raises(Errno::ENOENT) { update_profile_image("nonexistent.png") }
 
-      assert_includes error.message, "File not found"
+      assert_includes error.message, "No such file or directory"
     end
 
     def test_update_profile_image_raises_for_unsupported_file_type
-      error = assert_raises(X::InvalidMediaType) { update_profile_image("test/sample_files/sample.mp4") }
+      error = assert_raises(Uploader::InvalidMediaType) { update_profile_image("test/sample_files/sample.mp4") }
 
       assert_includes error.message, "Unsupported file type"
     end
@@ -110,13 +110,13 @@ module X
     end
 
     def test_update_profile_banner_raises_for_missing_file
-      error = assert_raises(RuntimeError) { update_profile_banner("nonexistent.png") }
+      error = assert_raises(Errno::ENOENT) { update_profile_banner("nonexistent.png") }
 
-      assert_includes error.message, "File not found"
+      assert_includes error.message, "No such file or directory"
     end
 
     def test_update_profile_banner_raises_for_unsupported_file_type
-      error = assert_raises(X::InvalidMediaType) { update_profile_banner("test/sample_files/sample.mp4") }
+      error = assert_raises(Uploader::InvalidMediaType) { update_profile_banner("test/sample_files/sample.mp4") }
 
       assert_includes error.message, "Unsupported file type"
     end

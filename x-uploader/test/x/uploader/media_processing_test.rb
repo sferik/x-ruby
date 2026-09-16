@@ -38,11 +38,11 @@ module X
     def test_await_processing_bang_raises_on_failure
       stub_processing_status_sequence("pending", "failed")
 
-      error = assert_raises(RuntimeError) do
+      error = assert_raises(Uploader::MediaProcessingFailed) do
         Uploader::Media.await_processing!(media_hash, client: @client)
       end
 
-      assert_equal "Media processing failed", error.message
+      assert_equal ["Media processing failed", "failed"], [error.message, error.status.dig("processing_info", "state")]
       assert_requested(:get, status_url, times: 2)
     end
 

@@ -25,11 +25,11 @@ module X
     end
 
     def test_missing_file_is_rejected_before_requesting
-      error = assert_raises(RuntimeError) do
+      error = assert_raises(Errno::ENOENT) do
         Uploader::Media.chunked_upload("nope.mp4", client: @client, media_category: "tweet_video")
       end
 
-      assert_equal "File not found: nope.mp4", error.message
+      assert_equal "No such file or directory - nope.mp4", error.message
     end
 
     def test_invalid_category_is_rejected_before_requesting

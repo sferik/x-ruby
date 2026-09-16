@@ -13,11 +13,11 @@ module X
       # @api private
       # @param file_path [String] the file path to validate
       # @return [void]
-      # @raise [RuntimeError] if the file does not exist
+      # @raise [Errno::ENOENT] if the file does not exist
       # @example Validate a file path
       #   Uploader::Validator.validate_file_path!("image.png")
       def validate_file_path!(file_path)
-        raise "File not found: #{file_path}" unless File.exist?(file_path)
+        raise Errno::ENOENT, file_path unless File.exist?(file_path)
       end
 
       # Validate that a media category is valid

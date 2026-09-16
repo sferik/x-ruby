@@ -64,13 +64,13 @@ module X
     end
 
     def test_infer_media_type_raises_for_unknown_extension
-      assert_raises(X::InvalidMediaType) do
+      assert_raises(Uploader::InvalidMediaType) do
         Uploader::Media.infer_media_type("test/sample_files/sample.unknown", Uploader::Media::TWEET_IMAGE)
       end
     end
 
     def test_infer_media_type_error_message_includes_file_path
-      error = assert_raises(X::InvalidMediaType) do
+      error = assert_raises(Uploader::InvalidMediaType) do
         Uploader::Media.infer_media_type("/tmp/tempfile123", Uploader::Media::TWEET_IMAGE)
       end
 

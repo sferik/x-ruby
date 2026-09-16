@@ -5,6 +5,7 @@ require "x/core"
 require_relative "chunks"
 require_relative "gif"
 require_relative "invalid_media_type"
+require_relative "media_processing_failed"
 require_relative "metadata"
 require_relative "validator"
 require_relative "version"
@@ -48,7 +49,8 @@ module X
       # @param boundary [String] the multipart boundary
       # @param options [Hash] options for a chunked upload, such as media_type and chunk_size_mb
       # @return [Hash, nil] the upload response data, or the processing status of a video
-      # @raise [RuntimeError] if the file does not exist or a video fails to process
+      # @raise [Errno::ENOENT] if the file does not exist
+      # @raise [MediaProcessingFailed] if a video fails to process
       # @example Upload an image
       #   Uploader::Media.upload("image.png", client: client)
       # @example Upload an image with alt text
@@ -99,7 +101,7 @@ module X
       # @param boundary [String] the multipart boundary
       # @param chunk_size_mb [Integer] the size of each chunk in megabytes
       # @return [Hash, nil] the upload response data
-      # @raise [RuntimeError] if the file does not exist
+      # @raise [Errno::ENOENT] if the file does not exist
       # @raise [ArgumentError] if the media category is invalid
       # @example Upload a large video
       #   Uploader::Media.chunked_upload("video.mp4", client: client)
@@ -137,11 +139,11 @@ module X
       # @param media [Hash] the media object with an id
       # @param client [Client] the X API client
       # @return [Hash, nil] the processing status
-      # @raise [RuntimeError] if media processing failed
+      # @raise [MediaProcessingFailed] if media processing failed, with the status X reported
       # @example Wait for processing with error handling
       #   Uploader::Media.await_processing!(media, client: client)
       def await_processing!(media, client:)
-        await_processing(media, client:).tap { |status| raise "Media processing failed" if status&.dig("processing_info", "state").eql?("failed") }
+        await_processing(media, client:).tap { |status| raise MediaProcessingFailed.new(status) if status&.dig("processing_info", "state").eql?("failed") }
       end
 
       # Infer the media type from file path and category

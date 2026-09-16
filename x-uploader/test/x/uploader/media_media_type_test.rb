@@ -35,7 +35,7 @@ module X
     end
 
     def test_unknown_extension_message
-      error = assert_raises(InvalidMediaType) { Uploader::Media.infer_media_type("/tmp/tempfile123", "tweet_image") }
+      error = assert_raises(Uploader::InvalidMediaType) { Uploader::Media.infer_media_type("/tmp/tempfile123", "tweet_image") }
 
       assert_equal 'unable to determine MIME type from file extension: "/tmp/tempfile123"', error.message
     end

@@ -1,5 +1,7 @@
 require_relative "uploader/version"
 require_relative "uploader/account"
 require_relative "uploader/gif"
+require_relative "uploader/invalid_media_type"
 require_relative "uploader/media"
+require_relative "uploader/media_processing_failed"
 require_relative "uploader/metadata"
