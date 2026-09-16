@@ -27,7 +27,7 @@ module X
     end
 
     def test_owner
-      assert_equal "9", @list.owner_id
+      assert_equal 9, @list.owner_id
       assert_equal "sferik", @list.owner.username
     end
 
@@ -61,6 +61,13 @@ module X
       assert_equal 5, @list.members(max_results: 5).params["max_results"]
       assert_equal 5, @list.followers(max_results: 5).params["max_results"]
       assert_equal 5, @list.posts(max_results: 5).params["max_results"]
+    end
+
+    def test_find_all_is_not_supported
+      error = assert_raises(NotImplementedError) { List.find_all([1, 2], client: @client) }
+
+      assert_equal "X::List cannot be fetched in batches; find 2 lists one at a time", error.message
+      assert_empty @client.requests
     end
 
     def test_find

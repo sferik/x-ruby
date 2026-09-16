@@ -1,24 +1,24 @@
 require "json"
+require "uri"
+require_relative "community"
 require_relative "cursor"
-require_relative "referenced_posts"
+require_relative "references"
 require_relative "resource"
 
 module X
   # A post, also known as a tweet
   # @api public
   class Post < Objects::Resource
-    # Every public post field
-    FIELDS = %w[attachments author_id context_annotations conversation_id created_at edit_controls
-      edit_history_tweet_ids entities geo id in_reply_to_user_id lang note_tweet possibly_sensitive
-      public_metrics referenced_tweets reply_settings source text withheld].freeze
-    # Every expansion available on post endpoints
-    EXPANSIONS = %w[attachments.media_keys attachments.poll_ids author_id edit_history_tweet_ids
-      entities.mentions.username geo.place_id in_reply_to_user_id referenced_tweets.id
-      referenced_tweets.id.author_id].freeze
+    # Every public post field; the identifiers of referenced resources come with their expansions
+    FIELDS = %w[attachments community_id context_annotations conversation_id created_at edit_controls entities geo id
+      lang note_post possibly_sensitive public_metrics reply_settings source text withheld].freeze
+    # Every expansion available on post endpoints that refers to a modeled resource
+    EXPANSIONS = %w[attachments.media_keys attachments.poll_ids author_id edit_history_post_ids
+      entities.mentions.username geo.place_id in_reply_to_user_id referenced_posts].freeze
     # Maximum number of posts or users per page
     MAX_RESULTS = 100
 
-    include Objects::ReferencedPosts
+    include Objects::References
 
     class << self
       # The API endpoint used to look up posts by identifier
@@ -36,19 +36,27 @@ module X
       # @api public
       # @return [String] the includes key
       # @example Get the includes key
-      #   X::Post.includes_key # => "tweets"
+      #   X::Post.includes_key # => "posts"
       def includes_key
-        "tweets"
+        "posts"
       end
+
+      # The query parameter that selects post fields
+      #
+      # @api public
+      # @return [String] the fields parameter
+      # @example Get the fields parameter
+      #   X::Post.fields_key # => "post.fields"
+      def fields_key = "post.fields"
 
       # The default query parameters requesting every post field and expansion
       #
       # @api public
       # @return [Hash{String => Array<String>}] the default query parameters
       # @example Get the default parameters
-      #   X::Post.default_params["tweet.fields"]
+      #   X::Post.default_params["post.fields"]
       def default_params
-        {"tweet.fields" => FIELDS, "user.fields" => User::FIELDS, "media.fields" => Media::FIELDS,
+        {"post.fields" => FIELDS, "user.fields" => User::FIELDS, "media.fields" => Media::FIELDS,
          "poll.fields" => Poll::FIELDS, "place.fields" => Place::FIELDS, "expansions" => EXPANSIONS}
       end
 
@@ -62,7 +70,7 @@ module X
       # @example Print posts about Ruby
       #   X::Post.search("ruby -is:retweet", client: client).each { |post| puts post.text }
       def search(query, client:, **params)
-        Cursor.new(self, client:, path: "tweets/search/recent", params: {query:, max_results: MAX_RESULTS}.merge(params))
+        Cursor.new(self, "tweets/search/recent", client:, params: {query:, max_results: MAX_RESULTS}.merge(params), min_results: 10)
       end
 
       # Search the full archive of posts
@@ -75,19 +83,31 @@ module X
       # @example Print every post about Ruby
       #   X::Post.search_all("ruby -is:retweet", client: client).each { |post| puts post.text }
       def search_all(query, client:, **params)
-        Cursor.new(self, client:, path: "tweets/search/all", params: {query:, max_results: MAX_RESULTS}.merge(params))
+        Cursor.new(self, "tweets/search/all", client:, params: {query:, max_results: MAX_RESULTS}.merge(params), min_results: 10)
       end
 
       # Create a post as the authenticated user
       #
+      # The API bills each post created, and bills a post whose text holds a URL more than ten times as much.
+      #
       # @api public
       # @param text [String] the text of the post
       # @param client [Object] the client used to make the request
-      # @param params [Hash] additional request body fields, such as reply or media
+      # @param reply_to [Post, String, Integer, nil] the post to reply to or its identifier
+      # @param media_ids [Array<String, Integer, Hash>, nil] the identifiers of uploaded media to attach, or the upload responses
+      # @param community [Community, String, Integer, nil] the community to post in or its identifier
+      # @param params [Hash] additional request body fields, such as poll or reply_settings
       # @return [Post, nil] the created post, holding only its identifier and text
       # @example Create a post
       #   X::Post.create("Hello, World!", client: client)
-      def create(text, client:, **params)
+      # @example Reply to a post with an image
+      #   X::Post.create("Hello!", client: client, reply_to: post, media_ids: [media["id"]])
+      # @example Post in a community
+      #   X::Post.create("Hello, Rubyists!", client: client, community: community)
+      def create(text, client:, reply_to: nil, media_ids: nil, community: nil, **params)
+        params[:reply] = {in_reply_to_tweet_id: Objects::Utils.id_of(reply_to)} unless reply_to.nil?
+        params[:media] = {media_ids: media_ids.map { |media| Objects::Utils.media_id_of(media) }} unless media_ids.nil?
+        params[:community_id] = Objects::Utils.id_of(community) unless community.nil?
         body = client.post("tweets", JSON.generate({text:, **params}), **Objects::Utils::JSON_CLASSES)
         resource_from_response(body, client:)
       end
@@ -141,26 +161,34 @@ module X
     # @!attribute [r] author_id
     #   The identifier of the author
     #   @api public
-    #   @return [String, nil] the author identifier
+    #   @return [Integer, nil] the author identifier
     #   @example Get the author identifier
     #     post.author_id
-    attribute :author_id
+    attribute :author_id, :integer
 
     # @!attribute [r] conversation_id
     #   The identifier of the first post in the conversation
     #   @api public
-    #   @return [String, nil] the conversation identifier
+    #   @return [Integer, nil] the conversation identifier
     #   @example Get the conversation identifier
     #     post.conversation_id
-    attribute :conversation_id
+    attribute :conversation_id, :integer
+
+    # @!attribute [r] community_id
+    #   The identifier of the community the post was made in
+    #   @api public
+    #   @return [Integer, nil] the community identifier
+    #   @example Get the community identifier
+    #     post.community_id
+    attribute :community_id, :integer
 
     # @!attribute [r] in_reply_to_user_id
     #   The identifier of the user being replied to
     #   @api public
-    #   @return [String, nil] the replied-to user identifier
+    #   @return [Integer, nil] the replied-to user identifier
     #   @example Get the replied-to user identifier
     #     post.in_reply_to_user_id
-    attribute :in_reply_to_user_id
+    attribute :in_reply_to_user_id, :integer
 
     # @!attribute [r] possibly_sensitive
     #   Whether the post may contain sensitive content
@@ -188,10 +216,10 @@ module X
     # @!attribute [r] edit_history_post_ids
     #   The identifiers of every version of the post
     #   @api public
-    #   @return [Array<String>, nil] the edit history identifiers
+    #   @return [Array<Integer>, nil] the edit history identifiers
     #   @example Get the edit history identifiers
     #     post.edit_history_post_ids
-    attribute :edit_history_post_ids, key: %w[edit_history_tweet_ids]
+    attribute :edit_history_post_ids, :integers
 
     # @!attribute [r] edit_controls
     #   The edit controls
@@ -209,6 +237,14 @@ module X
     #     post.entities
     attribute :entities
 
+    # @!attribute [r] urls
+    #   The links in the text, each with its shortened url and its expanded_url
+    #   @api public
+    #   @return [Array<Hash>, nil] the links
+    #   @example Get the links
+    #     post.urls # => [{"url" => "https://t.co/...", "expanded_url" => "https://github.com/sferik/x-ruby", ...}]
+    attribute :urls, key: %w[entities urls]
+
     # @!attribute [r] context_annotations
     #   The context annotations
     #   @api public
@@ -217,13 +253,13 @@ module X
     #     post.context_annotations
     attribute :context_annotations
 
-    # @!attribute [r] referenced_tweets
+    # @!attribute [r] referenced_posts
     #   The referenced posts with their types and identifiers
     #   @api public
     #   @return [Array<Hash>, nil] the referenced posts
     #   @example Get the referenced posts
-    #     post.referenced_tweets
-    attribute :referenced_tweets
+    #     post.referenced_posts
+    attribute :referenced_posts
 
     # @!attribute [r] attachments
     #   The attachment keys and identifiers
@@ -232,6 +268,14 @@ module X
     #   @example Get the attachments
     #     post.attachments
     attribute :attachments
+
+    # @!attribute [r] coordinates
+    #   The longitude and latitude the post was tagged with
+    #   @api public
+    #   @return [Array<Float>, nil] the longitude and latitude
+    #   @example Get the coordinates
+    #     post.coordinates # => [-122.4, 37.8]
+    attribute :coordinates, key: %w[geo coordinates coordinates]
 
     # @!attribute [r] geo
     #   The tagged place and coordinates
@@ -255,7 +299,7 @@ module X
     #   @return [Hash, nil] the note details
     #   @example Get the note details
     #     post.note_post
-    attribute :note_post, key: %w[note_tweet]
+    attribute :note_post
 
     # @!attribute [r] public_metrics
     #   The public metrics
@@ -271,7 +315,7 @@ module X
     #   @return [Integer, nil] the repost count
     #   @example Get the repost count
     #     post.repost_count
-    attribute :repost_count, key: %w[public_metrics retweet_count]
+    attribute :repost_count, key: %w[public_metrics repost_count]
 
     # @!attribute [r] reply_count
     #   The number of replies
@@ -329,6 +373,14 @@ module X
     #     post.in_reply_to_user
     reference :in_reply_to_user, :User, key: %w[in_reply_to_user_id]
 
+    # @!method community
+    #   The community the post was made in, as a stub holding only its identifier
+    #   @api public
+    #   @return [Community, nil] the community
+    #   @example Get the community's name
+    #     post.community.hydrate.name
+    reference :community, :Community, key: %w[community_id]
+
     # @!method place
     #   The tagged place, from the includes or as a stub holding only its identifier
     #   @api public
@@ -356,15 +408,42 @@ module X
     alias_method :retweet_count, :repost_count
     alias_method :edit_history_tweet_ids, :edit_history_post_ids
     alias_method :note_tweet, :note_post
+    alias_method :referenced_tweets, :referenced_posts
+
+    # The permalink of the post, by the author's username when known
+    #
+    # @api public
+    # @return [String] the x.com address of the post
+    # @example Get the permalink
+    #   post.permalink # => "https://x.com/sferik/status/1234567890"
+    def permalink = "https://x.com/#{author&.username || "i"}/status/#{id}"
+
+    # The permalink of the post as a URI
+    #
+    # @api public
+    # @return [URI::Generic] the x.com address of the post
+    # @example Get the address as a URI
+    #   post.uri # => #<URI::HTTPS https://x.com/sferik/status/1234567890>
+    def uri = URI(permalink)
+
+    # The text with every shortened link replaced by the URL it stands for
+    #
+    # @api public
+    # @return [String, nil] the text with expanded links
+    # @example Display a post with its links in full
+    #   post.expanded_text
+    def expanded_text
+      Array(urls).reduce(text) { |expanded, link| expanded&.gsub(link.fetch("url"), link["expanded_url"] || link.fetch("url")) }
+    end
 
     # The users who liked this post
     #
     # @api public
     # @param params [Hash] query parameters merged over the default parameters
-    # @return [Cursor] a cursor over the liking users
-    # @example Print the liking users
-    #   post.liking_users.each { |user| puts user.username }
-    def liking_users(**params)
+    # @return [Cursor] a cursor over the users who liked the post
+    # @example Print the users who liked a post
+    #   post.liked_by.each { |user| puts user.username }
+    def liked_by(**params)
       cursor(User, "tweets/#{id}/liking_users", max_results: MAX_RESULTS, **params)
     end
 
@@ -387,7 +466,7 @@ module X
     # @example Print the quotes
     #   post.quotes.each { |quote| puts quote.text }
     def quotes(**params)
-      cursor(Post, "tweets/#{id}/quote_tweets", max_results: MAX_RESULTS, **params)
+      cursor(Post, "tweets/#{id}/quote_tweets", max_results: MAX_RESULTS, min_results: 10, **params)
     end
 
     # Delete this post as the authenticated user

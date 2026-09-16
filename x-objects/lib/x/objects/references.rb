@@ -1,13 +1,15 @@
 module X
   module Objects
-    # Resolves the posts referenced by a post through its referenced_tweets attribute
+    # Resolves the posts a post refers to through its referenced_posts attribute
     # @api public
-    module ReferencedPosts
+    module References
       # Referenced post type for replies
       REPLIED_TO = "replied_to".freeze
       # Referenced post type for quotes
       QUOTED = "quoted".freeze
-      # Referenced post type for reposts
+      # Referenced post type for reposts, as the API labels them
+      REPOSTED = "reposted".freeze
+      # Referenced post type for reposts, as the API documentation labels them
       RETWEETED = "retweeted".freeze
 
       # The referenced posts, resolved from the includes or built as stubs
@@ -15,9 +17,9 @@ module X
       # @api public
       # @return [Array<Post>] the referenced posts
       # @example Get the referenced posts
-      #   post.referenced_posts
-      def referenced_posts
-        Array(referenced_tweets).filter_map do |reference|
+      #   post.references
+      def references
+        Array(referenced_posts).filter_map do |reference|
           resolve(Post, reference["id"]) #: Post?
         end.freeze
       end
@@ -29,7 +31,7 @@ module X
       # @example Get the replied-to post
       #   post.replied_to
       def replied_to
-        referenced_post(REPLIED_TO)
+        reference(REPLIED_TO)
       end
 
       # The post this post quotes
@@ -39,7 +41,7 @@ module X
       # @example Get the quoted post
       #   post.quoted
       def quoted
-        referenced_post(QUOTED)
+        reference(QUOTED)
       end
 
       # The post this post reposts
@@ -49,7 +51,7 @@ module X
       # @example Get the reposted post
       #   post.reposted
       def reposted
-        referenced_post(RETWEETED)
+        reference(REPOSTED, RETWEETED)
       end
 
       # Check whether this post is a reply
@@ -87,15 +89,15 @@ module X
 
       private
 
-      # Resolve the first referenced post of a type
+      # Resolve the first referenced post of any of some types
       # @api private
-      # @param type [String] the referenced post type
-      # @return [Post, nil] the referenced post or nil if there is none of that type
-      def referenced_post(type)
-        reference = Array(referenced_tweets).find { |element| element["type"].eql?(type) }
-        return if reference.nil?
+      # @param types [Array<String>] the referenced post types
+      # @return [Post, nil] the referenced post or nil if there is none of those types
+      def reference(*types)
+        found = Array(referenced_posts).find { |element| types.include?(element["type"]) }
+        return if found.nil?
 
-        resolve(Post, reference["id"]) #: Post?
+        resolve(Post, found["id"]) #: Post?
       end
     end
   end

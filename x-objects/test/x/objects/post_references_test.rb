@@ -42,27 +42,27 @@ module X
     end
 
     def test_cursor_paths
-      assert_equal "tweets/1/liking_users", @post.liking_users.path
+      assert_equal "tweets/1/liking_users", @post.liked_by.path
       assert_equal "tweets/1/retweeted_by", @post.reposted_by.path
       assert_equal "tweets/1/retweeted_by", @post.retweeted_by.path
       assert_equal "tweets/1/quote_tweets", @post.quotes.path
     end
 
     def test_cursor_classes
-      assert_equal User, @post.liking_users.klass
+      assert_equal User, @post.liked_by.klass
       assert_equal User, @post.reposted_by.klass
       assert_equal Post, @post.quotes.klass
       assert_same @client, @post.quotes.client
     end
 
     def test_cursor_max_results
-      assert_equal 100, @post.liking_users.params["max_results"]
+      assert_equal 100, @post.liked_by.params["max_results"]
       assert_equal 100, @post.reposted_by.params["max_results"]
       assert_equal 100, @post.quotes.params["max_results"]
     end
 
     def test_cursor_params
-      assert_equal 5, @post.liking_users(max_results: 5).params["max_results"]
+      assert_equal 5, @post.liked_by(max_results: 5).params["max_results"]
       assert_equal 5, @post.reposted_by(max_results: 5).params["max_results"]
       assert_equal 5, @post.quotes(max_results: 5).params["max_results"]
     end

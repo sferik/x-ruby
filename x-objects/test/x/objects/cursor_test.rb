@@ -13,7 +13,7 @@ module X
         when "p3" then {"data" => [{"id" => "4"}], "meta" => {"result_count" => 1}}
         end
       })
-      @cursor = Cursor.new(User, client: @client, path: "users/1/followers", params: {max_results: 1000})
+      @cursor = Cursor.new(User, "users/1/followers", client: @client, params: {max_results: 1000})
     end
 
     def test_readers
@@ -27,25 +27,25 @@ module X
     def test_params_merge_defaults
       assert_equal 1000, @cursor.params["max_results"]
       assert_equal User::FIELDS.join(","), @cursor.params["user.fields"]
-      assert_equal Post::FIELDS.join(","), @cursor.params["tweet.fields"]
+      assert_equal Post::FIELDS.join(","), @cursor.params["post.fields"]
       assert_predicate @cursor.params, :frozen?
     end
 
     def test_params_default_to_resource_defaults
-      cursor = Cursor.new(User, client: @client, path: "users/1/followers")
+      cursor = Cursor.new(User, "users/1/followers", client: @client)
 
       assert_equal Objects::Utils.query(User.default_params), cursor.params
     end
 
     def test_params_override_defaults
-      cursor = Cursor.new(User, client: @client, path: "users/1/followers", params: {"user.fields": "id", expansions: nil})
+      cursor = Cursor.new(User, "users/1/followers", client: @client, params: {"user.fields": "id", expansions: nil})
 
       assert_equal "id", cursor.params["user.fields"]
       refute cursor.params.key?("expansions")
     end
 
     def test_each_iterates_every_page
-      assert_equal %w[1 2 3 4], @cursor.map(&:id)
+      assert_equal [1, 2, 3, 4], @cursor.map(&:id)
       assert_equal [nil, "p2", "p3"], @client.queries.map { |query| query["pagination_token"] }
       assert_equal %w[1000 1000 1000], @client.queries.map { |query| query["max_results"] }
     end
@@ -63,11 +63,11 @@ module X
 
       assert_kind_of Enumerator, enumerator
       assert_equal 4, enumerator.count
-      assert_equal "1", @cursor.each.next.id
+      assert_equal 1, @cursor.each.next.id
     end
 
     def test_each_is_lazy
-      assert_equal %w[1 2], @cursor.first(2).map(&:id)
+      assert_equal [1, 2], @cursor.first(2).map(&:id)
       assert_equal 1, @client.requests.size
     end
 
@@ -81,7 +81,7 @@ module X
       pages = @cursor.each_page.to_a
 
       assert_equal [2, 1, 1], pages.map(&:result_count)
-      assert_equal %w[1 2], pages.first.map(&:id)
+      assert_equal [1, 2], pages.first.map(&:id)
       assert_equal 3, @client.requests.size
     end
 
@@ -97,7 +97,7 @@ module X
     def test_concurrent_iteration_fetches_each_page_once
       results = Array.new(4) { Thread.new { @cursor.map(&:id) } }.map(&:value)
 
-      assert_equal [%w[1 2 3 4]] * 4, results
+      assert_equal [[1, 2, 3, 4]] * 4, results
       assert_equal 3, @client.requests.size
     end
 

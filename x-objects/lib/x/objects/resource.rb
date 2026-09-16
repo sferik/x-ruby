@@ -1,8 +1,10 @@
 require_relative "attributes"
+require_relative "errors"
+require_relative "finders"
 require_relative "identity"
 require_relative "includes"
 require_relative "memo"
-require_relative "parallel"
+require_relative "problem"
 require_relative "utils"
 
 module X
@@ -11,10 +13,11 @@ module X
     # @api public
     class Resource
       extend Attributes
+      extend Finders
       include Identity
 
       # Maximum number of identifiers accepted by a batch lookup endpoint
-      MAX_BATCH_SIZE = 100
+      MAX_BATCH_SIZE = Finders::MAX_BATCH_SIZE
 
       # The frozen attributes returned by the API
       # @api public
@@ -59,9 +62,15 @@ module X
         # @return [String] the identifier key
         # @example Get the identifier key
         #   X::Media.id_key # => "media_key"
-        def id_key
-          "id"
-        end
+        def id_key = "id"
+
+        # The type of the identifier, integer unless it is not a number
+        #
+        # @api public
+        # @return [Symbol] integer, or raw for an identifier that is not a number
+        # @example Get the identifier type
+        #   X::Space.id_type # => :raw
+        def id_type = :integer
 
         # The key under which this resource appears in the includes of a response
         #
@@ -71,6 +80,25 @@ module X
         #   X::User.includes_key # => "users"
         def includes_key
         end
+
+        # The query parameter that selects the fields of this resource
+        #
+        # @api public
+        # @return [String, nil] the fields parameter or nil if the resource has no fields parameter
+        # @example Get the fields parameter
+        #   X::User.fields_key # => "user.fields"
+        def fields_key
+        end
+
+        # Build a resource from an identifier, or from a resource, without a request
+        #
+        # @api public
+        # @param id [String, Integer, Resource] the identifier, or a resource whose identifier is taken
+        # @param client [Object, nil] the client used to fetch the resource and its references
+        # @return [Resource] a stub that hydrates to the full resource
+        # @example Page through the followers of a user without looking the user up
+        #   X::User.from_id(7505382, client: client).followers
+        def from_id(id, client: nil) = new({id_key => Utils.id_of(id)}, client:)
 
         # The default query parameters requesting every field and expansion
         #
@@ -88,9 +116,7 @@ module X
         # @return [Boolean] true if the resource has a lookup endpoint
         # @example Check whether a resource is hydratable
         #   X::Media.hydratable? # => false
-        def hydratable?
-          !endpoint.nil?
-        end
+        def hydratable? = !endpoint.nil?
 
         # The lookup endpoint, which must exist
         #
@@ -99,62 +125,7 @@ module X
         # @raise [NotImplementedError] if the resource cannot be looked up by identifier
         # @example Get the lookup endpoint
         #   X::User.endpoint! # => "users"
-        def endpoint!
-          endpoint || raise(NotImplementedError, "#{self} cannot be fetched by #{id_key}")
-        end
-
-        # Look up a resource by identifier
-        #
-        # @api public
-        # @param id [String, Integer, Resource] the identifier
-        # @param client [Object] the client used to make the request
-        # @param params [Hash] query parameters merged over the default parameters
-        # @return [Resource, nil] the resource or nil if it was not found
-        # @example Look up a user by identifier
-        #   X::User.find("7505382", client: client)
-        def find(id, client:, **params)
-          lookup("#{endpoint!}/#{Utils.id_of(id)}", client:, **params)
-        end
-
-        # Look up many resources by identifier, in parallel batches
-        #
-        # @api public
-        # @param ids [Array<String, Integer, Resource>] the identifiers
-        # @param client [Object] the client used to make the requests
-        # @param params [Hash] query parameters merged over the default parameters
-        # @return [Array<Resource>] the resources that were found
-        # @example Look up many users by identifier
-        #   X::User.find_all(["7505382", "12"], client: client)
-        def find_all(ids, client:, **params)
-          batches = ids.map { |id| Utils.id_of(id) }.each_slice(MAX_BATCH_SIZE)
-          Parallel.map(batches) { |batch| lookup_all(endpoint!, client:, ids: batch, **params) }.flatten
-        end
-
-        # Fetch a single resource from an endpoint
-        #
-        # @api public
-        # @param path [String] the endpoint path
-        # @param client [Object] the client used to make the request
-        # @param params [Hash] query parameters merged over the default parameters
-        # @return [Resource, nil] the resource or nil if the response has no data
-        # @example Fetch the authenticated user
-        #   X::User.lookup("users/me", client: client)
-        def lookup(path, client:, **params)
-          resource_from_response(get(path, client:, params:), client:, hydrated: true)
-        end
-
-        # Fetch a list of resources from an endpoint without paginating
-        #
-        # @api public
-        # @param path [String] the endpoint path
-        # @param client [Object] the client used to make the request
-        # @param params [Hash] query parameters merged over the default parameters
-        # @return [Array<Resource>] the resources
-        # @example Fetch users by username
-        #   X::User.lookup_all("users/by", client: client, usernames: ["sferik", "gem"])
-        def lookup_all(path, client:, **params)
-          collection_from_response(get(path, client:, params:), client:, hydrated: true)
-        end
+        def endpoint! = endpoint || raise(NotImplementedError, "#{self} cannot be fetched by #{id_key}")
 
         # Build the resource or resources a response holds
         #
@@ -193,7 +164,7 @@ module X
           data = body["data"]
           return unless data.is_a?(Hash)
 
-          new(data, client:, includes: Includes.new(body["includes"]), hydrated:)
+          new(data, client:, includes: Includes.new(body["includes"], problems: Problem.all_from(body)), hydrated:)
         end
 
         # Build resources from a response with a data array
@@ -209,20 +180,8 @@ module X
           body = body.to_h
           data = body["data"]
           data = nil unless data.is_a?(Array)
-          includes = Includes.new(body["includes"])
+          includes = Includes.new(body["includes"], problems: Problem.all_from(body))
           Array(data).map { |attrs| new(attrs, client:, includes:, hydrated:) }.freeze
-        end
-
-        private
-
-        # Request an endpoint with the default parameters
-        # @api private
-        # @param path [String] the endpoint path
-        # @param client [Object] the client used to make the request
-        # @param params [Hash] query parameters merged over the default parameters
-        # @return [Hash, nil] the parsed response body
-        def get(path, client:, params:)
-          client.get(Utils.path(path, Utils.merge_params(default_params, params)), **Utils::JSON_CLASSES)
         end
       end
 
@@ -251,11 +210,11 @@ module X
       # The identifier
       #
       # @api public
-      # @return [String] the identifier
+      # @return [Integer, String] the identifier, an Integer unless the resource's identifiers are not numbers
       # @example Get the identifier
-      #   user.id # => "7505382"
+      #   user.id # => 7505382
       def id
-        attrs.fetch(self.class.id_key)
+        Attributes::CONVERTERS.fetch(self.class.id_type).call(attrs.fetch(self.class.id_key))
       end
 
       # Check whether the resource was the primary subject of an API response
@@ -267,6 +226,24 @@ module X
       def hydrated?
         @hydrated
       end
+
+      # The problems the API reported in the response this resource came from
+      #
+      # @api public
+      # @return [Array<Problem>] the problems, such as expansions whose resources no longer exist
+      # @example Check whether a user's pinned post still exists
+      #   client.current_user.problems.select(&:not_found?)
+      def problems = includes.problems
+
+      # Check whether the resource holds nothing but its identifier
+      #
+      # A reference the response did not expand is a stub, and so is a resource built with from_id.
+      #
+      # @api public
+      # @return [Boolean] true if the resource holds only its identifier
+      # @example Check whether the author of a post was included in the response
+      #   post.author.stub? # => false
+      def stub? = attrs.keys.eql?([self.class.id_key])
 
       # Fetch the full resource, memoizing the result
       #
@@ -333,11 +310,12 @@ module X
       # @param klass [Class] the resource class of the items
       # @param path [String] the endpoint path
       # @param max_results [Integer] the maximum number of items per page
+      # @param min_results [Integer] the smallest page the endpoint accepts
       # @param params [Hash] query parameters merged over the default parameters
       # @return [Cursor] the cursor
-      def cursor(klass, path, max_results:, **params)
+      def cursor(klass, path, max_results:, min_results: 1, **params)
         defaults = {max_results:} #: Hash[Symbol, untyped]
-        Cursor.new(klass, client: client!, path:, params: defaults.merge(params))
+        Cursor.new(klass, path, client: client!, params: defaults.merge(params), min_results:)
       end
     end
   end

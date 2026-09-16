@@ -1,3 +1,5 @@
+require "json"
+require "uri"
 require_relative "cursor"
 require_relative "resource"
 
@@ -6,7 +8,7 @@ module X
   # @api public
   class List < Objects::Resource
     # Every public list field
-    FIELDS = %w[created_at description follower_count id member_count name owner_id private].freeze
+    FIELDS = %w[created_at description follower_count id member_count name private].freeze
     # Every expansion available on list endpoints
     EXPANSIONS = %w[owner_id].freeze
     # Maximum number of users or posts per page
@@ -23,6 +25,14 @@ module X
         "lists"
       end
 
+      # The query parameter that selects list fields
+      #
+      # @api public
+      # @return [String] the fields parameter
+      # @example Get the fields parameter
+      #   X::List.fields_key # => "list.fields"
+      def fields_key = "list.fields"
+
       # The default query parameters requesting every list field and expansion
       #
       # @api public
@@ -31,6 +41,46 @@ module X
       #   X::List.default_params["list.fields"]
       def default_params
         {"list.fields" => FIELDS, "user.fields" => User::FIELDS, "expansions" => EXPANSIONS}
+      end
+
+      # Create a list owned by the authenticated user
+      #
+      # @api public
+      # @param name [String] the name of the list
+      # @param client [Object] the client used to make the request
+      # @param params [Hash] additional request body fields: description and private
+      # @return [List, nil] the created list, holding only its identifier and name
+      # @example Create a private list
+      #   X::List.create("Rubyists", client: client, description: "People who write Ruby", private: true)
+      def create(name, client:, **params)
+        body = client.post("lists", JSON.generate({name:, **params}), **Objects::Utils::JSON_CLASSES)
+        resource_from_response(body, client:)
+      end
+
+      # Refuse a batch lookup, which the API does not offer for lists
+      #
+      # @api public
+      # @param ids [Array<String, Integer, List>] the identifiers
+      # @param client [Object] the client, which is not used
+      # @return [void]
+      # @raise [NotImplementedError] always, since lists can only be looked up one at a time
+      # @example Look lists up one at a time instead
+      #   ids.map { |id| X::List.find(id, client: client) }
+      def find_all(ids, client:, **)
+        raise NotImplementedError, "#{self} cannot be fetched in batches; find #{ids.size} lists one at a time"
+      end
+
+      # Delete a list as the authenticated user
+      #
+      # @api public
+      # @param list [List, String, Integer] the list or its identifier
+      # @param client [Object] the client used to make the request
+      # @return [Boolean] true if the list was deleted
+      # @example Delete a list
+      #   X::List.delete("1234567890", client: client)
+      def delete(list, client:)
+        body = client.delete("lists/#{Objects::Utils.id_of(list)}", **Objects::Utils::JSON_CLASSES)
+        body.to_h.dig("data", "deleted").eql?(true)
       end
     end
 
@@ -77,10 +127,10 @@ module X
     # @!attribute [r] owner_id
     #   The identifier of the owner
     #   @api public
-    #   @return [String, nil] the owner identifier
+    #   @return [Integer, nil] the owner identifier
     #   @example Get the owner identifier
     #     list.owner_id
-    attribute :owner_id
+    attribute :owner_id, :integer
 
     # @!attribute [r] private
     #   Whether the list is private
@@ -138,6 +188,101 @@ module X
       cursor(Post, "lists/#{id}/tweets", max_results: MAX_RESULTS, **params)
     end
 
+    # Check whether a user is a member of this list, scanning until one matches
+    #
+    # The API has no lookup for a membership, so this scans either the members of the list or the lists
+    # the user is on. A private list scans its members, since a user's memberships leave private lists
+    # out. A public list scans the lists the user is on when there are fewer of them than members, as its
+    # member_count and the user's listed_count tell, looking up the list or the user first when either is
+    # a stub. The API bills every resource a scan returns.
+    #
+    # @api public
+    # @param user [User, String, Integer] the user or their identifier
+    # @return [Boolean] true if the user is a member
+    # @example Check whether a user is on a list
+    #   list.member?(user)
+    def member?(user)
+      return members.stubs.include?(User.from_id(user)) unless fewer_memberships?(user)
+
+      User.from_id(user, client: client!).list_memberships.stubs.include?(self)
+    end
+
+    # The permalink of the list
+    #
+    # @api public
+    # @return [String] the x.com address of the list
+    # @example Get the permalink
+    #   list.permalink # => "https://x.com/i/lists/1234567890"
+    def permalink = "https://x.com/i/lists/#{id}"
+
+    # The permalink of the list as a URI
+    #
+    # @api public
+    # @return [URI::Generic] the x.com address of the list
+    # @example Get the address as a URI
+    #   list.uri # => #<URI::HTTPS https://x.com/i/lists/1234567890>
+    def uri = URI(permalink)
+
+    # Add a member to this list as the authenticated user
+    #
+    # @api public
+    # @param user [User, String, Integer] the user or their identifier
+    # @return [Boolean] true if the user is now a member
+    # @example Add a member
+    #   list.add_member(user)
+    def add_member(user)
+      body = client!.post("lists/#{id}/members", JSON.generate({user_id: Objects::Utils.id_of(user)}), **Objects::Utils::JSON_CLASSES)
+      body.to_h.dig("data", "is_member").eql?(true)
+    end
+
+    # Remove a member from this list as the authenticated user
+    #
+    # @api public
+    # @param user [User, String, Integer] the user or their identifier
+    # @return [Boolean] true if the user is no longer a member
+    # @example Remove a member
+    #   list.remove_member(user)
+    def remove_member(user)
+      body = client!.delete("lists/#{id}/members/#{Objects::Utils.id_of(user)}", **Objects::Utils::JSON_CLASSES)
+      body.to_h.dig("data", "is_member").eql?(false)
+    end
+
+    # Delete this list as the authenticated user
+    #
+    # @api public
+    # @return [Boolean] true if the list was deleted
+    # @example Delete a list
+    #   list.delete
+    def delete
+      self.class.delete(self, client: client!)
+    end
+
     alias_method :tweets, :posts
+
+    private
+
+    # Check whether the user is on fewer lists than this public list has members
+    # @api private
+    # @param user [User, String, Integer] the user or their identifier
+    # @return [Boolean] true if the lists the user is on are fewer than the members of this public list
+    def fewer_memberships?(user)
+      list = hydrate
+      return false if list.nil? || list.private?
+
+      member_count = list.member_count
+      return false if member_count.nil?
+
+      listed_count = listed_count_of(user)
+      !listed_count.nil? && listed_count < member_count
+    end
+
+    # The number of lists a user is on, looking up a user that is not hydrated
+    # @api private
+    # @param user [User, String, Integer] the user or their identifier
+    # @return [Integer, nil] the listed count, or nil if the user was not found
+    def listed_count_of(user)
+      known = user if user.is_a?(User) && user.hydrated?
+      (known || User.find(User.from_id(user), client: client!))&.listed_count
+    end
   end
 end

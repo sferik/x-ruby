@@ -14,8 +14,8 @@ module X
     end
 
     def test_user_by_username
-      stub_json(:get, "users/by/username/sferik", {data: {id: "7505382", username: "sferik", pinned_tweet_id: "1"},
-                                                   includes: {tweets: [{id: "1", text: "pinned"}]}})
+      stub_json(:get, "users/by/username/sferik", {data: {id: "7505382", username: "sferik", pinned_post_id: "1"},
+                                                   includes: {posts: [{id: "1", text: "pinned"}]}})
       user = @client.find_user("sferik")
 
       assert_equal "sferik", user.username
@@ -24,8 +24,8 @@ module X
     end
 
     def test_resource_class_as_object_class
-      stub_json(:get, "users/by/username/sferik", {data: {id: "7505382", username: "sferik", pinned_tweet_id: "1"},
-                                                   includes: {tweets: [{id: "1", text: "pinned"}]}})
+      stub_json(:get, "users/by/username/sferik", {data: {id: "7505382", username: "sferik", pinned_post_id: "1"},
+                                                   includes: {posts: [{id: "1", text: "pinned"}]}})
       user = @client.get("users/by/username/sferik", object_class: User)
 
       assert_equal "sferik", user.username
@@ -87,8 +87,8 @@ module X
       stub_page("users/7505382/followers", "p2", %w[3], nil)
       followers = User.new({"id" => "7505382"}, client: @client).followers
 
-      assert_equal %w[1 2 3], followers.map(&:id)
-      assert_equal %w[1 2 3], followers.map(&:id)
+      assert_equal [1, 2, 3], followers.map(&:id)
+      assert_equal [1, 2, 3], followers.map(&:id)
       assert_requested :get, %r{users/7505382/followers.*max_results=1000}, times: 2
     end
 

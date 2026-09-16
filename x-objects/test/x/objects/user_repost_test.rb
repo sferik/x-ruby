@@ -2,7 +2,7 @@ require_relative "../../test_helper"
 
 module X
   class UserRepostTest < Minitest::Test
-    cover Objects::Actions
+    cover Objects::Relationships
 
     def setup
       @client = FakeClient.new

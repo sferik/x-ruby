@@ -7,6 +7,14 @@ module X
     # Every public place field
     FIELDS = %w[contained_within country country_code full_name geo id name place_type].freeze
 
+    # The type of the identifier, which is not a number
+    #
+    # @api public
+    # @return [Symbol] raw
+    # @example Get the identifier type
+    #   X::Place.id_type # => :raw
+    def self.id_type = :raw
+
     # The key under which places appear in the includes of a response
     #
     # @api public

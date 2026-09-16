@@ -14,6 +14,13 @@ module X
     #   page.items
     attr_reader :items
 
+    # The problems the response of this page reported
+    # @api public
+    # @return [Array<Problem>] the problems
+    # @example Collect every problem a cursor's pages reported
+    #   user.followers.each_page.flat_map(&:problems)
+    attr_reader :problems
+
     # The pagination metadata returned with this page
     # @api public
     # @return [Hash{String => Object}] the metadata
@@ -26,12 +33,14 @@ module X
     # @api public
     # @param items [Array<Objects::Resource>] the resources on the page
     # @param meta [Hash] the pagination metadata
+    # @param problems [Array<Problem>] the problems the page's response reported
     # @return [Page] a new page
     # @example Create a page
-    #   X::Page.new(items: [user], meta: {"result_count" => 1})
-    def initialize(items:, meta:)
+    #   X::Page.new([user], {"result_count" => 1})
+    def initialize(items, meta, problems: [])
       @items = items.freeze
       @meta = Objects::Utils.deep_freeze(meta)
+      @problems = problems.freeze
       freeze
     end
 

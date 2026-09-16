@@ -17,6 +17,14 @@ module X
       "media_key"
     end
 
+    # The type of the identifier, which is not a number
+    #
+    # @api public
+    # @return [Symbol] raw
+    # @example Get the identifier type
+    #   X::Media.id_type # => :raw
+    def self.id_type = :raw
+
     # The key under which media appear in the includes of a response
     #
     # @api public

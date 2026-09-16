@@ -4,6 +4,7 @@ module X
   module Objects
     class ResourceIdentityTest < Minitest::Test
       cover Resource
+      cover Objects::Finders
       cover Identity
 
       def setup
@@ -64,7 +65,7 @@ module X
       end
 
       def test_id
-        assert_equal "1", @user.id
+        assert_equal 1, @user.id
       end
 
       def test_client_and_includes

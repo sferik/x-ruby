@@ -3,7 +3,7 @@ require_relative "../../test_helper"
 module X
   module Objects
     class APILookupTest < Minitest::Test
-      cover API
+      cover API::Lookups
 
       def setup
         @client = FakeClient.new
@@ -21,46 +21,47 @@ module X
       def test_find_users
         @client.stub(:get, "users", {"data" => [{"id" => "1"}, {"id" => "2"}]})
 
-        assert_equal %w[1 2], @client.find_users([1, 2], "user.fields": "id").map(&:id)
+        assert_equal [1, 2], @client.find_users([1, 2], "user.fields": "id").map(&:id)
         assert_equal "1,2", @client.queries.first["ids"]
-        assert_equal "id", @client.queries.first["user.fields"]
-      end
-
-      def test_me
-        @client.stub(:get, "users/me", {"data" => {"id" => "1"}})
-
-        assert_equal "1", @client.me("user.fields": "id").id
         assert_equal "id", @client.queries.first["user.fields"]
       end
 
       def test_find_post
         @client.stub(:get, "tweets/1", {"data" => {"id" => "1", "text" => "hi"}})
 
-        assert_equal "hi", @client.find_post(1, "tweet.fields": "id").text
-        assert_equal "id", @client.queries.first["tweet.fields"]
+        assert_equal "hi", @client.find_post(1, "post.fields": "id").text
+        assert_equal "id", @client.queries.first["post.fields"]
       end
 
       def test_find_posts
         @client.stub(:get, "tweets", {"data" => [{"id" => "1"}, {"id" => "2"}]})
 
-        assert_equal %w[1 2], @client.find_posts([1, 2], "tweet.fields": "id").map(&:id)
+        assert_equal [1, 2], @client.find_posts([1, 2], "post.fields": "id").map(&:id)
         assert_equal "1,2", @client.queries.first["ids"]
-        assert_equal "id", @client.queries.first["tweet.fields"]
+        assert_equal "id", @client.queries.first["post.fields"]
       end
 
-      def test_tweet_alias
+      def test_find_tweet_aliases
         @client.stub(:get, "tweets/1", {"data" => {"id" => "1", "text" => "hi"}})
-
-        assert_equal "hi", @client.tweet(1).text
-      end
-
-      def test_tweets_alias
+        @client.stub(:get, "tweets/2", {"errors" => []})
         @client.stub(:get, "tweets", {"data" => [{"id" => "1"}, {"id" => "2"}]})
 
-        assert_equal %w[1 2], @client.tweets([1, 2]).map(&:id)
+        assert_equal "hi", @client.find_tweet(1).text
+        assert_equal "hi", @client.find_tweet!(1).text
+        assert_equal [1, 2], @client.find_tweets([1, 2]).map(&:id)
+        assert_raises(ResourceNotFound) { @client.find_tweet!(2) }
       end
 
-      def test_search
+      def test_search_posts
+        cursor = @client.search_posts("ruby", max_results: 10)
+
+        assert_equal "tweets/search/recent", cursor.path
+        assert_equal "ruby", cursor.params["query"]
+        assert_equal 10, cursor.params["max_results"]
+        assert_same @client, cursor.client
+      end
+
+      def test_search_is_search_posts
         cursor = @client.search("ruby", max_results: 10)
 
         assert_equal "tweets/search/recent", cursor.path
@@ -69,8 +70,8 @@ module X
         assert_same @client, cursor.client
       end
 
-      def test_search_all
-        cursor = @client.search_all("ruby", max_results: 10)
+      def test_search_all_posts
+        cursor = @client.search_all_posts("ruby", max_results: 10)
 
         assert_equal "tweets/search/all", cursor.path
         assert_equal "ruby", cursor.params["query"]
@@ -92,12 +93,19 @@ module X
         assert_equal "id", @client.queries.first["space.fields"]
       end
 
-      def test_direct_messages
-        cursor = @client.direct_messages(max_results: 10)
+      def test_find_spaces
+        @client.stub(:get, "spaces", {"data" => [{"id" => "1"}, {"id" => "2"}]})
 
-        assert_equal "dm_events", cursor.path
-        assert_equal 10, cursor.params["max_results"]
-        assert_same @client, cursor.client
+        assert_equal %w[1 2], @client.find_spaces(["1", "2"], "space.fields": "id").map(&:id)
+        assert_equal "1,2", @client.queries.first["ids"]
+        assert_equal "id", @client.queries.first["space.fields"]
+      end
+
+      def test_search_tweet_aliases
+        assert_equal "tweets/search/recent", @client.search_tweets("ruby").path
+        assert_equal "tweets/search/all", @client.search_all_tweets("ruby").path
+        assert_equal "ruby", @client.search_tweets("ruby").params["query"]
+        assert_equal "ruby", @client.search_all_tweets("ruby").params["query"]
       end
     end
   end

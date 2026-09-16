@@ -4,6 +4,7 @@ module X
   module Objects
     class ResourceLookupTest < Minitest::Test
       cover Resource
+      cover Objects::Finders
 
       def setup
         @client = FakeClient.new
@@ -22,7 +23,7 @@ module X
       def test_find_by_resource
         @client.stub(:get, "tweets/2", {"data" => {"id" => "2"}})
 
-        assert_equal "2", Post.find(Post.new({"id" => "2"}), client: @client).id
+        assert_equal 2, Post.find(Post.new({"id" => "2"}), client: @client).id
       end
 
       def test_find_merges_params_over_defaults
@@ -32,7 +33,7 @@ module X
 
         assert_equal "id", query["user.fields"]
         assert_equal "5", query["max_results"]
-        assert_equal Post::FIELDS.join(","), query["tweet.fields"]
+        assert_equal Post::FIELDS.join(","), query["post.fields"]
       end
 
       def test_find_drops_nil_params
@@ -53,7 +54,7 @@ module X
         @client.stub(:get, "tweets", ->(query, _) { {"data" => query["ids"].split(",").map { |id| {"id" => id} }} })
         posts = Post.find_all(ids, client: @client)
 
-        assert_equal ids, posts.map(&:id)
+        assert_equal (1..150).to_a, posts.map(&:id)
         assert_equal [ids.first(100), ids.last(50)], batches
       end
 
@@ -77,7 +78,7 @@ module X
       def test_find_all_accepts_resources_and_integers
         @client.stub(:get, "users", ->(query, _) { {"data" => query["ids"].split(",").map { |id| {"id" => id} }} })
 
-        assert_equal %w[1 2], User.find_all([User.new({"id" => "1"}), 2], client: @client).map(&:id)
+        assert_equal [1, 2], User.find_all([User.new({"id" => "1"}), 2], client: @client).map(&:id)
       end
 
       def test_find_all_merges_params
@@ -86,7 +87,7 @@ module X
 
         assert_equal "id", @client.queries.first["user.fields"]
         assert_equal "1", @client.queries.first["ids"]
-        assert_equal Post::FIELDS.join(","), @client.queries.first["tweet.fields"]
+        assert_equal Post::FIELDS.join(","), @client.queries.first["post.fields"]
       end
 
       def test_find_all_with_no_ids

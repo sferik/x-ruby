@@ -3,23 +3,28 @@ require_relative "../../test_helper"
 module X
   class UserAttributesTest < Minitest::Test
     cover User
+    cover X::Objects::UserFinders
 
     ATTRS = {"id" => "1", "name" => "Erik Berlin", "username" => "sferik", "description" => "d",
              "location" => "SF", "url" => "https://t.co/x", "profile_image_url" => "https://pbs.twimg.com/x.jpg",
              "created_at" => "2007-07-16T22:16:23.000Z", "protected" => false, "verified" => true,
-             "verified_type" => "blue", "pinned_tweet_id" => "2", "most_recent_tweet_id" => "3",
+             "verified_type" => "blue", "pinned_post_id" => "2", "most_recent_post_id" => "3",
              "entities" => {"url" => {}}, "withheld" => {"country_codes" => []},
-             "public_metrics" => {"followers_count" => 10, "following_count" => 20, "tweet_count" => 30,
+             "public_metrics" => {"followers_count" => 10, "following_count" => 20, "post_count" => 30,
                                   "listed_count" => 40, "like_count" => 50}}.freeze
 
     def setup
       @user = User.new(ATTRS)
     end
 
+    def test_fields_key
+      assert_equal "user.fields", User.fields_key
+    end
+
     def test_class_configuration
       assert_equal "users", User.endpoint
       assert_equal "users", User.includes_key
-      assert_equal({"user.fields" => User::FIELDS, "tweet.fields" => Post::FIELDS, "expansions" => User::EXPANSIONS},
+      assert_equal({"user.fields" => User::FIELDS, "post.fields" => Post::FIELDS, "expansions" => User::EXPANSIONS},
         User.default_params)
     end
 
@@ -35,8 +40,8 @@ module X
       assert_equal "https://pbs.twimg.com/x.jpg", @user.profile_image_url
       assert_equal Time.utc(2007, 7, 16, 22, 16, 23), @user.created_at
       assert_equal "blue", @user.verified_type
-      assert_equal "2", @user.pinned_post_id
-      assert_equal "3", @user.most_recent_post_id
+      assert_equal 2, @user.pinned_post_id
+      assert_equal 3, @user.most_recent_post_id
     end
 
     def test_hash_attributes
@@ -62,8 +67,8 @@ module X
 
     def test_tweet_aliases
       assert_equal 30, @user.tweet_count
-      assert_equal "2", @user.pinned_tweet_id
-      assert_equal "3", @user.most_recent_tweet_id
+      assert_equal 2, @user.pinned_tweet_id
+      assert_equal 3, @user.most_recent_tweet_id
     end
 
     def test_pinned_post

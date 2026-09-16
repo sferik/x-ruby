@@ -3,21 +3,28 @@ require_relative "utils"
 
 module X
   module Objects
-    # The identity map for one API response: the expanded objects it included and the stubs built for its references
+    # The context of one API response: its identity map of expanded objects and stubs, and the problems it reported
     # @api private
     class Includes
       # Initialize a new identity map
       #
       # @api private
       # @param data [Hash, nil] the includes hash from an API response
+      # @param problems [Array<Problem>] the problems the response reported
       # @return [Includes] a new identity map
-      def initialize(data = nil)
+      def initialize(data = nil, problems: [])
         @data = Utils.deep_freeze(data.to_h)
+        @problems = problems.freeze
         @monitor = Monitor.new
         @index = {}
         @resources = {}
         freeze
       end
+
+      # The problems the response reported, such as missing expanded resources
+      # @api private
+      # @return [Array<Problem>] the problems
+      attr_reader :problems
 
       # Resolve a reference to the included resource or a stub holding its identifier
       #

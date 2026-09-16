@@ -11,10 +11,11 @@ Most applications should install [`x`](https://rubygems.org/gems/x), which wires
 | Class | References | Collections |
 | --- | --- | --- |
 | `X::User` | `pinned_post`, `most_recent_post` | `followers`, `following`, `posts`, `mentions`, `liked_posts`, `bookmarks`, `owned_lists`, `list_memberships`, `followed_lists` |
-| `X::Post` | `author`, `in_reply_to_user`, `replied_to`, `quoted`, `reposted`, `referenced_posts`, `media`, `polls`, `place` | `liking_users`, `reposted_by`, `quotes` |
+| `X::Post` | `author`, `in_reply_to_user`, `community`, `replied_to`, `quoted`, `reposted`, `references`, `media`, `polls`, `place` | `liked_by`, `reposted_by`, `quotes` |
 | `X::List` | `owner` | `members`, `followers`, `posts` |
-| `X::DirectMessage` | `sender`, `participants`, `referenced_posts`, `media` | |
+| `X::DirectMessage` | `sender`, `participants`, `references`, `media` | |
 | `X::Space` | `creator`, `hosts`, `speakers`, `invited_users` | `posts` |
+| `X::Community` | | |
 | `X::Media`, `X::Poll`, `X::Place` | | |
 
 ## The client contract
@@ -25,7 +26,7 @@ Any object that responds to `get`, `post`, and `delete` can be the client. Each 
 require "x/objects"
 
 class MyClient
-  include X::Objects::API # adds find_user, find_users, me, find_post, find_posts, search, find_list, find_space, follow, like, ...
+  include X::Objects::API # adds find_user, find_users, current_user, find_post, find_posts, search, find_list, find_space, follow, like, ...
 
   def get(path, **options) = ...
   def post(path, body = nil, **options) = ...

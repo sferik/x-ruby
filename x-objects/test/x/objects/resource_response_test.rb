@@ -4,6 +4,7 @@ module X
   module Objects
     class ResourceResponseTest < Minitest::Test
       cover Resource
+      cover Objects::Finders
 
       def setup
         @client = FakeClient.new
@@ -16,7 +17,7 @@ module X
       def test_from_response_with_array_data_builds_each_resource
         users = User.from_response({"data" => [{"id" => "1"}, {"id" => "2"}]}, client: @client)
 
-        assert_equal %w[1 2], users.map(&:id)
+        assert_equal [1, 2], users.map(&:id)
         assert_predicate users, :frozen?
         assert_same @client, users.first.client
       end
@@ -24,7 +25,7 @@ module X
       def test_from_response_accepts_array_subclasses
         data = Class.new(Array).new([{"id" => "1"}])
 
-        assert_equal ["1"], User.from_response({"data" => data}, client: @client).map(&:id)
+        assert_equal [1], User.from_response({"data" => data}, client: @client).map(&:id)
       end
 
       def test_resource_from_response_with_array_data
@@ -36,7 +37,7 @@ module X
       end
 
       def test_from_response_with_includes
-        body = {"data" => {"id" => "1", "pinned_tweet_id" => "2"}, "includes" => {"tweets" => [{"id" => "2", "text" => "hi"}]}}
+        body = {"data" => {"id" => "1", "pinned_post_id" => "2"}, "includes" => {"posts" => [{"id" => "2", "text" => "hi"}]}}
         user = User.from_response(body, client: @client)
 
         assert_equal "hi", user.pinned_post.text
@@ -57,7 +58,7 @@ module X
         body = {"data" => [{"id" => "1", "author_id" => "9"}, {"id" => "2", "author_id" => "9"}]}
         posts = Post.collection_from_response(body, client: @client)
 
-        assert_equal %w[1 2], posts.map(&:id)
+        assert_equal [1, 2], posts.map(&:id)
         assert_predicate posts, :frozen?
         assert_same @client, posts.first.client
         refute(posts.any?(&:hydrated?))
@@ -126,13 +127,13 @@ module X
       def test_from_response_accepts_hash_subclasses
         data = Class.new(Hash).new.merge!("id" => "1")
 
-        assert_equal "1", User.from_response({"data" => data}, client: @client).id
+        assert_equal 1, User.from_response({"data" => data}, client: @client).id
       end
 
       def test_collection_from_response_accepts_array_subclasses
         data = Class.new(Array).new([{"id" => "1"}])
 
-        assert_equal ["1"], User.collection_from_response({"data" => data}, client: @client).map(&:id)
+        assert_equal [1], User.collection_from_response({"data" => data}, client: @client).map(&:id)
       end
     end
   end

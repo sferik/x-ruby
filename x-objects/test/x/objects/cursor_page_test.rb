@@ -13,11 +13,11 @@ module X
         when "p3" then {"data" => [{"id" => "4"}], "meta" => {"result_count" => 1}}
         end
       })
-      @cursor = Cursor.new(User, client: @client, path: "users/1/followers", params: {max_results: 1000})
+      @cursor = Cursor.new(User, "users/1/followers", client: @client, params: {max_results: 1000})
     end
 
     def test_page_by_index
-      assert_equal %w[3], @cursor.page(1).map(&:id)
+      assert_equal [3], @cursor.page(1).map(&:id)
       assert_equal 2, @client.requests.size
       assert_equal ["p2"], @client.queries.last.values_at("pagination_token")
     end
@@ -59,7 +59,7 @@ module X
       assert_raises(RuntimeError) { @cursor.page(0) }
       @client.stub(:get, "users/1/followers", {"data" => [{"id" => "1"}]})
 
-      assert_equal %w[1], @cursor.page(0).map(&:id)
+      assert_equal [1], @cursor.page(0).map(&:id)
     end
 
     def test_refresh_returns_new_cursor_without_cache

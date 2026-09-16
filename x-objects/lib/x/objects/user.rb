@@ -1,18 +1,21 @@
-require_relative "actions"
+require "uri"
+require_relative "relationships"
 require_relative "cursor"
 require_relative "resource"
+require_relative "user_finders"
 
 module X
   # A user account
   # @api public
   class User < Objects::Resource
-    include Objects::Actions
+    include Objects::Relationships
+    extend Objects::UserFinders
 
-    # Every public user field
-    FIELDS = %w[created_at description entities id location most_recent_tweet_id name pinned_tweet_id
-      profile_image_url protected public_metrics url username verified verified_type withheld].freeze
-    # Every expansion available on user endpoints
-    EXPANSIONS = %w[pinned_tweet_id].freeze
+    # Every public user field; the identifiers of referenced posts come with their expansions
+    FIELDS = %w[created_at description entities id location name profile_image_url protected public_metrics url
+      username verified verified_type withheld].freeze
+    # Every expansion available on user endpoints that refers to a modeled resource
+    EXPANSIONS = %w[most_recent_post_id pinned_post_id].freeze
     # Maximum number of followers or followed users per page
     MAX_FOLLOW_RESULTS = 1000
     # Maximum number of posts or lists per page
@@ -25,9 +28,7 @@ module X
       # @return [String] the endpoint
       # @example Get the endpoint
       #   X::User.endpoint # => "users"
-      def endpoint
-        "users"
-      end
+      def endpoint = "users"
 
       # The key under which users appear in the includes of a response
       #
@@ -35,9 +36,15 @@ module X
       # @return [String] the includes key
       # @example Get the includes key
       #   X::User.includes_key # => "users"
-      def includes_key
-        "users"
-      end
+      def includes_key = "users"
+
+      # The query parameter that selects user fields
+      #
+      # @api public
+      # @return [String] the fields parameter
+      # @example Get the fields parameter
+      #   X::User.fields_key # => "user.fields"
+      def fields_key = "user.fields"
 
       # The default query parameters requesting every user field and expansion
       #
@@ -46,42 +53,20 @@ module X
       # @example Get the default parameters
       #   X::User.default_params["user.fields"]
       def default_params
-        {"user.fields" => FIELDS, "tweet.fields" => Post::FIELDS, "expansions" => EXPANSIONS}
+        {"user.fields" => FIELDS, "post.fields" => Post::FIELDS, "expansions" => EXPANSIONS}
       end
 
-      # Look up a user by identifier or username
-      #
-      # An Integer or a user is looked up by identifier, and a String by username.
+      # Search users
       #
       # @api public
-      # @param id_or_username [Integer, User, String] an identifier or a user, or a username
-      # @param client [Object] the client used to make the request
-      # @param params [Hash] query parameters merged over the default parameters
-      # @return [User, nil] the user or nil if the user was not found
-      # @example Look up a user by username
-      #   X::User.find("sferik", client: client)
-      def find(id_or_username, client:, **params)
-        return super if Objects::Utils.id?(id_or_username)
-
-        lookup("users/by/username/#{id_or_username}", client:, **params)
-      end
-
-      # Look up many users by identifier or username, in parallel batches
-      #
-      # Integers and users are looked up by identifier, and Strings by username.
-      #
-      # @api public
-      # @param ids_or_usernames [Array<Integer, User, String>] identifiers or users, or usernames
+      # @param query [String] the search query
       # @param client [Object] the client used to make the requests
       # @param params [Hash] query parameters merged over the default parameters
-      # @return [Array<User>] the users that were found
-      # @example Look up many users by username
-      #   X::User.find_all(["sferik", "gem"], client: client)
-      def find_all(ids_or_usernames, client:, **params)
-        return super if ids_or_usernames.all? { |value| Objects::Utils.id?(value) }
-
-        batches = ids_or_usernames.each_slice(Objects::Resource::MAX_BATCH_SIZE)
-        Objects::Parallel.map(batches) { |batch| lookup_all("users/by", client:, usernames: batch, **params) }.flatten
+      # @return [Cursor] a cursor over the matching users
+      # @example Print the users matching a query
+      #   X::User.search("ruby", client: client).each { |user| puts user.username }
+      def search(query, client:, **params)
+        Cursor.new(self, "users/search", client:, params: {query:, max_results: MAX_RESULTS}.merge(params), token_param: "next_token")
       end
 
       # Look up the authenticated user
@@ -90,10 +75,11 @@ module X
       # @param client [Object] the client used to make the request
       # @param params [Hash] query parameters merged over the default parameters
       # @return [User, nil] the authenticated user
+      # @yieldparam problem [Problem] each problem the API reported
       # @example Look up the authenticated user
-      #   X::User.me(client: client)
-      def me(client:, **params)
-        lookup("users/me", client:, **params)
+      #   X::User.current(client: client)
+      def current(client:, **params, &)
+        lookup("users/me", client:, **params, &)
       end
     end
 
@@ -191,21 +177,29 @@ module X
     #     user.verified_type
     attribute :verified_type
 
+    # @!attribute [r] connection_status
+    #   How the authenticated user and this user are connected
+    #   @api public
+    #   @return [Array<String>, nil] following, followed_by, blocking, muting, follow_request_sent, or follow_request_received
+    #   @example Check whether this user follows the authenticated user
+    #     client.find_user("sferik", "user.fields": "connection_status").connection_status.include?("followed_by")
+    attribute :connection_status
+
     # @!attribute [r] pinned_post_id
     #   The identifier of the pinned post
     #   @api public
-    #   @return [String, nil] the pinned post identifier
+    #   @return [Integer, nil] the pinned post identifier
     #   @example Get the pinned post identifier
     #     user.pinned_post_id
-    attribute :pinned_post_id, key: %w[pinned_tweet_id]
+    attribute :pinned_post_id, :integer
 
     # @!attribute [r] most_recent_post_id
     #   The identifier of the most recent post
     #   @api public
-    #   @return [String, nil] the most recent post identifier
+    #   @return [Integer, nil] the most recent post identifier
     #   @example Get the most recent post identifier
     #     user.most_recent_post_id
-    attribute :most_recent_post_id, key: %w[most_recent_tweet_id]
+    attribute :most_recent_post_id, :integer
 
     # @!attribute [r] entities
     #   The entities found in the description and URL
@@ -253,7 +247,7 @@ module X
     #   @return [Integer, nil] the post count
     #   @example Get the post count
     #     user.post_count
-    attribute :post_count, key: %w[public_metrics tweet_count]
+    attribute :post_count, key: %w[public_metrics post_count]
 
     # @!attribute [r] listed_count
     #   The number of lists the user is a member of
@@ -277,7 +271,7 @@ module X
     #   @return [Post, nil] the pinned post
     #   @example Get the pinned post
     #     user.pinned_post
-    reference :pinned_post, :Post, key: %w[pinned_tweet_id]
+    reference :pinned_post, :Post, key: %w[pinned_post_id]
 
     # @!method most_recent_post
     #   The most recent post, from the includes or as a stub holding only its identifier
@@ -285,13 +279,29 @@ module X
     #   @return [Post, nil] the most recent post
     #   @example Get the most recent post
     #     user.most_recent_post
-    reference :most_recent_post, :Post, key: %w[most_recent_tweet_id]
+    reference :most_recent_post, :Post, key: %w[most_recent_post_id]
 
     alias_method :tweet_count, :post_count
     alias_method :pinned_tweet_id, :pinned_post_id
     alias_method :most_recent_tweet_id, :most_recent_post_id
     alias_method :pinned_tweet, :pinned_post
     alias_method :most_recent_tweet, :most_recent_post
+
+    # The permalink of the profile, by username when known and by identifier otherwise
+    #
+    # @api public
+    # @return [String] the x.com address of the profile
+    # @example Get the permalink
+    #   user.permalink # => "https://x.com/sferik"
+    def permalink = "https://x.com/#{username || "i/user/#{id}"}"
+
+    # The permalink of the user as a URI
+    #
+    # @api public
+    # @return [URI::Generic] the x.com address of the user
+    # @example Get the address as a URI
+    #   user.uri # => #<URI::HTTPS https://x.com/sferik>
+    def uri = URI(permalink)
 
     # The users following this user
     #
@@ -315,6 +325,28 @@ module X
       cursor(User, "users/#{id}/following", max_results: MAX_FOLLOW_RESULTS, **params)
     end
 
+    # The users this user blocks, which must be the authenticated user
+    #
+    # @api public
+    # @param params [Hash] query parameters merged over the default parameters
+    # @return [Cursor] a cursor over the blocked users
+    # @example Print every blocked user
+    #   client.current_user.blocking.each { |user| puts user.username }
+    def blocking(**params)
+      cursor(User, "users/#{id}/blocking", max_results: MAX_FOLLOW_RESULTS, **params)
+    end
+
+    # The users this user mutes, which must be the authenticated user
+    #
+    # @api public
+    # @param params [Hash] query parameters merged over the default parameters
+    # @return [Cursor] a cursor over the muted users
+    # @example Print every muted user
+    #   client.current_user.muting.each { |user| puts user.username }
+    def muting(**params)
+      cursor(User, "users/#{id}/muting", max_results: MAX_FOLLOW_RESULTS, **params)
+    end
+
     # The posts by this user
     #
     # @api public
@@ -323,8 +355,28 @@ module X
     # @example Print the most recent posts
     #   user.posts.first(10).each { |post| puts post.text }
     def posts(**params)
-      cursor(Post, "users/#{id}/tweets", max_results: MAX_RESULTS, **params)
+      cursor(Post, "users/#{id}/tweets", max_results: MAX_RESULTS, min_results: 5, **params)
     end
+
+    # The home timeline of this user, which must be the authenticated user
+    #
+    # @api public
+    # @param params [Hash] query parameters merged over the default parameters
+    # @return [Cursor] a cursor over the posts by the users this user follows, newest first
+    # @example Print the home timeline
+    #   client.current_user.home_timeline.first(10).each { |post| puts post.text }
+    def home_timeline(**params)
+      cursor(Post, "users/#{id}/timelines/reverse_chronological", max_results: MAX_RESULTS, **params)
+    end
+
+    # The posts of this user, the authenticated user, that other users have reposted
+    #
+    # @api public
+    # @param params [Hash] query parameters merged over the default parameters
+    # @return [Cursor] a cursor over the reposted posts
+    # @example Print the reposted posts
+    #   client.current_user.reposts_of_me.each { |post| puts post.text }
+    def reposts_of_me(**params) = cursor(Post, "users/reposts_of_me", max_results: MAX_RESULTS, **params)
 
     # The posts mentioning this user
     #
@@ -334,7 +386,7 @@ module X
     # @example Print the most recent mentions
     #   user.mentions.first(10).each { |post| puts post.text }
     def mentions(**params)
-      cursor(Post, "users/#{id}/mentions", max_results: MAX_RESULTS, **params)
+      cursor(Post, "users/#{id}/mentions", max_results: MAX_RESULTS, min_results: 5, **params)
     end
 
     # The posts liked by this user
@@ -345,7 +397,7 @@ module X
     # @example Print the most recently liked posts
     #   user.liked_posts.first(10).each { |post| puts post.text }
     def liked_posts(**params)
-      cursor(Post, "users/#{id}/liked_tweets", max_results: MAX_RESULTS, **params)
+      cursor(Post, "users/#{id}/liked_tweets", max_results: MAX_RESULTS, min_results: 5, **params)
     end
 
     # The posts bookmarked by the authenticated user
@@ -354,7 +406,7 @@ module X
     # @param params [Hash] query parameters merged over the default parameters
     # @return [Cursor] a cursor over the bookmarked posts
     # @example Print the bookmarked posts
-    #   client.me.bookmarks.each { |post| puts post.text }
+    #   client.current_user.bookmarks.each { |post| puts post.text }
     def bookmarks(**params)
       cursor(Post, "users/#{id}/bookmarks", max_results: MAX_RESULTS, **params)
     end

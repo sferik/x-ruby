@@ -15,6 +15,10 @@ module X
                           "invited_user_ids" => ["7"], "topic_ids" => ["t1"]}, client: @client, includes:)
     end
 
+    def test_fields_key
+      assert_equal "space.fields", Space.fields_key
+    end
+
     def test_class_configuration
       assert_equal "spaces", Space.endpoint
       assert_nil Space.includes_key
@@ -39,23 +43,24 @@ module X
 
     def test_ticketed
       assert @space.is_ticketed
-      assert_predicate @space, :is_ticketed?
       assert_predicate @space, :ticketed?
+      assert_instance_of FalseClass, Space.new({"id" => "1"}).ticketed?
+      assert_instance_of FalseClass, Space.new({"id" => "1", "is_ticketed" => false}).ticketed?
     end
 
     def test_ids
-      assert_equal "9", @space.creator_id
-      assert_equal ["9"], @space.host_ids
-      assert_equal %w[9 8], @space.speaker_ids
-      assert_equal ["7"], @space.invited_user_ids
+      assert_equal 9, @space.creator_id
+      assert_equal [9], @space.host_ids
+      assert_equal [9, 8], @space.speaker_ids
+      assert_equal [7], @space.invited_user_ids
       assert_equal ["t1"], @space.topic_ids
     end
 
     def test_references
       assert_equal "sferik", @space.creator.username
       assert_equal ["sferik"], @space.hosts.map(&:username)
-      assert_equal %w[9 8], @space.speakers.map(&:id)
-      assert_equal ["7"], @space.invited_users.map(&:id)
+      assert_equal [9, 8], @space.speakers.map(&:id)
+      assert_equal [7], @space.invited_users.map(&:id)
     end
 
     def test_posts

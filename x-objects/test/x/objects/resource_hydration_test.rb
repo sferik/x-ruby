@@ -4,6 +4,7 @@ module X
   module Objects
     class ResourceHydrationTest < Minitest::Test
       cover Resource
+      cover Objects::Finders
 
       def setup
         @client = FakeClient.new
@@ -27,12 +28,12 @@ module X
         assert_equal 1, @client.requests.size
       end
 
-      def test_hydrate_username_like_id_uses_id_endpoint
-        user = User.new({"id" => "sferik"}, client: @client)
-        @client.stub(:get, "users/sferik", {"data" => {"id" => "sferik"}})
+      def test_hydrate_an_id_that_could_be_a_username_uses_the_id_endpoint
+        user = User.new({"id" => "12345"}, client: @client)
+        @client.stub(:get, "users/12345", {"data" => {"id" => "12345"}})
 
-        assert_equal "sferik", user.hydrate.id
-        assert_equal ["users/sferik"], @client.paths
+        assert_equal 12_345, user.hydrate.id
+        assert_equal ["users/12345"], @client.paths
       end
 
       def test_hydrate_requests_default_params
@@ -99,7 +100,7 @@ module X
         assert_equal "users/1/followers", cursor.path
         assert_equal 5, cursor.params["max_results"]
         assert_equal "id", cursor.params["user.fields"]
-        assert_equal Post::FIELDS.join(","), cursor.params["tweet.fields"]
+        assert_equal Post::FIELDS.join(","), cursor.params["post.fields"]
         assert_same @client, cursor.client
       end
     end

@@ -9,14 +9,16 @@ module X
       CONVERTERS = {
         raw: ->(value) { value },
         boolean: ->(value) { value },
-        time: ->(value) { Utils.time(value) }
+        time: ->(value) { Utils.time(value) },
+        integer: ->(value) { Utils.integer(value) },
+        integers: ->(value) { value&.map { |id| Utils.integer(id) } }
       }.freeze
 
       # Define a reader for an attribute
       #
       # @api private
       # @param name [Symbol] the reader name
-      # @param type [Symbol] the attribute type: raw, boolean, or time
+      # @param type [Symbol] the attribute type: raw, boolean, time, integer, or integers
       # @param key [Array<String>] the key path
       # @return [void]
       def attribute(name, type = :raw, key: [name.to_s])

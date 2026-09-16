@@ -36,7 +36,7 @@ module X
       end
 
       def test_reference_with_nested_key
-        assert_equal "8", @widget.nested_owner.id
+        assert_equal 8, @widget.nested_owner.id
       end
 
       def test_missing_reference
@@ -47,7 +47,7 @@ module X
       def test_references_resolve_from_includes_and_stubs
         members = @widget.members
 
-        assert_equal %w[2 3], members.map(&:id)
+        assert_equal [2, 3], members.map(&:id)
         assert_equal ["two", nil], members.map(&:username)
         assert(members.all?(User))
         assert_same @client, members.last.client
@@ -60,7 +60,7 @@ module X
       end
 
       def test_references_with_nested_key
-        assert_equal ["7"], @widget.nested_members.map(&:id)
+        assert_equal [7], @widget.nested_members.map(&:id)
       end
 
       def test_missing_references
@@ -69,10 +69,10 @@ module X
       end
 
       def test_memo_keys_are_separate
-        assert_equal "9", @widget.owner.id
-        assert_equal "8", @widget.nested_owner.id
-        assert_equal %w[2 3], @widget.members.map(&:id)
-        assert_equal ["7"], @widget.nested_members.map(&:id)
+        assert_equal 9, @widget.owner.id
+        assert_equal 8, @widget.nested_owner.id
+        assert_equal [2, 3], @widget.members.map(&:id)
+        assert_equal [7], @widget.nested_members.map(&:id)
       end
     end
   end

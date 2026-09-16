@@ -6,10 +6,10 @@ module X
   # @api public
   class Space < Objects::Resource
     # Every public space field
-    FIELDS = %w[created_at creator_id ended_at host_ids id invited_user_ids is_ticketed lang participant_count
-      scheduled_start speaker_ids started_at state subscriber_count title topic_ids updated_at].freeze
-    # Every user expansion available on space endpoints
-    EXPANSIONS = %w[creator_id host_ids invited_user_ids speaker_ids].freeze
+    FIELDS = %w[created_at ended_at id is_ticketed lang participant_count scheduled_start started_at state
+      subscriber_count title updated_at].freeze
+    # Every expansion available on space endpoints
+    EXPANSIONS = %w[creator_id host_ids invited_user_ids speaker_ids topic_ids].freeze
     # Maximum number of posts per page
     MAX_RESULTS = 100
 
@@ -23,6 +23,22 @@ module X
       def endpoint
         "spaces"
       end
+
+      # The type of the identifier, which is letters and digits rather than a number
+      #
+      # @api public
+      # @return [Symbol] raw
+      # @example Get the identifier type
+      #   X::Space.id_type # => :raw
+      def id_type = :raw
+
+      # The query parameter that selects space fields
+      #
+      # @api public
+      # @return [String] the fields parameter
+      # @example Get the fields parameter
+      #   X::Space.fields_key # => "space.fields"
+      def fields_key = "space.fields"
 
       # The default query parameters requesting every space field and user expansion
       #
@@ -103,16 +119,9 @@ module X
     #   Whether the space requires a ticket
     #   @api public
     #   @return [Boolean, nil] true if the space is ticketed
-    #   @example Check whether a space is ticketed
-    #     space.is_ticketed?
-    attribute :is_ticketed, :boolean
-
-    # @!method is_ticketed?
-    #   Check whether the space requires a ticket
-    #   @api public
-    #   @return [Boolean] true if the space is ticketed
-    #   @example Check whether the space requires a ticket
-    #     space.is_ticketed?
+    #   @example Get the raw flag
+    #     space.is_ticketed
+    attribute :is_ticketed
 
     # @!attribute [r] participant_count
     #   The number of participants
@@ -133,34 +142,34 @@ module X
     # @!attribute [r] creator_id
     #   The identifier of the creator
     #   @api public
-    #   @return [String, nil] the creator identifier
+    #   @return [Integer, nil] the creator identifier
     #   @example Get the creator identifier
     #     space.creator_id
-    attribute :creator_id
+    attribute :creator_id, :integer
 
     # @!attribute [r] host_ids
     #   The identifiers of the hosts
     #   @api public
-    #   @return [Array<String>, nil] the host identifiers
+    #   @return [Array<Integer>, nil] the host identifiers
     #   @example Get the host identifiers
     #     space.host_ids
-    attribute :host_ids
+    attribute :host_ids, :integers
 
     # @!attribute [r] speaker_ids
     #   The identifiers of the speakers
     #   @api public
-    #   @return [Array<String>, nil] the speaker identifiers
+    #   @return [Array<Integer>, nil] the speaker identifiers
     #   @example Get the speaker identifiers
     #     space.speaker_ids
-    attribute :speaker_ids
+    attribute :speaker_ids, :integers
 
     # @!attribute [r] invited_user_ids
     #   The identifiers of the invited users
     #   @api public
-    #   @return [Array<String>, nil] the invited user identifiers
+    #   @return [Array<Integer>, nil] the invited user identifiers
     #   @example Get the invited user identifiers
     #     space.invited_user_ids
-    attribute :invited_user_ids
+    attribute :invited_user_ids, :integers
 
     # @!attribute [r] topic_ids
     #   The identifiers of the topics
@@ -202,13 +211,13 @@ module X
     #     space.invited_users
     references :invited_users, :User, key: %w[invited_user_ids]
 
-    # @!method ticketed?
-    #   Alias for is_ticketed?, checks whether the space requires a ticket
-    #   @api public
-    #   @return [Boolean] true if the space is ticketed
-    #   @example Check whether a space is ticketed
-    #     space.ticketed?
-    alias_method :ticketed?, :is_ticketed?
+    # Check whether the space requires a ticket
+    #
+    # @api public
+    # @return [Boolean] true if the space is ticketed
+    # @example Check whether a space is ticketed
+    #   space.ticketed?
+    def ticketed? = is_ticketed.eql?(true)
 
     # The posts shared in this space
     #

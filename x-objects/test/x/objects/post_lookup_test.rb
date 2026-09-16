@@ -23,7 +23,7 @@ module X
 
       assert_equal Post, cursor.klass
       assert_equal 100, cursor.params["max_results"]
-      assert_equal Post::FIELDS.join(","), cursor.params["tweet.fields"]
+      assert_equal Post::FIELDS.join(","), cursor.params["post.fields"]
       assert_same @client, cursor.client
     end
 
@@ -40,7 +40,7 @@ module X
 
       assert_equal Post, cursor.klass
       assert_equal 100, cursor.params["max_results"]
-      assert_equal Post::FIELDS.join(","), cursor.params["tweet.fields"]
+      assert_equal Post::FIELDS.join(","), cursor.params["post.fields"]
       assert_same @client, cursor.client
     end
 

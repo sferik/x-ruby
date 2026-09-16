@@ -66,6 +66,45 @@ module X
         value.respond_to?(:id) ? value.id.to_s : value.to_s
       end
 
+      # Normalize a username, dropping the at sign a handle is often written with
+      #
+      # @api private
+      # @param value [String] the username, with or without a leading at sign
+      # @return [String] the username
+      def username(value)
+        value.to_s.delete_prefix("@")
+      end
+
+      # The identifier of the user an OAuth 1.0a access token begins with
+      #
+      # @api private
+      # @param client [Object] the client, which may hold OAuth 1.0a credentials
+      # @return [Integer, nil] the identifier, or nil if the client holds no OAuth 1.0a access token that names one
+      def oauth1_user_id(client)
+        return unless client.respond_to?(:access_token_secret) && client.access_token_secret
+
+        prefix = client.access_token.to_s[/\A(\d+)-/, 1]
+        Integer(prefix, 10) if prefix
+      end
+
+      # Read a numeric identifier as an Integer
+      #
+      # @api private
+      # @param value [String, Integer, nil] the identifier
+      # @return [Integer, nil] the identifier or nil if it is missing
+      def integer(value)
+        Integer(value.to_s, 10) unless value.nil?
+      end
+
+      # Extract a media identifier from an upload response or a raw value
+      #
+      # @api private
+      # @param value [Hash, String, Integer] an upload response holding an id, or an identifier
+      # @return [String] the media identifier
+      def media_id_of(value)
+        value.is_a?(Hash) ? value.fetch("id").to_s : value.to_s
+      end
+
       # Check whether a value identifies a resource rather than naming one
       #
       # An Integer is an identifier and a String is a name, such as a username, so that an

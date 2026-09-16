@@ -3,11 +3,15 @@ require_relative "../../test_helper"
 module X
   class UserCursorsTest < Minitest::Test
     cover User
+    cover X::Objects::UserFinders
 
-    PATHS = {followers: "users/1/followers", following: "users/1/following", posts: "users/1/tweets",
+    PATHS = {followers: "users/1/followers", following: "users/1/following", blocking: "users/1/blocking",
+             muting: "users/1/muting", posts: "users/1/tweets", home_timeline: "users/1/timelines/reverse_chronological",
+             reposts_of_me: "users/reposts_of_me",
              mentions: "users/1/mentions", liked_posts: "users/1/liked_tweets", bookmarks: "users/1/bookmarks",
              owned_lists: "users/1/owned_lists", list_memberships: "users/1/list_memberships",
              followed_lists: "users/1/followed_lists"}.freeze
+    THOUSANDS = %i[followers following blocking muting].freeze
 
     def setup
       @client = FakeClient.new
@@ -27,15 +31,21 @@ module X
     end
 
     def test_user_cursors
-      assert_equal [User, 1000], [@user.followers.klass, @user.followers.params["max_results"]]
-      assert_equal [User, 1000], [@user.following.klass, @user.following.params["max_results"]]
+      THOUSANDS.each do |method|
+        assert_equal [User, 1000], [@user.public_send(method).klass, @user.public_send(method).params["max_results"]], method
+      end
     end
 
     def test_post_cursor_classes
       assert_equal Post, @user.posts.klass
+      assert_equal Post, @user.home_timeline.klass
       assert_equal Post, @user.mentions.klass
       assert_equal Post, @user.liked_posts.klass
       assert_equal Post, @user.bookmarks.klass
+    end
+
+    def test_reposts_of_me_cursor_class
+      assert_equal Post, @user.reposts_of_me.klass
     end
 
     def test_list_cursor_classes
@@ -46,7 +56,7 @@ module X
 
     def test_default_max_results
       PATHS.each_key do |method|
-        assert_equal(%i[followers following].include?(method) ? 1000 : 100, @user.public_send(method).params["max_results"], method)
+        assert_equal(THOUSANDS.include?(method) ? 1000 : 100, @user.public_send(method).params["max_results"], method)
       end
     end
 

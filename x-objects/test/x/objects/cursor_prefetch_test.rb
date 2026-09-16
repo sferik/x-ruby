@@ -13,7 +13,7 @@ module X
         when "p3" then {"data" => [{"id" => "4"}], "meta" => {"result_count" => 1}}
         end
       })
-      @plain = Cursor.new(User, client: @client, path: "users/1/followers", params: {max_results: 1000})
+      @plain = Cursor.new(User, "users/1/followers", client: @client, params: {max_results: 1000})
       @cursor = @plain.prefetch
     end
 
@@ -62,7 +62,7 @@ module X
       @cursor.page(0)
       wait_for_requests(2)
 
-      assert_equal %w[3], @cursor.page(1).map(&:id)
+      assert_equal [3], @cursor.page(1).map(&:id)
     end
 
     def test_prefetch_error_resurfaces_when_page_is_requested
