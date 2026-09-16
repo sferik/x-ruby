@@ -16,7 +16,7 @@ media_category = "tweet_video" # other options include: amplify_video, dm_video,
 media = X::Uploader::Media.chunked_upload(file_path, client:, media_category:, chunk_size_mb: 4, concurrency: 2)
 
 # Wait up to five minutes, raising X::Uploader::MediaProcessingFailed if processing fails
-X::Uploader::Media.await_processing!(media, client:, timeout: 300)
+X::Uploader::Media.await_processing!(media, client:, processing_timeout: 300)
 
 post = client.create_post("Posting media from @gem!", media_ids: [media])
 

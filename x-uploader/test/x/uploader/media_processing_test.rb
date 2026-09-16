@@ -57,7 +57,7 @@ module X
     def test_await_processing_bang_gives_up_after_its_timeout
       stub_request(:get, status_url).to_return(headers: json_headers, body: {data: {processing_info: {state: "pending", check_after_secs: 5}}}.to_json)
 
-      assert_raises(Uploader::MediaProcessingTimeout) { await(:await_processing!, timeout: 4) }
+      assert_raises(Uploader::MediaProcessingTimeout) { await(:await_processing!, processing_timeout: 4) }
       assert_requested(:get, status_url, times: 1)
     end
 

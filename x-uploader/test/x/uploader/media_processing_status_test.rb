@@ -52,7 +52,7 @@ module X
     def test_gives_up_once_the_waits_would_pass_the_timeout
       pending = {"processing_info" => {"state" => "in_progress", "check_after_secs" => 5, "progress_percent" => 42}}
       stub_statuses(pending)
-      error = assert_raises(Uploader::MediaProcessingTimeout) { await(timeout: 12) }
+      error = assert_raises(Uploader::MediaProcessingTimeout) { await(processing_timeout: 12) }
 
       assert_equal [[5, 5], pending, "Media processing did not finish within 12 seconds"], [@sleeps, error.status, error.message]
       assert_requested(:get, STATUS_URL, times: 3)
@@ -61,7 +61,7 @@ module X
     def test_waits_up_to_the_timeout_exactly
       stub_statuses({"processing_info" => {"state" => "pending", "check_after_secs" => 5}}, {"processing_info" => {"state" => "succeeded"}})
 
-      assert_equal "succeeded", await(timeout: 5).dig("processing_info", "state")
+      assert_equal "succeeded", await(processing_timeout: 5).dig("processing_info", "state")
     end
 
     def test_waits_ten_minutes_by_default

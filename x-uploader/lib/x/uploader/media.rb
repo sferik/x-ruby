@@ -152,19 +152,19 @@ module X
       # Wait for media processing to complete
       #
       # Between checks it waits as long as X asks, and at least a second. It gives up, rather than wait past the
-      # timeout, once those waits would add up to more than the timeout.
+      # processing timeout, once those waits would add up to more than the processing timeout.
       #
       # @api public
       # @param media [Hash] the media object with an id
       # @param client [Client] the X API client
-      # @param timeout [Integer] the seconds to wait between checks, in all, before giving up
+      # @param processing_timeout [Integer] the seconds to wait between checks, in all, before giving up
       # @return [Hash, nil] the processing status
-      # @raise [MediaProcessingTimeout] if the media is still processing once the timeout would pass
+      # @raise [MediaProcessingTimeout] if the media is still processing once the processing timeout would pass
       # @example Wait for processing
       #   Uploader::Media.await_processing(media, client: client)
       # @example Wait up to half an hour for a long video
-      #   Uploader::Media.await_processing(media, client: client, timeout: 1800)
-      def await_processing(media, client:, timeout: DEFAULT_PROCESSING_TIMEOUT)
+      #   Uploader::Media.await_processing(media, client: client, processing_timeout: 1800)
+      def await_processing(media, client:, processing_timeout: DEFAULT_PROCESSING_TIMEOUT)
         waited = 0
         loop do
           status = client.get("media/upload?command=STATUS&media_id=#{media.fetch("id")}", **JSON_CLASSES)&.fetch("data")
@@ -172,7 +172,7 @@ module X
           return status if processing_info.nil? || PROCESSING_INFO_STATES.include?(processing_info["state"])
 
           wait = [processing_info["check_after_secs"].to_i, MIN_CHECK_AFTER_SECS].max
-          raise MediaProcessingTimeout.new(status, timeout) if (waited += wait) > timeout
+          raise MediaProcessingTimeout.new(status, processing_timeout) if (waited += wait) > processing_timeout
 
           sleep wait
         end
@@ -183,14 +183,14 @@ module X
       # @api public
       # @param media [Hash] the media object with an id
       # @param client [Client] the X API client
-      # @param timeout [Integer] the seconds to wait between checks, in all, before giving up
+      # @param processing_timeout [Integer] the seconds to wait between checks, in all, before giving up
       # @return [Hash, nil] the processing status
       # @raise [MediaProcessingFailed] if media processing failed, with the status X reported
-      # @raise [MediaProcessingTimeout] if the media is still processing once the timeout would pass
+      # @raise [MediaProcessingTimeout] if the media is still processing once the processing timeout would pass
       # @example Wait for processing with error handling
       #   Uploader::Media.await_processing!(media, client: client)
-      def await_processing!(media, client:, timeout: DEFAULT_PROCESSING_TIMEOUT)
-        await_processing(media, client:, timeout:).tap { |status| raise MediaProcessingFailed.new(status) if status&.dig("processing_info", "state").eql?("failed") }
+      def await_processing!(media, client:, processing_timeout: DEFAULT_PROCESSING_TIMEOUT)
+        await_processing(media, client:, processing_timeout:).tap { |status| raise MediaProcessingFailed.new(status) if status&.dig("processing_info", "state").eql?("failed") }
       end
 
       # Infer the media type from file path and category
@@ -230,7 +230,7 @@ module X
         else
           upload_binary(File.binread(file_path), media_category, client:, boundary:)
         end
-        media&.key?("processing_info") ? await_processing!(media, client:, timeout: processing_timeout) : media
+        media&.key?("processing_info") ? await_processing!(media, client:, processing_timeout:) : media
       end
 
       # Check whether a media category is uploaded in chunks
