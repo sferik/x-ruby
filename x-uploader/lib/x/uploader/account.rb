@@ -1,6 +1,7 @@
 require "securerandom"
 require "x/core"
 require_relative "invalid_media_type"
+require_relative "json_classes"
 require_relative "validator"
 
 module X
@@ -43,7 +44,7 @@ module X
       def update_profile_image_binary(content, client:, boundary: SecureRandom.hex)
         body = construct_multipart_body(field_name: "image", content:, boundary:)
         headers = {"Content-Type" => "multipart/form-data; boundary=#{boundary}"}
-        v1_client(client).post("account/update_profile_image.json", body, headers:)
+        v1_client(client).post("account/update_profile_image.json", body, headers:, **JSON_CLASSES)
       end
 
       # Update the authenticating user's profile banner
@@ -87,7 +88,7 @@ module X
         boundary: SecureRandom.hex)
         body = construct_banner_body(content:, width:, height:, offset_left:, offset_top:, boundary:)
         headers = {"Content-Type" => "multipart/form-data; boundary=#{boundary}"}
-        v1_client(client).post("account/update_profile_banner.json", body, headers:)
+        v1_client(client).post("account/update_profile_banner.json", body, headers:, **JSON_CLASSES)
       end
 
       private

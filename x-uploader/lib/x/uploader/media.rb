@@ -4,6 +4,7 @@ require "x/core"
 require_relative "chunks"
 require_relative "gif"
 require_relative "invalid_media_type"
+require_relative "json_classes"
 require_relative "media_processing_failed"
 require_relative "media_processing_timeout"
 require_relative "metadata"
@@ -115,7 +116,7 @@ module X
         Validator.validate_media_category!(media_category)
         upload_body = construct_upload_body(content:, media_category:, boundary:)
         headers = {"Content-Type" => "multipart/form-data; boundary=#{boundary}"}
-        client.post("media/upload", upload_body, headers:)&.fetch("data")
+        client.post("media/upload", upload_body, headers:, **JSON_CLASSES)&.fetch("data")
       end
 
       # Perform a chunked upload for large files
@@ -140,7 +141,7 @@ module X
         Validator.validate_media_category!(media_category)
         media = init(client:, file_path:, media_type:, media_category:)
         append(client:, file_path:, chunk_size: chunk_size_mb * BYTES_PER_MB, media:, boundary:, concurrency:)
-        client.post("media/upload/#{media.fetch("id")}/finalize")&.fetch("data")
+        client.post("media/upload/#{media.fetch("id")}/finalize", **JSON_CLASSES)&.fetch("data")
       end
 
       # Wait for media processing to complete
@@ -161,7 +162,7 @@ module X
       def await_processing(media, client:, timeout: DEFAULT_PROCESSING_TIMEOUT)
         waited = 0
         loop do
-          status = client.get("media/upload?command=STATUS&media_id=#{media.fetch("id")}")&.fetch("data")
+          status = client.get("media/upload?command=STATUS&media_id=#{media.fetch("id")}", **JSON_CLASSES)&.fetch("data")
           processing_info = status&.dig("processing_info")
           return status if processing_info.nil? || PROCESSING_INFO_STATES.include?(processing_info["state"])
 

@@ -3,6 +3,7 @@ module X
 
   module Uploader
     VERSION: Gem::Version
+    JSON_CLASSES: Hash[Symbol, singleton(Array) | singleton(Hash)]
 
     class InvalidMediaType < Error
     end

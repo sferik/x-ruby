@@ -1,4 +1,5 @@
 require "x/core"
+require_relative "json_classes"
 
 module X
   module Uploader
@@ -22,7 +23,7 @@ module X
       # @example Describe an uploaded image
       #   Uploader::Metadata.add_alt_text(media, "A cat asleep on a keyboard", client: client)
       def add_alt_text(media, text, client:)
-        client.post("media/metadata", {id: media_id(media), metadata: {alt_text: {text:}}})&.fetch("data")
+        client.post("media/metadata", {id: media_id(media), metadata: {alt_text: {text:}}}, **JSON_CLASSES)&.fetch("data")
       end
 
       # Attach uploaded subtitles to an uploaded video
@@ -44,7 +45,7 @@ module X
       #   Uploader::Metadata.add_subtitles(video, subtitles, "EN", client: client, media_category: "AmplifyVideo")
       def add_subtitles(video, subtitles, language_code, client:, display_name: nil, media_category: SUBTITLED_MEDIA_CATEGORY)
         track = {id: media_id(subtitles), language_code: language_code.upcase, display_name:}.compact
-        client.post("media/subtitles", {id: media_id(video), media_category:, subtitles: track})&.fetch("data")
+        client.post("media/subtitles", {id: media_id(video), media_category:, subtitles: track}, **JSON_CLASSES)&.fetch("data")
       end
 
       private

@@ -1,3 +1,5 @@
+require_relative "json_classes"
+
 module X
   module Uploader
     # Uploads a file in the chunks the X API requires for video and subtitles
@@ -20,7 +22,8 @@ module X
       # @param media_category [String] the media category
       # @return [Hash, nil] the initialization response
       def init(client:, file_path:, media_type:, media_category:)
-        client.post("media/upload/initialize", {media_type:, media_category:, total_bytes: File.size(file_path)})&.fetch("data")
+        body = {media_type:, media_category:, total_bytes: File.size(file_path)}
+        client.post("media/upload/initialize", body, **JSON_CLASSES)&.fetch("data")
       end
 
       # Append the chunks of a file to a chunked upload, a few at a time
@@ -88,7 +91,7 @@ module X
       def upload_chunk(client:, media_id:, upload_body:, headers:)
         retries = 0
         begin
-          client.post("media/upload/#{media_id}/append", upload_body, headers:)
+          client.post("media/upload/#{media_id}/append", upload_body, headers:, **JSON_CLASSES)
         rescue NetworkError, ServerError
           raise unless (retries += 1) < MAX_RETRIES
 
