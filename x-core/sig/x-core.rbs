@@ -82,7 +82,9 @@ module X
 
     private
     def error_message: (Net::HTTPResponse response) -> String
-    def message_from_json_response:  (Net::HTTPResponse response) -> String
+    def message_from_json_response: (Net::HTTPResponse response) -> String?
+    def message_from_errors: (untyped errors) -> String?
+    def message_from_problem: (Hash[String, untyped] body) -> String?
     def json?: (Net::HTTPResponse response) -> bool
   end
 

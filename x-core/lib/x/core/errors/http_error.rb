@@ -46,32 +46,50 @@ module X
     private
 
     # Get the error message from the response
+    #
+    # A server can send any body with an error, so a body that is not the JSON its content type claims, or that
+    # holds no message, falls back on the status message rather than raise while the error is built.
+    #
     # @api private
     # @param response [Net::HTTPResponse] the HTTP response
     # @return [String] the error message
     def error_message(response)
-      if json?(response)
-        message_from_json_response(response)
-      else
-        response.message
-      end
+      (message_from_json_response(response) if json?(response)) || response.message
     end
 
     # Extract error message from a JSON response
     # @api private
     # @param response [Net::HTTPResponse] the HTTP response
-    # @return [String] the error message
+    # @return [String, nil] the error message, or nil if the body holds none
     def message_from_json_response(response)
-      response_object = JSON.parse(response.body)
-      if response_object["errors"].instance_of?(Array)
-        response_object.fetch("errors").map { |error| error.fetch("message") }.join(", ")
-      elsif response_object.key?("title") && response_object.key?("detail")
-        "#{response_object.fetch("title")}: #{response_object.fetch("detail")}"
-      elsif response_object.key?("error")
-        response_object.fetch("error")
-      else
-        response.message
+      body = Hash.try_convert(JSON.parse(response.body.to_s)) || {}
+      message_from_errors(body["errors"]) || message_from_problem(body) || String.try_convert(body["error"])
+    rescue JSON::ParserError
+      nil
+    end
+
+    # Join the messages of an errors array
+    #
+    # Each error gives its message, or else its detail or title.
+    #
+    # @api private
+    # @param errors [Object] the errors of the body
+    # @return [String, nil] the joined messages, or nil if there are none
+    def message_from_errors(errors)
+      messages = Array(errors).filter_map do |error|
+        Hash.try_convert(error)&.values_at("message", "detail", "title")&.grep(String)&.first
       end
+      messages.join(", ") unless messages.empty?
+    end
+
+    # The title and detail of a problem, joined
+    # @api private
+    # @param body [Hash{String => untyped}] the body
+    # @return [String, nil] the title and detail, or nil unless the body has both
+    def message_from_problem(body)
+      title = body["title"]
+      detail = body["detail"]
+      "#{title}: #{detail}" if title && detail
     end
 
     # Check if the response contains JSON

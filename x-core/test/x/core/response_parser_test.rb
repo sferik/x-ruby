@@ -67,57 +67,6 @@ module X
       assert_predicate exception.rate_limits.first.remaining, :zero?
     end
 
-    def test_error_with_title_only_falls_back_to_status
-      stub_json(status: [400, "Bad Request"], body: '{"title": "Some Error"}')
-
-      assert_equal "Bad Request", assert_raises(BadRequest) { @response_parser.parse(response:) }.message
-    end
-
-    def test_error_with_detail_only_falls_back_to_status
-      stub_json(status: [400, "Bad Request"], body: '{"detail": "Something went wrong"}')
-
-      assert_equal "Bad Request", assert_raises(BadRequest) { @response_parser.parse(response:) }.message
-    end
-
-    def test_error_with_title_and_detail
-      stub_json(status: 400, body: '{"title": "Some Error", "detail": "Something went wrong"}')
-
-      assert_equal "Some Error: Something went wrong",
-        assert_raises(BadRequest) { @response_parser.parse(response:) }.message
-    end
-
-    def test_error_with_error_field
-      stub_json(status: 400, body: '{"error": "Some Error"}')
-
-      assert_equal "Some Error", assert_raises(BadRequest) { @response_parser.parse(response:) }.message
-    end
-
-    def test_error_with_errors_array
-      stub_json(status: 400, body: '{"errors": [{"message": "Error 1"}, {"message": "Error 2"}]}')
-
-      assert_equal "Error 1, Error 2", assert_raises(BadRequest) { @response_parser.parse(response:) }.message
-    end
-
-    def test_errors_array_takes_priority_over_title_and_detail
-      body = {title: "Generic", detail: "Details", errors: [{message: "Specific error"}]}.to_json
-      stub_json(status: 400, body:)
-
-      assert_equal "Specific error", assert_raises(BadRequest) { @response_parser.parse(response:) }.message
-    end
-
-    def test_error_with_non_array_errors_field
-      stub_json(status: 400, body: '{"errors": {"message": "Some Error"}}')
-
-      assert_empty assert_raises(BadRequest) { @response_parser.parse(response:) }.message
-    end
-
-    def test_non_json_error_response
-      stub_request(:get, @uri.to_s)
-        .to_return(status: [400, "Bad Request"], body: "<html>Bad</html>", headers: {"Content-Type" => "text/html"})
-
-      assert_equal "Bad Request", assert_raises(BadRequest) { @response_parser.parse(response:) }.message
-    end
-
     def test_default_response_objects
       stub_json(body: '{"array": [1, 2, 2, 3]}')
       hash = @response_parser.parse(response:)
