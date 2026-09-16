@@ -63,6 +63,16 @@ module X
       assert_instance_of Connection, authorization.connection
     end
 
+    def test_a_nil_state_is_refused
+      error = assert_raises(ArgumentError) { authorization(state: nil) }
+
+      assert_equal "state must not be nil or empty; pass the state stored when the user was sent to X", error.message
+    end
+
+    def test_an_empty_state_is_refused
+      assert_raises(ArgumentError) { authorization(state: "") }
+    end
+
     def test_an_invalid_code_verifier_is_refused
       assert_raises(ArgumentError) { authorization(code_verifier: "short") }
     end

@@ -89,11 +89,14 @@ module X
     # @param code_verifier [String] the PKCE code verifier, as stored when the user was sent to X
     # @param connection [Connection] the connection that exchanges the authorization code for tokens
     # @return [OAuth2Authorization] a new authorization
+    # @raise [ArgumentError] if the state is nil or empty, which would accept the redirect of any authorization
     # @raise [ArgumentError] if the code verifier is not 43 to 128 unreserved characters
     # @example Start an authorization
     #   authorization = X::OAuth2Authorization.new(client_id: "id", redirect_uri: "https://example.com/callback")
     def initialize(client_id:, redirect_uri:, client_secret: nil, scopes: DEFAULT_SCOPES, state: SecureRandom.urlsafe_base64(STATE_BYTES),
       code_verifier: SimpleOAuth::OAuth2::PKCE.generate.verifier, connection: Connection.new)
+      raise ArgumentError, "state must not be nil or empty; pass the state stored when the user was sent to X" if state.to_s.empty?
+
       @client_id = client_id
       @client_secret = client_secret
       @redirect_uri = redirect_uri
