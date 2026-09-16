@@ -6,7 +6,7 @@ module X
     cover RequestBuilder
 
     def setup
-      @authenticator = OAuthAuthenticator.new(api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET,
+      @authenticator = OAuth1Authenticator.new(api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET,
         access_token: TEST_ACCESS_TOKEN, access_token_secret: TEST_ACCESS_TOKEN_SECRET)
       @request_builder = RequestBuilder.new
       @uri = URI("http://example.com")

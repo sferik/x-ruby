@@ -10,7 +10,7 @@ module X
 
       authenticator = client.authenticator
 
-      assert_instance_of OAuthAuthenticator, authenticator
+      assert_instance_of OAuth1Authenticator, authenticator
       assert_equal TEST_API_KEY, authenticator.api_key
       assert_equal TEST_API_KEY_SECRET, authenticator.api_key_secret
       assert_equal TEST_ACCESS_TOKEN, authenticator.access_token
@@ -20,7 +20,7 @@ module X
     def test_inspect_hides_the_credentials
       client = Client.new(**test_oauth_credentials)
 
-      assert_equal "#<X::Client base_url=\"https://api.twitter.com/2/\" authenticator=#<X::OAuthAuthenticator>>", client.inspect
+      assert_equal "#<X::Client base_url=\"https://api.twitter.com/2/\" authenticator=#<X::OAuth1Authenticator>>", client.inspect
     end
 
     def test_missing_oauth_credentials
@@ -39,7 +39,7 @@ module X
         assert_equal value, client.public_send(credential)
       end
 
-      assert_instance_of OAuthAuthenticator, client.authenticator
+      assert_instance_of OAuth1Authenticator, client.authenticator
     end
 
     def test_setting_oauth_credentials_reinitializes_authenticator
@@ -109,7 +109,7 @@ module X
       client = Client.new(**test_oauth_credentials, client_id: TEST_CLIENT_ID, client_secret: TEST_CLIENT_SECRET,
         refresh_token: TEST_REFRESH_TOKEN)
 
-      assert_instance_of OAuthAuthenticator, client.authenticator
+      assert_instance_of OAuth1Authenticator, client.authenticator
     end
 
     def test_oauth2_takes_precedence_over_bearer_token

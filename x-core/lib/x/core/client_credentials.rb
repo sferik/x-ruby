@@ -175,16 +175,16 @@ module X
     # @api private
     # @return [Authenticator] the initialized authenticator
     def initialize_authenticator
-      @authenticator = oauth_authenticator || oauth2_authenticator || bearer_authenticator || @authenticator || Authenticator.new
+      @authenticator = oauth1_authenticator || oauth2_authenticator || bearer_authenticator || @authenticator || Authenticator.new
     end
 
     # Build an OAuth 1.0a authenticator if credentials are available
     # @api private
-    # @return [OAuthAuthenticator, nil] the OAuth authenticator or nil
-    def oauth_authenticator
+    # @return [OAuth1Authenticator, nil] the OAuth authenticator or nil
+    def oauth1_authenticator
       return unless api_key && api_key_secret && access_token && access_token_secret
 
-      OAuthAuthenticator.new(api_key:, api_key_secret:, access_token:, access_token_secret:)
+      OAuth1Authenticator.new(api_key:, api_key_secret:, access_token:, access_token_secret:)
     end
 
     # Build an OAuth 2.0 authenticator if credentials are available

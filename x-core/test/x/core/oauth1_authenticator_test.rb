@@ -2,16 +2,20 @@ require "net/http"
 require_relative "../../test_helper"
 
 module X
-  class OAuthAuthenticatorTest < Minitest::Test
-    cover OAuthAuthenticator
+  class OAuth1AuthenticatorTest < Minitest::Test
+    cover OAuth1Authenticator
 
     def setup
-      @authenticator = OAuthAuthenticator.new(api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET,
+      @authenticator = OAuth1Authenticator.new(api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET,
         access_token: TEST_ACCESS_TOKEN, access_token_secret: TEST_ACCESS_TOKEN_SECRET)
     end
 
+    def test_old_name_is_an_alias
+      assert_same OAuth1Authenticator, OAuthAuthenticator
+    end
+
     def test_inspect_hides_the_secrets
-      assert_equal "#<X::OAuthAuthenticator>", @authenticator.inspect
+      assert_equal "#<X::OAuth1Authenticator>", @authenticator.inspect
     end
 
     def test_initialization
@@ -92,8 +96,8 @@ module X
 
   # The worked example X publishes for OAuth 1.0a, which signs a form-encoded body
   # @see https://docs.x.com/resources/fundamentals/authentication/oauth-1-0a/creating-a-signature
-  class OAuthAuthenticatorDocumentedExampleTest < Minitest::Test
-    cover OAuthAuthenticator
+  class OAuth1AuthenticatorDocumentedExampleTest < Minitest::Test
+    cover OAuth1Authenticator
 
     NONCE = "kYjzVBB8Y0ZFabxSWbWovY3uYSQ2pTgmZeNu2VS4cg".freeze
     TIMESTAMP = 1_318_622_958
@@ -102,7 +106,7 @@ module X
     SIGNATURE = "hCtSmYh%2BiHYCEqBWrE7C7hYmtUk%3D".freeze
 
     def setup
-      @authenticator = OAuthAuthenticator.new(api_key: "xvz1evFS4wEEPTGEFPHBog",
+      @authenticator = OAuth1Authenticator.new(api_key: "xvz1evFS4wEEPTGEFPHBog",
         api_key_secret: "kAcSOqF21Fu85e7zjz7ZN2U4ZRhfV3WpwPAoE3Z7kBw",
         access_token: "370773112-GmHxMAgYyLbNEtIKZeRNFsMKPR9EyMZeS9weJAEb",
         access_token_secret: "LswwdoUaIvS8ltyTt5jkRh4J50vUPVVHtR2YPi5kE")
@@ -137,14 +141,14 @@ module X
   end
 
   # Only a form-encoded body takes part in the signature
-  class OAuthAuthenticatorBodyTest < Minitest::Test
-    cover OAuthAuthenticator
+  class OAuth1AuthenticatorBodyTest < Minitest::Test
+    cover OAuth1Authenticator
 
     URL = "https://api.x.com/2/tweets".freeze
     FORM_BODY = "status=Hello".freeze
 
     def setup
-      @authenticator = OAuthAuthenticator.new(api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET,
+      @authenticator = OAuth1Authenticator.new(api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET,
         access_token: TEST_ACCESS_TOKEN, access_token_secret: TEST_ACCESS_TOKEN_SECRET)
     end
 

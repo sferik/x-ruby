@@ -16,7 +16,7 @@ module X
     def header: (Net::HTTPRequest? request) -> Hash[String, String]
   end
 
-  class OAuthAuthenticator < Authenticator
+  class OAuth1Authenticator < Authenticator
     OAUTH_VERSION: String
     OAUTH_SIGNATURE_METHOD: String
     FORM_CONTENT_TYPE: String
@@ -214,6 +214,8 @@ module X
     def yield_json: (line: String, decode: ^(String) -> untyped) { (untyped) -> void } -> void
   end
 
+  class OAuthAuthenticator = OAuth1Authenticator
+
   class OAuth2Authenticator < Authenticator
     TOKEN_PATH: String
     TOKEN_HOST: String
@@ -242,7 +244,7 @@ module X
   end
 
   module ClientCredentials
-    @authenticator: Authenticator | BearerTokenAuthenticator | OAuthAuthenticator | OAuth2Authenticator
+    @authenticator: Authenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator
 
     attr_reader api_key: String?
     attr_reader api_key_secret: String?
@@ -263,8 +265,8 @@ module X
 
     private
     def initialize_credentials: (api_key: String?, api_key_secret: String?, access_token: String?, access_token_secret: String?, bearer_token: String?, client_id: String?, client_secret: String?, refresh_token: String?) -> void
-    def initialize_authenticator: -> (Authenticator | BearerTokenAuthenticator | OAuthAuthenticator | OAuth2Authenticator)
-    def oauth_authenticator: -> OAuthAuthenticator?
+    def initialize_authenticator: -> (Authenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator)
+    def oauth1_authenticator: -> OAuth1Authenticator?
     def oauth2_authenticator: -> OAuth2Authenticator?
     def bearer_authenticator: -> BearerTokenAuthenticator?
   end
@@ -276,7 +278,7 @@ module X
     DEFAULT_ARRAY_CLASS: singleton(Array)
     DEFAULT_OBJECT_CLASS: singleton(Hash)
     extend Forwardable
-    @authenticator: Authenticator | BearerTokenAuthenticator | OAuthAuthenticator | OAuth2Authenticator
+    @authenticator: Authenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator
     @connection: Connection
     @request_builder: RequestBuilder
     @redirect_handler: RedirectHandler
@@ -286,7 +288,7 @@ module X
     attr_accessor base_url: String
     attr_accessor default_array_class: singleton(Array)
     attr_accessor default_object_class: singleton(Hash)
-    attr_reader authenticator: Authenticator | BearerTokenAuthenticator | OAuthAuthenticator | OAuth2Authenticator
+    attr_reader authenticator: Authenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator
     def initialize: (?api_key: String?, ?api_key_secret: String?, ?access_token: String?, ?access_token_secret: String?, ?bearer_token: String?, ?client_id: String?, ?client_secret: String?, ?refresh_token: String?, ?base_url: String, ?open_timeout: Integer, ?read_timeout: Integer, ?write_timeout: Integer, ?debug_output: untyped, ?proxy_url: String?, ?default_array_class: singleton(Array), ?default_object_class: singleton(Hash), ?max_redirects: Integer) -> void
     def inspect: () -> String
     def get: (String endpoint, ?headers: Hash[String, String], ?array_class: Class, ?object_class: Class) -> untyped

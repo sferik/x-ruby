@@ -5,7 +5,7 @@ require_relative "authenticator"
 module X
   # Authenticator for OAuth 1.0a authentication
   # @api public
-  class OAuthAuthenticator < Authenticator
+  class OAuth1Authenticator < Authenticator
     # OAuth version
     OAUTH_VERSION = SimpleOAuth::Header::OAUTH_VERSION
     # OAuth signature method
@@ -41,16 +41,16 @@ module X
     #   authenticator.access_token_secret = "token_secret"
     attr_accessor :access_token_secret
 
-    # Initialize a new OAuthAuthenticator
+    # Initialize a new OAuth1Authenticator
     #
     # @api public
     # @param api_key [String] the API key (consumer key)
     # @param api_key_secret [String] the API key secret (consumer secret)
     # @param access_token [String] the access token
     # @param access_token_secret [String] the access token secret
-    # @return [OAuthAuthenticator] a new instance
+    # @return [OAuth1Authenticator] a new instance
     # @example Create an OAuth authenticator
-    #   authenticator = X::OAuthAuthenticator.new(
+    #   authenticator = X::OAuth1Authenticator.new(
     #     api_key: "key",
     #     api_key_secret: "secret",
     #     access_token: "token",
@@ -118,4 +118,7 @@ module X
       request["Content-Type"].to_s.split(";").first.to_s.strip.downcase.eql?(FORM_CONTENT_TYPE)
     end
   end
+
+  # The name of OAuth1Authenticator before OAuth2Authenticator joined it
+  OAuthAuthenticator = OAuth1Authenticator
 end
