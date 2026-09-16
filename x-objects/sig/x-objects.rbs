@@ -59,6 +59,7 @@ module X
       def get: (String endpoint, **untyped) -> untyped
       def post: (String endpoint, ?String? body, **untyped) -> untyped
       def delete: (String endpoint, **untyped) -> untyped
+      def put: (String endpoint, ?String? body, **untyped) -> untyped
     end
 
     module Utils
@@ -267,8 +268,11 @@ module X
     module PostWrites : _Lookup[Post]
       def create: (String text, client: _Client, ?reply_to: id?, ?quote: id?, ?media_ids: Array[String | Integer | Hash[String, untyped]]?, ?community: id?, **untyped params) -> Post?
       def delete: (id post, client: _Client) -> bool
+      def hide: (id post, client: _Client) -> bool
+      def unhide: (id post, client: _Client) -> bool
 
       private
+      def change_visibility: (id post, bool hidden, client: _Client) -> bool?
       def referenced: (reply_to: id?, quote: id?, media_ids: Array[String | Integer | Hash[String, untyped]]?, community: id?) -> Hash[Symbol, untyped]
     end
 
@@ -424,6 +428,8 @@ module X
           def create_tweet: (String text, **untyped params) -> Post?
           def delete_post: (id post) -> bool
           def delete_tweet: (id post) -> bool
+          def hide_reply: (id post) -> bool
+          def unhide_reply: (id post) -> bool
         end
 
         module Lists : _Client, _CurrentUser
@@ -717,6 +723,8 @@ module X
     def retweeted_by: (**untyped params) -> Cursor
     def quotes: (**untyped params) -> Cursor
     def delete: () -> bool
+    def hide: () -> bool
+    def unhide: () -> bool
   end
 
   class Tweet = Post

@@ -39,6 +39,10 @@ class FakeClient
     respond(:delete, endpoint, nil, options)
   end
 
+  def put(endpoint, body = nil, **options)
+    respond(:put, endpoint, body, options)
+  end
+
   def stub(method, path, response)
     @responses[[method, path]] = response
     self

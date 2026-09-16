@@ -78,6 +78,7 @@ See [UPGRADING.md](UPGRADING.md) for the changes that code written for 0.19 need
 * Bookmark a post and remove the bookmark with `bookmark` and `unbookmark` on `X::User` and `X::Client`, beside the `bookmarks` cursor that reads them
 * Follow, unfollow, pin, and unpin a list with `follow_list`, `unfollow_list`, `pin_list`, and `unpin_list` on `X::User` and `X::Client`, and read a user's pinned lists with `X::User#pinned_lists`
 * Quote a post with the `quote:` of `create_post` and `X::Post.create`, which builds the `quote_tweet_id` of the new post
+* Hide a reply to a post of the authenticated user, and show it again, with `X::Post#hide` and `#unhide`, `X::Post.hide` and `.unhide`, and `hide_reply` and `unhide_reply` on the client
 
 ### Changed
 * Require Ruby 3.3 or later

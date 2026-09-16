@@ -107,6 +107,13 @@ module X
       assert_requested :get, %r{users/7505382/followers.*max_results=1000}, times: 2
     end
 
+    def test_hide_a_reply
+      stub_json(:put, "tweets/1/hidden", {data: {hidden: true}})
+
+      assert @client.hide_reply(1)
+      assert_requested :put, "#{BASE}tweets/1/hidden", body: {hidden: true}.to_json
+    end
+
     private
 
     def stub_current_user(bearer_token, id)

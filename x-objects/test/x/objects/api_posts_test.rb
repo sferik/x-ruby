@@ -26,6 +26,20 @@ module X
         assert_equal ["tweets/1"], @client.paths
       end
 
+      def test_hide_reply
+        @client.stub(:put, "tweets/1/hidden", {"data" => {"hidden" => true}})
+
+        assert @client.hide_reply(Post.new({"id" => "1"}))
+        assert_equal({hidden: true}.to_json, @client.requests.last[:body])
+      end
+
+      def test_unhide_reply
+        @client.stub(:put, "tweets/1/hidden", {"data" => {"hidden" => false}})
+
+        assert @client.unhide_reply("1")
+        assert_equal({hidden: false}.to_json, @client.requests.last[:body])
+      end
+
       def test_create_tweet_alias
         @client.stub(:post, "tweets", {"data" => {"id" => "1", "text" => "hi"}})
 

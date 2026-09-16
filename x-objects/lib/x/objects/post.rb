@@ -461,6 +461,26 @@ module X
       self.class.delete(self, client: client!)
     end
 
+    # Hide this reply, as the author of the post it replies to
+    #
+    # @api public
+    # @return [Boolean] true if the reply is now hidden
+    # @example Hide a reply
+    #   reply.hide
+    def hide
+      self.class.hide(self, client: client!)
+    end
+
+    # Show this reply after hiding it, as the author of the post it replies to
+    #
+    # @api public
+    # @return [Boolean] true if the reply is no longer hidden
+    # @example Show a hidden reply
+    #   reply.unhide
+    def unhide
+      self.class.unhide(self, client: client!)
+    end
+
     alias_method :retweeted_by, :reposted_by
   end
 

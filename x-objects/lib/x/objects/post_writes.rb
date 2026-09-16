@@ -3,7 +3,7 @@ require_relative "utils"
 
 module X
   module Objects
-    # Creating and deleting posts, as the authenticated user
+    # Creating and deleting posts, and hiding replies, as the authenticated user
     # @api public
     module PostWrites
       # Create a post as the authenticated user
@@ -45,7 +45,43 @@ module X
         body.to_h.dig("data", "deleted").eql?(true)
       end
 
+      # Hide a reply to a post of the authenticated user
+      #
+      # X still shows a hidden reply, behind a notice that its author was hidden.
+      #
+      # @api public
+      # @param post [Post, String, Integer] the reply or its identifier
+      # @param client [Object] the client used to make the request
+      # @return [Boolean] true if the reply is now hidden
+      # @example Hide a reply
+      #   X::Post.hide("1234567890", client: client)
+      def hide(post, client:)
+        change_visibility(post, true, client:).eql?(true)
+      end
+
+      # Show a reply that was hidden, as the author of the post it replies to
+      #
+      # @api public
+      # @param post [Post, String, Integer] the reply or its identifier
+      # @param client [Object] the client used to make the request
+      # @return [Boolean] true if the reply is no longer hidden
+      # @example Show a hidden reply
+      #   X::Post.unhide("1234567890", client: client)
+      def unhide(post, client:)
+        change_visibility(post, false, client:).eql?(false)
+      end
+
       private
+
+      # Hide or show a reply, and read whether it is hidden
+      # @api private
+      # @param post [Post, String, Integer] the reply or its identifier
+      # @param hidden [Boolean] whether to hide the reply
+      # @param client [Object] the client used to make the request
+      # @return [Boolean, nil] whether the reply is hidden, as the response reports, or nil if it does not
+      def change_visibility(post, hidden, client:)
+        client.put("tweets/#{Utils.id_of(post)}/hidden", JSON.generate({hidden:}), **Utils::JSON_CLASSES).to_h.dig("data", "hidden")
+      end
 
       # The fields of a new post that refer to other posts, media, or a community
       # @api private
