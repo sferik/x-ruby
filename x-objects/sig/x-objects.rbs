@@ -294,7 +294,8 @@ module X
       def fetch: () -> Resource?
       def client!: () -> _Client
       def resolve: (singleton(Resource) klass, untyped id) -> Resource?
-      def cursor: (singleton(Resource) klass, String path, max_results: Integer, ?min_results: Integer, **untyped params) -> Cursor
+      def cursor: (singleton(Resource) klass, String path, max_results: Integer, ?min_results: Integer, ?total: Symbol?, **untyped params) -> Cursor
+      def counter: (Symbol? total) -> (^() -> Integer?)?
     end
 
     module References : Resource
@@ -450,9 +451,10 @@ module X
     attr_reader min_results: Integer
 
     @prefetch: bool
+    @total: (^() -> Integer?)?
     @pages: Objects::Pages
 
-    def initialize: (singleton(Objects::Resource) klass, String path, client: Objects::_Client, ?params: Objects::params, ?prefetch: bool, ?token_param: String, ?min_results: Integer, ?limit: Integer?) -> void
+    def initialize: (singleton(Objects::Resource) klass, String path, client: Objects::_Client, ?params: Objects::params, ?prefetch: bool, ?token_param: String, ?min_results: Integer, ?limit: Integer?, ?total: (^() -> Integer?)?) -> void
     def prefetch?: () -> bool
     def each: () { (Objects::Resource) -> void } -> self
             | () -> Enumerator[Objects::Resource, self]
@@ -465,6 +467,11 @@ module X
     def first: (?Integer? count) -> (Objects::Resource | Array[Objects::Resource] | nil)
     def take: (Integer count) -> Array[Objects::Resource]
     def ids: () -> Array[Integer | String]
+    def any?: (*untyped pattern) ?{ (Objects::Resource) -> boolish } -> bool
+    def none?: (*untyped pattern) ?{ (Objects::Resource) -> boolish } -> bool
+    def one?: (*untyped pattern) ?{ (Objects::Resource) -> boolish } -> bool
+    def count: (*untyped args) ?{ (Objects::Resource) -> boolish } -> Integer
+    def size: () -> Integer
     def inspect: () -> String
 
     private

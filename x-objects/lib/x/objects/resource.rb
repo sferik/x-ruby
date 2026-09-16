@@ -311,11 +311,20 @@ module X
       # @param path [String] the endpoint path
       # @param max_results [Integer] the maximum number of items per page
       # @param min_results [Integer] the smallest page the endpoint accepts
+      # @param total [Symbol, nil] the attribute holding the number of resources the API publishes
       # @param params [Hash] query parameters merged over the default parameters
       # @return [Cursor] the cursor
-      def cursor(klass, path, max_results:, min_results: 1, **params)
+      def cursor(klass, path, max_results:, min_results: 1, total: nil, **params)
         defaults = {max_results:} #: Hash[Symbol, untyped]
-        Cursor.new(klass, path, client: client!, params: defaults.merge(params), min_results:)
+        Cursor.new(klass, path, client: client!, params: defaults.merge(params), min_results:, total: counter(total))
+      end
+
+      # A block reading the attribute holding the number the API publishes
+      # @api private
+      # @param total [Symbol, nil] the attribute name, or nil if the API publishes no number
+      # @return [Proc, nil] the block, or nil if the API publishes no number
+      def counter(total)
+        -> { public_send(total) } unless total.nil?
       end
     end
   end

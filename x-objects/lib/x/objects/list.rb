@@ -163,7 +163,7 @@ module X
     # @example Print every member
     #   list.members.each { |user| puts user.username }
     def members(**params)
-      cursor(User, "lists/#{id}/members", max_results: MAX_RESULTS, **params)
+      cursor(User, "lists/#{id}/members", max_results: MAX_RESULTS, total: :member_count, **params)
     end
 
     # The followers of this list
@@ -174,7 +174,7 @@ module X
     # @example Print every follower
     #   list.followers.each { |user| puts user.username }
     def followers(**params)
-      cursor(User, "lists/#{id}/followers", max_results: MAX_RESULTS, **params)
+      cursor(User, "lists/#{id}/followers", max_results: MAX_RESULTS, total: :follower_count, **params)
     end
 
     # The posts by members of this list

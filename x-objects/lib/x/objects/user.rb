@@ -311,7 +311,7 @@ module X
     # @example Print every follower
     #   user.followers.each { |follower| puts follower.username }
     def followers(**params)
-      cursor(User, "users/#{id}/followers", max_results: MAX_FOLLOW_RESULTS, **params)
+      cursor(User, "users/#{id}/followers", max_results: MAX_FOLLOW_RESULTS, total: :followers_count, **params)
     end
 
     # The users this user follows
@@ -322,7 +322,7 @@ module X
     # @example Count the followed users
     #   user.following.count
     def following(**params)
-      cursor(User, "users/#{id}/following", max_results: MAX_FOLLOW_RESULTS, **params)
+      cursor(User, "users/#{id}/following", max_results: MAX_FOLLOW_RESULTS, total: :following_count, **params)
     end
 
     # The users this user blocks, which must be the authenticated user
@@ -430,7 +430,7 @@ module X
     # @example Print the list memberships
     #   user.list_memberships.each { |list| puts list.name }
     def list_memberships(**params)
-      cursor(List, "users/#{id}/list_memberships", max_results: MAX_RESULTS, **params)
+      cursor(List, "users/#{id}/list_memberships", max_results: MAX_RESULTS, total: :listed_count, **params)
     end
 
     # The lists this user follows

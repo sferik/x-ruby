@@ -64,12 +64,13 @@ module X
     # @param token_param [String] the query parameter the token of the next page is sent in
     # @param min_results [Integer] the smallest page the endpoint accepts, which first never asks below
     # @param limit [Integer, nil] the number of resources wanted, which sizes the pages and ends the cursor
+    # @param total [Proc, nil] a block returning the number of resources the API publishes for the collection
     # @return [Cursor] a new cursor
     # @example Create a cursor over a user's followers
     #   X::Cursor.new(X::User, "users/7505382/followers", client: client, params: {max_results: 1000})
     # @example Create a cursor over an endpoint that pages with next_token
     #   X::Cursor.new(X::User, "users/search", client: client, params: {query: "ruby"}, token_param: "next_token")
-    def initialize(klass, path, client:, params: {}, prefetch: false, token_param: DEFAULT_TOKEN_PARAM, min_results: 1, limit: nil)
+    def initialize(klass, path, client:, params: {}, prefetch: false, token_param: DEFAULT_TOKEN_PARAM, min_results: 1, limit: nil, total: nil)
       @klass = klass
       @client = client
       @path = path
@@ -77,6 +78,7 @@ module X
       @prefetch = prefetch
       @token_param = token_param
       @min_results = min_results
+      @total = total
       @pages = Objects::Pages.new(self, limit)
       freeze
     end
@@ -135,7 +137,7 @@ module X
     # @return [Cursor] a new cursor
     # @example Iterate again with fresh data
     #   followers = user.followers.refresh
-    def refresh = self.class.new(klass, path, client:, params: own_params, prefetch: prefetch?, token_param:, min_results:)
+    def refresh = self.class.new(klass, path, client:, params: own_params, prefetch: prefetch?, token_param:, min_results:, total: @total)
 
     # Return a new cursor over the same collection with prefetching enabled
     #
@@ -143,7 +145,7 @@ module X
     # @return [Cursor] a new cursor
     # @example Fetch every follower while overlapping requests with processing
     #   user.followers.prefetch.each { |follower| process(follower) }
-    def prefetch = self.class.new(klass, path, client:, params: own_params, prefetch: true, token_param:, min_results:)
+    def prefetch = self.class.new(klass, path, client:, params: own_params, prefetch: true, token_param:, min_results:, total: @total)
 
     # Return a new cursor over the same collection that yields stubs
     #
@@ -155,7 +157,7 @@ module X
     # @raise [NotImplementedError] if the resource class has no fields parameter
     # @example Check whether a user is among thousands of followers without fetching their fields
     #   user.followers.stubs.any?(other)
-    def stubs = self.class.new(klass, path, client:, params: id_only_params, token_param:, min_results:)
+    def stubs = self.class.new(klass, path, client:, params: id_only_params, token_param:, min_results:, total: @total)
 
     # The first resource, or the first few, requesting pages no larger than needed
     #
@@ -183,6 +185,80 @@ module X
     # @example Read three followers in one request for three users
     #   user.followers.take(3)
     def take(count) = first(Integer(count)) #: Array[Objects::Resource]
+
+    # Check whether the collection holds any resource, requesting one
+    #
+    # Without a pattern or a block, this asks for a single resource rather than a full page.
+    #
+    # @api public
+    # @param pattern [Object] a pattern each resource is matched against
+    # @yield [Objects::Resource] each resource
+    # @return [Boolean] true if any resource matches
+    # @example Check whether a user has any followers
+    #   user.followers.any?
+    def any?(*pattern, &block)
+      return super unless pattern.empty? && block.nil?
+
+      !first.nil?
+    end
+
+    # Check whether the collection holds no resource, requesting one
+    #
+    # Without a pattern or a block, this asks for a single resource rather than a full page.
+    #
+    # @api public
+    # @param pattern [Object] a pattern each resource is matched against
+    # @yield [Objects::Resource] each resource
+    # @return [Boolean] true if no resource matches
+    # @example Check whether a user follows nobody
+    #   user.following.none?
+    def none?(*pattern, &block)
+      return super unless pattern.empty? && block.nil?
+
+      first.nil?
+    end
+
+    # Check whether the collection holds one resource, requesting two
+    #
+    # Without a pattern or a block, this asks for two resources rather than a full page.
+    #
+    # @api public
+    # @param pattern [Object] a pattern each resource is matched against
+    # @yield [Objects::Resource] each resource
+    # @return [Boolean] true if exactly one resource matches
+    # @example Check whether a list has a single member
+    #   list.members.one?
+    def one?(*pattern, &block)
+      return super unless pattern.empty? && block.nil?
+
+      take(2).size.eql?(1)
+    end
+
+    # The number of resources in the collection
+    #
+    # Counting without a block reads the number the API publishes for the collection, when it publishes
+    # one, rather than paging through every resource, which the API bills. The published number counts
+    # what the collection holds, which can differ from what the endpoint serves.
+    #
+    # @api public
+    # @param args [Object] a resource to count
+    # @yield [Objects::Resource] each resource
+    # @return [Integer] the number of resources
+    # @example Count a user's followers without reading one of them
+    #   user.followers.count
+    def count(*args, &block)
+      return super unless args.empty? && block.nil?
+
+      @total&.call || super()
+    end
+
+    # The number of resources in the collection, as count reports it
+    #
+    # @api public
+    # @return [Integer] the number of resources
+    # @example Count a user's followers without reading one of them
+    #   user.followers.size
+    def size = count
 
     # The identifiers of every resource, requesting nothing but identifiers
     #
@@ -222,7 +298,7 @@ module X
     # @param size [Integer] the size of the first page
     # @param limit [Integer] the number of resources wanted
     # @return [Cursor] a new cursor
-    def with_max_results(size, limit) = self.class.new(klass, path, client:, params: own_params.merge("max_results" => size), prefetch: prefetch?, token_param:, min_results:, limit:)
+    def with_max_results(size, limit) = self.class.new(klass, path, client:, params: own_params.merge("max_results" => size), prefetch: prefetch?, token_param:, min_results:, limit:, total: @total)
 
     # The parameters of this cursor, keeping dropped defaults dropped
     # @api private
