@@ -96,14 +96,15 @@ post.replied_to.refresh.text           # forces a new request
 
 Within one response, every reference to the same resource is the same object, so hydrating a user from one post hydrates it for every post on that page.
 
-**Pagination.** Collections are `X::Cursor` objects, which include `Enumerable`, remember the client that fetched them, and fetch pages lazily. Iterating requests the maximum page size, and pages are cached, so iterating twice costs no extra requests. `first(n)` and `take(n)` request a page of `n` instead, raised to the endpoint's minimum. `refresh` returns a cursor with an empty cache, and `ids` fetches nothing but identifiers.
+**Pagination.** Collections are `X::Cursor` objects, which include `Enumerable`, remember the client that fetched them, and fetch pages lazily. Iterating requests the maximum page size, and pages are cached, so iterating twice costs no extra requests. `first(n)` and `take(n)` request a page of `n` instead, raised to the endpoint's minimum. `count` and `size` read the number the API publishes for a collection, such as a user's `followers_count`, rather than paging through it. `refresh` returns a cursor with an empty cache, and `ids` fetches nothing but identifiers.
 
 ```ruby
 followers = user.followers             # max_results=1000 per page
 followers.first(10)                    # one request for ten users
-followers.count                        # fetches the remaining pages
-followers.count                        # cached, no requests
-followers.refresh.count                # starts over
+followers.to_a                         # fetches the remaining pages
+followers.to_a                         # cached, no requests
+followers.refresh.to_a                 # starts over
+followers.count                        # => 12345, the user's followers_count, with no request
 followers.ids                          # => [14100886, ...], requesting only identifiers
 
 x_client.search_posts("ruby -is:retweet").each { |post| puts post.text }
@@ -121,11 +122,12 @@ X::User.hydrate_all(posts.map(&:author), client: x_client) # looks up the stubs 
 message.peer(x_client.current_user)    # the other participant of a direct message
 ```
 
-**Costs.** The X API bills each resource a request returns, so the size of a page is the size of the bill. `first(n)` and `take(n)` read only what they return. Iterating a cursor, `count`, `to_a`, and `ids` read the whole collection, up to 1,000 users a page for followers and following. Other `Enumerable` methods, such as `find`, `include?`, and `lazy`, cannot know how much they will read, so they request the largest page too; pass `max_results:` to read less per request. `user.follows?(other)` takes one lookup when either user is the authenticated user, by reading the other's `connection_status`, and otherwise scans the users `user` follows. The API has no lookup for a list membership, so `list.member?(user)` scans: the members of a private list, and for a public list, whichever is smaller of its members and the lists the user is on, as `member_count` and `listed_count` tell.
+**Costs.** The X API bills each resource a request returns, so the size of a page is the size of the bill. `first(n)` and `take(n)` read only what they return. Iterating a cursor, `to_a`, and `ids` read the whole collection, up to 1,000 users a page for followers and following. `count` and `size` read the number the API publishes for a user's followers, followed users, and list memberships, and for a list's members and followers, which costs nothing when the user or list holds it and one lookup when it is a stub; for any other collection, or given a block, they read the whole collection too. Other `Enumerable` methods, such as `find`, `include?`, and `lazy`, cannot know how much they will read, so they request the largest page too; pass `max_results:` to read less per request. `user.follows?(other)` takes one lookup when either user is the authenticated user, by reading the other's `connection_status`, and otherwise scans the users `user` follows. The API has no lookup for a list membership, so `list.member?(user)` scans: the members of a private list, and for a public list, whichever is smaller of its members and the lists the user is on, as `member_count` and `listed_count` tell.
 
 ```ruby
 user.followers.first(10)               # ten users
-user.followers.count                   # every follower
+user.followers.count                   # the user's followers_count, reading no follower
+user.muting.count                      # every muted user, since the API publishes no number
 x_client.current_user.follows?(other)  # one lookup
 other.follows?(x_client.current_user)  # one lookup
 other.follows?(someone)                # scans everyone other follows

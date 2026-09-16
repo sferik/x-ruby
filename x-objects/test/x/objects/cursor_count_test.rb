@@ -75,10 +75,39 @@ module X
       assert_equal 2, @user.muting.size
     end
 
-    def test_count_falls_back_to_a_scan_without_the_metric
-      user = User.new({"id" => "1"}, client: @client)
+    def test_count_of_a_stub_looks_up_the_number_the_api_publishes
+      @client.stub(:get, "users/1", {"data" => {"id" => "1", "public_metrics" => {"followers_count" => 7}}})
+
+      assert_equal 7, User.from_id(1, client: @client).followers.count
+      assert_equal %w[users/1], @client.paths
+    end
+
+    def test_count_of_an_unhydrated_reference_looks_up_the_number_the_api_publishes
+      @client.stub(:get, "users/1", {"data" => {"id" => "1", "public_metrics" => {"followers_count" => 7}}})
+      user = User.new({"id" => "1", "username" => "sferik"}, client: @client)
+
+      assert_equal [7, 7], [user.followers.count, user.followers.size]
+      assert_equal %w[users/1], @client.paths
+    end
+
+    def test_count_falls_back_to_a_scan_when_the_lookup_has_no_metric
+      @client.stub(:get, "users/1", {"data" => {"id" => "1"}})
+
+      assert_equal 1000, User.from_id(1, client: @client).followers.count
+      assert_equal %w[users/1 users/1/followers], @client.paths
+    end
+
+    def test_count_falls_back_to_a_scan_when_the_resource_no_longer_exists
+      @client.stub(:get, "users/1", {"errors" => [{"title" => "Not Found Error"}]})
+
+      assert_equal 1000, User.from_id(1, client: @client).followers.count
+    end
+
+    def test_count_of_a_hydrated_resource_without_the_metric_scans_without_a_lookup
+      user = User.new({"id" => "1"}, client: @client, hydrated: true)
 
       assert_equal 1000, user.followers.count
+      assert_equal %w[users/1/followers], @client.paths
     end
 
     def test_count_with_a_block_or_a_resource_counts_what_it_is_given

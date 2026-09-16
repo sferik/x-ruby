@@ -325,11 +325,15 @@ module X
       end
 
       # A block reading the attribute holding the number the API publishes
+      #
+      # A resource without the attribute, such as a stub, is hydrated to read it, which costs one lookup rather than
+      # paging through the collection.
+      #
       # @api private
       # @param total [Symbol, nil] the attribute name, or nil if the API publishes no number
       # @return [Proc, nil] the block, or nil if the API publishes no number
       def counter(total)
-        -> { public_send(total) } unless total.nil?
+        -> { public_send(total) || hydrate&.public_send(total) } unless total.nil?
       end
     end
   end
