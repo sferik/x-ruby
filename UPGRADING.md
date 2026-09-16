@@ -35,6 +35,8 @@ client.access_token = "new_token"
 
 Remove `require "x/media_uploader"` and `require "x/account_uploader"`. `require "x"` loads the uploaders.
 
+`X::Uploader::Validator` is private API, which the uploaders validate their arguments with, and the MIME type and media category tables of `X::Uploader::Media`, such as `MIME_TYPE_MAP`, are private constants. Pass a file to `upload`, which raises `Errno::ENOENT` for a missing file and `ArgumentError` for an invalid category.
+
 ### Uploads
 
 The uploaders take the file, content, or media as their first argument, and the client as a keyword:

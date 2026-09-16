@@ -7,5 +7,6 @@ module X
     #
     # @api private
     JSON_CLASSES = {array_class: Array, object_class: Hash}.freeze
+    private_constant :JSON_CLASSES
   end
 end

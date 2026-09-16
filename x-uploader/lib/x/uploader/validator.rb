@@ -1,7 +1,10 @@
 module X
   module Uploader
     # Validates media upload parameters
-    # @api public
+    #
+    # Internal to x-uploader: the uploaders validate their arguments with it.
+    #
+    # @api private
     module Validator
       extend self
 

@@ -55,7 +55,7 @@ module X
     end
 
     def test_every_documented_type_has_an_extension
-      assert_equal Uploader::Media::MIME_TYPES.sort, Uploader::Media::MIME_TYPE_MAP.values.uniq.sort
+      assert_equal Uploader::Media.const_get(:MIME_TYPES).sort, Uploader::Media.const_get(:MIME_TYPE_MAP).values.uniq.sort
     end
 
     def test_infer_media_category_of_every_video_and_subtitles_type

@@ -13,6 +13,7 @@ module X
       IMAGE_SEPARATOR = 0x2C
       # Size in bytes of an image descriptor, counting its separator
       IMAGE_DESCRIPTOR_SIZE = 10
+      private_constant :HEADER_SIZE, :EXTENSION_INTRODUCER, :IMAGE_SEPARATOR, :IMAGE_DESCRIPTOR_SIZE
 
       # Check whether a GIF file holds more than one frame
       #

@@ -115,6 +115,7 @@ See [UPGRADING.md](UPGRADING.md) for the changes that code written for 0.19 need
 * Return nil from `X::TooManyRequests#reset_at`, `#reset_in`, and `#retry_after` when the response does not say when the limit resets, instead of `Time.at(0)` and 0, which told a caller to retry at once
 * Mark `X::Connection#perform` and `#perform_stream`, which take a `Net::HTTPRequest`, and `X::OAuth2Authenticator#refresh_rejected_token!` as `@api private`, the internals through which `X::Client` sends requests and refreshes a rejected token, so that they can change within 1.x
 * Make `X::Objects::Resource#includes` private, and document the `includes:`, `hydrated:`, and `batch:` of `X::Objects::Resource.new` and `from_id` and the `limit:` and `total:` of `X::Cursor.new` as internal to the object layer, so that they can change within 1.x
+* Mark `X::Uploader::Validator` as `@api private`, and make the MIME type and media category tables of `X::Uploader::Media`, the block constants of `X::Uploader::Gif`, and `X::Uploader::JSON_CLASSES` private constants, so that they can change within 1.x
 ### Removed
 * Remove `X::Uploader::Account::MIME_TYPE_MAP`, which nothing read
 * Make `X::HTTPError#error_message`, `#message_from_json_response`, and `#json?` private; they build the message an error is initialized with, which `message` returns
