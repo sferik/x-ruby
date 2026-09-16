@@ -1,4 +1,5 @@
 require "monitor"
+require_relative "batch"
 require_relative "page"
 require_relative "problem"
 require_relative "utils"
@@ -61,9 +62,19 @@ module X
       # @return [Array<Resource>] the resources
       def resources_from(body)
         klass = @cursor.klass
+        resources = klass.collection_from_response(body, client: @cursor.client, hydrated: true)
+        id_only? ? stubs_from(resources) : resources
+      end
+
+      # The stubs of a page, which hydrate together in one lookup for the whole page
+      # @api private
+      # @param resources [Array<Resource>] the resources of the page
+      # @return [Array<Resource>] the stubs
+      def stubs_from(resources)
+        klass = @cursor.klass
         client = @cursor.client
-        resources = klass.collection_from_response(body, client:, hydrated: true)
-        id_only? ? resources.map { |resource| klass.from_id(resource, client:) } : resources
+        batch = Batch.new(klass, resources, client:)
+        resources.map { |resource| klass.from_id(resource, client:, batch:) }
       end
 
       # Check whether the cursor requests nothing but identifiers

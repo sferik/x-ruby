@@ -98,7 +98,7 @@ module X
         # @return [Resource] a stub that hydrates to the full resource
         # @example Page through the followers of a user without looking the user up
         #   X::User.from_id(7505382, client: client).followers
-        def from_id(id, client: nil) = new({id_key => Utils.id_of(id)}, client:)
+        def from_id(id, client: nil, batch: nil) = new({id_key => Utils.id_of(id)}, client:, batch:)
 
         # The default query parameters requesting every field and expansion
         #
@@ -192,17 +192,19 @@ module X
       # @param client [Object, nil] the client used to fetch references
       # @param includes [Includes] the identity map of the response the resource came from
       # @param hydrated [Boolean] whether the resource holds every requested field
+      # @param batch [Batch, nil] the batch this stub hydrates with, in one lookup for every stub of the batch
       # @return [Resource] a new resource
       # @raise [ArgumentError] if the attributes do not include the identifier
       # @example Create a user from attributes
       #   X::User.new({"id" => "7505382", "username" => "sferik"}, client: client)
-      def initialize(attrs, client: nil, includes: Includes.new, hydrated: false)
+      def initialize(attrs, client: nil, includes: Includes.new, hydrated: false, batch: nil)
         @attrs = Utils.deep_freeze(attrs)
         raise ArgumentError, "#{self.class} requires #{self.class.id_key}" if @attrs[self.class.id_key].nil?
 
         @client = client
         @includes = includes
         @hydrated = hydrated
+        @batch = batch
         @memo = Memo.new
         freeze
       end
@@ -285,6 +287,9 @@ module X
       # @api private
       # @return [Resource, nil] the full resource or nil if it no longer exists
       def fetch
+        batch = @batch
+        return batch.fetch(id) unless batch.nil?
+
         self.class.lookup("#{self.class.endpoint!}/#{id}", client: client!)
       end
 

@@ -69,7 +69,7 @@ module X
 
     def test_stubs_are_stubs_even_with_the_default_fields_of_the_api
       @client.stub(:get, "users/1/following", {"data" => [{"id" => "2", "name" => "Two", "username" => "two"}]})
-      @client.stub(:get, "users/2", {"data" => {"id" => "2", "name" => "Two", "description" => "full"}})
+      @client.stub(:get, "users", {"data" => [{"id" => "2", "name" => "Two", "description" => "full"}]})
       stub = @user.following.stubs.first
 
       assert_predicate stub, :stub?

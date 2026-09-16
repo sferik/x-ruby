@@ -102,10 +102,24 @@ module X
       def cached: (Integer index) -> Page?
       def fetch: (Integer index) -> Page?
       def resources_from: (body body) -> Array[Resource]
+      def stubs_from: (Array[Resource] resources) -> Array[Resource]
       def id_only?: () -> bool
       def params_for: (Integer index) -> query?
       def next_params: (String token) -> query?
       def prefetch: (Integer index) -> Thread
+    end
+
+    class Batch
+      @klass: singleton(Resource)
+      @ids: Array[untyped]
+      @client: _Client
+      @memo: Memo
+
+      def initialize: (singleton(Resource) klass, Array[untyped] ids, client: _Client) -> void
+      def fetch: (untyped id) -> Resource?
+
+      private
+      def resources: () -> Hash[untyped, Resource]
     end
 
     class Memo
@@ -153,7 +167,7 @@ module X
       def find!: (id id, client: _Client, **untyped params) -> R
       def find_all: (Array[id] ids, client: _Client, **untyped params) ?{ (Problem problem) -> void } -> Array[R]
       def hydrate_all: (Array[R] resources, client: _Client, **untyped params) ?{ (Problem problem) -> void } -> Array[R]
-      def from_id: (id id, ?client: _Client?) -> R
+      def from_id: (id id, ?client: _Client?, ?batch: Batch?) -> R
       def lookup: (String path, client: _Client, **untyped params) ?{ (Problem problem) -> void } -> R?
       def lookup_all: (String path, client: _Client, **untyped params) ?{ (Problem problem) -> void } -> Array[R]
       def from_response: (body body, client: _Client?, ?hydrated: bool) -> (R | Array[R])?
@@ -265,6 +279,7 @@ module X
       attr_reader includes: Includes
 
       @hydrated: bool
+      @batch: Batch?
       @memo: Memo
 
       def self.endpoint: () -> String?
@@ -275,12 +290,12 @@ module X
       def self.default_params: () -> Hash[String, Array[String]]
       def self.hydratable?: () -> bool
       def self.endpoint!: () -> String
-      def self.from_id: (id id, ?client: _Client?) -> Resource
+      def self.from_id: (id id, ?client: _Client?, ?batch: Batch?) -> Resource
       def self.from_response: (body body, client: _Client?, ?hydrated: bool) -> (Resource | Array[Resource])?
       def self.resource_from_response: (body body, client: _Client?, ?hydrated: bool) -> Resource?
       def self.collection_from_response: (body body, client: _Client?, ?hydrated: bool) -> Array[Resource]
 
-      def initialize: (Hash[untyped, untyped] attrs, ?client: _Client?, ?includes: Includes, ?hydrated: bool) -> void
+      def initialize: (Hash[untyped, untyped] attrs, ?client: _Client?, ?includes: Includes, ?hydrated: bool, ?batch: Batch?) -> void
       def id: () -> (Integer | String)
       def to_h: () -> attrs
       def problems: () -> Array[Problem]
