@@ -48,37 +48,24 @@ module X
       assert_equal 'key not found: "id"', error.message
     end
 
-    def test_segment_files_and_directories_are_removed
+    def test_chunks_are_read_from_the_file_without_temporary_files
       stub_workflow
-      directories = track_temporary_directories do
+      Dir.stub(:mktmpdir, ->(*) { flunk "wrote a temporary file" }) do
         Uploader::Media.chunked_upload(VIDEO_FILE, client: @client, media_category: "tweet_video", chunk_size_mb: 0.0625)
       end
 
-      assert_equal 2, directories.size
-      directories.each { |directory| refute_path_exists directory }
+      assert_requested(:post, APPEND_URL, times: 2)
     end
 
-    def test_segment_files_are_removed_when_appending_fails
-      stub_request(:post, INIT_URL).to_return(headers: JSON_HEADERS, body: {data: {id: TEST_MEDIA_ID}}.to_json)
-      stub_request(:post, APPEND_URL).to_return(status: 500)
-      directories = track_temporary_directories do
-        without_thread_reports do
-          assert_raises(InternalServerError) do
-            Uploader::Media.chunked_upload(VIDEO_FILE, client: @client, media_category: "tweet_video")
-          end
-        end
+    def test_an_empty_file_appends_nothing
+      stub_workflow
+      Dir.mktmpdir do |dir|
+        path = File.join(dir, "empty.mp4")
+        File.binwrite(path, "")
+        Uploader::Media.chunked_upload(path, client: @client, media_category: "tweet_video")
       end
 
-      directories.each { |directory| refute_path_exists directory }
-    end
-
-    def test_cleanup_removes_an_emptied_directory
-      directory = Dir.mktmpdir
-      path = File.join(directory, "segment")
-      File.write(path, "content")
-      Uploader::Media.send(:cleanup_file, path)
-
-      refute_path_exists directory
+      assert_not_requested(:post, APPEND_URL)
     end
 
     private
@@ -96,17 +83,6 @@ module X
       yield
     ensure
       Thread.report_on_exception = original
-    end
-
-    def track_temporary_directories(&)
-      directories = []
-      original = Dir.method(:mktmpdir)
-      Dir.stub(:mktmpdir, lambda {
-        directory = original.call
-        directories << directory
-        directory
-      }, &)
-      directories
     end
   end
 end

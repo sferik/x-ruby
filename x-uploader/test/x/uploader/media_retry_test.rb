@@ -34,18 +34,6 @@ module X
       assert_requested(:post, append_url, times: Uploader::Chunks::MAX_RETRIES)
     end
 
-    def test_cleanup_preserves_nonempty_directory
-      Dir.mktmpdir do |dir|
-        file_to_delete, file_to_keep = create_temp_files(dir, 2)
-
-        Uploader::Media.send(:cleanup_file, file_to_delete)
-
-        refute_path_exists file_to_delete
-        assert_path_exists file_to_keep
-        assert Dir.exist?(dir)
-      end
-    end
-
     private
 
     def media_hash = {"id" => TEST_MEDIA_ID}
@@ -72,14 +60,6 @@ module X
       yield
     ensure
       Thread.report_on_exception = original
-    end
-
-    def create_temp_files(dir, count)
-      Array.new(count) do |i|
-        path = File.join(dir, "file#{i}.tmp")
-        File.write(path, "content#{i}")
-        path
-      end
     end
   end
 end

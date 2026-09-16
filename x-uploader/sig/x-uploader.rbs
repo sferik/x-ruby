@@ -16,13 +16,14 @@ module X
 
     module Chunks
       MAX_RETRIES: Integer
+      DEFAULT_CONCURRENCY: Integer
 
       private
-      def split: (String file_path, Integer chunk_size) -> Array[String]
       def init: (client: Client, file_path: String, media_type: String, media_category: String) -> untyped
-      def append: (client: Client, file_paths: Array[String], media: untyped, boundary: String) -> Array[String]
-      def upload_chunk: (client: Client, media_id: String, upload_body: String, file_path: String, headers: Hash[String, String]) -> Integer?
-      def cleanup_file: (String file_path) -> Integer?
+      def append: (client: Client, file_path: String, chunk_size: Integer, media: untyped, boundary: String, ?concurrency: Integer) -> void
+      def chunk_queue: (String file_path, Integer chunk_size) -> Thread::Queue
+      def append_worker: (Thread::Queue queue, Thread::Queue errors, client: Client, file_path: String, chunk_size: Integer, media_id: String, boundary: String) -> Thread
+      def upload_chunk: (client: Client, media_id: String, upload_body: String, headers: Hash[String, String]) -> untyped
       def construct_upload_body: (content: String, boundary: String, ?media_category: String?, ?segment_index: Integer?) -> String
     end
 
@@ -55,7 +56,7 @@ module X
       def upload: (String file_path, client: Client, ?media_category: String, ?alt_text: String?, ?boundary: String, **untyped options) -> untyped
       def infer_media_category: (String file_path) -> String
       def upload_binary: (String content, String media_category, client: Client, ?boundary: String) -> untyped
-      def chunked_upload: (String file_path, client: Client, ?media_category: String, ?media_type: String, ?boundary: String, ?chunk_size_mb: Integer) -> untyped
+      def chunked_upload: (String file_path, client: Client, ?media_category: String, ?media_type: String, ?boundary: String, ?chunk_size_mb: Integer, ?concurrency: Integer) -> untyped
       def await_processing: (untyped media, client: Client) -> untyped
       def await_processing!: (untyped media, client: Client) -> untyped
       def infer_media_type: (String file_path, String media_category) -> String

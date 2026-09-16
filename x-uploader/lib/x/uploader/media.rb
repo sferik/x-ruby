@@ -1,6 +1,5 @@
 require "json"
 require "securerandom"
-require "tmpdir"
 require "x/core"
 require_relative "chunks"
 require_relative "gif"
@@ -47,7 +46,7 @@ module X
       # @param media_category [String] the media category, inferred from the file by default
       # @param alt_text [String, nil] alt text describing the media, for people who cannot see it
       # @param boundary [String] the multipart boundary
-      # @param options [Hash] options for a chunked upload, such as media_type and chunk_size_mb
+      # @param options [Hash] options for a chunked upload, such as media_type, chunk_size_mb, and concurrency
       # @return [Hash, nil] the upload response data, or the processing status of a video
       # @raise [Errno::ENOENT] if the file does not exist
       # @raise [MediaProcessingFailed] if a video fails to process
@@ -100,18 +99,19 @@ module X
       # @param media_type [String] the MIME type of the media
       # @param boundary [String] the multipart boundary
       # @param chunk_size_mb [Integer] the size of each chunk in megabytes
+      # @param concurrency [Integer] the number of chunks uploaded at once
       # @return [Hash, nil] the upload response data
       # @raise [Errno::ENOENT] if the file does not exist
       # @raise [ArgumentError] if the media category is invalid
       # @example Upload a large video
       #   Uploader::Media.chunked_upload("video.mp4", client: client)
       def chunked_upload(file_path, client:, media_category: infer_media_category(file_path),
-        media_type: infer_media_type(file_path, media_category), boundary: SecureRandom.hex, chunk_size_mb: 1)
+        media_type: infer_media_type(file_path, media_category), boundary: SecureRandom.hex, chunk_size_mb: 1,
+        concurrency: Chunks::DEFAULT_CONCURRENCY)
         Validator.validate_file_path!(file_path)
         Validator.validate_media_category!(media_category)
         media = init(client:, file_path:, media_type:, media_category:)
-        chunk_size = chunk_size_mb * BYTES_PER_MB
-        append(client:, file_paths: split(file_path, chunk_size), media:, boundary:)
+        append(client:, file_path:, chunk_size: chunk_size_mb * BYTES_PER_MB, media:, boundary:, concurrency:)
         client.post("media/upload/#{media.fetch("id")}/finalize")&.fetch("data")
       end
 

@@ -1,5 +1,3 @@
-require "tmpdir"
-
 module X
   module Uploader
     # Uploads a file in the chunks the X API requires for video and subtitles
@@ -7,19 +5,10 @@ module X
     module Chunks
       # Maximum number of retry attempts for failed uploads
       MAX_RETRIES = 3
+      # Default number of chunks uploaded at once
+      DEFAULT_CONCURRENCY = 4
 
       private
-
-      # Split a file into chunks, each in its own temporary directory
-      # @api private
-      # @param file_path [String] the file path
-      # @param chunk_size [Integer] the chunk size in bytes
-      # @return [Array<String>] the paths to the chunk files
-      def split(file_path, chunk_size)
-        (0...File.size(file_path)).step(chunk_size).map do |offset|
-          File.join(Dir.mktmpdir, "segment").tap { |segment_path| File.binwrite(segment_path, File.binread(file_path, chunk_size, offset)) }
-        end
-      end
 
       # Initialize a chunked upload
       # @api private
@@ -32,23 +21,59 @@ module X
         client.post("media/upload/initialize", {media_type:, media_category:, total_bytes: File.size(file_path)})&.fetch("data")
       end
 
-      # Append chunks to a chunked upload
+      # Append the chunks of a file to a chunked upload, a few at a time
+      #
+      # Each worker reads its chunk from the file as it uploads it, so no more than concurrency chunks are held
+      # in memory at once. A chunk that fails stops the chunks not yet begun, and once the chunks already begun
+      # have finished, the first error is raised.
+      #
       # @api private
       # @param client [Client] the X API client
-      # @param file_paths [Array<String>] the chunk file paths
+      # @param file_path [String] the file path
+      # @param chunk_size [Integer] the chunk size in bytes
       # @param media [Hash] the media object
       # @param boundary [String] the multipart boundary
+      # @param concurrency [Integer] the number of chunks uploaded at once
       # @return [void]
-      def append(client:, file_paths:, media:, boundary:)
-        threads = file_paths.map.with_index do |file_path, index|
-          Thread.new do
-            Thread.current.report_on_exception = false
-            upload_body = construct_upload_body(content: File.binread(file_path), segment_index: index, boundary:)
-            headers = {"Content-Type" => "multipart/form-data; boundary=#{boundary}"}
-            upload_chunk(client:, media_id: media.fetch("id"), upload_body:, file_path:, headers:)
+      def append(client:, file_path:, chunk_size:, media:, boundary:, concurrency: DEFAULT_CONCURRENCY)
+        queue = chunk_queue(file_path, chunk_size)
+        errors = Queue.new
+        media_id = media.fetch("id")
+        Array.new([concurrency, queue.size].min) { append_worker(queue, errors, client:, file_path:, chunk_size:, media_id:, boundary:) }.each(&:join)
+        raise errors.deq unless errors.empty?
+      end
+
+      # A closed queue of the index and byte offset of each chunk of a file, in order
+      # @api private
+      # @param file_path [String] the file path
+      # @param chunk_size [Integer] the chunk size in bytes
+      # @return [Thread::Queue] the queue
+      def chunk_queue(file_path, chunk_size)
+        queue = Queue.new
+        (0...File.size(file_path)).step(chunk_size).each_with_index { |offset, index| queue << [index, offset] }
+        queue.close
+      end
+
+      # Start a thread that uploads chunks from a queue, emptying it if a chunk fails
+      # @api private
+      # @param queue [Thread::Queue] the index and offset of each chunk not yet begun
+      # @param errors [Thread::Queue] the errors of failed chunks, in the order they failed
+      # @param client [Client] the X API client
+      # @param file_path [String] the file path
+      # @param chunk_size [Integer] the chunk size in bytes
+      # @param media_id [String] the media ID
+      # @param boundary [String] the multipart boundary
+      # @return [Thread] the thread
+      def append_worker(queue, errors, client:, file_path:, chunk_size:, media_id:, boundary:)
+        Thread.new do
+          while (index, offset = queue.deq)
+            upload_body = construct_upload_body(content: File.binread(file_path, chunk_size, offset), segment_index: index, boundary:)
+            upload_chunk(client:, media_id:, upload_body:, headers: {"Content-Type" => "multipart/form-data; boundary=#{boundary}"})
           end
+        rescue => e
+          errors << e
+          queue.clear
         end
-        threads.each(&:join)
       end
 
       # Upload a single chunk with retry logic
@@ -56,26 +81,13 @@ module X
       # @param client [Client] the X API client
       # @param media_id [String] the media ID
       # @param upload_body [String] the upload body
-      # @param file_path [String] the chunk file path
       # @param headers [Hash] the request headers
       # @return [void]
-      def upload_chunk(client:, media_id:, upload_body:, file_path:, headers:)
+      def upload_chunk(client:, media_id:, upload_body:, headers:)
         client.post("media/upload/#{media_id}/append", upload_body, headers:)
       rescue NetworkError, ServerError
         retries ||= 0
         ((retries += 1) < MAX_RETRIES) ? retry : raise
-      ensure
-        cleanup_file(file_path)
-      end
-
-      # Clean up a temporary file
-      # @api private
-      # @param file_path [String] the file path
-      # @return [void]
-      def cleanup_file(file_path)
-        dirname = File.dirname(file_path)
-        File.delete(file_path)
-        Dir.delete(dirname) if Dir.empty?(dirname)
       end
 
       # Construct the multipart upload body
