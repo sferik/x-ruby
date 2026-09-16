@@ -305,7 +305,7 @@ module X
 
       attr_reader attrs: attrs
       attr_reader client: _Client?
-      attr_reader includes: Includes
+      private attr_reader includes: Includes
 
       @hydrated: bool
       @batch: Batch?

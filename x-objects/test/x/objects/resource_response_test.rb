@@ -104,7 +104,7 @@ module X
         includes = Includes.new({"users" => [{"id" => "8"}]})
         post = Post.new({"id" => "1", "author_id" => "9"}, client: @client, includes:)
 
-        assert_same includes, post.author.includes
+        assert_same includes, post.author.send(:includes)
         assert_same @client, post.author.client
         refute_predicate post.author, :hydrated?
         assert_equal({"id" => "9"}, post.author.attrs)

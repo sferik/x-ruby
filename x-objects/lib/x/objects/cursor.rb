@@ -63,8 +63,10 @@ module X
     # @param prefetch [Boolean] whether to fetch the next page in a background thread while the current page is consumed
     # @param token_param [String] the query parameter the token of the next page is sent in
     # @param min_results [Integer] the smallest page the endpoint accepts, which first never asks below
-    # @param limit [Integer, nil] the number of resources wanted, which sizes the pages and ends the cursor
-    # @param total [Proc, nil] a block returning the number of resources the API publishes for the collection
+    # @param limit [Integer, nil] internal to the object layer, which may change it within 1.x: the number of
+    #   resources wanted, which sizes the pages and ends the cursor
+    # @param total [Proc, nil] internal to the object layer, which may change it within 1.x: a block returning the
+    #   number of resources the API publishes for the collection
     # @return [Cursor] a new cursor
     # @example Create a cursor over a user's followers
     #   X::Cursor.new(X::User, "users/7505382/followers", client: client, params: {max_results: 1000})

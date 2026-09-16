@@ -70,12 +70,16 @@ module X
 
       def test_client_and_includes
         assert_same @client, @user.client
-        assert_instance_of Includes, @user.includes
+        assert_instance_of Includes, @user.send(:includes)
         assert_nil User.new({"id" => "1"}).client
       end
 
+      def test_includes_is_private
+        refute_respond_to @user, :includes
+      end
+
       def test_each_resource_gets_its_own_identity_map
-        refute_same User.new({"id" => "1"}).includes, User.new({"id" => "1"}).includes
+        refute_same User.new({"id" => "1"}).send(:includes), User.new({"id" => "1"}).send(:includes)
       end
 
       def test_equality_by_id

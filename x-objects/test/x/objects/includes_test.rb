@@ -15,7 +15,7 @@ module X
 
         assert_equal({"id" => "1", "username" => "sferik"}, user.attrs)
         assert_same @client, user.client
-        assert_same @includes, user.includes
+        assert_same @includes, user.send(:includes)
         refute_predicate user, :hydrated?
       end
 
@@ -24,7 +24,7 @@ module X
 
         assert_equal({"id" => "2"}, user.attrs)
         assert_same @client, user.client
-        assert_same @includes, user.includes
+        assert_same @includes, user.send(:includes)
       end
 
       def test_resolve_is_an_identity_map
