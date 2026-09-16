@@ -72,6 +72,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Read a stream with the `read_timeout` of the streaming client, 20 seconds by default, the interval of the keep-alive X sends, so a stream that goes quiet reconnects rather than waiting for the timeout of an ordinary request
 * Report how many posts the app's project has read with `X::Usage.find` and `client.usage`, including its monthly cap and its usage by day and by app
 * Take the authenticated user's ID for actions from the prefix of an OAuth 1.0a access token, with `current_user_id`, instead of requesting `users/me`
+* Refresh the tokens of a public OAuth 2.0 client, such as a native or single-page app, given a `client_id`, `access_token`, and `refresh_token` without a `client_secret`; the refresh sends the client ID in its body rather than authenticating with a secret
 
 ### Changed
 * Require Ruby 3.3 or later

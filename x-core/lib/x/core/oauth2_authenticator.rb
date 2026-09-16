@@ -71,7 +71,8 @@ module X
     #
     # @api public
     # @param client_id [String] the OAuth 2.0 client ID
-    # @param client_secret [String] the OAuth 2.0 client secret
+    # @param client_secret [String, nil] the OAuth 2.0 client secret, or nil for a public client, which sends its
+    #   client ID in the body of a refresh instead of authenticating with a secret
     # @param access_token [String] the OAuth 2.0 access token
     # @param refresh_token [String] the OAuth 2.0 refresh token
     # @param expires_at [Time, nil] the expiration time of the access token
@@ -85,7 +86,7 @@ module X
     #     access_token: "token",
     #     refresh_token: "refresh"
     #   )
-    def initialize(client_id:, client_secret:, access_token:, refresh_token:, expires_at: nil,
+    def initialize(client_id:, access_token:, refresh_token:, client_secret: nil, expires_at: nil,
       connection: Connection.new, on_refresh: nil)
       @client_id = client_id
       @client_secret = client_secret

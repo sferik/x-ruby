@@ -382,14 +382,14 @@ module X
     DEFAULT_ERROR_MESSAGE: String
 
     attr_accessor client_id: String
-    attr_accessor client_secret: String
+    attr_accessor client_secret: String?
     attr_accessor access_token: String
     attr_accessor refresh_token: String
     attr_accessor expires_at: Time?
     attr_accessor connection: Connection
     attr_accessor on_refresh: _TokenRefreshHook?
     @mutex: Thread::Mutex
-    def initialize: (client_id: String, client_secret: String, access_token: String, refresh_token: String, ?expires_at: Time?, ?connection: Connection, ?on_refresh: _TokenRefreshHook?) -> void
+    def initialize: (client_id: String, access_token: String, refresh_token: String, ?client_secret: String?, ?expires_at: Time?, ?connection: Connection, ?on_refresh: _TokenRefreshHook?) -> void
     def header: (Net::HTTPRequest? request) -> Hash[String, String]
     def inspect: () -> String
     def token_expired?: -> bool
@@ -543,7 +543,7 @@ module X
     def oauth2_authenticator: -> OAuth2Authenticator?
 
     private
-    def oauth2_credentials_of: (OAuth2Authenticator authenticator) -> [String, String, String, String, Time?]
+    def oauth2_credentials_of: (OAuth2Authenticator authenticator) -> [String, String?, String, String, Time?]
     def refreshing_rejected_token: [T] () { () -> T } -> T
     def perform: (:delete | :get | :post | :put http_method, URI::Generic uri, body: String?, headers: Hash[String, String], array_class: Class, object_class: Class) -> untyped
     def execute_request: (:delete | :get | :post | :put http_method, String endpoint, ?body: body?, ?params: params?, ?form: params?, ?headers: Hash[String, String], ?array_class: Class, ?object_class: Class) -> untyped

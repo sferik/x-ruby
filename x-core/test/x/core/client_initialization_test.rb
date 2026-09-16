@@ -78,8 +78,16 @@ module X
       assert_equal TEST_REFRESH_TOKEN, authenticator.refresh_token
     end
 
+    def test_initialize_a_public_oauth2_client_without_a_client_secret
+      authenticator = Client.new(**test_oauth2_credentials.except(:client_secret)).authenticator
+
+      assert_instance_of OAuth2Authenticator, authenticator
+      assert_nil authenticator.client_secret
+      assert_equal TEST_REFRESH_TOKEN, authenticator.refresh_token
+    end
+
     def test_missing_oauth2_credentials
-      test_oauth2_credentials.each_key do |missing_credential|
+      %i[client_id access_token refresh_token].each do |missing_credential|
         client = Client.new(**test_oauth2_credentials.except(missing_credential))
 
         assert_instance_of Authenticator, client.authenticator

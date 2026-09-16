@@ -131,6 +131,17 @@ module X
       authenticator.refresh_token!
     end
 
+    def test_refresh_token_of_a_public_client_sends_its_client_id_without_basic_auth
+      authenticator = OAuth2Authenticator.new(**test_oauth2_credentials.except(:client_secret))
+      refresh = stub_request(:post, TOKEN_URL)
+        .with(body: "grant_type=refresh_token&refresh_token=#{TEST_REFRESH_TOKEN}&client_id=#{TEST_CLIENT_ID}") { |request| !request.headers.key?("Authorization") }
+        .to_return(status: 200, body: {access_token: "new"}.to_json)
+      authenticator.refresh_token!
+
+      assert_requested refresh
+      assert_equal "new", authenticator.access_token
+    end
+
     def test_refresh_token_sends_correct_request_body
       authenticator = OAuth2Authenticator.new(**test_oauth2_credentials)
       expected_body = "grant_type=refresh_token&refresh_token=#{TEST_REFRESH_TOKEN}"

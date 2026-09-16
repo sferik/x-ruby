@@ -244,16 +244,18 @@ module X
     end
 
     # Build an OAuth 2.0 authenticator on the client's connection, given credentials
+    #
+    # A public client has no client secret, and refreshes its tokens with its client ID alone.
+    #
     # @api private
     # @return [OAuth2Authenticator, nil] the OAuth 2.0 authenticator or nil
     def oauth2_authenticator
       client_id = @client_id
-      client_secret = @client_secret
       access_token = @access_token
       refresh_token = @refresh_token
-      return unless client_id && client_secret && access_token && refresh_token
+      return unless client_id && access_token && refresh_token
 
-      OAuth2Authenticator.new(client_id:, client_secret:, access_token:, refresh_token:, expires_at: @expires_at,
+      OAuth2Authenticator.new(client_id:, client_secret: @client_secret, access_token:, refresh_token:, expires_at: @expires_at,
         connection: @connection, on_refresh: ->(authenticator) { on_token_refresh&.call(authenticator) })
     end
 
