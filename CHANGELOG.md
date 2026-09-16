@@ -98,6 +98,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Build and parse the OAuth 2.0 token refresh with simple_oauth, in place of the request and response handling `X::OAuth2Authenticator` carried; it sends the same request and still returns the token response and raises `X::Error`
 
 ### Removed
+* Make `X::HTTPError#error_message`, `#message_from_json_response`, and `#json?` private; they build the message an error is initialized with, which `message` returns
 * Remove `require "x/media_uploader"` and `require "x/account_uploader"`; require `x`, `x/uploader/media`, or `x/uploader/account` instead
 * Remove `X::OAuthAuthenticator::OAUTH_SIGNATURE_ALGORITHM`, which named the digest of the signing code that is gone
 * Remove `X::OAuth2Authenticator::REFRESH_GRANT_TYPE`, which named the grant type simple_oauth now sends

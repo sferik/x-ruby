@@ -43,13 +43,12 @@ module X
     #   retry if error.status.eql?(408)
     def status = Integer(code)
 
+    private
+
     # Get the error message from the response
-    #
-    # @api public
+    # @api private
     # @param response [Net::HTTPResponse] the HTTP response
     # @return [String] the error message
-    # @example Get the error message
-    #   error.error_message(response)
     def error_message(response)
       if json?(response)
         message_from_json_response(response)
@@ -59,12 +58,9 @@ module X
     end
 
     # Extract error message from a JSON response
-    #
-    # @api public
+    # @api private
     # @param response [Net::HTTPResponse] the HTTP response
     # @return [String] the error message
-    # @example Get error message from JSON
-    #   error.message_from_json_response(response)
     def message_from_json_response(response)
       response_object = JSON.parse(response.body)
       if response_object["errors"].instance_of?(Array)
@@ -79,12 +75,9 @@ module X
     end
 
     # Check if the response contains JSON
-    #
-    # @api public
+    # @api private
     # @param response [Net::HTTPResponse] the HTTP response
     # @return [Boolean] true if the response is JSON
-    # @example Check if response is JSON
-    #   error.json?(response)
     def json?(response)
       JSON_CONTENT_TYPE_REGEXP === response["content-type"]
     end
