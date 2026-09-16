@@ -24,14 +24,12 @@ Gem::Specification.new do |spec|
     "source_code_uri" => "https://github.com/sferik/x-ruby"
   }
 
-  spec.files = Dir[
+  spec.files = Dir.glob([
     "lib/**/*.rb",
     "sig/*.rbs",
     "*.md",
     "LICENSE.txt"
-  ]
-  spec.bindir = "exe"
-  spec.executables = spec.files.grep(%r{\Aexe/}) { |f| File.basename(f) }
+  ], base: __dir__)
   spec.require_paths = ["lib"]
   spec.add_dependency("x-core", version)
   spec.add_dependency("x-uploader", version)
