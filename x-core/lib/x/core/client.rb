@@ -122,11 +122,11 @@ module X
       max_rate_limit_retries: RateLimitHandler::DEFAULT_MAX_RETRIES,
       max_rate_limit_wait: RateLimitHandler::DEFAULT_MAX_WAIT,
       on_response: nil)
+      @connection = Connection.new(open_timeout:, read_timeout:, write_timeout:, debug_output:, proxy_url:)
       initialize_credentials(api_key:, api_key_secret:, access_token:, access_token_secret:, bearer_token:, client_id:, client_secret:, refresh_token:)
       initialize_authenticator
       @base_url = base_url
       initialize_response_handling(default_array_class:, default_object_class:, on_response:)
-      @connection = Connection.new(open_timeout:, read_timeout:, write_timeout:, debug_output:, proxy_url:)
       initialize_handlers(max_redirects:, max_rate_limit_retries:, max_rate_limit_wait:)
     end
 

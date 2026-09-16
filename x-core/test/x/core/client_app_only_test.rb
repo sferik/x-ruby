@@ -39,6 +39,25 @@ module X
       assert_equal [TEST_API_KEY, TEST_API_KEY_SECRET], options.values_at(:api_key, :api_key_secret)
     end
 
+    def test_an_app_only_client_fetches_its_token_over_the_client_connection
+      client = Client.new(api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET, proxy_url: "http://proxy.example.com:8080", open_timeout: 5)
+
+      assert_same client.instance_variable_get(:@connection), client.authenticator.connection
+    end
+
+    def test_an_oauth2_client_refreshes_its_token_over_the_client_connection
+      client = Client.new(**test_oauth2_credentials, proxy_url: "http://proxy.example.com:8080", read_timeout: 5)
+
+      assert_same client.instance_variable_get(:@connection), client.authenticator.connection
+    end
+
+    def test_the_client_connection_settings_reach_the_token_request
+      client = Client.new(api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET)
+      client.proxy_url = "http://proxy.example.com:8080"
+
+      assert_equal "http://proxy.example.com:8080", client.authenticator.connection.proxy_url
+    end
+
     def test_changing_credentials_fetches_the_token_again
       client = Client.new(**test_oauth_credentials)
       client.app_only

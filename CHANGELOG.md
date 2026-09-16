@@ -101,6 +101,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Remove the `base64` dependency from `x-core`, which encodes no Base64 of its own now that simple_oauth builds the Basic credentials
 
 ### Fixed
+* Fetch an app-only bearer token and refresh an OAuth 2.0 token over the client's connection, so the proxy, timeouts, and debug output of a client apply to token requests as they do to every other request
 * Drop the credentials, and any `Authorization` header passed in `headers:`, when a redirect leads to another scheme, host, or port, so a redirect cannot send them to a host they were not meant for
 * Send no `Authorization` header from a client without credentials, rather than an empty one
 * Raise `X::ClientError` or `X::ServerError` for a 4xx or 5xx status that no error class names, such as 405 or 501, instead of `X::HTTPError`, so a stream reconnects and a chunk upload retries after any server error

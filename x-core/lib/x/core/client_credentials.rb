@@ -229,22 +229,22 @@ module X
       OAuth1Authenticator.new(api_key:, api_key_secret:, access_token:, access_token_secret:)
     end
 
-    # Build an OAuth 2.0 authenticator if credentials are available
+    # Build an OAuth 2.0 authenticator on the client's connection, given credentials
     # @api private
     # @return [OAuth2Authenticator, nil] the OAuth 2.0 authenticator or nil
     def oauth2_authenticator
       return unless client_id && client_secret && access_token && refresh_token
 
-      OAuth2Authenticator.new(client_id:, client_secret:, access_token:, refresh_token:)
+      OAuth2Authenticator.new(client_id:, client_secret:, access_token:, refresh_token:, connection: @connection)
     end
 
-    # Build an app-only authenticator if an API key and secret are available
+    # Build an app-only authenticator on the client's connection, given API keys
     # @api private
     # @return [AppOnlyAuthenticator, nil] the app-only authenticator or nil
     def app_only_authenticator
       return unless api_key && api_key_secret
 
-      AppOnlyAuthenticator.new(api_key:, api_key_secret:)
+      AppOnlyAuthenticator.new(api_key:, api_key_secret:, connection: @connection)
     end
 
     # Build a bearer token authenticator if credentials are available
