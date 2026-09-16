@@ -2,7 +2,7 @@
 
 ## From 0.19 to 1.0
 
-Version 1.0 splits the gem into `x-core`, `x-uploader`, and `x-objects`, which `x` depends on and `require "x"` loads, and it renames or removes what version 0.19 had under old names without deprecating them first. This guide covers what code written for 0.19 needs to change. See [CHANGELOG.md](CHANGELOG.md) for everything that was added.
+Version 1.0 splits the gem into `x-core`, `x-uploader`, and `x-objects`, which `x` depends on and `require "x"` loads, and it renames or removes what version 0.19 had under old names without deprecating them first. This guide covers what code written for 0.19 needs to change. See [CHANGELOG.md](https://github.com/sferik/x-ruby/blob/main/CHANGELOG.md) for everything that was added.
 
 ### Ruby
 

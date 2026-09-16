@@ -1,6 +1,6 @@
 # x-uploader
 
-Media uploads for the [`x` gem](https://github.com/sferik/x-ruby), built on the HTTP client in [`x-core`](../x-core).
+Media uploads for the [`x` gem](https://github.com/sferik/x-ruby), built on the HTTP client in [`x-core`](https://github.com/sferik/x-ruby/tree/main/x-core).
 
 * `X::Uploader::Media` uploads images, GIFs, videos, and subtitles. Large files are split into chunks that upload in parallel, with retries, and processing can be awaited.
 * `X::Uploader::Account` updates the authenticated user's profile image and banner through the v1.1 API.

@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.0] - 2026-09-16
 
-See [UPGRADING.md](UPGRADING.md) for the changes that code written for 0.19 needs.
+See [UPGRADING.md](https://github.com/sferik/x-ruby/blob/main/UPGRADING.md) for the changes that code written for 0.19 needs.
 
 ### Added
 * Split the gem into gems released in lockstep: `x-core` (the HTTP client), `x-uploader` (media, profile image, and banner uploads), `x-objects` (resource objects), and `x` (a meta-gem that depends on all three and mixes the object methods into `X::Client`)

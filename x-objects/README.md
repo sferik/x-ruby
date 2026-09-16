@@ -4,7 +4,7 @@ The object layer of the [`x` gem](https://github.com/sferik/x-ruby): immutable, 
 
 It has no runtime dependencies and makes no HTTP requests itself. It asks a client to make them.
 
-Most applications should install [`x`](https://rubygems.org/gems/x), which wires this gem to the HTTP client from [`x-core`](../x-core).
+Most applications should install [`x`](https://rubygems.org/gems/x), which wires this gem to the HTTP client from [`x-core`](https://github.com/sferik/x-ruby/tree/main/x-core).
 
 ## Resources
 

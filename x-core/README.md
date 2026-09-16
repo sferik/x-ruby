@@ -2,9 +2,9 @@
 
 The HTTP layer of the [`x` gem](https://github.com/sferik/x-ruby): a small, dependency-light client for the [X API](https://developer.x.com) that returns parsed JSON.
 
-It handles OAuth 1.0a, OAuth 2.0 with PKCE authorization and token refresh, and bearer tokens. It also handles redirects, proxies, timeouts, HTTP errors, rate limits, and streaming. It depends only on the `simple_oauth` gem, which has no dependencies of its own. Media uploads live in [`x-uploader`](../x-uploader).
+It handles OAuth 1.0a, OAuth 2.0 with PKCE authorization and token refresh, and bearer tokens. It also handles redirects, proxies, timeouts, HTTP errors, rate limits, and streaming. It depends only on the `simple_oauth` gem, which has no dependencies of its own. Media uploads live in [`x-uploader`](https://github.com/sferik/x-ruby/tree/main/x-uploader).
 
-Most applications should install [`x`](https://rubygems.org/gems/x), which adds resource objects from [`x-objects`](../x-objects). Install `x-core` alone when you only want raw JSON.
+Most applications should install [`x`](https://rubygems.org/gems/x), which adds resource objects from [`x-objects`](https://github.com/sferik/x-ruby/tree/main/x-objects). Install `x-core` alone when you only want raw JSON.
 
 ## Installation
 

@@ -28,9 +28,9 @@ The `x` gem is a thin meta-gem that combines three gems, which are released from
 
 | Gem | What it does | Runtime dependencies |
 | --- | --- | --- |
-| [`x-core`](x-core) | HTTP: authentication, requests, redirects, errors, rate limits, and streaming | `simple_oauth` |
-| [`x-uploader`](x-uploader) | Uploads: images, GIFs, videos, and subtitles, in chunks when large, plus profile images and banners | `x-core` |
-| [`x-objects`](x-objects) | Resources: `User`, `Post`, `List`, `DirectMessage`, `Space`, `Community`, `Media`, `Poll`, `Place`, and cursors | none |
+| [`x-core`](https://github.com/sferik/x-ruby/tree/main/x-core) | HTTP: authentication, requests, redirects, errors, rate limits, and streaming | `simple_oauth` |
+| [`x-uploader`](https://github.com/sferik/x-ruby/tree/main/x-uploader) | Uploads: images, GIFs, videos, and subtitles, in chunks when large, plus profile images and banners | `x-core` |
+| [`x-objects`](https://github.com/sferik/x-ruby/tree/main/x-objects) | Resources: `User`, `Post`, `List`, `DirectMessage`, `Space`, `Community`, `Media`, `Poll`, `Place`, and cursors | none |
 
 `require "x"` loads all three, and mixes the object methods (`find_user`, `find_posts`, `search`, …) into `X::Client`. Any other request can return objects too, given a resource class as its `object_class`. If you only want raw JSON, depend on `x-core` alone. If you want the objects with your own HTTP client, depend on `x-objects` alone.
 
