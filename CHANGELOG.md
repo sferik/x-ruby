@@ -68,7 +68,6 @@ See [UPGRADING.md](UPGRADING.md) for the changes that code written for 0.19 need
 * Keep connections open between requests to the same host, up to eight idle per host, so a request no longer opens a TCP and TLS connection of its own; a connection whose request fails is closed, `X::Connection#close` closes the idle ones, a change of proxy or debug output opens new ones, and a forked process opens its own
 * Authenticate as the app with `X::Client#app_only`, a copy of a client that signs with OAuth 1.0a, which fetches the app's bearer token once and reuses it
 * Stream with app-only authentication from a client that signs with OAuth 1.0a, since the stream endpoints refuse it
-* Move `stream` from `X::Client` to `X::StreamingClient`, so that the client carries no streaming settings
 * Stream with `X::StreamingClient`, which `X::Client#streaming` builds from a client, sharing its credentials, base URL, parsing classes, and `on_response` hook while keeping the settings of a long-lived connection
 * Reconnect a stream that ends or drops, backing off as X recommends, up to the `max_reconnects` of the streaming client, which is unlimited by default; a rate limit waits until it resets, or from a minute, doubling each attempt
 * Read a stream with the `read_timeout` of the streaming client, 20 seconds by default, the interval of the keep-alive X sends, so a stream that goes quiet reconnects rather than waiting for the timeout of an ordinary request
@@ -105,6 +104,7 @@ See [UPGRADING.md](UPGRADING.md) for the changes that code written for 0.19 need
 * Build and parse the OAuth 2.0 token refresh with simple_oauth, in place of the request and response handling `X::OAuth2Authenticator` carried; it sends the same request and still returns the token response and raises `X::Error`
 * Raise `ArgumentError` from `X::Client.new`, and so from `copy`, for credentials that do not form a complete set, instead of sending requests without credentials, or authenticating as the app when an access token lacks its secret; the setters still change one credential at a time, keeping the authenticator until a set is complete
 * Raise `X::InvalidResponse`, an `X::Error` that holds the response, for a successful response whose body is not JSON, such as the page of a proxy or captive portal, instead of returning nil as though the response had no body; a successful response without a body still returns nil
+* Move `stream` from `X::Client` to `X::StreamingClient`, so that the client carries no streaming settings
 
 ### Removed
 * Remove `X::Uploader::Account::MIME_TYPE_MAP`, which nothing read
