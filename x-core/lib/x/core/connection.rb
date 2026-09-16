@@ -26,12 +26,19 @@ module X
     # Default timeout for writing requests in seconds
     DEFAULT_WRITE_TIMEOUT = 60 # seconds
     # Network errors that should be wrapped in NetworkError
+    #
+    # IOError covers EOFError, and a read from a socket closed under it. A dropped network can also refuse a
+    # write with EPIPE, or find no route with ENETUNREACH, and a connection cut off mid-response can leave
+    # Net::HTTP a status line it cannot parse.
     NETWORK_ERRORS = [
-      EOFError,
       Errno::ECONNREFUSED,
       Errno::ECONNRESET,
       Errno::EHOSTUNREACH,
+      Errno::ENETUNREACH,
+      Errno::EPIPE,
       Errno::ETIMEDOUT,
+      IOError,
+      Net::HTTPBadResponse,
       Net::OpenTimeout,
       Net::ReadTimeout,
       Net::WriteTimeout,

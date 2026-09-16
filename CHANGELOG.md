@@ -98,7 +98,7 @@ See [UPGRADING.md](UPGRADING.md) for the changes that code written for 0.19 need
 * Move the HTTP client into `x-core`, under `lib/x/core`, and the uploaders into `x-uploader`, under `lib/x/uploader`
 * Rename `X::MediaUploader` to `X::Uploader::Media`, `X::AccountUploader` to `X::Uploader::Account`, and `X::MediaUploadValidator` to `X::Uploader::Validator`, under an `X::Uploader` module that holds the gem's version, since `X::Media` is the media resource
 * Rename `upload_profile_image_binary` and `upload_profile_banner_binary` to `update_profile_image_binary` and `update_profile_banner_binary`, the binary forms of `update_profile_image` and `update_profile_banner`
-* Wrap `EOFError`, `SocketError`, `Net::WriteTimeout`, `Errno::ETIMEDOUT`, and `Errno::EHOSTUNREACH` in `NetworkError`
+* Wrap `IOError`, which includes `EOFError`, along with `SocketError`, `Net::WriteTimeout`, `Net::HTTPBadResponse`, `Errno::ETIMEDOUT`, `Errno::EHOSTUNREACH`, `Errno::ENETUNREACH`, and `Errno::EPIPE`, in `NetworkError`, so a stream reconnects after them rather than stopping
 * Stop following redirects after exactly `max_redirects` hops instead of one more
 * Raise `KeyError` from `X::Uploader::Media.chunked_upload` and `X::Uploader::Media.await_processing` when the media has no `"id"`, instead of requesting a URL with an empty ID
 * Sign OAuth 1.0a requests with the [simple_oauth](https://github.com/laserlemon/simple_oauth) gem, in place of the signing code `X::OAuthAuthenticator` carried; it keeps the same credentials and produces the same header

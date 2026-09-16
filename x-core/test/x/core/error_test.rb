@@ -32,6 +32,12 @@ module X
       end
     end
 
+    def test_eof_error_raises_network_error
+      stub_request(:get, "https://api.x.com/2/tweets").to_raise(EOFError)
+
+      assert_raises(NetworkError) { @client.get("tweets") }
+    end
+
     def test_connection_exception_is_gone
       refute X.const_defined?(:ConnectionException)
     end
