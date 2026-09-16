@@ -301,14 +301,14 @@ module X
     def remaining: -> Integer
     def exhausted?: -> bool
     def reset_at: -> Time
-    def reset_in: -> Integer?
+    def reset_in: -> Integer
+    def retry_after: -> Integer
   end
 
   class RequestBuilder
     HTTP_METHODS: Hash[Symbol, (singleton(Net::HTTP::Get) | singleton(Net::HTTP::Post) | singleton(Net::HTTP::Put) | singleton(Net::HTTP::Delete))]
     DEFAULT_HEADERS: Hash[String, String]
 
-    def initialize: (?content_type: String, ?user_agent: String) -> void
     def build: (http_method: Symbol, uri: URI::Generic, ?body: String?, ?headers: Hash[String, String], ?authenticator: Authenticator) -> (Net::HTTPRequest)
 
     private
@@ -398,7 +398,7 @@ module X
 
     attr_reader connection: Connection
     attr_reader request_builder: RequestBuilder
-    attr_reader max_redirects: Integer
+    attr_accessor max_redirects: Integer
     def initialize: (?connection: Connection, ?request_builder: RequestBuilder, ?max_redirects: Integer) -> void
     def handle: (response: Net::HTTPResponse, request: Net::HTTPRequest, ?headers: Hash[String, String], ?authenticator: Authenticator, ?redirect_count: Integer) -> Net::HTTPResponse
 
@@ -421,7 +421,6 @@ module X
     private
     def error: (Net::HTTPResponse response) -> HTTPError
     def error_class: (Net::HTTPResponse response) -> (singleton(HTTPError) | singleton(BadGateway) | singleton(BadRequest) | singleton(Conflict) | singleton(Forbidden) | singleton(GatewayTimeout) | singleton(Gone) | singleton(InternalServerError) | singleton(NotAcceptable) | singleton(NotFound) | singleton(PayloadTooLarge) | singleton(ServiceUnavailable) | singleton(TooManyRequests) | singleton(Unauthorized) | singleton(UnprocessableEntity))
-    def json?: (Net::HTTPResponse response) -> bool
   end
 
   class StreamParser
@@ -492,20 +491,20 @@ module X
 
     attr_reader base_url: String
     def base_url=: (String base_url) -> void
-    attr_accessor default_array_class: singleton(Array)
-    attr_accessor default_object_class: singleton(Hash)
+    attr_accessor default_array_class: Class
+    attr_accessor default_object_class: Class
     attr_accessor on_response: _ResponseHook?
-    def open_timeout: () -> Integer
-    def read_timeout: () -> Integer
-    def write_timeout: () -> Integer
+    def open_timeout: () -> (Float | Integer)
+    def read_timeout: () -> (Float | Integer)
+    def write_timeout: () -> (Float | Integer)
     def proxy_url: () -> String?
     def debug_output: () -> untyped
     def max_redirects: () -> Integer
     def max_rate_limit_retries: () -> Integer
     def max_rate_limit_wait: () -> Integer
-    def open_timeout=: (Integer timeout) -> Integer
-    def read_timeout=: (Integer timeout) -> Integer
-    def write_timeout=: (Integer timeout) -> Integer
+    def open_timeout=: (Float | Integer timeout) -> (Float | Integer)
+    def read_timeout=: (Float | Integer timeout) -> (Float | Integer)
+    def write_timeout=: (Float | Integer timeout) -> (Float | Integer)
     def proxy_url=: (String? proxy_url) -> String?
     def debug_output=: (untyped output) -> untyped
     def max_redirects=: (Integer max_redirects) -> Integer
@@ -513,7 +512,7 @@ module X
     def max_rate_limit_wait=: (Integer max_rate_limit_wait) -> Integer
 
     private
-    def initialize_settings: (base_url: String, default_array_class: singleton(Array), default_object_class: singleton(Hash), on_response: _ResponseHook?, max_redirects: Integer, max_rate_limit_retries: Integer, max_rate_limit_wait: Integer) -> void
+    def initialize_settings: (base_url: String, default_array_class: Class, default_object_class: Class, on_response: _ResponseHook?, max_redirects: Integer, max_rate_limit_retries: Integer, max_rate_limit_wait: Integer) -> void
     def settings: () -> Hash[Symbol, untyped]
     def report: (Symbol http_method, URI::Generic uri, Net::HTTPResponse response) -> void
   end
@@ -605,7 +604,7 @@ module X
 
     attr_accessor on_token_refresh: _TokenRefreshHook?
     attr_reader authenticator: Authenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator
-    def initialize: (?api_key: String?, ?api_key_secret: String?, ?access_token: String?, ?access_token_secret: String?, ?bearer_token: String?, ?client_id: String?, ?client_secret: String?, ?refresh_token: String?, ?expires_at: Time?, ?base_url: String, ?open_timeout: Integer, ?read_timeout: Integer, ?write_timeout: Integer, ?debug_output: untyped, ?proxy_url: String?, ?default_array_class: singleton(Array), ?default_object_class: singleton(Hash), ?max_redirects: Integer, ?max_rate_limit_retries: Integer, ?max_rate_limit_wait: Integer, ?on_response: _ResponseHook?, ?on_token_refresh: _TokenRefreshHook?) -> void
+    def initialize: (?api_key: String?, ?api_key_secret: String?, ?access_token: String?, ?access_token_secret: String?, ?bearer_token: String?, ?client_id: String?, ?client_secret: String?, ?refresh_token: String?, ?expires_at: Time?, ?base_url: String, ?open_timeout: Float | Integer, ?read_timeout: Float | Integer, ?write_timeout: Float | Integer, ?debug_output: untyped, ?proxy_url: String?, ?default_array_class: Class, ?default_object_class: Class, ?max_redirects: Integer, ?max_rate_limit_retries: Integer, ?max_rate_limit_wait: Integer, ?on_response: _ResponseHook?, ?on_token_refresh: _TokenRefreshHook?) -> void
     def inspect: () -> String
     def copy: (**untyped options) -> Client
     def get: (String endpoint, ?params: params?, ?headers: Hash[String, String], ?array_class: Class, ?object_class: Class) -> untyped
