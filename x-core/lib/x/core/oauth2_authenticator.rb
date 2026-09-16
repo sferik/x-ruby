@@ -149,7 +149,9 @@ module X
     #
     # Requests that were sent with the same token, and rejected together, refresh it once between them.
     #
-    # @api public
+    # Internal to x-core: Client refreshes a rejected token with it, through retrying_rejected_token.
+    #
+    # @api private
     # @param rejected_token [String] the access token the API rejected
     # @return [Boolean] true if the access token is no longer the one rejected
     # @raise [AuthorizationError] if X refuses to refresh the token

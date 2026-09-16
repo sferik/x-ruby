@@ -110,7 +110,10 @@ module X
 
     # Perform an HTTP request
     #
-    # @api public
+    # Internal to x-core: Client, its redirects, and token requests send their requests with it, so that it can change
+    # within 1.x, as the Net::HTTP requests it takes may.
+    #
+    # @api private
     # @param request [Net::HTTPRequest] the HTTP request to perform
     # @return [Net::HTTPResponse] the HTTP response
     # @raise [NetworkError] if a network error occurs
@@ -129,7 +132,9 @@ module X
 
     # Perform a streaming HTTP request
     #
-    # @api public
+    # Internal to x-core: StreamingClient opens its streams with it.
+    #
+    # @api private
     # @param request [Net::HTTPRequest] the HTTP request to perform
     # @yield [Net::HTTPResponse] the HTTP response for streaming
     # @return [void]
