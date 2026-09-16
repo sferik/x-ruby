@@ -1,6 +1,4 @@
-require "json"
 require "x"
-require "x/uploader"
 
 x_credentials = {
   api_key: "INSERT YOUR X API KEY HERE",
@@ -11,14 +9,15 @@ x_credentials = {
 
 client = X::Client.new(**x_credentials)
 file_path = "path/to/your/media.mp4"
-media_category = "tweet_video" # other options include: tweet_image, tweet_gif, dm_image, dm_video, dm_gif, subtitles
 
-media = X::Uploader::Media.chunked_upload(file_path, client:, media_category:)
+# X::Uploader::Media.upload uploads a video in chunks and waits for it to be processed. The steps it takes can also
+# be run one at a time, to choose the media category, the size of each chunk, and how many are sent at once.
+media_category = "tweet_video" # other options include: amplify_video, dm_video, tweet_gif, dm_gif, and subtitles
+media = X::Uploader::Media.chunked_upload(file_path, client:, media_category:, chunk_size_mb: 4, concurrency: 2)
 
-X::Uploader::Media.await_processing(media, client:) # or X::Uploader::Media.await_processing!(media, client:) to raise an error if fails
+# Wait up to five minutes, raising X::Uploader::MediaProcessingFailed if processing fails
+X::Uploader::Media.await_processing!(media, client:, timeout: 300)
 
-post_body = {text: "Posting media from @gem!", media: {media_ids: [media["id"]]}}
+post = client.create_post("Posting media from @gem!", media_ids: [media])
 
-post = client.post("tweets", post_body.to_json)
-
-puts post["data"]["id"]
+puts post.id

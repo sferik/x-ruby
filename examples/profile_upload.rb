@@ -1,5 +1,4 @@
 require "x"
-require "x/uploader"
 
 x_credentials = {
   api_key: "INSERT YOUR X API KEY HERE",

@@ -1,6 +1,4 @@
-require "json"
 require "x"
-require "x/uploader"
 
 x_credentials = {
   api_key: "INSERT YOUR X API KEY HERE",
@@ -11,12 +9,11 @@ x_credentials = {
 
 client = X::Client.new(**x_credentials)
 file_path = "path/to/your/media.jpg"
-media_category = "tweet_image" # other options are: dm_image or subtitles; for videos or GIFs use chunked_upload
 
-media = X::Uploader::Media.upload(file_path, client:, media_category:)
+# The media category is inferred from the file: an image, an animated GIF, a video, which is uploaded in chunks and
+# processed, or subtitles. Pass media_category: to choose another, such as dm_image.
+media = X::Uploader::Media.upload(file_path, client:, alt_text: "Describe the image for people who cannot see it")
 
-post_body = {text: "Posting media from @gem!", media: {media_ids: [media["id"]]}}
+post = client.create_post("Posting media from @gem!", media_ids: [media])
 
-post = client.post("tweets", post_body.to_json)
-
-puts post["data"]["id"]
+puts post.id

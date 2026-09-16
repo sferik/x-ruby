@@ -7,21 +7,22 @@ x_credentials = {
   access_token_secret: "INSERT YOUR X ACCESS TOKEN SECRET HERE"
 }
 
-client = X::Client.new(base_url: "https://api.x.com/1.1/", **x_credentials)
+# Wait for a rate limit to reset, up to 15 minutes, and retry, up to three times in a row
+client = X::Client.new(**x_credentials, max_rate_limit_retries: 3)
 
-screen_name = "sferik"
-count = 5000
-cursor = -1
+# Page through raw JSON by passing each page's next_token as the pagination_token of the next request
+user_id = client.get("users/by/username/sferik").dig("data", "id")
+params = {max_results: 1000, "user.fields": "id"}
 follower_ids = []
 
 loop do
-  response = client.get("followers/ids.json?screen_name=#{screen_name}&count=#{count}&cursor=#{cursor}")
-  follower_ids.concat(response["ids"])
-  cursor = response["next_cursor"]
-  break if cursor.zero?
-rescue X::TooManyRequests => e
-  # NOTE: Your process could go to sleep for up to 15 minutes but if you
-  # retry any sooner, it will almost certainly fail with the same exception.
-  sleep e.retry_after
-  retry
+  response = client.get("users/#{user_id}/followers", params:)
+  follower_ids.concat(Array(response["data"]).map { |follower| follower["id"] })
+  next_token = response.dig("meta", "next_token") or break
+  params = params.merge(pagination_token: next_token)
 end
+
+puts follower_ids.size
+
+# A cursor does the same, requesting nothing but identifiers
+puts client.find_user("sferik").followers.ids.size
