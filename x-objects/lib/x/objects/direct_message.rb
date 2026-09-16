@@ -223,17 +223,34 @@ module X
     #   messages.partition { |message| message.from?(client.current_user) }
     def from?(user) = sender_id.to_s.eql?(Objects::Utils.id_of(user))
 
+    # Check whether the message belongs to a group conversation
+    #
+    # The identifier of a one-to-one conversation joins the identifiers of its two participants with a hyphen, and
+    # the identifier of a group conversation is a number of its own.
+    #
+    # @api public
+    # @return [Boolean] true if the message belongs to a group conversation, false if to a one-to-one conversation or
+    #   the message does not say
+    # @example Leave out the messages of group conversations
+    #   client.direct_messages.reject(&:group?)
+    def group?
+      conversation_id = dm_conversation_id
+      !conversation_id.nil? && !conversation_id.include?("-")
+    end
+
     # The other participant of a one-to-one conversation, as seen by a user
     #
     # The sender, when the user did not send the message, and otherwise the other member of the
-    # conversation, from the includes or as a stub holding only its identifier.
+    # conversation, from the includes or as a stub holding only its identifier. A group conversation has no one
+    # other participant.
     #
     # @api public
     # @param user [User, String, Integer] the user, usually the authenticated user, or their identifier
-    # @return [User, nil] the other participant or nil if the conversation has no other participant
+    # @return [User, nil] the other participant, or nil for a group conversation or one without another participant
     # @example Print who each message was exchanged with
-    #   client.direct_messages.each { |message| puts message.peer(client.current_user).username }
+    #   client.direct_messages.reject(&:group?).each { |message| puts message.peer(client.current_user).username }
     def peer(user)
+      return if group?
       return sender unless from?(user)
 
       user_id = Objects::Utils.id_of(user)

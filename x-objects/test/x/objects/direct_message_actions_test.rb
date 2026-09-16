@@ -104,8 +104,22 @@ module X
     end
 
     def test_peer_without_another_participant
-      assert_nil DirectMessage.new({"id" => "1", "sender_id" => "9", "dm_conversation_id" => "9"}).peer("9")
+      assert_nil DirectMessage.new({"id" => "1", "sender_id" => "9", "dm_conversation_id" => "9-9"}).peer("9")
       assert_nil DirectMessage.new({"id" => "1", "sender_id" => "9"}).peer("9")
+    end
+
+    def test_peer_of_a_group_conversation
+      sent = DirectMessage.new({"id" => "1", "sender_id" => "9", "dm_conversation_id" => "1582838223204016129"}, includes: @includes)
+      received = DirectMessage.new({"id" => "2", "sender_id" => "8", "dm_conversation_id" => "1582838223204016129"}, includes: @includes)
+
+      assert_nil sent.peer("9")
+      assert_nil received.peer("9")
+    end
+
+    def test_group
+      assert_predicate DirectMessage.new({"id" => "1", "dm_conversation_id" => "1582838223204016129"}), :group?
+      refute_predicate DirectMessage.new({"id" => "1", "dm_conversation_id" => "8-9"}), :group?
+      refute_predicate DirectMessage.new({"id" => "1"}), :group?
     end
 
     def test_peer_without_a_sender
