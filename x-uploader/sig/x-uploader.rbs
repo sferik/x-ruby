@@ -68,6 +68,7 @@ module X
       CHUNKED_CATEGORIES: Array[String]
       CATEGORY_MAP: Hash[String, String]
       CATEGORY_MIME_TYPES: Hash[String, Array[String]]
+      # Media extends Chunks, and include lets the checker see the methods of Chunks from the methods of Media
       include Chunks
       extend Chunks
       extend Media
@@ -75,7 +76,7 @@ module X
       def upload: (String file_path, client: Client, ?media_category: String, ?alt_text: String?, ?boundary: String, ?processing_timeout: Integer, **untyped options) -> untyped
       def infer_media_category: (String file_path) -> String
       def upload_binary: (String content, client: Client, media_category: String, ?boundary: String) -> untyped
-      def chunked_upload: (String file_path, client: Client, ?media_category: String, ?media_type: String, ?boundary: String, ?chunk_size_mb: Integer, ?concurrency: Integer) -> untyped
+      def chunked_upload: (String file_path, client: Client, ?media_category: String, ?media_type: String, ?boundary: String, ?chunk_size_mb: Float | Integer, ?concurrency: Integer) -> untyped
       def await_processing: (untyped media, client: Client, ?processing_timeout: Integer) -> untyped
       def await_processing!: (untyped media, client: Client, ?processing_timeout: Integer) -> untyped
       def infer_media_type: (String file_path, String media_category) -> String
@@ -85,7 +86,6 @@ module X
       def chunked?: (String media_category) -> bool
       def still_gif?: (String file_path) -> bool
       def extension: (String file_path) -> String
-      def finalize: (client: Client, media: untyped) -> untyped
     end
 
     module Gif
@@ -121,7 +121,7 @@ module X
 
       def validate_file_path!: (String file_path) -> nil
       def validate_media_category!: (String media_category) -> nil
-      def validate_chunks!: (chunk_size_mb: Numeric, concurrency: Integer) -> nil
+      def validate_chunks!: (chunk_size_mb: Float | Integer, concurrency: Integer) -> nil
     end
 
     module Account
