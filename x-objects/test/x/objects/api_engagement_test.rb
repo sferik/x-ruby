@@ -66,6 +66,33 @@ module X
         refute @client.unrepost("1")
       end
 
+      def test_bookmark
+        @client.stub(:post, "users/9/bookmarks", {"data" => {"bookmarked" => true}})
+
+        assert @client.bookmark(Post.new({"id" => "1"}))
+        assert_equal({tweet_id: "1"}.to_json, @client.requests.last[:body])
+        assert_equal "users/9/bookmarks", @client.paths.last
+      end
+
+      def test_bookmark_not_bookmarked
+        @client.stub(:post, "users/9/bookmarks", {"data" => {"bookmarked" => false}})
+
+        refute @client.bookmark("1")
+      end
+
+      def test_unbookmark
+        @client.stub(:delete, "users/9/bookmarks/1", {"data" => {"bookmarked" => false}})
+
+        assert @client.unbookmark("1")
+        assert_equal "users/9/bookmarks/1", @client.paths.last
+      end
+
+      def test_unbookmark_still_bookmarked
+        @client.stub(:delete, "users/9/bookmarks/1", {"data" => {"bookmarked" => true}})
+
+        refute @client.unbookmark("1")
+      end
+
       def test_current_user_is_memoized
         @client.stub(:post, "users/9/likes", {"data" => {"liked" => true}})
         2.times { @client.like("1") }

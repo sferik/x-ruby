@@ -4,7 +4,7 @@ module X
   module Objects
     module API
       module Actions
-        # Like and repost posts as the authenticated user
+        # Like, repost, and bookmark posts as the authenticated user
         # @api public
         module Engagement
           # Like a post as the authenticated user
@@ -49,6 +49,28 @@ module X
           #   client.unrepost("1234567890")
           def unrepost(post)
             User.from_id(current_user_id, client: self).unrepost(post)
+          end
+
+          # Bookmark a post as the authenticated user
+          #
+          # @api public
+          # @param post [Post, String, Integer] the post or its identifier
+          # @return [Boolean] true if the authenticated user has bookmarked the post
+          # @example Bookmark a post
+          #   client.bookmark("1234567890")
+          def bookmark(post)
+            User.from_id(current_user_id, client: self).bookmark(post)
+          end
+
+          # Remove a bookmark as the authenticated user
+          #
+          # @api public
+          # @param post [Post, String, Integer] the post or its identifier
+          # @return [Boolean] true if the authenticated user no longer has the post bookmarked
+          # @example Remove a bookmark
+          #   client.unbookmark("1234567890")
+          def unbookmark(post)
+            User.from_id(current_user_id, client: self).unbookmark(post)
           end
 
           alias_method :retweet, :repost

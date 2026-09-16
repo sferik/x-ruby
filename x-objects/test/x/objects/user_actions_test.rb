@@ -78,5 +78,31 @@ module X
 
       refute @me.unlike("1")
     end
+
+    def test_bookmark
+      @client.stub(:post, "users/9/bookmarks", {"data" => {"bookmarked" => true}})
+
+      assert @me.bookmark(Post.new({"id" => "1"}))
+      assert_equal [{method: :post, path: "users/9/bookmarks", query: {}, body: {tweet_id: "1"}.to_json}], @client.requests
+    end
+
+    def test_bookmark_not_bookmarked
+      @client.stub(:post, "users/9/bookmarks", {"data" => {"bookmarked" => false}})
+
+      refute @me.bookmark(1)
+    end
+
+    def test_unbookmark
+      @client.stub(:delete, "users/9/bookmarks/1", {"data" => {"bookmarked" => false}})
+
+      assert @me.unbookmark(Post.new({"id" => "1"}))
+      assert_equal ["users/9/bookmarks/1"], @client.paths
+    end
+
+    def test_unbookmark_still_bookmarked
+      @client.stub(:delete, "users/9/bookmarks/1", {"data" => {"bookmarked" => true}})
+
+      refute @me.unbookmark("1")
+    end
   end
 end

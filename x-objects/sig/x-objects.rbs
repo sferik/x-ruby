@@ -215,6 +215,8 @@ module X
       def retweet: (id post) -> bool
       def unrepost: (id post) -> bool
       def unretweet: (id post) -> bool
+      def bookmark: (id post) -> bool
+      def unbookmark: (id post) -> bool
       def follows?: (id user) -> bool
 
       private
@@ -440,6 +442,8 @@ module X
           def retweet: (id post) -> bool
           def unrepost: (id post) -> bool
           def unretweet: (id post) -> bool
+          def bookmark: (id post) -> bool
+          def unbookmark: (id post) -> bool
         end
       end
     end

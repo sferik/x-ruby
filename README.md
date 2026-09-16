@@ -186,6 +186,7 @@ me.follow(user)
 me.block(user)
 me.like(post)
 me.repost(post)
+me.bookmark(post)
 
 x_client.like(post)                    # the same, via the client
 post = x_client.create_post("Hello, World! (from @gem)")

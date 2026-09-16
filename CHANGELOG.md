@@ -75,6 +75,7 @@ See [UPGRADING.md](UPGRADING.md) for the changes that code written for 0.19 need
 * Take the authenticated user's ID for actions from the prefix of an OAuth 1.0a access token, with `current_user_id`, instead of requesting `users/me`
 * Refresh the tokens of a public OAuth 2.0 client, such as a native or single-page app, given a `client_id`, `access_token`, and `refresh_token` without a `client_secret`; the refresh sends the client ID in its body rather than authenticating with a secret
 * Read the number of photos and videos a user has posted with `X::User#media_count`
+* Bookmark a post and remove the bookmark with `bookmark` and `unbookmark` on `X::User` and `X::Client`, beside the `bookmarks` cursor that reads them
 
 ### Changed
 * Require Ruby 3.3 or later

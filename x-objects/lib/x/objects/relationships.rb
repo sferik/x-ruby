@@ -116,6 +116,28 @@ module X
         unrelate("retweets", post, "retweeted")
       end
 
+      # Bookmark a post, acting as this user, which must be the authenticated user
+      #
+      # @api public
+      # @param post [Resource, String, Integer] the post or its identifier
+      # @return [Boolean] true if this user has bookmarked the post
+      # @example Bookmark a post
+      #   client.current_user.bookmark(post)
+      def bookmark(post)
+        relate("bookmarks", "tweet_id", post, "bookmarked")
+      end
+
+      # Remove a bookmark, acting as this user, which must be the authenticated user
+      #
+      # @api public
+      # @param post [Resource, String, Integer] the post or its identifier
+      # @return [Boolean] true if this user no longer has the post bookmarked
+      # @example Remove a bookmark
+      #   client.current_user.unbookmark(post)
+      def unbookmark(post)
+        unrelate("bookmarks", post, "bookmarked")
+      end
+
       # Check whether this user follows a user
       #
       # When either user is the authenticated user, one lookup of the other's connection_status answers.
@@ -160,7 +182,7 @@ module X
 
       # Relate a resource to this user and report the resulting state
       # @api private
-      # @param relation [String] the relation endpoint: following, blocking, muting, likes, or retweets
+      # @param relation [String] the relation endpoint: following, blocking, muting, likes, retweets, or bookmarks
       # @param key [String] the request body field holding the identifier of the target
       # @param target [Resource, String, Integer] the related resource or its identifier
       # @param state [String] the response field reporting the state
@@ -172,7 +194,7 @@ module X
 
       # Remove a relation from this user and report the resulting state
       # @api private
-      # @param relation [String] the relation endpoint: following, blocking, muting, likes, or retweets
+      # @param relation [String] the relation endpoint: following, blocking, muting, likes, retweets, or bookmarks
       # @param target [Resource, String, Integer] the related resource or its identifier
       # @param state [String] the response field reporting the state
       # @return [Boolean] true if the relation no longer exists
