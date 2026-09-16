@@ -9,8 +9,7 @@ module X
     end
 
     def test_header
-      assert_kind_of Hash, @authenticator.header(nil)
-      assert_empty @authenticator.header(nil)["Authorization"]
+      assert_equal({}, @authenticator.header(nil))
     end
 
     def test_inspect

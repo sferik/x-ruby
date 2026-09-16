@@ -51,7 +51,7 @@ module X
     def test_build_without_authenticator_parameter
       request = @request_builder.build(http_method: :get, uri: @uri)
 
-      assert_empty request["Authorization"]
+      refute request.key?("Authorization")
     end
 
     def test_unsupported_http_method

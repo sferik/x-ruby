@@ -34,14 +34,14 @@ module X
     def test_handle_with_one_redirect
       authenticator = BearerTokenAuthenticator.new(bearer_token: TEST_BEARER_TOKEN)
       request = Net::HTTP::Get.new("/")
-      stub_request(:get, "http://www.example.com/").with(headers: {"Authorization" => /Bearer #{TEST_BEARER_TOKEN}/o})
+      stub_request(:get, "http://example.com/2").with(headers: {"Authorization" => /Bearer #{TEST_BEARER_TOKEN}/o})
 
       response = Net::HTTPFound.new("1.1", "302", "Found")
-      response["Location"] = "http://www.example.com"
+      response["Location"] = "http://example.com/2"
 
       @redirect_handler.handle(response:, request:, base_url: "http://example.com", authenticator:)
 
-      assert_requested :get, "http://www.example.com"
+      assert_requested :get, "http://example.com/2"
     end
 
     def test_handle_with_two_redirects
@@ -122,6 +122,92 @@ module X
         @redirect_handler.handle(response:, request:, base_url: "http://example.com", redirect_count:)
       end
       assert_not_requested :get, "http://example.com/some_path"
+    end
+  end
+
+  class RedirectHandlerCredentialsTest < Minitest::Test
+    cover RedirectHandler
+
+    AUTHORIZATION = "Bearer #{TEST_BEARER_TOKEN}".freeze
+
+    def setup
+      @redirect_handler = RedirectHandler.new
+      @authenticator = BearerTokenAuthenticator.new(bearer_token: TEST_BEARER_TOKEN)
+    end
+
+    def redirect(from, to, headers: {})
+      response = Net::HTTPFound.new("1.1", "302", "Found")
+      response["Location"] = to
+      @redirect_handler.handle(response:, request: Net::HTTP::Get.new(URI(from)), base_url: from, headers:,
+        authenticator: @authenticator)
+    end
+
+    def authorizations_sent_to(url)
+      WebMock::RequestRegistry.instance.requested_signatures.hash.keys
+        .select { |signature| signature.uri.to_s.eql?(url) }.map { |signature| signature.headers.to_h["Authorization"] }
+    end
+
+    def test_keeps_credentials_on_the_same_origin
+      stub_request(:get, "https://api.x.com:443/2/next")
+      redirect("https://api.x.com/2/users", "https://API.x.com/2/next")
+
+      assert_equal [AUTHORIZATION], authorizations_sent_to("https://api.x.com:443/2/next")
+    end
+
+    def test_drops_credentials_on_another_host
+      stub_request(:get, "https://example.com:443/steal")
+      redirect("https://api.x.com/2/users", "https://example.com/steal")
+
+      assert_equal [nil], authorizations_sent_to("https://example.com:443/steal")
+    end
+
+    def test_drops_credentials_on_another_scheme
+      stub_request(:get, "http://api.x.com:443/2/next")
+      redirect("https://api.x.com/2/users", "http://api.x.com:443/2/next")
+
+      assert_equal [nil], authorizations_sent_to("http://api.x.com:443/2/next")
+    end
+
+    def test_drops_credentials_on_another_port
+      stub_request(:get, "https://api.x.com:8443/2/next")
+      redirect("https://api.x.com/2/users", "https://api.x.com:8443/2/next")
+
+      assert_equal [nil], authorizations_sent_to("https://api.x.com:8443/2/next")
+    end
+
+    def test_drops_an_authorization_header_on_another_host
+      stub_request(:get, "https://example.com:443/steal")
+      redirect("https://api.x.com/2/users", "https://example.com/steal", headers: {"authorization" => "Basic secret", "X-Custom" => "kept"})
+
+      assert_requested :get, "https://example.com/steal", headers: {"X-Custom" => "kept"}
+      assert_equal [nil], authorizations_sent_to("https://example.com:443/steal")
+    end
+
+    def test_keeps_credentials_dropped_after_a_redirect_back
+      stub_request(:get, "https://example.com:443/back").to_return(status: 302, headers: {"Location" => "https://api.x.com/2/users"})
+      stub_request(:get, "https://api.x.com:443/2/users")
+      redirect("https://api.x.com/2/users", "https://example.com/back")
+
+      assert_equal [nil], authorizations_sent_to("https://api.x.com:443/2/users")
+    end
+
+    def test_compares_with_the_request_rather_than_the_base_url
+      stub_request(:get, "https://upload.x.com:443/next")
+      response = Net::HTTPFound.new("1.1", "302", "Found")
+      response["Location"] = "https://upload.x.com/next"
+      @redirect_handler.handle(response:, request: Net::HTTP::Get.new(URI("https://upload.x.com/media")),
+        base_url: "https://api.x.com/2/", authenticator: @authenticator)
+
+      assert_equal [AUTHORIZATION], authorizations_sent_to("https://upload.x.com:443/next")
+    end
+
+    def test_compares_a_relative_request_with_the_base_url
+      stub_request(:get, "https://api.x.com:443/2/next")
+      response = Net::HTTPFound.new("1.1", "302", "Found")
+      response["Location"] = "/2/next"
+      @redirect_handler.handle(response:, request: Net::HTTP::Get.new("/2/users"), base_url: "https://api.x.com/", authenticator: @authenticator)
+
+      assert_equal [AUTHORIZATION], authorizations_sent_to("https://api.x.com:443/2/next")
     end
   end
 

@@ -312,6 +312,10 @@ module X
 
     private
     def build_new_uri: (Net::HTTPResponse response, String base_url) -> URI::Generic
+    def credentials_for: (URI::Generic from, URI::Generic to, Authenticator authenticator, Hash[String, String] headers) -> [Authenticator, Hash[String, String]]
+    def same_origin?: (URI::Generic uri, URI::Generic other) -> bool
+    def origin: (URI::Generic uri) -> [String?, String?, Integer?]
+    def without_authorization: (Hash[String, String] headers) -> Hash[String, String]
     def build_request: (Net::HTTPRequest request, URI::Generic new_uri, Integer response_code, Hash[String, String] headers, Authenticator authenticator) -> Net::HTTPRequest
     def send_new_request: (URI::Generic new_uri, Net::HTTPRequest new_request) -> Net::HTTPResponse
   end

@@ -51,6 +51,9 @@ module X
 
     # Handle redirects for an HTTP response
     #
+    # A redirect to another scheme, host, or port drops the credentials, the authenticator's and any
+    # Authorization header among the headers, so that they never reach a host they were not meant for.
+    #
     # @api public
     # @param response [Net::HTTPResponse] the HTTP response to handle
     # @param request [Net::HTTPRequest] the original HTTP request
@@ -63,19 +66,14 @@ module X
     # @example Handle a response
     #   response = handler.handle(response: resp, request: req, base_url: url)
     def handle(response:, request:, base_url:, headers: {}, authenticator: Authenticator.new, redirect_count: 0)
-      if response.is_a?(Net::HTTPRedirection)
-        raise TooManyRedirects, "Too many redirects" if redirect_count >= max_redirects
+      return response unless response.is_a?(Net::HTTPRedirection)
+      raise TooManyRedirects, "Too many redirects" if redirect_count >= max_redirects
 
-        new_uri = build_new_uri(response, base_url)
-
-        new_request = build_request(request, new_uri, Integer(response.code), headers, authenticator)
-        new_response = connection.perform(request: new_request)
-
-        handle(response: new_response, request: new_request, base_url:, headers:, authenticator:,
-          redirect_count: redirect_count + 1)
-      else
-        response
-      end
+      new_uri = build_new_uri(response, base_url)
+      authenticator, headers = credentials_for(request.uri || URI(base_url), new_uri, authenticator, headers)
+      new_request = build_request(request, new_uri, Integer(response.code), headers, authenticator)
+      handle(response: connection.perform(request: new_request), request: new_request, base_url:, headers:,
+        authenticator:, redirect_count: redirect_count + 1)
     end
 
     private
@@ -89,6 +87,43 @@ module X
       location = response.fetch("location")
       # If location is relative, it will join with the original base URL, otherwise it will overwrite it
       URI.join(base_url, location)
+    end
+
+    # The authenticator and headers of a redirect, dropping credentials off origin
+    # @api private
+    # @param from [URI::Generic] the URI of the request that was redirected
+    # @param to [URI::Generic] the URI it was redirected to
+    # @param authenticator [Authenticator] the authenticator of the request
+    # @param headers [Hash{String => String}] the headers of the request
+    # @return [Array(Authenticator, Hash{String => String})] the authenticator and headers
+    def credentials_for(from, to, authenticator, headers)
+      return [authenticator, headers] if same_origin?(from, to)
+
+      [Authenticator.new, without_authorization(headers)]
+    end
+
+    # Check whether two URIs share a scheme, host, and port
+    # @api private
+    # @param uri [URI::Generic] the URI of the request that was redirected
+    # @param other [URI::Generic] the URI it was redirected to
+    # @return [Boolean] true if both have the same origin
+    def same_origin?(uri, other) = origin(uri).eql?(origin(other))
+
+    # The scheme, host, and port of a URI, in lowercase
+    # @api private
+    # @param uri [URI::Generic] the URI
+    # @return [Array(String, String, Integer)] the origin
+    def origin(uri)
+      normalized = uri.normalize
+      [normalized.scheme, normalized.host, normalized.port]
+    end
+
+    # Headers without an Authorization header, whatever its case
+    # @api private
+    # @param headers [Hash{String => String}] the headers
+    # @return [Hash{String => String}] the headers other than Authorization
+    def without_authorization(headers)
+      headers.reject { |name, _| name.casecmp?(Authenticator::AUTHENTICATION_HEADER) }
     end
 
     # Build a new request for the redirect
