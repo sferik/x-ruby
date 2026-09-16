@@ -151,7 +151,7 @@ module X
     attr_accessor open_timeout : Float | Integer
     attr_accessor read_timeout : Float | Integer
     attr_accessor write_timeout : Float | Integer
-    attr_accessor debug_output : IO?
+    attr_reader debug_output : IO?
 
     attr_reader proxy_uri: URI::Generic?
     attr_reader proxy_host : String?
@@ -164,9 +164,33 @@ module X
     def perform: (request: Net::HTTPRequest) -> Net::HTTPResponse
     def perform_stream: (request: Net::HTTPRequest) { (Net::HTTPResponse) -> void } -> void
 
+    @pool: ConnectionPool
+
+    def debug_output=: (IO? debug_output) -> void
+    def close: () -> void
+
     private
     def build_http_client: (?String host, ?Integer port) -> Net::HTTP
     def configure_http_client: (Net::HTTP http_client) -> Net::HTTP
+    def configure_timeouts: (Net::HTTP http_client) -> Net::HTTP
+  end
+
+  class ConnectionPool
+    MAX_IDLE: Integer
+
+    @lock: Thread::Mutex
+    @idle: Hash[[bool, String, Integer], Array[Net::HTTP]]
+    @pid: Integer?
+
+    def initialize: () -> void
+    def with: [T] ([bool, String, Integer] key, ^() -> Net::HTTP open) { (Net::HTTP) -> T } -> T
+    def clear: () -> void
+
+    private
+    def checkout: ([bool, String, Integer] key, ^() -> Net::HTTP open) -> [Hash[[bool, String, Integer], Array[Net::HTTP]], Net::HTTP]
+    def checkin: ([bool, String, Integer] key, Net::HTTP http_client, Hash[[bool, String, Integer], Array[Net::HTTP]] pool) -> Array[Net::HTTP]?
+    def forget_after_fork: () -> void
+    def close: (Net::HTTP http_client) -> void
   end
 
   interface _BodyHook

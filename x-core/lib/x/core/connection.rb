@@ -2,10 +2,15 @@ require "forwardable"
 require "net/http"
 require "openssl"
 require "uri"
+require_relative "connection_pool"
 require_relative "errors/network_error"
 
 module X
   # Manages HTTP connections to the X API
+  #
+  # Requests keep their connections open for the next request to the same host, which saves opening a TCP and
+  # TLS connection each time. A stream opens a connection of its own, which it holds for as long as it reads.
+  #
   # @api public
   class Connection
     extend Forwardable
@@ -58,9 +63,9 @@ module X
     # The IO object for debug output
     # @api public
     # @return [IO] the IO object for debug output
-    # @example Get or set the debug output
-    #   connection.debug_output = $stderr
-    attr_accessor :debug_output
+    # @example Get the debug output
+    #   connection.debug_output
+    attr_reader :debug_output
 
     # The proxy URL for requests
     # @api public
@@ -100,6 +105,7 @@ module X
       @read_timeout = read_timeout
       @write_timeout = write_timeout
       @debug_output = debug_output
+      @pool = ConnectionPool.new
       self.proxy_url = proxy_url unless proxy_url.nil?
     end
 
@@ -112,11 +118,12 @@ module X
     # @example Perform a request
     #   response = connection.perform(request: request)
     def perform(request:)
-      host = request.uri.host || DEFAULT_HOST
-      port = request.uri.port || DEFAULT_PORT
-      http_client = build_http_client(host, port)
-      http_client.use_ssl = request.uri.scheme.eql?("https")
-      http_client.request(request)
+      uri = request.uri
+      host = uri.host || DEFAULT_HOST
+      port = uri.port || DEFAULT_PORT
+      use_ssl = uri.scheme.eql?("https")
+      open = -> { build_http_client(host, port).tap { |http_client| http_client.use_ssl = use_ssl } }
+      @pool.with([use_ssl, host, port], open) { |http_client| configure_timeouts(http_client).request(request) }
     rescue *NETWORK_ERRORS => e
       raise NetworkError, "Network error: #{e}"
     end
@@ -140,6 +147,30 @@ module X
       raise NetworkError, "Network error: #{e}"
     end
 
+    # Set the IO object for debug output, for the connections opened from now on
+    #
+    # @api public
+    # @param debug_output [IO, nil] the IO object for debug output, or nil for none
+    # @return [void]
+    # @example Set the debug output
+    #   connection.debug_output = $stderr
+    def debug_output=(debug_output)
+      @debug_output = debug_output
+      @pool.clear
+    end
+
+    # Close the connections kept open between requests
+    #
+    # A later request opens a connection again. Connections also close when the connection is garbage collected.
+    #
+    # @api public
+    # @return [void]
+    # @example Close the connections before a long pause
+    #   connection.close
+    def close
+      @pool.clear
+    end
+
     # Set the proxy URL for requests
     #
     # @api public
@@ -154,6 +185,7 @@ module X
       raise ArgumentError, "Invalid proxy URL: #{proxy_uri}" unless proxy_uri.is_a?(URI::HTTP)
 
       @proxy_uri = proxy_uri
+      @pool.clear
     end
 
     private
@@ -172,16 +204,23 @@ module X
       configure_http_client(http_client)
     end
 
-    # Configure an HTTP client with timeout settings
+    # Configure a new HTTP client with timeout settings and debug output
     # @api private
     # @param http_client [Net::HTTP] the HTTP client to configure
     # @return [Net::HTTP] the configured HTTP client
     def configure_http_client(http_client)
+      configure_timeouts(http_client).tap { |c| c.set_debug_output(debug_output) }
+    end
+
+    # Apply the current timeouts to an HTTP client, before each request it makes
+    # @api private
+    # @param http_client [Net::HTTP] the HTTP client to configure
+    # @return [Net::HTTP] the configured HTTP client
+    def configure_timeouts(http_client)
       http_client.tap do |c|
         c.open_timeout = open_timeout
         c.read_timeout = read_timeout
         c.write_timeout = write_timeout
-        c.set_debug_output(debug_output)
       end
     end
   end
