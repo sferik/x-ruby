@@ -26,7 +26,7 @@ module X
       # Validate the chunk size and concurrency of a chunked upload
       #
       # @api private
-      # @param chunk_size_mb [Numeric] the size of each chunk in megabytes, which must be positive
+      # @param chunk_size_mb [Float, Integer] the size of each chunk in megabytes, which must be positive
       # @param concurrency [Integer] the number of chunks uploaded at once, which must be at least one
       # @return [void]
       # @raise [ArgumentError] if the chunk size is not positive or the concurrency is less than one

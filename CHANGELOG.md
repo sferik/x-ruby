@@ -158,6 +158,7 @@ See [UPGRADING.md](UPGRADING.md) for the changes that code written for 0.19 need
 * Raise `ArgumentError` from `X::Uploader::Media.chunked_upload`, before any request, for a `chunk_size_mb` that is not positive or a `concurrency` less than one, which initialized an upload and finalized it without a chunk, or raised `ArgumentError: negative array size` after initializing it
 * Stop sending a credential a setter clears, such as `client.bearer_token = nil`, which kept the authenticator of the cleared credential while the client reported it as nil
 * Send a `Time` passed as a query parameter, such as the `start_time:` of `count_posts` or the `params:` of `get`, in UTC in the ISO 8601 form the API takes, rather than as `Time#to_s`, which the API refuses
+* Round a fractional `chunk_size_mb` up to a whole number of bytes, rather than read each chunk at a fractional offset, which skipped a byte between some chunks and uploaded a corrupt file
 
 ## [0.19.0] - 2026-03-01
 * Add streaming support for filtered stream and volume stream endpoints

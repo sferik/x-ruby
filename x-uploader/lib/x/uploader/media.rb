@@ -132,7 +132,7 @@ module X
       # @param media_category [String] the media category, inferred from the file extension by default
       # @param media_type [String] the MIME type of the media
       # @param boundary [String] the multipart boundary
-      # @param chunk_size_mb [Numeric] the size of each chunk in megabytes
+      # @param chunk_size_mb [Float, Integer] the size of each chunk in megabytes, rounded up to a whole byte
       # @param concurrency [Integer] the number of chunks uploaded at once
       # @return [Hash, nil] the upload response data
       # @raise [Errno::ENOENT] if the file does not exist
@@ -147,7 +147,7 @@ module X
         Validator.validate_media_category!(media_category)
         Validator.validate_chunks!(chunk_size_mb:, concurrency:)
         media = init(client:, file_path:, media_type:, media_category:)
-        append(client:, file_path:, chunk_size: chunk_size_mb * BYTES_PER_MB, media:, boundary:, concurrency:)
+        append(client:, file_path:, chunk_size: (chunk_size_mb * BYTES_PER_MB).ceil, media:, boundary:, concurrency:)
         client.post("media/upload/#{media.fetch("id")}/finalize", **JSON_CLASSES)&.fetch("data")
       end
 
