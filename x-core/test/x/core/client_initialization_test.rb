@@ -208,6 +208,22 @@ module X
       assert_equal Array, client.default_array_class
     end
 
+    def test_a_slash_ends_the_base_url
+      client = Client.new(base_url: "https://api.x.com/2")
+
+      assert_equal "https://api.x.com/2/", client.base_url
+      client.base_url = "https://api.x.com/1.1"
+
+      assert_equal "https://api.x.com/1.1/", client.base_url
+    end
+
+    def test_requests_keep_the_last_segment_of_a_base_url_without_a_slash
+      stub_request(:get, "https://api.x.com/2/users/me")
+      Client.new(base_url: "https://api.x.com/2").get("users/me")
+
+      assert_requested :get, "https://api.x.com/2/users/me"
+    end
+
     def test_overwrite_defaults
       client = Client.new(base_url: "https://api.x.com/1.1/", max_redirects: 5,
         default_object_class: OpenStruct, default_array_class: Set)

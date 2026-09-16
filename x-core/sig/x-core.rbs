@@ -490,7 +490,8 @@ module X
     @redirect_handler: RedirectHandler
     @rate_limit_handler: RateLimitHandler
 
-    attr_accessor base_url: String
+    attr_reader base_url: String
+    def base_url=: (String base_url) -> void
     attr_accessor default_array_class: singleton(Array)
     attr_accessor default_object_class: singleton(Hash)
     attr_accessor on_response: _ResponseHook?

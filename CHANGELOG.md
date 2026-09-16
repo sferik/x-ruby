@@ -154,6 +154,7 @@ See [UPGRADING.md](UPGRADING.md) for the changes that code written for 0.19 need
 * Remove a proxy by setting `proxy_url` to nil, which raised `ArgumentError`, and decode a percent-encoded proxy user and password, which were sent to the proxy still encoded
 * Raise `X::HTTPError` for a redirect that cannot be followed, such as 304 Not Modified or one whose location is missing, is not a valid URL, or is not an HTTP or HTTPS URL, instead of `KeyError`, `URI::InvalidURIError`, or `ArgumentError`
 * Raise `X::UnsupportedOperation` from `X::DirectMessage.find_all`, and so from `hydrate_all`, since the API has no batch lookup of direct message events, instead of sending an `ids` parameter the endpoint does not take
+* End a `base_url` without a trailing slash with one, so that `base_url: "https://api.x.com/2"` sends a request for `users/me` to `/2/users/me` rather than `/users/me`
 
 ## [0.19.0] - 2026-03-01
 * Add streaming support for filtered stream and volume stream endpoints

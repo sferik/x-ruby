@@ -12,10 +12,10 @@ module X
 
     # The base URL for API requests
     # @api public
-    # @return [String] the base URL for API requests
-    # @example Get or set the base URL
-    #   client.base_url = "https://api.x.com/1.1/"
-    attr_accessor :base_url
+    # @return [String] the base URL for API requests, which ends with a slash
+    # @example Get the base URL
+    #   client.base_url # => "https://api.x.com/2/"
+    attr_reader :base_url
 
     # The default class for parsing JSON arrays
     # @api public
@@ -38,6 +38,21 @@ module X
     #   client.on_response = ->(response) { total += response.resource_count }
     attr_accessor :on_response
 
+    # Set the base URL for API requests
+    #
+    # An endpoint is resolved against the base URL, which drops the last segment of a path that does not end with a
+    # slash, so a slash is added to a base URL without one.
+    #
+    # @api public
+    # @param base_url [String] the base URL for API requests
+    # @return [void]
+    # @example Set the base URL
+    #   client.base_url = "https://api.x.com/1.1"
+    #   client.base_url # => "https://api.x.com/1.1/"
+    def base_url=(base_url)
+      @base_url = base_url.end_with?("/") ? base_url : "#{base_url}/"
+    end
+
     def_delegators :@connection, :open_timeout, :read_timeout, :write_timeout, :proxy_url, :debug_output
     def_delegators :@connection, :open_timeout=, :read_timeout=, :write_timeout=, :proxy_url=, :debug_output=
     def_delegators :@redirect_handler, :max_redirects, :max_redirects=
@@ -57,7 +72,7 @@ module X
     # @return [void]
     def initialize_settings(base_url:, default_array_class:, default_object_class:, on_response:, max_redirects:,
       max_rate_limit_retries:, max_rate_limit_wait:)
-      @base_url = base_url
+      self.base_url = base_url
       @default_array_class = default_array_class
       @default_object_class = default_object_class
       @on_response = on_response
