@@ -10,7 +10,7 @@ Gem::Specification.new do |spec|
   spec.summary = "The object layer of the X gem: users, posts, lists, direct messages, and cursors."
   spec.homepage = "https://sferik.github.io/x-ruby"
   spec.license = "MIT"
-  spec.required_ruby_version = ">= 3.2"
+  spec.required_ruby_version = ">= 3.3"
   spec.platform = Gem::Platform::RUBY
 
   spec.metadata = {

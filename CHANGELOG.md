@@ -70,6 +70,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Take the authenticated user's ID for actions from the prefix of an OAuth 1.0a access token, with `current_user_id`, instead of requesting `users/me`
 
 ### Changed
+* Require Ruby 3.3 or later
 * Hydrate the stubs of a page together, in one batch lookup for the whole page rather than one request per stub, so walking `user.followers.stubs` costs a request per page
 * Split the object methods of the client into `X::Objects::API::Lookups` and `X::Objects::API::Actions`, which `X::Objects::API` includes together, and `X::Objects::API::Actions` into one module per kind of action: `Posts`, `Lists`, `DirectMessages`, `Relationships`, and `Engagement`
 * Raise `X::ResourceNotFound` instead of `KeyError` from `current_user` when the API returns no user
