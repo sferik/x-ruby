@@ -4,7 +4,7 @@ module X
   module Objects
     module API
       module Lookups
-        # Look up spaces, mixed into a client through API
+        # Look up and search spaces, mixed into a client through API
         # @api public
         module Spaces
           # Look up a space by identifier
@@ -44,6 +44,18 @@ module X
           #   client.find_spaces(["1DXxyRYNejbKM", "1OwGWzarWnNKQ"]).map(&:title)
           def find_spaces(ids, **params, &)
             Space.find_all(ids, client: self, **params, &)
+          end
+
+          # Search spaces by their titles
+          #
+          # @api public
+          # @param query [String] the search query
+          # @param params [Hash] query parameters merged over the default parameters, such as state: live or scheduled
+          # @return [Cursor] a cursor over the matching spaces
+          # @example Print the live spaces about Ruby
+          #   client.search_spaces("ruby", state: "live").each { |space| puts space.title }
+          def search_spaces(query, **params)
+            Space.search(query, client: self, **params)
           end
         end
       end

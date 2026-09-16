@@ -110,6 +110,7 @@ followers.ids                          # => [14100886, ...], requesting only ide
 x_client.search_posts("ruby -is:retweet").each { |post| puts post.text }
 x_client.search_users("ruby").first(10)
 x_client.search_communities("ruby").first(10)
+x_client.search_spaces("ruby", state: "live").first(10)
 x_client.current_user.home_timeline.first(10)
 ```
 

@@ -25,6 +25,21 @@ module X
       assert_equal({"space.fields" => Space::FIELDS, "user.fields" => User::FIELDS, "expansions" => Space::EXPANSIONS}, Space.default_params)
     end
 
+    def test_search
+      cursor = Space.search("ruby", client: @client, state: "live")
+
+      assert_equal ["spaces/search", Space, "ruby", "live", 100], [cursor.path, cursor.klass, cursor.params["query"], cursor.params["state"], cursor.params["max_results"]]
+      assert_equal Space::FIELDS.join(","), cursor.params["space.fields"]
+      assert_same @client, cursor.client
+    end
+
+    def test_search_reads_the_one_page_the_api_returns
+      @client.stub(:get, "spaces/search", {"data" => [{"id" => "1DXxyRYNejbKM", "title" => "Ruby"}], "meta" => {"result_count" => 1}})
+
+      assert_equal ["Ruby"], Space.search("ruby", client: @client, max_results: 10).map(&:title)
+      assert_equal [{"query" => "ruby", "max_results" => "10"}], @client.queries.map { |query| query.slice("query", "max_results") }
+    end
+
     def test_attributes
       assert_equal "Ruby", @space.title
       assert_equal "live", @space.state

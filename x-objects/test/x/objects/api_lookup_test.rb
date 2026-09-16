@@ -101,6 +101,13 @@ module X
         assert_equal "id", @client.queries.first["space.fields"]
       end
 
+      def test_search_spaces
+        cursor = @client.search_spaces("ruby", state: "scheduled")
+
+        assert_equal ["spaces/search", "ruby", "scheduled"], [cursor.path, cursor.params["query"], cursor.params["state"]]
+        assert_same @client, cursor.client
+      end
+
       def test_search_tweet_aliases
         assert_equal "tweets/search/recent", @client.search_tweets("ruby").path
         assert_equal "tweets/search/all", @client.search_all_tweets("ruby").path

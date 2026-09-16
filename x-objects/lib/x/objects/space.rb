@@ -10,7 +10,7 @@ module X
       subscriber_count title updated_at].freeze
     # Every expansion available on space endpoints
     EXPANSIONS = %w[creator_id host_ids invited_user_ids speaker_ids topic_ids].freeze
-    # Maximum number of posts per page
+    # Maximum number of posts, or of spaces a search returns, per page
     MAX_RESULTS = 100
 
     class << self
@@ -48,6 +48,21 @@ module X
       #   X::Space.default_params["space.fields"]
       def default_params
         {"space.fields" => FIELDS, "user.fields" => User::FIELDS, "expansions" => EXPANSIONS}
+      end
+
+      # Search spaces by their titles
+      #
+      # The API returns the matching spaces in one response, of up to 100 spaces.
+      #
+      # @api public
+      # @param query [String] the search query
+      # @param client [Object] the client used to make the request
+      # @param params [Hash] query parameters merged over the default parameters, such as state: live or scheduled
+      # @return [Cursor] a cursor over the matching spaces
+      # @example Print the live spaces about Ruby
+      #   X::Space.search("ruby", client: client, state: "live").each { |space| puts space.title }
+      def search(query, client:, **params)
+        Cursor.new(self, "spaces/search", client:, params: {query:, max_results: MAX_RESULTS}.merge(params))
       end
     end
 

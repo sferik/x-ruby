@@ -443,6 +443,7 @@ module X
           def find_space: (id id, **untyped params) ?{ (Problem problem) -> void } -> Space?
           def find_space!: (id id, **untyped params) -> Space
           def find_spaces: (Array[id] ids, **untyped params) ?{ (Problem problem) -> void } -> Array[Space]
+          def search_spaces: (String query, **untyped params) -> Cursor
         end
 
         module Communities : _Client
@@ -899,6 +900,7 @@ module X
     def self.endpoint: () -> String
     def self.fields_key: () -> String
     def self.default_params: () -> Hash[String, Array[String]]
+    def self.search: (String query, client: Objects::_Client, **untyped params) -> Cursor
 
     def title: () -> String?
     def state: () -> String?
