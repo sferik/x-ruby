@@ -11,9 +11,11 @@ require_relative "stream_parser"
 module X
   # A client for the streaming endpoints, which hold a connection open rather than answer a request
   #
-  # A stream reads until it is interrupted, so it reads with a short timeout, reconnects when it drops, and
-  # authenticates as the app, which the streaming endpoints require. It takes its credentials, base URL, parsing
-  # classes, and on_response hook from the client it was built from, and keeps the rest of its settings itself.
+  # A stream reads until it is interrupted, so it reads with a short timeout and reconnects when it drops. The
+  # streaming endpoints require app-only authentication, so it streams with the bearer token of a client that has
+  # one, or fetches one with the API key and secret of a client that signs with OAuth 1.0a. It takes its credentials,
+  # base URL, parsing classes, and on_response hook from the client it was built from, and keeps the rest of its
+  # settings itself.
   #
   # @api public
   class StreamingClient
@@ -67,7 +69,9 @@ module X
     # Stream data from the X API
     #
     # The stream endpoints take app-only authentication, so a client that signs with OAuth 1.0a streams with the
-    # bearer token its app_only client holds. A stream that drops reconnects, backing off as X recommends, up to
+    # bearer token its app_only client holds. A client that authenticates with OAuth 2.0 as a user holds no app-only
+    # credentials, and X refuses its streams with 403 Forbidden, so stream with a client built from the app's bearer
+    # token, or its API key and secret. A stream that drops reconnects, backing off as X recommends, up to
     # max_reconnects times in a row. The API bills each object a stream delivers, so the client's on_response
     # receives each one, as well as a failed response.
     #

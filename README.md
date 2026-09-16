@@ -287,7 +287,7 @@ x_client.create_post("Look at this cat move", media_ids: [video])
 
 A stream holds a connection open instead of answering a request, so `X::StreamingClient` handles one, and `streaming` builds it from a client. It shares the client's credentials, base URL, parsing classes, and `on_response` hook, and keeps the settings a long-lived connection needs: `read_timeout`, 20 seconds by default, and `max_reconnects`.
 
-The stream endpoints take app-only authentication, so a client that signs with OAuth 1.0a streams with the bearer token that `app_only` holds. The endpoints that manage stream rules take it too, so send those through `app_only`.
+The stream endpoints take app-only authentication, so a client that signs with OAuth 1.0a streams with the bearer token that `app_only` holds. The endpoints that manage stream rules take it too, so send those through `app_only`. A client that authenticates with OAuth 2.0 as a user holds no credentials of the app, so X refuses its streams with 403 Forbidden; stream with a client built from the app's bearer token, or its API key and secret, instead.
 
 X holds a stream open indefinitely, but drops it for deploys, network trouble, and slow readers. A stream that ends or drops reconnects at once, then waits a quarter second longer each attempt, up to 16 seconds. A server error, a refused connection, or a line that is not JSON waits 5 seconds, doubling each attempt, up to 320 seconds. A rate limit waits until it resets, or from a minute, doubling each attempt. Delivering a post starts the count over. A stream reconnects without limit by default; set `max_reconnects` to give up after that many attempts in a row. An error raised by the block always stops the stream.
 

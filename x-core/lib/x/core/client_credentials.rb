@@ -197,7 +197,9 @@ module X
     # A client that authenticates as the app, for the endpoints that refuse OAuth 1.0a
     #
     # A client that signs with OAuth 1.0a fetches an app-only bearer token with its API key and secret the first
-    # time, and keeps it for later copies. Any other client is already as able as a copy would be.
+    # time, and keeps it for later copies. Any other client is returned as it is: one with a bearer token or an API
+    # key and secret already authenticates as the app, and one that authenticates with OAuth 2.0 as a user holds no
+    # credentials of the app to authenticate with, so the endpoints that take app-only authentication refuse it.
     #
     # @api public
     # @return [Client] a copy that authenticates with the bearer token, or the client itself
