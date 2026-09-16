@@ -1,9 +1,8 @@
-require "net/http"
 require "simple_oauth"
-require "uri"
 require_relative "authenticator"
 require_relative "connection"
 require_relative "errors/error"
+require_relative "token_endpoint"
 
 module X
   # Authenticates as an app with a bearer token, fetched with the API key and secret when first needed
@@ -81,22 +80,17 @@ module X
     # @return [String] the bearer token
     # @raise [Error] if the token endpoint rejects the request
     def fetch_bearer_token
-      response = connection.perform(request: token_request)
-      SimpleOAuth::OAuth2::Token.from_response(status: response.code, body: response.body).access_token
+      TokenEndpoint.fetch(token_request, connection:).access_token
     rescue SimpleOAuth::OAuth2::Error => e
       raise Error, e.description || e.code || DEFAULT_ERROR_MESSAGE
     end
 
     # Build the client credentials request
     # @api private
-    # @return [Net::HTTP::Post] the token request
+    # @return [SimpleOAuth::OAuth2::Request] the token request
     def token_request
-      oauth2_client = SimpleOAuth::OAuth2::Client.new(client_id: api_key, client_secret: api_key_secret, token_endpoint: TOKEN_URL)
-      token_request = oauth2_client.client_credentials_request
-      request = Net::HTTP::Post.new(URI(token_request.url))
-      token_request.headers.each { |name, value| request[name] = value }
-      request.body = token_request.body
-      request
+      SimpleOAuth::OAuth2::Client.new(client_id: api_key, client_secret: api_key_secret, token_endpoint: TOKEN_URL)
+        .client_credentials_request
     end
   end
 end

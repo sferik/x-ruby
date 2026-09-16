@@ -1,9 +1,8 @@
-require "net/http"
 require "simple_oauth"
-require "uri"
 require_relative "authenticator"
 require_relative "connection"
 require_relative "errors/unauthorized"
+require_relative "token_endpoint"
 
 module X
   # Handles OAuth 2.0 authentication, refreshing the access token when it expires
@@ -190,7 +189,11 @@ module X
     # @return [Hash{String => Object}] the token response
     # @raise [Error] if token refresh fails
     def refresh
-      handle_token_response(send_token_request)
+      token = TokenEndpoint.fetch(oauth2_client.refresh_token_request(refresh_token:), connection:)
+      update_tokens(token)
+      token.params
+    rescue SimpleOAuth::OAuth2::Error => e
+      raise Error, e.description || e.code || DEFAULT_ERROR_MESSAGE
     end
 
     # Pass the authenticator to on_refresh, once the lock is released
@@ -216,37 +219,6 @@ module X
     # @return [String] the token endpoint URL
     def token_endpoint
       "https://#{TOKEN_HOST}#{TOKEN_PATH}"
-    end
-
-    # Send the token refresh request
-    # @api private
-    # @return [Net::HTTPResponse] the HTTP response
-    def send_token_request
-      connection.perform(request: build_token_request)
-    end
-
-    # Build the token refresh request
-    # @api private
-    # @return [Net::HTTP::Post] the POST request
-    def build_token_request
-      token_request = oauth2_client.refresh_token_request(refresh_token:)
-      request = Net::HTTP::Post.new(URI(token_request.url))
-      token_request.headers.each { |name, value| request[name] = value }
-      request.body = token_request.body
-      request
-    end
-
-    # Handle the token response
-    # @api private
-    # @param response [Net::HTTPResponse] the HTTP response
-    # @return [Hash{String => Object}] the parsed response body
-    # @raise [Error] if the response indicates an error
-    def handle_token_response(response)
-      token = SimpleOAuth::OAuth2::Token.from_response(status: response.code, body: response.body)
-      update_tokens(token)
-      token.params
-    rescue SimpleOAuth::OAuth2::Error => e
-      raise Error, e.description || e.code || DEFAULT_ERROR_MESSAGE
     end
 
     # Update tokens from the response

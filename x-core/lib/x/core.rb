@@ -1,2 +1,3 @@
 require_relative "core/version"
 require_relative "core/client"
+require_relative "core/oauth2_authorization"

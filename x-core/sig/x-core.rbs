@@ -16,6 +16,50 @@ module X
     def header: (Net::HTTPRequest? request) -> Hash[String, String]
   end
 
+  class OAuth2Authorization
+    AUTHORIZATION_URL: String
+    TOKEN_URL: String
+    DEFAULT_SCOPES: Array[String]
+    STATE_BYTES: Integer
+    DEFAULT_ERROR_MESSAGE: String
+
+    @pkce: SimpleOAuth::OAuth2::PKCE
+
+    attr_reader client_id: String
+    attr_reader client_secret: String?
+    attr_reader redirect_uri: String
+    attr_reader scopes: Array[String]
+    attr_reader state: String
+    attr_reader code_verifier: String
+    attr_reader connection: Connection
+
+    def initialize: (client_id: String, redirect_uri: String, ?client_secret: String?, ?scopes: Array[String], ?state: String, ?code_verifier: String, ?connection: Connection) -> void
+    def inspect: () -> String
+    def url: () -> String
+    def credentials: (String | Hash[String | Symbol, String] callback) -> Hash[Symbol, String | Time | nil]
+    def client: (String | Hash[String | Symbol, String] callback, **untyped options) -> Client
+
+    private
+    def oauth2_client: () -> SimpleOAuth::OAuth2::Client
+    def query_of: (String | Hash[String | Symbol, String] callback) -> (String | Hash[String | Symbol, String])
+    def credentials_from: (SimpleOAuth::OAuth2::Token token) -> Hash[Symbol, String | Time | nil]
+  end
+
+  class AuthorizationError < Error
+    attr_reader code: String?
+
+    def initialize: (String message, code: String?) -> void
+  end
+
+  module TokenEndpoint
+    extend TokenEndpoint
+
+    def fetch: (SimpleOAuth::OAuth2::Request token_request, connection: Connection) -> SimpleOAuth::OAuth2::Token
+
+    private
+    def post: (SimpleOAuth::OAuth2::Request token_request) -> Net::HTTP::Post
+  end
+
   class AppOnlyAuthenticator < Authenticator
     TOKEN_URL: String
     DEFAULT_ERROR_MESSAGE: String
@@ -32,7 +76,7 @@ module X
 
     private
     def fetch_bearer_token: () -> String
-    def token_request: () -> Net::HTTP::Post
+    def token_request: () -> SimpleOAuth::OAuth2::Request
   end
 
   class OAuth1Authenticator < Authenticator
@@ -405,9 +449,6 @@ module X
     def report_refresh: -> void
     def oauth2_client: -> SimpleOAuth::OAuth2::Client
     def token_endpoint: -> String
-    def send_token_request: -> Net::HTTPResponse
-    def build_token_request: -> Net::HTTP::Post
-    def handle_token_response: (Net::HTTPResponse response) -> Hash[String, untyped]
     def update_tokens: (SimpleOAuth::OAuth2::Token token) -> void
   end
 
