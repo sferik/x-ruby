@@ -74,7 +74,7 @@ module X
       def path: (String base, params params) -> String
       def query: (params params) -> query
       def merge_params: (params defaults, params params) -> query
-      def id_of: (untyped value) -> String
+      def id_of: (untyped value, ?raw: bool) -> String
       def username: (untyped value) -> String
       def media_id_of: (untyped value) -> String
       def integer: (String | Integer | nil value) -> Integer?
@@ -236,6 +236,7 @@ module X
 
     interface _FinderHost
       def endpoint!: () -> String
+      def id_type: () -> Symbol
       def default_params: () -> Hash[String, Array[String]]
       def resource_from_response: (body body, client: _Client?, ?hydrated: bool) -> Resource?
       def collection_from_response: (body body, client: _Client?, ?hydrated: bool) -> Array[Resource]

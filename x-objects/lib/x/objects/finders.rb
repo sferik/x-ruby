@@ -21,7 +21,7 @@ module X
       # @yieldparam problem [Problem] each problem the API reported, such as a resource that was not found
       # @example Look up a user by identifier
       #   X::User.find("7505382", client: client)
-      def find(id, client:, **params, &) = lookup("#{endpoint!}/#{Utils.id_of(id)}", client:, **params, &)
+      def find(id, client:, **params, &) = lookup("#{endpoint!}/#{Utils.id_of(id, raw: id_type.eql?(:raw))}", client:, **params, &)
 
       # Look up a resource by identifier, which must exist
       #
@@ -66,7 +66,7 @@ module X
       # @example Look up many users by identifier, reporting the ones that were not found
       #   X::User.find_all(["7505382", "12"], client: client) { |problem| warn problem.detail }
       def find_all(ids, client:, **params, &)
-        lookup_in_batches(endpoint!, :ids, ids.map { |id| Utils.id_of(id) }, client:, **params, &)
+        lookup_in_batches(endpoint!, :ids, ids.map { |id| Utils.id_of(id, raw: id_type.eql?(:raw)) }, client:, **params, &)
       end
 
       # Fetch a single resource from an endpoint

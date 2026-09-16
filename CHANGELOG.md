@@ -55,7 +55,7 @@ See [UPGRADING.md](UPGRADING.md) for the changes that code written for 0.19 need
 * Scan a cursor with nothing but identifiers with `stubs`, and check a relationship without fetching every page with `user.follows?` and `list.member?`
 * Resolve the posts a post or direct message refers to with `references`, and pair `liked_by` with `reposted_by` on `X::Post`
 * Add `X::Post#urls` and `X::Post#expanded_text`, the text with every shortened link replaced by the URL it stands for
-* Look up a user by identifier when given an Integer and by username when given a String, so an account whose username is all digits is found by name
+* Look up a user by identifier when given an Integer and by username when given a String, so an account whose username is all digits is found by name; everywhere else, such as `follow`, `from_id`, and `find_post`, an identifier that is not a number raises `ArgumentError`, rather than reach the API as a username it would take for an identifier
 * Name the interface after posts rather than tweets, including `post_count`, `pinned_post_id`, `most_recent_post_id`, `edit_history_post_ids`, `note_post`, `referenced_posts`, and `repost_count`; the tweet-named methods, such as `create_tweet`, `tweets`, and `retweet_count`, remain as aliases
 * Add `inspect` to `Client` and the authenticators that never reveals credentials
 * Preserve custom headers passed to `get`, `post`, `put`, and `delete` across redirects

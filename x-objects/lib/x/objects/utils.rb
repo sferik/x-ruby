@@ -59,11 +59,19 @@ module X
 
       # Extract an identifier from a resource or a raw value
       #
+      # The identifiers of most resources are numbers, so a value that is not, such as a username, raises rather than
+      # reach the API as an identifier it cannot be.
+      #
       # @api private
       # @param value [#id, String, Integer] a resource or an identifier
+      # @param raw [Boolean] true for a resource whose identifiers are not numbers, such as a space
       # @return [String] the identifier
-      def id_of(value)
-        value.respond_to?(:id) ? value.id.to_s : value.to_s
+      # @raise [ArgumentError] if the identifier is not a number, unless raw
+      def id_of(value, raw: false)
+        id = value.respond_to?(:id) ? value.id.to_s : value.to_s
+        return id if raw || id.match?(/\A\d+\z/)
+
+        raise ArgumentError, "#{value.inspect} is not an identifier: pass a resource, an Integer, or a String of digits"
       end
 
       # Normalize a username, dropping the at sign a handle is often written with

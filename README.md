@@ -180,7 +180,7 @@ x_client.find_users(follower_ids)                       # parallel batches of 10
 user.followers.prefetch.each { |follower| process(follower) }
 ```
 
-**Actions.** Actions are taken as the authenticated user.
+**Actions.** Actions are taken as the authenticated user. They take a resource or its identifier, an Integer or a String of digits, and raise `ArgumentError` for anything else, such as a username, so look a user up with `find_user` first.
 
 ```ruby
 me = x_client.current_user             # fetched once per client

@@ -96,9 +96,10 @@ module X
         # @param id [String, Integer, Resource] the identifier, or a resource whose identifier is taken
         # @param client [Object, nil] the client used to fetch the resource and its references
         # @return [Resource] a stub that hydrates to the full resource
+        # @raise [ArgumentError] if the identifier is not a number, for a resource whose identifiers are numbers
         # @example Page through the followers of a user without looking the user up
         #   X::User.from_id(7505382, client: client).followers
-        def from_id(id, client: nil, batch: nil) = new({id_key => Utils.id_of(id)}, client:, batch:)
+        def from_id(id, client: nil, batch: nil) = new({id_key => Utils.id_of(id, raw: id_type.eql?(:raw))}, client:, batch:)
 
         # The default query parameters requesting every field and expansion
         #
