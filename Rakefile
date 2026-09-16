@@ -44,6 +44,25 @@ task :build do
   end
 end
 
+# The path of a gem that build writes into the pkg directory
+def gem_path(name)
+  File.expand_path("pkg/#{name}-#{version}.gem", __dir__)
+end
+
+# Bundler's install, checksum, and push tasks know only the gem of the root gemspec, x, which would install the gems
+# it depends on from RubyGems rather than pkg, and push only x
+%w[install install:local build:checksum release:rubygem_push].each { |name| Rake::Task[name].clear }
+
+desc "Build and install x-core, x-uploader, x-objects, and x into system gems"
+task install: :build do
+  GEMS.each_key { |name| Bundler.with_original_env { sh "gem", "install", gem_path(name) } }
+end
+
+desc "Build and install x-core, x-uploader, x-objects, and x into system gems without network access"
+task "install:local" => :build do
+  GEMS.each_key { |name| Bundler.with_original_env { sh "gem", "install", gem_path(name), "--local" } }
+end
+
 Rake::Task["release"].clear
 desc "Build gems and create tag (gem push handled by CI)"
 task release: %w[check_versions build release:guard_clean release:source_control_push]
