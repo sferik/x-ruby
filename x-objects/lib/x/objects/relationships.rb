@@ -8,13 +8,15 @@ module X
     module Relationships
       # Follow a user, acting as this user, which must be the authenticated user
       #
+      # A protected user must accept the request first, so following one reports true once the request is pending.
+      #
       # @api public
       # @param user [Resource, String, Integer] the user to follow or their identifier
-      # @return [Boolean] true if this user now follows the user
+      # @return [Boolean] true if this user now follows the user, or has asked to follow a protected user
       # @example Follow a user
       #   client.current_user.follow(client.find_user("sferik"))
       def follow(user)
-        relate("following", "target_user_id", user, "following")
+        relate("following", "target_user_id", user, "following", "pending_follow")
       end
 
       # Unfollow a user, acting as this user, which must be the authenticated user
@@ -229,11 +231,11 @@ module X
       # @param relation [String] the relation endpoint, such as following, likes, or pinned_lists
       # @param key [String] the request body field holding the identifier of the target
       # @param target [Resource, String, Integer] the related resource or its identifier
-      # @param state [String] the response field reporting the state
+      # @param states [Array<String>] the response fields reporting the state, any of which is true once it exists
       # @return [Boolean] true if the relation now exists
-      def relate(relation, key, target, state)
+      def relate(relation, key, target, *states)
         body = client!.post("users/#{id}/#{relation}", JSON.generate({key => Utils.id_of(target)}), **Utils::JSON_CLASSES)
-        body.to_h.dig("data", state).eql?(true)
+        states.any? { |state| body.to_h.dig("data", state).eql?(true) }
       end
 
       # Remove a relation from this user and report the resulting state

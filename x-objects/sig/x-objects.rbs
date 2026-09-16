@@ -230,7 +230,7 @@ module X
       private
       def authenticated_user_id: () -> Integer?
       def connection_status_of: (id user) -> Array[String]
-      def relate: (String relation, String key, id target, String state) -> bool
+      def relate: (String relation, String key, id target, *String states) -> bool
       def unrelate: (String relation, id target, String state) -> bool
     end
 

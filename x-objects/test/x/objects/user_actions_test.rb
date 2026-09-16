@@ -19,7 +19,19 @@ module X
     def test_follow_pending
       @client.stub(:post, "users/9/following", {"data" => {"following" => false, "pending_follow" => true}})
 
-      refute @me.follow(1)
+      assert @me.follow(1)
+    end
+
+    def test_follow_refused
+      @client.stub(:post, "users/9/following", {"data" => {"following" => false, "pending_follow" => false}})
+
+      assert_same false, @me.follow(1)
+    end
+
+    def test_follow_reports_only_a_state_of_true
+      @client.stub(:post, "users/9/following", {"data" => {"following" => "true", "pending_follow" => 1}})
+
+      assert_same false, @me.follow(1)
     end
 
     def test_follow_without_body

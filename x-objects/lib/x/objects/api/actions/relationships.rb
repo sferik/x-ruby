@@ -11,7 +11,7 @@ module X
           #
           # @api public
           # @param user [User, String, Integer] the user or their identifier
-          # @return [Boolean] true if the authenticated user now follows the user
+          # @return [Boolean] true if the authenticated user now follows the user, or has asked to follow a protected user
           # @example Follow a user
           #   client.follow("7505382")
           def follow(user)

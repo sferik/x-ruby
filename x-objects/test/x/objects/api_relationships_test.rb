@@ -21,7 +21,7 @@ module X
       def test_follow_pending
         @client.stub(:post, "users/9/following", {"data" => {"following" => false, "pending_follow" => true}})
 
-        refute @client.follow("1")
+        assert @client.follow("1")
       end
 
       def test_unfollow
