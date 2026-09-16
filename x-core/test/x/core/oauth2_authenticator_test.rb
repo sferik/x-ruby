@@ -193,14 +193,13 @@ module X
       assert_operator authenticator.expires_at, :>=, before_refresh + 7200
     end
 
-    def test_refresh_token_keeps_expires_at_when_no_lifetime_is_returned
-      expires_at = Time.now + 3600
-      authenticator = OAuth2Authenticator.new(**test_oauth2_credentials, expires_at: expires_at)
+    def test_refresh_token_forgets_expires_at_when_no_lifetime_is_returned
+      authenticator = OAuth2Authenticator.new(**test_oauth2_credentials, expires_at: Time.now + 3600)
       stub_request(:post, TOKEN_URL).to_return(status: 200, body: {access_token: "new"}.to_json)
 
       authenticator.refresh_token!
 
-      assert_equal expires_at, authenticator.expires_at
+      assert_nil authenticator.expires_at
     end
 
     def test_refresh_token_keeps_old_refresh_token_when_not_returned
@@ -226,6 +225,13 @@ module X
       authenticator = OAuth2Authenticator.new(**test_oauth2_credentials, expires_at: Time.now - 1)
 
       assert_equal({"Authorization" => "Bearer NEW_ACCESS_TOKEN"}, authenticator.header(nil))
+      assert_requested @refresh, times: 1
+    end
+
+    def test_header_refreshes_an_expired_token_once_when_no_lifetime_is_returned
+      authenticator = OAuth2Authenticator.new(**test_oauth2_credentials, expires_at: Time.now - 1)
+      2.times { authenticator.header(nil) }
+
       assert_requested @refresh, times: 1
     end
 

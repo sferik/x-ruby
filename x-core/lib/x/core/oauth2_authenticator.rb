@@ -228,7 +228,7 @@ module X
     def update_tokens(token)
       @access_token = token.access_token
       @refresh_token = token.refresh_token if token.refresh_token
-      @expires_at = token.expires_at if token.expires_at
+      @expires_at = token.expires_at
     end
   end
 end
