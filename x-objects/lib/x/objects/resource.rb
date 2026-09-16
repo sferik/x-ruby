@@ -314,7 +314,7 @@ module X
       # @api private
       # @param klass [Class] the resource class of the items
       # @param path [String] the endpoint path
-      # @param max_results [Integer] the maximum number of items per page
+      # @param max_results [Integer, nil] the maximum number of items per page, or nil for an endpoint without pages
       # @param min_results [Integer] the smallest page the endpoint accepts
       # @param total [Symbol, nil] the attribute holding the number of resources the API publishes
       # @param params [Hash] query parameters merged over the default parameters

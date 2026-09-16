@@ -217,6 +217,10 @@ module X
       def unretweet: (id post) -> bool
       def bookmark: (id post) -> bool
       def unbookmark: (id post) -> bool
+      def follow_list: (id list) -> bool
+      def unfollow_list: (id list) -> bool
+      def pin_list: (id list) -> bool
+      def unpin_list: (id list) -> bool
       def follows?: (id user) -> bool
 
       private
@@ -318,7 +322,7 @@ module X
       def fetch: () -> Resource?
       def client!: () -> _Client
       def resolve: (singleton(Resource) klass, untyped id) -> Resource?
-      def cursor: (singleton(Resource) klass, String path, max_results: Integer, ?min_results: Integer, ?total: Symbol?, **untyped params) -> Cursor
+      def cursor: (singleton(Resource) klass, String path, max_results: Integer?, ?min_results: Integer, ?total: Symbol?, **untyped params) -> Cursor
       def counter: (Symbol? total) -> (^() -> Integer?)?
     end
 
@@ -414,9 +418,13 @@ module X
           def delete_tweet: (id post) -> bool
         end
 
-        module Lists : _Client
+        module Lists : _Client, _CurrentUser
           def create_list: (String name, **untyped params) -> List?
           def delete_list: (id list) -> bool
+          def follow_list: (id list) -> bool
+          def unfollow_list: (id list) -> bool
+          def pin_list: (id list) -> bool
+          def unpin_list: (id list) -> bool
         end
 
         module DirectMessages : _Client
@@ -630,6 +638,7 @@ module X
     def owned_lists: (**untyped params) -> Cursor
     def list_memberships: (**untyped params) -> Cursor
     def followed_lists: (**untyped params) -> Cursor
+    def pinned_lists: (**untyped params) -> Cursor
   end
 
   class Post < Objects::Resource

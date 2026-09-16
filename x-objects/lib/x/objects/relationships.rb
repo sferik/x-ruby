@@ -3,7 +3,7 @@ require_relative "utils"
 
 module X
   module Objects
-    # Relationships with users and posts, changed as the authenticated user
+    # Relationships with users, posts, and lists, changed as the authenticated user
     # @api public
     module Relationships
       # Follow a user, acting as this user, which must be the authenticated user
@@ -138,6 +138,50 @@ module X
         unrelate("bookmarks", post, "bookmarked")
       end
 
+      # Follow a list, acting as this user, which must be the authenticated user
+      #
+      # @api public
+      # @param list [Resource, String, Integer] the list or its identifier
+      # @return [Boolean] true if this user now follows the list
+      # @example Follow a list
+      #   client.current_user.follow_list(list)
+      def follow_list(list)
+        relate("followed_lists", "list_id", list, "following")
+      end
+
+      # Unfollow a list, acting as this user, which must be the authenticated user
+      #
+      # @api public
+      # @param list [Resource, String, Integer] the list or its identifier
+      # @return [Boolean] true if this user no longer follows the list
+      # @example Unfollow a list
+      #   client.current_user.unfollow_list(list)
+      def unfollow_list(list)
+        unrelate("followed_lists", list, "following")
+      end
+
+      # Pin a list, acting as this user, which must be the authenticated user
+      #
+      # @api public
+      # @param list [Resource, String, Integer] the list or its identifier
+      # @return [Boolean] true if this user has pinned the list
+      # @example Pin a list
+      #   client.current_user.pin_list(list)
+      def pin_list(list)
+        relate("pinned_lists", "list_id", list, "pinned")
+      end
+
+      # Unpin a list, acting as this user, which must be the authenticated user
+      #
+      # @api public
+      # @param list [Resource, String, Integer] the list or its identifier
+      # @return [Boolean] true if this user no longer has the list pinned
+      # @example Unpin a list
+      #   client.current_user.unpin_list(list)
+      def unpin_list(list)
+        unrelate("pinned_lists", list, "pinned")
+      end
+
       # Check whether this user follows a user
       #
       # When either user is the authenticated user, one lookup of the other's connection_status answers.
@@ -182,7 +226,7 @@ module X
 
       # Relate a resource to this user and report the resulting state
       # @api private
-      # @param relation [String] the relation endpoint: following, blocking, muting, likes, retweets, or bookmarks
+      # @param relation [String] the relation endpoint, such as following, likes, or pinned_lists
       # @param key [String] the request body field holding the identifier of the target
       # @param target [Resource, String, Integer] the related resource or its identifier
       # @param state [String] the response field reporting the state
@@ -194,7 +238,7 @@ module X
 
       # Remove a relation from this user and report the resulting state
       # @api private
-      # @param relation [String] the relation endpoint: following, blocking, muting, likes, retweets, or bookmarks
+      # @param relation [String] the relation endpoint, such as following, likes, or pinned_lists
       # @param target [Resource, String, Integer] the related resource or its identifier
       # @param state [String] the response field reporting the state
       # @return [Boolean] true if the relation no longer exists

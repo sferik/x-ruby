@@ -31,6 +31,34 @@ module X
 
         refute @client.delete_list(List.new({"id" => "1"}))
       end
+
+      def test_follow_list
+        @client.stub(:post, "users/9/followed_lists", {"data" => {"following" => true}})
+
+        assert @client.follow_list(List.new({"id" => "1"}))
+        assert_equal [{method: :post, path: "users/9/followed_lists", query: {}, body: {list_id: "1"}.to_json}], @client.requests.drop(1)
+      end
+
+      def test_unfollow_list
+        @client.stub(:delete, "users/9/followed_lists/1", {"data" => {"following" => false}})
+
+        assert @client.unfollow_list("1")
+        assert_equal "users/9/followed_lists/1", @client.paths.last
+      end
+
+      def test_pin_list
+        @client.stub(:post, "users/9/pinned_lists", {"data" => {"pinned" => true}})
+
+        assert @client.pin_list("1")
+        assert_equal [{method: :post, path: "users/9/pinned_lists", query: {}, body: {list_id: "1"}.to_json}], @client.requests.drop(1)
+      end
+
+      def test_unpin_list
+        @client.stub(:delete, "users/9/pinned_lists/1", {"data" => {"pinned" => false}})
+
+        assert @client.unpin_list("1")
+        assert_equal "users/9/pinned_lists/1", @client.paths.last
+      end
     end
   end
 end

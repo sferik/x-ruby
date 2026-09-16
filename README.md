@@ -195,6 +195,7 @@ post.delete
 
 list = x_client.create_list("Rubyists", private: true)
 list.add_member(user)
+me.pin_list(list)                      # also unpin_list, follow_list, and unfollow_list
 list.delete
 
 message = x_client.create_dm(user, "Hello!") # create_direct_message, shortened

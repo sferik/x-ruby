@@ -1,10 +1,11 @@
 require_relative "../../list"
+require_relative "../../user"
 
 module X
   module Objects
     module API
       module Actions
-        # Create and delete lists as the authenticated user
+        # Create, delete, follow, and pin lists as the authenticated user
         # @api public
         module Lists
           # Create a list owned by the authenticated user
@@ -28,6 +29,50 @@ module X
           #   client.delete_list("1234567890")
           def delete_list(list)
             List.delete(list, client: self)
+          end
+
+          # Follow a list as the authenticated user
+          #
+          # @api public
+          # @param list [List, String, Integer] the list or its identifier
+          # @return [Boolean] true if the authenticated user now follows the list
+          # @example Follow a list
+          #   client.follow_list("1234567890")
+          def follow_list(list)
+            User.from_id(current_user_id, client: self).follow_list(list)
+          end
+
+          # Unfollow a list as the authenticated user
+          #
+          # @api public
+          # @param list [List, String, Integer] the list or its identifier
+          # @return [Boolean] true if the authenticated user no longer follows the list
+          # @example Unfollow a list
+          #   client.unfollow_list("1234567890")
+          def unfollow_list(list)
+            User.from_id(current_user_id, client: self).unfollow_list(list)
+          end
+
+          # Pin a list as the authenticated user
+          #
+          # @api public
+          # @param list [List, String, Integer] the list or its identifier
+          # @return [Boolean] true if the authenticated user has pinned the list
+          # @example Pin a list
+          #   client.pin_list("1234567890")
+          def pin_list(list)
+            User.from_id(current_user_id, client: self).pin_list(list)
+          end
+
+          # Unpin a list as the authenticated user
+          #
+          # @api public
+          # @param list [List, String, Integer] the list or its identifier
+          # @return [Boolean] true if the authenticated user no longer has the list pinned
+          # @example Unpin a list
+          #   client.unpin_list("1234567890")
+          def unpin_list(list)
+            User.from_id(current_user_id, client: self).unpin_list(list)
           end
         end
       end

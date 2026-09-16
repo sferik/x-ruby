@@ -454,6 +454,19 @@ module X
       cursor(List, "users/#{id}/followed_lists", max_results: MAX_RESULTS, **params)
     end
 
+    # The lists this user has pinned
+    #
+    # The API returns them in one response, without pages.
+    #
+    # @api public
+    # @param params [Hash] query parameters merged over the default parameters
+    # @return [Cursor] a cursor over the pinned lists
+    # @example Print the pinned lists
+    #   client.current_user.pinned_lists.each { |list| puts list.name }
+    def pinned_lists(**params)
+      cursor(List, "users/#{id}/pinned_lists", max_results: nil, **params)
+    end
+
     alias_method :tweets, :posts
     alias_method :liked_tweets, :liked_posts
   end
