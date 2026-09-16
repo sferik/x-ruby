@@ -85,7 +85,7 @@ See [UPGRADING.md](https://github.com/sferik/x-ruby/blob/main/UPGRADING.md) for 
 ### Changed
 * Require Ruby 3.3 or later
 * Hydrate the stubs of a page together, in one batch lookup for the whole page rather than one request per stub, so walking `user.followers.stubs` costs a request per page
-* Split the object methods of the client into `X::Objects::API::Lookups` and `X::Objects::API::Actions`, which `X::Objects::API` includes together, and `X::Objects::API::Actions` into one module per kind of action: `Posts`, `Lists`, `DirectMessages`, `Relationships`, and `Engagement`
+* Split the object methods of the client into `X::Objects::API::Lookups` and `X::Objects::API::Actions`, which `X::Objects::API` includes together, `X::Objects::API::Lookups` into one module per kind of resource: `Users`, `Posts`, `Lists`, `Spaces`, `Communities`, and `DirectMessages`, and `X::Objects::API::Actions` into one module per kind of action: `Posts`, `Lists`, `DirectMessages`, `Relationships`, and `Engagement`
 * Raise `X::ResourceNotFound` instead of `KeyError` from `current_user` when the API returns no user
 * Read only the rate limits a response reports in full, with a limit, remaining requests, and reset time, so `X::TooManyRequests#retry_after` no longer raises `KeyError` for a response without a reset time
 * Return the identifiers of users, posts, lists, direct messages, communities, and polls as Integers, along with the attributes that refer to them, such as `author_id`, `owner_id`, and `participant_ids`; space and place identifiers, media keys, and `dm_conversation_id`, which are not numbers, remain Strings
