@@ -400,7 +400,7 @@ module X
     def handle: (response: Net::HTTPResponse, request: Net::HTTPRequest, ?headers: Hash[String, String], ?authenticator: Authenticator, ?redirect_count: Integer) -> Net::HTTPResponse
 
     private
-    def build_new_uri: (Net::HTTPResponse response, URI::Generic uri) -> URI::Generic
+    def build_new_uri: (Net::HTTPResponse response, URI::Generic uri) -> URI::Generic?
     def credentials_for: (URI::Generic from, URI::Generic to, Authenticator authenticator, Hash[String, String] headers) -> [Authenticator, Hash[String, String]]
     def same_origin?: (URI::Generic uri, URI::Generic other) -> bool
     def origin: (URI::Generic uri) -> [String?, String?, Integer?]

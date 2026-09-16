@@ -57,6 +57,9 @@ module X
     # A redirect to another scheme, host, or port drops the credentials, the authenticator's and any
     # Authorization header among the headers, so that they never reach a host they were not meant for.
     #
+    # A redirect that cannot be followed, such as 304 Not Modified or one whose location is missing, is not a
+    # valid URL, or is not an HTTP or HTTPS URL, is returned as it is, so that the client raises an HTTPError for it.
+    #
     # @api private
     # @param response [Net::HTTPResponse] the HTTP response to handle
     # @param request [Net::HTTPRequest] the request the response answers, built from a URI
@@ -73,6 +76,8 @@ module X
 
       uri = request.uri #: URI::Generic
       new_uri = build_new_uri(response, uri)
+      return response if new_uri.nil?
+
       authenticator, headers = credentials_for(uri, new_uri, authenticator, headers)
       new_request = build_request(request, new_uri, Integer(response.code), headers, authenticator)
       handle(response: connection.perform(request: new_request), request: new_request, headers:, authenticator:,
@@ -89,9 +94,13 @@ module X
     # @api private
     # @param response [Net::HTTPResponse] the redirect response
     # @param uri [URI::Generic] the URI of the request that was redirected
-    # @return [URI] the new URI
+    # @return [URI::HTTP, nil] the new URI, or nil if the location is missing, invalid, or not an HTTP or HTTPS URL
     def build_new_uri(response, uri)
-      URI.join(uri, response.fetch("location"))
+      location = response["location"] or return
+      new_uri = URI.join(uri, location)
+      new_uri if new_uri.is_a?(URI::HTTP)
+    rescue URI::InvalidURIError
+      nil
     end
 
     # The authenticator and headers of a redirect, dropping credentials off origin
