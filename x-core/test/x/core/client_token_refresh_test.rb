@@ -54,6 +54,15 @@ module X
       assert_requested @refresh, times: 1
     end
 
+    def test_a_refused_refresh_of_a_rejected_token_raises_an_authorization_error
+      stub_request(:post, "https://api.x.com/2/oauth2/token")
+        .to_return(status: 400, body: {error: "invalid_request", error_description: "Value passed for the token was invalid."}.to_json)
+      stub_users_me(TEST_ACCESS_TOKEN, status: 401)
+      error = assert_raises(AuthorizationError) { Client.new(**test_oauth2_credentials).get("users/me") }
+
+      assert_equal ["Value passed for the token was invalid.", "invalid_request", 400], [error.message, error.code, error.status]
+    end
+
     def test_a_refresh_that_returns_the_rejected_token_raises_without_sending_again
       stub_token_refresh(TEST_ACCESS_TOKEN, "NEW_REFRESH_TOKEN")
       stub_users_me(TEST_ACCESS_TOKEN, status: 401)

@@ -399,8 +399,8 @@ module X
       stub_request(:post, TOKEN_URL)
         .to_return(status: 400, body: {error: "invalid_grant", error_description: "Token expired"}.to_json)
 
-      error = assert_raises(Error) { authenticator.refresh_token! }
-      assert_equal "Token expired", error.message
+      error = assert_raises(AuthorizationError) { authenticator.refresh_token! }
+      assert_equal ["Token expired", "invalid_grant", 400], [error.message, error.code, error.status]
     end
 
     def test_refresh_token_raises_on_error_without_description
@@ -409,7 +409,7 @@ module X
       stub_request(:post, TOKEN_URL)
         .to_return(status: 400, body: {error: "invalid_grant"}.to_json)
 
-      error = assert_raises(Error) { authenticator.refresh_token! }
+      error = assert_raises(AuthorizationError) { authenticator.refresh_token! }
       assert_equal "invalid_grant", error.message
     end
 
@@ -419,8 +419,8 @@ module X
       stub_request(:post, TOKEN_URL)
         .to_return(status: 500, body: {}.to_json)
 
-      error = assert_raises(Error) { authenticator.refresh_token! }
-      assert_equal "Token refresh failed", error.message
+      error = assert_raises(AuthorizationError) { authenticator.refresh_token! }
+      assert_equal ["Token refresh failed", nil, 500], [error.message, error.code, error.status]
     end
 
     def test_refresh_token_raises_on_invalid_json_response
@@ -429,7 +429,7 @@ module X
       stub_request(:post, TOKEN_URL)
         .to_return(status: 500, body: "Internal Server Error")
 
-      error = assert_raises(Error) { authenticator.refresh_token! }
+      error = assert_raises(AuthorizationError) { authenticator.refresh_token! }
       assert_equal "Token refresh failed", error.message
     end
   end

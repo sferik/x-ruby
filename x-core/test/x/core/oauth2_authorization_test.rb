@@ -167,7 +167,7 @@ module X
     def test_a_redirect_for_another_authorization_raises
       error = assert_raises(AuthorizationError) { authorization.credentials("state=OTHER&code=CODE") }
 
-      assert_equal ["The authorization response answers a different request", nil], [error.message, error.code]
+      assert_equal ["The authorization response answers a different request", nil, nil], [error.message, error.code, error.status]
       assert_not_requested :post, "https://api.x.com/2/oauth2/token"
     end
 
@@ -175,7 +175,7 @@ module X
       stub_token(status: 400, body: {error: "invalid_grant", error_description: "Value passed for the authorization code was invalid."})
       error = assert_raises(AuthorizationError) { authorization.credentials("state=STATE&code=CODE") }
 
-      assert_equal ["Value passed for the authorization code was invalid.", "invalid_grant"], [error.message, error.code]
+      assert_equal ["Value passed for the authorization code was invalid.", "invalid_grant", 400], [error.message, error.code, error.status]
     end
 
     def test_a_redirect_that_is_not_a_valid_url_raises

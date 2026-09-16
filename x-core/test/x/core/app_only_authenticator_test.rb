@@ -81,21 +81,21 @@ module X
     def test_raises_with_the_error_description
       stub_request(:post, AppOnlyAuthenticator::TOKEN_URL)
         .to_return(status: 403, body: {error: "invalid_client", error_description: "Unable to verify your credentials"}.to_json)
-      error = assert_raises(Error) { @authenticator.bearer_token }
+      error = assert_raises(AuthorizationError) { @authenticator.bearer_token }
 
-      assert_equal "Unable to verify your credentials", error.message
+      assert_equal ["Unable to verify your credentials", "invalid_client", 403], [error.message, error.code, error.status]
     end
 
     def test_raises_with_the_error_code_without_a_description
       stub_request(:post, AppOnlyAuthenticator::TOKEN_URL).to_return(status: 403, body: {error: "invalid_client"}.to_json)
-      error = assert_raises(Error) { @authenticator.bearer_token }
+      error = assert_raises(AuthorizationError) { @authenticator.bearer_token }
 
       assert_equal "invalid_client", error.message
     end
 
     def test_raises_with_the_default_message
       stub_request(:post, AppOnlyAuthenticator::TOKEN_URL).to_return(status: 500, body: "Internal Server Error")
-      error = assert_raises(Error) { @authenticator.bearer_token }
+      error = assert_raises(AuthorizationError) { @authenticator.bearer_token }
 
       assert_equal "Bearer token request failed", error.message
     end
@@ -103,7 +103,7 @@ module X
     def test_a_failed_fetch_is_retried
       stub_request(:post, AppOnlyAuthenticator::TOKEN_URL).to_return(status: 500, body: "").then
         .to_return(status: 200, body: {access_token: TEST_BEARER_TOKEN}.to_json)
-      assert_raises(Error) { @authenticator.bearer_token }
+      assert_raises(AuthorizationError) { @authenticator.bearer_token }
 
       assert_equal TEST_BEARER_TOKEN, @authenticator.bearer_token
     end

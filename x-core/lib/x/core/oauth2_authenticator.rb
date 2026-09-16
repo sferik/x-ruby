@@ -1,6 +1,7 @@
 require "simple_oauth"
 require_relative "authenticator"
 require_relative "connection"
+require_relative "errors/authorization_error"
 require_relative "errors/unauthorized"
 require_relative "token_endpoint"
 
@@ -102,7 +103,7 @@ module X
     # @api public
     # @param _request [Net::HTTPRequest, nil] the HTTP request (unused)
     # @return [Hash{String => String}] the authentication header
-    # @raise [Error] if the token has expired and cannot be refreshed
+    # @raise [AuthorizationError] if the token has expired and X refuses to refresh it
     # @example Get the header
     #   authenticator.header(request)
     def header(_request)
@@ -137,7 +138,7 @@ module X
     #
     # @api public
     # @return [Hash{String => Object}] the token response
-    # @raise [Error] if token refresh fails
+    # @raise [AuthorizationError] if X refuses to refresh the token
     # @example Refresh the token
     #   authenticator.refresh_token!
     def refresh_token!
@@ -151,7 +152,7 @@ module X
     # @api public
     # @param rejected_token [String] the access token the API rejected
     # @return [Boolean] true if the access token is no longer the one rejected
-    # @raise [Error] if token refresh fails
+    # @raise [AuthorizationError] if X refuses to refresh the token
     # @example Refresh a token the API rejected, and retry
     #   retry if authenticator.refresh_rejected_token!(token)
     def refresh_rejected_token!(rejected_token)
@@ -187,13 +188,13 @@ module X
     # Refresh the access token, holding the lock
     # @api private
     # @return [Hash{String => Object}] the token response
-    # @raise [Error] if token refresh fails
+    # @raise [AuthorizationError] if X refuses to refresh the token
     def refresh
       token = TokenEndpoint.fetch(oauth2_client.refresh_token_request(refresh_token:), connection:)
       update_tokens(token)
       token.params
     rescue SimpleOAuth::OAuth2::Error => e
-      raise Error, e.description || e.code || DEFAULT_ERROR_MESSAGE
+      raise AuthorizationError.from(e, DEFAULT_ERROR_MESSAGE)
     end
 
     # Pass the authenticator to on_refresh, once the lock is released

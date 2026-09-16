@@ -1,7 +1,7 @@
 require "simple_oauth"
 require_relative "authenticator"
 require_relative "connection"
-require_relative "errors/error"
+require_relative "errors/authorization_error"
 require_relative "token_endpoint"
 
 module X
@@ -55,7 +55,7 @@ module X
     # @api public
     # @param _request [Net::HTTPRequest, nil] the request, which app-only authentication does not sign
     # @return [Hash{String => String}] the authorization header
-    # @raise [Error] if the bearer token cannot be fetched
+    # @raise [AuthorizationError] if X refuses to issue the bearer token
     # @example Generate the header
     #   authenticator.header(request) # => {"Authorization" => "Bearer ..."}
     def header(_request)
@@ -66,7 +66,7 @@ module X
     #
     # @api public
     # @return [String] the bearer token
-    # @raise [Error] if the bearer token cannot be fetched
+    # @raise [AuthorizationError] if X refuses to issue the bearer token
     # @example Get the bearer token
     #   authenticator.bearer_token
     def bearer_token
@@ -78,11 +78,11 @@ module X
     # Exchange the API key and secret for a bearer token
     # @api private
     # @return [String] the bearer token
-    # @raise [Error] if the token endpoint rejects the request
+    # @raise [AuthorizationError] if the token endpoint rejects the request
     def fetch_bearer_token
       TokenEndpoint.fetch(token_request, connection:).access_token
     rescue SimpleOAuth::OAuth2::Error => e
-      raise Error, e.description || e.code || DEFAULT_ERROR_MESSAGE
+      raise AuthorizationError.from(e, DEFAULT_ERROR_MESSAGE)
     end
 
     # Build the client credentials request
