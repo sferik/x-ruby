@@ -109,6 +109,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Remove the `base64` dependency from `x-core`, which encodes no Base64 of its own now that simple_oauth builds the Basic credentials
 
 ### Fixed
+* Give up waiting for media to process after ten minutes, or the `timeout:` of `await_processing` and the `processing_timeout:` of `upload`, raising `X::Uploader::MediaProcessingTimeout` with the last status, and wait at least a second between checks when X asks for no wait, instead of polling in a tight loop forever
 * Wait before retrying a chunk that failed with a server or network error, a second and then two, instead of retrying at once
 * Upload the chunks of a video no more than four at a time, or the `concurrency:` of `chunked_upload`, reading each from the file as it is sent, instead of starting a thread per chunk and first copying every chunk into a temporary file; a chunk that fails stops the chunks not yet begun
 * Read the tokens of the last OAuth 2.0 refresh from `X::Client#access_token`, `refresh_token`, and `expires_at`, and share the authenticator with a copy that holds the same credentials, so that neither `copy` nor a changed credential brings back a refresh token X no longer accepts

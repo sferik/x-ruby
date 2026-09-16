@@ -7,6 +7,11 @@ module X
     class InvalidMediaType < Error
     end
 
+    class MediaProcessingTimeout < Error
+      attr_reader status: Hash[String, untyped]
+      def initialize: (Hash[String, untyped] status, Integer timeout) -> void
+    end
+
     class MediaProcessingFailed < Error
       DEFAULT_MESSAGE: String
 
@@ -46,6 +51,8 @@ module X
       WEBP_MIME_TYPE: String
       MIME_TYPE_MAP: Hash[String, String]
       PROCESSING_INFO_STATES: Array[String]
+      DEFAULT_PROCESSING_TIMEOUT: Integer
+      MIN_CHECK_AFTER_SECS: Integer
       VIDEO_CATEGORIES: Array[String]
       CHUNKED_CATEGORIES: Array[String]
       CATEGORY_MAP: Hash[String, String]
@@ -54,16 +61,16 @@ module X
       extend Chunks
       extend Media
 
-      def upload: (String file_path, client: Client, ?media_category: String, ?alt_text: String?, ?boundary: String, **untyped options) -> untyped
+      def upload: (String file_path, client: Client, ?media_category: String, ?alt_text: String?, ?boundary: String, ?processing_timeout: Integer, **untyped options) -> untyped
       def infer_media_category: (String file_path) -> String
       def upload_binary: (String content, String media_category, client: Client, ?boundary: String) -> untyped
       def chunked_upload: (String file_path, client: Client, ?media_category: String, ?media_type: String, ?boundary: String, ?chunk_size_mb: Integer, ?concurrency: Integer) -> untyped
-      def await_processing: (untyped media, client: Client) -> untyped
-      def await_processing!: (untyped media, client: Client) -> untyped
+      def await_processing: (untyped media, client: Client, ?timeout: Integer) -> untyped
+      def await_processing!: (untyped media, client: Client, ?timeout: Integer) -> untyped
       def infer_media_type: (String file_path, String media_category) -> String
 
       private
-      def transfer: (String file_path, String media_category, client: Client, boundary: String, **untyped options) -> untyped
+      def transfer: (String file_path, String media_category, client: Client, boundary: String, processing_timeout: Integer, **untyped options) -> untyped
       def chunked?: (String media_category) -> bool
       def still_gif?: (String file_path) -> bool
       def extension: (String file_path) -> String

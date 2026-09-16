@@ -41,11 +41,34 @@ module X
       assert_equal [2, 3], @sleeps
     end
 
-    def test_sleeps_zero_seconds_without_check_after_secs
-      stub_statuses({"processing_info" => {"state" => "pending"}}, {"processing_info" => {"state" => "succeeded"}})
+    def test_sleeps_a_second_without_check_after_secs
+      stub_statuses({"processing_info" => {"state" => "pending"}}, {"processing_info" => {"state" => "pending", "check_after_secs" => 0}},
+        {"processing_info" => {"state" => "succeeded"}})
       await
 
-      assert_equal [0], @sleeps
+      assert_equal [1, 1], @sleeps
+    end
+
+    def test_gives_up_once_the_waits_would_pass_the_timeout
+      pending = {"processing_info" => {"state" => "in_progress", "check_after_secs" => 5, "progress_percent" => 42}}
+      stub_statuses(pending)
+      error = assert_raises(Uploader::MediaProcessingTimeout) { await(timeout: 12) }
+
+      assert_equal [[5, 5], pending, "Media processing did not finish within 12 seconds"], [@sleeps, error.status, error.message]
+      assert_requested(:get, STATUS_URL, times: 3)
+    end
+
+    def test_waits_up_to_the_timeout_exactly
+      stub_statuses({"processing_info" => {"state" => "pending", "check_after_secs" => 5}}, {"processing_info" => {"state" => "succeeded"}})
+
+      assert_equal "succeeded", await(timeout: 5).dig("processing_info", "state")
+    end
+
+    def test_waits_ten_minutes_by_default
+      stub_statuses({"processing_info" => {"state" => "pending", "check_after_secs" => 60}})
+
+      assert_raises(Uploader::MediaProcessingTimeout) { await }
+      assert_equal [60] * 10, @sleeps
     end
 
     def test_media_without_id
@@ -56,9 +79,9 @@ module X
 
     private
 
-    def await
+    def await(**)
       Uploader::Media.stub(:sleep, ->(seconds) { @sleeps << seconds }) do
-        Uploader::Media.await_processing({"id" => TEST_MEDIA_ID}, client: @client)
+        Uploader::Media.await_processing({"id" => TEST_MEDIA_ID}, client: @client, **)
       end
     end
 

@@ -18,6 +18,18 @@ module X
     end
   end
 
+  class UploaderMediaProcessingTimeoutTest < Minitest::Test
+    cover Uploader::MediaProcessingTimeout
+
+    def test_holds_the_last_status_and_names_the_timeout
+      status = {"processing_info" => {"state" => "in_progress"}}
+      error = Uploader::MediaProcessingTimeout.new(status, 600)
+
+      assert_equal [status, "Media processing did not finish within 600 seconds"], [error.status, error.message]
+      assert_kind_of Error, error
+    end
+  end
+
   class UploaderInvalidMediaTypeTest < Minitest::Test
     def test_the_old_name_is_a_deprecated_alias
       deprecated = Warning[:deprecated]
