@@ -33,6 +33,11 @@ module X
       assert_equal [5, 10, 20, 40, 80, 160, 320, 320], @sleeps
     end
 
+    def test_a_line_that_is_not_json_backs_off_exponentially
+      assert_raises(InvalidResponse) { stream_with(ReconnectHandler.new(max_reconnects: 3)) { fail_with(InvalidResponse) } }
+      assert_equal [4, [5, 10, 20]], [@runs, @sleeps]
+    end
+
     def test_a_rate_limit_waits_until_it_resets_or_backs_off_from_a_minute
       assert_raises(TooManyRequests) { stream_with(ReconnectHandler.new(max_reconnects: 8)) { refused((@runs > 2) ? 1000 : nil) } }
       assert_equal [60, 120, 240, 1000, 1000, 1000, 1000, 1000], @sleeps

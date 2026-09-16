@@ -1,4 +1,5 @@
 require_relative "errors/conflict"
+require_relative "errors/invalid_response"
 require_relative "errors/network_error"
 require_relative "errors/server_error"
 require_relative "errors/too_many_requests"
@@ -7,8 +8,8 @@ module X
   # Reconnects a stream that drops, backing off as X recommends
   #
   # A stream that ends or loses its connection reconnects at once, then after a delay that grows by a quarter
-  # second each attempt, up to 16 seconds. A server error or a refused connection backs off from 5 seconds,
-  # doubling each attempt, up to 320 seconds. A rate limit waits until it resets, or from a minute, doubling
+  # second each attempt, up to 16 seconds. A server error, a refused connection, or a line that is not JSON backs
+  # off from 5 seconds, doubling each attempt, up to 320 seconds. A rate limit waits until it resets, or from a minute, doubling
   # each attempt. Delivering an object starts the count over.
   #
   # Internal to x-core: StreamingClient reconnects with it, and max_reconnects is set on the streaming client.
@@ -28,7 +29,7 @@ module X
     # First wait after a rate limit, in seconds, for a limit that does not say when it resets
     RATE_LIMIT_BACKOFF_START = 60
     # The errors a stream reconnects after, which come from the server or the connection rather than the request
-    RECONNECTABLE_ERRORS = [NetworkError, ServerError, Conflict, TooManyRequests].freeze
+    RECONNECTABLE_ERRORS = [NetworkError, ServerError, Conflict, TooManyRequests, InvalidResponse].freeze
 
     # Raised in place of an error the consumer of a stream raised, which is its cause, so that the stream stops
     ConsumerError = Class.new(StandardError) #: singleton(StandardError)
@@ -61,7 +62,8 @@ module X
     # @yield [deliver] runs the stream once
     # @yieldparam deliver [Proc] the block to pass each object to, which passes it on to the consumer
     # @return [nil] once the stream ends with no reconnects left
-    # @raise [NetworkError, ServerError, Conflict] if the stream fails with no reconnects left
+    # @raise [NetworkError, ServerError, Conflict, TooManyRequests, InvalidResponse] if the stream fails with no
+    #   reconnects left
     # @example Reconnect a stream
     #   handler.handle(->(post) { puts post }) { |deliver| read_stream(&deliver) }
     def handle(consumer)
@@ -143,7 +145,7 @@ module X
     # @return [Float, Integer] the seconds to wait
     def network_backoff(reconnects) = [NETWORK_BACKOFF_STEP * (reconnects - 1), MAX_NETWORK_BACKOFF].min
 
-    # The wait before a reconnect after a server error or a refused connection
+    # The wait before a reconnect after a server error, a refusal, or a bad line
     # @api private
     # @param reconnects [Integer] the number of the reconnect, counting from one
     # @return [Integer] the seconds to wait

@@ -336,7 +336,7 @@ module X
     HTTP_BACKOFF_START: Integer
     RATE_LIMIT_BACKOFF_START: Integer
     MAX_HTTP_BACKOFF: Integer
-    RECONNECTABLE_ERRORS: Array[singleton(NetworkError) | singleton(ServerError) | singleton(Conflict) | singleton(TooManyRequests)]
+    RECONNECTABLE_ERRORS: Array[singleton(NetworkError) | singleton(ServerError) | singleton(Conflict) | singleton(TooManyRequests) | singleton(InvalidResponse)]
 
     ConsumerError: singleton(StandardError)
 
