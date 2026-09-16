@@ -136,36 +136,13 @@ module X
       assert_instance_of BearerTokenAuthenticator, client.authenticator
     end
 
-    def test_authenticator_remains_unchanged_if_no_new_credentials
+    def test_clearing_credentials_of_a_client_without_them_sends_none
       client = Client.new
-      initial_authenticator = client.authenticator
 
       client.api_key = nil
       client.bearer_token = nil
 
-      assert_equal initial_authenticator, client.authenticator
-    end
-
-    def test_initialize_authenticator_uses_instance_variable_not_accessor
-      client = Client.new(**test_oauth_credentials)
-      original_authenticator = client.authenticator
-      clear_all_credentials(client)
-
-      # If code uses accessor (nil), falls through to Authenticator.new; if @authenticator, preserves original
-      client.stub(:authenticator, nil) { client.send(:initialize_authenticator) }
-
-      assert_equal original_authenticator, client.authenticator
-    end
-
-    private
-
-    def clear_all_credentials(client)
-      %i[@api_key @api_key_secret @access_token @access_token_secret].each do |var|
-        client.instance_variable_set(var, nil)
-      end
-      %i[@bearer_token @client_id @client_secret @refresh_token].each do |var|
-        client.instance_variable_set(var, nil)
-      end
+      assert_instance_of Authenticator, client.authenticator
     end
   end
 

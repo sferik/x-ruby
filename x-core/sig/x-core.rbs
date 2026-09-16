@@ -546,14 +546,15 @@ module X
     def client_secret=: (String client_secret) -> void
     def refresh_token=: (String refresh_token) -> void
     def expires_at=: (Time? expires_at) -> void
+    def update_credentials: (**String | Time | nil changes) -> void
 
     private
     def app_bearer_token: () -> String
     def fetched_app_bearer_token: () -> String
-    def update_credentials: (**untyped changes) -> void
+    def replace_credentials: (**String | Time | nil changes) -> void
     def credentials: () -> { api_key: String?, api_key_secret: String?, access_token: String?, access_token_secret: String?, bearer_token: String?, client_id: String?, client_secret: String?, refresh_token: String?, expires_at: Time? }
     def initialize_credentials: (api_key: String?, api_key_secret: String?, access_token: String?, access_token_secret: String?, bearer_token: String?, client_id: String?, client_secret: String?, refresh_token: String?, expires_at: Time?) -> void
-    def initialize_authenticator: -> (Authenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator)
+    def initialize_authenticator: () -> (Authenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator)
     def oauth1_authenticator: -> OAuth1Authenticator?
     def bearer_authenticator: -> BearerTokenAuthenticator?
     def app_only_authenticator: -> AppOnlyAuthenticator?

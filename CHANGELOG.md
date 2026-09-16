@@ -80,7 +80,7 @@ See [UPGRADING.md](UPGRADING.md) for the changes that code written for 0.19 need
 * Quote a post with the `quote:` of `create_post` and `X::Post.create`, which builds the `quote_tweet_id` of the new post
 * Hide a reply to a post of the authenticated user, and show it again, with `X::Post#hide` and `#unhide`, `X::Post.hide` and `.unhide`, and `hide_reply` and `unhide_reply` on the client
 * Authorize an app to act for a user with the OAuth 2.0 authorization code flow and PKCE: `X::OAuth2Authorization` builds the URL that asks the user, with a state and code verifier to store until X redirects back, and exchanges the code of the redirect for `credentials` or a `client`, raising `X::AuthorizationError`, whose `code` is the OAuth 2.0 error code, when the user declines, the state does not match, X refuses the code, or the redirect is not a valid URL; a nil or empty state raises `ArgumentError`, since it would accept the redirect of any authorization
-
+* Change several credentials at once with `X::Client#update_credentials`, which builds the authenticator once, so rotating an OAuth 1.0a access token and its secret never signs a request with a mismatched pair, and raises `ArgumentError` for credentials that do not form a complete set
 ### Changed
 * Require Ruby 3.3 or later
 * Hydrate the stubs of a page together, in one batch lookup for the whole page rather than one request per stub, so walking `user.followers.stubs` costs a request per page
@@ -108,7 +108,7 @@ See [UPGRADING.md](UPGRADING.md) for the changes that code written for 0.19 need
 * Raise `KeyError` from `X::Uploader::Media.chunked_upload` and `X::Uploader::Media.await_processing` when the media has no `"id"`, instead of requesting a URL with an empty ID
 * Sign OAuth 1.0a requests with the [simple_oauth](https://github.com/laserlemon/simple_oauth) gem, in place of the signing code `X::OAuthAuthenticator` carried; it keeps the same credentials and produces the same header
 * Build and parse the OAuth 2.0 token refresh with simple_oauth, in place of the request and response handling `X::OAuth2Authenticator` carried; it sends the same request and still returns the token response
-* Raise `ArgumentError` from `X::Client.new`, and so from `copy`, for credentials that do not form a complete set, instead of sending requests without credentials, or authenticating as the app when an access token lacks its secret; the setters still change one credential at a time, keeping the authenticator until a set is complete
+* Raise `ArgumentError` from `X::Client.new`, and so from `copy`, for credentials that do not form a complete set, instead of sending requests without credentials, or authenticating as the app when an access token lacks its secret; the setters change one credential at a time, and `update_credentials` changes several at once
 * Raise `X::InvalidResponse`, an `X::Error` that holds the response, for a successful response whose body is not JSON, such as the page of a proxy or captive portal, instead of returning nil as though the response had no body; a successful response without a body still returns nil
 * Move `stream` from `X::Client` to `X::StreamingClient`, so that the client carries no streaming settings
 * Raise `X::AuthorizationError`, an `X::Error`, when X refuses to refresh an OAuth 2.0 token or to issue an app-only bearer token, rather than a bare `X::Error`, with the OAuth 2.0 error `code`, such as `invalid_request` for a refresh token that was revoked or already used, and the HTTP `status`, which tells a refusal from a failure of the token endpoint
@@ -156,6 +156,7 @@ See [UPGRADING.md](UPGRADING.md) for the changes that code written for 0.19 need
 * Raise `X::UnsupportedOperation` from `X::DirectMessage.find_all`, and so from `hydrate_all`, since the API has no batch lookup of direct message events, instead of sending an `ids` parameter the endpoint does not take
 * End a `base_url` without a trailing slash with one, so that `base_url: "https://api.x.com/2"` sends a request for `users/me` to `/2/users/me` rather than `/users/me`
 * Raise `ArgumentError` from `X::Uploader::Media.chunked_upload`, before any request, for a `chunk_size_mb` that is not positive or a `concurrency` less than one, which initialized an upload and finalized it without a chunk, or raised `ArgumentError: negative array size` after initializing it
+* Stop sending a credential a setter clears, such as `client.bearer_token = nil`, which kept the authenticator of the cleared credential while the client reported it as nil
 
 ## [0.19.0] - 2026-03-01
 * Add streaming support for filtered stream and volume stream endpoints

@@ -20,7 +20,10 @@ client.authenticator.access_token = "new_token"
 
 # 1.0
 client.access_token = "new_token"
+client.update_credentials(access_token: "new_token", access_token_secret: "new_secret") # both at once
 ```
+
+A client authenticates with the first complete set of credentials it holds, so a setter that clears a credential no longer keeps the authenticator it had: `client.bearer_token = nil` sends requests without credentials, and `client.access_token_secret = nil` authenticates as the app when the client holds an API key and secret. `update_credentials` changes several credentials before the client builds its authenticator again, and raises `ArgumentError`, leaving the client as it was, for credentials that do not form a complete set.
 
 ### Renamed classes
 
