@@ -86,7 +86,7 @@ module X
       DEFAULT_CONCURRENCY: Integer
 
       def map: [T, U] (Enumerable[T] items, ?concurrency: Integer) { (T) -> U } -> Array[U]
-      private def worker: [T, U] (Thread::Queue queue, Array[T] items, Array[U?] results) { (T) -> U } -> Thread
+      private def worker: [T, U] (Thread::Queue queue, Thread::Queue errors, Array[T] items, Array[U?] results) { (T) -> U } -> Thread
     end
 
     class Pages

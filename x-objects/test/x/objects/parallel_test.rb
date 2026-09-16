@@ -48,6 +48,30 @@ module X
         assert_equal "boom 2", error.message
       end
 
+      def test_map_stops_the_items_not_yet_begun_after_an_error
+        calls = Queue.new
+        assert_raises(RuntimeError) { Parallel.map(1..6, concurrency: 2) { |value| failing_after_others(value, calls) } }
+
+        assert_equal 2, calls.size
+      end
+
+      def test_map_waits_for_the_items_already_begun
+        finished = Queue.new
+        assert_raises(RuntimeError) do
+          Parallel.map(1..2, concurrency: 2) { |value| failing_after_others(value, Queue.new).tap { finished << value } }
+        end
+
+        assert_equal [2], Array.new(finished.size) { finished.pop }
+      end
+
+      def test_map_raises_the_error_raised_first
+        error = assert_raises(RuntimeError) do
+          Parallel.map(1..2, concurrency: 2) { |value| failing_after_others(value, Queue.new) && raise("boom #{value}") }
+        end
+
+        assert_equal "boom 1", error.message
+      end
+
       def test_map_does_not_report_exceptions_on_stderr
         _, err = capture_subprocess_io do
           Parallel.map([1]) { raise "boom" }
@@ -69,6 +93,15 @@ module X
       end
 
       private
+
+      # Raise for the first item after a short wait, and return any other after a longer one
+      def failing_after_others(value, calls)
+        calls << value
+        sleep(value.eql?(1) ? 0.01 : 0.05)
+        raise "boom #{value}" if value.eql?(1)
+
+        value
+      end
 
       def count_threads(&)
         count = 0
