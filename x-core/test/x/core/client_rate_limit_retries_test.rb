@@ -15,7 +15,7 @@ module X
     def test_options_default_to_no_retries_and_a_15_minute_wait
       client = Client.new
 
-      assert_equal [0, 900, Float::INFINITY], [client.max_rate_limit_retries, client.max_rate_limit_wait, client.max_stream_reconnects]
+      assert_equal [0, 900], [client.max_rate_limit_retries, client.max_rate_limit_wait]
     end
 
     def test_options_can_be_set_and_are_copied
@@ -46,20 +46,10 @@ module X
       assert_empty @sleeps
     end
 
-    def test_a_stream_is_retried_after_the_reset
-      client = retrying_client
-      stub_request(:get, "https://api.twitter.com/2/tweets/sample/stream").to_return(refused, {status: 200, body: "{\"data\":{\"id\":\"1\"}}\r\n"})
-      posts = []
-      without_sleeping(client) { client.stream("tweets/sample/stream") { |post| posts << post } }
-
-      assert_equal [[{"data" => {"id" => "1"}}], [0]], [posts, @sleeps]
-      assert_requested(:get, "https://api.twitter.com/2/tweets/sample/stream", times: 2)
-    end
-
     private
 
     def retrying_client(**credentials)
-      Client.new(**credentials, max_rate_limit_retries: 1, max_stream_reconnects: 0, on_response: ->(response) { @responses << response.status })
+      Client.new(**credentials, max_rate_limit_retries: 1, on_response: ->(response) { @responses << response.status })
     end
 
     def nonce_of(request)

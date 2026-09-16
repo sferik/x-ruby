@@ -263,23 +263,25 @@ x_client.create_post("Look at this cat move", media_ids: [video])
 
 ### Streaming
 
+A stream holds a connection open instead of answering a request, so `X::StreamingClient` handles one, and `streaming` builds it from a client. It shares the client's credentials, base URL, parsing classes, and `on_response` hook, and keeps the settings a long-lived connection needs: `read_timeout`, 20 seconds by default, and `max_reconnects`.
+
 The stream endpoints take app-only authentication, so a client that signs with OAuth 1.0a streams with the bearer token that `app_only` holds. The endpoints that manage stream rules take it too, so send those through `app_only`.
 
-X holds a stream open indefinitely, but drops it for deploys, network trouble, and slow readers. A stream that ends or drops reconnects at once, then waits a quarter second longer each attempt, up to 16 seconds. A server error or a refused connection waits 5 seconds, doubling each attempt, up to 320 seconds. A rate limit waits until it resets, or from a minute, doubling each attempt. Delivering a post starts the count over. A stream reconnects without limit by default; set `max_stream_reconnects` to give up after that many attempts in a row. An error raised by the block always stops the stream.
+X holds a stream open indefinitely, but drops it for deploys, network trouble, and slow readers. A stream that ends or drops reconnects at once, then waits a quarter second longer each attempt, up to 16 seconds. A server error or a refused connection waits 5 seconds, doubling each attempt, up to 320 seconds. A rate limit waits until it resets, or from a minute, doubling each attempt. Delivering a post starts the count over. A stream reconnects without limit by default; set `max_reconnects` to give up after that many attempts in a row. An error raised by the block always stops the stream.
 
-X sends a newline every 20 seconds to keep an idle stream alive, so a stream reads with its own timeout, `stream_read_timeout`, which is 20 seconds by default. A connection that goes quiet is dropped and reconnected rather than held open until the 60-second `read_timeout` of an ordinary request.
+X sends a newline every 20 seconds to keep an idle stream alive, so a stream reads with a 20-second timeout of its own. A connection that goes quiet is dropped and reconnected rather than held open until the 60-second `read_timeout` of an ordinary request.
 
 ```ruby
 # Set up rules for filtered stream
 x_client.app_only.post("tweets/search/stream/rules", {add: [{value: "ruby"}]})
 
 # Stream matching posts in real time, until interrupted
-x_client.stream("tweets/search/stream") do |post|
+x_client.streaming.stream("tweets/search/stream") do |post|
   puts post["data"]["text"]
 end
 
-# Give up after five reconnects in a row
-x_client.max_stream_reconnects = 5
+# Give up after five reconnects in a row, and notice a quiet connection sooner
+streaming_client = x_client.streaming(max_reconnects: 5, read_timeout: 10)
 ```
 
 ### Responses
@@ -294,7 +296,7 @@ x_client.on_response = lambda do |response|
 end
 ```
 
-**Rate limits.** A request the API refuses for a rate limit raises `X::TooManyRequests`, whose `retry_after` is the number of seconds until the limit resets. A client can instead wait and retry, up to `max_rate_limit_retries` times, which is 0 by default. It waits only as long as `max_rate_limit_wait`, which is 900 seconds by default, the length of a 15-minute window. A request whose limit resets later, such as a limit on the requests of a day, raises at once. A refusal that does not say when its limit resets waits a minute before the first retry, doubling the wait for each retry after, as X recommends. Each retry signs the request afresh and passes its response to `on_response`. The API refuses a rate-limited request without acting on it, so retrying a write does not repeat it. A stream is the exception to the default: it reconnects after a rate limit however `max_rate_limit_retries` is set.
+**Rate limits.** A request the API refuses for a rate limit raises `X::TooManyRequests`, whose `retry_after` is the number of seconds until the limit resets. A client can instead wait and retry, up to `max_rate_limit_retries` times, which is 0 by default. It waits only as long as `max_rate_limit_wait`, which is 900 seconds by default, the length of a 15-minute window. A request whose limit resets later, such as a limit on the requests of a day, raises at once. A refusal that does not say when its limit resets waits a minute before the first retry, doubling the wait for each retry after, as X recommends. Each retry signs the request afresh and passes its response to `on_response`. The API refuses a rate-limited request without acting on it, so retrying a write does not repeat it. A stream is the exception to the default: `X::StreamingClient` reconnects after a rate limit however `max_rate_limit_retries` is set.
 
 ```ruby
 x_client = X::Client.new(**x_credentials, max_rate_limit_retries: 3, max_rate_limit_wait: 60)

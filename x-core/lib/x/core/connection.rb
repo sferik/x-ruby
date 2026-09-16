@@ -18,8 +18,6 @@ module X
     DEFAULT_OPEN_TIMEOUT = 60 # seconds
     # Default timeout for reading responses in seconds
     DEFAULT_READ_TIMEOUT = 60 # seconds
-    # Default timeout for reading from a stream in seconds, the keep-alive X sends while a stream is idle
-    DEFAULT_STREAM_READ_TIMEOUT = 20 # seconds
     # Default timeout for writing requests in seconds
     DEFAULT_WRITE_TIMEOUT = 60 # seconds
     # Network errors that should be wrapped in NetworkError
@@ -42,13 +40,6 @@ module X
     # @example Get or set the open timeout
     #   connection.open_timeout = 30
     attr_accessor :open_timeout
-
-    # The timeout for reading from a stream in seconds
-    # @api public
-    # @return [Integer] the timeout for reading from a stream in seconds
-    # @example Get or set the read timeout of a stream
-    #   connection.stream_read_timeout = 30
-    attr_accessor :stream_read_timeout
 
     # The timeout for reading responses in seconds
     # @api public
@@ -96,7 +87,6 @@ module X
     # @param open_timeout [Integer] the timeout for opening connections in seconds
     # @param read_timeout [Integer] the timeout for reading responses in seconds
     # @param write_timeout [Integer] the timeout for writing requests in seconds
-    # @param stream_read_timeout [Integer] the timeout for reading from a stream in seconds
     # @param debug_output [IO] the IO object for debug output
     # @param proxy_url [String, nil] the proxy URL for requests
     # @return [Connection] a new connection instance
@@ -105,11 +95,9 @@ module X
     # @example Create a connection with custom timeouts
     #   connection = X::Connection.new(open_timeout: 30, read_timeout: 30)
     def initialize(open_timeout: DEFAULT_OPEN_TIMEOUT, read_timeout: DEFAULT_READ_TIMEOUT,
-      write_timeout: DEFAULT_WRITE_TIMEOUT, stream_read_timeout: DEFAULT_STREAM_READ_TIMEOUT,
-      debug_output: nil, proxy_url: nil)
+      write_timeout: DEFAULT_WRITE_TIMEOUT, debug_output: nil, proxy_url: nil)
       @open_timeout = open_timeout
       @read_timeout = read_timeout
-      @stream_read_timeout = stream_read_timeout
       @write_timeout = write_timeout
       @debug_output = debug_output
       self.proxy_url = proxy_url unless proxy_url.nil?
@@ -147,7 +135,6 @@ module X
       port = request.uri.port || DEFAULT_PORT
       http_client = build_http_client(host, port)
       http_client.use_ssl = request.uri.scheme.eql?("https")
-      http_client.read_timeout = stream_read_timeout
       http_client.request(request, &)
     rescue *NETWORK_ERRORS => e
       raise NetworkError, "Network error: #{e}"

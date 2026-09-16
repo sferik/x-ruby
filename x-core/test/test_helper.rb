@@ -60,23 +60,29 @@ class ResponseBuilder
   def self.from_response(body, client:) = {body:, client:}
 end
 
-# Stub a client's streaming connection and collect what it yields
+# Stub a streaming client's connection and collect what it yields
 module StreamHelpers
+  # The streaming client of a client, which reconnects no stream, since a stub delivers its chunks once
+  def streaming(client: @client)
+    @streaming ||= {}
+    @streaming[client] ||= client.streaming(max_reconnects: 0)
+  end
+
   def stream_and_collect(endpoint, client: @client, **options)
     results = []
-    client.stream(endpoint, **options) { |json| results << json }
+    streaming(client:).stream(endpoint, **options) { |json| results << json }
     results
   end
 
   def with_stubbed_stream(chunks:, client: @client, &test_block)
     mock_response = mock_streaming_response(chunks:)
-    connection = client.instance_variable_get(:@connection)
+    connection = streaming(client:).instance_variable_get(:@connection)
     connection.stub(:perform_stream, ->(**_, &block) { block.call(mock_response) }, &test_block)
   end
 
   def with_stream_request(mock_response, client: @client, &test_block)
     captured_request = nil
-    connection = client.instance_variable_get(:@connection)
+    connection = streaming(client:).instance_variable_get(:@connection)
     connection.stub(:perform_stream, lambda { |request:, &block|
       captured_request = request
       block.call(mock_response)

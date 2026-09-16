@@ -9,13 +9,12 @@ require_relative "connection"
 require_relative "oauth1_authenticator"
 require_relative "oauth2_authenticator"
 require_relative "rate_limit_handler"
-require_relative "reconnect_handler"
 require_relative "redirect_handler"
 require_relative "request_builder"
 require_relative "request_encoding"
 require_relative "response"
 require_relative "response_parser"
-require_relative "stream_parser"
+require_relative "streaming_client"
 
 module X
   # A client for interacting with the X API
@@ -69,11 +68,10 @@ module X
     #   client.on_response = ->(response) { total += response.resource_count }
     attr_accessor :on_response
 
-    def_delegators :@connection, :open_timeout, :read_timeout, :write_timeout, :stream_read_timeout, :proxy_url, :debug_output
-    def_delegators :@connection, :open_timeout=, :read_timeout=, :write_timeout=, :stream_read_timeout=, :proxy_url=, :debug_output=
+    def_delegators :@connection, :open_timeout, :read_timeout, :write_timeout, :proxy_url, :debug_output
+    def_delegators :@connection, :open_timeout=, :read_timeout=, :write_timeout=, :proxy_url=, :debug_output=
     def_delegators :@redirect_handler, :max_redirects, :max_redirects=
     def_delegators :@rate_limit_handler, :max_rate_limit_retries, :max_rate_limit_retries=, :max_rate_limit_wait, :max_rate_limit_wait=
-    def_delegators :@reconnect_handler, :max_stream_reconnects, :max_stream_reconnects=
 
     # Initialize a new X API client
     #
@@ -90,8 +88,6 @@ module X
     # @param open_timeout [Integer] the timeout for opening connections in seconds
     # @param read_timeout [Integer] the timeout for reading responses in seconds
     # @param write_timeout [Integer] the timeout for writing requests in seconds
-    # @param stream_read_timeout [Integer] the timeout for reading from a stream in seconds, which X keeps alive with a
-    #   newline every 20 seconds
     # @param debug_output [IO] the IO object for debug output
     # @param proxy_url [String, nil] the proxy URL for requests
     # @param default_array_class [Class] the default class for parsing JSON arrays
@@ -101,8 +97,6 @@ module X
     #   after waiting for the limit to reset
     # @param max_rate_limit_wait [Integer] the maximum number of seconds to wait for a rate limit to reset; a request
     #   whose limit resets later raises TooManyRequests at once
-    # @param max_stream_reconnects [Integer, Float] the maximum number of times in a row to reconnect a stream that
-    #   drops without delivering an object, or Float::INFINITY, the default, for no limit
     # @param on_response [#call, nil] a callable passed an X::Response after every request, failed ones included, and
     #   every object a stream delivers
     # @return [Client] a new client instance
@@ -120,7 +114,6 @@ module X
       open_timeout: Connection::DEFAULT_OPEN_TIMEOUT,
       read_timeout: Connection::DEFAULT_READ_TIMEOUT,
       write_timeout: Connection::DEFAULT_WRITE_TIMEOUT,
-      stream_read_timeout: Connection::DEFAULT_STREAM_READ_TIMEOUT,
       debug_output: nil,
       proxy_url: nil,
       default_array_class: DEFAULT_ARRAY_CLASS,
@@ -128,14 +121,13 @@ module X
       max_redirects: RedirectHandler::DEFAULT_MAX_REDIRECTS,
       max_rate_limit_retries: RateLimitHandler::DEFAULT_MAX_RETRIES,
       max_rate_limit_wait: RateLimitHandler::DEFAULT_MAX_WAIT,
-      max_stream_reconnects: ReconnectHandler::DEFAULT_MAX_RECONNECTS,
       on_response: nil)
       initialize_credentials(api_key:, api_key_secret:, access_token:, access_token_secret:, bearer_token:, client_id:, client_secret:, refresh_token:)
       initialize_authenticator
       @base_url = base_url
       initialize_response_handling(default_array_class:, default_object_class:, on_response:)
-      @connection = Connection.new(open_timeout:, read_timeout:, write_timeout:, stream_read_timeout:, debug_output:, proxy_url:)
-      initialize_handlers(max_redirects:, max_rate_limit_retries:, max_rate_limit_wait:, max_stream_reconnects:)
+      @connection = Connection.new(open_timeout:, read_timeout:, write_timeout:, debug_output:, proxy_url:)
+      initialize_handlers(max_redirects:, max_rate_limit_retries:, max_rate_limit_wait:)
     end
 
     # Summarize the client for the console without revealing credentials
@@ -229,35 +221,15 @@ module X
       execute_request(:delete, endpoint, params:, headers:, array_class:, object_class:)
     end
 
-    # Stream data from the X API
-    #
-    # The stream endpoints take app-only authentication, so a client that signs with OAuth 1.0a streams with the
-    # bearer token of its {#app_only}. A stream that drops reconnects, backing off as X recommends, up to
-    # max_stream_reconnects times in a row. The API bills each object a stream delivers, so on_response receives
-    # each one, as well as a failed response.
+    # A client for the streaming endpoints, which reads and reconnects differently
     #
     # @api public
-    # @param endpoint [String] the streaming API endpoint
-    # @param params [Hash, nil] query parameters appended to the endpoint
-    # @param headers [Hash] additional headers for the request
-    # @param array_class [Class] the class for parsing JSON arrays
-    # @param object_class [Class] the class for parsing JSON objects, or one that responds to from_response
-    #   and builds objects from the whole response (see {ResponseParser#decode})
-    # @yield [Hash, Array] each parsed JSON object from the stream
-    # @return [nil] once the stream ends with no reconnects left
-    # @raise [HTTPError] if the response is not successful and the stream may not reconnect
-    # @example Stream filtered posts
-    #   client.stream("tweets/search/stream") { |post| puts post }
-    def stream(endpoint, params: nil, headers: {}, array_class: default_array_class, object_class: default_object_class, &block)
-      uri = URI.join(base_url, endpoint_with(endpoint, params))
-      @reconnect_handler.handle(block) do |deliver|
-        @rate_limit_handler.handle do
-          @connection.perform_stream(request: @request_builder.build(http_method: :get, uri:, headers:, authenticator: app_only.authenticator)) do |response|
-            @stream_parser.process(response:, response_parser: @response_parser, array_class:, object_class:, client: self,
-              on_body: ->(body = nil) { report(:get, uri, response, body:) }, &deliver)
-          end
-        end
-      end
+    # @param options [Hash] the options of {StreamingClient#initialize}, such as read_timeout and max_reconnects
+    # @return [StreamingClient] a streaming client that shares this client's credentials and settings
+    # @example Stream filtered posts, giving up after five reconnects in a row
+    #   client.streaming(max_reconnects: 5).stream("tweets/search/stream") { |post| puts post }
+    def streaming(**options)
+      StreamingClient.new(self, **options)
     end
 
     private
@@ -279,10 +251,9 @@ module X
     # @param http_method [Symbol] the HTTP method of the request
     # @param uri [URI::Generic] the URI of the request
     # @param response [Net::HTTPResponse] the HTTP response
-    # @param body [String, nil] the part of the body to summarize, or nil for all of it
     # @return [void]
-    def report(http_method, uri, response, body: nil)
-      on_response&.call(Response.new(http_method, uri, response, body:))
+    def report(http_method, uri, response)
+      on_response&.call(Response.new(http_method, uri, response))
     end
 
     # Initialize the objects that build requests and handle responses
@@ -290,15 +261,12 @@ module X
     # @param max_redirects [Integer] the maximum number of redirects to follow
     # @param max_rate_limit_retries [Integer] the maximum number of times to retry a request refused for a rate limit
     # @param max_rate_limit_wait [Integer] the maximum number of seconds to wait for a rate limit to reset
-    # @param max_stream_reconnects [Integer, Float] the maximum number of times in a row to reconnect a stream
     # @return [void]
-    def initialize_handlers(max_redirects:, max_rate_limit_retries:, max_rate_limit_wait:, max_stream_reconnects:)
+    def initialize_handlers(max_redirects:, max_rate_limit_retries:, max_rate_limit_wait:)
       @request_builder = RequestBuilder.new
       @redirect_handler = RedirectHandler.new(connection: @connection, request_builder: @request_builder, max_redirects:)
       @rate_limit_handler = RateLimitHandler.new(max_rate_limit_retries:, max_rate_limit_wait:)
-      @reconnect_handler = ReconnectHandler.new(max_stream_reconnects:)
       @response_parser = ResponseParser.new
-      @stream_parser = StreamParser.new
     end
 
     # Execute an HTTP request to the X API
@@ -319,8 +287,8 @@ module X
     # @api private
     # @return [Hash{Symbol => Object}] the settings
     def settings
-      {base_url:, open_timeout:, read_timeout:, write_timeout:, stream_read_timeout:, debug_output:, proxy_url:, default_array_class:, default_object_class:,
-       max_redirects:, max_rate_limit_retries:, max_rate_limit_wait:, max_stream_reconnects:, on_response:}
+      {base_url:, open_timeout:, read_timeout:, write_timeout:, debug_output:, proxy_url:, default_array_class:,
+       default_object_class:, max_redirects:, max_rate_limit_retries:, max_rate_limit_wait:, on_response:}
     end
   end
 end

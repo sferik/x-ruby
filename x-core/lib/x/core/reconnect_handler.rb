@@ -36,18 +36,18 @@ module X
     # @api public
     # @return [Integer, Float] the maximum number of reconnects, or Float::INFINITY for no limit
     # @example Get or set the maximum reconnects
-    #   handler.max_stream_reconnects = 5
-    attr_accessor :max_stream_reconnects
+    #   handler.max_reconnects = 5
+    attr_accessor :max_reconnects
 
     # Initialize a new reconnect handler
     #
     # @api public
-    # @param max_stream_reconnects [Integer, Float] the maximum number of reconnects in a row, or Float::INFINITY
+    # @param max_reconnects [Integer, Float] the maximum number of reconnects in a row, or Float::INFINITY
     # @return [ReconnectHandler] a new instance
     # @example Create a reconnect handler
-    #   handler = X::ReconnectHandler.new(max_stream_reconnects: 5)
-    def initialize(max_stream_reconnects: DEFAULT_MAX_RECONNECTS)
-      @max_stream_reconnects = max_stream_reconnects
+    #   handler = X::ReconnectHandler.new(max_reconnects: 5)
+    def initialize(max_reconnects: DEFAULT_MAX_RECONNECTS)
+      @max_reconnects = max_reconnects
     end
 
     # Run a stream, running it again whenever it drops
@@ -92,7 +92,7 @@ module X
     # @return [Boolean] true if no reconnects remain, or false once it has waited for the next
     def out_of_reconnects?(error, state)
       reconnects = state[:reconnects] += 1
-      return true if reconnects > max_stream_reconnects
+      return true if reconnects > max_reconnects
 
       sleep(error ? backoff(error, reconnects) : network_backoff(reconnects))
       false

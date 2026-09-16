@@ -2,16 +2,16 @@ require "json"
 require_relative "../../test_helper"
 
 module X
-  class ClientStreamTest < Minitest::Test
+  class StreamingClientTest < Minitest::Test
     include StreamHelpers
 
-    cover Client
+    cover StreamingClient
 
     def setup
-      @client = Client.new(bearer_token: TEST_BEARER_TOKEN, max_stream_reconnects: 0)
+      @client = Client.new(bearer_token: TEST_BEARER_TOKEN)
     end
 
-    def test_stream_yields_json_objects
+    def test_yields_json_objects
       results = with_stubbed_stream(chunks: ["{\"data\":{\"id\":\"1\"}}\r\n"]) do
         stream_and_collect("tweets/search/stream")
       end
@@ -19,7 +19,7 @@ module X
       assert_equal [{"data" => {"id" => "1"}}], results
     end
 
-    def test_stream_with_headers
+    def test_with_headers
       mock_response = mock_streaming_response(chunks: ["{\"data\":{\"id\":\"1\"}}\r\n"])
       headers = {"User-Agent" => "Custom Agent"}
       request = with_stream_request(mock_response) do
@@ -29,7 +29,7 @@ module X
       assert_equal "Custom Agent", request["User-Agent"]
     end
 
-    def test_stream_with_custom_object_class
+    def test_with_custom_object_class
       results = with_stubbed_stream(chunks: ["{\"data\":{\"id\":\"1\"}}\r\n"]) do
         stream_and_collect("tweets/search/stream", object_class: OpenStruct)
       end
@@ -37,7 +37,7 @@ module X
       assert_kind_of OpenStruct, results[0]
     end
 
-    def test_stream_with_custom_array_class
+    def test_with_custom_array_class
       results = with_stubbed_stream(chunks: ["{\"ids\":[1,2,2,3]}\r\n"]) do
         stream_and_collect("tweets/search/stream", array_class: Set)
       end
@@ -45,8 +45,8 @@ module X
       assert_kind_of Set, results[0]["ids"]
     end
 
-    def test_stream_with_default_custom_classes
-      client = Client.new(bearer_token: TEST_BEARER_TOKEN, default_object_class: OpenStruct, default_array_class: Set, max_stream_reconnects: 0)
+    def test_with_default_custom_classes
+      client = Client.new(bearer_token: TEST_BEARER_TOKEN, default_object_class: OpenStruct, default_array_class: Set)
       results = with_stubbed_stream(chunks: ["{\"ids\":[1,2,2,3]}\r\n"], client:) do
         stream_and_collect("tweets/search/stream", client:)
       end
@@ -55,47 +55,47 @@ module X
       assert_kind_of Set, results[0].ids
     end
 
-    def test_stream_raises_on_error
+    def test_raises_on_error
       stub_request(:get, "https://api.twitter.com/2/tweets/search/stream")
         .to_return(status: 401, body: '{"errors":[{"message":"Unauthorized"}]}',
           headers: {"Content-Type" => "application/json"})
 
       assert_raises(Unauthorized) do
-        @client.stream("tweets/search/stream") { |_json| flunk "unexpected yield" }
+        streaming.stream("tweets/search/stream") { |_json| flunk "unexpected yield" }
       end
     end
 
-    def test_stream_includes_authentication
+    def test_includes_authentication
       mock_response = mock_streaming_response(chunks: [])
       request = with_stream_request(mock_response) do
-        @client.stream("tweets/search/stream") { |_json| flunk "unexpected yield" }
+        streaming.stream("tweets/search/stream") { |_json| flunk "unexpected yield" }
       end
 
       assert_match(/Bearer #{TEST_BEARER_TOKEN}/o, request["Authorization"])
     end
 
-    def test_stream_builds_get_request
+    def test_builds_get_request
       mock_response = mock_streaming_response(chunks: [])
       request = with_stream_request(mock_response) do
-        @client.stream("tweets/search/stream") { |_json| flunk "unexpected yield" }
+        streaming.stream("tweets/search/stream") { |_json| flunk "unexpected yield" }
       end
 
       assert_instance_of Net::HTTP::Get, request
     end
 
-    def test_stream_with_params
+    def test_with_params
       mock_response = mock_streaming_response(chunks: [])
       request = with_stream_request(mock_response) do
-        @client.stream("tweets/sample/stream", params: {"tweet.fields": %w[id text], expansions: nil}) { |_json| flunk "unexpected yield" }
+        streaming.stream("tweets/sample/stream", params: {"tweet.fields": %w[id text], expansions: nil}) { |_json| flunk "unexpected yield" }
       end
 
       assert_equal URI("https://api.twitter.com/2/tweets/sample/stream?tweet.fields=id,text"), request.uri
     end
 
-    def test_stream_uses_base_url
+    def test_uses_base_url
       mock_response = mock_streaming_response(chunks: [])
       request = with_stream_request(mock_response) do
-        @client.stream("tweets/search/stream") { |_json| flunk "unexpected yield" }
+        streaming.stream("tweets/search/stream") { |_json| flunk "unexpected yield" }
       end
 
       assert_equal URI("https://api.twitter.com/2/tweets/search/stream"), request.uri

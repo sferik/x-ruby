@@ -11,17 +11,17 @@ module X
     end
 
     def test_reconnects_without_limit_by_default
-      assert_equal Float::INFINITY, ReconnectHandler.new.max_stream_reconnects
+      assert_equal Float::INFINITY, ReconnectHandler.new.max_reconnects
     end
 
     def test_a_stream_that_ends_reconnects_at_once_then_backs_off_linearly
-      assert_nil stream_with(ReconnectHandler.new(max_stream_reconnects: 3)) { @runs += 1 }
+      assert_nil stream_with(ReconnectHandler.new(max_reconnects: 3)) { @runs += 1 }
       assert_equal [4, [0.0, 0.25, 0.5]], [@runs, @sleeps]
     end
 
     def test_a_dropped_connection_backs_off_linearly_up_to_16_seconds_then_raises
-      handler = ReconnectHandler.new(max_stream_reconnects: 1)
-      handler.max_stream_reconnects = 70
+      handler = ReconnectHandler.new(max_reconnects: 1)
+      handler.max_reconnects = 70
 
       assert_raises(NetworkError) { stream_with(handler) { fail_with(NetworkError) } }
       assert_equal [71, [0.0, 0.25, 0.5], [16] * 5], [@runs, @sleeps.first(3), @sleeps.last(5)]
@@ -29,17 +29,17 @@ module X
     end
 
     def test_a_server_error_or_a_refused_connection_backs_off_exponentially_up_to_320_seconds
-      assert_raises(ServiceUnavailable) { stream_with(ReconnectHandler.new(max_stream_reconnects: 8)) { fail_with(@runs.even? ? ServiceUnavailable : ConnectionException) } }
+      assert_raises(ServiceUnavailable) { stream_with(ReconnectHandler.new(max_reconnects: 8)) { fail_with(@runs.even? ? ServiceUnavailable : ConnectionException) } }
       assert_equal [5, 10, 20, 40, 80, 160, 320, 320], @sleeps
     end
 
     def test_a_rate_limit_waits_until_it_resets_or_backs_off_from_a_minute
-      assert_raises(TooManyRequests) { stream_with(ReconnectHandler.new(max_stream_reconnects: 8)) { refused((@runs > 2) ? 1000 : nil) } }
+      assert_raises(TooManyRequests) { stream_with(ReconnectHandler.new(max_reconnects: 8)) { refused((@runs > 2) ? 1000 : nil) } }
       assert_equal [60, 120, 240, 1000, 1000, 1000, 1000, 1000], @sleeps
     end
 
     def test_delivering_an_object_starts_the_count_over
-      handler = ReconnectHandler.new(max_stream_reconnects: 1)
+      handler = ReconnectHandler.new(max_reconnects: 1)
       stream_with(handler) do |deliver|
         @runs += 1
         deliver.call(@runs) if @runs <= 3

@@ -3,6 +3,7 @@ require_relative "../../test_helper"
 module X
   class ClientAppOnlyTest < Minitest::Test
     cover Client
+    cover StreamingClient
 
     STREAM_URL = "https://api.twitter.com/2/tweets/sample/stream".freeze
 
@@ -62,38 +63,12 @@ module X
     end
 
     def test_an_oauth1_client_streams_with_the_bearer_token_and_builds_objects_with_itself
-      client = Client.new(**test_oauth_credentials, max_stream_reconnects: 0)
+      client = Client.new(**test_oauth_credentials)
       stub_request(:get, STREAM_URL).with(headers: {"Authorization" => "Bearer #{TEST_BEARER_TOKEN}"}).to_return(body: "{\"data\":{\"id\":\"1\"}}\r\n")
       built = []
-      client.stream("tweets/sample/stream", object_class: ResponseBuilder) { |object| built << object }
+      client.streaming(max_reconnects: 0).stream("tweets/sample/stream", object_class: ResponseBuilder) { |object| built << object }
 
       assert_same client, built.first[:client]
-    end
-
-    def test_a_client_passes_its_stream_read_timeout_along_and_keeps_it_in_a_copy
-      client = Client.new(stream_read_timeout: 5)
-
-      assert_equal [5, 5, 20], [client.stream_read_timeout, client.copy.stream_read_timeout, Client.new.stream_read_timeout]
-      client.stream_read_timeout = 30
-
-      assert_equal 30, client.instance_variable_get(:@connection).stream_read_timeout
-    end
-
-    def test_a_stream_that_drops_reconnects
-      client = Client.new(bearer_token: TEST_BEARER_TOKEN)
-      client.max_stream_reconnects = 2
-      stub_request(:get, STREAM_URL).to_return({body: "{\"data\":{\"id\":\"1\"}}\r\n"}, {status: 503}, {body: "{\"data\":{\"id\":\"2\"}}\r\n"}).then.to_raise(Errno::ECONNRESET)
-      posts = []
-
-      assert_raises(NetworkError) { without_sleeping(client) { client.stream("tweets/sample/stream") { |post| posts << post.dig("data", "id") } } }
-      assert_equal [%w[1 2], [0.0, 10, 0.0, 0.25], 2], [posts, @sleeps, client.copy.max_stream_reconnects]
-    end
-
-    private
-
-    def without_sleeping(client, &)
-      @sleeps = []
-      client.instance_variable_get(:@reconnect_handler).stub(:sleep, ->(seconds) { @sleeps << seconds }, &)
     end
   end
 end

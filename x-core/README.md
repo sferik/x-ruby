@@ -20,7 +20,7 @@ client = X::Client.new(bearer_token: "INSERT YOUR BEARER TOKEN HERE")
 client.get("users/by/username/sferik")
 # {"data"=>{"id"=>"7505382", "name"=>"Erik Berlin", "username"=>"sferik"}}
 
-client.stream("tweets/search/stream") { |post| puts post["data"]["text"] }
+client.streaming.stream("tweets/search/stream") { |post| puts post["data"]["text"] }
 ```
 
 See the [`x` README](https://github.com/sferik/x-ruby#readme) for more examples.

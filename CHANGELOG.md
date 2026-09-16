@@ -60,8 +60,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Retry a request refused for a rate limit after the limit resets, up to `max_rate_limit_retries` times, which is 0 by default, for a limit that resets within `max_rate_limit_wait` seconds, which is 900 by default; a refusal that does not say when its limit resets waits a minute, doubling for each retry after
 * Authenticate as the app with `X::Client#app_only`, a copy of a client that signs with OAuth 1.0a, which fetches the app's bearer token once and reuses it
 * Stream with app-only authentication from a client that signs with OAuth 1.0a, since the stream endpoints refuse it
-* Reconnect a stream that ends or drops, backing off as X recommends, up to `max_stream_reconnects` times in a row, which is unlimited by default; a rate limit waits until it resets, or from a minute, doubling each attempt
-* Read a stream with its own `stream_read_timeout`, 20 seconds by default, the interval of the keep-alive X sends, so a stream that goes quiet reconnects rather than waiting for the timeout of an ordinary request
+* Move `stream` from `X::Client` to `X::StreamingClient`, so that the client carries no streaming settings
+* Stream with `X::StreamingClient`, which `X::Client#streaming` builds from a client, sharing its credentials, base URL, parsing classes, and `on_response` hook while keeping the settings of a long-lived connection
+* Reconnect a stream that ends or drops, backing off as X recommends, up to the `max_reconnects` of the streaming client, which is unlimited by default; a rate limit waits until it resets, or from a minute, doubling each attempt
+* Read a stream with the `read_timeout` of the streaming client, 20 seconds by default, the interval of the keep-alive X sends, so a stream that goes quiet reconnects rather than waiting for the timeout of an ordinary request
 * Report how many posts the app's project has read with `X::Usage.find` and `client.usage`, including its monthly cap and its usage by day and by app
 * Take the authenticated user's ID for actions from the prefix of an OAuth 1.0a access token, with `current_user_id`, instead of requesting `users/me`
 

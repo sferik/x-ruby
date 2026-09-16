@@ -5,9 +5,10 @@ module X
     include StreamHelpers
 
     cover Client
+    cover StreamingClient
 
     def setup
-      @client = Client.new(bearer_token: TEST_BEARER_TOKEN, max_stream_reconnects: 0)
+      @client = Client.new(bearer_token: TEST_BEARER_TOKEN)
     end
 
     X::RequestBuilder::HTTP_METHODS.each_key do |http_method|
