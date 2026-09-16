@@ -5,6 +5,7 @@ require "x/uploader/media"
 module X
   class MediaChunkedWorkflowTest < Minitest::Test
     cover Uploader::Media
+    cover Uploader::Chunks
 
     BASE_URL = "https://api.twitter.com/2/media/upload".freeze
     INIT_URL = "#{BASE_URL}/initialize".freeze

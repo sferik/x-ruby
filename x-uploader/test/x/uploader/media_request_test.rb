@@ -6,6 +6,7 @@ require "x/uploader/media"
 module X
   class MediaRequestTest < Minitest::Test
     cover Uploader::Media
+    cover Uploader::Chunks
 
     UPLOAD_URL = "https://api.twitter.com/2/media/upload".freeze
     BOUNDARY = "AaB03x".freeze

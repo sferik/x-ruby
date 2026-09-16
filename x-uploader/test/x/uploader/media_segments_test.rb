@@ -5,6 +5,7 @@ require "x/uploader/media"
 module X
   class MediaSegmentsTest < Minitest::Test
     cover Uploader::Media
+    cover Uploader::Chunks
 
     BASE_URL = "https://api.twitter.com/2/media/upload".freeze
     APPEND_URL = "#{BASE_URL}/#{TEST_MEDIA_ID}/append".freeze

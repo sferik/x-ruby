@@ -4,6 +4,7 @@ require "x/uploader/media"
 module X
   class MediaRetryTest < Minitest::Test
     cover Uploader::Media
+    cover Uploader::Chunks
 
     BASE_URL = "https://api.twitter.com/2/media/upload".freeze
     VIDEO_FILE = "test/sample_files/sample.mp4".freeze
@@ -30,7 +31,7 @@ module X
         assert_raises(InternalServerError) { perform_upload }
       end
 
-      assert_requested(:post, append_url, times: Uploader::Media::MAX_RETRIES)
+      assert_requested(:post, append_url, times: Uploader::Chunks::MAX_RETRIES)
     end
 
     def test_cleanup_preserves_nonempty_directory
