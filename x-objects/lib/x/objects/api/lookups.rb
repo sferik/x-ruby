@@ -384,6 +384,17 @@ module X
           DirectMessage.with(user, client: self, **params)
         end
 
+        # The direct message events of a conversation, one-to-one or group
+        #
+        # @api public
+        # @param conversation [DirectMessage, String, Integer] a message of the conversation, or the conversation's identifier
+        # @param params [Hash] query parameters merged over the default parameters, such as event_types
+        # @return [Cursor] a cursor over the events
+        # @raise [ArgumentError] if the conversation identifier is not one
+        # @example Print the conversation a message belongs to
+        #   client.direct_messages_in(message).each { |event| puts event.text }
+        def direct_messages_in(conversation, **params) = DirectMessage.in_conversation(conversation, client: self, **params)
+
         # Search recent posts, the short form of search_posts
         #
         # @api public
@@ -409,6 +420,7 @@ module X
         alias_method :find_dm!, :find_direct_message!
         alias_method :dms, :direct_messages
         alias_method :dms_with, :direct_messages_with
+        alias_method :dms_in, :direct_messages_in
       end
     end
   end

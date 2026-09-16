@@ -3,6 +3,7 @@ require_relative "../../test_helper"
 module X
   class DirectMessageCreateTest < Minitest::Test
     cover DirectMessage
+    cover Objects::DirectMessageConversations
 
     def setup
       @client = FakeClient.new

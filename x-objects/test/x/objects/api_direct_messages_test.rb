@@ -32,6 +32,29 @@ module X
         refute @client.delete_direct_message(DirectMessage.new({"id" => "1"}))
       end
 
+      def test_create_group_direct_message
+        @client.stub(:post, "dm_conversations", {"data" => {"dm_conversation_id" => "1582838223204016129", "dm_event_id" => "2"}})
+        message = @client.create_group_direct_message([8, 7], "Hi", attachments: [])
+
+        assert_equal [2, @client], [message.id, message.client]
+        assert_equal({conversation_type: "Group", participant_ids: %w[8 7], message: {text: "Hi", attachments: []}}.to_json, @client.requests.last[:body])
+      end
+
+      def test_create_direct_message_in
+        @client.stub(:post, "dm_conversations/9-8/messages", {"data" => {"dm_conversation_id" => "9-8", "dm_event_id" => "2"}})
+        message = @client.create_direct_message_in("9-8", "Hi", attachments: [])
+
+        assert_equal [2, @client], [message.id, message.client]
+        assert_equal({text: "Hi", attachments: []}.to_json, @client.requests.last[:body])
+      end
+
+      def test_group_dm_aliases
+        @client.stub(:post, "dm_conversations", {"data" => {"dm_conversation_id" => "1582838223204016129", "dm_event_id" => "2"}})
+        @client.stub(:post, "dm_conversations/9-8/messages", {"data" => {"dm_conversation_id" => "9-8", "dm_event_id" => "3"}})
+
+        assert_equal [2, 3], [@client.create_group_dm([8, 7], "Hi").id, @client.create_dm_in("9-8", "Hi").id]
+      end
+
       def test_dm_aliases
         @client.stub(:post, "dm_conversations/with/8/messages", {"data" => {"dm_conversation_id" => "9-8", "dm_event_id" => "2"}})
         @client.stub(:delete, "dm_events/2", {"data" => {"deleted" => true}})

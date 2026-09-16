@@ -281,6 +281,23 @@ module X
       def referenced: (reply_to: id?, quote: id?, media_ids: Array[String | Integer | Hash[String, untyped]]?, community: id?) -> Hash[Symbol, untyped]
     end
 
+    # The class side of DirectMessage, which builds its messages
+    interface _DirectMessageClass
+      def new: (attrs attrs, ?client: _Client?) -> DirectMessage
+    end
+
+    module DirectMessageConversations : _DirectMessageClass
+      CONVERSATION_ID: Regexp
+
+      def create_group: (Array[id] users, String text, client: _Client, **untyped params) -> DirectMessage?
+      def create_in: (DirectMessage | String | Integer conversation, String text, client: _Client, **untyped params) -> DirectMessage?
+      def in_conversation: (DirectMessage | String | Integer conversation, client: _Client, **untyped params) -> Cursor
+
+      private
+      def conversation_id_of: (DirectMessage | String | Integer conversation) -> String
+      def sent: (body body, client: _Client) -> DirectMessage?
+    end
+
     module PostCounts
       RECENT_ENDPOINT: String
       ALL_ENDPOINT: String
@@ -420,6 +437,8 @@ module X
         def dms: (**untyped params) -> Cursor
         def direct_messages_with: (id user, **untyped params) -> Cursor
         def dms_with: (id user, **untyped params) -> Cursor
+        def direct_messages_in: (DirectMessage | String | Integer conversation, **untyped params) -> Cursor
+        def dms_in: (DirectMessage | String | Integer conversation, **untyped params) -> Cursor
       end
 
       module Actions : _Client, _CurrentUser
@@ -451,6 +470,10 @@ module X
         module DirectMessages : _Client
           def create_direct_message: (id user, String text, **untyped params) -> DirectMessage?
           def create_dm: (id user, String text, **untyped params) -> DirectMessage?
+          def create_group_direct_message: (Array[id] users, String text, **untyped params) -> DirectMessage?
+          def create_group_dm: (Array[id] users, String text, **untyped params) -> DirectMessage?
+          def create_direct_message_in: (DirectMessage | String | Integer conversation, String text, **untyped params) -> DirectMessage?
+          def create_dm_in: (DirectMessage | String | Integer conversation, String text, **untyped params) -> DirectMessage?
           def delete_direct_message: (id message) -> bool
           def delete_dm: (id message) -> bool
         end
@@ -802,6 +825,7 @@ module X
   end
 
   class DirectMessage < Objects::Resource
+    extend Objects::DirectMessageConversations
     extend Objects::_Lookup[DirectMessage]
     include Objects::_Hydration[DirectMessage]
     FIELDS: Array[String]

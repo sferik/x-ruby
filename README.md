@@ -205,6 +205,10 @@ list.delete
 
 message = x_client.create_dm(user, "Hello!") # create_direct_message, shortened
 x_client.dms_with(user).first(10)          # the conversation with a user
+
+group = x_client.create_group_dm([user, other], "Hello, both of you!") # create_group_direct_message, shortened
+x_client.create_dm_in(group, "Anyone free on Friday?") # to the conversation of a message, or its identifier
+x_client.dms_in(group).first(10)           # the messages of a conversation, one-to-one or group
 ```
 
 ### Raw JSON

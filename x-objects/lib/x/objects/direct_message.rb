@@ -1,11 +1,14 @@
 require "json"
 require_relative "cursor"
+require_relative "direct_message_conversations"
 require_relative "resource"
 
 module X
   # A direct message event
   # @api public
   class DirectMessage < Objects::Resource
+    extend Objects::DirectMessageConversations
+
     # Every public direct message event field
     FIELDS = %w[attachments created_at dm_conversation_id event_type id text].freeze
     # Every expansion available on direct message endpoints
@@ -94,10 +97,7 @@ module X
       #   X::DirectMessage.create(user, "Hello!", client: client)
       def create(user, text, client:, **params)
         path = "dm_conversations/with/#{Objects::Utils.id_of(user)}/messages"
-        data = client.post(path, JSON.generate({text:, **params}), **Objects::Utils::JSON_CLASSES).to_h["data"]
-        return unless data.is_a?(Hash)
-
-        new({"id" => data["dm_event_id"], "dm_conversation_id" => data["dm_conversation_id"]}, client:)
+        sent(client.post(path, JSON.generate({text:, **params}), **Objects::Utils::JSON_CLASSES), client:)
       end
 
       # Delete a direct message event as the authenticated user
