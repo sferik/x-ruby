@@ -7,6 +7,8 @@ module X
       MAX_RETRIES = 3
       # Default number of chunks uploaded at once
       DEFAULT_CONCURRENCY = 4
+      # Seconds to wait before retrying a chunk, doubled for each retry after
+      RETRY_BACKOFF = 1
 
       private
 
@@ -76,7 +78,7 @@ module X
         end
       end
 
-      # Upload a single chunk with retry logic
+      # Upload a single chunk, retrying a server or network error after a growing wait
       # @api private
       # @param client [Client] the X API client
       # @param media_id [String] the media ID
@@ -84,10 +86,15 @@ module X
       # @param headers [Hash] the request headers
       # @return [void]
       def upload_chunk(client:, media_id:, upload_body:, headers:)
-        client.post("media/upload/#{media_id}/append", upload_body, headers:)
-      rescue NetworkError, ServerError
-        retries ||= 0
-        ((retries += 1) < MAX_RETRIES) ? retry : raise
+        retries = 0
+        begin
+          client.post("media/upload/#{media_id}/append", upload_body, headers:)
+        rescue NetworkError, ServerError
+          raise unless (retries += 1) < MAX_RETRIES
+
+          sleep RETRY_BACKOFF << (retries - 1)
+          retry
+        end
       end
 
       # Construct the multipart upload body

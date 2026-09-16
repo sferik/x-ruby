@@ -11,6 +11,7 @@ module X
 
     def setup
       @client = Client.new
+      @waits = []
     end
 
     def test_retry_recovers_from_transient_server_error
@@ -21,6 +22,16 @@ module X
       assert perform_upload
       assert_requested(:post, append_url, times: 2)
       assert_requested(:post, finalize_url, times: 1)
+      assert_equal [1], @waits
+    end
+
+    def test_retry_recovers_from_a_network_error
+      stub_init_request
+      stub_request(:post, append_url).to_raise(Errno::ECONNRESET).to_return(status: 204)
+      stub_finalize_request
+
+      assert perform_upload
+      assert_requested(:post, append_url, times: 2)
     end
 
     def test_retry_raises_after_exhausting_max_retries
@@ -32,6 +43,19 @@ module X
       end
 
       assert_requested(:post, append_url, times: Uploader::Chunks::MAX_RETRIES)
+      assert_equal [1, 2], @waits
+    end
+
+    def test_a_client_error_is_not_retried
+      stub_init_request
+      stub_request(:post, append_url).to_return(status: 400)
+
+      with_thread_exceptions_suppressed do
+        assert_raises(BadRequest) { perform_upload }
+      end
+
+      assert_requested(:post, append_url, times: 1)
+      assert_empty @waits
     end
 
     private
@@ -51,7 +75,9 @@ module X
     end
 
     def perform_upload
-      Uploader::Media.chunked_upload(VIDEO_FILE, client: @client, media_category: Uploader::Media::TWEET_VIDEO)
+      Uploader::Media.stub(:sleep, ->(seconds) { @waits << seconds }) do
+        Uploader::Media.chunked_upload(VIDEO_FILE, client: @client, media_category: Uploader::Media::TWEET_VIDEO)
+      end
     end
 
     def with_thread_exceptions_suppressed

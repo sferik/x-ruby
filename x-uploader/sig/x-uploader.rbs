@@ -17,6 +17,7 @@ module X
     module Chunks
       MAX_RETRIES: Integer
       DEFAULT_CONCURRENCY: Integer
+      RETRY_BACKOFF: Integer
 
       private
       def init: (client: Client, file_path: String, media_type: String, media_category: String) -> untyped
