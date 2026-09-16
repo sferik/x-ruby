@@ -19,7 +19,7 @@ module X
     end
 
     module Chunks
-      MAX_RETRIES: Integer
+      MAX_ATTEMPTS: Integer
       DEFAULT_CONCURRENCY: Integer
       RETRY_BACKOFF: Integer
 

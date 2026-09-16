@@ -5,8 +5,8 @@ module X
     # Uploads a file in the chunks the X API requires for video and subtitles
     # @api private
     module Chunks
-      # Maximum number of retry attempts for failed uploads
-      MAX_RETRIES = 3
+      # Maximum number of attempts to upload a chunk, counting the first, so a chunk is retried twice
+      MAX_ATTEMPTS = 3
       # Default number of chunks uploaded at once
       DEFAULT_CONCURRENCY = 4
       # Seconds to wait before retrying a chunk, doubled for each retry after
@@ -93,7 +93,7 @@ module X
         begin
           client.post("media/upload/#{media_id}/append", upload_body, headers:, **JSON_CLASSES)
         rescue NetworkError, ServerError
-          raise unless (retries += 1) < MAX_RETRIES
+          raise unless (retries += 1) < MAX_ATTEMPTS
 
           sleep RETRY_BACKOFF << (retries - 1)
           retry

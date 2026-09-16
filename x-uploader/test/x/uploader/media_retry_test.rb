@@ -34,7 +34,7 @@ module X
       assert_requested(:post, append_url, times: 2)
     end
 
-    def test_retry_raises_after_exhausting_max_retries
+    def test_retry_raises_after_exhausting_max_attempts
       stub_init_request
       stub_request(:post, append_url).to_return(status: 500)
 
@@ -42,7 +42,7 @@ module X
         assert_raises(InternalServerError) { perform_upload }
       end
 
-      assert_requested(:post, append_url, times: Uploader::Chunks::MAX_RETRIES)
+      assert_requested(:post, append_url, times: Uploader::Chunks::MAX_ATTEMPTS)
       assert_equal [1, 2], @waits
     end
 
