@@ -104,7 +104,7 @@ module X
   class ClientError < HTTPError
   end
 
-  class BadGateway < ClientError
+  class BadGateway < ServerError
   end
 
   class BadRequest < ClientError
@@ -133,7 +133,7 @@ module X
   class Forbidden < ClientError
   end
 
-  class GatewayTimeout < ClientError
+  class GatewayTimeout < ServerError
   end
 
   class Gone < ClientError
