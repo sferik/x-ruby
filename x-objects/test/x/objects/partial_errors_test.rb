@@ -7,6 +7,7 @@ module X
       cover Resource
       cover Includes
       cover Cursor
+      cover Objects::Pages
       cover API::Lookups
       cover X::User
       cover X::Objects::UserFinders

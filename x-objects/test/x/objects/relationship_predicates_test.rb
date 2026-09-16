@@ -7,6 +7,7 @@ module X
     cover Objects::Relationships
     cover List
     cover Cursor
+    cover Objects::Pages
 
     def setup
       @client = FakeClient.new

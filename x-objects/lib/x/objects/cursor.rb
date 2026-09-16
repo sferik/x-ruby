@@ -1,6 +1,5 @@
-require "monitor"
 require_relative "page"
-require_relative "problem"
+require_relative "pages"
 require_relative "utils"
 
 module X
@@ -78,9 +77,7 @@ module X
       @prefetch = prefetch
       @token_param = token_param
       @min_results = min_results
-      @limit = limit
-      @monitor = Monitor.new
-      @pages = []
+      @pages = Objects::Pages.new(self, limit)
       freeze
     end
 
@@ -130,11 +127,7 @@ module X
     # @return [Page, nil] the page or nil if the collection has fewer pages
     # @example Fetch the first page
     #   user.followers.page(0)
-    def page(index)
-      current = cached_page(index)
-      prefetch_page(index + 1) if prefetch? && current&.next_token
-      current
-    end
+    def page(index) = @pages.at(index)
 
     # Return a new cursor over the same collection with an empty page cache
     #
@@ -240,11 +233,6 @@ module X
       dropped.merge(params)
     end
 
-    # Check whether this cursor requests nothing but identifiers
-    # @api private
-    # @return [Boolean] true if the fields parameter selects only the identifier
-    def id_only? = params[klass.fields_key].eql?(klass.id_key)
-
     # The query parameters that select nothing but the identifier
     # @api private
     # @return [Hash{String => Object}] the query parameters
@@ -254,71 +242,6 @@ module X
       dropped = {} #: Hash[String, nil]
       klass.default_params.each_key { |key| dropped[key] = nil }
       params.merge(dropped, fields_key => klass.id_key)
-    end
-
-    # Fetch a page by index, storing it in the cache
-    # @api private
-    # @param index [Integer] the zero-based page index
-    # @return [Page, nil] the page or nil if the collection has fewer pages
-    def cached_page(index)
-      @monitor.synchronize { @pages[index] ||= fetch_page(index) }
-    end
-
-    # Fetch a page from the API
-    # @api private
-    # @param index [Integer] the zero-based page index
-    # @return [Page, nil] the page or nil if the previous page was the last
-    def fetch_page(index)
-      page_params = page_params(index)
-      return if page_params.nil?
-
-      body = client.get(Objects::Utils.path(path, page_params), **Objects::Utils::JSON_CLASSES)
-      Page.new(resources_from(body), body.to_h["meta"].to_h, problems: Problem.all_from(body))
-    end
-
-    # Build the resources of a page, as stubs for a cursor of identifiers
-    # @api private
-    # @param body [Hash, nil] the response body
-    # @return [Array<Objects::Resource>] the resources
-    def resources_from(body)
-      resources = klass.collection_from_response(body, client:, hydrated: true)
-      id_only? ? resources.map { |resource| klass.from_id(resource, client:) } : resources
-    end
-
-    # Build the query parameters for a page, including the previous page token
-    # @api private
-    # @param index [Integer] the zero-based page index
-    # @return [Hash{String => Object}, nil] the parameters or nil if the previous page was the last
-    def page_params(index)
-      return params if index.zero?
-
-      token = cached_page(index - 1)&.next_token
-      next_params(token) unless token.nil?
-    end
-
-    # The query parameters of a page, asking for what the pages before it left
-    # @api private
-    # @param token [String] the token of the next page
-    # @return [Hash{String => Object}, nil] the parameters, or nil once the limit is fetched
-    def next_params(token)
-      paged = params.merge(token_param => token)
-      limit = @limit
-      return paged if limit.nil?
-
-      remaining = limit - @pages.sum { |page| page.to_a.size }
-      paged.merge("max_results" => remaining.clamp(min_results, Integer(params.fetch("max_results")))) if remaining.positive?
-    end
-
-    # Fetch a page in a background thread; errors resurface when the page is requested
-    # @api private
-    # @param index [Integer] the zero-based page index
-    # @return [Thread] the background thread
-    def prefetch_page(index)
-      Thread.new do
-        cached_page(index)
-      rescue
-        nil
-      end
     end
   end
 end

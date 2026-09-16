@@ -89,6 +89,25 @@ module X
       private def worker: [T, U] (Thread::Queue queue, Array[T] items, Array[U?] results) { (T) -> U } -> Thread
     end
 
+    class Pages
+      @cursor: Cursor
+      @limit: Integer?
+      @monitor: Monitor
+      @pages: Array[Page?]
+
+      def initialize: (Cursor cursor, Integer? limit) -> void
+      def at: (Integer index) -> Page?
+
+      private
+      def cached: (Integer index) -> Page?
+      def fetch: (Integer index) -> Page?
+      def resources_from: (body body) -> Array[Resource]
+      def id_only?: () -> bool
+      def params_for: (Integer index) -> query?
+      def next_params: (String token) -> query?
+      def prefetch: (Integer index) -> Thread
+    end
+
     class Memo
       UNSET: Object
 
@@ -431,9 +450,7 @@ module X
     attr_reader min_results: Integer
 
     @prefetch: bool
-    @limit: Integer?
-    @monitor: Monitor
-    @pages: Array[Page?]
+    @pages: Objects::Pages
 
     def initialize: (singleton(Objects::Resource) klass, String path, client: Objects::_Client, ?params: Objects::params, ?prefetch: bool, ?token_param: String, ?min_results: Integer, ?limit: Integer?) -> void
     def prefetch?: () -> bool
@@ -454,14 +471,7 @@ module X
     def sized: (Integer count) -> Cursor
     def own_params: () -> Objects::params
     def with_max_results: (Integer size, Integer limit) -> Cursor
-    def id_only?: () -> bool
     def id_only_params: () -> Objects::params
-    def cached_page: (Integer index) -> Page?
-    def fetch_page: (Integer index) -> Page?
-    def resources_from: (Objects::body body) -> Array[Objects::Resource]
-    def page_params: (Integer index) -> Objects::query?
-    def next_params: (String token) -> Objects::query?
-    def prefetch_page: (Integer index) -> Thread
   end
 
   class Media < Objects::Resource

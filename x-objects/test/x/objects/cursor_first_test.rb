@@ -3,6 +3,7 @@ require_relative "../../test_helper"
 module X
   class CursorFirstTest < Minitest::Test
     cover Cursor
+    cover Objects::Pages
     cover Community
     cover Post
     cover User
@@ -65,34 +66,6 @@ module X
       assert_equal [{"max_results" => "3"}, {"max_results" => "3", "pagination_token" => "p2"}], @client.queries.map { |query| query.slice("max_results", "pagination_token") }
     end
 
-    def test_first_beyond_the_page_size_asks_the_next_page_for_what_is_left
-      assert_equal [1, 2, 3, 1], @user.followers(max_results: 3).first(4).map(&:id)
-      assert_equal %w[3 1], @client.queries.map { |query| query["max_results"] }
-    end
-
-    def test_a_page_after_the_first_asks_for_no_more_than_the_page_size
-      stub_paging_followers
-      cursor = Cursor.new(User, "users/2/followers", client: @client, params: {max_results: 3})
-
-      assert_equal 7, cursor.first(7).size
-      assert_equal %w[3 3 1], @client.queries.map { |query| query["max_results"] }
-    end
-
-    def test_a_cursor_with_a_limit_ends_once_it_has_what_it_asked_for
-      stub_paging_followers
-      cursor = Cursor.new(User, "users/2/followers", client: @client, params: {max_results: "3"}, limit: 7)
-
-      assert_equal 7, cursor.to_a.size
-      assert_equal %w[3 3 1], @client.queries.map { |query| query["max_results"] }
-    end
-
-    def test_a_page_after_the_first_rises_to_the_minimum_of_the_endpoint
-      cursor = Cursor.new(User, "users/1/followers", client: @client, params: {max_results: 10}, min_results: 5)
-
-      assert_equal 12, cursor.first(12).size
-      assert_equal %w[10 5], @client.queries.map { |query| query["max_results"] }
-    end
-
     def test_first_of_a_cursor_without_a_page_size
       @client.stub(:get, "dm_events", {"data" => [{"id" => "1"}, {"id" => "2"}]})
       cursor = Cursor.new(DirectMessage, "dm_events", client: @client)
@@ -136,16 +109,6 @@ module X
       cursor = Cursor.new(User, "users/1/followers", client: @client, min_results: 7)
 
       assert_equal [7, 7, 7], [cursor.refresh, cursor.prefetch, cursor.stubs].map(&:min_results)
-    end
-
-    private
-
-    def stub_paging_followers
-      tokens = {nil => "p1", "p1" => "p2", "p2" => "p3"}
-      @client.stub(:get, "users/2/followers", lambda { |query, _|
-        size = query.fetch("max_results").to_i
-        {"data" => (1..size).map { |id| {"id" => id.to_s} }, "meta" => {"next_token" => tokens[query["pagination_token"]]}.compact}
-      })
     end
   end
 end

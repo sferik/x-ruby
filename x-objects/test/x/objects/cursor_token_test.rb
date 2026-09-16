@@ -3,6 +3,7 @@ require_relative "../../test_helper"
 module X
   class CursorTokenTest < Minitest::Test
     cover Cursor
+    cover Objects::Pages
 
     def setup
       @client = FakeClient.new
