@@ -155,6 +155,7 @@ See [UPGRADING.md](UPGRADING.md) for the changes that code written for 0.19 need
 * Raise `X::HTTPError` for a redirect that cannot be followed, such as 304 Not Modified or one whose location is missing, is not a valid URL, or is not an HTTP or HTTPS URL, instead of `KeyError`, `URI::InvalidURIError`, or `ArgumentError`
 * Raise `X::UnsupportedOperation` from `X::DirectMessage.find_all`, and so from `hydrate_all`, since the API has no batch lookup of direct message events, instead of sending an `ids` parameter the endpoint does not take
 * End a `base_url` without a trailing slash with one, so that `base_url: "https://api.x.com/2"` sends a request for `users/me` to `/2/users/me` rather than `/users/me`
+* Raise `ArgumentError` from `X::Uploader::Media.chunked_upload`, before any request, for a `chunk_size_mb` that is not positive or a `concurrency` less than one, which initialized an upload and finalized it without a chunk, or raised `ArgumentError: negative array size` after initializing it
 
 ## [0.19.0] - 2026-03-01
 * Add streaming support for filtered stream and volume stream endpoints

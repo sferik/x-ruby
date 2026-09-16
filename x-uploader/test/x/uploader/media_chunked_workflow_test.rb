@@ -47,6 +47,12 @@ module X
       assert_not_requested(:post, INIT_URL)
     end
 
+    def test_invalid_chunk_options_are_rejected_before_requesting
+      assert_raises(ArgumentError) { Uploader::Media.chunked_upload(VIDEO_FILE, client: @client, concurrency: 0) }
+      assert_raises(ArgumentError) { Uploader::Media.chunked_upload(VIDEO_FILE, client: @client, chunk_size_mb: 0) }
+      assert_not_requested(:post, INIT_URL)
+    end
+
     def test_media_without_id
       stub_request(:post, INIT_URL).to_return(headers: JSON_HEADERS, body: {data: {}}.to_json)
       error = without_thread_reports do

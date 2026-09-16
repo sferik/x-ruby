@@ -121,6 +121,7 @@ module X
 
       def validate_file_path!: (String file_path) -> nil
       def validate_media_category!: (String media_category) -> nil
+      def validate_chunks!: (chunk_size_mb: Numeric, concurrency: Integer) -> nil
     end
 
     module Account

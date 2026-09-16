@@ -15,6 +15,28 @@ module X
       assert_equal "No such file or directory - bad/path", error.message
     end
 
+    def test_validate_chunks
+      assert_nil Uploader::Validator.validate_chunks!(chunk_size_mb: 0.0625, concurrency: 1)
+    end
+
+    def test_validate_chunks_raises_for_a_chunk_size_that_is_not_positive
+      error = assert_raises(ArgumentError) { Uploader::Validator.validate_chunks!(chunk_size_mb: 0, concurrency: 1) }
+
+      assert_equal "chunk_size_mb must be positive, not 0", error.message
+      assert_raises(ArgumentError) { Uploader::Validator.validate_chunks!(chunk_size_mb: -1, concurrency: 1) }
+    end
+
+    def test_validate_chunks_raises_for_a_concurrency_less_than_one
+      error = assert_raises(ArgumentError) { Uploader::Validator.validate_chunks!(chunk_size_mb: 1, concurrency: 0) }
+
+      assert_equal "concurrency must be an Integer of at least 1, not 0", error.message
+      assert_raises(ArgumentError) { Uploader::Validator.validate_chunks!(chunk_size_mb: 1, concurrency: -1) }
+    end
+
+    def test_validate_chunks_raises_for_a_concurrency_that_is_not_an_integer
+      assert_raises(ArgumentError) { Uploader::Validator.validate_chunks!(chunk_size_mb: 1, concurrency: 2.5) }
+    end
+
     def test_validate_media_category
       assert_nil Uploader::Validator.validate_media_category!("tweet_image")
     end

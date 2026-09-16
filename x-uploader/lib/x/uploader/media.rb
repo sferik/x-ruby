@@ -132,11 +132,12 @@ module X
       # @param media_category [String] the media category, inferred from the file extension by default
       # @param media_type [String] the MIME type of the media
       # @param boundary [String] the multipart boundary
-      # @param chunk_size_mb [Integer] the size of each chunk in megabytes
+      # @param chunk_size_mb [Numeric] the size of each chunk in megabytes
       # @param concurrency [Integer] the number of chunks uploaded at once
       # @return [Hash, nil] the upload response data
       # @raise [Errno::ENOENT] if the file does not exist
-      # @raise [ArgumentError] if the media category is invalid
+      # @raise [ArgumentError] if the media category is invalid, the chunk size is not positive, or the concurrency is
+      #   less than one
       # @example Upload a large video
       #   Uploader::Media.chunked_upload("video.mp4", client: client)
       def chunked_upload(file_path, client:, media_category: infer_media_category(file_path),
@@ -144,6 +145,7 @@ module X
         concurrency: Chunks::DEFAULT_CONCURRENCY)
         Validator.validate_file_path!(file_path)
         Validator.validate_media_category!(media_category)
+        Validator.validate_chunks!(chunk_size_mb:, concurrency:)
         media = init(client:, file_path:, media_type:, media_category:)
         append(client:, file_path:, chunk_size: chunk_size_mb * BYTES_PER_MB, media:, boundary:, concurrency:)
         client.post("media/upload/#{media.fetch("id")}/finalize", **JSON_CLASSES)&.fetch("data")
