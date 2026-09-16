@@ -23,11 +23,19 @@ module X
       assert_equal "#<X::Client base_url=\"https://api.twitter.com/2/\" authenticator=#<X::OAuth1Authenticator>>", client.inspect
     end
 
-    def test_missing_oauth_credentials
-      test_oauth_credentials.each_key do |missing_credential|
+    def test_missing_api_key_or_secret
+      %i[api_key api_key_secret].each do |missing_credential|
         client = Client.new(**test_oauth_credentials.except(missing_credential))
 
         assert_instance_of Authenticator, client.authenticator
+      end
+    end
+
+    def test_missing_access_token_or_secret_authenticates_as_the_app
+      %i[access_token access_token_secret].each do |missing_credential|
+        client = Client.new(**test_oauth_credentials.except(missing_credential))
+
+        assert_instance_of AppOnlyAuthenticator, client.authenticator
       end
     end
 
@@ -215,6 +223,48 @@ module X
       assert_equal client.instance_variable_get(:@connection), redirect_handler.connection
       assert_equal client.instance_variable_get(:@request_builder), redirect_handler.request_builder
       assert_equal 5, redirect_handler.instance_variable_get(:@max_redirects)
+    end
+  end
+
+  class ClientAppOnlyInitializationTest < Minitest::Test
+    cover Client
+
+    def test_initialize_app_only_credentials
+      client = Client.new(api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET)
+
+      assert_instance_of AppOnlyAuthenticator, client.authenticator
+      assert_equal TEST_API_KEY, client.authenticator.api_key
+      assert_equal TEST_API_KEY_SECRET, client.authenticator.api_key_secret
+    end
+
+    def test_inspect_hides_the_credentials
+      client = Client.new(api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET)
+
+      assert_equal "#<X::Client base_url=\"https://api.twitter.com/2/\" authenticator=#<X::AppOnlyAuthenticator>>", client.inspect
+    end
+
+    def test_a_bearer_token_takes_precedence
+      client = Client.new(api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET, bearer_token: TEST_BEARER_TOKEN)
+
+      assert_instance_of BearerTokenAuthenticator, client.authenticator
+    end
+
+    def test_requests_fetch_the_bearer_token
+      stub_request(:post, AppOnlyAuthenticator::TOKEN_URL).to_return(status: 200, body: {access_token: TEST_BEARER_TOKEN}.to_json)
+      stub_request(:get, "https://api.twitter.com/2/tweets/1").with(headers: {"Authorization" => "Bearer #{TEST_BEARER_TOKEN}"})
+      client = Client.new(api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET)
+      2.times { client.get("tweets/1") }
+
+      assert_requested :post, AppOnlyAuthenticator::TOKEN_URL, times: 1
+      assert_requested :get, "https://api.twitter.com/2/tweets/1", times: 2
+    end
+
+    def test_setting_access_tokens_switches_to_oauth
+      client = Client.new(api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET)
+      client.access_token = TEST_ACCESS_TOKEN
+      client.access_token_secret = TEST_ACCESS_TOKEN_SECRET
+
+      assert_instance_of OAuth1Authenticator, client.authenticator
     end
   end
 end

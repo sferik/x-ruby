@@ -16,6 +16,25 @@ module X
     def header: (Net::HTTPRequest? request) -> Hash[String, String]
   end
 
+  class AppOnlyAuthenticator < Authenticator
+    TOKEN_URL: String
+    DEFAULT_ERROR_MESSAGE: String
+
+    @bearer_token: String?
+    @mutex: Thread::Mutex
+
+    attr_reader api_key: String
+    attr_reader api_key_secret: String
+    attr_reader connection: Connection
+    def initialize: (api_key: String, api_key_secret: String, ?bearer_token: String?, ?connection: Connection) -> void
+    def header: (Net::HTTPRequest? request) -> Hash[String, String]
+    def bearer_token: () -> String
+
+    private
+    def fetch_bearer_token: () -> String
+    def token_request: () -> Net::HTTP::Post
+  end
+
   class OAuth1Authenticator < Authenticator
     OAUTH_VERSION: String
     OAUTH_SIGNATURE_METHOD: String
@@ -104,6 +123,7 @@ module X
     def rate_limits: -> Array[RateLimit]
     def reset_at: -> Time
     def reset_in: -> Integer?
+    def retry_after: -> Integer
   end
 
   class Unauthorized < ClientError
@@ -117,6 +137,7 @@ module X
     DEFAULT_PORT: Integer
     DEFAULT_OPEN_TIMEOUT: Integer
     DEFAULT_READ_TIMEOUT: Integer
+    DEFAULT_STREAM_READ_TIMEOUT: Integer
     DEFAULT_WRITE_TIMEOUT: Integer
 
     NETWORK_ERRORS: Array[(singleton(EOFError) | singleton(Errno::ECONNREFUSED) | singleton(Errno::ECONNRESET) | singleton(Errno::EHOSTUNREACH) | singleton(Errno::ETIMEDOUT) | singleton(Net::OpenTimeout) | singleton(Net::ReadTimeout) | singleton(Net::WriteTimeout) | singleton(OpenSSL::SSL::SSLError) | singleton(SocketError))]
@@ -127,6 +148,7 @@ module X
 
     attr_accessor open_timeout : Float | Integer
     attr_accessor read_timeout : Float | Integer
+    attr_accessor stream_read_timeout : Float | Integer
     attr_accessor write_timeout : Float | Integer
     attr_accessor debug_output : IO?
 
@@ -136,7 +158,7 @@ module X
     attr_reader proxy_user : String?
     attr_reader proxy_pass : String?
 
-    def initialize: (?open_timeout: Float | Integer, ?read_timeout: Float | Integer, ?write_timeout: Float | Integer, ?proxy_url: URI::Generic? | String?, ?debug_output: IO?) -> void
+    def initialize: (?open_timeout: Float | Integer, ?read_timeout: Float | Integer, ?write_timeout: Float | Integer, ?stream_read_timeout: Float | Integer, ?proxy_url: URI::Generic? | String?, ?debug_output: IO?) -> void
     def proxy_url=: (URI::Generic | String proxy_url) -> void
     def perform: (request: Net::HTTPRequest) -> Net::HTTPResponse
     def perform_stream: (request: Net::HTTPRequest) { (Net::HTTPResponse) -> void } -> void
@@ -144,6 +166,34 @@ module X
     private
     def build_http_client: (?String host, ?Integer port) -> Net::HTTP
     def configure_http_client: (Net::HTTP http_client) -> Net::HTTP
+  end
+
+  interface _BodyHook
+    def call: (?String body) -> untyped
+  end
+
+  interface _ResponseHook
+    def call: (Response response) -> untyped
+  end
+
+  class Response
+    attr_reader http_method: Symbol
+    attr_reader uri: URI::Generic
+    attr_reader http_response: Net::HTTPResponse
+
+    @body: String?
+
+    def initialize: (Symbol http_method, URI::Generic uri, Net::HTTPResponse http_response, ?body: String?) -> void
+    def body: () -> String?
+    def status: () -> Integer
+    def success?: () -> bool
+    def rate_limits: () -> Array[RateLimit]
+    def rate_limit: () -> RateLimit?
+    def resource_counts: () -> Hash[String, Integer]
+    def resource_count: () -> Integer
+
+    private
+    def parsed_body: () -> Hash[String, untyped]
   end
 
   class RateLimit
@@ -154,9 +204,11 @@ module X
 
     attr_accessor type: String
     attr_accessor response: Net::HTTPResponse
+    def self.reported?: (String type, Net::HTTPResponse response) -> bool
     def initialize: (type: String, response: Net::HTTPResponse) -> void
     def limit: -> Integer
     def remaining: -> Integer
+    def exhausted?: -> bool
     def reset_at: -> Time
     def reset_in: -> Integer?
   end
@@ -173,6 +225,47 @@ module X
     def add_authentication: (request: Net::HTTPRequest, authenticator: Authenticator) -> void
     def add_headers: (request: Net::HTTPRequest, headers: Hash[String, String]) -> void
     def escape_query_params: (URI::Generic uri) -> URI::Generic
+  end
+
+  class RateLimitHandler
+    DEFAULT_MAX_RETRIES: Integer
+    DEFAULT_MAX_WAIT: Integer
+    UNREPORTED_RESET_WAIT: Integer
+
+    attr_accessor max_rate_limit_retries: Integer
+    attr_accessor max_rate_limit_wait: Integer
+    def initialize: (?max_rate_limit_retries: Integer, ?max_rate_limit_wait: Integer) -> void
+    def handle: [T] () { () -> T } -> T
+
+    private
+    def wait_before_retry: (TooManyRequests error, Integer retries) -> Integer
+  end
+
+  class ReconnectHandler
+    DEFAULT_MAX_RECONNECTS: Float
+    NETWORK_BACKOFF_STEP: Float
+    MAX_NETWORK_BACKOFF: Integer
+    HTTP_BACKOFF_START: Integer
+    RATE_LIMIT_BACKOFF_START: Integer
+    MAX_HTTP_BACKOFF: Integer
+    RECONNECTABLE_ERRORS: Array[singleton(NetworkError) | singleton(ServerError) | singleton(ConnectionException) | singleton(TooManyRequests)]
+
+    ConsumerError: singleton(StandardError)
+
+    type state = {reconnects: Integer}
+
+    attr_accessor max_stream_reconnects: Integer | Float
+    def initialize: (?max_stream_reconnects: Integer | Float) -> void
+    def handle: (^(untyped) -> void consumer) { (^(untyped) -> void) -> void } -> nil
+
+    private
+    def cause_of: (StandardError error) -> StandardError
+    def out_of_reconnects?: (StandardError? error, state state) -> bool
+    def delivery_to: (^(untyped) -> void consumer, state state) -> ^(untyped) -> void
+    def backoff: (StandardError error, Integer reconnects) -> (Float | Integer)
+    def network_backoff: (Integer reconnects) -> (Float | Integer)
+    def http_backoff: (Integer reconnects) -> Integer
+    def rate_limit_backoff: (TooManyRequests error, Integer reconnects) -> Integer
   end
 
   class RedirectHandler
@@ -206,9 +299,11 @@ module X
   class StreamParser
     LINE_DELIMITER: String
 
-    def process: (response: Net::HTTPResponse, response_parser: ResponseParser, ?array_class: Class?, ?object_class: untyped, ?client: Client?) { (untyped) -> void } -> void
+    def process: (response: Net::HTTPResponse, response_parser: ResponseParser, ?array_class: Class?, ?object_class: untyped, ?client: Client?, ?on_body: _BodyHook?) { (untyped) -> void } -> void
 
     private
+    def raise_unless_successful: (response: Net::HTTPResponse, response_parser: ResponseParser, on_body: _BodyHook?) -> void
+    def read_lines: (response: Net::HTTPResponse, decode: ^(String) -> untyped) { (untyped) -> void } -> void
     def process_buffer: (buffer: String, decode: ^(String) -> untyped) { (untyped) -> void } -> void
     def process_remaining: (buffer: String, decode: ^(String) -> untyped) { (untyped) -> void } -> void
     def yield_json: (line: String, decode: ^(String) -> untyped) { (untyped) -> void } -> void
@@ -243,7 +338,16 @@ module X
     def update_tokens: (SimpleOAuth::OAuth2::Token token) -> void
   end
 
-  module ClientCredentials
+  interface _CredentialHost
+    def authenticator: () -> (Authenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator)
+    def copy: (**untyped options) -> Client
+  end
+
+  module ClientCredentials : _CredentialHost
+    @app_bearer_token: String?
+    @connection: Connection
+
+    def app_only: () -> (Client | self)
     @authenticator: Authenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator
 
     attr_reader api_key: String?
@@ -264,41 +368,83 @@ module X
     def refresh_token=: (String refresh_token) -> void
 
     private
+    def app_bearer_token: () -> String
+    def fetched_app_bearer_token: () -> String
+    def credentials: () -> Hash[Symbol, String?]
     def initialize_credentials: (api_key: String?, api_key_secret: String?, access_token: String?, access_token_secret: String?, bearer_token: String?, client_id: String?, client_secret: String?, refresh_token: String?) -> void
     def initialize_authenticator: -> (Authenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator)
     def oauth1_authenticator: -> OAuth1Authenticator?
     def oauth2_authenticator: -> OAuth2Authenticator?
     def bearer_authenticator: -> BearerTokenAuthenticator?
+    def app_only_authenticator: -> AppOnlyAuthenticator?
   end
+
+  module RequestEncoding
+    private
+    def endpoint_with: (String endpoint, params? params) -> String
+    def encode_body: (body? body, params? form) -> String?
+  end
+
+  type params = Hash[String | Symbol, untyped]
+  type body = String | Hash[untyped, untyped]
 
   class Client
     include ClientCredentials
+    include RequestEncoding
 
     DEFAULT_BASE_URL: String
     DEFAULT_ARRAY_CLASS: singleton(Array)
     DEFAULT_OBJECT_CLASS: singleton(Hash)
+    FORM_CONTENT_TYPE: String
     extend Forwardable
     @authenticator: Authenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator
     @connection: Connection
     @request_builder: RequestBuilder
     @redirect_handler: RedirectHandler
+    @rate_limit_handler: RateLimitHandler
+    @reconnect_handler: ReconnectHandler
     @response_parser: ResponseParser
     @stream_parser: StreamParser
 
     attr_accessor base_url: String
     attr_accessor default_array_class: singleton(Array)
     attr_accessor default_object_class: singleton(Hash)
+    attr_accessor on_response: _ResponseHook?
     attr_reader authenticator: Authenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator
-    def initialize: (?api_key: String?, ?api_key_secret: String?, ?access_token: String?, ?access_token_secret: String?, ?bearer_token: String?, ?client_id: String?, ?client_secret: String?, ?refresh_token: String?, ?base_url: String, ?open_timeout: Integer, ?read_timeout: Integer, ?write_timeout: Integer, ?debug_output: untyped, ?proxy_url: String?, ?default_array_class: singleton(Array), ?default_object_class: singleton(Hash), ?max_redirects: Integer) -> void
+    def initialize: (?api_key: String?, ?api_key_secret: String?, ?access_token: String?, ?access_token_secret: String?, ?bearer_token: String?, ?client_id: String?, ?client_secret: String?, ?refresh_token: String?, ?base_url: String, ?open_timeout: Integer, ?read_timeout: Integer, ?write_timeout: Integer, ?stream_read_timeout: Integer, ?debug_output: untyped, ?proxy_url: String?, ?default_array_class: singleton(Array), ?default_object_class: singleton(Hash), ?max_redirects: Integer, ?max_rate_limit_retries: Integer, ?max_rate_limit_wait: Integer, ?max_stream_reconnects: Integer | Float, ?on_response: _ResponseHook?) -> void
+    def open_timeout: () -> Integer
+    def read_timeout: () -> Integer
+    def write_timeout: () -> Integer
+    def stream_read_timeout: () -> Integer
+    def proxy_url: () -> String?
+    def debug_output: () -> untyped
+    def max_redirects: () -> Integer
+    def max_rate_limit_retries: () -> Integer
+    def max_rate_limit_wait: () -> Integer
+    def max_stream_reconnects: () -> (Integer | Float)
+    def open_timeout=: (Integer timeout) -> Integer
+    def read_timeout=: (Integer timeout) -> Integer
+    def write_timeout=: (Integer timeout) -> Integer
+    def stream_read_timeout=: (Integer timeout) -> Integer
+    def proxy_url=: (String? proxy_url) -> String?
+    def debug_output=: (untyped output) -> untyped
+    def max_redirects=: (Integer max_redirects) -> Integer
+    def max_rate_limit_retries=: (Integer max_rate_limit_retries) -> Integer
+    def max_rate_limit_wait=: (Integer max_rate_limit_wait) -> Integer
+    def max_stream_reconnects=: (Integer | Float max_stream_reconnects) -> (Integer | Float)
     def inspect: () -> String
-    def get: (String endpoint, ?headers: Hash[String, String], ?array_class: Class, ?object_class: Class) -> untyped
-    def post: (String endpoint, ?String? body, ?headers: Hash[String, String], ?array_class: Class, ?object_class: Class) -> untyped
-    def put: (String endpoint, ?String? body, ?headers: Hash[String, String], ?array_class: Class, ?object_class: Class) -> untyped
-    def delete: (String endpoint, ?headers: Hash[String, String], ?array_class: Class, ?object_class: Class) -> untyped
-    def stream: (String endpoint, ?headers: Hash[String, String], ?array_class: Class, ?object_class: Class) { (untyped) -> void } -> void
+    def copy: (**untyped options) -> Client
+    def get: (String endpoint, ?params: params?, ?headers: Hash[String, String], ?array_class: Class, ?object_class: Class) -> untyped
+    def post: (String endpoint, ?body? body, ?params: params?, ?form: params?, ?headers: Hash[String, String], ?array_class: Class, ?object_class: Class) -> untyped
+    def put: (String endpoint, ?body? body, ?params: params?, ?form: params?, ?headers: Hash[String, String], ?array_class: Class, ?object_class: Class) -> untyped
+    def delete: (String endpoint, ?params: params?, ?headers: Hash[String, String], ?array_class: Class, ?object_class: Class) -> untyped
+    def stream: (String endpoint, ?params: params?, ?headers: Hash[String, String], ?array_class: Class, ?object_class: Class) { (untyped) -> void } -> void
 
     private
-    def initialize_default_classes: (default_array_class: singleton(Array), default_object_class: singleton(Hash)) -> void
-    def execute_request: (:delete | :get | :post | :put http_method, String endpoint, ?body: String?, ?headers: Hash[String, String], ?array_class: Class, ?object_class: Class) -> nil
+    def initialize_response_handling: (default_array_class: singleton(Array), default_object_class: singleton(Hash), on_response: _ResponseHook?) -> void
+    def initialize_handlers: (max_redirects: Integer, max_rate_limit_retries: Integer, max_rate_limit_wait: Integer, max_stream_reconnects: Integer | Float) -> void
+    def settings: () -> Hash[Symbol, untyped]
+    def report: (Symbol http_method, URI::Generic uri, Net::HTTPResponse response, ?body: String?) -> void
+    def execute_request: (:delete | :get | :post | :put http_method, String endpoint, ?body: body?, ?params: params?, ?form: params?, ?headers: Hash[String, String], ?array_class: Class, ?object_class: Class) -> untyped
   end
 end

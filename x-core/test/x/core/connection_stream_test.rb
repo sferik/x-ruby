@@ -24,6 +24,17 @@ module X
       assert_requested :get, "http://example.com:80"
     end
 
+    def test_perform_stream_reads_with_the_stream_read_timeout
+      connection = Connection.new(read_timeout: 60, stream_read_timeout: 5)
+      stub_request(:get, "https://example.com")
+      request = Net::HTTP::Get.new(URI("https://example.com"))
+      http_client = Net::HTTP.new("example.com", 443)
+      connection.stub(:build_http_client, http_client) { connection.perform_stream(request:) { |_response| nil } }
+
+      assert_equal [5, 60], [http_client.read_timeout, connection.read_timeout]
+      assert_equal 20, Connection.new.stream_read_timeout
+    end
+
     def test_perform_stream_network_error
       stub_request(:get, "https://example.com").to_raise(Errno::ECONNREFUSED)
       request = Net::HTTP::Get.new(URI("https://example.com"))

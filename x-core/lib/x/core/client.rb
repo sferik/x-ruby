@@ -1,12 +1,19 @@
 require "forwardable"
+require "json"
+require "uri"
+require_relative "app_only_authenticator"
 require_relative "authenticator"
 require_relative "bearer_token_authenticator"
 require_relative "client_credentials"
 require_relative "connection"
 require_relative "oauth1_authenticator"
 require_relative "oauth2_authenticator"
+require_relative "rate_limit_handler"
+require_relative "reconnect_handler"
 require_relative "redirect_handler"
 require_relative "request_builder"
+require_relative "request_encoding"
+require_relative "response"
 require_relative "response_parser"
 require_relative "stream_parser"
 
@@ -16,6 +23,7 @@ module X
   class Client
     extend Forwardable
     include ClientCredentials
+    include RequestEncoding
 
     # Default base URL for the X API
     DEFAULT_BASE_URL = "https://api.twitter.com/2/".freeze
@@ -23,6 +31,8 @@ module X
     DEFAULT_ARRAY_CLASS = Array
     # Default class for parsing JSON objects
     DEFAULT_OBJECT_CLASS = Hash
+    # Content type of a form-encoded request body
+    FORM_CONTENT_TYPE = "application/x-www-form-urlencoded; charset=utf-8".freeze
 
     # The base URL for API requests
     # @api public
@@ -52,10 +62,18 @@ module X
     #   client.authenticator.token_expired?
     attr_reader :authenticator
 
-    def_delegators :@connection, :open_timeout, :read_timeout, :write_timeout, :proxy_url, :debug_output
-    def_delegators :@connection, :open_timeout=, :read_timeout=, :write_timeout=, :proxy_url=, :debug_output=
-    def_delegators :@redirect_handler, :max_redirects
-    def_delegators :@redirect_handler, :max_redirects=
+    # A callable passed an X::Response after each request and streamed object
+    # @api public
+    # @return [#call, nil] the callable, or nil for none
+    # @example Total the resources a client reads
+    #   client.on_response = ->(response) { total += response.resource_count }
+    attr_accessor :on_response
+
+    def_delegators :@connection, :open_timeout, :read_timeout, :write_timeout, :stream_read_timeout, :proxy_url, :debug_output
+    def_delegators :@connection, :open_timeout=, :read_timeout=, :write_timeout=, :stream_read_timeout=, :proxy_url=, :debug_output=
+    def_delegators :@redirect_handler, :max_redirects, :max_redirects=
+    def_delegators :@rate_limit_handler, :max_rate_limit_retries, :max_rate_limit_retries=, :max_rate_limit_wait, :max_rate_limit_wait=
+    def_delegators :@reconnect_handler, :max_stream_reconnects, :max_stream_reconnects=
 
     # Initialize a new X API client
     #
@@ -72,37 +90,52 @@ module X
     # @param open_timeout [Integer] the timeout for opening connections in seconds
     # @param read_timeout [Integer] the timeout for reading responses in seconds
     # @param write_timeout [Integer] the timeout for writing requests in seconds
+    # @param stream_read_timeout [Integer] the timeout for reading from a stream in seconds, which X keeps alive with a
+    #   newline every 20 seconds
     # @param debug_output [IO] the IO object for debug output
     # @param proxy_url [String, nil] the proxy URL for requests
     # @param default_array_class [Class] the default class for parsing JSON arrays
     # @param default_object_class [Class] the default class for parsing JSON objects
     # @param max_redirects [Integer] the maximum number of redirects to follow
+    # @param max_rate_limit_retries [Integer] the maximum number of times to retry a request refused for a rate limit,
+    #   after waiting for the limit to reset
+    # @param max_rate_limit_wait [Integer] the maximum number of seconds to wait for a rate limit to reset; a request
+    #   whose limit resets later raises TooManyRequests at once
+    # @param max_stream_reconnects [Integer, Float] the maximum number of times in a row to reconnect a stream that
+    #   drops without delivering an object, or Float::INFINITY, the default, for no limit
+    # @param on_response [#call, nil] a callable passed an X::Response after every request, failed ones included, and
+    #   every object a stream delivers
     # @return [Client] a new client instance
     # @example Create a client with bearer token authentication
     #   client = X::Client.new(bearer_token: "your_bearer_token")
     # @example Create a client with OAuth 1.0a authentication
     #   client = X::Client.new(api_key: "key", api_key_secret: "secret", access_token: "token", access_token_secret: "token_secret")
+    # @example Create a client that fetches an app-only bearer token with the API key and secret
+    #   client = X::Client.new(api_key: "key", api_key_secret: "secret")
+    # @example Create a client that retries a rate-limited request up to three times
+    #   client = X::Client.new(bearer_token: "your_bearer_token", max_rate_limit_retries: 3)
     def initialize(api_key: nil, api_key_secret: nil, access_token: nil, access_token_secret: nil,
       bearer_token: nil, client_id: nil, client_secret: nil, refresh_token: nil,
       base_url: DEFAULT_BASE_URL,
       open_timeout: Connection::DEFAULT_OPEN_TIMEOUT,
       read_timeout: Connection::DEFAULT_READ_TIMEOUT,
       write_timeout: Connection::DEFAULT_WRITE_TIMEOUT,
+      stream_read_timeout: Connection::DEFAULT_STREAM_READ_TIMEOUT,
       debug_output: nil,
       proxy_url: nil,
       default_array_class: DEFAULT_ARRAY_CLASS,
       default_object_class: DEFAULT_OBJECT_CLASS,
-      max_redirects: RedirectHandler::DEFAULT_MAX_REDIRECTS)
-      initialize_credentials(api_key:, api_key_secret:, access_token:, access_token_secret:, bearer_token:,
-        client_id:, client_secret:, refresh_token:)
+      max_redirects: RedirectHandler::DEFAULT_MAX_REDIRECTS,
+      max_rate_limit_retries: RateLimitHandler::DEFAULT_MAX_RETRIES,
+      max_rate_limit_wait: RateLimitHandler::DEFAULT_MAX_WAIT,
+      max_stream_reconnects: ReconnectHandler::DEFAULT_MAX_RECONNECTS,
+      on_response: nil)
+      initialize_credentials(api_key:, api_key_secret:, access_token:, access_token_secret:, bearer_token:, client_id:, client_secret:, refresh_token:)
       initialize_authenticator
       @base_url = base_url
-      initialize_default_classes(default_array_class:, default_object_class:)
-      @connection = Connection.new(open_timeout:, read_timeout:, write_timeout:, debug_output:, proxy_url:)
-      @request_builder = RequestBuilder.new
-      @redirect_handler = RedirectHandler.new(connection: @connection, request_builder: @request_builder, max_redirects:)
-      @response_parser = ResponseParser.new
-      @stream_parser = StreamParser.new
+      initialize_response_handling(default_array_class:, default_object_class:, on_response:)
+      @connection = Connection.new(open_timeout:, read_timeout:, write_timeout:, stream_read_timeout:, debug_output:, proxy_url:)
+      initialize_handlers(max_redirects:, max_rate_limit_retries:, max_rate_limit_wait:, max_stream_reconnects:)
     end
 
     # Summarize the client for the console without revealing credentials
@@ -115,88 +148,179 @@ module X
       "#<#{self.class} base_url=#{base_url.inspect} authenticator=#{authenticator.inspect}>"
     end
 
+    # Copy the client with some of its options changed
+    #
+    # @api public
+    # @param options [Hash] the options to change, as accepted by initialize
+    # @return [Client] a new client with the same credentials and settings, apart from the options given
+    # @example Derive an API v1.1 client
+    #   v1_client = client.copy(base_url: "https://api.twitter.com/1.1/")
+    # @example Derive an app-only client from the API key and secret
+    #   app_client = client.copy(access_token: nil, access_token_secret: nil)
+    def copy(**options)
+      self.class.new(**credentials, **settings, **options)
+    end
+
     # Perform a GET request to the X API
     #
     # @api public
+    # @param endpoint [String] the endpoint, with or without a query string
+    # @param params [Hash, nil] query parameters appended to the endpoint; nil values are dropped and arrays are joined with commas
+    # @param headers [Hash] additional headers for the request
+    # @param array_class [Class] the class for parsing JSON arrays
+    # @param object_class [Class] the class for parsing JSON objects, or one that responds to from_response
     # @return [Object, nil] the parsed response body, or what an object_class that responds to from_response builds
     # @example Get a user by username
     #   client.get("users/by/username/sferik")
-    def get(endpoint, headers: {}, array_class: default_array_class, object_class: default_object_class)
-      execute_request(:get, endpoint, headers:, array_class:, object_class:)
+    # @example Get users by identifier, requesting only some fields
+    #   client.get("users", params: {ids: [1, 2], "user.fields": %w[id username]})
+    def get(endpoint, params: nil, headers: {}, array_class: default_array_class, object_class: default_object_class)
+      execute_request(:get, endpoint, params:, headers:, array_class:, object_class:)
     end
 
     # Perform a POST request to the X API
     #
     # @api public
+    # @param endpoint [String] the endpoint, with or without a query string
+    # @param body [String, Hash, nil] the request body; a Hash is encoded as JSON
+    # @param params [Hash, nil] query parameters appended to the endpoint
+    # @param form [Hash, nil] fields to send as a form-encoded body instead of the body
+    # @param headers [Hash] additional headers for the request
+    # @param array_class [Class] the class for parsing JSON arrays
+    # @param object_class [Class] the class for parsing JSON objects, or one that responds to from_response
     # @return [Object, nil] the parsed response body, or what an object_class that responds to from_response builds
     # @example Create a post
-    #   client.post("tweets", '{"text": "Hello, World!"}')
-    def post(endpoint, body = nil, headers: {}, array_class: default_array_class, object_class: default_object_class)
-      execute_request(:post, endpoint, body:, headers:, array_class:, object_class:)
+    #   client.post("tweets", {text: "Hello, World!"})
+    # @example Post a form to the v1.1 API
+    #   v1_client.post("account/settings.json", form: {lang: "en"})
+    def post(endpoint, body = nil, params: nil, form: nil, headers: {}, array_class: default_array_class, object_class: default_object_class)
+      execute_request(:post, endpoint, body:, params:, form:, headers:, array_class:, object_class:)
     end
 
     # Perform a PUT request to the X API
     #
     # @api public
+    # @param endpoint [String] the endpoint, with or without a query string
+    # @param body [String, Hash, nil] the request body; a Hash is encoded as JSON
+    # @param params [Hash, nil] query parameters appended to the endpoint
+    # @param form [Hash, nil] fields to send as a form-encoded body instead of the body
+    # @param headers [Hash] additional headers for the request
+    # @param array_class [Class] the class for parsing JSON arrays
+    # @param object_class [Class] the class for parsing JSON objects, or one that responds to from_response
     # @return [Object, nil] the parsed response body, or what an object_class that responds to from_response builds
     # @example Update a resource
-    #   client.put("some/endpoint", '{"key": "value"}')
-    def put(endpoint, body = nil, headers: {}, array_class: default_array_class, object_class: default_object_class)
-      execute_request(:put, endpoint, body:, headers:, array_class:, object_class:)
+    #   client.put("some/endpoint", {key: "value"})
+    def put(endpoint, body = nil, params: nil, form: nil, headers: {}, array_class: default_array_class, object_class: default_object_class)
+      execute_request(:put, endpoint, body:, params:, form:, headers:, array_class:, object_class:)
     end
 
     # Perform a DELETE request to the X API
     #
     # @api public
+    # @param endpoint [String] the endpoint, with or without a query string
+    # @param params [Hash, nil] query parameters appended to the endpoint
+    # @param headers [Hash] additional headers for the request
+    # @param array_class [Class] the class for parsing JSON arrays
+    # @param object_class [Class] the class for parsing JSON objects, or one that responds to from_response
     # @return [Object, nil] the parsed response body, or what an object_class that responds to from_response builds
     # @example Delete a post
     #   client.delete("tweets/1234567890")
-    def delete(endpoint, headers: {}, array_class: default_array_class, object_class: default_object_class)
-      execute_request(:delete, endpoint, headers:, array_class:, object_class:)
+    def delete(endpoint, params: nil, headers: {}, array_class: default_array_class, object_class: default_object_class)
+      execute_request(:delete, endpoint, params:, headers:, array_class:, object_class:)
     end
 
     # Stream data from the X API
     #
+    # The stream endpoints take app-only authentication, so a client that signs with OAuth 1.0a streams with the
+    # bearer token of its {#app_only}. A stream that drops reconnects, backing off as X recommends, up to
+    # max_stream_reconnects times in a row. The API bills each object a stream delivers, so on_response receives
+    # each one, as well as a failed response.
+    #
     # @api public
     # @param endpoint [String] the streaming API endpoint
+    # @param params [Hash, nil] query parameters appended to the endpoint
     # @param headers [Hash] additional headers for the request
     # @param array_class [Class] the class for parsing JSON arrays
     # @param object_class [Class] the class for parsing JSON objects, or one that responds to from_response
     #   and builds objects from the whole response (see {ResponseParser#decode})
     # @yield [Hash, Array] each parsed JSON object from the stream
-    # @return [void]
-    # @raise [HTTPError] if the response is not successful
+    # @return [nil] once the stream ends with no reconnects left
+    # @raise [HTTPError] if the response is not successful and the stream may not reconnect
     # @example Stream filtered posts
     #   client.stream("tweets/search/stream") { |post| puts post }
-    def stream(endpoint, headers: {}, array_class: default_array_class, object_class: default_object_class, &block)
-      uri = URI.join(base_url, endpoint)
-      request = @request_builder.build(http_method: :get, uri:, headers:, authenticator:)
-      @connection.perform_stream(request:) do |response|
-        @stream_parser.process(response:, response_parser: @response_parser, array_class:, object_class:, client: self, &block)
+    def stream(endpoint, params: nil, headers: {}, array_class: default_array_class, object_class: default_object_class, &block)
+      uri = URI.join(base_url, endpoint_with(endpoint, params))
+      @reconnect_handler.handle(block) do |deliver|
+        @rate_limit_handler.handle do
+          @connection.perform_stream(request: @request_builder.build(http_method: :get, uri:, headers:, authenticator: app_only.authenticator)) do |response|
+            @stream_parser.process(response:, response_parser: @response_parser, array_class:, object_class:, client: self,
+              on_body: ->(body = nil) { report(:get, uri, response, body:) }, &deliver)
+          end
+        end
       end
     end
 
     private
 
-    # Initialize default JSON parsing classes
+    # Initialize how responses are parsed and reported
     # @api private
     # @param default_array_class [Class] the default class for parsing JSON arrays
     # @param default_object_class [Class] the default class for parsing JSON objects
+    # @param on_response [#call, nil] the callable passed an X::Response after every request and streamed object
     # @return [void]
-    def initialize_default_classes(default_array_class:, default_object_class:)
+    def initialize_response_handling(default_array_class:, default_object_class:, on_response:)
       @default_array_class = default_array_class
       @default_object_class = default_object_class
+      @on_response = on_response
+    end
+
+    # Pass a response to on_response, if there is one
+    # @api private
+    # @param http_method [Symbol] the HTTP method of the request
+    # @param uri [URI::Generic] the URI of the request
+    # @param response [Net::HTTPResponse] the HTTP response
+    # @param body [String, nil] the part of the body to summarize, or nil for all of it
+    # @return [void]
+    def report(http_method, uri, response, body: nil)
+      on_response&.call(Response.new(http_method, uri, response, body:))
+    end
+
+    # Initialize the objects that build requests and handle responses
+    # @api private
+    # @param max_redirects [Integer] the maximum number of redirects to follow
+    # @param max_rate_limit_retries [Integer] the maximum number of times to retry a request refused for a rate limit
+    # @param max_rate_limit_wait [Integer] the maximum number of seconds to wait for a rate limit to reset
+    # @param max_stream_reconnects [Integer, Float] the maximum number of times in a row to reconnect a stream
+    # @return [void]
+    def initialize_handlers(max_redirects:, max_rate_limit_retries:, max_rate_limit_wait:, max_stream_reconnects:)
+      @request_builder = RequestBuilder.new
+      @redirect_handler = RedirectHandler.new(connection: @connection, request_builder: @request_builder, max_redirects:)
+      @rate_limit_handler = RateLimitHandler.new(max_rate_limit_retries:, max_rate_limit_wait:)
+      @reconnect_handler = ReconnectHandler.new(max_stream_reconnects:)
+      @response_parser = ResponseParser.new
+      @stream_parser = StreamParser.new
     end
 
     # Execute an HTTP request to the X API
     # @api private
     # @return [Object, nil] the parsed response body, or what an object_class that responds to from_response builds
-    def execute_request(http_method, endpoint, body: nil, headers: {}, array_class: default_array_class, object_class: default_object_class)
-      uri = URI.join(base_url, endpoint)
-      request = @request_builder.build(http_method:, uri:, body:, headers:, authenticator:)
-      response = @connection.perform(request:)
-      response = @redirect_handler.handle(response:, request:, base_url:, headers:, authenticator:)
-      @response_parser.parse(response:, array_class:, object_class:, client: self)
+    def execute_request(http_method, endpoint, body: nil, params: nil, form: nil, headers: {}, array_class: default_array_class, object_class: default_object_class)
+      uri = URI.join(base_url, endpoint_with(endpoint, params))
+      headers = {"Content-Type" => FORM_CONTENT_TYPE}.merge(headers) unless form.nil?
+      @rate_limit_handler.handle do
+        request = @request_builder.build(http_method:, uri:, body: encode_body(body, form), headers:, authenticator:)
+        response = @redirect_handler.handle(response: @connection.perform(request:), request:, base_url:, headers:, authenticator:)
+        report(http_method, uri, response)
+        @response_parser.parse(response:, array_class:, object_class:, client: self)
+      end
+    end
+
+    # The settings other than credentials, as initialize accepts them
+    # @api private
+    # @return [Hash{Symbol => Object}] the settings
+    def settings
+      {base_url:, open_timeout:, read_timeout:, write_timeout:, stream_read_timeout:, debug_output:, proxy_url:, default_array_class:, default_object_class:,
+       max_redirects:, max_rate_limit_retries:, max_rate_limit_wait:, max_stream_reconnects:, on_response:}
     end
   end
 end

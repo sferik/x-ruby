@@ -25,6 +25,16 @@ module X
     #   rate_limit.response = http_response
     attr_accessor :response
 
+    # Check whether a response has the limit, remaining, and reset of a rate limit
+    #
+    # @api public
+    # @param type [String] the type of rate limit
+    # @param response [Net::HTTPResponse] the HTTP response
+    # @return [Boolean] true if the response has every header of the rate limit
+    # @example Check for the 15-minute rate limit
+    #   X::RateLimit.reported?("rate-limit", response)
+    def self.reported?(type, response) = %w[limit remaining reset].all? { |field| response.key?("x-#{type}-#{field}") }
+
     # Initialize a new RateLimit
     #
     # @api public
@@ -57,6 +67,14 @@ module X
     def remaining
       Integer(response.fetch("x-#{type}-remaining"))
     end
+
+    # Check whether the limit has no requests left
+    #
+    # @api public
+    # @return [Boolean] true if no requests remain in the window
+    # @example Wait for a limit that is used up
+    #   sleep rate_limit.reset_in if rate_limit.exhausted?
+    def exhausted? = remaining.zero?
 
     # Get the time when the rate limit resets
     #

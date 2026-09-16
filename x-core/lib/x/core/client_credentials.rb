@@ -154,7 +154,47 @@ module X
       initialize_authenticator
     end
 
+    # A client that authenticates as the app, for the endpoints that refuse OAuth 1.0a
+    #
+    # A client that signs with OAuth 1.0a fetches an app-only bearer token with its API key and secret the first
+    # time, and keeps it for later copies. Any other client is already as able as a copy would be.
+    #
+    # @api public
+    # @return [Client] a copy that authenticates with the bearer token, or the client itself
+    # @example Add a filtered stream rule, which takes app-only authentication
+    #   client.app_only.post("tweets/search/stream/rules", {add: [{value: "ruby"}]})
+    def app_only
+      case authenticator
+      when OAuth1Authenticator then copy(access_token: nil, access_token_secret: nil, bearer_token: app_bearer_token)
+      else self
+      end
+    end
+
     private
+
+    # The app-only bearer token, fetched once with the API key and secret
+    # @api private
+    # @return [String] the bearer token
+    def app_bearer_token
+      bearer_token || fetched_app_bearer_token
+    end
+
+    # The app-only bearer token this client fetched, fetching it the first time
+    # @api private
+    # @return [String] the bearer token
+    def fetched_app_bearer_token
+      key = api_key #: String
+      secret = api_key_secret #: String
+      @app_bearer_token ||= AppOnlyAuthenticator.new(api_key: key, api_key_secret: secret, connection: @connection).bearer_token
+    end
+
+    # The credentials, as initialize accepts them
+    # @api private
+    # @return [Hash{Symbol => String, nil}] the credentials
+    def credentials
+      {api_key:, api_key_secret:, access_token:, access_token_secret:, bearer_token:, client_id:, client_secret:,
+       refresh_token:}
+    end
 
     # Initialize credential instance variables
     # @api private
@@ -175,12 +215,14 @@ module X
     # @api private
     # @return [Authenticator] the initialized authenticator
     def initialize_authenticator
-      @authenticator = oauth1_authenticator || oauth2_authenticator || bearer_authenticator || @authenticator || Authenticator.new
+      @app_bearer_token = nil
+      @authenticator = oauth1_authenticator || oauth2_authenticator || bearer_authenticator || app_only_authenticator ||
+        @authenticator || Authenticator.new
     end
 
     # Build an OAuth 1.0a authenticator if credentials are available
     # @api private
-    # @return [OAuth1Authenticator, nil] the OAuth authenticator or nil
+    # @return [OAuth1Authenticator, nil] the OAuth 1.0a authenticator or nil
     def oauth1_authenticator
       return unless api_key && api_key_secret && access_token && access_token_secret
 
@@ -194,6 +236,15 @@ module X
       return unless client_id && client_secret && access_token && refresh_token
 
       OAuth2Authenticator.new(client_id:, client_secret:, access_token:, refresh_token:)
+    end
+
+    # Build an app-only authenticator if an API key and secret are available
+    # @api private
+    # @return [AppOnlyAuthenticator, nil] the app-only authenticator or nil
+    def app_only_authenticator
+      return unless api_key && api_key_secret
+
+      AppOnlyAuthenticator.new(api_key:, api_key_secret:)
     end
 
     # Build a bearer token authenticator if credentials are available

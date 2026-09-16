@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Preserve custom headers passed to `get`, `post`, `put`, and `delete` across redirects
 
 ### Changed
+* Rename `X::OAuthAuthenticator` to `X::OAuth1Authenticator`, beside `X::OAuth2Authenticator`; `X::OAuthAuthenticator` remains as an alias
 * Move the HTTP client into `x-core`, under `lib/x/core`, and the uploaders into `x-media`, under `lib/x/media`; `require "x/media_uploader"` and `require "x/account_uploader"` still work
 * Wrap `EOFError`, `SocketError`, `Net::WriteTimeout`, `Errno::ETIMEDOUT`, and `Errno::EHOSTUNREACH` in `NetworkError`
 * Stop following redirects after exactly `max_redirects` hops instead of one more

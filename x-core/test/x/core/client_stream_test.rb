@@ -8,7 +8,7 @@ module X
     cover Client
 
     def setup
-      @client = Client.new(bearer_token: TEST_BEARER_TOKEN)
+      @client = Client.new(bearer_token: TEST_BEARER_TOKEN, max_stream_reconnects: 0)
     end
 
     def test_stream_yields_json_objects
@@ -46,7 +46,7 @@ module X
     end
 
     def test_stream_with_default_custom_classes
-      client = Client.new(bearer_token: TEST_BEARER_TOKEN, default_object_class: OpenStruct, default_array_class: Set)
+      client = Client.new(bearer_token: TEST_BEARER_TOKEN, default_object_class: OpenStruct, default_array_class: Set, max_stream_reconnects: 0)
       results = with_stubbed_stream(chunks: ["{\"ids\":[1,2,2,3]}\r\n"], client:) do
         stream_and_collect("tweets/search/stream", client:)
       end
@@ -81,6 +81,15 @@ module X
       end
 
       assert_instance_of Net::HTTP::Get, request
+    end
+
+    def test_stream_with_params
+      mock_response = mock_streaming_response(chunks: [])
+      request = with_stream_request(mock_response) do
+        @client.stream("tweets/sample/stream", params: {"tweet.fields": %w[id text], expansions: nil}) { |_json| flunk "unexpected yield" }
+      end
+
+      assert_equal URI("https://api.twitter.com/2/tweets/sample/stream?tweet.fields=id,text"), request.uri
     end
 
     def test_stream_uses_base_url

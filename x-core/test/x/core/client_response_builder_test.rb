@@ -7,7 +7,7 @@ module X
     cover Client
 
     def setup
-      @client = Client.new(bearer_token: TEST_BEARER_TOKEN)
+      @client = Client.new(bearer_token: TEST_BEARER_TOKEN, max_stream_reconnects: 0)
     end
 
     X::RequestBuilder::HTTP_METHODS.each_key do |http_method|

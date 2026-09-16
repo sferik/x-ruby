@@ -18,24 +18,52 @@ module X
     # @param object_class [Class, nil] the class for parsing JSON objects, or a class that builds objects from
     #   each whole document (see {ResponseParser#decode})
     # @param client [Client, nil] the client that made the request
+    # @param on_body [#call, nil] a callable called before a failed response raises, and passed each line of JSON
+    #   before it is decoded
     # @yield [Object] each decoded JSON document from the stream
     # @return [void]
     # @raise [HTTPError] if the response is not successful
     # @example Process a streaming response
     #   handler.process(response: response, response_parser: parser) { |json| puts json }
-    def process(response:, response_parser:, array_class: nil, object_class: nil, client: nil, &block)
-      response_parser.parse(response:) unless response.is_a?(Net::HTTPSuccess)
-
-      decode = ->(line) { response_parser.decode(line, array_class:, object_class:, client:) }
-      buffer = +""
-      response.read_body do |chunk|
-        buffer << chunk
-        process_buffer(buffer:, decode:, &block)
+    def process(response:, response_parser:, array_class: nil, object_class: nil, client: nil, on_body: nil, &block)
+      raise_unless_successful(response:, response_parser:, on_body:)
+      decode = lambda do |line|
+        on_body&.call(line)
+        response_parser.decode(line, array_class:, object_class:, client:)
       end
-      process_remaining(buffer:, decode:, &block)
+      read_lines(response:, decode:, &block)
     end
 
     private
+
+    # Raise the error of a failed response, after passing it to on_body
+    # @api private
+    # @param response [Net::HTTPResponse] the HTTP response
+    # @param response_parser [ResponseParser] the response parser that raises the error
+    # @param on_body [#call, nil] a callable called before the error is raised
+    # @return [void]
+    # @raise [HTTPError] if the response is not successful
+    def raise_unless_successful(response:, response_parser:, on_body:)
+      return if response.is_a?(Net::HTTPSuccess)
+
+      on_body&.call
+      response_parser.parse(response:)
+    end
+
+    # Read the body in chunks and yield each line as it completes
+    # @api private
+    # @param response [Net::HTTPResponse] the HTTP response
+    # @param decode [Proc] the lambda that decodes a line
+    # @yield [Object] each decoded JSON document
+    # @return [void]
+    def read_lines(response:, decode:, &)
+      buffer = +""
+      response.read_body do |chunk|
+        buffer << chunk
+        process_buffer(buffer:, decode:, &)
+      end
+      process_remaining(buffer:, decode:, &)
+    end
 
     # Process complete lines from the buffer
     # @api private

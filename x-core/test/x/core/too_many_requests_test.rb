@@ -99,9 +99,11 @@ module X
     end
 
     def test_reset_in_ceil
-      @exception.response["x-rate-limit-reset"] = (Time.now + 61).to_i.to_s
+      Time.stub :now, Time.utc(1983, 11, 24, 0, 0, 0, 900_000) do
+        @exception.response["x-rate-limit-reset"] = (Time.now + 62).to_i.to_s
 
-      assert_equal 61, @exception.reset_in
+        assert_equal 62, @exception.reset_in
+      end
     end
 
     def test_retry_after

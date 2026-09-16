@@ -51,7 +51,7 @@ module X
     end
 
     def test_too_many_requests_with_headers
-      stub_request(:get, @uri.to_s).to_return(status: 429, headers: {"x-rate-limit-remaining" => "0"})
+      stub_request(:get, @uri.to_s).to_return(status: 429, headers: {"x-rate-limit-limit" => "50", "x-rate-limit-remaining" => "0", "x-rate-limit-reset" => "1"})
       exception = assert_raises(TooManyRequests) { @response_parser.parse(response:) }
 
       assert_predicate exception.rate_limits.first.remaining, :zero?

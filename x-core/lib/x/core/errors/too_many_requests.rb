@@ -18,13 +18,11 @@ module X
     # Get all rate limits from the response
     #
     # @api public
-    # @return [Array<RateLimit>] the rate limits that are exhausted
+    # @return [Array<RateLimit>] the rate limits that are exhausted, among those the response reports in full
     # @example Get all rate limits
     #   error.rate_limits
     def rate_limits
-      @rate_limits ||= RateLimit::TYPES.filter_map do |type|
-        RateLimit.new(type:, response:) if response["x-#{type}-remaining"].eql?("0")
-      end
+      @rate_limits ||= RateLimit::TYPES.filter_map { |type| RateLimit.new(type:, response:) if RateLimit.reported?(type, response) }.select(&:exhausted?)
     end
 
     # Get the time when the rate limit resets
