@@ -58,7 +58,7 @@ X::Uploader::Account.update_profile_image_binary(content, client:)
 X::Uploader::Account.update_profile_banner_binary(content, client:)
 ```
 
-`upload` infers the media category from the file, and still takes `media_category:`. `upload_binary` takes the content and the media category as positional arguments, and `await_processing` and `await_processing!` take the media as one.
+`upload` infers the media category from the file, and still takes `media_category:`. `upload_binary` takes the content as a positional argument and requires `media_category:`, and `await_processing` and `await_processing!` take the media as one.
 
 `await_processing!` raises `X::Uploader::MediaProcessingFailed` rather than `RuntimeError`, and `await_processing` raises `X::Uploader::MediaProcessingTimeout` after ten minutes rather than waiting forever. Both are `X::Error`s. A file that does not exist raises `Errno::ENOENT`.
 

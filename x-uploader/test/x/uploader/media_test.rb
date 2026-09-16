@@ -34,8 +34,8 @@ module X
       stub_upload_request
       response = Uploader::Media.upload_binary(
         SAMPLE_BINARY_CONTENT,
-        Uploader::Media::TWEET_IMAGE,
         client: @client,
+        media_category: Uploader::Media::TWEET_IMAGE,
         boundary: TEST_BOUNDARY
       )
 
@@ -47,8 +47,8 @@ module X
 
       response = Uploader::Media.upload_binary(
         SAMPLE_BINARY_CONTENT,
-        Uploader::Media::TWEET_IMAGE,
         client: @client,
+        media_category: Uploader::Media::TWEET_IMAGE,
         boundary: TEST_BOUNDARY
       )
 

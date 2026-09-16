@@ -110,14 +110,14 @@ module X
       #
       # @api public
       # @param content [String] the binary content to upload
-      # @param media_category [String] the media category
       # @param client [Client] the X API client
+      # @param media_category [String] the media category, which content cannot be inferred from
       # @param boundary [String] the multipart boundary
       # @return [Hash, nil] the upload response data
       # @raise [ArgumentError] if the media category is invalid
       # @example Upload binary content
-      #   Uploader::Media.upload_binary(data, "tweet_image", client: client)
-      def upload_binary(content, media_category, client:, boundary: SecureRandom.hex)
+      #   Uploader::Media.upload_binary(data, client: client, media_category: "tweet_image")
+      def upload_binary(content, client:, media_category:, boundary: SecureRandom.hex)
         Validator.validate_media_category!(media_category)
         upload_body = construct_upload_body(content:, media_category:, boundary:)
         headers = {"Content-Type" => "multipart/form-data; boundary=#{boundary}"}
@@ -228,7 +228,7 @@ module X
         media = if chunked?(media_category)
           chunked_upload(file_path, client:, media_category:, boundary:, **options)
         else
-          upload_binary(File.binread(file_path), media_category, client:, boundary:)
+          upload_binary(File.binread(file_path), client:, media_category:, boundary:)
         end
         media&.key?("processing_info") ? await_processing!(media, client:, processing_timeout:) : media
       end

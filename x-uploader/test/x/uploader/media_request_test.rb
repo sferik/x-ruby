@@ -23,7 +23,7 @@ module X
     end
 
     def test_upload_binary_body_and_headers
-      Uploader::Media.upload_binary(CONTENT, "tweet_image", client: @client, boundary: BOUNDARY)
+      Uploader::Media.upload_binary(CONTENT, client: @client, media_category: "tweet_image", boundary: BOUNDARY)
 
       assert_equal "multipart/form-data; boundary=#{BOUNDARY}", @request.headers["Content-Type"]
       assert_equal upload_body(CONTENT, "tweet_image", BOUNDARY), @request.body.b
@@ -36,7 +36,7 @@ module X
     end
 
     def test_upload_binary_default_boundary
-      Uploader::Media.upload_binary(CONTENT, "tweet_image", client: @client)
+      Uploader::Media.upload_binary(CONTENT, client: @client, media_category: "tweet_image")
 
       assert_equal upload_body(CONTENT, "tweet_image", request_boundary), @request.body.b
     end
@@ -48,7 +48,7 @@ module X
     end
 
     def test_upload_binary_rejects_invalid_category_before_requesting
-      assert_raises(ArgumentError) { Uploader::Media.upload_binary(CONTENT, "bogus", client: @client) }
+      assert_raises(ArgumentError) { Uploader::Media.upload_binary(CONTENT, client: @client, media_category: "bogus") }
       assert_not_requested(:post, UPLOAD_URL)
     end
 
