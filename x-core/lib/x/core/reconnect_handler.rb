@@ -1,4 +1,4 @@
-require_relative "errors/connection_exception"
+require_relative "errors/conflict"
 require_relative "errors/network_error"
 require_relative "errors/server_error"
 require_relative "errors/too_many_requests"
@@ -26,7 +26,7 @@ module X
     # First wait after a rate limit, in seconds, for a limit that does not say when it resets
     RATE_LIMIT_BACKOFF_START = 60
     # The errors a stream reconnects after, which come from the server or the connection rather than the request
-    RECONNECTABLE_ERRORS = [NetworkError, ServerError, ConnectionException, TooManyRequests].freeze
+    RECONNECTABLE_ERRORS = [NetworkError, ServerError, Conflict, TooManyRequests].freeze
 
     # Raised in place of an error the consumer of a stream raised, which is its cause, so that the stream stops
     ConsumerError = Class.new(StandardError) #: singleton(StandardError)
@@ -59,7 +59,7 @@ module X
     # @yield [deliver] runs the stream once
     # @yieldparam deliver [Proc] the block to pass each object to, which passes it on to the consumer
     # @return [nil] once the stream ends with no reconnects left
-    # @raise [NetworkError, ServerError, ConnectionException] if the stream fails with no reconnects left
+    # @raise [NetworkError, ServerError, Conflict] if the stream fails with no reconnects left
     # @example Reconnect a stream
     #   handler.handle(->(post) { puts post }) { |deliver| read_stream(&deliver) }
     def handle(consumer)

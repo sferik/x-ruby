@@ -29,7 +29,7 @@ module X
     end
 
     def test_a_server_error_or_a_refused_connection_backs_off_exponentially_up_to_320_seconds
-      assert_raises(ServiceUnavailable) { stream_with(ReconnectHandler.new(max_reconnects: 8)) { fail_with(@runs.even? ? ServiceUnavailable : ConnectionException) } }
+      assert_raises(ServiceUnavailable) { stream_with(ReconnectHandler.new(max_reconnects: 8)) { fail_with(@runs.even? ? ServiceUnavailable : Conflict) } }
       assert_equal [5, 10, 20, 40, 80, 160, 320, 320], @sleeps
     end
 

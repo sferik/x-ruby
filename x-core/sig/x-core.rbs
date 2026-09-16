@@ -66,8 +66,10 @@ module X
   class BadRequest < ClientError
   end
 
-  class ConnectionException < ClientError
+  class Conflict < ClientError
   end
+
+  ConnectionException: singleton(Conflict)
 
   class HTTPError < Error
     JSON_CONTENT_TYPE_REGEXP: Regexp
@@ -246,7 +248,7 @@ module X
     HTTP_BACKOFF_START: Integer
     RATE_LIMIT_BACKOFF_START: Integer
     MAX_HTTP_BACKOFF: Integer
-    RECONNECTABLE_ERRORS: Array[singleton(NetworkError) | singleton(ServerError) | singleton(ConnectionException) | singleton(TooManyRequests)]
+    RECONNECTABLE_ERRORS: Array[singleton(NetworkError) | singleton(ServerError) | singleton(Conflict) | singleton(TooManyRequests)]
 
     ConsumerError: singleton(StandardError)
 
@@ -322,14 +324,14 @@ module X
 
   class ResponseParser
     STATUS_CLASS_ERRORS: Hash[Integer, singleton(ClientError) | singleton(ServerError)]
-    ERROR_MAP: Hash[Integer, singleton(BadGateway) | singleton(BadRequest) | singleton(ConnectionException) | singleton(Forbidden) | singleton(GatewayTimeout) | singleton(Gone) | singleton(InternalServerError) | singleton(NotAcceptable) | singleton(NotFound) | singleton(PayloadTooLarge) | singleton(ServiceUnavailable) | singleton(TooManyRequests) | singleton(Unauthorized) | singleton(UnprocessableEntity)]
+    ERROR_MAP: Hash[Integer, singleton(BadGateway) | singleton(BadRequest) | singleton(Conflict) | singleton(Forbidden) | singleton(GatewayTimeout) | singleton(Gone) | singleton(InternalServerError) | singleton(NotAcceptable) | singleton(NotFound) | singleton(PayloadTooLarge) | singleton(ServiceUnavailable) | singleton(TooManyRequests) | singleton(Unauthorized) | singleton(UnprocessableEntity)]
 
     def parse: (response: Net::HTTPResponse, ?array_class: Class?, ?object_class: untyped, ?client: Client?) -> untyped
     def decode: (String json, ?array_class: Class?, ?object_class: untyped, ?client: Client?) -> untyped
 
     private
     def error: (Net::HTTPResponse response) -> HTTPError
-    def error_class: (Net::HTTPResponse response) -> (singleton(HTTPError) | singleton(BadGateway) | singleton(BadRequest) | singleton(ConnectionException) | singleton(Forbidden) | singleton(GatewayTimeout) | singleton(Gone) | singleton(InternalServerError) | singleton(NotAcceptable) | singleton(NotFound) | singleton(PayloadTooLarge) | singleton(ServiceUnavailable) | singleton(TooManyRequests) | singleton(Unauthorized) | singleton(UnprocessableEntity))
+    def error_class: (Net::HTTPResponse response) -> (singleton(HTTPError) | singleton(BadGateway) | singleton(BadRequest) | singleton(Conflict) | singleton(Forbidden) | singleton(GatewayTimeout) | singleton(Gone) | singleton(InternalServerError) | singleton(NotAcceptable) | singleton(NotFound) | singleton(PayloadTooLarge) | singleton(ServiceUnavailable) | singleton(TooManyRequests) | singleton(Unauthorized) | singleton(UnprocessableEntity))
     def json?: (Net::HTTPResponse response) -> bool
   end
 

@@ -2,7 +2,7 @@ require "json"
 require "net/http"
 require_relative "errors/bad_gateway"
 require_relative "errors/bad_request"
-require_relative "errors/connection_exception"
+require_relative "errors/conflict"
 require_relative "errors/http_error"
 require_relative "errors/forbidden"
 require_relative "errors/gateway_timeout"
@@ -27,7 +27,7 @@ module X
       403 => Forbidden,
       404 => NotFound,
       406 => NotAcceptable,
-      409 => ConnectionException,
+      409 => Conflict,
       410 => Gone,
       413 => PayloadTooLarge,
       422 => UnprocessableEntity,
