@@ -11,7 +11,7 @@ Most applications should install [`x`](https://rubygems.org/gems/x), which wires
 | Class | References | Collections |
 | --- | --- | --- |
 | `X::User` | `pinned_post`, `most_recent_post` | `followers`, `following`, `posts`, `mentions`, `liked_posts`, `bookmarks`, `owned_lists`, `list_memberships`, `followed_lists` |
-| `X::Post` | `author`, `in_reply_to_user`, `community`, `replied_to`, `quoted`, `reposted`, `references`, `media`, `polls`, `place` | `liked_by`, `reposted_by`, `quotes` |
+| `X::Post` | `author`, `in_reply_to_user`, `community`, `replied_to`, `quoted`, `reposted`, `references`, `media`, `polls`, `place` | `liked_by`, `reposted_by`, `reposts`, `quotes` |
 | `X::List` | `owner` | `members`, `followers`, `posts` |
 | `X::DirectMessage` | `sender`, `participants`, `references`, `media` | |
 | `X::Space` | `creator`, `hosts`, `speakers`, `invited_users` | `posts` |

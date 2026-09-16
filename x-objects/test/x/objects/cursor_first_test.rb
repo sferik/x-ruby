@@ -6,6 +6,7 @@ module X
     cover Objects::Pages
     cover Community
     cover Post
+    cover Objects::PostCollections
     cover User
     cover X::Objects::UserFinders
     cover Objects::Resource

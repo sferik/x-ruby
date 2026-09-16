@@ -360,6 +360,15 @@ module X
       def counter: (Symbol? total) -> (^() -> Integer?)?
     end
 
+    module PostCollections : Resource
+      def liked_by: (**untyped params) -> Cursor
+      def reposted_by: (**untyped params) -> Cursor
+      def retweeted_by: (**untyped params) -> Cursor
+      def reposts: (**untyped params) -> Cursor
+      def retweets: (**untyped params) -> Cursor
+      def quotes: (**untyped params) -> Cursor
+    end
+
     module References : Resource
       REPLIED_TO: String
       QUOTED: String
@@ -715,6 +724,7 @@ module X
     extend Objects::PostWrites
     include Objects::_Hydration[Post]
     include Objects::References
+    include Objects::PostCollections
     def id: () -> Integer
 
     FIELDS: Array[String]
@@ -773,10 +783,6 @@ module X
     def permalink: () -> String
     def uri: () -> URI::Generic
     def expanded_text: () -> String?
-    def liked_by: (**untyped params) -> Cursor
-    def reposted_by: (**untyped params) -> Cursor
-    def retweeted_by: (**untyped params) -> Cursor
-    def quotes: (**untyped params) -> Cursor
     def delete: () -> bool
     def hide: () -> bool
     def unhide: () -> bool

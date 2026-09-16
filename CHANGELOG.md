@@ -53,7 +53,7 @@ See [UPGRADING.md](https://github.com/sferik/x-ruby/blob/main/UPGRADING.md) for 
 * Accept the responses of `X::Uploader::Media.upload` directly as the `media_ids:` of `create_post`
 * Load `x-uploader` from `require "x"`, so `X::Uploader::Media` and `X::Uploader::Account` need no further require
 * Scan a cursor with nothing but identifiers with `stubs`, and check a relationship without fetching every page with `user.follows?` and `list.member?`
-* Resolve the posts a post or direct message refers to with `references`, and pair `liked_by` with `reposted_by` on `X::Post`
+* Resolve the posts a post or direct message refers to with `references`, and pair `liked_by` with `reposted_by` on `X::Post`, beside `reposts`, the reposts themselves, each a post by the user who reposted it
 * Add `X::Post#urls` and `X::Post#expanded_text`, the text with every shortened link replaced by the URL it stands for
 * Look up a user by identifier when given an Integer and by username when given a String, so an account whose username is all digits is found by name; everywhere else, such as `follow`, `from_id`, and `find_post`, an identifier that is not a number raises `ArgumentError`, rather than reach the API as a username it would take for an identifier
 * Name the interface after posts rather than tweets, including `post_count`, `pinned_post_id`, `most_recent_post_id`, `edit_history_post_ids`, `note_post`, `referenced_posts`, and `repost_count`; the tweet-named methods, such as `create_tweet`, `tweets`, and `retweet_count`, remain as aliases
