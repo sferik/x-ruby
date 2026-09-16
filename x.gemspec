@@ -25,7 +25,6 @@ Gem::Specification.new do |spec|
   }
 
   spec.files = Dir[
-    "bin/*",
     "lib/**/*.rb",
     "sig/*.rbs",
     "*.md",
