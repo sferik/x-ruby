@@ -32,6 +32,12 @@ module X
     def test_response_builder_is_skipped_for_invalid_json
       stub_request(:get, @uri.to_s).to_return(status: 200, body: "not json")
 
+      assert_raises(InvalidResponse) { @response_parser.parse(response:, object_class: ResponseBuilder) }
+    end
+
+    def test_response_builder_is_skipped_for_an_empty_body
+      stub_request(:get, @uri.to_s).to_return(status: 200, body: "")
+
       assert_nil @response_parser.parse(response:, object_class: ResponseBuilder)
     end
 

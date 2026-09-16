@@ -104,6 +104,7 @@ See [UPGRADING.md](UPGRADING.md) for the changes that code written for 0.19 need
 * Sign OAuth 1.0a requests with the [simple_oauth](https://github.com/laserlemon/simple_oauth) gem, in place of the signing code `X::OAuthAuthenticator` carried; it keeps the same credentials and produces the same header
 * Build and parse the OAuth 2.0 token refresh with simple_oauth, in place of the request and response handling `X::OAuth2Authenticator` carried; it sends the same request and still returns the token response and raises `X::Error`
 * Raise `ArgumentError` from `X::Client.new`, and so from `copy`, for credentials that do not form a complete set, instead of sending requests without credentials, or authenticating as the app when an access token lacks its secret; the setters still change one credential at a time, keeping the authenticator until a set is complete
+* Raise `X::InvalidResponse`, an `X::Error` that holds the response, for a successful response whose body is not JSON, such as the page of a proxy or captive portal, instead of returning nil as though the response had no body; a successful response without a body still returns nil
 
 ### Removed
 * Remove `X::Uploader::Account::MIME_TYPE_MAP`, which nothing read

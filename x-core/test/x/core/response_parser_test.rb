@@ -26,6 +26,28 @@ module X
 
     def test_non_json_success_response
       stub_request(:get, @uri.to_s).to_return(body: "<html></html>", headers: {"Content-Type" => "text/html"})
+      error = assert_raises(InvalidResponse) { @response_parser.parse(response:) }
+
+      assert_equal "The body of the 200 response is not JSON (text/html)", error.message
+      assert_equal "<html></html>", error.response.body
+      assert_kind_of JSON::ParserError, error.cause
+    end
+
+    def test_non_json_success_response_without_a_content_type
+      stub_request(:get, @uri.to_s).to_return(status: 201, body: "Created")
+
+      assert_equal "The body of the 201 response is not JSON (no content type)",
+        assert_raises(InvalidResponse) { @response_parser.parse(response:) }.message
+    end
+
+    def test_empty_success_response
+      stub_request(:get, @uri.to_s).to_return(status: 200, body: " \r\n")
+
+      assert_nil @response_parser.parse(response:)
+    end
+
+    def test_success_response_without_a_body
+      stub_request(:get, @uri.to_s).to_return(status: 202)
 
       assert_nil @response_parser.parse(response:)
     end

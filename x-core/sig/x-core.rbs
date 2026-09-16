@@ -119,6 +119,12 @@ module X
   class TooManyRedirects < Error
   end
 
+  class InvalidResponse < Error
+    attr_reader response: Net::HTTPResponse
+
+    def initialize: (response: Net::HTTPResponse) -> void
+  end
+
   class TooManyRequests < ClientError
     @rate_limits: Array[RateLimit]
 

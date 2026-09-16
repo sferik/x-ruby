@@ -78,6 +78,8 @@ A stream reconnects when it ends or drops, where 0.19 returned or raised. Pass `
 
 A 4xx or 5xx status without an error class of its own raises `X::ClientError` or `X::ServerError` rather than `X::HTTPError`, and `X::NetworkError` wraps `IOError`, which includes `EOFError`, along with `SocketError`, `Net::WriteTimeout`, `Net::HTTPBadResponse`, `Errno::ETIMEDOUT`, `Errno::EHOSTUNREACH`, `Errno::ENETUNREACH`, and `Errno::EPIPE`. Rescuing `X::Error` still catches them all.
 
+A successful response whose body is not JSON, such as the page of a proxy, raises `X::InvalidResponse`, an `X::Error`, rather than returning nil. A successful response without a body still returns nil.
+
 `X::HTTPError#error_message`, `#message_from_json_response`, and `#json?` are private. Read `message` instead. `X::HTTPError#status` reads the status as an Integer, beside `code`.
 
 ### Removed constants

@@ -4,6 +4,7 @@ require_relative "errors/bad_gateway"
 require_relative "errors/bad_request"
 require_relative "errors/conflict"
 require_relative "errors/http_error"
+require_relative "errors/invalid_response"
 require_relative "errors/forbidden"
 require_relative "errors/gateway_timeout"
 require_relative "errors/gone"
@@ -45,6 +46,9 @@ module X
 
     # Parse an HTTP response
     #
+    # A successful response without a body, such as 204 No Content, parses to nil. One whose body is not JSON
+    # raises, rather than parse to nil as though the response had no body.
+    #
     # @api private
     # @param response [Net::HTTPResponse] the HTTP response to parse
     # @param array_class [Class, nil] the class for parsing JSON arrays
@@ -53,17 +57,19 @@ module X
     # @param client [Client, nil] the client that made the request
     # @return [Object, nil] the parsed response body
     # @raise [HTTPError] if the response is not successful
+    # @raise [InvalidResponse] if the body of a successful response is not JSON
     # @example Parse a response
     #   parser.parse(response: response)
     def parse(response:, array_class: nil, object_class: nil, client: nil)
       raise error(response) unless response.is_a?(Net::HTTPSuccess)
 
-      return if response.instance_of?(Net::HTTPNoContent)
+      body = response.body.to_s
+      return unless body.match?(/\S/)
 
       begin
-        decode(response.body, array_class:, object_class:, client:)
+        decode(body, array_class:, object_class:, client:)
       rescue JSON::ParserError
-        nil
+        raise InvalidResponse.new(response:)
       end
     end
 
