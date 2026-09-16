@@ -19,6 +19,25 @@ module X
       assert_instance_of Authenticator, Client.new(expires_at: Time.now).authenticator
     end
 
+    def test_an_expiration_time_that_is_not_a_time_is_refused
+      error = assert_raises(ArgumentError) { Client.new(**test_oauth2_credentials, expires_at: 1_789_600_000) }
+
+      assert_equal CredentialValidator::INVALID_EXPIRES_AT, error.message
+    end
+
+    def test_an_expiration_time_of_a_subclass_of_time_is_allowed
+      expires_at = Class.new(Time).at(Time.now.to_i + 60)
+
+      assert_same expires_at, Client.new(**test_oauth2_credentials, expires_at:).expires_at
+    end
+
+    def test_setting_an_expiration_time_that_is_not_a_time_is_refused
+      client = Client.new(**test_oauth2_credentials, expires_at: Time.now + 60)
+
+      assert_raises(ArgumentError) { client.expires_at = "2026-09-16T00:00:00Z" }
+      assert_kind_of Time, client.expires_at
+    end
+
     def test_each_credential_alone_is_incomplete
       test_oauth_credentials.merge(test_oauth2_credentials).except(:api_key, :access_token).each do |name, value|
         assert_incomplete(name => value)

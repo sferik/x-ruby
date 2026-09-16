@@ -80,6 +80,7 @@ module X
     # @return [Client] a new client instance
     # @raise [ArgumentError] if credentials are given that do not form a complete set, which would send requests
     #   without them, or authenticate as the app rather than a user
+    # @raise [ArgumentError] if expires_at is neither a Time nor nil
     # @example Create a client with bearer token authentication
     #   client = X::Client.new(bearer_token: "your_bearer_token")
     # @example Create a client with OAuth 2.0 authentication that stores the tokens of each refresh

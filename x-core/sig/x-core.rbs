@@ -570,8 +570,10 @@ module X
 
   module CredentialValidator
     INCOMPLETE_CREDENTIALS: String
+    INVALID_EXPIRES_AT: String
     extend CredentialValidator
 
+    def validate_expires_at!: (untyped expires_at) -> void
     def validate!: (Authenticator authenticator, Hash[Symbol, String | Time | nil] credentials) -> void
 
     private

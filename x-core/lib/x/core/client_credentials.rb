@@ -163,6 +163,7 @@ module X
     # @api public
     # @param expires_at [Time, nil] the expiration time, or nil if it is not known
     # @return [void]
+    # @raise [ArgumentError] if the expiration time is neither a Time nor nil
     # @example Set the expiration time
     #   client.expires_at = Time.now + 7200
     def expires_at=(expires_at)
@@ -225,6 +226,7 @@ module X
     # @return [void]
     def initialize_credentials(api_key:, api_key_secret:, access_token:, access_token_secret:, bearer_token:,
       client_id:, client_secret:, refresh_token:, expires_at:)
+      CredentialValidator.validate_expires_at!(expires_at)
       @api_key = api_key
       @api_key_secret = api_key_secret
       @access_token = access_token

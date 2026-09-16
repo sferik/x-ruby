@@ -22,6 +22,25 @@ module X
       "client_secret of a confidential client, for OAuth 2.0; bearer_token for a bearer token, such as an OAuth 2.0 " \
       "access token that is not refreshed; or api_key and api_key_secret to authenticate as the app".freeze
 
+    # The message of the error raised for an expiration time that is not a Time
+    INVALID_EXPIRES_AT = "expires_at must be a Time, such as Time.at(seconds) for a time stored as seconds since the " \
+      "epoch, or nil if it is not known".freeze
+
+    # Raise for an expiration time that is not a Time
+    #
+    # A token refresh compares the expiration time with the current time before every request, which fails for a time
+    # stored as a number or a String.
+    #
+    # @api private
+    # @param expires_at [Object] the expiration time
+    # @return [void]
+    # @raise [ArgumentError] if the expiration time is neither a Time nor nil
+    # @example Check an expiration time
+    #   X::CredentialValidator.validate_expires_at!(Time.now + 7200)
+    def validate_expires_at!(expires_at)
+      raise ArgumentError, INVALID_EXPIRES_AT unless expires_at.nil? || expires_at.is_a?(Time)
+    end
+
     # Raise for credentials that do not form a complete set
     #
     # @api private
