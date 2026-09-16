@@ -317,6 +317,7 @@ module X
   end
 
   class ResponseParser
+    STATUS_CLASS_ERRORS: Hash[Integer, singleton(ClientError) | singleton(ServerError)]
     ERROR_MAP: Hash[Integer, singleton(BadGateway) | singleton(BadRequest) | singleton(ConnectionException) | singleton(Forbidden) | singleton(GatewayTimeout) | singleton(Gone) | singleton(InternalServerError) | singleton(NotAcceptable) | singleton(NotFound) | singleton(PayloadTooLarge) | singleton(ServiceUnavailable) | singleton(TooManyRequests) | singleton(Unauthorized) | singleton(UnprocessableEntity)]
 
     def parse: (response: Net::HTTPResponse, ?array_class: Class?, ?object_class: untyped, ?client: Client?) -> untyped
@@ -324,7 +325,7 @@ module X
 
     private
     def error: (Net::HTTPResponse response) -> HTTPError
-    def error_class: (Net::HTTPResponse response) -> (singleton(BadGateway) | singleton(BadRequest) | singleton(ConnectionException) | singleton(Forbidden) | singleton(GatewayTimeout) | singleton(Gone) | singleton(InternalServerError) | singleton(NotAcceptable) | singleton(NotFound) | singleton(PayloadTooLarge) | singleton(ServiceUnavailable) | singleton(TooManyRequests) | singleton(Unauthorized) | singleton(UnprocessableEntity))
+    def error_class: (Net::HTTPResponse response) -> (singleton(HTTPError) | singleton(BadGateway) | singleton(BadRequest) | singleton(ConnectionException) | singleton(Forbidden) | singleton(GatewayTimeout) | singleton(Gone) | singleton(InternalServerError) | singleton(NotAcceptable) | singleton(NotFound) | singleton(PayloadTooLarge) | singleton(ServiceUnavailable) | singleton(TooManyRequests) | singleton(Unauthorized) | singleton(UnprocessableEntity))
     def json?: (Net::HTTPResponse response) -> bool
   end
 

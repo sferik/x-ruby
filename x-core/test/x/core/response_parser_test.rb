@@ -50,6 +50,15 @@ module X
       assert_raises(Error) { @response_parser.parse(response:) }
     end
 
+    {405 => ClientError, 499 => ClientError, 501 => ServerError, 520 => ServerError, 599 => ServerError, 304 => HTTPError}.each do |status, error_class|
+      define_method(:"test_unmapped_#{status}_raises_#{error_class.name.split("::").last.downcase}") do
+        stub_request(:get, @uri.to_s).to_return(status:)
+        exception = assert_raises(HTTPError) { @response_parser.parse(response:) }
+
+        assert_instance_of error_class, exception
+      end
+    end
+
     def test_too_many_requests_with_headers
       stub_request(:get, @uri.to_s).to_return(status: 429, headers: {"x-rate-limit-limit" => "50", "x-rate-limit-remaining" => "0", "x-rate-limit-reset" => "1"})
       exception = assert_raises(TooManyRequests) { @response_parser.parse(response:) }

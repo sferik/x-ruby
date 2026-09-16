@@ -37,6 +37,8 @@ module X
       503 => ServiceUnavailable,
       504 => GatewayTimeout
     }.freeze
+    # Error classes for the statuses ERROR_MAP does not name, keyed by the class of status: 4xx or 5xx
+    STATUS_CLASS_ERRORS = {4 => ClientError, 5 => ServerError}.freeze
 
     # Parse an HTTP response
     #
@@ -94,12 +96,13 @@ module X
       error_class(response).new(response:)
     end
 
-    # Get the error class for a response
+    # Get the error class for a response, falling back on its class of status
     # @api private
     # @param response [Net::HTTPResponse] the HTTP response
     # @return [Class] the error class
     def error_class(response)
-      ERROR_MAP[Integer(response.code)] || HTTPError
+      status = Integer(response.code)
+      ERROR_MAP.fetch(status) { STATUS_CLASS_ERRORS.fetch(status / 100, HTTPError) }
     end
   end
 end
