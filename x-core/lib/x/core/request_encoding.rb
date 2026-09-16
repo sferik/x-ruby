@@ -1,4 +1,5 @@
 require "json"
+require "time"
 require "uri"
 
 module X
@@ -13,10 +14,25 @@ module X
     # @param params [Hash, nil] the query parameters
     # @return [String] the endpoint with the parameters in its query string
     def endpoint_with(endpoint, params)
-      query = URI.encode_www_form(params.to_h.compact.transform_values { |value| value.is_a?(Array) ? value.join(",") : value })
+      query = URI.encode_www_form(params.to_h.compact.transform_values { |value| query_value(value) })
       return endpoint if query.empty?
 
       "#{endpoint}#{endpoint.include?("?") ? "&" : "?"}#{query}"
+    end
+
+    # Encode a query parameter value
+    #
+    # An Array is joined with commas, and a Time is given in UTC in the ISO 8601 form the API takes.
+    #
+    # @api private
+    # @param value [Object] the value
+    # @return [Object] the encoded value
+    def query_value(value)
+      case value
+      when Array then value.join(",")
+      when Time then value.getutc.iso8601
+      else value
+      end
     end
 
     # Encode a form as form fields, a Hash as JSON, and any other body as given

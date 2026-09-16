@@ -73,6 +73,7 @@ module X
       def deep_freeze: (untyped value) -> untyped
       def path: (String base, params params) -> String
       def query: (params params) -> query
+      def query_value: (untyped value) -> untyped
       def merge_params: (params defaults, params params) -> query
       def id_of: (untyped value, ?raw: bool) -> String
       def username: (untyped value) -> String

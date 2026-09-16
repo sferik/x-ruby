@@ -23,6 +23,13 @@ module X
       assert_requested :get, "https://api.x.com/2/users?ids=1,2"
     end
 
+    def test_params_send_a_time_in_iso_8601_in_utc
+      stub_request(:get, "https://api.x.com/2/tweets/counts/recent?query=ruby&start_time=2026-09-16T18:30:00Z")
+      @client.get("tweets/counts/recent", params: {query: "ruby", start_time: Time.new(2026, 9, 16, 11, 30, 0, "-07:00")})
+
+      assert_requested :get, "https://api.x.com/2/tweets/counts/recent?query=ruby&start_time=2026-09-16T18:30:00Z"
+    end
+
     def test_params_drop_nil_values
       stub_request(:get, "https://api.x.com/2/users?ids=1")
       @client.get("users", params: {ids: 1, expansions: nil})

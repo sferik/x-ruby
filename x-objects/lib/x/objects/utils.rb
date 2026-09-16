@@ -44,7 +44,22 @@ module X
       # @param params [Hash] the query parameters
       # @return [Hash{String => String, Integer}] the normalized parameters
       def query(params)
-        params.transform_keys(&:to_s).compact.transform_values { |value| value.is_a?(Array) ? value.join(",") : value }
+        params.transform_keys(&:to_s).compact.transform_values { |value| query_value(value) }
+      end
+
+      # Normalize a query parameter value
+      #
+      # An Array is joined with commas, and a Time is given in UTC in the ISO 8601 form the API takes.
+      #
+      # @api private
+      # @param value [Object] the value
+      # @return [Object] the normalized value
+      def query_value(value)
+        case value
+        when Array then value.join(",")
+        when Time then value.getutc.iso8601
+        else value
+        end
       end
 
       # Merge query parameters over defaults, dropping parameters set to nil
