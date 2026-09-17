@@ -431,6 +431,7 @@ module X
           def search_tweets: (String query, **untyped params) -> Cursor
           def search_all_posts: (String query, **untyped params) -> Cursor
           def reposts_of_me: (**untyped params) -> Cursor
+          def retweets_of_me: (**untyped params) -> Cursor
           def search_all_tweets: (String query, **untyped params) -> Cursor
           def usage: (**untyped params) -> Usage
           def count_posts: (String query, **untyped params) -> Integer

@@ -161,6 +161,7 @@ module X
           alias_method :find_tweets, :find_posts
           alias_method :search_tweets, :search_posts
           alias_method :search_all_tweets, :search_all_posts
+          alias_method :retweets_of_me, :reposts_of_me
           alias_method :count_tweets, :count_posts
           alias_method :count_all_tweets, :count_all_posts
           alias_method :tweet_counts, :post_counts
