@@ -19,8 +19,8 @@ module X
       # @param params [Hash] query parameters merged over the default parameters
       # @return [Resource, nil] the resource or nil if it was not found
       # @yieldparam problem [Problem] each problem the API reported, such as a resource that was not found
-      # @example Look up a user by identifier
-      #   X::User.find("7505382", client: client)
+      # @example Look up a post by identifier
+      #   X::Post.find(1234567890, client: client)
       def find(id, client:, **params, &) = lookup("#{endpoint!}/#{Utils.id_of(id, raw: id_type.eql?(:raw))}", client:, **params, &)
 
       # Look up a resource by identifier, which must exist
@@ -31,8 +31,8 @@ module X
       # @param params [Hash] query parameters merged over the default parameters
       # @return [Resource] the resource
       # @raise [ResourceNotFound] if the resource was not found
-      # @example Look up a user by identifier
-      #   X::User.find!("7505382", client: client)
+      # @example Look up a post by identifier
+      #   X::Post.find!(1234567890, client: client)
       def find!(id, client:, **params)
         problems = [] #: Array[Problem]
         find(id, client:, **params) { |problem| problems << problem } || raise(ResourceNotFound.new("Could not find #{self} #{id}", problems:))
@@ -67,8 +67,8 @@ module X
       # @param params [Hash] query parameters merged over the default parameters
       # @return [Array<Resource>] the resources that were found
       # @yieldparam problem [Problem] each problem the API reported, such as an identifier that was not found
-      # @example Look up many users by identifier, reporting the ones that were not found
-      #   X::User.find_all(["7505382", "12"], client: client) { |problem| warn problem.detail }
+      # @example Look up many posts by identifier, reporting the ones that were not found
+      #   X::Post.find_all([1234567890, 1234567891], client: client) { |problem| warn problem.detail }
       def find_all(ids, client:, **params, &)
         lookup_in_batches(endpoint!, :ids, ids.map { |id| Utils.id_of(id, raw: id_type.eql?(:raw)) }, client:, **params, &)
       end
