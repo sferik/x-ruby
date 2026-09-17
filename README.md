@@ -359,7 +359,7 @@ If this entire library is implemented in under 3,000 lines of code, why should y
 * Thread safety
 * Persistent HTTP connections, reused across requests to the same host
 * HTTP redirect following
-* HTTP proxy support
+* HTTP and HTTPS proxy support
 * HTTP logging
 * HTTP timeout configuration
 * HTTP error handling

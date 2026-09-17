@@ -154,6 +154,7 @@ See [UPGRADING.md](https://github.com/sferik/x-ruby/blob/main/UPGRADING.md) for 
 * Form-encode the client credentials before Basic authentication on token refresh, as RFC 6749 Section 2.3.1 requires, so a client ID or secret containing a reserved character authenticates
 * Leave the user and password of a proxy out of the message of an invalid proxy URL, and out of `X::Connection#inspect`, which now summarizes the proxy URL and timeouts; raise `ArgumentError` rather than `URI::InvalidURIError` for a proxy URL that cannot be parsed; and keep the proxy an invalid URL would have replaced
 * Remove a proxy by setting `proxy_url` to nil, which raised `ArgumentError`, and decode a percent-encoded proxy user and password, which were sent to the proxy still encoded
+* Connect to an `https://` proxy over TLS, rather than sending it the host to tunnel to and the proxy user and password in plaintext
 * Raise `X::HTTPError` for a redirect that cannot be followed, such as 304 Not Modified or one whose location is missing, is not a valid URL, or is not an HTTP or HTTPS URL, instead of `KeyError`, `URI::InvalidURIError`, or `ArgumentError`
 * Raise `X::UnsupportedOperation` from `X::DirectMessage.find_all`, and so from `hydrate_all`, since the API has no batch lookup of direct message events, instead of sending an `ids` parameter the endpoint does not take
 * End a `base_url` without a trailing slash with one, so that `base_url: "https://api.x.com/2"` sends a request for `users/me` to `/2/users/me` rather than `/users/me`

@@ -178,13 +178,16 @@ module X
     private
 
     # Build an HTTP client for the given host and port
+    #
+    # The client connects to an HTTPS proxy over TLS.
+    #
     # @api private
     # @param host [String] the host to connect to
     # @param port [Integer] the port to connect to
     # @return [Net::HTTP] the HTTP client
     def build_http_client(host = DEFAULT_HOST, port = DEFAULT_PORT)
       http_client = if proxy_uri
-        Net::HTTP.new(host, port, proxy_host, proxy_port, proxy_user, proxy_pass)
+        Net::HTTP.new(host, port, proxy_host, proxy_port, proxy_user, proxy_pass, nil, proxy_uri.instance_of?(URI::HTTPS))
       else
         Net::HTTP.new(host, port)
       end

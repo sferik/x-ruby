@@ -135,4 +135,20 @@ module X
       ENV["http_proxy"] = old_value
     end
   end
+
+  class ConnectionProxyTLSTest < Minitest::Test
+    cover Connection
+
+    def test_http_proxy_is_connected_to_without_tls
+      http_client = Connection.new(proxy_url: "http://example.com:8080").send(:build_http_client)
+
+      assert_same false, http_client.instance_variable_get(:@proxy_use_ssl)
+    end
+
+    def test_https_proxy_is_connected_to_over_tls
+      http_client = Connection.new(proxy_url: "https://user:pass@example.com:8443").send(:build_http_client)
+
+      assert_same true, http_client.instance_variable_get(:@proxy_use_ssl)
+    end
+  end
 end

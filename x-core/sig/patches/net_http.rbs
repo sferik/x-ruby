@@ -1,6 +1,9 @@
-# Widen Net::HTTP#set_debug_output to accept nil, which disables debug output
+# Widen Net::HTTP#set_debug_output to accept nil, which disables debug output, and add the p_use_ssl of
+# Net::HTTP.new, which net-http 0.6 takes to connect to a proxy over TLS
 module Net
   class HTTP
+    def self.new: (String address, ?Integer? port, ?String | :ENV | nil p_addr, ?Integer? p_port, ?String? p_user, ?String? p_pass, ?untyped? p_no_proxy, ?bool? p_use_ssl) -> Net::HTTP
+
     def set_debug_output: (IO? output) -> void
   end
 end
