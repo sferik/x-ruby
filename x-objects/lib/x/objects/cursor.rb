@@ -220,6 +220,16 @@ module X
       first.nil?
     end
 
+    # Check whether the collection is empty, requesting one resource
+    #
+    # Like none? without a pattern or a block, this asks for a single resource rather than a full page.
+    #
+    # @api public
+    # @return [Boolean] true if the collection holds no resource
+    # @example Check whether a user has no followers
+    #   user.followers.empty?
+    def empty? = first.nil?
+
     # Check whether the collection holds one resource, requesting two
     #
     # Without a pattern or a block, this asks for two resources rather than a full page.

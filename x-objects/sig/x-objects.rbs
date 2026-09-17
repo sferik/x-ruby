@@ -584,6 +584,7 @@ module X
     def ids: () -> Array[Integer | String]
     def any?: (*untyped pattern) ?{ (Objects::Resource) -> boolish } -> bool
     def none?: (*untyped pattern) ?{ (Objects::Resource) -> boolish } -> bool
+    def empty?: () -> bool
     def one?: (*untyped pattern) ?{ (Objects::Resource) -> boolish } -> bool
     def size: () -> Integer
     def published_count: () -> Integer?

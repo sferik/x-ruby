@@ -101,6 +101,7 @@ Within one response, every reference to the same resource is the same object, so
 ```ruby
 followers = user.followers             # max_results=1000 per page
 followers.first(10)                    # one request for ten users
+followers.empty?                       # one request for one user, as any? and none? make
 followers.to_a                         # fetches the remaining pages
 followers.to_a                         # cached, no requests
 followers.refresh.to_a                 # starts over
