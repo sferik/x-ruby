@@ -183,6 +183,20 @@ module X
       end
     end
 
+    # Set the expiration time of the access token, holding the lock
+    #
+    # Internal to x-core: Client sets the expiration time it is given on the authenticator that it and its copies
+    # share, rather than build an authenticator of its own with the same refresh token.
+    #
+    # @api private
+    # @param expires_at [Time, nil] the expiration time, or nil if it is not known
+    # @return [void]
+    # @example Set the expiration time
+    #   authenticator.update_expires_at(Time.now + 7200)
+    def update_expires_at(expires_at)
+      @mutex.synchronize { @expires_at = expires_at }
+    end
+
     private
 
     # Refresh the access token, holding the lock

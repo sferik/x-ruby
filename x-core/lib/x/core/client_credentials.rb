@@ -138,7 +138,8 @@ module X
 
     # Set the time the OAuth 2.0 access token expires
     #
-    # The first request after that time, less a buffer for clock skew, refreshes the token.
+    # The first request after that time, less a buffer for clock skew, refreshes the token. The copies of a client
+    # that share its OAuth 2.0 authenticator share the expiration time, so setting it on one sets it for each.
     #
     # @api public
     # @param expires_at [Time, nil] the expiration time, or nil if it is not known

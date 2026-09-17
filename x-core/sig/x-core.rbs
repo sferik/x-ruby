@@ -455,6 +455,7 @@ module X
     def refresh_token!: -> Hash[String, untyped]
     def refresh_rejected_token!: (String rejected_token) -> bool
     def retrying_rejected_token: [T] () { () -> T } -> T
+    def update_expires_at: (Time? expires_at) -> void
 
     private
     def refresh: -> Hash[String, untyped]
@@ -507,7 +508,7 @@ module X
 
     private
     def new_oauth2_authenticator: (client_id: String, access_token: String, refresh_token: String) -> OAuth2Authenticator
-    def oauth2_credentials_of: (OAuth2Authenticator authenticator) -> [String, String?, String, String, Time?]
+    def oauth2_credentials_of: (OAuth2Authenticator authenticator) -> [String, String?, String, String]
     def refreshing_rejected_token: [T] () { () -> T } -> T
   end
 

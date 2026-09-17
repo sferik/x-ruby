@@ -45,7 +45,8 @@ module X
     # Share an OAuth 2.0 authenticator that holds the same credentials
     #
     # A refresh by either client then reaches both. X accepts a refresh token once, so a copy that refreshed with
-    # an authenticator of its own would leave the original client with a refresh token that no longer works.
+    # an authenticator of its own would leave the original client with a refresh token that no longer works. The
+    # expiration time is a fact about the access token the two hold, so a copy given another sets it for both.
     #
     # @api private
     # @param other [Authenticator] the authenticator of the client this one was copied from
@@ -55,6 +56,7 @@ module X
       current = oauth2_authenticator_in_use
       return unless current && other.is_a?(OAuth2Authenticator) && oauth2_credentials_of(current).eql?(oauth2_credentials_of(other))
 
+      other.update_expires_at(expires_at)
       @authenticator = other
       @token_refresh_clients = clients
       clients[self] = true
@@ -70,8 +72,10 @@ module X
 
     # The OAuth 2.0 authenticator of the client's credentials, if they form a set
     #
-    # A client keeps the authenticator it has while its OAuth 2.0 credentials are the ones the authenticator holds,
-    # so that changing another credential or setting leaves it sharing the authenticator with its copies.
+    # A client keeps the authenticator it has while its client ID and secret and its tokens are the ones the
+    # authenticator holds, so that changing another credential or setting leaves it sharing the authenticator with
+    # its copies. A new expiration time is set on that authenticator, for every client that shares it, since an
+    # authenticator of its own would hold a refresh token that X accepts once from either.
     #
     # @api private
     # @return [OAuth2Authenticator, nil] the OAuth 2.0 authenticator or nil
@@ -82,10 +86,10 @@ module X
       return unless client_id && access_token && refresh_token
 
       current = oauth2_authenticator_in_use
-      held = [client_id, @client_secret, access_token, refresh_token, @expires_at]
-      return current if current && oauth2_credentials_of(current).eql?(held)
+      held = [client_id, @client_secret, access_token, refresh_token]
+      return new_oauth2_authenticator(client_id:, access_token:, refresh_token:) unless current && oauth2_credentials_of(current).eql?(held)
 
-      new_oauth2_authenticator(client_id:, access_token:, refresh_token:)
+      current.tap { |authenticator| authenticator.update_expires_at(@expires_at) }
     end
 
     private
@@ -106,13 +110,16 @@ module X
         connection: @connection, on_refresh: ->(authenticator) { clients.keys.filter_map(&:on_token_refresh).uniq.each { |hook| hook.call(authenticator) } })
     end
 
-    # The credentials an OAuth 2.0 authenticator holds
+    # The credentials that tell one OAuth 2.0 authenticator from another
+    #
+    # The expiration time is left out: it says when the access token expires, and two authenticators that hold the
+    # same tokens hold the same refresh token, which X accepts once.
+    #
     # @api private
     # @param authenticator [OAuth2Authenticator] the authenticator
-    # @return [Array<String, Time, nil>] the client ID and secret, the tokens, and the expiration time
+    # @return [Array<String, nil>] the client ID and secret, and the tokens
     def oauth2_credentials_of(authenticator)
-      [authenticator.client_id, authenticator.client_secret, authenticator.access_token, authenticator.refresh_token,
-        authenticator.expires_at]
+      [authenticator.client_id, authenticator.client_secret, authenticator.access_token, authenticator.refresh_token]
     end
 
     # Run a request, again if a refresh replaces an OAuth 2.0 token the API rejects

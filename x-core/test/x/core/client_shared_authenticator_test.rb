@@ -70,16 +70,6 @@ module X
       end
     end
 
-    def test_changing_the_expiration_time_builds_an_authenticator_of_its_own
-      client = Client.new(**test_oauth2_credentials)
-      authenticator = client.authenticator
-      expires_at = Time.now + 3600
-      client.expires_at = expires_at
-
-      refute_same authenticator, client.authenticator
-      assert_equal expires_at, client.authenticator.expires_at
-    end
-
     def test_a_copy_given_other_credentials_no_longer_hears_of_the_refreshes_of_the_client
       refreshed = []
       client = Client.new(**test_oauth2_credentials, on_token_refresh: ->(authenticator) { refreshed << [:client, authenticator.refresh_token] })

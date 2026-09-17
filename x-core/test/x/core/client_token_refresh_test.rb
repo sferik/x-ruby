@@ -241,7 +241,6 @@ module X
       %i[client_id client_secret access_token refresh_token].each do |credential|
         refute_same client.authenticator, client.copy(credential => "OTHER").authenticator
       end
-      refute_same client.authenticator, client.copy(expires_at: Time.now).authenticator
     end
 
     def test_an_oauth2_copy_of_a_client_without_oauth2_has_its_own_authenticator
