@@ -414,10 +414,10 @@ module X
     #     post.polls.first.options
     references :polls, :Poll, key: %w[attachments poll_ids]
 
-    alias_method :retweet_count, :repost_count
-    alias_method :edit_history_tweet_ids, :edit_history_post_ids
-    alias_method :note_tweet, :note_post
-    alias_method :referenced_tweets, :referenced_posts
+    attribute_alias :retweet_count, :repost_count
+    attribute_alias :edit_history_tweet_ids, :edit_history_post_ids
+    attribute_alias :note_tweet, :note_post
+    attribute_alias :referenced_tweets, :referenced_posts
 
     # The permalink of the post, by the author's username when known
     #

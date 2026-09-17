@@ -166,10 +166,13 @@ module X
       CONVERTERS: Hash[Symbol, ^(untyped) -> untyped]
 
       @attribute_names: Array[Symbol]?
+      @attribute_aliases: Array[Symbol]?
 
       def attribute_names: () -> Array[Symbol]
+      def attribute_aliases: () -> Array[Symbol]
 
       private
+      def attribute_alias: (Symbol name, Symbol original) -> void
       def attribute: (Symbol name, ?Symbol type, ?key: key) -> void
       def reference: (Symbol name, Symbol klass_name, key: key) -> void
       def references: (Symbol name, Symbol klass_name, key: key) -> void

@@ -45,7 +45,9 @@ module X
       # Deconstruct the resource into its attributes, so it matches a hash pattern
       #
       # Every attribute the resource declares is read as its own method reads it, so a pattern sees the
-      # identifier as a number, a timestamp as a Time, and a metric by the name it is read by.
+      # identifier as a number, a timestamp as a Time, and a metric by the name it is read by. A pattern can ask
+      # for an attribute by another name it is read by, such as retweet_count for repost_count, and a pattern
+      # that asks for every attribute, with a double splat, gets each once, by the name the resource declares.
       #
       # @api public
       # @param keys [Array<Symbol>, nil] the keys the pattern asks for, or nil for every attribute
@@ -53,9 +55,13 @@ module X
       # @example Match a post by its author
       #   case post in {author_id: 7505382} then puts "by sferik"
       #   end
+      # @example Match a post by a name from before posts were posts
+      #   case post in {retweet_count: 100..} then puts "widely reposted"
+      #   end
       def deconstruct_keys(keys)
-        names = self.class.attribute_names
-        names &= keys unless keys.nil?
+        klass = self.class
+        names = klass.attribute_names
+        names = (names + klass.attribute_aliases) & keys unless keys.nil?
         names.to_h { |name| [name, public_send(name)] }
       end
     end

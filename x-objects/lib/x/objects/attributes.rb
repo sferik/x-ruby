@@ -25,7 +25,29 @@ module X
         @attribute_names ||= parent.is_a?(Attributes) ? parent.attribute_names.dup : [:id]
       end
 
+      # The other names some attributes are read by, which a pattern can ask for
+      #
+      # @api private
+      # @return [Array<Symbol>] the alias names
+      # @example Get the attribute aliases of a user
+      #   X::User.attribute_aliases # => [:tweet_count, :pinned_tweet_id, :most_recent_tweet_id]
+      def attribute_aliases
+        parent = superclass
+        @attribute_aliases ||= parent.is_a?(Attributes) ? parent.attribute_aliases.dup : []
+      end
+
       private
+
+      # Define another name for an attribute, which a pattern can ask for
+      #
+      # @api private
+      # @param name [Symbol] the alias name
+      # @param original [Symbol] the name of the attribute
+      # @return [void]
+      def attribute_alias(name, original)
+        attribute_aliases << name
+        alias_method name, original
+      end
 
       # Define a reader for an attribute
       #

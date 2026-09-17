@@ -277,7 +277,7 @@ module X
       self.class.delete(self, client: client!)
     end
 
-    alias_method :conversation_id, :dm_conversation_id
-    alias_method :referenced_tweets, :referenced_posts
+    attribute_alias :conversation_id, :dm_conversation_id
+    attribute_alias :referenced_tweets, :referenced_posts
   end
 end

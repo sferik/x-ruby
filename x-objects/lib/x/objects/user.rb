@@ -291,9 +291,9 @@ module X
     #     user.most_recent_post
     reference :most_recent_post, :Post, key: %w[most_recent_post_id]
 
-    alias_method :tweet_count, :post_count
-    alias_method :pinned_tweet_id, :pinned_post_id
-    alias_method :most_recent_tweet_id, :most_recent_post_id
+    attribute_alias :tweet_count, :post_count
+    attribute_alias :pinned_tweet_id, :pinned_post_id
+    attribute_alias :most_recent_tweet_id, :most_recent_post_id
     alias_method :pinned_tweet, :pinned_post
     alias_method :most_recent_tweet, :most_recent_post
 

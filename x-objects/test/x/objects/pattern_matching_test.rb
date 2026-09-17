@@ -52,6 +52,41 @@ module X
       assert_empty @user.deconstruct_keys([:nothing_of_the_sort])
     end
 
+    def test_a_pattern_reads_an_attribute_by_another_name_it_is_read_by
+      post = Post.new({"id" => "1", "public_metrics" => {"repost_count" => 5}, "note_post" => {"text" => "long"}})
+      user = User.new({"id" => "1", "pinned_post_id" => "9", "public_metrics" => {"post_count" => 3}})
+      message = DirectMessage.new({"id" => "1", "dm_conversation_id" => "9-8"})
+
+      matched = case post
+      in {retweet_count: 5, note_tweet: Hash => note, repost_count: 5} then note
+      end
+
+      assert_equal({"text" => "long"}, matched)
+      assert_equal({tweet_count: 3, pinned_tweet_id: 9}, user.deconstruct_keys(%i[tweet_count pinned_tweet_id pinned_tweet]))
+      assert_equal({conversation_id: "9-8"}, message.deconstruct_keys([:conversation_id]))
+    end
+
+    def test_a_pattern_asking_for_every_attribute_reads_each_once_by_the_name_it_is_declared_by
+      refute_includes @post.deconstruct_keys(nil), :retweet_count
+      assert_equal Post.attribute_names, @post.deconstruct_keys(nil).keys
+    end
+
+    def test_declaring_an_alias_records_its_name_after_the_ones_it_inherits
+      klass = Class.new(User) { attribute_alias :handle, :username }
+
+      assert_equal %i[tweet_count pinned_tweet_id most_recent_tweet_id], User.attribute_aliases
+      assert_equal User.attribute_aliases + [:handle], klass.attribute_aliases
+      assert_equal "sferik", klass.new({"id" => "1", "username" => "sferik"}).handle
+      assert_equal %i[retweet_count edit_history_tweet_ids note_tweet referenced_tweets], Post.attribute_aliases
+      assert_equal %i[conversation_id referenced_tweets], DirectMessage.attribute_aliases
+    end
+
+    def test_a_resource_without_aliases_declares_none
+      assert_empty Objects::Resource.attribute_aliases
+      assert_empty Class.new { extend Objects::Attributes }.attribute_aliases
+      assert_empty List.attribute_aliases
+    end
+
     def test_declaring_an_attribute_records_its_name_after_the_ones_it_inherits
       klass = Class.new(User) { attribute :nickname }
 

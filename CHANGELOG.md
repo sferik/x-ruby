@@ -87,6 +87,7 @@ See [UPGRADING.md](https://github.com/sferik/x-ruby/blob/main/UPGRADING.md) for 
 * Search spaces with `X::Space.search` and `search_spaces` on the client, a cursor over the live or scheduled spaces that match a query
 * Read what a successful response held instead of JSON with `X::InvalidResponse#body`: the body of a response, or the line of a stream, whose response cannot be read for its body once the stream is open
 * Check whether a collection is empty without paging it with `X::Cursor#empty?`, which requests one resource, as `none?` does
+* Match a resource by the tweet-named aliases of its attributes, such as `post in {retweet_count: 100..}` and `user in {pinned_tweet_id: Integer}`, and by `conversation_id` on a direct message; a pattern that asks for every attribute gets each once, by the name the resource declares
 ### Changed
 * Require Ruby 3.4 or later
 * Hydrate the stubs of a page together, in batch lookups of up to 100 rather than one request per stub, so hydrating one stub looks up, and the API bills, no more than 100 resources, and hydrating every stub of a page of 1,000 costs ten lookups; the stubs of lists, communities, and direct messages, which the API cannot look up in batches, hydrate one at a time, and `refresh` looks a stub up again on its own rather than read what the lookup of its page found
