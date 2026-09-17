@@ -19,6 +19,15 @@ module X
         assert_equal({text: "yo", attachments: []}.to_json, @client.requests.first[:body])
       end
 
+      def test_direct_messages_without_text
+        sent = {"data" => {"dm_conversation_id" => "9-8", "dm_event_id" => "2"}}
+        @client.stub(:post, "dm_conversations/with/8/messages", sent).stub(:post, "dm_conversations", sent).stub(:post, "dm_conversations/9-8/messages", sent)
+        messages = [@client.create_direct_message(8, attachments: [1]), @client.create_group_direct_message([8, 7], attachments: [2]), @client.create_direct_message_in("9-8", attachments: [3])]
+
+        assert_equal [2, 2, 2], messages.map(&:id)
+        assert_equal [{attachments: [1]}.to_json, {conversation_type: "Group", participant_ids: %w[8 7], message: {attachments: [2]}}.to_json, {attachments: [3]}.to_json], @client.requests.map { |request| request[:body] }
+      end
+
       def test_delete_direct_message
         @client.stub(:delete, "dm_events/1", {"data" => {"deleted" => true}})
 

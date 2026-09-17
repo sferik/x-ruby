@@ -19,6 +19,13 @@ module X
         assert_equal({text: "hi", reply_settings: "following"}.to_json, @client.requests.first[:body])
       end
 
+      def test_create_post_without_text
+        @client.stub(:post, "tweets", {"data" => {"id" => "1"}})
+
+        assert_equal 1, @client.create_post(media_ids: [3]).id
+        assert_equal({media: {media_ids: ["3"]}}.to_json, @client.requests.first[:body])
+      end
+
       def test_delete_post
         @client.stub(:delete, "tweets/1", {"data" => {"deleted" => true}})
 

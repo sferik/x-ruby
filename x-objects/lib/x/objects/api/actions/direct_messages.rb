@@ -11,12 +11,15 @@ module X
           #
           # @api public
           # @param user [User, String, Integer] the recipient or their identifier
-          # @param text [String] the text of the message
+          # @param text [String, nil] the text of the message, or nil for a message of attachments alone
           # @param params [Hash] additional request body fields, such as attachments
           # @return [DirectMessage, nil] the sent message, holding only its identifiers
+          # @raise [ArgumentError] if the message has neither text nor any other field
           # @example Send a direct message
           #   client.create_direct_message(user, "Hello!")
-          def create_direct_message(user, text, **params)
+          # @example Send an image without text
+          #   client.create_direct_message(user, attachments: [{media_id: media["id"]}])
+          def create_direct_message(user, text = nil, **params)
             DirectMessage.create(user, text, client: self, **params)
           end
 
@@ -24,12 +27,13 @@ module X
           #
           # @api public
           # @param users [Array<User, String, Integer>] the other participants or their identifiers
-          # @param text [String] the text of the first message
+          # @param text [String, nil] the text of the first message, or nil for a message of attachments alone
           # @param params [Hash] additional fields of the message, such as attachments
           # @return [DirectMessage, nil] the sent message, holding only its identifiers, among them the conversation's
+          # @raise [ArgumentError] if the message has neither text nor any other field
           # @example Start a group conversation
           #   client.create_group_direct_message([alice, bob], "Hello, both of you!")
-          def create_group_direct_message(users, text, **params)
+          def create_group_direct_message(users, text = nil, **params)
             DirectMessage.create_group(users, text, client: self, **params)
           end
 
@@ -39,13 +43,13 @@ module X
           #
           # @api public
           # @param conversation [DirectMessage, String, Integer] a message of the conversation, or the conversation's identifier
-          # @param text [String] the text of the message
+          # @param text [String, nil] the text of the message, or nil for a message of attachments alone
           # @param params [Hash] additional request body fields, such as attachments
           # @return [DirectMessage, nil] the sent message, holding only its identifiers
-          # @raise [ArgumentError] if the conversation identifier is not one
+          # @raise [ArgumentError] if the conversation identifier is not one, or the message has neither text nor any other field
           # @example Reply to the conversation of a message
           #   client.create_direct_message_in(message, "Sounds good")
-          def create_direct_message_in(conversation, text, **params)
+          def create_direct_message_in(conversation, text = nil, **params)
             DirectMessage.create_in(conversation, text, client: self, **params)
           end
 

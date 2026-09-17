@@ -20,6 +20,18 @@ module X
       assert_equal({text: "yo", attachments: [{media_id: "3"}]}.to_json, @client.requests.first[:body])
     end
 
+    def test_create_without_text
+      @client.stub(:post, "dm_conversations/with/8/messages", {"data" => {"dm_conversation_id" => "9-8", "dm_event_id" => "2"}})
+
+      assert_equal 2, DirectMessage.create(8, client: @client, attachments: [{media_id: "3"}]).id
+      assert_equal({attachments: [{media_id: "3"}]}.to_json, @client.requests.first[:body])
+    end
+
+    def test_create_without_text_or_any_other_field_is_refused
+      assert_raises(ArgumentError) { DirectMessage.create(8, client: @client) }
+      assert_empty @client.requests
+    end
+
     def test_create_with_id
       @client.stub(:post, "dm_conversations/with/8/messages", {"data" => {"dm_conversation_id" => "9-8", "dm_event_id" => "2"}})
 

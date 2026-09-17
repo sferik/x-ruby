@@ -32,6 +32,26 @@ module X
       assert_equal({text: "Hello", media: {media_ids: %w[3 4]}}.to_json, @client.requests.first[:body])
     end
 
+    def test_create_without_text
+      Post.create(client: @client, media_ids: [3])
+      Post.create(nil, client: @client, quote: 2)
+
+      assert_equal [{media: {media_ids: ["3"]}}.to_json, {quote_tweet_id: "2"}.to_json], @client.requests.map { |request| request[:body] }
+    end
+
+    def test_create_drops_fields_given_nil
+      Post.create("Hello", client: @client, reply_settings: nil)
+
+      assert_equal({text: "Hello"}.to_json, @client.requests.first[:body])
+    end
+
+    def test_create_without_text_or_any_other_field_is_refused
+      error = assert_raises(ArgumentError) { Post.create(client: @client, reply_settings: nil) }
+
+      assert_equal "a post needs text, or something else to show, such as media_ids", error.message
+      assert_empty @client.requests
+    end
+
     def test_create_with_upload_responses_as_media_ids
       Post.create("Hello", client: @client, media_ids: [{"id" => "3", "media_key" => "3_3"}, 4])
 

@@ -9,9 +9,10 @@ module X
       # Create a post as the authenticated user
       #
       # The API bills each post created, and bills a post whose text holds a URL more than ten times as much.
+      # A post needs no text when it has something else to show, such as media.
       #
       # @api public
-      # @param text [String] the text of the post
+      # @param text [String, nil] the text of the post, or nil for a post without text, such as one of media alone
       # @param client [Object] the client used to make the request
       # @param reply_to [Post, String, Integer, nil] the post to reply to or its identifier
       # @param quote [Post, String, Integer, nil] the post to quote or its identifier
@@ -19,16 +20,21 @@ module X
       # @param community [Community, String, Integer, nil] the community to post in or its identifier
       # @param params [Hash] additional request body fields, such as poll or reply_settings
       # @return [Post, nil] the created post, holding only its identifier and text
+      # @raise [ArgumentError] if the post has neither text nor any other field
       # @example Create a post
       #   X::Post.create("Hello, World!", client: client)
+      # @example Post an image without text
+      #   X::Post.create(client: client, media_ids: [media])
       # @example Reply to a post with an image
       #   X::Post.create("Hello!", client: client, reply_to: post, media_ids: [media["id"]])
       # @example Post in a community
       #   X::Post.create("Hello, Rubyists!", client: client, community: community)
       # @example Quote a post
       #   X::Post.create("Worth reading", client: client, quote: post)
-      def create(text, client:, reply_to: nil, quote: nil, media_ids: nil, community: nil, **params)
-        fields = {text:, **params, **referenced(reply_to:, quote:, media_ids:, community:)}
+      def create(text = nil, client:, reply_to: nil, quote: nil, media_ids: nil, community: nil, **params)
+        fields = {text:, **params, **referenced(reply_to:, quote:, media_ids:, community:)}.compact
+        raise ArgumentError, "a post needs text, or something else to show, such as media_ids" if fields.empty?
+
         resource_from_response(client.post("tweets", JSON.generate(fields), **Utils::JSON_CLASSES), client:)
       end
 

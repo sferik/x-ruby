@@ -87,6 +87,7 @@ See [UPGRADING.md](https://github.com/sferik/x-ruby/blob/main/UPGRADING.md) for 
 * Search spaces with `X::Space.search` and `search_spaces` on the client, a cursor over the live or scheduled spaces that match a query
 * Read what a successful response held instead of JSON with `X::InvalidResponse#body`: the body of a response, or the line of a stream, whose response cannot be read for its body once the stream is open
 * Check whether a collection is empty without paging it with `X::Cursor#empty?`, which requests one resource, as `none?` does
+* Post media without text, and send a direct message of attachments alone: the text of `create_post`, `X::Post.create`, `create_direct_message`, `create_group_direct_message`, `create_direct_message_in`, and their `X::DirectMessage` equivalents is optional, a post or message without text sends no `text` field rather than a null one, and one with neither text nor any other field raises `ArgumentError`
 * Match a resource by the tweet-named aliases of its attributes, such as `post in {retweet_count: 100..}` and `user in {pinned_tweet_id: Integer}`, and by `conversation_id` on a direct message; a pattern that asks for every attribute gets each once, by the name the resource declares
 ### Changed
 * Require Ruby 3.4 or later
@@ -100,7 +101,7 @@ See [UPGRADING.md](https://github.com/sferik/x-ruby/blob/main/UPGRADING.md) for 
 * Rename `X::User.me` to `X::User.current`, the request behind `current_user`
 * Rename `X::Objects::Actions`, the follow, block, mute, like, and repost methods of `X::User`, to `X::Objects::Relationships`, so it no longer shares a name with `X::Objects::API::Actions`
 * Raise `X::UnsupportedOperation`, an `X::Error`, from `X::List.find_all`, since the API has no batch lookup of lists, instead of sending a request that fails; the object layer raises it for anything else the API offers no way to do, such as hydrating `X::Media` or requesting the identifiers alone of a resource without a fields parameter
-* Take the recipient and text of a direct message as the positional arguments of `create_direct_message`, in place of `to:` and `text:`, since both are required
+* Take the recipient and text of a direct message as the positional arguments of `create_direct_message`, in place of `to:` and `text:`; the text is optional for a message of attachments alone
 * Derive the v1.1 client of `X::Uploader::Account` from the client it is given with `copy`, so it keeps the timeouts, proxy, and other settings
 * Mark `X::RequestBuilder`, `X::RedirectHandler`, `X::ResponseParser`, `X::StreamParser`, `X::RateLimitHandler`, and `X::ReconnectHandler` as `@api private`, the internals of `X::Client` and `X::StreamingClient`, whose settings they expose, so that they can change within 1.x
 * Raise `Errno::ENOENT` from the uploaders for a file that does not exist, and `X::Uploader::MediaProcessingFailed`, an `X::Error` whose `status` holds what X reported and whose message is its reason, for media that fails to process, instead of `RuntimeError`

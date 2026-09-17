@@ -20,6 +20,31 @@ module X
                      body: {conversation_type: "Group", participant_ids: %w[8 7], message: {text: "Hello, both of you!", attachments: [{media_id: "3"}]}}.to_json}], @client.requests
     end
 
+    def test_create_group_without_text
+      @client.stub(:post, "dm_conversations", SENT)
+      DirectMessage.create_group([8, 7], client: @client, attachments: [{media_id: "3"}])
+
+      assert_equal({conversation_type: "Group", participant_ids: %w[8 7], message: {attachments: [{media_id: "3"}]}}.to_json, @client.requests.first[:body])
+    end
+
+    def test_create_in_without_text
+      @client.stub(:post, "dm_conversations/9-8/messages", SENT)
+      DirectMessage.create_in("9-8", nil, client: @client, attachments: [{media_id: "3"}])
+      DirectMessage.create_in("9-8", client: @client, attachments: [{media_id: "4"}])
+
+      assert_equal [{attachments: [{media_id: "3"}]}.to_json, {attachments: [{media_id: "4"}]}.to_json], @client.requests.map { |request| request[:body] }
+    end
+
+    def test_a_message_without_text_or_any_other_field_is_refused
+      errors = [
+        assert_raises(ArgumentError) { DirectMessage.create_group([8, 7], client: @client) },
+        assert_raises(ArgumentError) { DirectMessage.create_in("9-8", client: @client, attachments: nil) }
+      ]
+
+      assert_equal ["a direct message needs text, or something else to show, such as attachments"] * 2, errors.map(&:message)
+      assert_empty @client.requests
+    end
+
     def test_create_group_refuses_a_username
       assert_raises(ArgumentError) { DirectMessage.create_group(%w[sferik 7], "Hi", client: @client) }
       assert_empty @client.requests

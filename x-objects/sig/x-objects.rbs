@@ -280,7 +280,7 @@ module X
     end
 
     module PostWrites : _Lookup[Post]
-      def create: (String text, client: _Client, ?reply_to: id?, ?quote: id?, ?media_ids: Array[String | Integer | Hash[String, untyped]]?, ?community: id?, **untyped params) -> Post?
+      def create: (?String? text, client: _Client, ?reply_to: id?, ?quote: id?, ?media_ids: Array[String | Integer | Hash[String, untyped]]?, ?community: id?, **untyped params) -> Post?
       def delete: (id post, client: _Client) -> bool
       def hide: (id post, client: _Client) -> bool
       def unhide: (id post, client: _Client) -> bool
@@ -298,12 +298,13 @@ module X
     module DirectMessageConversations : _DirectMessageClass
       CONVERSATION_ID: Regexp
 
-      def create_group: (Array[id] users, String text, client: _Client, **untyped params) -> DirectMessage?
-      def create_in: (DirectMessage | String | Integer conversation, String text, client: _Client, **untyped params) -> DirectMessage?
+      def create_group: (Array[id] users, ?String? text, client: _Client, **untyped params) -> DirectMessage?
+      def create_in: (DirectMessage | String | Integer conversation, ?String? text, client: _Client, **untyped params) -> DirectMessage?
       def `in`: (DirectMessage | String | Integer conversation, client: _Client, **untyped params) -> Cursor
 
       private
       def conversation_id_of: (DirectMessage | String | Integer conversation) -> String
+      def message: (String? text, Hash[Symbol, untyped] params) -> Hash[Symbol, untyped]
       def sent: (body body, client: _Client) -> DirectMessage?
     end
 
@@ -495,8 +496,8 @@ module X
         include Actions::Engagement
 
         module Posts : _Client
-          def create_post: (String text, **untyped params) -> Post?
-          def create_tweet: (String text, **untyped params) -> Post?
+          def create_post: (?String? text, **untyped params) -> Post?
+          def create_tweet: (?String? text, **untyped params) -> Post?
           def delete_post: (id post) -> bool
           def delete_tweet: (id post) -> bool
           def hide_reply: (id post) -> bool
@@ -514,12 +515,12 @@ module X
         end
 
         module DirectMessages : _Client
-          def create_direct_message: (id user, String text, **untyped params) -> DirectMessage?
-          def create_dm: (id user, String text, **untyped params) -> DirectMessage?
-          def create_group_direct_message: (Array[id] users, String text, **untyped params) -> DirectMessage?
-          def create_group_dm: (Array[id] users, String text, **untyped params) -> DirectMessage?
-          def create_direct_message_in: (DirectMessage | String | Integer conversation, String text, **untyped params) -> DirectMessage?
-          def create_dm_in: (DirectMessage | String | Integer conversation, String text, **untyped params) -> DirectMessage?
+          def create_direct_message: (id user, ?String? text, **untyped params) -> DirectMessage?
+          def create_dm: (id user, ?String? text, **untyped params) -> DirectMessage?
+          def create_group_direct_message: (Array[id] users, ?String? text, **untyped params) -> DirectMessage?
+          def create_group_dm: (Array[id] users, ?String? text, **untyped params) -> DirectMessage?
+          def create_direct_message_in: (DirectMessage | String | Integer conversation, ?String? text, **untyped params) -> DirectMessage?
+          def create_dm_in: (DirectMessage | String | Integer conversation, ?String? text, **untyped params) -> DirectMessage?
           def delete_direct_message: (id message) -> bool
           def delete_dm: (id message) -> bool
         end
@@ -886,7 +887,7 @@ module X
     def self.default_params: () -> Hash[String, Array[String]]
     def self.all: (client: Objects::_Client, **untyped params) -> Cursor
     def self.with: (Objects::id user, client: Objects::_Client, **untyped params) -> Cursor
-    def self.create: (Objects::id user, String text, client: Objects::_Client, **untyped params) -> DirectMessage?
+    def self.create: (Objects::id user, ?String? text, client: Objects::_Client, **untyped params) -> DirectMessage?
     def self.delete: (Objects::id message, client: Objects::_Client) -> bool
 
     def text: () -> String?
