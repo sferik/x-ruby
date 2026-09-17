@@ -156,7 +156,7 @@ module X
         authorization.credentials("error=access_denied&error_description=The+user+denied+the+request&state=STATE")
       end
 
-      assert_equal ["The user denied the request", "access_denied"], [error.message, error.code]
+      assert_equal ["The user denied the request", "access_denied"], [error.message, error.error_code]
       assert_not_requested :post, "https://api.x.com/2/oauth2/token"
     end
 
@@ -167,7 +167,7 @@ module X
     def test_a_redirect_for_another_authorization_raises
       error = assert_raises(AuthorizationError) { authorization.credentials("state=OTHER&code=CODE") }
 
-      assert_equal ["The authorization response answers a different request", nil, nil], [error.message, error.code, error.status]
+      assert_equal ["The authorization response answers a different request", nil, nil], [error.message, error.error_code, error.status]
       assert_not_requested :post, "https://api.x.com/2/oauth2/token"
     end
 
@@ -175,13 +175,13 @@ module X
       stub_token(status: 400, body: {error: "invalid_grant", error_description: "Value passed for the authorization code was invalid."})
       error = assert_raises(AuthorizationError) { authorization.credentials("state=STATE&code=CODE") }
 
-      assert_equal ["Value passed for the authorization code was invalid.", "invalid_grant", 400], [error.message, error.code, error.status]
+      assert_equal ["Value passed for the authorization code was invalid.", "invalid_grant", 400], [error.message, error.error_code, error.status]
     end
 
     def test_a_redirect_that_is_not_a_valid_url_raises
       error = assert_raises(AuthorizationError) { authorization.credentials("https://exa mple.com/callback?state=STATE&code=CODE") }
 
-      assert_equal ["The redirect back from X is not a valid URL", nil], [error.message, error.code]
+      assert_equal ["The redirect back from X is not a valid URL", nil], [error.message, error.error_code]
       assert_not_requested :post, "https://api.x.com/2/oauth2/token"
     end
 
@@ -189,7 +189,7 @@ module X
       stub_request(:post, "https://api.x.com/2/oauth2/token").to_return(status: 500, body: "")
       error = assert_raises(AuthorizationError) { authorization.credentials("state=STATE&code=CODE") }
 
-      assert_equal ["Authorization failed", nil], [error.message, error.code]
+      assert_equal ["Authorization failed", nil], [error.message, error.error_code]
       assert_kind_of Error, error
     end
   end

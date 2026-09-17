@@ -182,7 +182,7 @@ module X
     def query_of(callback)
       String.try_convert(callback)&.then { |url| URI(url).query } || callback
     rescue URI::InvalidURIError
-      raise AuthorizationError.new(INVALID_CALLBACK_MESSAGE, code: nil)
+      raise AuthorizationError.new(INVALID_CALLBACK_MESSAGE)
     end
 
     # The credentials of a client from the token X returned

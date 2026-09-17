@@ -400,7 +400,7 @@ module X
         .to_return(status: 400, body: {error: "invalid_grant", error_description: "Token expired"}.to_json)
 
       error = assert_raises(AuthorizationError) { authenticator.refresh_token! }
-      assert_equal ["Token expired", "invalid_grant", 400], [error.message, error.code, error.status]
+      assert_equal ["Token expired", "invalid_grant", 400], [error.message, error.error_code, error.status]
     end
 
     def test_refresh_token_raises_on_error_without_description
@@ -420,7 +420,7 @@ module X
         .to_return(status: 500, body: {}.to_json)
 
       error = assert_raises(AuthorizationError) { authenticator.refresh_token! }
-      assert_equal ["Token refresh failed", nil, 500], [error.message, error.code, error.status]
+      assert_equal ["Token refresh failed", nil, 500], [error.message, error.error_code, error.status]
     end
 
     def test_refresh_token_raises_on_invalid_json_response

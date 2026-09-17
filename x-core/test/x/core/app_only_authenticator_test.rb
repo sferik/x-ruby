@@ -83,7 +83,7 @@ module X
         .to_return(status: 403, body: {error: "invalid_client", error_description: "Unable to verify your credentials"}.to_json)
       error = assert_raises(AuthorizationError) { @authenticator.bearer_token }
 
-      assert_equal ["Unable to verify your credentials", "invalid_client", 403], [error.message, error.code, error.status]
+      assert_equal ["Unable to verify your credentials", "invalid_client", 403], [error.message, error.error_code, error.status]
     end
 
     def test_raises_with_the_error_code_without_a_description

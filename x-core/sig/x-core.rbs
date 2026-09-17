@@ -47,11 +47,11 @@ module X
   end
 
   class AuthorizationError < Error
-    attr_reader code: String?
+    attr_reader error_code: String?
     attr_reader status: Integer?
 
     def self.from: (SimpleOAuth::OAuth2::Error error, String default_message) -> AuthorizationError
-    def initialize: (String message, code: String?, ?status: Integer?) -> void
+    def initialize: (String message, ?error_code: String?, ?status: Integer?) -> void
   end
 
   module TokenEndpoint

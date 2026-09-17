@@ -60,7 +60,7 @@ module X
       stub_users_me(TEST_ACCESS_TOKEN, status: 401)
       error = assert_raises(AuthorizationError) { Client.new(**test_oauth2_credentials).get("users/me") }
 
-      assert_equal ["Value passed for the token was invalid.", "invalid_request", 400], [error.message, error.code, error.status]
+      assert_equal ["Value passed for the token was invalid.", "invalid_request", 400], [error.message, error.error_code, error.status]
     end
 
     def test_a_refresh_that_returns_the_rejected_token_raises_without_sending_again
