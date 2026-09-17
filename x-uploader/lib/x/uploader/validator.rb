@@ -1,3 +1,6 @@
+require_relative "invalid_media_type"
+require_relative "utils"
+
 module X
   module Uploader
     # Validates media upload parameters
@@ -21,6 +24,22 @@ module X
       #   Uploader::Validator.validate_file_path!("image.png")
       def validate_file_path!(file_path)
         raise Errno::ENOENT, file_path unless File.exist?(file_path)
+      end
+
+      # Validate that a file has one of the extensions an upload supports
+      #
+      # @api private
+      # @param file_path [String] the file path to validate
+      # @param extensions [Array<String>] the supported extensions, in lowercase and without a dot
+      # @return [void]
+      # @raise [InvalidMediaType] if the extension of the file is not supported
+      # @example Validate the extension of a profile image
+      #   Uploader::Validator.validate_extension!("avatar.png", %w[gif jpg jpeg png])
+      def validate_extension!(file_path, extensions)
+        extension = Utils.extension(file_path)
+        return if extensions.include?(extension)
+
+        raise InvalidMediaType, "Unsupported file type: #{extension}. Supported types: #{extensions.join(", ")}"
       end
 
       # Validate the chunk size and concurrency of a chunked upload

@@ -27,9 +27,17 @@ module X
       assert_requested(:post, "#{V1_URL}update_profile_banner.json") { |request| request.headers["Authorization"].include?("oauth_token=\"#{TEST_ACCESS_TOKEN}\"") }
     end
 
-    def test_v1_client_keeps_the_settings_of_the_client
+    def test_image_upload_uses_a_v1_client_that_keeps_the_settings_of_the_client
       client = Client.new(**test_oauth_credentials, read_timeout: 9, max_redirects: 1)
-      v1_client = Uploader::Account.send(:v1_client, client)
+      v1_client = v1_client_of(client) { Uploader::Account.update_profile_image_binary("image", client:) }
+
+      assert_equal [Uploader::Account::V1_BASE_URL, 9, 1], [v1_client.base_url, v1_client.read_timeout, v1_client.max_redirects]
+      assert_equal "https://api.x.com/2/", client.base_url
+    end
+
+    def test_banner_upload_uses_a_v1_client_that_keeps_the_settings_of_the_client
+      client = Client.new(**test_oauth_credentials, read_timeout: 9, max_redirects: 1)
+      v1_client = v1_client_of(client) { Uploader::Account.update_profile_banner_binary("banner", client:) }
 
       assert_equal [Uploader::Account::V1_BASE_URL, 9, 1], [v1_client.base_url, v1_client.read_timeout, v1_client.max_redirects]
       assert_equal "https://api.x.com/2/", client.base_url
@@ -57,6 +65,16 @@ module X
       end
 
       assert_requested(:post, "#{V1_URL}update_profile_image.json")
+    end
+
+    private
+
+    # The one client that the block copies from a client
+    def v1_client_of(client, &)
+      copies = []
+      copy = client.method(:copy)
+      client.stub(:copy, ->(**options) { copy.call(**options).tap { |copied| copies << copied } }, &)
+      copies.fetch(0)
     end
   end
 end

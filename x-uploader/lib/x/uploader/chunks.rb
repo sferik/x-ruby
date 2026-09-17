@@ -1,26 +1,33 @@
 require_relative "json_classes"
+require_relative "multipart"
 
 module X
   module Uploader
     # Uploads a file in the chunks the X API requires for video and subtitles
+    #
+    # Internal to x-uploader: X::Uploader::Media calls it rather than mix its methods into itself, so a class that
+    # includes X::Uploader::Media gains none of them.
+    #
     # @api private
     module Chunks
+      extend self
+
       # Maximum number of attempts to upload a chunk, counting the first, so a chunk is retried twice
       MAX_ATTEMPTS = 3
-      # Default number of chunks uploaded at once
-      DEFAULT_CONCURRENCY = 4
       # Seconds to wait before retrying a chunk, doubled for each retry after
       RETRY_BACKOFF = 1
-
-      private
+      private_constant :MAX_ATTEMPTS, :RETRY_BACKOFF
 
       # Initialize a chunked upload
+      #
       # @api private
       # @param client [Client] the X API client
       # @param file_path [String] the file path
       # @param media_type [String] the MIME type
       # @param media_category [String] the media category
       # @return [Hash, nil] the initialization response
+      # @example Initialize the upload of a video
+      #   Uploader::Chunks.init(client:, file_path: "cat.mp4", media_type: "video/mp4", media_category: "tweet_video")
       def init(client:, file_path:, media_type:, media_category:)
         body = {media_type:, media_category:, total_bytes: File.size(file_path)}
         client.post("media/upload/initialize", body, **JSON_CLASSES)&.fetch("data")
@@ -40,13 +47,17 @@ module X
       # @param boundary [String] the multipart boundary
       # @param concurrency [Integer] the number of chunks uploaded at once
       # @return [void]
-      def append(client:, file_path:, chunk_size:, media:, boundary:, concurrency: DEFAULT_CONCURRENCY)
+      # @example Append the chunks of a video
+      #   Uploader::Chunks.append(client:, file_path: "cat.mp4", chunk_size: 1_048_576, media:, boundary:, concurrency: 4)
+      def append(client:, file_path:, chunk_size:, media:, boundary:, concurrency:)
         queue = chunk_queue(file_path, chunk_size)
         errors = Queue.new
         media_id = media.fetch("id")
         Array.new([concurrency, queue.size].min) { append_worker(queue, errors, client:, file_path:, chunk_size:, media_id:, boundary:) }.each(&:join)
         raise errors.deq unless errors.empty?
       end
+
+      private
 
       # A closed queue of the index and byte offset of each chunk of a file, in order
       # @api private
@@ -72,8 +83,8 @@ module X
       def append_worker(queue, errors, client:, file_path:, chunk_size:, media_id:, boundary:)
         Thread.new do
           while (index, offset = queue.deq)
-            upload_body = construct_upload_body(content: File.binread(file_path, chunk_size, offset), segment_index: index, boundary:)
-            upload_chunk(client:, media_id:, upload_body:, headers: {"Content-Type" => "multipart/form-data; boundary=#{boundary}"})
+            upload_body = Multipart.body("media", File.binread(file_path, chunk_size, offset), boundary:, segment_index: index)
+            upload_chunk(client:, media_id:, upload_body:, headers: Multipart.headers(boundary))
           end
         rescue => e
           errors << e
@@ -98,24 +109,6 @@ module X
           sleep RETRY_BACKOFF << (retries - 1)
           retry
         end
-      end
-
-      # Construct the multipart upload body
-      # @api private
-      # @param content [String] the content to upload
-      # @param media_category [String, nil] the media category
-      # @param segment_index [Integer, nil] the segment index
-      # @param boundary [String] the multipart boundary
-      # @return [String] the upload body
-      def construct_upload_body(content:, boundary:, media_category: nil, segment_index: nil)
-        body = ""
-        body += "--#{boundary}\r\nContent-Disposition: form-data; name=\"segment_index\"\r\n\r\n#{segment_index}\r\n" if segment_index
-        body += "--#{boundary}\r\nContent-Disposition: form-data; name=\"media_category\"\r\n\r\n#{media_category}\r\n" if media_category
-        "#{body}--#{boundary}\r\n" \
-          "Content-Disposition: form-data; name=\"media\"\r\n" \
-          "Content-Type: application/octet-stream\r\n\r\n" \
-          "#{content}\r\n" \
-          "--#{boundary}--\r\n"
       end
     end
   end

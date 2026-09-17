@@ -15,6 +15,20 @@ module X
       assert_equal "No such file or directory - bad/path", error.message
     end
 
+    def test_validate_extension
+      assert_nil Uploader::Validator.validate_extension!("avatar.png", %w[jpg png])
+    end
+
+    def test_validate_extension_ignores_case
+      assert_nil Uploader::Validator.validate_extension!(Pathname("AVATAR.PNG"), %w[jpg png])
+    end
+
+    def test_validate_extension_raises_for_an_unsupported_extension
+      error = assert_raises(Uploader::InvalidMediaType) { Uploader::Validator.validate_extension!("clip.MP4", %w[jpg png]) }
+
+      assert_equal "Unsupported file type: mp4. Supported types: jpg, png", error.message
+    end
+
     def test_validate_chunks
       assert_nil Uploader::Validator.validate_chunks!(chunk_size_mb: 0.0625, concurrency: 1)
     end

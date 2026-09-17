@@ -2,7 +2,7 @@
 
 Media uploads for the [`x` gem](https://github.com/sferik/x-ruby), built on the HTTP client in [`x-core`](https://github.com/sferik/x-ruby/tree/main/x-core).
 
-* `X::Uploader::Media` uploads images, GIFs, videos, and subtitles. Large files are split into chunks that upload in parallel, with retries, and processing can be awaited.
+* `X::Uploader::Media` uploads images, GIFs, videos, and subtitles. Videos and subtitles are split into chunks that upload in parallel, with retries, and processing can be awaited.
 * `X::Uploader::Account` updates the authenticated user's profile image and banner through the v1.1 API.
 
 Installing [`x`](https://rubygems.org/gems/x) installs this gem too.
@@ -30,6 +30,10 @@ X::Uploader::Account.update_profile_image("avatar.png", client:)
 ```
 
 `upload` infers the media category from the file. A GIF with a single frame is an image, because X processes only animated GIFs as GIFs, and `X::Uploader::Gif.animated?` tells the two apart. Videos are MP4, QuickTime, WebM, or MPEG-TS files and subtitles are SubRip (`.srt`) or WebVTT (`.vtt`) files, each uploaded in chunks as the type its extension names.
+
+A chunked upload sends four chunks at once, `X::Uploader::Media::DEFAULT_CONCURRENCY`, unless `concurrency:` says otherwise.
+
+The methods of `X::Uploader::Media`, `X::Uploader::Account`, and `X::Uploader::Metadata` can be called on the module, or on an instance of a class that includes it. Such a class gains the documented public methods alone, so its own methods, whatever their names, cannot change an upload.
 
 ## Development
 

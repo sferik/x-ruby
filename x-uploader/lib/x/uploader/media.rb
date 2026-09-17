@@ -8,15 +8,21 @@ require_relative "json_classes"
 require_relative "media_processing_failed"
 require_relative "media_processing_timeout"
 require_relative "metadata"
+require_relative "multipart"
+require_relative "utils"
 require_relative "validator"
 require_relative "version"
 
 module X
   module Uploader
     # Uploads media files to the X API
+    #
+    # Its methods can be called on the module, or on an instance of a class that includes it, which gains its public
+    # methods alone: what they call besides each other belongs to modules of its own, so no method the class defines
+    # under another name can change an upload.
+    #
     # @api public
     module Media
-      include Chunks
       extend self
 
       # Number of bytes per megabyte
@@ -46,6 +52,8 @@ module X
       PROCESSING_INFO_STATES = %w[failed succeeded].freeze
       # Default number of seconds await_processing waits between checks before it gives up
       DEFAULT_PROCESSING_TIMEOUT = 600
+      # Default number of chunks uploaded at once
+      DEFAULT_CONCURRENCY = 4
       # Fewest seconds to wait between checks, for a status that asks for no wait
       MIN_CHECK_AFTER_SECS = 1
       # Media categories that are uploaded in chunks and processed after the upload
@@ -81,7 +89,9 @@ module X
       # @param concurrency [Integer] the number of chunks uploaded at once
       # @return [Hash, nil] the upload response data, or the processing status of media that X processes
       # @raise [Errno::ENOENT] if the file does not exist
-      # @raise [ArgumentError] if the chunk size is not positive or the concurrency is less than one
+      # @raise [ArgumentError] if the media category is invalid, the chunk size is not positive, or the concurrency is
+      #   less than one
+      # @raise [InvalidMediaType] if media uploaded in chunks is given no media type and none can be inferred
       # @raise [MediaProcessingFailed] if the media fails to process
       # @raise [MediaProcessingTimeout] if the media is still processing after processing_timeout seconds
       # @example Upload an image
@@ -94,8 +104,13 @@ module X
         processing_timeout: DEFAULT_PROCESSING_TIMEOUT, media_type: nil, chunk_size_mb: 1, concurrency: DEFAULT_CONCURRENCY)
         Validator.validate_file_path!(file_path)
         Validator.validate_chunks!(chunk_size_mb:, concurrency:)
-        transfer(file_path, media_category, client:, processing_timeout:, media_type:, chunk_size_mb:, concurrency:)
-          .tap { |media| Metadata.add_alt_text(media, alt_text, client:) unless alt_text.nil? }
+        media = if CHUNKED_CATEGORIES.include?(media_category.downcase)
+          chunked_upload(file_path, client:, media_category:, media_type:, chunk_size_mb:, concurrency:)
+        else
+          upload_binary(File.binread(file_path), client:, media_category:)
+        end
+        media = await_processing!(media, client:, processing_timeout:) if media&.key?("processing_info")
+        media.tap { Metadata.add_alt_text(media, alt_text, client:) unless alt_text.nil? }
       end
 
       # Infer the media category of a post attachment from a file
@@ -107,7 +122,11 @@ module X
       # @return [String] tweet_gif, tweet_video for MP4, QuickTime, WebM, or MPEG-TS, subtitles for SubRip or WebVTT, or tweet_image
       # @example Infer the category of a video
       #   Uploader::Media.infer_media_category("cat.mp4") # => "tweet_video"
-      def infer_media_category(file_path) = still_gif?(file_path) ? TWEET_IMAGE : CATEGORY_MAP.fetch(extension(file_path), TWEET_IMAGE)
+      def infer_media_category(file_path)
+        category = CATEGORY_MAP.fetch(Utils.extension(file_path), TWEET_IMAGE)
+        still = category.eql?(TWEET_GIF) && File.file?(file_path) && !Gif.animated?(file_path)
+        still ? TWEET_IMAGE : category
+      end
 
       # Upload binary content to the X API
       #
@@ -122,9 +141,8 @@ module X
       def upload_binary(content, client:, media_category:)
         Validator.validate_media_category!(media_category)
         boundary = SecureRandom.hex
-        upload_body = construct_upload_body(content:, media_category: media_category.downcase, boundary:)
-        headers = {"Content-Type" => "multipart/form-data; boundary=#{boundary}"}
-        client.post("media/upload", upload_body, headers:, **JSON_CLASSES)&.fetch("data")
+        upload_body = Multipart.body("media", content, boundary:, media_category: media_category.downcase)
+        client.post("media/upload", upload_body, headers: Multipart.headers(boundary), **JSON_CLASSES)&.fetch("data")
       end
 
       # Perform a chunked upload for large files
@@ -149,8 +167,8 @@ module X
         Validator.validate_media_category!(media_category)
         Validator.validate_chunks!(chunk_size_mb:, concurrency:)
         media_type ||= infer_media_type(file_path, media_category)
-        media = init(client:, file_path:, media_type:, media_category: media_category.downcase)
-        append(client:, file_path:, chunk_size: (chunk_size_mb * BYTES_PER_MB).ceil, media:, boundary: SecureRandom.hex, concurrency:)
+        media = Chunks.init(client:, file_path:, media_type:, media_category: media_category.downcase)
+        Chunks.append(client:, file_path:, chunk_size: (chunk_size_mb * BYTES_PER_MB).ceil, media:, boundary: SecureRandom.hex, concurrency:)
         client.post("media/upload/#{media.fetch("id")}/finalize", **JSON_CLASSES)&.fetch("data")
       end
 
@@ -212,50 +230,11 @@ module X
       # @example Uploader::Media.infer_media_type("image.png", "tweet_image") #=> "image/png"
       # @example Uploader::Media.infer_media_type("clip.webm", "tweet_video") #=> "video/webm"
       def infer_media_type(file_path, media_category)
-        from_extension = MIME_TYPE_MAP[extension(file_path)]
+        from_extension = MIME_TYPE_MAP[Utils.extension(file_path)]
         taken = CATEGORY_MIME_TYPES.fetch(media_category.downcase, [from_extension])
         (taken.include?(from_extension) ? from_extension : taken.first) ||
           raise(InvalidMediaType, "unable to determine MIME type from file extension: #{file_path.inspect}")
       end
-
-      private
-
-      # Upload a file whole or in chunks, waiting for processing when the API reports it
-      # @api private
-      # @param file_path [String] the path to the file
-      # @param media_category [String] the media category
-      # @param client [Client] the X API client
-      # @param processing_timeout [Integer] the seconds to wait for processing
-      # @param media_type [String, nil] the MIME type of media uploaded in chunks
-      # @param chunk_size_mb [Float, Integer] the size of each chunk in megabytes
-      # @param concurrency [Integer] the number of chunks uploaded at once
-      # @return [Hash, nil] the upload response data, or the processing status
-      def transfer(file_path, media_category, client:, processing_timeout:, media_type:, chunk_size_mb:, concurrency:)
-        media = if chunked?(media_category)
-          chunked_upload(file_path, client:, media_category:, media_type:, chunk_size_mb:, concurrency:)
-        else
-          upload_binary(File.binread(file_path), client:, media_category:)
-        end
-        media&.key?("processing_info") ? await_processing!(media, client:, processing_timeout:) : media
-      end
-
-      # Check whether a media category is uploaded in chunks
-      # @api private
-      # @param media_category [String] the media category
-      # @return [Boolean] true if the category is a video or subtitles
-      def chunked?(media_category) = CHUNKED_CATEGORIES.include?(media_category.downcase)
-
-      # Check whether a file is a GIF with a single frame
-      # @api private
-      # @param file_path [String] the path to the file
-      # @return [Boolean] true if the file is a still GIF
-      def still_gif?(file_path) = extension(file_path).eql?("gif") && File.file?(file_path) && !Gif.animated?(file_path)
-
-      # The lowercase extension of a file, without its dot
-      # @api private
-      # @param file_path [String] the path to the file
-      # @return [String] the extension
-      def extension(file_path) = File.extname(file_path).delete(".").downcase
     end
   end
 end

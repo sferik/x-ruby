@@ -33,7 +33,7 @@ module X
       stub_slow_appends
       upload(chunks: 8)
 
-      assert_equal Uploader::Chunks::DEFAULT_CONCURRENCY, @most_active
+      assert_equal 4, @most_active
     end
 
     def test_starts_no_more_workers_than_chunks

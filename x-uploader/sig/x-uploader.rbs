@@ -18,18 +18,32 @@ module X
       def initialize: (Hash[String, untyped] status) -> void
     end
 
+    module Utils
+      extend Utils
+
+      def extension: (String file_path) -> String
+      def media_id: (untyped media) -> String
+    end
+
+    module Multipart
+      extend Multipart
+
+      def headers: (String boundary) -> Hash[String, String]
+      def body: (String name, String content, boundary: String, **untyped fields) -> String
+    end
+
     module Chunks
       MAX_ATTEMPTS: Integer
-      DEFAULT_CONCURRENCY: Integer
       RETRY_BACKOFF: Integer
+      extend Chunks
+
+      def init: (client: Client, file_path: String, media_type: String, media_category: String) -> untyped
+      def append: (client: Client, file_path: String, chunk_size: Integer, media: untyped, boundary: String, concurrency: Integer) -> void
 
       private
-      def init: (client: Client, file_path: String, media_type: String, media_category: String) -> untyped
-      def append: (client: Client, file_path: String, chunk_size: Integer, media: untyped, boundary: String, ?concurrency: Integer) -> void
       def chunk_queue: (String file_path, Integer chunk_size) -> Thread::Queue
       def append_worker: (Thread::Queue queue, Thread::Queue errors, client: Client, file_path: String, chunk_size: Integer, media_id: String, boundary: String) -> Thread
       def upload_chunk: (client: Client, media_id: String, upload_body: String, headers: Hash[String, String]) -> untyped
-      def construct_upload_body: (content: String, boundary: String, ?media_category: String?, ?segment_index: Integer?) -> String
     end
 
     module Media
@@ -63,12 +77,12 @@ module X
       SUBTITLES_MIME_TYPES: Array[String]
       PROCESSING_INFO_STATES: Array[String]
       DEFAULT_PROCESSING_TIMEOUT: Integer
+      DEFAULT_CONCURRENCY: Integer
       MIN_CHECK_AFTER_SECS: Integer
       VIDEO_CATEGORIES: Array[String]
       CHUNKED_CATEGORIES: Array[String]
       CATEGORY_MAP: Hash[String, String]
       CATEGORY_MIME_TYPES: Hash[String, Array[String]]
-      include Chunks
       extend Media
 
       def upload: (String file_path, client: Client, ?media_category: String, ?alt_text: String?, ?processing_timeout: Integer, ?media_type: String?, ?chunk_size_mb: Float | Integer, ?concurrency: Integer) -> untyped
@@ -78,12 +92,6 @@ module X
       def await_processing: (untyped media, client: Client, ?processing_timeout: Integer) -> untyped
       def await_processing!: (untyped media, client: Client, ?processing_timeout: Integer) -> untyped
       def infer_media_type: (String file_path, String media_category) -> String
-
-      private
-      def transfer: (String file_path, String media_category, client: Client, processing_timeout: Integer, media_type: String?, chunk_size_mb: Float | Integer, concurrency: Integer) -> untyped
-      def chunked?: (String media_category) -> bool
-      def still_gif?: (String file_path) -> bool
-      def extension: (String file_path) -> String
     end
 
     module Gif
@@ -108,9 +116,6 @@ module X
 
       def add_alt_text: (untyped media, String text, client: Client) -> untyped
       def add_subtitles: (untyped video, untyped subtitles, String language_code, client: Client, ?display_name: String?, ?media_category: String) -> untyped
-
-      private
-      def media_id: (untyped media) -> String
     end
 
     module Validator
@@ -118,6 +123,7 @@ module X
       extend Validator
 
       def validate_file_path!: (String file_path) -> nil
+      def validate_extension!: (String file_path, Array[String] extensions) -> nil
       def validate_media_category!: (String media_category) -> nil
       def validate_chunks!: (chunk_size_mb: Float | Integer, concurrency: Integer) -> nil
     end
@@ -131,13 +137,6 @@ module X
       def update_profile_image_binary: (String content, client: Client) -> untyped
       def update_profile_banner: (String file_path, client: Client, ?width: Integer?, ?height: Integer?, ?offset_left: Integer?, ?offset_top: Integer?) -> untyped
       def update_profile_banner_binary: (String content, client: Client, ?width: Integer?, ?height: Integer?, ?offset_left: Integer?, ?offset_top: Integer?) -> untyped
-
-      private
-      def v1_client: (Client client) -> Client
-      def validate_file!: (String file_path) -> nil
-      def construct_multipart_body: (field_name: String, content: String, boundary: String) -> String
-      def construct_banner_body: (content: String, width: Integer?, height: Integer?, offset_left: Integer?, offset_top: Integer?, boundary: String) -> String
-      def multipart_field: (String name, untyped value, String boundary) -> String
     end
   end
 end

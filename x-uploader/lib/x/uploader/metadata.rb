@@ -1,5 +1,6 @@
 require "x/core"
 require_relative "json_classes"
+require_relative "utils"
 
 module X
   module Uploader
@@ -23,7 +24,7 @@ module X
       # @example Describe an uploaded image
       #   Uploader::Metadata.add_alt_text(media, "A cat asleep on a keyboard", client: client)
       def add_alt_text(media, text, client:)
-        client.post("media/metadata", {id: media_id(media), metadata: {alt_text: {text:}}}, **JSON_CLASSES)&.fetch("data")
+        client.post("media/metadata", {id: Utils.media_id(media), metadata: {alt_text: {text:}}}, **JSON_CLASSES)&.fetch("data")
       end
 
       # Attach uploaded subtitles to an uploaded video
@@ -44,17 +45,9 @@ module X
       #   video = Uploader::Media.upload("cat.mp4", client: client, media_category: "amplify_video")
       #   Uploader::Metadata.add_subtitles(video, subtitles, "EN", client: client, media_category: "AmplifyVideo")
       def add_subtitles(video, subtitles, language_code, client:, display_name: nil, media_category: SUBTITLED_MEDIA_CATEGORY)
-        track = {id: media_id(subtitles), language_code: language_code.upcase, display_name:}.compact
-        client.post("media/subtitles", {id: media_id(video), media_category:, subtitles: track}, **JSON_CLASSES)&.fetch("data")
+        track = {id: Utils.media_id(subtitles), language_code: language_code.upcase, display_name:}.compact
+        client.post("media/subtitles", {id: Utils.media_id(video), media_category:, subtitles: track}, **JSON_CLASSES)&.fetch("data")
       end
-
-      private
-
-      # The media identifier of an upload response or of an identifier
-      # @api private
-      # @param media [Hash, String, Integer] the upload response, or the media identifier
-      # @return [String] the media identifier
-      def media_id(media) = media.is_a?(Hash) ? media.fetch("id").to_s : media.to_s
     end
   end
 end

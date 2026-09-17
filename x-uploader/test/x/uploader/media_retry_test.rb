@@ -42,7 +42,7 @@ module X
         assert_raises(InternalServerError) { perform_upload }
       end
 
-      assert_requested(:post, append_url, times: Uploader::Chunks::MAX_ATTEMPTS)
+      assert_requested(:post, append_url, times: 3)
       assert_equal [1, 2], @waits
     end
 
@@ -75,7 +75,7 @@ module X
     end
 
     def perform_upload
-      Uploader::Media.stub(:sleep, ->(seconds) { @waits << seconds }) do
+      Uploader::Chunks.stub(:sleep, ->(seconds) { @waits << seconds }) do
         Uploader::Media.chunked_upload(VIDEO_FILE, client: @client, media_category: Uploader::Media::TWEET_VIDEO)
       end
     end
