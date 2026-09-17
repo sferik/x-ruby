@@ -47,28 +47,28 @@ module X
 
     # The timeout for opening connections in seconds
     # @api public
-    # @return [Integer] the timeout for opening connections in seconds
+    # @return [Integer, Float] the timeout for opening connections in seconds
     # @example Get or set the open timeout
     #   connection.open_timeout = 30
     attr_accessor :open_timeout
 
     # The timeout for reading responses in seconds
     # @api public
-    # @return [Integer] the timeout for reading responses in seconds
+    # @return [Integer, Float] the timeout for reading responses in seconds
     # @example Get or set the read timeout
     #   connection.read_timeout = 30
     attr_accessor :read_timeout
 
     # The timeout for writing requests in seconds
     # @api public
-    # @return [Integer] the timeout for writing requests in seconds
+    # @return [Integer, Float] the timeout for writing requests in seconds
     # @example Get or set the write timeout
     #   connection.write_timeout = 30
     attr_accessor :write_timeout
 
     # The IO object for debug output
     # @api public
-    # @return [IO] the IO object for debug output
+    # @return [IO, nil] the IO object for debug output, or nil for none
     # @example Get the debug output
     #   connection.debug_output
     attr_reader :debug_output
@@ -76,11 +76,11 @@ module X
     # Initialize a new connection
     #
     # @api public
-    # @param open_timeout [Integer] the timeout for opening connections in seconds
-    # @param read_timeout [Integer] the timeout for reading responses in seconds
-    # @param write_timeout [Integer] the timeout for writing requests in seconds
-    # @param debug_output [IO] the IO object for debug output
-    # @param proxy_url [String, nil] the proxy URL for requests
+    # @param open_timeout [Integer, Float] the timeout for opening connections in seconds
+    # @param read_timeout [Integer, Float] the timeout for reading responses in seconds
+    # @param write_timeout [Integer, Float] the timeout for writing requests in seconds
+    # @param debug_output [IO, nil] the IO object for debug output
+    # @param proxy_url [String, URI::Generic, nil] the proxy URL for requests
     # @return [Connection] a new connection instance
     # @example Create a connection with default settings
     #   connection = X::Connection.new

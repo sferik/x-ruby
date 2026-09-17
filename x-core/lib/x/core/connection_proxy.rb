@@ -7,7 +7,7 @@ module X
   module ConnectionProxy
     # The proxy URL for requests
     # @api public
-    # @return [String, nil] the proxy URL for requests
+    # @return [String, URI::Generic, nil] the proxy URL for requests, as it was given
     # @example Get the proxy URL
     #   connection.proxy_url
     attr_reader :proxy_url
@@ -57,7 +57,7 @@ module X
     # proxy as it was, and its message leaves out the user and password.
     #
     # @api public
-    # @param proxy_url [String, nil] the proxy URL, or nil for none
+    # @param proxy_url [String, URI::Generic, nil] the proxy URL, or nil for none
     # @return [void]
     # @raise [ArgumentError] if the proxy URL is invalid
     # @example Set the proxy URL

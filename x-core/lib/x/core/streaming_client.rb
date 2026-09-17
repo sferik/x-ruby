@@ -40,7 +40,7 @@ module X
     #
     # @api public
     # @param client [Client] the client whose credentials, base URL, and settings the stream uses
-    # @param read_timeout [Integer] the timeout for reading from a stream in seconds
+    # @param read_timeout [Integer, Float] the timeout for reading from a stream in seconds
     # @param max_reconnects [Integer, Float] the maximum number of times in a row to reconnect a stream that drops
     #   without delivering an object, or Float::INFINITY, the default, for no limit
     # @return [StreamingClient] a new instance

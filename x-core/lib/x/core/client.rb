@@ -61,11 +61,11 @@ module X
     # @param refresh_token [String, nil] the OAuth 2.0 refresh token
     # @param expires_at [Time, nil] the time the OAuth 2.0 access token expires, after which a request refreshes it
     # @param base_url [String] the base URL for API requests
-    # @param open_timeout [Integer] the timeout for opening connections in seconds
-    # @param read_timeout [Integer] the timeout for reading responses in seconds
-    # @param write_timeout [Integer] the timeout for writing requests in seconds
-    # @param debug_output [IO] the IO object for debug output
-    # @param proxy_url [String, nil] the proxy URL for requests
+    # @param open_timeout [Integer, Float] the timeout for opening connections in seconds
+    # @param read_timeout [Integer, Float] the timeout for reading responses in seconds
+    # @param write_timeout [Integer, Float] the timeout for writing requests in seconds
+    # @param debug_output [IO, nil] the IO object for debug output
+    # @param proxy_url [String, URI::Generic, nil] the proxy URL for requests
     # @param default_array_class [Class] the default class for parsing JSON arrays
     # @param default_object_class [Class] the default class for parsing JSON objects
     # @param max_redirects [Integer] the maximum number of redirects to follow
