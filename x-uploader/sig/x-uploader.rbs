@@ -76,7 +76,7 @@ module X
       def upload: (String file_path, client: Client, ?media_category: String, ?alt_text: String?, ?processing_timeout: Integer, **untyped options) -> untyped
       def infer_media_category: (String file_path) -> String
       def upload_binary: (String content, client: Client, media_category: String) -> untyped
-      def chunked_upload: (String file_path, client: Client, ?media_category: String, ?media_type: String, ?chunk_size_mb: Float | Integer, ?concurrency: Integer) -> untyped
+      def chunked_upload: (String file_path, client: Client, ?media_category: String, ?media_type: String?, ?chunk_size_mb: Float | Integer, ?concurrency: Integer) -> untyped
       def await_processing: (untyped media, client: Client, ?processing_timeout: Integer) -> untyped
       def await_processing!: (untyped media, client: Client, ?processing_timeout: Integer) -> untyped
       def infer_media_type: (String file_path, String media_category) -> String
