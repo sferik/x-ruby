@@ -130,7 +130,8 @@ module X
     # Copy the client with some of its options changed
     #
     # A copy with the same OAuth 2.0 credentials shares the client's authenticator, so that a refresh by either
-    # client reaches the other, since X accepts a refresh token once.
+    # client reaches the other, since X accepts a refresh token once. A refresh then passes the authenticator to the
+    # on_token_refresh of each client that shares it, once for each distinct callable.
     #
     # @api public
     # @param options [Hash] the options to change, as accepted by initialize
@@ -140,7 +141,7 @@ module X
     # @example Derive an app-only client from the API key and secret
     #   app_client = client.copy(access_token: nil, access_token_secret: nil)
     def copy(**options)
-      self.class.new(**credentials, **settings, **options).tap { |copy| copy.share_authenticator(authenticator) }
+      self.class.new(**credentials, **settings, **options).tap { |copy| copy.share_authenticator(authenticator, @token_refresh_clients) }
     end
 
     # Perform a GET request to the X API
@@ -231,13 +232,15 @@ module X
     #
     # @api private
     # @param other [Authenticator] the authenticator of the client this one was copied from
+    # @param clients [ObjectSpace::WeakMap] the clients that share it, held weakly, which this client joins
     # @return [void]
-    def share_authenticator(other)
+    def share_authenticator(other, clients)
       current = oauth2_authenticator_in_use
-      return unless current && other.is_a?(OAuth2Authenticator)
-      return unless oauth2_credentials_of(current).eql?(oauth2_credentials_of(other))
+      return unless current && other.is_a?(OAuth2Authenticator) && oauth2_credentials_of(current).eql?(oauth2_credentials_of(other))
 
       @authenticator = other
+      @token_refresh_clients = clients
+      clients[self] = true
     end
 
     # The OAuth 2.0 authenticator, if the client authenticates with one
@@ -260,8 +263,9 @@ module X
       refresh_token = @refresh_token
       return unless client_id && access_token && refresh_token
 
+      clients = @token_refresh_clients = ObjectSpace::WeakMap.new.tap { |registry| registry[self] = true }
       OAuth2Authenticator.new(client_id:, client_secret: @client_secret, access_token:, refresh_token:, expires_at: @expires_at,
-        connection: @connection, on_refresh: ->(authenticator) { on_token_refresh&.call(authenticator) })
+        connection: @connection, on_refresh: ->(authenticator) { clients.keys.filter_map(&:on_token_refresh).uniq.each { |hook| hook.call(authenticator) } })
     end
 
     private

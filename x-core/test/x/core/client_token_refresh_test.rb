@@ -200,6 +200,25 @@ module X
       assert_equal %w[NEW_REFRESH_TOKEN NEW_REFRESH_TOKEN], [client.refresh_token, copy.refresh_token]
     end
 
+    def test_a_refresh_calls_the_hook_of_each_client_that_shares_the_authenticator_once
+      refreshed = []
+      hook = ->(authenticator) { refreshed << [:client, authenticator.refresh_token] }
+      client = Client.new(**test_oauth2_credentials, on_token_refresh: hook)
+      copies = [client.copy(on_token_refresh: ->(authenticator) { refreshed << [:copy, authenticator.refresh_token] }), client.copy]
+      copies.first.authenticator.refresh_token!
+
+      assert_equal [[:client, "NEW_REFRESH_TOKEN"], [:copy, "NEW_REFRESH_TOKEN"]], refreshed.sort
+    end
+
+    def test_a_copy_joins_the_clients_that_share_the_authenticator
+      client = Client.new(**test_oauth2_credentials)
+      copy = client.copy
+      clients = client.instance_variable_get(:@token_refresh_clients)
+
+      assert_same clients, copy.instance_variable_get(:@token_refresh_clients)
+      assert_equal [true, true], [clients[client], clients[copy]]
+    end
+
     def test_a_copy_shares_a_subclass_of_the_oauth2_authenticator
       client = Client.new(**test_oauth2_credentials)
       authenticator = Class.new(OAuth2Authenticator).new(**test_oauth2_credentials)

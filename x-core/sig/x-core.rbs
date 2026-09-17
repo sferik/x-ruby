@@ -465,6 +465,11 @@ module X
     def update_tokens: (SimpleOAuth::OAuth2::Token token) -> void
   end
 
+  interface _ClientRegistry
+    def []=: (Client client, bool shared) -> bool
+    def keys: () -> Array[Client]
+  end
+
   interface _TokenRefreshHook
     def call: (OAuth2Authenticator authenticator) -> untyped
   end
@@ -598,6 +603,7 @@ module X
     @redirect_handler: RedirectHandler
     @rate_limit_handler: RateLimitHandler
     @response_parser: ResponseParser
+    @token_refresh_clients: _ClientRegistry
     @client_id: String?
     @client_secret: String?
     @access_token: String?
@@ -614,7 +620,7 @@ module X
     def put: (String endpoint, ?body? body, ?params: params?, ?form: params?, ?headers: Hash[String, String], ?array_class: Class, ?object_class: Class) -> untyped
     def delete: (String endpoint, ?params: params?, ?headers: Hash[String, String], ?array_class: Class, ?object_class: Class) -> untyped
     def streaming: (**untyped options) -> StreamingClient
-    def share_authenticator: (Authenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator other) -> void
+    def share_authenticator: (Authenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator other, _ClientRegistry clients) -> void
     def oauth2_authenticator_in_use: () -> OAuth2Authenticator?
     def oauth2_authenticator: -> OAuth2Authenticator?
 
