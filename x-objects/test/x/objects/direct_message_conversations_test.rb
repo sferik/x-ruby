@@ -45,8 +45,8 @@ module X
       assert_nil DirectMessage.create_in("9-8", "Hi", client: @client)
     end
 
-    def test_in_conversation
-      cursor = DirectMessage.in_conversation(DirectMessage.new({"id" => "1", "dm_conversation_id" => "1582838223204016129"}), client: @client, event_types: "MessageCreate")
+    def test_in
+      cursor = DirectMessage.in(DirectMessage.new({"id" => "1", "dm_conversation_id" => "1582838223204016129"}), client: @client, event_types: "MessageCreate")
 
       assert_equal ["dm_conversations/1582838223204016129/dm_events", DirectMessage, 100, "MessageCreate"],
         [cursor.path, cursor.klass, cursor.params["max_results"], cursor.params["event_types"]]
@@ -54,18 +54,18 @@ module X
     end
 
     def test_in_a_group_conversation_by_integer_identifier
-      assert_equal "dm_conversations/1582838223204016129/dm_events", DirectMessage.in_conversation(1_582_838_223_204_016_129, client: @client).path
+      assert_equal "dm_conversations/1582838223204016129/dm_events", DirectMessage.in(1_582_838_223_204_016_129, client: @client).path
     end
 
-    def test_in_conversation_takes_a_page_size
-      assert_equal 10, DirectMessage.in_conversation("9-8", client: @client, max_results: 10).params["max_results"]
+    def test_in_takes_a_page_size
+      assert_equal 10, DirectMessage.in("9-8", client: @client, max_results: 10).params["max_results"]
     end
 
     def test_a_conversation_that_is_not_one_is_refused
-      error = assert_raises(ArgumentError) { DirectMessage.in_conversation("sferik", client: @client) }
+      error = assert_raises(ArgumentError) { DirectMessage.in("sferik", client: @client) }
 
       assert_equal "\"sferik\" is not a conversation: pass a direct message or a conversation identifier", error.message
-      assert_raises(ArgumentError) { DirectMessage.in_conversation(DirectMessage.new({"id" => "1"}), client: @client) }
+      assert_raises(ArgumentError) { DirectMessage.in(DirectMessage.new({"id" => "1"}), client: @client) }
     end
 
     def test_a_conversation_identifier_must_be_whole

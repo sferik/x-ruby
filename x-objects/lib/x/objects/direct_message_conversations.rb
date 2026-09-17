@@ -50,8 +50,8 @@ module X
       # @return [Cursor] a cursor over the events
       # @raise [ArgumentError] if the conversation identifier is not one
       # @example Print the conversation a message belongs to
-      #   X::DirectMessage.in_conversation(message, client: client).each { |event| puts event.text }
-      def in_conversation(conversation, client:, **params)
+      #   X::DirectMessage.in(message, client: client).each { |event| puts event.text }
+      def in(conversation, client:, **params)
         path = "dm_conversations/#{conversation_id_of(conversation)}/dm_events"
         Cursor.new(DirectMessage, path, client:, params: {max_results: DirectMessage::MAX_RESULTS}.merge(params))
       end

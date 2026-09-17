@@ -291,7 +291,7 @@ module X
 
       def create_group: (Array[id] users, String text, client: _Client, **untyped params) -> DirectMessage?
       def create_in: (DirectMessage | String | Integer conversation, String text, client: _Client, **untyped params) -> DirectMessage?
-      def in_conversation: (DirectMessage | String | Integer conversation, client: _Client, **untyped params) -> Cursor
+      def `in`: (DirectMessage | String | Integer conversation, client: _Client, **untyped params) -> Cursor
 
       private
       def conversation_id_of: (DirectMessage | String | Integer conversation) -> String

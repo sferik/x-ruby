@@ -66,7 +66,7 @@ module X
           # @example Print the conversation a message belongs to
           #   client.direct_messages_in(message).each { |event| puts event.text }
           def direct_messages_in(conversation, **params)
-            DirectMessage.in_conversation(conversation, client: self, **params)
+            DirectMessage.in(conversation, client: self, **params)
           end
 
           alias_method :find_dm, :find_direct_message
