@@ -166,7 +166,8 @@ module X
     # Iterating a cursor requests the largest page an endpoint allows, which costs the least in requests.
     # The API bills each resource returned, so first asks for a page of the size it needs instead, raised to
     # the endpoint's minimum, and each page after the first asks for no more than the pages before it left.
-    # A page of the cursor's own size reuses its cache.
+    # A page of the cursor's own size reuses its cache. The API may serve an empty page with the token of the next,
+    # having left out what it filters, such as suspended users, so first reads on until it finds a resource.
     #
     # @api public
     # @param count [Integer, nil] the number of resources, or nil for the first resource alone
@@ -174,7 +175,7 @@ module X
     # @example Read ten followers in one request for ten users
     #   user.followers.first(10)
     def first(count = nil)
-      cursor = sized(count.to_i)
+      cursor = sized(count || 1)
       count.nil? ? Enumerable.instance_method(:first).bind_call(cursor) : Enumerable.instance_method(:first).bind_call(cursor, count)
     end
 

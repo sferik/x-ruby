@@ -137,6 +137,7 @@ See [UPGRADING.md](https://github.com/sferik/x-ruby/blob/main/UPGRADING.md) for 
 * Remove the setters of `X::RateLimit`, `X::BearerTokenAuthenticator`, `X::OAuth1Authenticator`, and `X::OAuth2Authenticator`, whose attributes are now read-only; change a credential with the setters of `X::Client`, which build a new authenticator, and a token refresh replaces the tokens of an OAuth 2.0 authenticator under its lock
 
 ### Fixed
+* Read past an empty page that names a next page in `X::Cursor#first`, `any?`, `none?`, and `empty?`, since the API can serve such a page when it filters what it returns, such as suspended users, instead of reporting an empty collection after one request
 * Parse the responses of the uploaders into Hashes and Arrays whatever the `default_object_class` and `default_array_class` of the client, so a client that defaults to another class, such as `OpenStruct`, uploads media, adds metadata, and updates a profile image or banner instead of raising `NoMethodError`
 * Call `on_token_refresh`, and the `on_refresh` of `X::OAuth2Authenticator`, once the refresh releases its lock, so the callable can send a request with the client, such as looking up the user whose tokens it stores, rather than raise `ThreadError` for recursive locking
 * Resolve a relative redirect against the URL of the request it redirects, rather than the base URL, so a redirect from a request to another host, such as `upload.x.com`, stays on that host with its credentials
