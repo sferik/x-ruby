@@ -63,7 +63,7 @@ user.name                              # => "Erik Berlin"
 user.followers_count                   # => 12345
 
 post = x_client.find_post(1234567890)  # X::Post
-post.text
+post.text                              # the full text, even of a post longer than 280 characters
 post.created_at                        # => 2026-09-11 12:00:00 UTC
 ```
 

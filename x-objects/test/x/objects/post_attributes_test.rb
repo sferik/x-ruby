@@ -10,7 +10,7 @@ module X
              "entities" => {"urls" => []}, "context_annotations" => [{"domain" => {}}],
              "referenced_posts" => [{"type" => "replied_to", "id" => "5"}],
              "attachments" => {"media_keys" => ["3_1"], "poll_ids" => ["7"]}, "geo" => {"place_id" => "p1"},
-             "withheld" => {"copyright" => true}, "note_post" => {"text" => "long"},
+             "withheld" => {"copyright" => true},
              "public_metrics" => {"repost_count" => 1, "reply_count" => 2, "like_count" => 3, "quote_count" => 4,
                                   "bookmark_count" => 5, "impression_count" => 6}}.freeze
 
@@ -62,7 +62,7 @@ module X
     end
 
     def test_note_and_metrics_hash
-      assert_equal({"text" => "long"}, @post.note_post)
+      assert_equal({"text" => "long"}, Post.new({"id" => "1", "note_post" => {"text" => "long"}}).note_post)
       assert_equal 1, @post.public_metrics["repost_count"]
       assert_equal [{"type" => "replied_to", "id" => "5"}], @post.referenced_posts
       assert_equal @post.referenced_posts, @post.referenced_tweets
@@ -84,7 +84,7 @@ module X
     def test_tweet_aliases
       assert_equal 1, @post.retweet_count
       assert_equal [1], @post.edit_history_tweet_ids
-      assert_equal({"text" => "long"}, @post.note_tweet)
+      assert_equal({"text" => "long"}, Post.new({"id" => "1", "note_post" => {"text" => "long"}}).note_tweet)
     end
 
     def test_more_metrics

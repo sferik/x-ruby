@@ -42,6 +42,21 @@ module X
       assert_nil Post.new({"id" => "1", "entities" => {"urls" => [LINK]}}).expanded_text
     end
 
+    def test_a_long_post_reads_its_full_text_and_entities_from_its_note
+      note = {"text" => "A long post that links https://t.co/abc", "entities" => {"urls" => [LINK]}}
+      post = Post.new({"id" => "1", "text" => "A long post… https://t.co/xyz", "entities" => {"urls" => [{"url" => "https://t.co/xyz"}]}, "note_post" => note})
+
+      assert_equal ["A long post that links https://t.co/abc", note["entities"], [LINK]], [post.text, post.entities, post.urls]
+      assert_equal "A long post that links https://github.com/sferik/x-ruby", post.expanded_text
+      assert_equal({text: note["text"], urls: [LINK]}, post.deconstruct_keys(%i[text urls]))
+    end
+
+    def test_a_long_post_without_entities_in_its_note_has_none
+      post = Post.new({"id" => "1", "text" => "A long post…", "entities" => {"urls" => [LINK]}, "note_post" => {"text" => "A long post"}})
+
+      assert_equal ["A long post", nil, nil], [post.text, post.entities, post.urls]
+    end
+
     def test_expanded_text_uses_only_the_links_of_the_post_itself
       includes = Objects::Includes.new({"posts" => [{"id" => "2", "text" => "See https://t.co/abc", "entities" => {"urls" => [LINK]}}]})
       post = Post.new({"id" => "1", "text" => "RT @sferik: See https://t.co/abc", "referenced_posts" => [{"type" => "reposted", "id" => "2"}]}, includes:)

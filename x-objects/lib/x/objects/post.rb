@@ -124,13 +124,16 @@ module X
       end
     end
 
-    # @!attribute [r] text
-    #   The text
-    #   @api public
-    #   @return [String, nil] the text
-    #   @example Get the text
-    #     post.text
-    attribute :text
+    # The full text
+    #
+    # A long post, of more than 280 characters, holds its full text in note_post, and a text cut short with an
+    # ellipsis and a link to the post; this reads the full text.
+    #
+    # @api public
+    # @return [String, nil] the text
+    # @example Get the text
+    #   post.text
+    def text = full["text"]
 
     # @!attribute [r] lang
     #   The BCP 47 language tag
@@ -227,21 +230,25 @@ module X
     #     post.edit_controls
     attribute :edit_controls
 
-    # @!attribute [r] entities
-    #   The entities found in the text
-    #   @api public
-    #   @return [Hash, nil] the entities
-    #   @example Get the entities
-    #     post.entities
-    attribute :entities
+    # The entities found in the full text
+    #
+    # The entities, such as links, mentions, and hashtags, come from note_post for a long post.
+    #
+    # @api public
+    # @return [Hash, nil] the entities
+    # @example Get the entities
+    #   post.entities
+    def entities = full["entities"]
 
-    # @!attribute [r] urls
-    #   The links in the text, each with its shortened url and its expanded_url
-    #   @api public
-    #   @return [Array<Hash>, nil] the links
-    #   @example Get the links
-    #     post.urls # => [{"url" => "https://t.co/...", "expanded_url" => "https://github.com/sferik/x-ruby", ...}]
-    attribute :urls, key: %w[entities urls]
+    # The links in the full text, each with its shortened url and its expanded_url
+    #
+    # @api public
+    # @return [Array<Hash>, nil] the links
+    # @example Get the links
+    #   post.urls # => [{"url" => "https://t.co/...", "expanded_url" => "https://github.com/sferik/x-ruby", ...}]
+    def urls = entities&.dig("urls")
+
+    attribute_names.push(:text, :entities, :urls)
 
     # @!attribute [r] context_annotations
     #   The context annotations
@@ -463,6 +470,16 @@ module X
     def unhide
       self.class.unhide(self, client: client!)
     end
+
+    private
+
+    # The attributes that hold the full text and its entities
+    #
+    # A long post holds them in note_post, and any other post holds them itself.
+    #
+    # @api private
+    # @return [Hash] the attributes
+    def full = note_post || attrs
   end
 
   # Alias for Post
