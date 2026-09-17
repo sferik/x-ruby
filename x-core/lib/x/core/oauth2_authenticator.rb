@@ -13,10 +13,8 @@ module X
   #
   # @api public
   class OAuth2Authenticator < Authenticator
-    # Path for the OAuth 2.0 token endpoint
-    TOKEN_PATH = "/2/oauth2/token".freeze
-    # Host for token refresh requests
-    TOKEN_HOST = "api.x.com".freeze
+    # The endpoint that refreshes an access token
+    TOKEN_URL = "https://api.x.com/2/oauth2/token".freeze
     # Buffer time in seconds to account for clock skew and network latency
     EXPIRATION_BUFFER = 30
     # The message raised when the token endpoint describes no reason for the failure
@@ -214,14 +212,7 @@ module X
     # @api private
     # @return [SimpleOAuth::OAuth2::Client] the OAuth 2.0 client
     def oauth2_client
-      SimpleOAuth::OAuth2::Client.new(client_id:, client_secret:, token_endpoint: token_endpoint)
-    end
-
-    # The URL of the token endpoint
-    # @api private
-    # @return [String] the token endpoint URL
-    def token_endpoint
-      "https://#{TOKEN_HOST}#{TOKEN_PATH}"
+      SimpleOAuth::OAuth2::Client.new(client_id:, client_secret:, token_endpoint: TOKEN_URL)
     end
 
     # Update tokens from the response

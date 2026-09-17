@@ -6,10 +6,6 @@ module X
   # Authenticator for OAuth 1.0a authentication
   # @api public
   class OAuth1Authenticator < Authenticator
-    # OAuth version
-    OAUTH_VERSION = SimpleOAuth::Header::OAUTH_VERSION
-    # OAuth signature method
-    OAUTH_SIGNATURE_METHOD = SimpleOAuth::Header::DEFAULT_SIGNATURE_METHOD
     # The media type whose body OAuth 1.0a signs as request parameters
     FORM_CONTENT_TYPE = "application/x-www-form-urlencoded".freeze
 

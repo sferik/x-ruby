@@ -83,8 +83,6 @@ module X
   end
 
   class OAuth1Authenticator < Authenticator
-    OAUTH_VERSION: String
-    OAUTH_SIGNATURE_METHOD: String
     FORM_CONTENT_TYPE: String
 
     attr_reader api_key: String
@@ -436,8 +434,7 @@ module X
 
 
   class OAuth2Authenticator < Authenticator
-    TOKEN_PATH: String
-    TOKEN_HOST: String
+    TOKEN_URL: String
     EXPIRATION_BUFFER: Integer
     DEFAULT_ERROR_MESSAGE: String
 
@@ -461,7 +458,6 @@ module X
     def refresh: -> Hash[String, untyped]
     def report_refresh: -> void
     def oauth2_client: -> SimpleOAuth::OAuth2::Client
-    def token_endpoint: -> String
     def update_tokens: (SimpleOAuth::OAuth2::Token token) -> void
   end
 

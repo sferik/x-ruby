@@ -121,12 +121,13 @@ See [UPGRADING.md](https://github.com/sferik/x-ruby/blob/main/UPGRADING.md) for 
 * Make `attribute`, `reference`, and `references`, the class macros that declare what a resource reads, private, and mark `endpoint`, `endpoint!`, `id_key`, `id_type`, `includes_key`, `fields_key`, and `hydratable?`, which name the API's endpoints and keys for each resource class, as `@api private`, so that they can change within 1.x
 * Make `X::Objects::Resource#includes` private, and document the `includes:`, `hydrated:`, and `batch:` of `X::Objects::Resource.new` and `from_id` and the `limit:` and `total:` of `X::Cursor.new` as internal to the object layer, so that they can change within 1.x
 * Mark `X::Uploader::Validator` as `@api private`, and make the MIME type and media category tables of `X::Uploader::Media`, the block constants of `X::Uploader::Gif`, and `X::Uploader::JSON_CLASSES` private constants, so that they can change within 1.x
+* Name the token endpoint of `X::OAuth2Authenticator` `TOKEN_URL`, as `X::AppOnlyAuthenticator` and `X::OAuth2Authorization` name theirs, in place of `TOKEN_HOST` and `TOKEN_PATH`
 ### Removed
 * Remove `X::Uploader::Account::MIME_TYPE_MAP`, which nothing read
 * Remove the `boundary:` of the upload methods of `X::Uploader::Media` and `X::Uploader::Account`, which each upload now generates for itself, since a caller has no reason to choose the boundary of a multipart body
 * Make `X::HTTPError#error_message`, `#message_from_json_response`, and `#json?` private; they build the message an error is initialized with, which `message` returns
 * Remove `require "x/media_uploader"` and `require "x/account_uploader"`; require `x`, `x/uploader/media`, or `x/uploader/account` instead
-* Remove `X::OAuthAuthenticator::OAUTH_SIGNATURE_ALGORITHM`, which named the digest of the signing code that is gone
+* Remove `X::OAuthAuthenticator::OAUTH_SIGNATURE_ALGORITHM`, which named the digest of the signing code that is gone, and `OAUTH_VERSION` and `OAUTH_SIGNATURE_METHOD`, which nothing read once simple_oauth signed requests
 * Remove `X::OAuth2Authenticator::REFRESH_GRANT_TYPE`, which named the grant type simple_oauth now sends
 * Remove the `base64` dependency from `x-core`, which encodes no Base64 of its own now that simple_oauth builds the Basic credentials
 * Remove the setters of `X::RateLimit`, `X::BearerTokenAuthenticator`, `X::OAuth1Authenticator`, and `X::OAuth2Authenticator`, whose attributes are now read-only; change a credential with the setters of `X::Client`, which build a new authenticator, and a token refresh replaces the tokens of an OAuth 2.0 authenticator under its lock
