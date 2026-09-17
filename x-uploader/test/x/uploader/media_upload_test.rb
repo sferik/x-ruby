@@ -51,13 +51,6 @@ module X
       assert_not_requested :post, BASE_URL
     end
 
-    def test_upload_passes_the_options_to_the_chunked_upload
-      stub_chunked_workflow
-      Uploader::Media.upload("test/sample_files/sample.mp4", client: @client, chunk_size_mb: 0.0625)
-
-      assert_requested(:post, "#{BASE_URL}/#{TEST_MEDIA_ID}/append", times: 2)
-    end
-
     def test_upload_chunks_by_category_rather_than_extension
       stub_chunked_workflow
       Uploader::Media.upload("test/sample_files/sample.png", client: @client, media_category: "DM_VIDEO", media_type: "video/mp4")

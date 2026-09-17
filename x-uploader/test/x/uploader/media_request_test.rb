@@ -46,6 +46,17 @@ module X
       assert_not_requested(:post, UPLOAD_URL)
     end
 
+    def test_upload_rejects_an_unknown_option
+      assert_raises(ArgumentError) { Uploader::Media.upload(GIF_FILE, client: @client, chunk_size: 1) }
+      assert_not_requested(:post, UPLOAD_URL)
+    end
+
+    def test_upload_rejects_invalid_chunk_options_for_media_it_uploads_whole
+      assert_raises(ArgumentError) { Uploader::Media.upload(GIF_FILE, client: @client, media_category: "tweet_image", chunk_size_mb: 0) }
+      assert_raises(ArgumentError) { Uploader::Media.upload(GIF_FILE, client: @client, media_category: "tweet_image", concurrency: 0) }
+      assert_not_requested(:post, UPLOAD_URL)
+    end
+
     def test_upload_rejects_missing_file_before_reading_it
       error = assert_raises(Errno::ENOENT) { Uploader::Media.upload("nope.jpg", client: @client, media_category: "tweet_image") }
 

@@ -76,9 +76,12 @@ module X
       # @param media_category [String] the media category, inferred from the file by default
       # @param alt_text [String, nil] alt text describing the media, for people who cannot see it
       # @param processing_timeout [Integer] the seconds to wait for media, such as a video or an animated GIF, to process
-      # @param options [Hash] options for a chunked upload, such as media_type, chunk_size_mb, and concurrency
+      # @param media_type [String, nil] the MIME type of media uploaded in chunks, inferred from the file and category when nil
+      # @param chunk_size_mb [Float, Integer] the size of each chunk of media uploaded in chunks, in megabytes
+      # @param concurrency [Integer] the number of chunks uploaded at once
       # @return [Hash, nil] the upload response data, or the processing status of media that X processes
       # @raise [Errno::ENOENT] if the file does not exist
+      # @raise [ArgumentError] if the chunk size is not positive or the concurrency is less than one
       # @raise [MediaProcessingFailed] if the media fails to process
       # @raise [MediaProcessingTimeout] if the media is still processing after processing_timeout seconds
       # @example Upload an image
@@ -88,9 +91,10 @@ module X
       # @example Upload a video and wait until it can be attached to a post
       #   Uploader::Media.upload("video.mp4", client: client)
       def upload(file_path, client:, media_category: infer_media_category(file_path), alt_text: nil,
-        processing_timeout: DEFAULT_PROCESSING_TIMEOUT, **options)
+        processing_timeout: DEFAULT_PROCESSING_TIMEOUT, media_type: nil, chunk_size_mb: 1, concurrency: Chunks::DEFAULT_CONCURRENCY)
         Validator.validate_file_path!(file_path)
-        transfer(file_path, media_category, client:, processing_timeout:, **options)
+        Validator.validate_chunks!(chunk_size_mb:, concurrency:)
+        transfer(file_path, media_category, client:, processing_timeout:, media_type:, chunk_size_mb:, concurrency:)
           .tap { |media| Metadata.add_alt_text(media, alt_text, client:) unless alt_text.nil? }
       end
 
@@ -222,11 +226,13 @@ module X
       # @param media_category [String] the media category
       # @param client [Client] the X API client
       # @param processing_timeout [Integer] the seconds to wait for processing
-      # @param options [Hash] options for a chunked upload
+      # @param media_type [String, nil] the MIME type of media uploaded in chunks
+      # @param chunk_size_mb [Float, Integer] the size of each chunk in megabytes
+      # @param concurrency [Integer] the number of chunks uploaded at once
       # @return [Hash, nil] the upload response data, or the processing status
-      def transfer(file_path, media_category, client:, processing_timeout:, **options)
+      def transfer(file_path, media_category, client:, processing_timeout:, media_type:, chunk_size_mb:, concurrency:)
         media = if chunked?(media_category)
-          chunked_upload(file_path, client:, media_category:, **options)
+          chunked_upload(file_path, client:, media_category:, media_type:, chunk_size_mb:, concurrency:)
         else
           upload_binary(File.binread(file_path), client:, media_category:)
         end
