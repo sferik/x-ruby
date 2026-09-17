@@ -24,7 +24,7 @@ module X
       # Update the authenticating user's profile image
       #
       # @api public
-      # @param file_path [String] the path to the image file
+      # @param file_path [String, Pathname] the path to the image file
       # @param client [Client] the X API client
       # @return [Hash, nil] the updated user object
       # @raise [Errno::ENOENT] if the file does not exist
@@ -55,7 +55,7 @@ module X
       # Update the authenticating user's profile banner
       #
       # @api public
-      # @param file_path [String] the path to the image file
+      # @param file_path [String, Pathname] the path to the image file
       # @param client [Client] the X API client
       # @param width [Integer, nil] the width of the banner
       # @param height [Integer, nil] the height of the banner

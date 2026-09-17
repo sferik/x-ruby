@@ -12,7 +12,7 @@ module X
       # The lowercase extension of a file, without its dot
       #
       # @api private
-      # @param file_path [String] the path to the file
+      # @param file_path [String, Pathname] the path to the file
       # @return [String] the extension
       # @example The extension of a file
       #   Uploader::Utils.extension("cat.JPG") # => "jpg"

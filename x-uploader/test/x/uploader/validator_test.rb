@@ -15,6 +15,16 @@ module X
       assert_equal "No such file or directory - bad/path", error.message
     end
 
+    def test_validate_file_path_of_a_pathname
+      assert_nil Uploader::Validator.validate_file_path!(Pathname("test/sample_files/sample.jpg"))
+    end
+
+    def test_validate_file_path_raises_for_a_missing_pathname
+      error = assert_raises(Errno::ENOENT) { Uploader::Validator.validate_file_path!(Pathname("bad/path")) }
+
+      assert_equal "No such file or directory - bad/path", error.message
+    end
+
     def test_validate_extension
       assert_nil Uploader::Validator.validate_extension!("avatar.png", %w[jpg png])
     end

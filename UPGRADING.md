@@ -76,7 +76,7 @@ X::Uploader::Account.update_profile_image_binary(content, client:)
 X::Uploader::Account.update_profile_banner_binary(content, client:)
 ```
 
-`upload` infers the media category from the file, and still takes `media_category:`. No upload method takes `boundary:`, since each upload generates the boundary of its multipart body. `upload_binary` takes the content as a positional argument and requires `media_category:`, and `await_processing` and `await_processing!` take the media as one: the response of an upload, or a media identifier. A class that includes `X::Uploader::Media` gains its public methods alone: the private methods it used to gain, such as `init`, `append`, and `construct_upload_body`, belong to private modules now.
+`upload` infers the media category from the file, and still takes `media_category:`. No upload method takes `boundary:`, since each upload generates the boundary of its multipart body. `upload_binary` takes the content as a positional argument and requires `media_category:`, and `await_processing` and `await_processing!` take the media as one: the response of an upload, or a media identifier. Every method that takes a file takes a `String` or a `Pathname`. A class that includes `X::Uploader::Media` gains its public methods alone: the private methods it used to gain, such as `init`, `append`, and `construct_upload_body`, belong to private modules now.
 
 `upload` returns the processing status of media that X processes, such as a video or an animated GIF, rather than the response of the upload; both hold the media's `"id"`. The uploaders return Hashes and Arrays whatever the `default_object_class` and `default_array_class` of the client, where 0.19 parsed their responses with the client's classes.
 

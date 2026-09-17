@@ -69,5 +69,11 @@ module X
 
       assert_equal 'unable to determine MIME type from file extension: "/tmp/tempfile123"', error.message
     end
+
+    def test_unknown_extension_message_of_a_pathname
+      error = assert_raises(Uploader::InvalidMediaType) { Uploader::Media.infer_media_type(Pathname("/tmp/tempfile123"), "tweet_image") }
+
+      assert_equal 'unable to determine MIME type from file extension: "/tmp/tempfile123"', error.message
+    end
   end
 end

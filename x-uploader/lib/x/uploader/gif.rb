@@ -18,7 +18,7 @@ module X
       # Check whether a GIF file holds more than one frame
       #
       # @api public
-      # @param file_path [String] the path to the GIF file
+      # @param file_path [String, Pathname] the path to the GIF file
       # @return [Boolean] true if the GIF has a second frame
       # @example Check whether a GIF is animated
       #   Uploader::Gif.animated?("cat.gif") # => true

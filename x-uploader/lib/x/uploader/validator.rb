@@ -17,19 +17,19 @@ module X
       # Validate that a file path exists
       #
       # @api private
-      # @param file_path [String] the file path to validate
+      # @param file_path [String, Pathname] the file path to validate
       # @return [void]
       # @raise [Errno::ENOENT] if the file does not exist
       # @example Validate a file path
       #   Uploader::Validator.validate_file_path!("image.png")
       def validate_file_path!(file_path)
-        raise Errno::ENOENT, file_path unless File.exist?(file_path)
+        raise Errno::ENOENT, File.path(file_path) unless File.exist?(file_path)
       end
 
       # Validate that a file has one of the extensions an upload supports
       #
       # @api private
-      # @param file_path [String] the file path to validate
+      # @param file_path [String, Pathname] the file path to validate
       # @param extensions [Array<String>] the supported extensions, in lowercase and without a dot
       # @return [void]
       # @raise [InvalidMediaType] if the extension of the file is not supported

@@ -21,7 +21,7 @@ module X
     module Utils
       extend Utils
 
-      def extension: (String file_path) -> String
+      def extension: (path file_path) -> String
       def media_id: (untyped media) -> String
     end
 
@@ -37,12 +37,12 @@ module X
       RETRY_BACKOFF: Integer
       extend Chunks
 
-      def init: (client: Client, file_path: String, media_type: String, media_category: String) -> untyped
-      def append: (client: Client, file_path: String, chunk_size: Integer, media: untyped, boundary: String, concurrency: Integer) -> void
+      def init: (client: Client, file_path: path, media_type: String, media_category: String) -> untyped
+      def append: (client: Client, file_path: path, chunk_size: Integer, media: untyped, boundary: String, concurrency: Integer) -> void
 
       private
-      def chunk_queue: (String file_path, Integer chunk_size) -> Thread::Queue
-      def append_worker: (Thread::Queue queue, Thread::Queue errors, client: Client, file_path: String, chunk_size: Integer, media_id: String, boundary: String) -> Thread
+      def chunk_queue: (path file_path, Integer chunk_size) -> Thread::Queue
+      def append_worker: (Thread::Queue queue, Thread::Queue errors, client: Client, file_path: path, chunk_size: Integer, media_id: String, boundary: String) -> Thread
       def upload_chunk: (client: Client, media_id: String, upload_body: String, headers: Hash[String, String]) -> untyped
     end
 
@@ -85,13 +85,13 @@ module X
       CATEGORY_MIME_TYPES: Hash[String, Array[String]]
       extend Media
 
-      def upload: (String file_path, client: Client, ?media_category: String, ?alt_text: String?, ?processing_timeout: Integer, ?media_type: String?, ?chunk_size_mb: Float | Integer, ?concurrency: Integer) -> untyped
-      def infer_media_category: (String file_path) -> String
+      def upload: (path file_path, client: Client, ?media_category: String, ?alt_text: String?, ?processing_timeout: Integer, ?media_type: String?, ?chunk_size_mb: Float | Integer, ?concurrency: Integer) -> untyped
+      def infer_media_category: (path file_path) -> String
       def upload_binary: (String content, client: Client, media_category: String) -> untyped
-      def chunked_upload: (String file_path, client: Client, ?media_category: String, ?media_type: String?, ?chunk_size_mb: Float | Integer, ?concurrency: Integer) -> untyped
+      def chunked_upload: (path file_path, client: Client, ?media_category: String, ?media_type: String?, ?chunk_size_mb: Float | Integer, ?concurrency: Integer) -> untyped
       def await_processing: (Hash[String, untyped] | String | Integer media, client: Client, ?processing_timeout: Integer) -> untyped
       def await_processing!: (Hash[String, untyped] | String | Integer media, client: Client, ?processing_timeout: Integer) -> untyped
-      def infer_media_type: (String file_path, String media_category) -> String
+      def infer_media_type: (path file_path, String media_category) -> String
     end
 
     module Gif
@@ -101,7 +101,7 @@ module X
       IMAGE_DESCRIPTOR_SIZE: Integer
       extend Gif
 
-      def animated?: (String file_path) -> bool
+      def animated?: (path file_path) -> bool
 
       private
       def after_block: (String data, Integer position, Integer block) -> Integer
@@ -122,8 +122,8 @@ module X
       MEDIA_CATEGORIES: Array[String]
       extend Validator
 
-      def validate_file_path!: (String file_path) -> nil
-      def validate_extension!: (String file_path, Array[String] extensions) -> nil
+      def validate_file_path!: (path file_path) -> nil
+      def validate_extension!: (path file_path, Array[String] extensions) -> nil
       def validate_media_category!: (String media_category) -> nil
       def validate_chunks!: (chunk_size_mb: Float | Integer, concurrency: Integer) -> nil
     end
@@ -133,9 +133,9 @@ module X
       SUPPORTED_EXTENSIONS: Array[String]
       extend Account
 
-      def update_profile_image: (String file_path, client: Client) -> untyped
+      def update_profile_image: (path file_path, client: Client) -> untyped
       def update_profile_image_binary: (String content, client: Client) -> untyped
-      def update_profile_banner: (String file_path, client: Client, ?width: Integer?, ?height: Integer?, ?offset_left: Integer?, ?offset_top: Integer?) -> untyped
+      def update_profile_banner: (path file_path, client: Client, ?width: Integer?, ?height: Integer?, ?offset_left: Integer?, ?offset_top: Integer?) -> untyped
       def update_profile_banner_binary: (String content, client: Client, ?width: Integer?, ?height: Integer?, ?offset_left: Integer?, ?offset_top: Integer?) -> untyped
     end
   end

@@ -79,7 +79,7 @@ module X
       # Upload a file, in chunks for video and subtitles, awaiting any processing
       #
       # @api public
-      # @param file_path [String] the path to the file to upload
+      # @param file_path [String, Pathname] the path to the file to upload
       # @param client [Client] the X API client
       # @param media_category [String] the media category, inferred from the file by default
       # @param alt_text [String, nil] alt text describing the media, for people who cannot see it
@@ -118,7 +118,7 @@ module X
       # A GIF with a single frame is an image, since X processes only animated GIFs as GIFs.
       #
       # @api public
-      # @param file_path [String] the path to the file
+      # @param file_path [String, Pathname] the path to the file
       # @return [String] tweet_gif, tweet_video for MP4, QuickTime, WebM, or MPEG-TS, subtitles for SubRip or WebVTT, or tweet_image
       # @example Infer the category of a video
       #   Uploader::Media.infer_media_category("cat.mp4") # => "tweet_video"
@@ -148,7 +148,7 @@ module X
       # Perform a chunked upload for large files
       #
       # @api public
-      # @param file_path [String] the path to the file to upload
+      # @param file_path [String, Pathname] the path to the file to upload
       # @param client [Client] the X API client
       # @param media_category [String] the media category, in any case, inferred from the file extension by default
       # @param media_type [String, nil] the MIME type of the media, inferred from the file and category when nil
@@ -228,7 +228,7 @@ module X
       # named. Any other category, an image, is typed by its extension alone.
       #
       # @api public
-      # @param file_path [String] the file path
+      # @param file_path [String, Pathname] the file path
       # @param media_category [String] the media category
       # @return [String] the inferred MIME type
       # @raise [InvalidMediaType] if the MIME type cannot be determined
@@ -238,7 +238,7 @@ module X
         from_extension = MIME_TYPE_MAP[Utils.extension(file_path)]
         taken = CATEGORY_MIME_TYPES.fetch(media_category.downcase, [from_extension])
         (taken.include?(from_extension) ? from_extension : taken.first) ||
-          raise(InvalidMediaType, "unable to determine MIME type from file extension: #{file_path.inspect}")
+          raise(InvalidMediaType, "unable to determine MIME type from file extension: #{File.path(file_path).inspect}")
       end
     end
   end

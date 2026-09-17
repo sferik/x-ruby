@@ -22,7 +22,7 @@ module X
       #
       # @api private
       # @param client [Client] the X API client
-      # @param file_path [String] the file path
+      # @param file_path [String, Pathname] the file path
       # @param media_type [String] the MIME type
       # @param media_category [String] the media category
       # @return [Hash, nil] the initialization response
@@ -41,7 +41,7 @@ module X
       #
       # @api private
       # @param client [Client] the X API client
-      # @param file_path [String] the file path
+      # @param file_path [String, Pathname] the file path
       # @param chunk_size [Integer] the chunk size in bytes
       # @param media [Hash] the media object
       # @param boundary [String] the multipart boundary
@@ -61,7 +61,7 @@ module X
 
       # A closed queue of the index and byte offset of each chunk of a file, in order
       # @api private
-      # @param file_path [String] the file path
+      # @param file_path [String, Pathname] the file path
       # @param chunk_size [Integer] the chunk size in bytes
       # @return [Thread::Queue] the queue
       def chunk_queue(file_path, chunk_size)
@@ -75,7 +75,7 @@ module X
       # @param queue [Thread::Queue] the index and offset of each chunk not yet begun
       # @param errors [Thread::Queue] the errors of failed chunks, in the order they failed
       # @param client [Client] the X API client
-      # @param file_path [String] the file path
+      # @param file_path [String, Pathname] the file path
       # @param chunk_size [Integer] the chunk size in bytes
       # @param media_id [String] the media ID
       # @param boundary [String] the multipart boundary
