@@ -221,15 +221,13 @@ module X
   end
 
   module ConnectionProxy
-    extend Forwardable
-
     @proxy_url: (URI::Generic | String)?
     @pool: ConnectionPool
 
     attr_reader proxy_url: (URI::Generic | String)?
     attr_reader proxy_uri: URI::Generic?
-    attr_reader proxy_host : String?
-    attr_reader proxy_port : Integer?
+    def proxy_host: () -> String?
+    def proxy_port: () -> Integer?
 
     def proxy_user: () -> String?
     def proxy_pass: () -> String?

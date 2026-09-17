@@ -1,4 +1,3 @@
-require "forwardable"
 require "uri"
 
 module X
@@ -6,8 +5,6 @@ module X
   # Connection
   # @api private
   module ConnectionProxy
-    extend Forwardable
-
     # The proxy URL for requests
     # @api public
     # @return [String, nil] the proxy URL for requests
@@ -22,8 +19,21 @@ module X
     #   connection.proxy_uri
     attr_reader :proxy_uri
 
-    def_delegator :proxy_uri, :host, :proxy_host
-    def_delegator :proxy_uri, :port, :proxy_port
+    # The host of the proxy
+    #
+    # @api public
+    # @return [String, nil] the proxy host, or nil without a proxy
+    # @example Get the proxy host
+    #   connection.proxy_host
+    def proxy_host = proxy_uri&.host
+
+    # The port of the proxy
+    #
+    # @api public
+    # @return [Integer, nil] the proxy port, or nil without a proxy
+    # @example Get the proxy port
+    #   connection.proxy_port
+    def proxy_port = proxy_uri&.port
 
     # The user of the proxy, decoded from the proxy URL
     #

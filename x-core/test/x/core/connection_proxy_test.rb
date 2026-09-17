@@ -21,15 +21,6 @@ module X
       assert_equal 8080, @connection.proxy_port
     end
 
-    def test_host_port_with_proxy
-      connection = Connection.new(proxy_url: "https://user:pass@example.com")
-      http_client = connection.send(:build_http_client, "example.com", 8080)
-
-      assert_predicate http_client, :proxy?
-      assert_equal "example.com", http_client.address
-      assert_equal 8080, http_client.port
-    end
-
     def test_invalid_proxy_url
       error = assert_raises(ArgumentError) { @connection.proxy_url = "ftp://ftp.twitter.com/" }
 
@@ -63,6 +54,11 @@ module X
       assert_nil @connection.proxy_uri
       assert_nil @connection.proxy_user
       assert_nil @connection.proxy_pass
+    end
+
+    def test_proxy_host_and_port_without_a_proxy
+      assert_nil @connection.proxy_host
+      assert_nil @connection.proxy_port
     end
 
     def test_removing_the_proxy_opens_new_connections
@@ -136,8 +132,18 @@ module X
     end
   end
 
-  class ConnectionProxyTLSTest < Minitest::Test
+  class ConnectionProxyHTTPClientTest < Minitest::Test
     cover Connection
+    cover ConnectionProxy
+
+    def test_host_port_with_proxy
+      connection = Connection.new(proxy_url: "https://user:pass@example.com")
+      http_client = connection.send(:build_http_client, "example.com", 8080)
+
+      assert_predicate http_client, :proxy?
+      assert_equal "example.com", http_client.address
+      assert_equal 8080, http_client.port
+    end
 
     def test_http_proxy_is_connected_to_without_tls
       http_client = Connection.new(proxy_url: "http://example.com:8080").send(:build_http_client)
