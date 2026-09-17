@@ -47,7 +47,7 @@ See [UPGRADING.md](https://github.com/sferik/x-ruby/blob/main/UPGRADING.md) for 
 * Take the file path, content, or media as the positional argument of the `X::Uploader::Media`, `X::Uploader::Validator`, and `X::Uploader::Account` methods, with `client:` as a keyword, as the object layer does
 * Copy a client with some options changed with `X::Client#copy`, such as `client.copy(base_url: "https://api.x.com/1.1/")` for the v1.1 API or `client.copy(access_token: nil, access_token_secret: nil)` for an app-only client
 * Raise `X::ResourceNotFound`, an `X::Error`, from `current_user` and the new `find!`, `find_user!`, `find_post!`, `find_list!`, `find_space!`, and `find_direct_message!`, so a missing resource is an error a caller can rescue in one place
-* Replace the stubs among some resources with the full resources in parallel batches with `X::User.hydrate_all` and its equivalents
+* Replace the stubs among some resources with the full resources in parallel batches with `X::User.hydrate_all` and its equivalents, which make no lookup when no resource is a stub
 * Accept a username with a leading at sign in `find_user`, `find_users`, and `X::User.find_all_by_username`
 * Add `X::DirectMessage#from?`, `X::Post#coordinates`, `permalink`, the x.com address of a post, user, list, or community, and `uri`, the same address as a `URI`
 * Match resources against `case/in` patterns: `deconstruct` gives the identifier and `deconstruct_keys` every attribute the resource declares, read as its own method reads it, so `post in {like_count: 100..}` matches a metric the API nests

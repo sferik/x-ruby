@@ -40,7 +40,8 @@ module X
 
       # Replace the stubs among some resources with the full resources
       #
-      # A stub whose resource was not found is dropped, and a resource that is not a stub is kept as it is.
+      # A stub whose resource was not found is dropped, and a resource that is not a stub is kept as it is. Resources
+      # without a stub need no lookup, so they are returned even for a resource that cannot be looked up in batches.
       #
       # @api public
       # @param resources [Array<Resource>] the resources, some of which may be stubs
@@ -51,7 +52,10 @@ module X
       # @example Expand the authors a search did not include
       #   X::User.hydrate_all(posts.map(&:author), client: client)
       def hydrate_all(resources, client:, **params, &)
-        found = find_all(resources.select(&:stub?), client:, **params, &).to_h { |resource| [resource.id, resource] }
+        stubs = resources.select(&:stub?)
+        return resources.dup if stubs.empty?
+
+        found = find_all(stubs, client:, **params, &).to_h { |resource| [resource.id, resource] }
         resources.filter_map { |resource| resource.stub? ? found[resource.id] : resource }
       end
 

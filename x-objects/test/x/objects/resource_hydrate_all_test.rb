@@ -39,6 +39,14 @@ module X
         assert_empty User.hydrate_all([], client: @client)
       end
 
+      def test_hydrate_all_without_stubs_needs_no_batch_lookup
+        lists = [List.new({"id" => "1", "name" => "Rubyists"}, client: @client)]
+
+        assert_equal lists, List.hydrate_all(lists, client: @client)
+        assert_empty Media.hydrate_all([], client: @client)
+        refute_same lists, List.hydrate_all(lists, client: @client)
+      end
+
       def test_hydrate_all_merges_params
         User.hydrate_all([User.from_id(2)], client: @client, "user.fields": "id")
 
