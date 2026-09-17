@@ -10,7 +10,7 @@ Version 1.0 requires Ruby 3.4 or later.
 
 ### Credentials
 
-`X::Client.new` raises `ArgumentError` for credentials that do not form a complete set, where 0.19 sent requests without them. Pass a complete set: `api_key`, `api_key_secret`, `access_token`, and `access_token_secret` for OAuth 1.0a; `client_id`, `access_token`, and `refresh_token`, with the `client_secret` of a confidential client, for OAuth 2.0; `bearer_token`; or `api_key` and `api_key_secret` alone to authenticate as the app. An OAuth 2.0 access token that is not refreshed is a `bearer_token`.
+`X::Client.new` raises `ArgumentError` for credentials that do not form a complete set, where 0.19 sent requests without them. Pass a complete set: `api_key`, `api_key_secret`, `access_token`, and `access_token_secret` for OAuth 1.0a; `client_id`, `access_token`, and `refresh_token`, with the `client_secret` of a confidential client, for OAuth 2.0; `bearer_token`; or `api_key` and `api_key_secret` alone to authenticate as the app. An OAuth 2.0 access token that is not refreshed is a `bearer_token`. Every credential must belong to a complete set, so a credential of a set that is not complete, such as a `client_id` or an `api_key` beside a `bearer_token`, raises `ArgumentError` rather than being ignored; leave it out. A client may hold several complete sets, such as the bearer token of an app beside its API key and secret, and authenticates with the first of them, in the order above, and an `expires_at` is allowed beside any credentials.
 
 The authenticators and `X::RateLimit` are read-only. Change a credential with the setters of `X::Client`:
 

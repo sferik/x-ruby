@@ -60,21 +60,39 @@ module X
       assert_incomplete(bearer_token: TEST_BEARER_TOKEN, access_token: TEST_ACCESS_TOKEN)
     end
 
-    def test_other_credentials_beside_a_bearer_token_are_allowed
-      client = Client.new(bearer_token: TEST_BEARER_TOKEN, access_token_secret: TEST_ACCESS_TOKEN_SECRET, refresh_token: TEST_REFRESH_TOKEN)
-
-      assert_instance_of BearerTokenAuthenticator, client.authenticator
+    def test_a_credential_of_an_incomplete_set_beside_a_bearer_token_is_incomplete
+      test_oauth_credentials.merge(test_oauth2_credentials).each do |name, value|
+        assert_incomplete(:bearer_token => TEST_BEARER_TOKEN, name => value)
+      end
     end
 
-    def test_an_access_token_secret_beside_app_only_credentials_is_allowed
-      client = Client.new(**test_oauth_credentials.except(:access_token))
-
-      assert_instance_of AppOnlyAuthenticator, client.authenticator
+    def test_an_access_token_secret_beside_app_only_credentials_is_incomplete
+      assert_incomplete(**test_oauth_credentials.except(:access_token))
     end
 
-    def test_complete_sets_beside_other_credentials_are_allowed
+    def test_a_credential_of_an_incomplete_set_beside_a_complete_one_is_incomplete
+      assert_incomplete(**test_oauth_credentials, client_id: TEST_CLIENT_ID)
+      assert_incomplete(**test_oauth2_credentials, api_key: TEST_API_KEY)
+      assert_incomplete(**test_oauth2_credentials, access_token_secret: TEST_ACCESS_TOKEN_SECRET)
+    end
+
+    def test_a_client_secret_without_the_rest_of_its_set_is_incomplete
+      assert_incomplete(**test_oauth_credentials, client_secret: TEST_CLIENT_SECRET)
+    end
+
+    def test_an_expiration_time_is_allowed_beside_any_credentials
+      assert_instance_of BearerTokenAuthenticator, Client.new(bearer_token: TEST_BEARER_TOKEN, expires_at: Time.now).authenticator
+    end
+
+    def test_a_public_oauth2_client_needs_no_client_secret
+      assert_instance_of OAuth2Authenticator, Client.new(**test_oauth2_credentials.except(:client_secret)).authenticator
+    end
+
+    def test_complete_sets_beside_each_other_are_allowed
       assert_instance_of OAuth1Authenticator, Client.new(**test_oauth_credentials, bearer_token: TEST_BEARER_TOKEN).authenticator
-      assert_instance_of OAuth2Authenticator, Client.new(**test_oauth2_credentials, api_key: TEST_API_KEY).authenticator
+      assert_instance_of OAuth2Authenticator, Client.new(**test_oauth2_credentials, api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET).authenticator
+      assert_instance_of BearerTokenAuthenticator, Client.new(bearer_token: TEST_BEARER_TOKEN, api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET).authenticator
+      assert_instance_of OAuth1Authenticator, Client.new(**test_oauth_credentials, **test_oauth2_credentials).authenticator
     end
 
     def test_a_copy_with_an_incomplete_set_raises

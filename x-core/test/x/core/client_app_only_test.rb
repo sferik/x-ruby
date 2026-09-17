@@ -37,6 +37,15 @@ module X
       assert_equal [TEST_BEARER_TOKEN, nil, nil, "https://api.x.com/2/"], [copy.bearer_token, copy.access_token, copy.access_token_secret, copy.base_url]
     end
 
+    def test_an_app_only_copy_holds_the_credentials_of_the_app_alone
+      client = Client.new(**test_oauth_credentials, **test_oauth2_credentials, expires_at: Time.now + 60)
+      client.client_secret = nil
+      copy = client.app_only
+
+      assert_instance_of BearerTokenAuthenticator, copy.authenticator
+      assert_equal({api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET, bearer_token: TEST_BEARER_TOKEN}, copy.send(:credentials).compact)
+    end
+
     def test_the_token_is_fetched_over_the_client_connection
       client = Client.new(**test_oauth_credentials)
       options = nil

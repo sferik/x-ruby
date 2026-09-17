@@ -1,16 +1,13 @@
-require_relative "app_only_authenticator"
-require_relative "bearer_token_authenticator"
-require_relative "oauth1_authenticator"
-require_relative "oauth2_authenticator"
-
 module X
-  # Checks that the credentials of a new client form a complete set
+  # Checks that the credentials of a new client form complete sets
   #
-  # A client authenticates with the first complete set of credentials it has, and a setter changes one credential
-  # at a time, so a client keeps its authenticator until a set is complete again. A new client has no
-  # authenticator to keep: credentials that form no set would send requests without credentials, and an access
-  # token without the rest of its set would authenticate as the app, or with a bearer token, rather than as the
-  # user it belongs to.
+  # A client authenticates with the first complete set of credentials it has, and ignores the rest. Credentials that
+  # form no set would send requests without credentials, an access token without the rest of its set would
+  # authenticate as the app, or with a bearer token, rather than as the user it belongs to, and any other credential
+  # of a set that is not complete, such as a client ID beside a bearer token, is a mistake that a client would
+  # otherwise hide. So every credential must belong to a complete set. A client may hold several, such as the
+  # bearer token of an app beside its API key and secret. A setter changes one credential at a time, and checks
+  # nothing, since the set it changes is complete only once every setter has been called.
   #
   # @api private
   module CredentialValidator
@@ -20,7 +17,18 @@ module X
     INCOMPLETE_CREDENTIALS = "The credentials given do not form a complete set. Pass api_key, api_key_secret, " \
       "access_token, and access_token_secret for OAuth 1.0a; client_id, access_token, and refresh_token, with the " \
       "client_secret of a confidential client, for OAuth 2.0; bearer_token for a bearer token, such as an OAuth 2.0 " \
-      "access token that is not refreshed; or api_key and api_key_secret to authenticate as the app".freeze
+      "access token that is not refreshed; or api_key and api_key_secret to authenticate as the app. Leave out any " \
+      "credential of a set that is not complete".freeze
+
+    # The credentials of each set: OAuth 1.0a, OAuth 2.0 for a confidential and for a public client, a bearer token,
+    # and the app's API key and secret
+    CREDENTIAL_SETS = [
+      %i[api_key api_key_secret access_token access_token_secret],
+      %i[client_id client_secret access_token refresh_token],
+      %i[client_id access_token refresh_token],
+      %i[bearer_token],
+      %i[api_key api_key_secret]
+    ].freeze
 
     # The message of the error raised for an expiration time that is not a Time
     INVALID_EXPIRES_AT = "expires_at must be a Time, such as Time.at(seconds) for a time stored as seconds since the " \
@@ -44,29 +52,28 @@ module X
     # Raise for credentials that do not form a complete set
     #
     # @api private
-    # @param authenticator [Authenticator] the authenticator built from the credentials
     # @param credentials [Hash{Symbol => String, Time, nil}] the credentials, as Client#initialize accepts them
     # @return [void]
-    # @raise [ArgumentError] if the credentials do not form a complete set
+    # @raise [ArgumentError] if a credential belongs to no complete set
     # @example Check the credentials of a client
-    #   X::CredentialValidator.validate!(client.authenticator, api_key: "key")
-    def validate!(authenticator, credentials)
-      raise ArgumentError, INCOMPLETE_CREDENTIALS if incomplete?(authenticator, credentials)
+    #   X::CredentialValidator.validate!(api_key: "key")
+    def validate!(credentials)
+      raise ArgumentError, INCOMPLETE_CREDENTIALS if incomplete?(credentials)
     end
 
     private
 
-    # Check whether credentials were given that the authenticator does not use
+    # Check whether a credential was given that belongs to no complete set
+    #
+    # The expiration time is no credential, so it is allowed beside any.
+    #
     # @api private
-    # @param authenticator [Authenticator] the authenticator built from the credentials
     # @param credentials [Hash{Symbol => String, Time, nil}] the credentials
-    # @return [Boolean] true if the credentials do not form a complete set
-    def incomplete?(authenticator, credentials)
-      case authenticator
-      when OAuth1Authenticator, OAuth2Authenticator then false
-      when BearerTokenAuthenticator, AppOnlyAuthenticator then !credentials.fetch(:access_token).nil?
-      else credentials.except(:expires_at).values.any?
-      end
+    # @return [Boolean] true if the credentials do not form complete sets
+    def incomplete?(credentials)
+      given = credentials.except(:expires_at).compact.keys
+      complete = CREDENTIAL_SETS.select { |set| (set - given).empty? }
+      (given - complete.flatten).any?
     end
   end
 end

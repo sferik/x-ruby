@@ -115,7 +115,7 @@ module X
       initialize_credentials(api_key:, api_key_secret:, access_token:, access_token_secret:, bearer_token:, client_id:, client_secret:, refresh_token:, expires_at:)
       @on_token_refresh = on_token_refresh
       initialize_authenticator
-      CredentialValidator.validate!(authenticator, credentials)
+      CredentialValidator.validate!(credentials)
       initialize_settings(base_url:, default_array_class:, default_object_class:, on_response:, max_redirects:, max_rate_limit_retries:, max_rate_limit_wait:)
     end
 

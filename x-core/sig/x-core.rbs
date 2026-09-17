@@ -604,13 +604,14 @@ module X
   module CredentialValidator
     INCOMPLETE_CREDENTIALS: String
     INVALID_EXPIRES_AT: String
+    CREDENTIAL_SETS: Array[Array[Symbol]]
     extend CredentialValidator
 
     def validate_expires_at!: (untyped expires_at) -> void
-    def validate!: (Authenticator authenticator, Hash[Symbol, String | Time | nil] credentials) -> void
+    def validate!: (Hash[Symbol, String | Time | nil] credentials) -> void
 
     private
-    def incomplete?: (Authenticator authenticator, Hash[Symbol, String | Time | nil] credentials) -> bool
+    def incomplete?: (Hash[Symbol, String | Time | nil] credentials) -> bool
   end
 
   class Client

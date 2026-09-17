@@ -197,7 +197,7 @@ module X
     def app_only_copy
       source = {**credentials, **settings}
       @app_only&.[](source) ||
-        copy(access_token: nil, access_token_secret: nil, bearer_token: app_bearer_token).tap { |app_client| @app_only = {source => app_client} }
+        copy(**credentials.to_h { |name, _| [name, nil] }, api_key:, api_key_secret:, bearer_token: app_bearer_token).tap { |app_client| @app_only = {source => app_client} }
     end
 
     # Replace some credentials, keeping the tokens of the last refresh
