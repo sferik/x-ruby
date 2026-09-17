@@ -6,7 +6,6 @@ module X
     cover Uploader::Account
 
     V1_PROFILE_IMAGE_URL = "https://api.x.com/1.1/account/update_profile_image.json".freeze
-    TEST_BOUNDARY = "AaB03x".freeze
     SAMPLE_BINARY_CONTENT = "\x89PNG\r\n\x1A\n\x00\x00\x00...".b.freeze
 
     def setup
@@ -23,8 +22,7 @@ module X
 
     def test_update_profile_image_binary_sends_content_directly
       stub_profile_image_request
-      response = Uploader::Account.update_profile_image_binary(SAMPLE_BINARY_CONTENT, client: @client,
-        boundary: TEST_BOUNDARY)
+      response = Uploader::Account.update_profile_image_binary(SAMPLE_BINARY_CONTENT, client: @client)
 
       assert_requested(:post, V1_PROFILE_IMAGE_URL)
       assert_equal "12345", response["id"]
@@ -59,7 +57,7 @@ module X
     private
 
     def update_profile_image(file_path)
-      Uploader::Account.update_profile_image(file_path, client: @client, boundary: TEST_BOUNDARY)
+      Uploader::Account.update_profile_image(file_path, client: @client)
     end
 
     def stub_profile_image_request
@@ -80,7 +78,6 @@ module X
     cover Uploader::Account
 
     V1_PROFILE_BANNER_URL = "https://api.x.com/1.1/account/update_profile_banner.json".freeze
-    TEST_BOUNDARY = "AaB03x".freeze
     SAMPLE_BINARY_CONTENT = "\x89PNG\r\n\x1A\n\x00\x00\x00...".b.freeze
 
     def setup
@@ -103,8 +100,7 @@ module X
 
     def test_update_profile_banner_binary_sends_content_directly
       stub_profile_banner_request
-      Uploader::Account.update_profile_banner_binary(SAMPLE_BINARY_CONTENT, client: @client,
-        boundary: TEST_BOUNDARY)
+      Uploader::Account.update_profile_banner_binary(SAMPLE_BINARY_CONTENT, client: @client)
 
       assert_requested(:post, V1_PROFILE_BANNER_URL)
     end
@@ -124,12 +120,12 @@ module X
     private
 
     def update_profile_banner(file_path)
-      Uploader::Account.update_profile_banner(file_path, client: @client, boundary: TEST_BOUNDARY)
+      Uploader::Account.update_profile_banner(file_path, client: @client)
     end
 
     def update_profile_banner_with_dimensions
       Uploader::Account.update_profile_banner("test/sample_files/sample.png", client: @client,
-        width: 1500, height: 500, offset_left: 0, offset_top: 0, boundary: TEST_BOUNDARY)
+        width: 1500, height: 500, offset_left: 0, offset_top: 0)
     end
 
     def stub_profile_banner_request

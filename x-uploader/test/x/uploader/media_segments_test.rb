@@ -9,7 +9,6 @@ module X
 
     BASE_URL = "https://api.x.com/2/media/upload".freeze
     APPEND_URL = "#{BASE_URL}/#{TEST_MEDIA_ID}/append".freeze
-    BOUNDARY = "AaB03x".freeze
     VIDEO_FILE = "test/sample_files/sample.mp4".freeze
     CHUNK_BYTES = 65_536
     HEX_BOUNDARY = %r{\Amultipart/form-data; boundary=(\h{32})\z}
@@ -21,25 +20,21 @@ module X
     end
 
     def test_segments_carry_their_index_and_exact_content
-      upload(VIDEO_FILE, boundary: BOUNDARY, chunk_size_mb: chunk_size_mb)
+      upload(VIDEO_FILE, chunk_size_mb: chunk_size_mb)
+      requests = append_requests
+      boundary = boundary_of(requests.first)
       content = File.binread(VIDEO_FILE)
 
-      assert_equal [segment_body(0, content.byteslice(0, CHUNK_BYTES), BOUNDARY),
-        segment_body(1, content.byteslice(CHUNK_BYTES..), BOUNDARY)], append_bodies
+      assert_equal [segment_body(0, content.byteslice(0, CHUNK_BYTES), boundary),
+        segment_body(1, content.byteslice(CHUNK_BYTES..), boundary)], requests.map { |request| request.body.b }
     end
 
-    def test_segments_use_the_boundary_in_their_headers
-      upload(VIDEO_FILE, boundary: BOUNDARY, chunk_size_mb: chunk_size_mb)
-
-      assert_equal ["multipart/form-data; boundary=#{BOUNDARY}"] * 2, append_requests.map { |request| request.headers["Content-Type"] }
-    end
-
-    def test_default_boundary
+    def test_segments_share_the_boundary_of_the_upload
       upload(VIDEO_FILE, chunk_size_mb: chunk_size_mb)
-      request = append_requests.first
-      boundary = HEX_BOUNDARY.match(request.headers["Content-Type"])[1]
+      content_types = append_requests.map { |request| request.headers["Content-Type"] }
 
-      assert_equal segment_body(0, File.binread(VIDEO_FILE, CHUNK_BYTES), boundary), request.body.b
+      assert_match HEX_BOUNDARY, content_types.first
+      assert_equal [content_types.first] * 2, content_types
     end
 
     def test_file_that_fills_its_last_chunk_exactly
@@ -80,9 +75,7 @@ module X
       Array.new(@appends.size) { @appends.pop }.sort_by { |request| request.body.b[/name="segment_index"\r\n\r\n(\d+)/, 1].to_i }
     end
 
-    def append_bodies
-      append_requests.map { |request| request.body.b }
-    end
+    def boundary_of(request) = HEX_BOUNDARY.match(request.headers["Content-Type"])[1]
 
     def segment_body(index, content, boundary)
       "--#{boundary}\r\nContent-Disposition: form-data; name=\"segment_index\"\r\n\r\n#{index}\r\n" \

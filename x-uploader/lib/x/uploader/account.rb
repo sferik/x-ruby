@@ -21,15 +21,14 @@ module X
       # @api public
       # @param file_path [String] the path to the image file
       # @param client [Client] the X API client
-      # @param boundary [String] the multipart boundary
       # @return [Hash, nil] the updated user object
       # @raise [Errno::ENOENT] if the file does not exist
       # @raise [InvalidMediaType] if the file type is not supported
       # @example Update profile image from a file
       #   Uploader::Account.update_profile_image("avatar.png", client: client)
-      def update_profile_image(file_path, client:, boundary: SecureRandom.hex)
+      def update_profile_image(file_path, client:)
         validate_file!(file_path)
-        update_profile_image_binary(File.binread(file_path), client:, boundary:)
+        update_profile_image_binary(File.binread(file_path), client:)
       end
 
       # Update the authenticating user's profile image from binary content
@@ -37,11 +36,11 @@ module X
       # @api public
       # @param content [String] the binary image content
       # @param client [Client] the X API client
-      # @param boundary [String] the multipart boundary
       # @return [Hash, nil] the updated user object
       # @example Update profile image from binary content
       #   Uploader::Account.update_profile_image_binary(image_data, client: client)
-      def update_profile_image_binary(content, client:, boundary: SecureRandom.hex)
+      def update_profile_image_binary(content, client:)
+        boundary = SecureRandom.hex
         body = construct_multipart_body(field_name: "image", content:, boundary:)
         headers = {"Content-Type" => "multipart/form-data; boundary=#{boundary}"}
         v1_client(client).post("account/update_profile_image.json", body, headers:, **JSON_CLASSES)
@@ -56,7 +55,6 @@ module X
       # @param height [Integer, nil] the height of the banner
       # @param offset_left [Integer, nil] the left offset of the banner
       # @param offset_top [Integer, nil] the top offset of the banner
-      # @param boundary [String] the multipart boundary
       # @return [Hash, nil] nil on success (204 No Content)
       # @raise [Errno::ENOENT] if the file does not exist
       # @raise [InvalidMediaType] if the file type is not supported
@@ -64,11 +62,9 @@ module X
       #   Uploader::Account.update_profile_banner("banner.png", client: client)
       # @example Update profile banner with dimensions
       #   Uploader::Account.update_profile_banner("banner.png", client: client, width: 1500, height: 500)
-      def update_profile_banner(file_path, client:, width: nil, height: nil, offset_left: nil, offset_top: nil,
-        boundary: SecureRandom.hex)
+      def update_profile_banner(file_path, client:, width: nil, height: nil, offset_left: nil, offset_top: nil)
         validate_file!(file_path)
-        update_profile_banner_binary(File.binread(file_path), client:, width:, height:, offset_left:, offset_top:,
-          boundary:)
+        update_profile_banner_binary(File.binread(file_path), client:, width:, height:, offset_left:, offset_top:)
       end
 
       # Update the authenticating user's profile banner from binary content
@@ -80,12 +76,11 @@ module X
       # @param height [Integer, nil] the height of the banner
       # @param offset_left [Integer, nil] the left offset of the banner
       # @param offset_top [Integer, nil] the top offset of the banner
-      # @param boundary [String] the multipart boundary
       # @return [Hash, nil] nil on success (204 No Content)
       # @example Update profile banner from binary content
       #   Uploader::Account.update_profile_banner_binary(image_data, client: client)
-      def update_profile_banner_binary(content, client:, width: nil, height: nil, offset_left: nil, offset_top: nil,
-        boundary: SecureRandom.hex)
+      def update_profile_banner_binary(content, client:, width: nil, height: nil, offset_left: nil, offset_top: nil)
+        boundary = SecureRandom.hex
         body = construct_banner_body(content:, width:, height:, offset_left:, offset_top:, boundary:)
         headers = {"Content-Type" => "multipart/form-data; boundary=#{boundary}"}
         v1_client(client).post("account/update_profile_banner.json", body, headers:, **JSON_CLASSES)

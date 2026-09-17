@@ -7,7 +7,6 @@ module X
 
     V1_URL = "https://api.x.com/1.1/account/".freeze
     V1_URL_PATTERN = /\A#{Regexp.escape(V1_URL)}/
-    BOUNDARY = "AaB03x".freeze
     CONTENT = "\x89PNG\r\n\x1A\n\x00\x00\x00...".b.freeze
     PNG_FILE = "test/sample_files/sample.png".freeze
     HEX_BOUNDARY = %r{\Amultipart/form-data; boundary=(\h{32})\z}
@@ -21,67 +20,49 @@ module X
     end
 
     def test_update_profile_image_binary_body
-      Uploader::Account.update_profile_image_binary(CONTENT, client: @client, boundary: BOUNDARY)
-
-      assert_equal "/1.1/account/update_profile_image.json", @request.uri.path
-      assert_equal "multipart/form-data; boundary=#{BOUNDARY}", @request.headers["Content-Type"]
-      assert_equal image_body(CONTENT, BOUNDARY), @request.body.b
-    end
-
-    def test_update_profile_image_sends_file_content
-      Uploader::Account.update_profile_image(PNG_FILE, client: @client, boundary: BOUNDARY)
-
-      assert_equal image_body(File.binread(PNG_FILE), BOUNDARY), @request.body.b
-    end
-
-    def test_update_profile_image_binary_default_boundary
       Uploader::Account.update_profile_image_binary(CONTENT, client: @client)
 
+      assert_equal "/1.1/account/update_profile_image.json", @request.uri.path
       assert_equal image_body(CONTENT, request_boundary), @request.body.b
     end
 
-    def test_update_profile_image_default_boundary
+    def test_update_profile_image_sends_file_content
       Uploader::Account.update_profile_image(PNG_FILE, client: @client)
 
       assert_equal image_body(File.binread(PNG_FILE), request_boundary), @request.body.b
     end
 
     def test_update_profile_banner_binary_body_without_dimensions
-      Uploader::Account.update_profile_banner_binary(CONTENT, client: @client, boundary: BOUNDARY)
+      Uploader::Account.update_profile_banner_binary(CONTENT, client: @client)
 
       assert_equal "/1.1/account/update_profile_banner.json", @request.uri.path
-      assert_equal "multipart/form-data; boundary=#{BOUNDARY}", @request.headers["Content-Type"]
-      assert_equal banner_body(CONTENT, BOUNDARY), @request.body.b
+      assert_equal banner_body(CONTENT, request_boundary), @request.body.b
     end
 
     def test_update_profile_banner_binary_body_with_dimensions
       Uploader::Account.update_profile_banner_binary(CONTENT, client: @client, width: 1500, height: 500,
-        offset_left: 10, offset_top: 20, boundary: BOUNDARY)
+        offset_left: 10, offset_top: 20)
 
-      expected = banner_body(CONTENT, BOUNDARY, width: 1500, height: 500, offset_left: 10, offset_top: 20)
+      expected = banner_body(CONTENT, request_boundary, width: 1500, height: 500, offset_left: 10, offset_top: 20)
 
       assert_equal expected, @request.body.b
     end
 
     def test_update_profile_banner_sends_file_content_and_dimensions
       Uploader::Account.update_profile_banner(PNG_FILE, client: @client, width: 1500, height: 500,
-        offset_left: 10, offset_top: 20, boundary: BOUNDARY)
+        offset_left: 10, offset_top: 20)
 
-      expected = banner_body(File.binread(PNG_FILE), BOUNDARY, width: 1500, height: 500, offset_left: 10, offset_top: 20)
+      expected = banner_body(File.binread(PNG_FILE), request_boundary, width: 1500, height: 500, offset_left: 10, offset_top: 20)
 
       assert_equal expected, @request.body.b
     end
 
-    def test_update_profile_banner_binary_default_boundary
-      Uploader::Account.update_profile_banner_binary(CONTENT, client: @client)
+    def test_each_upload_has_a_boundary_of_its_own
+      Uploader::Account.update_profile_image_binary(CONTENT, client: @client)
+      first = request_boundary
+      Uploader::Account.update_profile_image_binary(CONTENT, client: @client)
 
-      assert_equal banner_body(CONTENT, request_boundary), @request.body.b
-    end
-
-    def test_update_profile_banner_default_boundary
-      Uploader::Account.update_profile_banner(PNG_FILE, client: @client)
-
-      assert_equal banner_body(File.binread(PNG_FILE), request_boundary), @request.body.b
+      refute_equal first, request_boundary
     end
 
     private

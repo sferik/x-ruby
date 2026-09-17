@@ -75,7 +75,6 @@ module X
       # @param client [Client] the X API client
       # @param media_category [String] the media category, inferred from the file by default
       # @param alt_text [String, nil] alt text describing the media, for people who cannot see it
-      # @param boundary [String] the multipart boundary
       # @param processing_timeout [Integer] the seconds to wait for media, such as a video or an animated GIF, to process
       # @param options [Hash] options for a chunked upload, such as media_type, chunk_size_mb, and concurrency
       # @return [Hash, nil] the upload response data, or the processing status of media that X processes
@@ -88,10 +87,10 @@ module X
       #   Uploader::Media.upload("cat.jpg", client: client, alt_text: "A cat asleep on a keyboard")
       # @example Upload a video and wait until it can be attached to a post
       #   Uploader::Media.upload("video.mp4", client: client)
-      def upload(file_path, client:, media_category: infer_media_category(file_path), alt_text: nil, boundary: SecureRandom.hex,
+      def upload(file_path, client:, media_category: infer_media_category(file_path), alt_text: nil,
         processing_timeout: DEFAULT_PROCESSING_TIMEOUT, **options)
         Validator.validate_file_path!(file_path)
-        transfer(file_path, media_category, client:, boundary:, processing_timeout:, **options)
+        transfer(file_path, media_category, client:, processing_timeout:, **options)
           .tap { |media| Metadata.add_alt_text(media, alt_text, client:) unless alt_text.nil? }
       end
 
@@ -112,13 +111,13 @@ module X
       # @param content [String] the binary content to upload
       # @param client [Client] the X API client
       # @param media_category [String] the media category, which content cannot be inferred from
-      # @param boundary [String] the multipart boundary
       # @return [Hash, nil] the upload response data
       # @raise [ArgumentError] if the media category is invalid
       # @example Upload binary content
       #   Uploader::Media.upload_binary(data, client: client, media_category: "tweet_image")
-      def upload_binary(content, client:, media_category:, boundary: SecureRandom.hex)
+      def upload_binary(content, client:, media_category:)
         Validator.validate_media_category!(media_category)
+        boundary = SecureRandom.hex
         upload_body = construct_upload_body(content:, media_category:, boundary:)
         headers = {"Content-Type" => "multipart/form-data; boundary=#{boundary}"}
         client.post("media/upload", upload_body, headers:, **JSON_CLASSES)&.fetch("data")
@@ -131,7 +130,6 @@ module X
       # @param client [Client] the X API client
       # @param media_category [String] the media category, inferred from the file extension by default
       # @param media_type [String] the MIME type of the media
-      # @param boundary [String] the multipart boundary
       # @param chunk_size_mb [Float, Integer] the size of each chunk in megabytes, rounded up to a whole byte
       # @param concurrency [Integer] the number of chunks uploaded at once
       # @return [Hash, nil] the upload response data
@@ -141,13 +139,13 @@ module X
       # @example Upload a large video
       #   Uploader::Media.chunked_upload("video.mp4", client: client)
       def chunked_upload(file_path, client:, media_category: infer_media_category(file_path),
-        media_type: infer_media_type(file_path, media_category), boundary: SecureRandom.hex, chunk_size_mb: 1,
+        media_type: infer_media_type(file_path, media_category), chunk_size_mb: 1,
         concurrency: Chunks::DEFAULT_CONCURRENCY)
         Validator.validate_file_path!(file_path)
         Validator.validate_media_category!(media_category)
         Validator.validate_chunks!(chunk_size_mb:, concurrency:)
         media = init(client:, file_path:, media_type:, media_category:)
-        append(client:, file_path:, chunk_size: (chunk_size_mb * BYTES_PER_MB).ceil, media:, boundary:, concurrency:)
+        append(client:, file_path:, chunk_size: (chunk_size_mb * BYTES_PER_MB).ceil, media:, boundary: SecureRandom.hex, concurrency:)
         client.post("media/upload/#{media.fetch("id")}/finalize", **JSON_CLASSES)&.fetch("data")
       end
 
@@ -222,15 +220,14 @@ module X
       # @param file_path [String] the path to the file
       # @param media_category [String] the media category
       # @param client [Client] the X API client
-      # @param boundary [String] the multipart boundary
       # @param processing_timeout [Integer] the seconds to wait for processing
       # @param options [Hash] options for a chunked upload
       # @return [Hash, nil] the upload response data, or the processing status
-      def transfer(file_path, media_category, client:, boundary:, processing_timeout:, **options)
+      def transfer(file_path, media_category, client:, processing_timeout:, **options)
         media = if chunked?(media_category)
-          chunked_upload(file_path, client:, media_category:, boundary:, **options)
+          chunked_upload(file_path, client:, media_category:, **options)
         else
-          upload_binary(File.binread(file_path), client:, media_category:, boundary:)
+          upload_binary(File.binread(file_path), client:, media_category:)
         end
         media&.key?("processing_info") ? await_processing!(media, client:, processing_timeout:) : media
       end

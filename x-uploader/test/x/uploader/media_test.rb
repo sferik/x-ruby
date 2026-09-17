@@ -6,7 +6,6 @@ module X
     cover Uploader::Media
 
     UPLOAD_URL = "https://api.x.com/2/media/upload".freeze
-    TEST_BOUNDARY = "AaB03x".freeze
     SAMPLE_BINARY_CONTENT = "\x89PNG\r\n\x1A\n\x00\x00\x00...".b.freeze
 
     def setup
@@ -35,8 +34,7 @@ module X
       response = Uploader::Media.upload_binary(
         SAMPLE_BINARY_CONTENT,
         client: @client,
-        media_category: Uploader::Media::TWEET_IMAGE,
-        boundary: TEST_BOUNDARY
+        media_category: Uploader::Media::TWEET_IMAGE
       )
 
       assert_equal TEST_MEDIA_ID, response["id"]
@@ -48,8 +46,7 @@ module X
       response = Uploader::Media.upload_binary(
         SAMPLE_BINARY_CONTENT,
         client: @client,
-        media_category: Uploader::Media::TWEET_IMAGE,
-        boundary: TEST_BOUNDARY
+        media_category: Uploader::Media::TWEET_IMAGE
       )
 
       assert_nil response
@@ -90,8 +87,7 @@ module X
       Uploader::Media.upload(
         file_path,
         client: @client,
-        media_category: Uploader::Media::TWEET_IMAGE,
-        boundary: TEST_BOUNDARY
+        media_category: Uploader::Media::TWEET_IMAGE
       )
     end
 

@@ -51,11 +51,11 @@ module X
       assert_not_requested :post, BASE_URL
     end
 
-    def test_upload_passes_the_boundary_and_options_to_the_chunked_upload
+    def test_upload_passes_the_options_to_the_chunked_upload
       stub_chunked_workflow
-      Uploader::Media.upload("test/sample_files/sample.mp4", client: @client, boundary: "AaB03x", chunk_size_mb: 0.0625)
+      Uploader::Media.upload("test/sample_files/sample.mp4", client: @client, chunk_size_mb: 0.0625)
 
-      assert_requested(:post, "#{BASE_URL}/#{TEST_MEDIA_ID}/append", times: 2) { |request| request.body.include?("--AaB03x\r\n") }
+      assert_requested(:post, "#{BASE_URL}/#{TEST_MEDIA_ID}/append", times: 2)
     end
 
     def test_upload_chunks_by_category_rather_than_extension

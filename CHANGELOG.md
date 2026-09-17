@@ -120,6 +120,7 @@ See [UPGRADING.md](https://github.com/sferik/x-ruby/blob/main/UPGRADING.md) for 
 * Mark `X::Uploader::Validator` as `@api private`, and make the MIME type and media category tables of `X::Uploader::Media`, the block constants of `X::Uploader::Gif`, and `X::Uploader::JSON_CLASSES` private constants, so that they can change within 1.x
 ### Removed
 * Remove `X::Uploader::Account::MIME_TYPE_MAP`, which nothing read
+* Remove the `boundary:` of the upload methods of `X::Uploader::Media` and `X::Uploader::Account`, which each upload now generates for itself, since a caller has no reason to choose the boundary of a multipart body
 * Make `X::HTTPError#error_message`, `#message_from_json_response`, and `#json?` private; they build the message an error is initialized with, which `message` returns
 * Remove `require "x/media_uploader"` and `require "x/account_uploader"`; require `x`, `x/uploader/media`, or `x/uploader/account` instead
 * Remove `X::OAuthAuthenticator::OAUTH_SIGNATURE_ALGORITHM`, which named the digest of the signing code that is gone
