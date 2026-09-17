@@ -252,11 +252,13 @@ oauth2_client = X::Client.new(client_id: "ID", client_secret: "SECRET", access_t
 # Ask a user to authorize the app with OAuth 2.0 and PKCE, keeping the state and code verifier until X redirects back
 authorization = X::OAuth2Authorization.new(client_id: "ID", redirect_uri: "https://example.com/callback",
   scopes: %w[tweet.read tweet.write users.read offline.access])
-session[:oauth2] = {state: authorization.state, code_verifier: authorization.code_verifier}
+session[:state] = authorization.state
+session[:code_verifier] = authorization.code_verifier
 redirect_to authorization.url
 
 # Then, where X redirects back, exchange the code for a client that acts for the user
-authorization = X::OAuth2Authorization.new(client_id: "ID", redirect_uri: "https://example.com/callback", **session[:oauth2])
+authorization = X::OAuth2Authorization.new(client_id: "ID", redirect_uri: "https://example.com/callback",
+  state: session[:state], code_verifier: session[:code_verifier])
 user_client = authorization.client(request.url, on_token_refresh: ->(auth) { store(auth.refresh_token) })
 
 # Define a custom response object
