@@ -132,12 +132,15 @@ module X
       [normalized.scheme, normalized.host, normalized.port]
     end
 
-    # Headers without an Authorization header, whatever its case
+    # Headers without an Authorization header
+    #
+    # The header is dropped whatever its case, whether a String or a Symbol names it.
+    #
     # @api private
-    # @param headers [Hash{String => String}] the headers
-    # @return [Hash{String => String}] the headers other than Authorization
+    # @param headers [Hash{String, Symbol => String}] the headers
+    # @return [Hash{String, Symbol => String}] the headers other than Authorization
     def without_authorization(headers)
-      headers.reject { |name, _| name.casecmp?(Authenticator::AUTHENTICATION_HEADER) }
+      headers.reject { |name, _| name.to_s.casecmp?(Authenticator::AUTHENTICATION_HEADER) }
     end
 
     # Build a new request for the redirect

@@ -181,6 +181,13 @@ module X
       assert_equal [nil], authorizations_sent_to("https://example.com:443/steal")
     end
 
+    def test_drops_an_authorization_header_named_by_a_symbol_on_another_host
+      stub_request(:get, "https://example.com:443/steal")
+      redirect("https://api.x.com/2/users", "https://example.com/steal", headers: {Authorization: "Bearer secret"})
+
+      assert_equal [nil], authorizations_sent_to("https://example.com:443/steal")
+    end
+
     def test_keeps_credentials_dropped_after_a_redirect_back
       stub_request(:get, "https://example.com:443/back").to_return(status: 302, headers: {"Location" => "https://api.x.com/2/users"})
       stub_request(:get, "https://api.x.com:443/2/users")

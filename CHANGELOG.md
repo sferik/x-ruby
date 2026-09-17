@@ -143,7 +143,7 @@ See [UPGRADING.md](https://github.com/sferik/x-ruby/blob/main/UPGRADING.md) for 
 * Upload the chunks of a video no more than four at a time, or the `concurrency:` of `chunked_upload`, reading each from the file as it is sent, instead of starting a thread per chunk and first copying every chunk into a temporary file; a chunk that fails stops the chunks not yet begun
 * Read the tokens of the last OAuth 2.0 refresh from `X::Client#access_token`, `refresh_token`, and `expires_at`, and share the authenticator with a copy that holds the same credentials, so that neither `copy` nor a changed credential brings back a refresh token X no longer accepts
 * Fetch an app-only bearer token and refresh an OAuth 2.0 token over the client's connection, so the proxy, timeouts, and debug output of a client apply to token requests as they do to every other request
-* Drop the credentials, and any `Authorization` header passed in `headers:`, when a redirect leads to another scheme, host, or port, so a redirect cannot send them to a host they were not meant for
+* Drop the credentials, and any `Authorization` header passed in `headers:`, named by a String or a Symbol in any case, when a redirect leads to another scheme, host, or port, so a redirect cannot send them to a host they were not meant for
 * Send no `Authorization` header from a client without credentials, rather than an empty one
 * Raise `X::ClientError` or `X::ServerError` for a 4xx or 5xx status that no error class names, such as 405 or 501, instead of `X::HTTPError`, so a stream reconnects and a chunk upload retries after any server error
 * Link each gem's `changelog_uri` to the `main` branch, which the repository uses, rather than `master`
