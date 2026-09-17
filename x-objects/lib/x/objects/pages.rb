@@ -63,7 +63,7 @@ module X
       # @return [Array<Resource>] the resources
       def resources_from(body)
         klass = @cursor.klass
-        resources = klass.collection_from_response(body, client: @cursor.client, hydrated: true)
+        resources = klass.collection_from_response(body, client: @cursor.client, hydrated: klass.fully_requested_by?(@cursor.params))
         id_only? ? stubs_from(resources) : resources
       end
 

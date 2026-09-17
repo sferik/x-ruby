@@ -14,7 +14,7 @@ See [UPGRADING.md](https://github.com/sferik/x-ruby/blob/main/UPGRADING.md) for 
 * Add immutable, thread-safe resource classes: `X::User`, `X::Post` (aliased as `X::Tweet`), `X::List`, `X::DirectMessage`, `X::Space`, `X::Media`, `X::Poll`, and `X::Place`
 * Compare resources by class and ID with `==`, `eql?`, and `hash`, so the same resource fetched in different requests is equal
 * Resolve references such as `post.author` and `post.replied_to` to included objects or ID stubs, sharing one object per resource within a response
-* Add `hydrate`, which fetches and memoizes the full resource, and `refresh`, which fetches it again
+* Add `hydrate`, which fetches and memoizes the full resource, and `refresh`, which fetches it again; a lookup or a cursor given a parameter that overrides a default field or expansion parameter, such as `"user.fields": "name"`, returns resources that are not hydrated, so `hydrate` fetches the fields the request left out, as `refresh` does
 * Add `X::Cursor`, an `Enumerable` collection that requests the maximum page size, fetches pages lazily, caches them, and offers `refresh` and `prefetch`
 * Check a collection without paging it: `X::Cursor#any?`, `X::Cursor#none?`, and `X::Cursor#one?` request one or two resources, rather than a full page, when they are given no block or pattern
 * Request only the expansions of the resources a post refers to that the object layer resolves, leaving out `edit_history_post_ids`, which included every post again as a version of itself, and `entities.mentions.username`, which included every user a post mentions, since nothing reads either include

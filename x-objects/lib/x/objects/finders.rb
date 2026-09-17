@@ -16,7 +16,8 @@ module X
       # @api public
       # @param id [String, Integer, Resource] the identifier
       # @param client [Object] the client used to make the request
-      # @param params [Hash] query parameters merged over the default parameters
+      # @param params [Hash] query parameters merged over the default parameters; one that overrides a default field
+      #   or expansion parameter builds resources that are not hydrated, so hydrate fetches the rest
       # @return [Resource, nil] the resource or nil if it was not found
       # @yieldparam problem [Problem] each problem the API reported, such as a resource that was not found
       # @example Look up a post by identifier
@@ -28,7 +29,8 @@ module X
       # @api public
       # @param id [String, Integer, Resource] the identifier
       # @param client [Object] the client used to make the request
-      # @param params [Hash] query parameters merged over the default parameters
+      # @param params [Hash] query parameters merged over the default parameters; one that overrides a default field
+      #   or expansion parameter builds resources that are not hydrated, so hydrate fetches the rest
       # @return [Resource] the resource
       # @raise [ResourceNotFound] if the resource was not found
       # @example Look up a post by identifier
@@ -46,7 +48,8 @@ module X
       # @api public
       # @param resources [Array<Resource>] the resources, some of which may be stubs
       # @param client [Object] the client used to make the requests
-      # @param params [Hash] query parameters merged over the default parameters
+      # @param params [Hash] query parameters merged over the default parameters; one that overrides a default field
+      #   or expansion parameter builds resources that are not hydrated, so hydrate fetches the rest
       # @return [Array<Resource>] the resources, in order, with the stubs replaced
       # @yieldparam problem [Problem] each problem the API reported, such as a stub whose resource was not found
       # @example Expand the authors a search did not include
@@ -64,7 +67,8 @@ module X
       # @api public
       # @param ids [Array<String, Integer, Resource>] the identifiers
       # @param client [Object] the client used to make the requests
-      # @param params [Hash] query parameters merged over the default parameters
+      # @param params [Hash] query parameters merged over the default parameters; one that overrides a default field
+      #   or expansion parameter builds resources that are not hydrated, so hydrate fetches the rest
       # @return [Array<Resource>] the resources that were found
       # @yieldparam problem [Problem] each problem the API reported, such as an identifier that was not found
       # @example Look up many posts by identifier, reporting the ones that were not found
@@ -78,13 +82,15 @@ module X
       # @api public
       # @param path [String] the endpoint path
       # @param client [Object] the client used to make the request
-      # @param params [Hash] query parameters merged over the default parameters
+      # @param params [Hash] query parameters merged over the default parameters; one that overrides a default field
+      #   or expansion parameter builds resources that are not hydrated, so hydrate fetches the rest
       # @return [Resource, nil] the resource or nil if the response has no data
       # @yieldparam problem [Problem] each problem the API reported
       # @example Fetch the authenticated user
       #   X::User.lookup("users/me", client: client)
       def lookup(path, client:, **params, &)
-        resource_from_response(reporting(get(path, client:, params:), &), client:, hydrated: true)
+        query = Utils.merge_params(default_params, params)
+        resource_from_response(reporting(get(path, client:, query:), &), client:, hydrated: fully_requested_by?(query))
       end
 
       # Fetch a list of resources from an endpoint without paginating
@@ -92,25 +98,27 @@ module X
       # @api public
       # @param path [String] the endpoint path
       # @param client [Object] the client used to make the request
-      # @param params [Hash] query parameters merged over the default parameters
+      # @param params [Hash] query parameters merged over the default parameters; one that overrides a default field
+      #   or expansion parameter builds resources that are not hydrated, so hydrate fetches the rest
       # @return [Array<Resource>] the resources
       # @yieldparam problem [Problem] each problem the API reported
       # @example Fetch users by username
       #   X::User.lookup_all("users/by", client: client, usernames: ["sferik", "gem"])
       def lookup_all(path, client:, **params, &)
-        collection_from_response(reporting(get(path, client:, params:), &), client:, hydrated: true)
+        query = Utils.merge_params(default_params, params)
+        collection_from_response(reporting(get(path, client:, query:), &), client:, hydrated: fully_requested_by?(query))
       end
 
       private
 
-      # Request an endpoint with the default parameters
+      # Request an endpoint
       # @api private
       # @param path [String] the endpoint path
       # @param client [Object] the client used to make the request
-      # @param params [Hash] query parameters merged over the default parameters
+      # @param query [Hash] the query parameters, merged over the default parameters
       # @return [Hash, nil] the parsed response body
-      def get(path, client:, params:)
-        client.get(Utils.path(path, Utils.merge_params(default_params, params)), **Utils::JSON_CLASSES)
+      def get(path, client:, query:)
+        client.get(Utils.path(path, query), **Utils::JSON_CLASSES)
       end
 
       # Look up values in parallel batches, asking for each value once
@@ -119,12 +127,14 @@ module X
       # @param key [Symbol] the query parameter the values go in, such as ids or usernames
       # @param values [Array<String>] the values
       # @param client [Object] the client used to make the requests
-      # @param params [Hash] query parameters merged over the default parameters
+      # @param params [Hash] query parameters merged over the default parameters; one that overrides a default field
+      #   or expansion parameter builds resources that are not hydrated, so hydrate fetches the rest
       # @return [Array<Resource>] the resources that were found
       # @yieldparam problem [Problem] each problem the responses reported
       def lookup_in_batches(path, key, values, client:, **params, &)
-        bodies = Parallel.map(values.uniq.each_slice(MAX_BATCH_SIZE)) { |batch| get(path, client:, params: {key => batch, **params}) }
-        bodies.flat_map { |body| collection_from_response(reporting(body, &), client:, hydrated: true) }
+        query = Utils.merge_params(default_params, params)
+        bodies = Parallel.map(values.uniq.each_slice(MAX_BATCH_SIZE)) { |batch| get(path, client:, query: query.merge(Utils.query(key => batch))) }
+        bodies.flat_map { |body| collection_from_response(reporting(body, &), client:, hydrated: fully_requested_by?(query)) }
       end
 
       # Pass the problems a response body reports to a block, if there is one

@@ -53,7 +53,7 @@ X::Post.search("ruby", client:)
 user = client.get("users/by/username/sferik", object_class: X::User)
 ```
 
-An object built this way is not hydrated, because the request may have asked for only some fields, so `hydrate` fetches the full resource. The lookups, batch lookups, and cursors in this gem request every field, so what they return is already hydrated.
+An object built this way is not hydrated, because the request may have asked for only some fields, so `hydrate` fetches the full resource. The lookups, batch lookups, and cursors in this gem request every field, so what they return is already hydrated, unless they are given a parameter that overrides a default field or expansion parameter, such as `"user.fields": "name"`: what they return then is not hydrated either, so `hydrate` fetches the rest.
 
 ## How it works
 

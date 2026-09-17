@@ -40,7 +40,7 @@ module X
       user = User.find("sferik", client: @client, "user.fields": "id")
 
       assert_equal "sferik", user.username
-      assert_predicate user, :hydrated?
+      refute_predicate user, :hydrated?
       assert_equal "id", @client.queries.first["user.fields"]
       assert_equal User::EXPANSIONS.join(","), @client.queries.first["expansions"]
     end
@@ -93,12 +93,12 @@ module X
       assert_equal Post::FIELDS.join(","), @client.queries.first["post.fields"]
     end
 
-    def test_find_all_by_username_looks_up_and_hydrates
+    def test_find_all_by_username_with_other_fields_is_not_hydrated
       @client.stub(:get, "users/by", {"data" => [{"id" => "2", "username" => "sferik"}]})
       users = User.find_all_by_username(["sferik"], client: @client, "user.fields": "id")
 
       assert_equal ["sferik"], users.map(&:username)
-      assert_predicate users.first, :hydrated?
+      refute_predicate users.first, :hydrated?
       assert_equal "id", @client.queries.first["user.fields"]
     end
 
@@ -112,7 +112,7 @@ module X
       current = User.current(client: @client, "user.fields": "id")
 
       assert_equal "sferik", current.username
-      assert_predicate current, :hydrated?
+      refute_predicate current, :hydrated?
       assert_equal "id", @client.queries.first["user.fields"]
       assert_equal User::EXPANSIONS.join(","), @client.queries.first["expansions"]
     end

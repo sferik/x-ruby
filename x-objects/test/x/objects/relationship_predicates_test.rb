@@ -78,20 +78,27 @@ module X
       assert_equal "full", stub.hydrate.description
     end
 
-    def test_a_cursor_with_fields_yields_hydrated_resources
+    def test_a_cursor_with_other_fields_yields_resources_that_are_not_hydrated
       @client.stub(:get, "users/1/following", {"data" => [{"id" => "2", "name" => "Two"}]})
       user = @user.following("user.fields": "id,name").first
 
-      assert_predicate user, :hydrated?
+      refute_predicate user, :hydrated?
       assert_equal "Two", user.name
     end
 
-    def test_a_cursor_without_a_fields_parameter_yields_hydrated_resources
+    def test_a_cursor_without_a_fields_parameter_yields_resources_that_are_not_hydrated
       @client.stub(:get, "users/1/following", {"data" => [{"id" => "2", "name" => "Two"}]})
       user = @user.following("user.fields": nil).first
 
-      assert_predicate user, :hydrated?
+      refute_predicate user, :hydrated?
       refute_includes @client.queries.first, "user.fields"
+    end
+
+    def test_a_cursor_with_the_default_parameters_yields_hydrated_resources
+      @client.stub(:get, "users/1/following", {"data" => [{"id" => "2", "name" => "Two"}]})
+
+      assert_predicate @user.following.first, :hydrated?
+      assert_predicate @user.following(max_results: 5).first, :hydrated?
     end
 
     def test_stubs_keep_the_token_param

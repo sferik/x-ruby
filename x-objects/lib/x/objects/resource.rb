@@ -114,6 +114,20 @@ module X
           {}
         end
 
+        # Check whether a request asks for every default field and expansion
+        #
+        # A request that overrides a default parameter, to ask for fewer fields or for others, builds resources that
+        # are not hydrated, so that hydrate fetches the full resource rather than return one that lacks fields.
+        #
+        # @api private
+        # @param query [Hash{String => Object}] the query parameters of the request, merged over the defaults
+        # @return [Boolean] true if every default parameter has its default value
+        # @example Check a request that asks for the name of a user alone
+        #   X::User.fully_requested_by?("user.fields" => "name") # => false
+        def fully_requested_by?(query)
+          Utils.query(default_params).all? { |key, value| query[key].eql?(value) }
+        end
+
         # Check whether this resource can be looked up by identifier
         #
         # @api private
@@ -236,10 +250,14 @@ module X
         Attributes::CONVERTERS.fetch(self.class.id_type).call(attrs.fetch(self.class.id_key))
       end
 
-      # Check whether the resource was the primary subject of an API response
+      # Check whether the resource holds every field the object layer requests
+      #
+      # A resource is hydrated when it was the subject of a response to a request that kept every default field and
+      # expansion parameter. A stub, a reference a response included, and a resource looked up with parameters that
+      # override those defaults are not, so hydrate fetches the full resource.
       #
       # @api public
-      # @return [Boolean] true if the resource holds every requested field
+      # @return [Boolean] true if the resource holds every field the object layer requests
       # @example Check whether a referenced user is hydrated
       #   post.author.hydrated? # => false
       def hydrated?

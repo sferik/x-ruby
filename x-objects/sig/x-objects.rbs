@@ -248,6 +248,7 @@ module X
       def endpoint!: () -> String
       def id_type: () -> Symbol
       def default_params: () -> Hash[String, Array[String]]
+      def fully_requested_by?: (Hash[String, untyped] query) -> bool
       def resource_from_response: (body body, client: _Client?, ?hydrated: bool) -> Resource?
       def collection_from_response: (body body, client: _Client?, ?hydrated: bool) -> Array[Resource]
     end
@@ -274,7 +275,7 @@ module X
       def lookup_all: (String path, client: _Client, **untyped params) ?{ (Problem problem) -> void } -> Array[Resource]
 
       private
-      def get: (String path, client: _Client, params: params) -> body
+      def get: (String path, client: _Client, query: Hash[String, untyped]) -> body
       def lookup_in_batches: (String path, Symbol key, Array[String] values, client: _Client, **untyped params) ?{ (Problem problem) -> void } -> Array[Resource]
       def reporting: (body body) ?{ (Problem problem) -> void } -> body
     end
@@ -344,6 +345,7 @@ module X
       def self.id_type: () -> Symbol
       def self.includes_key: () -> String?
       def self.fields_key: () -> String?
+      def self.fully_requested_by?: (Hash[String, untyped] query) -> bool
       def self.default_params: () -> Hash[String, Array[String]]
       def self.hydratable?: () -> bool
       def self.batchable?: () -> bool
