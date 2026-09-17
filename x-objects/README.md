@@ -8,15 +8,17 @@ Most applications should install [`x`](https://rubygems.org/gems/x), which wires
 
 ## Resources
 
-| Class | References | Collections |
-| --- | --- | --- |
-| `X::User` | `pinned_post`, `most_recent_post` | `followers`, `following`, `posts`, `mentions`, `liked_posts`, `bookmarks`, `owned_lists`, `list_memberships`, `followed_lists` |
-| `X::Post` | `author`, `in_reply_to_user`, `community`, `replied_to`, `quoted`, `reposted`, `references`, `media`, `polls`, `place` | `liked_by`, `reposted_by`, `reposts`, `quotes` |
-| `X::List` | `owner` | `members`, `followers`, `posts` |
-| `X::DirectMessage` | `sender`, `participants`, `references`, `media` | |
-| `X::Space` | `creator`, `hosts`, `speakers`, `invited_users` | `posts` |
-| `X::Community` | | |
-| `X::Media`, `X::Poll`, `X::Place` | | |
+| Class | References | Collections | Class collections |
+| --- | --- | --- | --- |
+| `X::User` | `pinned_post`, `most_recent_post` | `followers`, `following`, `blocking`, `muting`, `posts`, `home_timeline`, `mentions`, `liked_posts`, `bookmarks`, `owned_lists`, `list_memberships`, `followed_lists`, `pinned_lists` | `search` |
+| `X::Post` | `author`, `in_reply_to_user`, `community`, `replied_to`, `quoted`, `reposted`, `references`, `media`, `polls`, `place` | `liked_by`, `reposted_by`, `reposts`, `quotes` | `search`, `search_all`, `reposts_of_me` |
+| `X::List` | `owner` | `members`, `followers`, `posts` | |
+| `X::DirectMessage` | `sender`, `participants`, `references`, `media` | | `all`, `with`, `in` |
+| `X::Space` | `creator`, `hosts`, `speakers`, `invited_users` | `posts` | `search` |
+| `X::Community` | | | `search` |
+| `X::Media`, `X::Poll`, `X::Place` | | | |
+
+A collection is an `X::Cursor`, read from a resource, as in `user.followers`, and a class collection is one read from the class with a client, as in `X::Post.search("ruby", client:)`.
 
 ## The client contract
 
