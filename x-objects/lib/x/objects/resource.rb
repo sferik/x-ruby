@@ -278,6 +278,9 @@ module X
 
       # Fetch the full resource again, replacing the memoized result
       #
+      # A stub that hydrates together with the others of its page looks itself up on its own, rather than read what
+      # the lookup of the page found.
+      #
       # @api public
       # @return [Resource, nil] the fresh resource or nil if it no longer exists
       # @raise [UnsupportedOperation] if the resource cannot be looked up by identifier
@@ -285,7 +288,7 @@ module X
       # @example Refresh a user's follower count
       #   user.refresh.followers_count
       def refresh
-        @memo.store(fetch)
+        @memo.store(look_up)
       end
 
       # Summarize the resource for the console
@@ -300,15 +303,18 @@ module X
 
       private
 
-      # Fetch the full resource from the API
+      # Fetch the full resource from the API, in the lookup of its batch if it has one
       # @api private
       # @return [Resource, nil] the full resource or nil if it no longer exists
       def fetch
         batch = @batch
-        return batch.fetch(id) unless batch.nil?
-
-        self.class.lookup("#{self.class.endpoint!}/#{id}", client: client!)
+        batch.nil? ? look_up : batch.fetch(id)
       end
+
+      # Look the full resource up on its own
+      # @api private
+      # @return [Resource, nil] the full resource or nil if it no longer exists
+      def look_up = self.class.lookup("#{self.class.endpoint!}/#{id}", client: client!)
 
       # The client, which must exist
       # @api private

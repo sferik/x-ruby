@@ -355,6 +355,7 @@ module X
 
       private
       def fetch: () -> Resource?
+      def look_up: () -> Resource?
       def client!: () -> _Client
       def resolve: (singleton(Resource) klass, untyped id) -> Resource?
       def cursor: (singleton(Resource) klass, String path, max_results: Integer?, ?min_results: Integer, ?total: Symbol?, **untyped params) -> Cursor

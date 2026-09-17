@@ -48,6 +48,16 @@ module X
       assert_equal [false, false, false, false], [List, Community, DirectMessage, Media].map(&:batchable?)
     end
 
+    def test_refreshing_a_stub_of_a_page_looks_it_up_again_on_its_own
+      @client.stub(:get, "users", {"data" => [{"id" => "2", "name" => "Two"}, {"id" => "3", "name" => "Three"}]})
+      stub = @user.followers.stubs.first
+      stub.hydrate
+      @client.stub(:get, "users/2", {"data" => {"id" => "2", "name" => "Deux"}})
+
+      assert_equal %w[Deux Deux], [stub.refresh.name, stub.hydrate.name]
+      assert_equal ["users/1/followers", "users", "users/2"], @client.paths
+    end
+
     def test_a_batch_is_frozen
       assert_predicate Objects::Batch.new(User, [], client: @client), :frozen?
     end
