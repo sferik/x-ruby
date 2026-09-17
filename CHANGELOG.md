@@ -87,7 +87,7 @@ See [UPGRADING.md](https://github.com/sferik/x-ruby/blob/main/UPGRADING.md) for 
 * Search spaces with `X::Space.search` and `search_spaces` on the client, a cursor over the live or scheduled spaces that match a query
 ### Changed
 * Require Ruby 3.4 or later
-* Hydrate the stubs of a page together, in one batch lookup for the whole page rather than one request per stub, so walking `user.followers.stubs` costs a request per page
+* Hydrate the stubs of a page together, in one batch lookup for the whole page rather than one request per stub, so walking `user.followers.stubs` costs a request per page; the stubs of lists, communities, and direct messages, which the API cannot look up in batches, hydrate one at a time
 * Split the object methods of the client into `X::Objects::API::Lookups` and `X::Objects::API::Actions`, which `X::Objects::API` includes together, `X::Objects::API::Lookups` into one module per kind of resource: `Users`, `Posts`, `Lists`, `Spaces`, `Communities`, and `DirectMessages`, and `X::Objects::API::Actions` into one module per kind of action: `Posts`, `Lists`, `DirectMessages`, `Relationships`, and `Engagement`
 * Raise `X::ResourceNotFound` instead of `KeyError` from `current_user` when the API returns no user
 * Read only the rate limits a response reports in full, with a limit, remaining requests, and reset time, so `X::TooManyRequests#retry_after` no longer raises `KeyError` for a response without a reset time

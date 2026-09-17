@@ -7,6 +7,9 @@ module X
     cover Objects::Batch
     cover Objects::Resource
     cover User
+    cover List
+    cover Community
+    cover DirectMessage
 
     def setup
       @client = FakeClient.new
@@ -29,6 +32,20 @@ module X
 
       assert_equal "Two", stubs.first.hydrate.name
       assert_nil stubs.last.hydrate
+    end
+
+    def test_the_stubs_of_a_resource_without_a_batch_lookup_hydrate_one_at_a_time
+      @client.stub(:get, "users/1/owned_lists", {"data" => [{"id" => "2"}, {"id" => "3"}]})
+      @client.stub(:get, "lists/2", {"data" => {"id" => "2", "name" => "Two"}})
+      @client.stub(:get, "lists/3", {"data" => {"id" => "3", "name" => "Three"}})
+
+      assert_equal %w[Two Three], @user.owned_lists.stubs.map { |stub| stub.hydrate.name }
+      assert_equal ["users/1/owned_lists", "lists/2", "lists/3"], @client.paths
+    end
+
+    def test_only_resources_with_a_batch_lookup_are_batchable
+      assert_equal [true, true, true], [User, Post, Space].map(&:batchable?)
+      assert_equal [false, false, false, false], [List, Community, DirectMessage, Media].map(&:batchable?)
     end
 
     def test_a_batch_is_frozen

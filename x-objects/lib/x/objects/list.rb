@@ -15,6 +15,16 @@ module X
     MAX_RESULTS = 100
 
     class << self
+      # Check whether lists can be looked up many at a time
+      #
+      # The API offers no batch lookup of them, so each stub hydrates on its own.
+      #
+      # @api private
+      # @return [Boolean] false
+      # @example Check whether lists can be looked up in batches
+      #   X::List.batchable? # => false
+      def batchable? = false
+
       # The API endpoint used to look up lists by identifier
       #
       # @api private

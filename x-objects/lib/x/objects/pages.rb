@@ -67,13 +67,16 @@ module X
       end
 
       # The stubs of a page, which hydrate together in one lookup for the whole page
+      #
+      # A resource without a batch lookup, such as a list, hydrates each stub on its own.
+      #
       # @api private
       # @param resources [Array<Resource>] the resources of the page
       # @return [Array<Resource>] the stubs
       def stubs_from(resources)
         klass = @cursor.klass
         client = @cursor.client
-        batch = Batch.new(klass, resources, client:)
+        batch = (Batch.new(klass, resources, client:) if klass.batchable?)
         resources.map { |resource| klass.from_id(resource, client:, batch:) }
       end
 

@@ -122,6 +122,16 @@ module X
         #   X::Media.hydratable? # => false
         def hydratable? = !endpoint.nil?
 
+        # Check whether this resource can be looked up many at a time
+        #
+        # The stubs of a page of such a resource hydrate together, in one lookup.
+        #
+        # @api private
+        # @return [Boolean] true if the resource has a batch lookup
+        # @example Check whether lists can be looked up in batches
+        #   X::List.batchable? # => false
+        def batchable? = hydratable?
+
         # The lookup endpoint, which must exist
         #
         # @api private

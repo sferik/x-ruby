@@ -17,6 +17,16 @@ module X
     MAX_RESULTS = 100
 
     class << self
+      # Check whether direct message events can be looked up many at a time
+      #
+      # The API offers no batch lookup of them, so each stub hydrates on its own.
+      #
+      # @api private
+      # @return [Boolean] false
+      # @example Check whether direct message events can be looked up in batches
+      #   X::DirectMessage.batchable? # => false
+      def batchable? = false
+
       # The API endpoint used to look up direct message events by identifier
       #
       # @api private

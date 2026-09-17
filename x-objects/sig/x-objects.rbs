@@ -336,6 +336,7 @@ module X
       def self.fields_key: () -> String?
       def self.default_params: () -> Hash[String, Array[String]]
       def self.hydratable?: () -> bool
+      def self.batchable?: () -> bool
       def self.endpoint!: () -> String
       def self.from_id: (id id, ?client: _Client?, ?batch: Batch?) -> Resource
       def self.from_response: (body body, client: _Client?, ?hydrated: bool) -> (Resource | Array[Resource])?
