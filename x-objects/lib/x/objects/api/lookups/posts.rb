@@ -131,8 +131,8 @@ module X
           # @param params [Hash] query parameters, such as granularity, which is day by default
           # @return [Hash{Time => Integer}] the number of matching posts, keyed by the start of each period
           # @example Count the posts about Ruby by day in 2024
-          #   client.all_post_counts("ruby", start_time: "2024-01-01T00:00:00Z", end_time: "2025-01-01T00:00:00Z")
-          def all_post_counts(query, **params) = Post.counts_all(query, client: self, **params)
+          #   client.post_counts_all("ruby", start_time: "2024-01-01T00:00:00Z", end_time: "2025-01-01T00:00:00Z")
+          def post_counts_all(query, **params) = Post.counts_all(query, client: self, **params)
 
           # Look up how many posts the app's project has read
           #
@@ -165,7 +165,7 @@ module X
           alias_method :count_tweets, :count_posts
           alias_method :count_all_tweets, :count_all_posts
           alias_method :tweet_counts, :post_counts
-          alias_method :all_tweet_counts, :all_post_counts
+          alias_method :tweet_counts_all, :post_counts_all
         end
       end
     end

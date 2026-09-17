@@ -52,7 +52,7 @@ module X
 
     def test_client_methods_pass_the_query_and_parameters
       @client.stub(:get, "tweets/counts/all", {"meta" => {"total_tweet_count" => 3}})
-      %i[count_posts post_counts count_all_posts all_post_counts].each { |method| @client.public_send(method, "ruby", granularity: "hour") }
+      %i[count_posts post_counts count_all_posts post_counts_all].each { |method| @client.public_send(method, "ruby", granularity: "hour") }
 
       assert_equal [{"query" => "ruby", "granularity" => "hour"}], @client.queries.reject { |query| query.key?("next_token") }.uniq
       assert_equal %w[tweets/counts/recent tweets/counts/all], @client.paths.uniq
@@ -67,7 +67,7 @@ module X
       @client.stub(:get, "tweets/counts/all", {"data" => [{"start" => "2024-01-01T00:00:00.000Z", "tweet_count" => 3}], "meta" => {"total_tweet_count" => 3}})
 
       assert_equal [3, 3], [@client.count_all_posts("ruby"), @client.count_all_tweets("ruby")]
-      assert_equal [{Time.utc(2024) => 3}] * 2, [@client.all_post_counts("ruby"), @client.all_tweet_counts("ruby")]
+      assert_equal [{Time.utc(2024) => 3}] * 2, [@client.post_counts_all("ruby"), @client.tweet_counts_all("ruby")]
     end
   end
 end

@@ -448,8 +448,8 @@ module X
           def count_all_tweets: (String query, **untyped params) -> Integer
           def post_counts: (String query, **untyped params) -> Hash[Time?, Integer?]
           def tweet_counts: (String query, **untyped params) -> Hash[Time?, Integer?]
-          def all_post_counts: (String query, **untyped params) -> Hash[Time?, Integer?]
-          def all_tweet_counts: (String query, **untyped params) -> Hash[Time?, Integer?]
+          def post_counts_all: (String query, **untyped params) -> Hash[Time?, Integer?]
+          def tweet_counts_all: (String query, **untyped params) -> Hash[Time?, Integer?]
         end
 
         module Lists : _Client
