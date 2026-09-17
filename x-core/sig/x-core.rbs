@@ -472,6 +472,7 @@ module X
   interface _CredentialHost
     def authenticator: () -> (Authenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator)
     def copy: (**untyped options) -> Client
+    def settings: () -> Hash[Symbol, untyped]
     def oauth2_authenticator_in_use: () -> OAuth2Authenticator?
     def oauth2_authenticator: () -> OAuth2Authenticator?
   end
@@ -509,14 +510,16 @@ module X
     def max_rate_limit_retries=: (Integer max_rate_limit_retries) -> Integer
     def max_rate_limit_wait=: (Integer max_rate_limit_wait) -> Integer
 
+    def settings: () -> Hash[Symbol, untyped]
+
     private
     def initialize_settings: (base_url: String, default_array_class: Class, default_object_class: Class, on_response: _ResponseHook?, max_redirects: Integer, max_rate_limit_retries: Integer, max_rate_limit_wait: Integer) -> void
-    def settings: () -> Hash[Symbol, untyped]
     def report: (Symbol http_method, URI::Generic uri, Net::HTTPResponse response) -> void
   end
 
   module ClientCredentials : _CredentialHost
     @app_bearer_token: String?
+    @app_only: Hash[Hash[Symbol, untyped], Client]?
     @connection: Connection
 
     def app_only: () -> (Client | self)
@@ -546,6 +549,7 @@ module X
     def update_credentials: (**String | Time | nil changes) -> void
 
     private
+    def app_only_copy: () -> Client
     def app_bearer_token: () -> String
     def fetched_app_bearer_token: () -> String
     def replace_credentials: (**String | Time | nil changes) -> void

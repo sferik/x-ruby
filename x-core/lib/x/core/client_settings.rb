@@ -58,6 +58,16 @@ module X
     def_delegators :@redirect_handler, :max_redirects, :max_redirects=
     def_delegators :@rate_limit_handler, :max_rate_limit_retries, :max_rate_limit_retries=, :max_rate_limit_wait, :max_rate_limit_wait=
 
+    protected
+
+    # The settings, as initialize accepts them
+    # @api private
+    # @return [Hash{Symbol => Object}] the settings
+    def settings
+      {base_url:, open_timeout:, read_timeout:, write_timeout:, debug_output:, proxy_url:, default_array_class:,
+       default_object_class:, max_redirects:, max_rate_limit_retries:, max_rate_limit_wait:, on_response:, on_token_refresh:}
+    end
+
     private
 
     # Initialize the settings, and the handlers of redirects and rate limits
@@ -88,14 +98,6 @@ module X
     # @return [void]
     def report(http_method, uri, response)
       on_response&.call(Response.new(http_method, uri, response))
-    end
-
-    # The settings, as initialize accepts them
-    # @api private
-    # @return [Hash{Symbol => Object}] the settings
-    def settings
-      {base_url:, open_timeout:, read_timeout:, write_timeout:, debug_output:, proxy_url:, default_array_class:,
-       default_object_class:, max_redirects:, max_rate_limit_retries:, max_rate_limit_wait:, on_response:, on_token_refresh:}
     end
   end
 end

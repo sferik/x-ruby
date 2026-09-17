@@ -197,7 +197,8 @@ module X
     # A client that authenticates as the app, for the endpoints that refuse OAuth 1.0a
     #
     # A client that signs with OAuth 1.0a fetches an app-only bearer token with its API key and secret the first
-    # time, and keeps it for later copies. Any other client is returned as it is: one with a bearer token or an API
+    # time, and returns the same copy, with the connections it keeps open, until its credentials or settings change.
+    # Any other client is returned as it is: one with a bearer token or an API
     # key and secret already authenticates as the app, and one that authenticates with OAuth 2.0 as a user holds no
     # credentials of the app to authenticate with, so the endpoints that take app-only authentication refuse it.
     #
@@ -207,12 +208,21 @@ module X
     #   client.app_only.post("tweets/search/stream/rules", {add: [{value: "ruby"}]})
     def app_only
       case authenticator
-      when OAuth1Authenticator then copy(access_token: nil, access_token_secret: nil, bearer_token: app_bearer_token)
+      when OAuth1Authenticator then app_only_copy
       else self
       end
     end
 
     private
+
+    # The app-only copy of the client, kept until its credentials or settings change
+    # @api private
+    # @return [Client] the copy
+    def app_only_copy
+      source = {**credentials, **settings}
+      @app_only&.[](source) ||
+        copy(access_token: nil, access_token_secret: nil, bearer_token: app_bearer_token).tap { |app_client| @app_only = {source => app_client} }
+    end
 
     # Replace some credentials, keeping the tokens of the last refresh
     #
