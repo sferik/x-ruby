@@ -46,6 +46,12 @@ module X
       assert_not_requested(:post, UPLOAD_URL)
     end
 
+    def test_upload_binary_sends_the_media_category_in_lowercase
+      Uploader::Media.upload_binary(CONTENT, client: @client, media_category: "TWEET_Image")
+
+      assert_equal upload_body(CONTENT, "tweet_image", request_boundary), @request.body.b
+    end
+
     def test_upload_rejects_an_unknown_option
       assert_raises(ArgumentError) { Uploader::Media.upload(GIF_FILE, client: @client, chunk_size: 1) }
       assert_not_requested(:post, UPLOAD_URL)

@@ -55,7 +55,7 @@ module X
       stub_chunked_workflow
       Uploader::Media.upload("test/sample_files/sample.png", client: @client, media_category: "DM_VIDEO", media_type: "video/mp4")
 
-      assert_requested :post, "#{BASE_URL}/initialize", body: {media_type: "video/mp4", media_category: "DM_VIDEO", total_bytes: 68}.to_json
+      assert_requested :post, "#{BASE_URL}/initialize", body: {media_type: "video/mp4", media_category: "dm_video", total_bytes: 68}.to_json
     end
 
     def test_upload_raises_when_video_processing_fails
