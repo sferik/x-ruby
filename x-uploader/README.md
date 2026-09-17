@@ -31,7 +31,7 @@ X::Uploader::Account.update_profile_image("avatar.png", client:)
 
 Every method that takes a file takes its path as a `String` or a `Pathname`, and raises `Errno::ENOENT` for a file that does not exist. `await_processing` and `await_processing!` take the response of an upload or a media identifier, as `X::Uploader::Metadata` does.
 
-`upload` infers the media category from the file. A GIF with a single frame is an image, because X processes only animated GIFs as GIFs, and `X::Uploader::Gif.animated?` tells the two apart. Videos are MP4, QuickTime, WebM, or MPEG-TS files and subtitles are SubRip (`.srt`) or WebVTT (`.vtt`) files, each uploaded in chunks as the type its extension names.
+`upload` infers the media category from the file. A GIF with a single frame is an image, because X processes only animated GIFs as GIFs, and `X::Uploader::Gif.animated?` tells the two apart. Videos are MP4, QuickTime, WebM, or MPEG-TS files and subtitles are SubRip (`.srt`) or WebVTT (`.vtt`) files, each uploaded in chunks as the type its extension names. An `.m4v` file is MP4, and an `.avi` or `.mkv` file, which the API documents no type for, is a video too, uploaded in chunks as MP4, for X to decide whether it can process it.
 
 A chunked upload sends four chunks at once, `X::Uploader::Media::DEFAULT_CONCURRENCY`, unless `concurrency:` says otherwise. An exception raised in the thread that uploads, such as a timeout or an interrupt, stops every chunk, so no thread goes on uploading after the call has ended.
 

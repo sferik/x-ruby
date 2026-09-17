@@ -40,6 +40,10 @@ module X
           %w[a.mts tweet_video]].map { |file, category| Uploader::Media.infer_media_type(file, category) }
     end
 
+    def test_videos_of_other_names_upload_as_mp4
+      assert_equal %w[video/mp4] * 3, %w[a.m4v a.avi a.mkv].map { |file| Uploader::Media.infer_media_type(file, "tweet_video") }
+    end
+
     def test_subtitles_category_takes_webvtt
       assert_equal "text/vtt", Uploader::Media.infer_media_type("a.vtt", "subtitles")
     end
@@ -60,6 +64,7 @@ module X
 
     def test_infer_media_category_of_every_video_and_subtitles_type
       assert_equal %w[tweet_video] * 7, %w[a.mp4 a.mov a.qt a.webm a.ts a.m2ts a.mts].map { |file| Uploader::Media.infer_media_category(file) }
+      assert_equal %w[tweet_video] * 3, %w[a.m4v a.AVI a.mkv].map { |file| Uploader::Media.infer_media_category(file) }
       assert_equal %w[subtitles subtitles], %w[a.srt a.VTT].map { |file| Uploader::Media.infer_media_category(file) }
       assert_equal %w[tweet_image] * 4, %w[a.bmp a.tiff a.glb a.usdz].map { |file| Uploader::Media.infer_media_category(file) }
     end
