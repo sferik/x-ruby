@@ -7,20 +7,34 @@ module X
     # The HTTP response
     # @api public
     # @return [Net::HTTPResponse] the HTTP response
-    # @example Read the body that could not be parsed
-    #   error.response.body
+    # @example Read the status of the response
+    #   error.response.code
     attr_reader :response
+
+    # The body that is not JSON: the whole body of a response, or the line of a stream
+    #
+    # The body of a stream can be read only as it arrives, so an error raised for a line of a stream holds that line.
+    #
+    # @api public
+    # @return [String, nil] the body, or the line of a stream, or nil for an error built without one
+    # @example Read the body that could not be parsed
+    #   error.body
+    attr_reader :body
 
     # Initialize a new InvalidResponse
     #
     # @api public
     # @param response [Net::HTTPResponse] the HTTP response
+    # @param body [String, nil] the body that is not JSON
     # @return [InvalidResponse] a new instance
     # @example Create an error
-    #   error = X::InvalidResponse.new(response: response)
-    def initialize(response:)
+    #   error = X::InvalidResponse.new(response: response, body: response.body)
+    # @example Create an error for a line of a stream
+    #   error = X::InvalidResponse.new(response: response, body: line)
+    def initialize(response:, body: nil)
       super("The body of the #{response.code} response is not JSON (#{response["content-type"] || "no content type"})")
       @response = response
+      @body = body
     end
   end
 end

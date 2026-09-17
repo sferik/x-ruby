@@ -29,7 +29,7 @@ module X
       error = assert_raises(InvalidResponse) { @response_parser.parse(response:) }
 
       assert_equal "The body of the 200 response is not JSON (text/html)", error.message
-      assert_equal "<html></html>", error.response.body
+      assert_equal ["<html></html>", "<html></html>"], [error.body, error.response.body]
       assert_kind_of JSON::ParserError, error.cause
     end
 

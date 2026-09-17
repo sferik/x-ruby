@@ -166,8 +166,9 @@ module X
 
   class InvalidResponse < Error
     attr_reader response: Net::HTTPResponse
+    attr_reader body: String?
 
-    def initialize: (response: Net::HTTPResponse) -> void
+    def initialize: (response: Net::HTTPResponse, ?body: String?) -> void
   end
 
   class TooManyRequests < ClientError

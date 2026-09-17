@@ -69,7 +69,7 @@ module X
       begin
         decode(body, array_class:, object_class:, client:)
       rescue JSON::ParserError
-        raise InvalidResponse.new(response:)
+        raise InvalidResponse.new(response:, body:)
       end
     end
 

@@ -26,7 +26,7 @@ module X
     # @yield [Object] each decoded JSON document from the stream
     # @return [void]
     # @raise [HTTPError] if the response is not successful
-    # @raise [InvalidResponse] if a line of the stream is not JSON
+    # @raise [InvalidResponse] if a line of the stream is not JSON, which the error holds as its body
     # @example Process a streaming response
     #   handler.process(response: response, response_parser: parser) { |json| puts json }
     def process(response:, response_parser:, array_class: nil, object_class: nil, client: nil, on_body: nil, &block)
@@ -35,7 +35,7 @@ module X
         on_body&.call(line)
         response_parser.decode(line, array_class:, object_class:, client:)
       rescue JSON::ParserError
-        raise InvalidResponse.new(response:)
+        raise InvalidResponse.new(response:, body: line)
       end
       read_lines(response:, decode:, &block)
     end
