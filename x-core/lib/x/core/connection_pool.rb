@@ -19,7 +19,6 @@ module X
     # @return [ConnectionPool] a new pool
     def initialize
       @lock = Mutex.new
-      @idle = {}
     end
 
     # Run a block with an open connection, keeping it for later if the block returns
@@ -43,10 +42,16 @@ module X
 
     # Close every idle connection, and each one in use once its request finishes
     #
+    # A forked process leaves the connections its parent opened alone, since closing one would end the parent's
+    # TLS session over the socket they share.
+    #
     # @api private
     # @return [void]
     def clear
-      idle = @lock.synchronize { @idle.values.flatten.tap { @idle = {} } }
+      idle = @lock.synchronize do
+        forget_after_fork
+        @idle.values.flatten.tap { @idle = {} }
+      end
       idle.each { |http_client| close(http_client) }
     end
 
@@ -81,6 +86,9 @@ module X
     end
 
     # Drop the connections a parent process opened, which a fork must not share
+    #
+    # The first call in a process, which is the first in a new pool, starts the pool with no connections.
+    #
     # @api private
     # @return [void]
     def forget_after_fork

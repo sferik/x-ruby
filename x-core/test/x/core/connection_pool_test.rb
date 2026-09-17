@@ -103,6 +103,13 @@ module X
       assert_predicate @opened.first, :started?
     end
 
+    def test_a_forked_process_leaves_its_parents_connections_open_when_it_clears
+      request
+      Process.stub(:pid, Process.pid + 1) { @pool.clear }
+
+      assert_predicate @opened.first, :started?
+    end
+
     private
 
     def nest(depth)
