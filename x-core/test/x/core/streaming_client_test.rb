@@ -92,6 +92,14 @@ module X
       assert_equal URI("https://api.x.com/2/tweets/sample/stream?tweet.fields=id,text"), request.uri
     end
 
+    def test_a_stream_without_a_block_raises_before_it_connects
+      stream = stub_request(:get, "https://api.x.com/2/tweets/search/stream")
+      error = assert_raises(ArgumentError) { streaming.stream("tweets/search/stream") }
+
+      assert_equal StreamingClient::NO_BLOCK_MESSAGE, error.message
+      assert_not_requested stream
+    end
+
     def test_uses_base_url
       mock_response = mock_streaming_response(chunks: [])
       request = with_stream_request(mock_response) do

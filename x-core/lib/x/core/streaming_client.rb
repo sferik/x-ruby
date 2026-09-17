@@ -24,6 +24,8 @@ module X
 
     # Default timeout for reading from a stream in seconds, half again the 20-second interval of the keep-alive X sends
     DEFAULT_READ_TIMEOUT = 30 # seconds
+    # The message of the error raised for a stream without a block to deliver its objects to
+    NO_BLOCK_MESSAGE = "stream takes a block, which receives each object the stream delivers".freeze
 
     # The client the stream authenticates and parses with
     # @api public
@@ -84,11 +86,14 @@ module X
     #   and builds objects from each whole object the stream delivers, which it receives with the client
     # @yield [Hash, Array] each parsed JSON object from the stream
     # @return [nil] once the stream ends with no reconnects left
+    # @raise [ArgumentError] if no block is given, before the stream is opened
     # @raise [HTTPError] if the response is not successful and the stream may not reconnect
     # @example Stream filtered posts
     #   streaming_client.stream("tweets/search/stream") { |post| puts post }
     def stream(endpoint, params: nil, headers: {}, array_class: client.default_array_class,
       object_class: client.default_object_class, &block)
+      raise ArgumentError, NO_BLOCK_MESSAGE if block.nil?
+
       uri = URI.join(client.base_url, endpoint_with(endpoint, params))
       @reconnect_handler.handle(block) do |deliver|
         @connection.perform_stream(request: request_for(uri, headers)) do |response|

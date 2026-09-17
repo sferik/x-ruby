@@ -361,6 +361,7 @@ module X
     extend Forwardable
 
     DEFAULT_READ_TIMEOUT: Integer
+    NO_BLOCK_MESSAGE: String
 
     @connection: Connection
     @reconnect_handler: ReconnectHandler
