@@ -6,7 +6,7 @@ Version 1.0 splits the gem into `x-core`, `x-uploader`, and `x-objects`, which `
 
 ### Ruby
 
-Version 1.0 requires Ruby 3.3 or later.
+Version 1.0 requires Ruby 3.4 or later.
 
 ### Credentials
 

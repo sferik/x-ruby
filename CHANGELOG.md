@@ -84,7 +84,7 @@ See [UPGRADING.md](https://github.com/sferik/x-ruby/blob/main/UPGRADING.md) for 
 * Start a group conversation of direct messages with `X::DirectMessage.create_group` and `create_group_direct_message` on the client, send to any conversation with `X::DirectMessage.create_in` and `create_direct_message_in`, and read any conversation with `X::DirectMessage.in_conversation` and `direct_messages_in`, each given a message of the conversation or its identifier; the client methods have `create_group_dm`, `create_dm_in`, and `dms_in` aliases
 * Search spaces with `X::Space.search` and `search_spaces` on the client, a cursor over the live or scheduled spaces that match a query
 ### Changed
-* Require Ruby 3.3 or later
+* Require Ruby 3.4 or later
 * Hydrate the stubs of a page together, in one batch lookup for the whole page rather than one request per stub, so walking `user.followers.stubs` costs a request per page
 * Split the object methods of the client into `X::Objects::API::Lookups` and `X::Objects::API::Actions`, which `X::Objects::API` includes together, `X::Objects::API::Lookups` into one module per kind of resource: `Users`, `Posts`, `Lists`, `Spaces`, `Communities`, and `DirectMessages`, and `X::Objects::API::Actions` into one module per kind of action: `Posts`, `Lists`, `DirectMessages`, `Relationships`, and `Engagement`
 * Raise `X::ResourceNotFound` instead of `KeyError` from `current_user` when the API returns no user

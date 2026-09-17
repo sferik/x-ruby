@@ -10,7 +10,7 @@ Gem::Specification.new do |spec|
   spec.summary = "The HTTP layer of the X gem: authentication, requests, and errors."
   spec.homepage = "https://sferik.github.io/x-ruby"
   spec.license = "MIT"
-  spec.required_ruby_version = ">= 3.3"
+  spec.required_ruby_version = ">= 3.4"
   spec.platform = Gem::Platform::RUBY
 
   spec.metadata = {

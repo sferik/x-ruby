@@ -10,7 +10,7 @@ Gem::Specification.new do |spec|
   spec.summary = "Uploads for the X gem: images, GIFs, videos, and subtitles, and profile images and banners."
   spec.homepage = "https://sferik.github.io/x-ruby"
   spec.license = "MIT"
-  spec.required_ruby_version = ">= 3.3"
+  spec.required_ruby_version = ">= 3.4"
   spec.platform = Gem::Platform::RUBY
 
   spec.metadata = {
