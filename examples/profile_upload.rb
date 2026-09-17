@@ -14,20 +14,19 @@ client = X::Client.new(**x_credentials)
 # Image should be under 700 KB
 profile_image_path = "path/to/your/avatar.png"
 
-user = X::Uploader::Account.update_profile_image(profile_image_path, client:)
+user = client.update_profile_image(profile_image_path)
 puts "Profile image updated for @#{user["screen_name"]}"
 
 # Update profile banner
 # Recommended dimensions: 1500x500 pixels
 banner_path = "path/to/your/banner.png"
 
-X::Uploader::Account.update_profile_banner(banner_path, client:)
+client.update_profile_banner(banner_path)
 puts "Profile banner updated successfully"
 
 # Update profile banner with custom dimensions and offset
-X::Uploader::Account.update_profile_banner(
+client.update_profile_banner(
   banner_path,
-  client:,
   width: 1500,
   height: 500,
   offset_left: 0,

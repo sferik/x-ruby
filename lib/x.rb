@@ -5,4 +5,5 @@ require_relative "x/version"
 
 module X
   Client.include(Objects::API)
+  Client.include(Uploader::API)
 end

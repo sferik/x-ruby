@@ -74,6 +74,10 @@ video = X::Uploader::Media.upload("cat.mp4", client:) # uploads in chunks and aw
 X::Uploader::Account.update_profile_image("avatar.png", client:)
 X::Uploader::Account.update_profile_image_binary(content, client:)
 X::Uploader::Account.update_profile_banner_binary(content, client:)
+
+# 1.0, as methods of a client, which require "x" adds
+media = client.upload_media("cat.jpg")
+client.update_profile_image("avatar.png")
 ```
 
 `upload` infers the media category from the file, and still takes `media_category:`. No upload method takes `boundary:`, since each upload generates the boundary of its multipart body. `upload_binary` takes the content as a positional argument and requires `media_category:`, and `await_processing` and `await_processing!` take the media as one: the response of an upload, or a media identifier. Every method that takes a file takes a `String` or a `Pathname`. A class that includes `X::Uploader::Media` gains its public methods alone: the private methods it used to gain, such as `init`, `append`, and `construct_upload_body`, belong to private modules now.

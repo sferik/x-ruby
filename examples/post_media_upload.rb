@@ -12,7 +12,7 @@ file_path = "path/to/your/media.jpg"
 
 # The media category is inferred from the file: an image, an animated GIF, a video, which is uploaded in chunks and
 # processed, or subtitles. Pass media_category: to choose another, such as dm_image.
-media = X::Uploader::Media.upload(file_path, client:, alt_text: "Describe the image for people who cannot see it")
+media = client.upload_media(file_path, alt_text: "Describe the image for people who cannot see it")
 
 post = client.create_post("Posting media from @gem!", media_ids: [media])
 

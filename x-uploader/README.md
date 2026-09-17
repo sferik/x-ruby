@@ -29,6 +29,20 @@ X::Uploader::Metadata.add_subtitles(video, subtitles, "EN", client:, display_nam
 X::Uploader::Account.update_profile_image("avatar.png", client:)
 ```
 
+`X::Uploader::API` holds the uploads a client is most often asked for, as methods that call the uploaders with the client. The `x` gem includes it into `X::Client`. With `x-core` and `x-uploader` alone, include it yourself:
+
+```ruby
+X::Client.include(X::Uploader::API)
+
+media = client.upload_media("cat.jpg", alt_text: "A cat asleep on a keyboard")
+client.upload_media_binary(File.binread("cat.png"), media_category: "tweet_image")
+client.await_media_processing(video)      # raises X::Uploader::MediaProcessingFailed if processing failed
+client.add_alt_text(media, "A cat asleep on a keyboard")
+client.add_subtitles(video, subtitles, "EN", display_name: "English")
+client.update_profile_image("avatar.png")
+client.update_profile_banner("banner.png", width: 1500, height: 500)
+```
+
 Every method that takes a file takes its path as a `String` or a `Pathname`, and raises `Errno::ENOENT` for a file that does not exist. `await_processing` and `await_processing!` take the response of an upload or a media identifier, as `X::Uploader::Metadata` does.
 
 `upload` infers the media category from the file. A GIF with a single frame is an image, because X processes only animated GIFs as GIFs, and `X::Uploader::Gif.animated?` tells the two apart. Videos are MP4, QuickTime, WebM, or MPEG-TS files and subtitles are SubRip (`.srt`) or WebVTT (`.vtt`) files, each uploaded in chunks as the type its extension names. An `.m4v` file is MP4, and an `.avi` or `.mkv` file, which the API documents no type for, is a video too, uploaded in chunks as MP4, for X to decide whether it can process it.

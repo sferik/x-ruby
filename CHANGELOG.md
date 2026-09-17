@@ -53,6 +53,7 @@ See [UPGRADING.md](https://github.com/sferik/x-ruby/blob/main/UPGRADING.md) for 
 * Match resources against `case/in` patterns: `deconstruct` gives the identifier and `deconstruct_keys` every attribute the resource declares, read as its own method reads it, so `post in {like_count: 100..}` matches a metric the API nests
 * Accept the responses of `X::Uploader::Media.upload` directly as the `media_ids:` of `create_post`
 * Load `x-uploader` from `require "x"`, so `X::Uploader::Media` and `X::Uploader::Account` need no further require
+* Add `upload_media`, `upload_media_binary`, `await_media_processing`, which raises if processing failed, `add_alt_text`, `add_subtitles`, `update_profile_image`, and `update_profile_banner` to `X::Client`, each of which calls an uploader with the client, as in `client.create_post("Look", media_ids: [client.upload_media("cat.jpg")])`; they are the methods of `X::Uploader::API`, which `x` includes into `X::Client`, and which code that depends on `x-core` and `x-uploader` alone can include itself
 * Scan a cursor with nothing but identifiers with `stubs`, and check a relationship without fetching every page with `user.follows?` and `list.member?`
 * Resolve the posts a post or direct message refers to with `references`, and pair `liked_by` with `reposted_by` on `X::Post`, beside `reposts`, the reposts themselves, each a post by the user who reposted it
 * Add `X::Post#urls` and `X::Post#expanded_text`, the text with every shortened link replaced by the URL it stands for

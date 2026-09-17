@@ -32,7 +32,7 @@ The `x` gem is a thin meta-gem that combines three gems, which are released from
 | [`x-uploader`](https://github.com/sferik/x-ruby/tree/main/x-uploader) | Uploads: images, GIFs, videos, and subtitles, with videos and subtitles in chunks, plus profile images and banners | `x-core` |
 | [`x-objects`](https://github.com/sferik/x-ruby/tree/main/x-objects) | Resources: `User`, `Post`, `List`, `DirectMessage`, `Space`, `Community`, `Media`, `Poll`, `Place`, and cursors | none |
 
-`require "x"` loads all three, and mixes the object methods (`find_user`, `find_posts`, `search`, …) into `X::Client`. Any other request can return objects too, given a resource class as its `object_class`. If you only want raw JSON, depend on `x-core` alone. If you want the objects with your own HTTP client, depend on `x-objects` alone.
+`require "x"` loads all three, and mixes the object methods (`find_user`, `find_posts`, `search`, …) and the upload methods (`upload_media`, `add_alt_text`, `update_profile_image`, …) into `X::Client`. Any other request can return objects too, given a resource class as its `object_class`. If you only want raw JSON, depend on `x-core` alone. If you want the objects with your own HTTP client, depend on `x-objects` alone.
 
 ## Usage
 
@@ -286,16 +286,22 @@ x_client.close
 ```ruby
 # The media category is inferred from the file: an image, an animated GIF, a video, or subtitles.
 # A GIF with a single frame is uploaded as an image, since X processes only animated GIFs as GIFs.
-media = X::Uploader::Media.upload("cat.jpg", client: x_client, alt_text: "A cat asleep on a keyboard")
+media = x_client.upload_media("cat.jpg", alt_text: "A cat asleep on a keyboard")
 x_client.create_post("Look at this cat", media_ids: [media])
 
 # A video is uploaded in chunks, four at a time unless concurrency says otherwise, and upload waits until a video or
 # an animated GIF has been processed, for up to ten minutes unless processing_timeout says otherwise
-video = X::Uploader::Media.upload("cat.mp4", client: x_client)
-subtitles = X::Uploader::Media.upload("cat.srt", client: x_client)
-X::Uploader::Metadata.add_subtitles(video, subtitles, "EN", client: x_client, display_name: "English")
+video = x_client.upload_media("cat.mp4")
+subtitles = x_client.upload_media("cat.srt")
+x_client.add_subtitles(video, subtitles, "EN", display_name: "English")
 x_client.create_post("Look at this cat move", media_ids: [video])
+
+# Update the profile image and banner of the authenticated user
+x_client.update_profile_image("avatar.png")
+x_client.update_profile_banner("banner.png")
 ```
+
+Each of these methods calls an uploader with the client: `upload_media`, `upload_media_binary`, and `await_media_processing` call `X::Uploader::Media`, `add_alt_text` and `add_subtitles` call `X::Uploader::Metadata`, and `update_profile_image` and `update_profile_banner` call `X::Uploader::Account`. The uploaders do more, such as `X::Uploader::Media.chunked_upload("cat.mp4", client: x_client, chunk_size_mb: 4)`, and take any client as `client:`.
 
 ### Streaming
 

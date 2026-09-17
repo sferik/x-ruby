@@ -3,6 +3,23 @@ module X
     VERSION: Gem::Version
     JSON_CLASSES: Hash[Symbol, singleton(Array) | singleton(Hash)]
 
+    # What the uploaders ask of a client, which X::Client provides
+    interface _Client
+      def get: (String endpoint, **untyped) -> untyped
+      def post: (String endpoint, ?untyped body, **untyped) -> untyped
+      def copy: (**untyped options) -> _Client
+    end
+
+    module API : _Client
+      def upload_media: (path file_path, **untyped options) -> untyped
+      def upload_media_binary: (String content, media_category: String) -> untyped
+      def await_media_processing: (Hash[String, untyped] | String | Integer media, **untyped options) -> untyped
+      def add_alt_text: (untyped media, String text) -> untyped
+      def add_subtitles: (untyped video, untyped subtitles, String language_code, **untyped options) -> untyped
+      def update_profile_image: (path file_path) -> untyped
+      def update_profile_banner: (path file_path, **untyped options) -> untyped
+    end
+
     class InvalidMediaType < Error
     end
 
@@ -37,14 +54,14 @@ module X
       RETRY_BACKOFF: Integer
       extend Chunks
 
-      def init: (client: Client, file_path: path, media_type: String, media_category: String) -> untyped
-      def append: (client: Client, file_path: path, chunk_size: Integer, media: untyped, boundary: String, concurrency: Integer) -> void
+      def init: (client: _Client, file_path: path, media_type: String, media_category: String) -> untyped
+      def append: (client: _Client, file_path: path, chunk_size: Integer, media: untyped, boundary: String, concurrency: Integer) -> void
 
       private
       def await: (Array[Thread] workers) -> void
       def chunk_queue: (path file_path, Integer chunk_size) -> Thread::Queue
-      def append_worker: (Thread::Queue queue, Thread::Queue errors, client: Client, file_path: path, chunk_size: Integer, media_id: String, boundary: String) -> Thread
-      def upload_chunk: (client: Client, media_id: String, upload_body: String, headers: Hash[String, String]) -> untyped
+      def append_worker: (Thread::Queue queue, Thread::Queue errors, client: _Client, file_path: path, chunk_size: Integer, media_id: String, boundary: String) -> Thread
+      def upload_chunk: (client: _Client, media_id: String, upload_body: String, headers: Hash[String, String]) -> untyped
     end
 
     module Media
@@ -86,12 +103,12 @@ module X
       CATEGORY_MIME_TYPES: Hash[String, Array[String]]
       extend Media
 
-      def upload: (path file_path, client: Client, ?media_category: String, ?alt_text: String?, ?processing_timeout: Integer, ?media_type: String?, ?chunk_size_mb: Float | Integer, ?concurrency: Integer) -> untyped
+      def upload: (path file_path, client: _Client, ?media_category: String, ?alt_text: String?, ?processing_timeout: Integer, ?media_type: String?, ?chunk_size_mb: Float | Integer, ?concurrency: Integer) -> untyped
       def infer_media_category: (path file_path) -> String
-      def upload_binary: (String content, client: Client, media_category: String) -> untyped
-      def chunked_upload: (path file_path, client: Client, ?media_category: String, ?media_type: String?, ?chunk_size_mb: Float | Integer, ?concurrency: Integer) -> untyped
-      def await_processing: (Hash[String, untyped] | String | Integer media, client: Client, ?processing_timeout: Integer) -> untyped
-      def await_processing!: (Hash[String, untyped] | String | Integer media, client: Client, ?processing_timeout: Integer) -> untyped
+      def upload_binary: (String content, client: _Client, media_category: String) -> untyped
+      def chunked_upload: (path file_path, client: _Client, ?media_category: String, ?media_type: String?, ?chunk_size_mb: Float | Integer, ?concurrency: Integer) -> untyped
+      def await_processing: (Hash[String, untyped] | String | Integer media, client: _Client, ?processing_timeout: Integer) -> untyped
+      def await_processing!: (Hash[String, untyped] | String | Integer media, client: _Client, ?processing_timeout: Integer) -> untyped
       def infer_media_type: (path file_path, String media_category) -> String
     end
 
@@ -115,8 +132,8 @@ module X
       AMPLIFY_SUBTITLED_MEDIA_CATEGORY: String
       extend Metadata
 
-      def add_alt_text: (untyped media, String text, client: Client) -> untyped
-      def add_subtitles: (untyped video, untyped subtitles, String language_code, client: Client, ?display_name: String?, ?media_category: String) -> untyped
+      def add_alt_text: (untyped media, String text, client: _Client) -> untyped
+      def add_subtitles: (untyped video, untyped subtitles, String language_code, client: _Client, ?display_name: String?, ?media_category: String) -> untyped
     end
 
     module Validator
@@ -134,10 +151,10 @@ module X
       SUPPORTED_EXTENSIONS: Array[String]
       extend Account
 
-      def update_profile_image: (path file_path, client: Client) -> untyped
-      def update_profile_image_binary: (String content, client: Client) -> untyped
-      def update_profile_banner: (path file_path, client: Client, ?width: Integer?, ?height: Integer?, ?offset_left: Integer?, ?offset_top: Integer?) -> untyped
-      def update_profile_banner_binary: (String content, client: Client, ?width: Integer?, ?height: Integer?, ?offset_left: Integer?, ?offset_top: Integer?) -> untyped
+      def update_profile_image: (path file_path, client: _Client) -> untyped
+      def update_profile_image_binary: (String content, client: _Client) -> untyped
+      def update_profile_banner: (path file_path, client: _Client, ?width: Integer?, ?height: Integer?, ?offset_left: Integer?, ?offset_top: Integer?) -> untyped
+      def update_profile_banner_binary: (String content, client: _Client, ?width: Integer?, ?height: Integer?, ?offset_left: Integer?, ?offset_top: Integer?) -> untyped
     end
   end
 end

@@ -3,5 +3,6 @@ module X
 
   class Client
     include Objects::API
+    include Uploader::API
   end
 end
