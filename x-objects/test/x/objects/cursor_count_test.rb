@@ -62,71 +62,65 @@ module X
       assert_equal %w[1000 1000 1000], @client.queries.map { |query| query["max_results"] }
     end
 
-    def test_count_and_size_read_the_number_the_api_publishes
-      assert_equal 12, @user.followers.count
-      assert_equal 12, @user.followers.size
+    def test_count_and_size_read_every_page
+      @client.stub(:get, "users/1/followers", {"data" => [{"id" => "2"}, {"id" => "3"}]})
+
+      assert_equal [2, 2], [@user.followers.count, @user.followers.size]
+      assert_equal %w[users/1/followers users/1/followers], @client.paths
+    end
+
+    def test_published_count_reads_the_number_the_api_publishes
+      assert_equal 12, @user.followers.published_count
       assert_empty @client.requests
     end
 
-    def test_count_of_a_collection_the_api_publishes_no_number_for
-      @client.stub(:get, "users/1/muting", {"data" => [{"id" => "2"}, {"id" => "3"}]})
-
-      assert_equal 2, @user.muting.count
-      assert_equal 2, @user.muting.size
+    def test_published_count_of_a_collection_the_api_publishes_no_number_for
+      assert_nil @user.muting.published_count
+      assert_empty @client.requests
     end
 
-    def test_count_of_a_stub_looks_up_the_number_the_api_publishes
+    def test_published_count_of_a_stub_looks_up_the_number_the_api_publishes
       @client.stub(:get, "users/1", {"data" => {"id" => "1", "public_metrics" => {"followers_count" => 7}}})
 
-      assert_equal 7, User.from_id(1, client: @client).followers.count
+      assert_equal 7, User.from_id(1, client: @client).followers.published_count
       assert_equal %w[users/1], @client.paths
     end
 
-    def test_count_of_an_unhydrated_reference_looks_up_the_number_the_api_publishes
+    def test_published_count_of_an_unhydrated_reference_looks_up_the_number_the_api_publishes
       @client.stub(:get, "users/1", {"data" => {"id" => "1", "public_metrics" => {"followers_count" => 7}}})
-      user = User.new({"id" => "1", "username" => "sferik"}, client: @client)
 
-      assert_equal [7, 7], [user.followers.count, user.followers.size]
+      assert_equal 7, User.new({"id" => "1", "username" => "sferik"}, client: @client).followers.published_count
       assert_equal %w[users/1], @client.paths
     end
 
-    def test_count_falls_back_to_a_scan_when_the_lookup_has_no_metric
+    def test_published_count_is_nil_when_the_lookup_has_no_metric
       @client.stub(:get, "users/1", {"data" => {"id" => "1"}})
 
-      assert_equal 1000, User.from_id(1, client: @client).followers.count
-      assert_equal %w[users/1 users/1/followers], @client.paths
+      assert_nil User.from_id(1, client: @client).followers.published_count
+      assert_equal %w[users/1], @client.paths
     end
 
-    def test_count_falls_back_to_a_scan_when_the_resource_no_longer_exists
+    def test_published_count_is_nil_when_the_resource_no_longer_exists
       @client.stub(:get, "users/1", {"errors" => [{"title" => "Not Found Error"}]})
 
-      assert_equal 1000, User.from_id(1, client: @client).followers.count
+      assert_nil User.from_id(1, client: @client).followers.published_count
     end
 
-    def test_count_of_a_hydrated_resource_without_the_metric_scans_without_a_lookup
-      user = User.new({"id" => "1"}, client: @client, hydrated: true)
-
-      assert_equal 1000, user.followers.count
-      assert_equal %w[users/1/followers], @client.paths
-    end
-
-    def test_count_with_a_block_or_a_resource_counts_what_it_is_given
-      @client.stub(:get, "users/1/followers", {"data" => [{"id" => "2"}, {"id" => "3"}]})
-
-      assert_equal 1, @user.followers.count { |follower| follower.id.eql?(2) }
-      assert_equal 1, @user.followers.count(User.new({"id" => "2"}, client: @client))
+    def test_published_count_of_a_hydrated_resource_without_the_metric_is_nil_without_a_lookup
+      assert_nil User.new({"id" => "1"}, client: @client, hydrated: true).followers.published_count
+      assert_empty @client.requests
     end
 
     def test_derived_cursors_keep_the_published_number
-      assert_equal [12, 12, 12], [@user.followers.refresh, @user.followers.prefetch, @user.followers.stubs].map(&:count)
-      assert_equal 12, @user.followers.send(:sized, 3).count
+      assert_equal [12, 12, 12], [@user.followers.refresh, @user.followers.prefetch, @user.followers.stubs].map(&:published_count)
+      assert_equal 12, @user.followers.send(:sized, 3).published_count
     end
 
     def test_the_collections_the_api_publishes_a_number_for
       list = List.new({"id" => "9", "member_count" => 3, "follower_count" => 4}, client: @client)
       user = User.new({"id" => "1", "public_metrics" => {"following_count" => 5, "listed_count" => 6}}, client: @client)
 
-      assert_equal [3, 4, 5, 6], [list.members, list.followers, user.following, user.list_memberships].map(&:count)
+      assert_equal [3, 4, 5, 6], [list.members, list.followers, user.following, user.list_memberships].map(&:published_count)
     end
   end
 end

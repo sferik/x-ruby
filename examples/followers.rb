@@ -20,7 +20,7 @@ followers.each { |follower| puts "#{follower.username}: #{follower.followers_cou
 puts followers.to_a.size
 
 # Count the followers the profile reports, without paging through them
-puts user.followers.count
+puts user.followers.published_count
 
 # Posts reference their authors. Every reference to the same user in one page is the same object.
 user.posts.first(10).each do |post|

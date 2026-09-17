@@ -236,31 +236,30 @@ module X
       take(2).size.eql?(1)
     end
 
-    # The number of resources in the collection
+    # The number of resources the collection serves, reading every page of it
     #
-    # Counting without a block reads the number the API publishes for the collection, when it publishes
-    # one, rather than paging through every resource, which the API bills. The published number counts
-    # what the collection holds, which can differ from what the endpoint serves.
-    #
-    # @api public
-    # @param args [Object] a resource to count
-    # @yield [Objects::Resource] each resource
-    # @return [Integer] the number of resources
-    # @example Count a user's followers without reading one of them
-    #   user.followers.count
-    def count(*args, &block)
-      return super unless args.empty? && block.nil?
-
-      @total&.call || super()
-    end
-
-    # The number of resources in the collection, as count reports it
+    # Like count, this pages through the whole collection, which costs a request per page, and the API bills each
+    # resource it returns. To learn how many followers a user has without reading them, use published_count.
     #
     # @api public
     # @return [Integer] the number of resources
-    # @example Count a user's followers without reading one of them
-    #   user.followers.size
+    # @example Count the users a user mutes, reading every one of them
+    #   user.muting.size
     def size = count
+
+    # The number the API publishes for the collection, without reading any of it
+    #
+    # The API publishes a number for a user's followers, followed users, and list memberships, and for a list's
+    # members and followers. Reading it costs no request when the user or list holds it, and one lookup when it is a
+    # stub. The number counts what the collection holds, which can differ from what count reads, since the
+    # endpoint leaves out what the authenticated user cannot see, such as private lists and suspended users. count
+    # and size instead read every page of the collection, a request per page, and the API bills each resource.
+    #
+    # @api public
+    # @return [Integer, nil] the published number, or nil for a collection the API publishes no number for
+    # @example Count a user's followers without reading one of them
+    #   user.followers.published_count # => 12345
+    def published_count = @total&.call
 
     # The identifiers of every resource, requesting nothing but identifiers
     #
