@@ -178,19 +178,23 @@ module X
       # processing timeout, once those waits would add up to more than the processing timeout.
       #
       # @api public
-      # @param media [Hash] the media object with an id
+      # @param media [Hash, String, Integer] the upload response, or the media identifier
       # @param client [Client] the X API client
       # @param processing_timeout [Integer] the seconds to wait between checks, in all, before giving up
       # @return [Hash, nil] the processing status
+      # @raise [KeyError] if an upload response has no id
       # @raise [MediaProcessingTimeout] if the media is still processing once the processing timeout would pass
       # @example Wait for processing
       #   Uploader::Media.await_processing(media, client: client)
+      # @example Wait for the processing of media known by its identifier
+      #   Uploader::Media.await_processing("1880028106020515840", client: client)
       # @example Wait up to half an hour for a long video
       #   Uploader::Media.await_processing(media, client: client, processing_timeout: 1800)
       def await_processing(media, client:, processing_timeout: DEFAULT_PROCESSING_TIMEOUT)
         waited = 0
+        media_id = Utils.media_id(media)
         loop do
-          status = client.get("media/upload?command=STATUS&media_id=#{media.fetch("id")}", **JSON_CLASSES)&.fetch("data")
+          status = client.get("media/upload?command=STATUS&media_id=#{media_id}", **JSON_CLASSES)&.fetch("data")
           processing_info = status&.dig("processing_info")
           return status if processing_info.nil? || PROCESSING_INFO_STATES.include?(processing_info["state"])
 
@@ -204,10 +208,11 @@ module X
       # Wait for media processing and raise on failure
       #
       # @api public
-      # @param media [Hash] the media object with an id
+      # @param media [Hash, String, Integer] the upload response, or the media identifier
       # @param client [Client] the X API client
       # @param processing_timeout [Integer] the seconds to wait between checks, in all, before giving up
       # @return [Hash, nil] the processing status
+      # @raise [KeyError] if an upload response has no id
       # @raise [MediaProcessingFailed] if media processing failed, with the status X reported
       # @raise [MediaProcessingTimeout] if the media is still processing once the processing timeout would pass
       # @example Wait for processing with error handling

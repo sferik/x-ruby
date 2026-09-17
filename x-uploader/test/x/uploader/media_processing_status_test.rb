@@ -71,6 +71,16 @@ module X
       assert_equal [60] * 10, @sleeps
     end
 
+    def test_awaits_the_processing_of_a_media_identifier
+      stub_request(:get, "https://api.x.com/2/media/upload?command=STATUS&media_id=7")
+        .to_return(headers: {"content-type" => "application/json"}, body: {data: {id: "7"}}.to_json)
+
+      [7, "7"].each do |media|
+        assert_equal({"id" => "7"}, Uploader::Media.await_processing(media, client: @client))
+        assert_equal({"id" => "7"}, Uploader::Media.await_processing!(media, client: @client))
+      end
+    end
+
     def test_media_without_id
       error = assert_raises(KeyError) { Uploader::Media.await_processing({}, client: @client) }
 

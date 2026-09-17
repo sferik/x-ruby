@@ -29,6 +29,8 @@ X::Uploader::Metadata.add_subtitles(video, subtitles, "EN", client:, display_nam
 X::Uploader::Account.update_profile_image("avatar.png", client:)
 ```
 
+`await_processing` and `await_processing!` take the response of an upload or a media identifier, as `X::Uploader::Metadata` does.
+
 `upload` infers the media category from the file. A GIF with a single frame is an image, because X processes only animated GIFs as GIFs, and `X::Uploader::Gif.animated?` tells the two apart. Videos are MP4, QuickTime, WebM, or MPEG-TS files and subtitles are SubRip (`.srt`) or WebVTT (`.vtt`) files, each uploaded in chunks as the type its extension names.
 
 A chunked upload sends four chunks at once, `X::Uploader::Media::DEFAULT_CONCURRENCY`, unless `concurrency:` says otherwise.
