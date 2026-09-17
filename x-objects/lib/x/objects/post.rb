@@ -15,9 +15,13 @@ module X
     # Every public post field; the identifiers of referenced resources come with their expansions
     FIELDS = %w[attachments community_id context_annotations conversation_id created_at edit_controls entities geo id
       lang note_post possibly_sensitive public_metrics reply_settings source text withheld].freeze
-    # Every expansion available on post endpoints that refers to a modeled resource
-    EXPANSIONS = %w[attachments.media_keys attachments.poll_ids author_id edit_history_post_ids
-      entities.mentions.username geo.place_id in_reply_to_user_id referenced_posts].freeze
+    # The expansions of the resources a post refers to that the object layer resolves
+    #
+    # The identifiers of a post's edit history come with every post, so the edit_history_post_ids expansion, which
+    # would include each version of the post again, including the post itself, is left out, as is
+    # entities.mentions.username, which would include each user the post mentions, since nothing reads them.
+    EXPANSIONS = %w[attachments.media_keys attachments.poll_ids author_id geo.place_id in_reply_to_user_id
+      referenced_posts].freeze
     # Maximum number of posts or users per page
     MAX_RESULTS = 100
     # Maximum number of posts per page of full-archive search, which allows only MAX_RESULTS with context annotations
