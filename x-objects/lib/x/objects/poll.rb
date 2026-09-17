@@ -9,7 +9,7 @@ module X
 
     # The key under which polls appear in the includes of a response
     #
-    # @api public
+    # @api private
     # @return [String] the includes key
     # @example Get the includes key
     #   X::Poll.includes_key # => "polls"

@@ -19,6 +19,10 @@ module X
         @widget = @klass.new(ATTRS, client: @client)
       end
 
+      def test_the_macros_are_private_to_the_class_body
+        %i[attribute reference references].each { |macro| refute_respond_to @klass, macro }
+      end
+
       def test_raw_attribute
         assert_equal "w", @widget.name
         assert_nil @klass.new({"id" => "1"}).name

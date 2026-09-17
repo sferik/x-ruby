@@ -17,7 +17,7 @@ module X
     class << self
       # The API endpoint used to look up lists by identifier
       #
-      # @api public
+      # @api private
       # @return [String] the endpoint
       # @example Get the endpoint
       #   X::List.endpoint # => "lists"
@@ -27,7 +27,7 @@ module X
 
       # The query parameter that selects list fields
       #
-      # @api public
+      # @api private
       # @return [String] the fields parameter
       # @example Get the fields parameter
       #   X::List.fields_key # => "list.fields"

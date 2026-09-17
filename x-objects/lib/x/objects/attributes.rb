@@ -14,6 +14,19 @@ module X
         integers: ->(value) { value&.map { |id| Utils.integer(id) } }
       }.freeze
 
+      # The names of the attributes declared on this class, which pattern matching reads
+      #
+      # @api private
+      # @return [Array<Symbol>] the attribute names
+      # @example Get the attributes of a user
+      #   X::User.attribute_names
+      def attribute_names
+        parent = superclass
+        @attribute_names ||= parent.is_a?(Attributes) ? parent.attribute_names.dup : [:id]
+      end
+
+      private
+
       # Define a reader for an attribute
       #
       # @api private
@@ -35,17 +48,6 @@ module X
           # @type self: Resource
           attrs.dig(*path).eql?(true)
         end
-      end
-
-      # The names of the attributes declared on this class, which pattern matching reads
-      #
-      # @api private
-      # @return [Array<Symbol>] the attribute names
-      # @example Get the attributes of a user
-      #   X::User.attribute_names
-      def attribute_names
-        parent = superclass
-        @attribute_names ||= parent.is_a?(Attributes) ? parent.attribute_names.dup : [:id]
       end
 
       # Define a reader that resolves a referenced resource
@@ -77,8 +79,6 @@ module X
           Array(attrs.dig(*path)).map { |id| resolve(X.const_get(klass_name), id) }.freeze
         end
       end
-
-      private
 
       # Check that a key path is an array of keys
       #

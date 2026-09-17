@@ -19,7 +19,7 @@ module X
     class << self
       # The API endpoint used to look up direct message events by identifier
       #
-      # @api public
+      # @api private
       # @return [String] the endpoint
       # @example Get the endpoint
       #   X::DirectMessage.endpoint # => "dm_events"
@@ -29,7 +29,7 @@ module X
 
       # The query parameter that selects direct message event fields
       #
-      # @api public
+      # @api private
       # @return [String] the fields parameter
       # @example Get the fields parameter
       #   X::DirectMessage.fields_key # => "dm_event.fields"

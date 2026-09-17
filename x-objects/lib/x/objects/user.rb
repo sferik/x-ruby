@@ -26,7 +26,7 @@ module X
     class << self
       # The API endpoint used to look up users by identifier
       #
-      # @api public
+      # @api private
       # @return [String] the endpoint
       # @example Get the endpoint
       #   X::User.endpoint # => "users"
@@ -34,7 +34,7 @@ module X
 
       # The key under which users appear in the includes of a response
       #
-      # @api public
+      # @api private
       # @return [String] the includes key
       # @example Get the includes key
       #   X::User.includes_key # => "users"
@@ -42,7 +42,7 @@ module X
 
       # The query parameter that selects user fields
       #
-      # @api public
+      # @api private
       # @return [String] the fields parameter
       # @example Get the fields parameter
       #   X::User.fields_key # => "user.fields"

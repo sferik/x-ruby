@@ -161,12 +161,12 @@ module X
 
       @attribute_names: Array[Symbol]?
 
-      def attribute: (Symbol name, ?Symbol type, ?key: key) -> void
       def attribute_names: () -> Array[Symbol]
-      def reference: (Symbol name, Symbol klass_name, key: key) -> void
-      def references: (Symbol name, Symbol klass_name, key: key) -> void
 
       private
+      def attribute: (Symbol name, ?Symbol type, ?key: key) -> void
+      def reference: (Symbol name, Symbol klass_name, key: key) -> void
+      def references: (Symbol name, Symbol klass_name, key: key) -> void
       def key_path: (untyped key) -> key
     end
 

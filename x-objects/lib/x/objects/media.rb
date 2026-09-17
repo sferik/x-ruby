@@ -9,7 +9,7 @@ module X
 
     # The attribute holding the identifier
     #
-    # @api public
+    # @api private
     # @return [String] the identifier key
     # @example Get the identifier key
     #   X::Media.id_key # => "media_key"
@@ -19,7 +19,7 @@ module X
 
     # The type of the identifier, which is not a number
     #
-    # @api public
+    # @api private
     # @return [Symbol] raw
     # @example Get the identifier type
     #   X::Media.id_type # => :raw
@@ -27,7 +27,7 @@ module X
 
     # The key under which media appear in the includes of a response
     #
-    # @api public
+    # @api private
     # @return [String] the includes key
     # @example Get the includes key
     #   X::Media.includes_key # => "media"

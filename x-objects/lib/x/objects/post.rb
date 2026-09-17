@@ -35,7 +35,7 @@ module X
     class << self
       # The API endpoint used to look up posts by identifier
       #
-      # @api public
+      # @api private
       # @return [String] the endpoint
       # @example Get the endpoint
       #   X::Post.endpoint # => "tweets"
@@ -45,7 +45,7 @@ module X
 
       # The key under which posts appear in the includes of a response
       #
-      # @api public
+      # @api private
       # @return [String] the includes key
       # @example Get the includes key
       #   X::Post.includes_key # => "posts"
@@ -55,7 +55,7 @@ module X
 
       # The query parameter that selects post fields
       #
-      # @api public
+      # @api private
       # @return [String] the fields parameter
       # @example Get the fields parameter
       #   X::Post.fields_key # => "post.fields"

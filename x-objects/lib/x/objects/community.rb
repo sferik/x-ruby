@@ -14,7 +14,7 @@ module X
     class << self
       # The API endpoint used to look up communities by identifier
       #
-      # @api public
+      # @api private
       # @return [String] the endpoint
       # @example Get the endpoint
       #   X::Community.endpoint # => "communities"
@@ -22,7 +22,7 @@ module X
 
       # The query parameter that selects community fields
       #
-      # @api public
+      # @api private
       # @return [String] the fields parameter
       # @example Get the fields parameter
       #   X::Community.fields_key # => "community.fields"

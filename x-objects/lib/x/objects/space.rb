@@ -16,7 +16,7 @@ module X
     class << self
       # The API endpoint used to look up spaces by identifier
       #
-      # @api public
+      # @api private
       # @return [String] the endpoint
       # @example Get the endpoint
       #   X::Space.endpoint # => "spaces"
@@ -26,7 +26,7 @@ module X
 
       # The type of the identifier, which is letters and digits rather than a number
       #
-      # @api public
+      # @api private
       # @return [Symbol] raw
       # @example Get the identifier type
       #   X::Space.id_type # => :raw
@@ -34,7 +34,7 @@ module X
 
       # The query parameter that selects space fields
       #
-      # @api public
+      # @api private
       # @return [String] the fields parameter
       # @example Get the fields parameter
       #   X::Space.fields_key # => "space.fields"

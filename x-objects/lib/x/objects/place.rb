@@ -9,7 +9,7 @@ module X
 
     # The type of the identifier, which is not a number
     #
-    # @api public
+    # @api private
     # @return [Symbol] raw
     # @example Get the identifier type
     #   X::Place.id_type # => :raw
@@ -17,7 +17,7 @@ module X
 
     # The key under which places appear in the includes of a response
     #
-    # @api public
+    # @api private
     # @return [String] the includes key
     # @example Get the includes key
     #   X::Place.includes_key # => "places"

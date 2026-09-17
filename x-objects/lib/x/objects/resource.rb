@@ -50,7 +50,7 @@ module X
       class << self
         # The API endpoint used to look up this resource by identifier
         #
-        # @api public
+        # @api private
         # @return [String, nil] the endpoint or nil if the resource cannot be looked up
         # @example Get the endpoint
         #   X::User.endpoint # => "users"
@@ -59,7 +59,7 @@ module X
 
         # The attribute holding the identifier
         #
-        # @api public
+        # @api private
         # @return [String] the identifier key
         # @example Get the identifier key
         #   X::Media.id_key # => "media_key"
@@ -67,7 +67,7 @@ module X
 
         # The type of the identifier, integer unless it is not a number
         #
-        # @api public
+        # @api private
         # @return [Symbol] integer, or raw for an identifier that is not a number
         # @example Get the identifier type
         #   X::Space.id_type # => :raw
@@ -75,7 +75,7 @@ module X
 
         # The key under which this resource appears in the includes of a response
         #
-        # @api public
+        # @api private
         # @return [String, nil] the includes key or nil if the resource is never expanded
         # @example Get the includes key
         #   X::User.includes_key # => "users"
@@ -84,7 +84,7 @@ module X
 
         # The query parameter that selects the fields of this resource
         #
-        # @api public
+        # @api private
         # @return [String, nil] the fields parameter or nil if the resource has no fields parameter
         # @example Get the fields parameter
         #   X::User.fields_key # => "user.fields"
@@ -116,7 +116,7 @@ module X
 
         # Check whether this resource can be looked up by identifier
         #
-        # @api public
+        # @api private
         # @return [Boolean] true if the resource has a lookup endpoint
         # @example Check whether a resource is hydratable
         #   X::Media.hydratable? # => false
@@ -124,7 +124,7 @@ module X
 
         # The lookup endpoint, which must exist
         #
-        # @api public
+        # @api private
         # @return [String] the endpoint
         # @raise [UnsupportedOperation] if the resource cannot be looked up by identifier
         # @example Get the lookup endpoint
