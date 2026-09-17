@@ -194,11 +194,19 @@ module X
     end
 
     # Configure a new HTTP client with timeout settings and debug output
+    #
+    # Net::HTTP sends a GET, PUT, or DELETE request again by itself after a timeout or a dropped connection, with the
+    # same OAuth 1.0a nonce and signature, which the API may bill twice, so its retries are turned off: a request
+    # that fails raises NetworkError, and the caller decides whether to send it again.
+    #
     # @api private
     # @param http_client [Net::HTTP] the HTTP client to configure
     # @return [Net::HTTP] the configured HTTP client
     def configure_http_client(http_client)
-      configure_timeouts(http_client).tap { |c| c.set_debug_output(debug_output) }
+      configure_timeouts(http_client).tap do |c|
+        c.max_retries = 0
+        c.set_debug_output(debug_output)
+      end
     end
 
     # Apply the current timeouts to an HTTP client, before each request it makes

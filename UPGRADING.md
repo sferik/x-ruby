@@ -38,6 +38,8 @@ client.copy(base_url: "https://api.x.com/1.1/").get("account/settings.json")
 client.get("https://api.x.com/1.1/account/settings.json")
 ```
 
+A request is sent once. In 0.19, `Net::HTTP` sent a GET, PUT, or DELETE request again by itself after a timeout or a dropped connection, with the OAuth 1.0a nonce and signature of the first attempt. Version 1.0 raises `X::NetworkError` instead, so rescue it to send a request again.
+
 ### Renamed classes
 
 | 0.19 | 1.0 |

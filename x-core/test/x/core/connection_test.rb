@@ -39,6 +39,10 @@ module X
       assert_equal Connection::DEFAULT_WRITE_TIMEOUT, http_client.write_timeout
     end
 
+    def test_http_client_leaves_retries_to_the_caller
+      assert_equal 0, @connection.send(:build_http_client).max_retries
+    end
+
     def test_debug_output
       http_client = @connection.send(:build_http_client)
 

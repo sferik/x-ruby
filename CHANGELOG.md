@@ -123,6 +123,7 @@ See [UPGRADING.md](https://github.com/sferik/x-ruby/blob/main/UPGRADING.md) for 
 * Make `X::Objects::Resource#includes` private, and document the `includes:`, `hydrated:`, and `batch:` of `X::Objects::Resource.new` and `from_id` and the `limit:` and `total:` of `X::Cursor.new` as internal to the object layer, so that they can change within 1.x
 * Mark `X::Uploader::Validator` as `@api private`, and make the MIME type and media category tables of `X::Uploader::Media`, the block constants of `X::Uploader::Gif`, and `X::Uploader::JSON_CLASSES` private constants, so that they can change within 1.x
 * Resolve an endpoint that begins with a slash against the base URL, like one without, so `client.get("/users/me")` requests `https://api.x.com/2/users/me` rather than drop the `/2/` of the API version and request a page that is not found; pass a whole URL to reach another path of the host
+* Send each request once, turning off the retry that `Net::HTTP` makes by itself of a GET, PUT, or DELETE request after a timeout or a dropped connection, which sent the OAuth 1.0a nonce and signature of the first attempt again and could repeat a read the API bills; such a failure raises `X::NetworkError`, and the caller decides whether to send the request again
 * Name the token endpoint of `X::OAuth2Authenticator` `TOKEN_URL`, as `X::AppOnlyAuthenticator` and `X::OAuth2Authorization` name theirs, in place of `TOKEN_HOST` and `TOKEN_PATH`
 ### Removed
 * Remove `X::Uploader::Account::MIME_TYPE_MAP`, which nothing read
