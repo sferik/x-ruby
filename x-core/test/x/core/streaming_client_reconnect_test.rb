@@ -27,7 +27,7 @@ module X
     def test_reads_with_a_short_timeout_of_its_own
       client = Client.new(read_timeout: 60)
 
-      assert_equal [20, 5], [client.streaming.read_timeout, client.streaming(read_timeout: 5).read_timeout]
+      assert_equal [30, 5], [client.streaming.read_timeout, client.streaming(read_timeout: 5).read_timeout]
       assert_equal [Float::INFINITY, 3], [client.streaming.max_reconnects, client.streaming(max_reconnects: 3).max_reconnects]
       assert_equal 60, client.read_timeout
     end
@@ -36,7 +36,7 @@ module X
       client = Client.new(open_timeout: 5, read_timeout: 60, write_timeout: 7, debug_output: $stderr, proxy_url: "https://proxy.example.com:8080")
       streaming_client = client.streaming
 
-      assert_equal [5, 20, 7], [streaming_client.open_timeout, streaming_client.read_timeout, streaming_client.write_timeout]
+      assert_equal [5, 30, 7], [streaming_client.open_timeout, streaming_client.read_timeout, streaming_client.write_timeout]
       assert_equal [$stderr, "https://proxy.example.com:8080"], [streaming_client.debug_output, streaming_client.proxy_url]
     end
 

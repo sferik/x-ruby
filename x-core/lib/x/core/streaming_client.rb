@@ -22,8 +22,8 @@ module X
     extend Forwardable
     include RequestEncoding
 
-    # Default timeout for reading from a stream in seconds, the interval of the keep-alive X sends
-    DEFAULT_READ_TIMEOUT = 20 # seconds
+    # Default timeout for reading from a stream in seconds, half again the 20-second interval of the keep-alive X sends
+    DEFAULT_READ_TIMEOUT = 30 # seconds
 
     # The client the stream authenticates and parses with
     # @api public
