@@ -38,7 +38,7 @@ A client authenticates with the first complete set of credentials it holds, so a
 
 Remove `require "x/media_uploader"` and `require "x/account_uploader"`. `require "x"` loads the uploaders.
 
-`X::Uploader::Validator` is private API, which the uploaders validate their arguments with, and the MIME type and media category tables of `X::Uploader::Media`, such as `MIME_TYPE_MAP`, are private constants. Pass a file to `upload`, which raises `Errno::ENOENT` for a missing file and `ArgumentError` for an invalid category.
+`X::Uploader::Validator` is private API, which the uploaders validate their arguments with, and the MIME type and media category tables of `X::Uploader::Media` are private constants: `MIME_TYPES`, `MIME_TYPE_MAP`, the MIME type constants, such as `GIF_MIME_TYPE`, `MP4_MIME_TYPE`, and `SUBRIP_MIME_TYPE`, and `PROCESSING_INFO_STATES`. The media category constants, such as `TWEET_IMAGE`, and `BYTES_PER_MB` remain public. Pass a file to `upload`, which raises `Errno::ENOENT` for a missing file and `ArgumentError` for an invalid category, or infer a type with `infer_media_type`.
 
 ### Uploads
 
@@ -62,6 +62,10 @@ X::Uploader::Account.update_profile_banner_binary(content, client:)
 ```
 
 `upload` infers the media category from the file, and still takes `media_category:`. No upload method takes `boundary:`, since each upload generates the boundary of its multipart body. `upload_binary` takes the content as a positional argument and requires `media_category:`, and `await_processing` and `await_processing!` take the media as one.
+
+`upload` returns the processing status of media that X processes, such as a video or an animated GIF, rather than the response of the upload; both hold the media's `"id"`. The uploaders return Hashes and Arrays whatever the `default_object_class` and `default_array_class` of the client, where 0.19 parsed their responses with the client's classes.
+
+`infer_media_type` returns the type the category takes that the file's extension names, such as `video/quicktime` for `clip.mov` uploaded as `tweet_video`, where 0.19 returned `video/mp4` for every video, and it returns `text/srt` for SubRip subtitles, where 0.19 returned `application/x-subrip`.
 
 `await_processing!` raises `X::Uploader::MediaProcessingFailed` rather than `RuntimeError`, and `await_processing` raises `X::Uploader::MediaProcessingTimeout` after ten minutes rather than waiting forever. Both are `X::Error`s. A file that does not exist raises `Errno::ENOENT`.
 
@@ -97,6 +101,10 @@ sleep(error.retry_after || 60)
 
 `X::HTTPError#error_message`, `#message_from_json_response`, and `#json?` are private. Read `message` instead. `X::HTTPError#status` reads the status as an Integer, beside `code`.
 
+### Internals
+
+`X::RequestBuilder`, `X::RedirectHandler`, `X::ResponseParser`, `X::StreamParser`, `X::RateLimitHandler`, and `X::ReconnectHandler` are private API, which can change within 1.x; configure them through the settings of `X::Client` and `X::StreamingClient`, such as `max_redirects`. `X::RedirectHandler#handle` no longer takes `base_url:`, since a relative redirect resolves against the request it redirects.
+
 ### Removed constants
 
-`X::OAuthAuthenticator::OAUTH_SIGNATURE_ALGORITHM` and `X::OAuth2Authenticator::REFRESH_GRANT_TYPE` are gone, since [simple_oauth](https://github.com/laserlemon/simple_oauth) signs requests and builds token refreshes now. `x-core` no longer depends on `base64`, so add it to your own Gemfile if you use it.
+`X::OAuthAuthenticator::OAUTH_SIGNATURE_ALGORITHM` and `X::OAuth2Authenticator::REFRESH_GRANT_TYPE` are gone, since [simple_oauth](https://github.com/laserlemon/simple_oauth) signs requests and builds token refreshes now. `X::MediaUploader::MAX_RETRIES` is gone, since a chunk is retried by `X::Uploader::Chunks`, which is private API, and `X::AccountUploader::MIME_TYPE_MAP` is gone, since nothing read it. `x-core` no longer depends on `base64`, so add it to your own Gemfile if you use it.
