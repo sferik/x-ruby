@@ -16,9 +16,10 @@ Most applications should install [`x`](https://rubygems.org/gems/x), which wires
 | `X::DirectMessage` | `sender`, `participants`, `references`, `media` | | `all`, `with`, `in` |
 | `X::Space` | `creator`, `hosts`, `speakers`, `invited_users` | `posts` | `search` |
 | `X::Community` | | | `search` |
-| `X::Media`, `X::Poll`, `X::Place` | | | |
+| `X::Media` | | | |
+| `X::Poll`, `X::Place` | | | |
 
-A collection is an `X::Cursor`, read from a resource, as in `user.followers`, and a class collection is one read from the class with a client, as in `X::Post.search("ruby", client:)`.
+Every class but `X::Poll` and `X::Place`, which the API has no lookup for, is looked up with `find`, as in `X::Media.find("3_1880028106020515840", client:)`, which looks media up by its media key. A collection is an `X::Cursor`, read from a resource, as in `user.followers`, and a class collection is one read from the class with a client, as in `X::Post.search("ruby", client:)`.
 
 ## The client contract
 

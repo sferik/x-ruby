@@ -60,7 +60,7 @@ module X
     end
 
     def test_a_resource_without_default_parameters_is_fully_requested_by_any_request
-      assert Media.fully_requested_by?({"media.fields" => "url"})
+      assert Poll.fully_requested_by?({"poll.fields" => "id"})
     end
   end
 end

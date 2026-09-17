@@ -21,14 +21,14 @@ module X
 
       def test_endpoint_bang
         assert_equal "users", User.endpoint!
-        error = assert_raises(UnsupportedOperation) { Media.endpoint! }
+        error = assert_raises(UnsupportedOperation) { Poll.endpoint! }
 
-        assert_equal "X::Media cannot be fetched by media_key", error.message
+        assert_equal "X::Poll cannot be fetched by id", error.message
       end
 
       def test_find_without_endpoint
-        assert_raises(UnsupportedOperation) { Media.find("3_1", client: FakeClient.new) }
-        assert_raises(UnsupportedOperation) { Media.find_all(["3_1"], client: FakeClient.new) }
+        assert_raises(UnsupportedOperation) { Poll.find(1, client: FakeClient.new) }
+        assert_raises(UnsupportedOperation) { Poll.find_all([1], client: FakeClient.new) }
       end
 
       def test_hydratable

@@ -59,6 +59,15 @@ module X
         assert_raises(ResourceNotFound) { @client.find_post!(2) }
       end
 
+      def test_find_media_bang
+        @client.stub(:get, "media/3_1", {"data" => {"media_key" => "3_1", "type" => "photo"}})
+        @client.stub(:get, "media/3_2", {"errors" => []})
+
+        assert_equal "photo", @client.find_media!("3_1", "media.fields": "type").type
+        assert_equal "type", @client.queries.first["media.fields"]
+        assert_raises(ResourceNotFound) { @client.find_media!("3_2") }
+      end
+
       def test_find_space_bang
         @client.stub(:get, "spaces/1", {"data" => {"id" => "1", "title" => "Ruby"}})
         @client.stub(:get, "spaces/2", {"errors" => []})

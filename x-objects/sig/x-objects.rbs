@@ -253,6 +253,7 @@ module X
       def endpoint!: () -> String
       def id_type: () -> Symbol
       def default_params: () -> Hash[String, Array[String]]
+      def batch_key: () -> Symbol
       def fully_requested_by?: (Hash[String, untyped] query) -> bool
       def resource_from_response: (body body, client: _Client?, ?hydrated: bool) -> Resource?
       def collection_from_response: (body body, client: _Client?, ?hydrated: bool) -> Array[Resource]
@@ -354,6 +355,7 @@ module X
       def self.default_params: () -> Hash[String, Array[String]]
       def self.hydratable?: () -> bool
       def self.batchable?: () -> bool
+      def self.batch_key: () -> Symbol
       def self.endpoint!: () -> String
       def self.from_id: (id id, ?client: _Client?, ?batch: Batch?) -> Resource
       def self.from_response: (body body, client: _Client?, ?hydrated: bool) -> (Resource | Array[Resource])?
@@ -424,6 +426,7 @@ module X
         include Lookups::Posts
         include Lookups::Lists
         include Lookups::Spaces
+        include Lookups::Media
         include Lookups::Communities
         include Lookups::DirectMessages
 
@@ -473,6 +476,11 @@ module X
           def find_space!: (id id, **untyped params) -> Space
           def find_spaces: (Array[id] ids, **untyped params) ?{ (Problem problem) -> void } -> Array[Space]
           def search_spaces: (String query, **untyped params) -> Cursor
+        end
+
+        module Media : _Client
+          def find_media: (id media_key, **untyped params) ?{ (Problem problem) -> void } -> X::Media?
+          def find_media!: (id media_key, **untyped params) -> X::Media
         end
 
         module Communities : _Client
@@ -624,6 +632,10 @@ module X
 
     def self.id_key: () -> String
     def self.includes_key: () -> String
+    def self.endpoint: () -> String
+    def self.batch_key: () -> Symbol
+    def self.fields_key: () -> String
+    def self.default_params: () -> Hash[String, Array[String]]
     def media_key: () -> String
     def type: () -> String?
     def url: () -> String?

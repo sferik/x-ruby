@@ -74,7 +74,7 @@ module X
       # @example Look up many posts by identifier, reporting the ones that were not found
       #   X::Post.find_all([1234567890, 1234567891], client: client) { |problem| warn problem.detail }
       def find_all(ids, client:, **params, &)
-        lookup_in_batches(endpoint!, :ids, ids.map { |id| Utils.id_of(id, raw: id_type.eql?(:raw)) }, client:, **params, &)
+        lookup_in_batches(endpoint!, batch_key, ids.map { |id| Utils.id_of(id, raw: id_type.eql?(:raw)) }, client:, **params, &)
       end
 
       # Fetch a single resource from an endpoint

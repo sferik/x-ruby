@@ -56,7 +56,7 @@ module X
 
       def test_fields_key_defaults_to_nil
         assert_nil Resource.fields_key
-        assert_nil Media.fields_key
+        assert_nil Poll.fields_key
         assert_nil Poll.fields_key
         assert_nil Place.fields_key
       end

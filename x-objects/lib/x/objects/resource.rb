@@ -146,6 +146,14 @@ module X
         #   X::List.batchable? # => false
         def batchable? = hydratable?
 
+        # The query parameter a batch lookup takes the identifiers in
+        #
+        # @api private
+        # @return [Symbol] the parameter name
+        # @example Get the parameter of a batch lookup of media
+        #   X::Media.batch_key # => :media_keys
+        def batch_key = :ids
+
         # The lookup endpoint, which must exist
         #
         # @api private

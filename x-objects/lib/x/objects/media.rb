@@ -1,7 +1,7 @@
 require_relative "resource"
 
 module X
-  # A photo, video, or animated GIF attached to a post
+  # A photo, video, or animated GIF attached to a post, which its media key identifies
   # @api public
   class Media < Objects::Resource
     # Every public media field
@@ -15,6 +15,42 @@ module X
     #   X::Media.id_key # => "media_key"
     def self.id_key
       "media_key"
+    end
+
+    # The lookup endpoint
+    #
+    # @api private
+    # @return [String] the endpoint
+    # @example Get the lookup endpoint
+    #   X::Media.endpoint # => "media"
+    def self.endpoint
+      "media"
+    end
+
+    # The query parameter a batch lookup takes the media keys in
+    #
+    # @api private
+    # @return [Symbol] the parameter name
+    # @example Get the parameter of a batch lookup
+    #   X::Media.batch_key # => :media_keys
+    def self.batch_key = :media_keys
+
+    # The name of the fields parameter
+    #
+    # @api private
+    # @return [String] the fields parameter
+    # @example Get the fields parameter
+    #   X::Media.fields_key # => "media.fields"
+    def self.fields_key = "media.fields"
+
+    # The default query parameters requesting every public field
+    #
+    # @api public
+    # @return [Hash{String => Array<String>}] the default query parameters
+    # @example Get the default fields
+    #   X::Media.default_params["media.fields"]
+    def self.default_params
+      {"media.fields" => FIELDS}
     end
 
     # The type of the identifier, which is not a number

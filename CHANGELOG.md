@@ -35,6 +35,7 @@ See [UPGRADING.md](https://github.com/sferik/x-ruby/blob/main/UPGRADING.md) for 
 * Make `current_user`, the memoized authenticated user, public on the client, in place of `me`, which made a request every call
 * Look up a mix of identifiers and usernames with `find_users`, which batches each kind separately instead of treating everything as a username, and returns the users in the order they were asked for
 * Look up a direct message with `find_direct_message`, many spaces with `find_spaces`, and the conversation with a user with `direct_messages_with`
+* Look up media by media key with `X::Media.find`, `find!`, and `find_all`, which asks for up to 100 `media_keys` at a time, and with `find_media` and `find_media!` on the client, so the media of a post hydrates to every field, and `client.find_media(uploaded.media_key)` reads what an upload became, with its URL and variants
 * Add `X::Community`, looked up with `find_community` and `find_community!`, searched with `search_communities`, referred to by `post.community`, and posted in with the `community:` of `create_post`
 * Shorten every client method named for direct messages with a `dm` alias: `find_dm`, `find_dm!`, `dms`, `dms_with`, `create_dm`, and `delete_dm`
 * Build the `reply` and `media` fields of a new post from the `reply_to:` and `media_ids:` of `create_post`
@@ -104,7 +105,7 @@ See [UPGRADING.md](https://github.com/sferik/x-ruby/blob/main/UPGRADING.md) for 
 * Send requests to `api.x.com` rather than `api.twitter.com` by default, the host of the token endpoints, the uploads, and the API's documentation
 * Rename `X::User.me` to `X::User.current`, the request behind `current_user`
 * Rename `X::Objects::Actions`, the follow, block, mute, like, and repost methods of `X::User`, to `X::Objects::Relationships`, so it no longer shares a name with `X::Objects::API::Actions`
-* Raise `X::UnsupportedOperation`, an `X::Error`, from `X::List.find_all`, since the API has no batch lookup of lists, instead of sending a request that fails; the object layer raises it for anything else the API offers no way to do, such as hydrating `X::Media` or requesting the identifiers alone of a resource without a fields parameter
+* Raise `X::UnsupportedOperation`, an `X::Error`, from `X::List.find_all`, since the API has no batch lookup of lists, instead of sending a request that fails; the object layer raises it for anything else the API offers no way to do, such as hydrating an `X::Poll` or requesting the identifiers alone of a resource without a fields parameter
 * Take the recipient and text of a direct message as the positional arguments of `create_direct_message`, in place of `to:` and `text:`; the text is optional for a message of attachments alone
 * Derive the v1.1 client of `X::Uploader::Account` from the client it is given with `copy`, so it keeps the timeouts, proxy, and other settings
 * Mark `X::RequestBuilder`, `X::RedirectHandler`, `X::ResponseParser`, `X::StreamParser`, `X::RateLimitHandler`, and `X::ReconnectHandler` as `@api private`, the internals of `X::Client` and `X::StreamingClient`, whose settings they expose, so that they can change within 1.x

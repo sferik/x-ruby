@@ -290,6 +290,7 @@ media = x_client.upload_media("cat.jpg", alt_text: "A cat asleep on a keyboard")
 media.id                               # => 1880028106020515840, and media["id"] reads it as the API gave it
 media.expires_at                       # => 2026-09-19 12:00:00 UTC, after which it cannot be attached to a post
 x_client.create_post("Look at this cat", media_ids: [media])
+x_client.find_media(media.media_key).url # the X::Media it became, as a post refers to it
 
 # A video is uploaded in chunks, four at a time unless concurrency says otherwise, and upload waits until a video or
 # an animated GIF has been processed, for up to ten minutes unless processing_timeout says otherwise

@@ -93,6 +93,23 @@ module X
         assert_equal "id", @client.queries.first["space.fields"]
       end
 
+      def test_find_media
+        @client.stub(:get, "media/3_1", {"data" => {"media_key" => "3_1", "type" => "photo"}})
+        problems = []
+
+        assert_equal "photo", @client.find_media("3_1", "media.fields": "type") { |problem| problems << problem }.type
+        assert_equal "type", @client.queries.first["media.fields"]
+        assert_empty problems
+      end
+
+      def test_find_media_passes_each_problem_to_its_block
+        @client.stub(:get, "media/3_9", {"errors" => [{"title" => "Not Found Error"}]})
+        titles = []
+
+        assert_nil @client.find_media("3_9") { |problem| titles << problem.title }
+        assert_equal ["Not Found Error"], titles
+      end
+
       def test_find_spaces
         @client.stub(:get, "spaces", {"data" => [{"id" => "1"}, {"id" => "2"}]})
 

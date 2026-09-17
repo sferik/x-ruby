@@ -27,6 +27,14 @@ module X
       assert_requested :post, "#{BASE}tweets", body: {text: "Look at this cat", media: {media_ids: ["7"]}}.to_json
     end
 
+    def test_a_client_looks_up_the_media_that_an_upload_became
+      stub_json(:post, "media/upload", {data: {id: "7", media_key: "3_7"}})
+      stub_request(:get, %r{\A#{Regexp.escape(BASE)}media/3_7\?}o).to_return(body: JSON.generate({data: {media_key: "3_7", type: "photo"}}), headers: {"content-type" => "application/json"})
+      uploaded = @client.upload_media_binary("GIF89a", media_category: "tweet_image")
+
+      assert_equal "photo", @client.find_media(uploaded.media_key).type
+    end
+
     private
 
     def stub_json(method, path, body)
