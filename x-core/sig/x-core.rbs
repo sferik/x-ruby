@@ -195,7 +195,7 @@ module X
     DEFAULT_READ_TIMEOUT: Integer
     DEFAULT_WRITE_TIMEOUT: Integer
 
-    NETWORK_ERRORS: Array[(singleton(Errno::ECONNREFUSED) | singleton(Errno::ECONNRESET) | singleton(Errno::EHOSTUNREACH) | singleton(Errno::ENETUNREACH) | singleton(Errno::EPIPE) | singleton(Errno::ETIMEDOUT) | singleton(IOError) | singleton(Net::HTTPBadResponse) | singleton(Net::OpenTimeout) | singleton(Net::ReadTimeout) | singleton(Net::WriteTimeout) | singleton(OpenSSL::SSL::SSLError) | singleton(SocketError))]
+    NETWORK_ERRORS: Array[singleton(IOError) | singleton(Net::HTTPBadResponse) | singleton(Net::ProtocolError) | singleton(OpenSSL::SSL::SSLError) | singleton(SocketError) | singleton(SystemCallError) | singleton(Timeout::Error) | singleton(Zlib::Error)]
 
     include ConnectionProxy
 

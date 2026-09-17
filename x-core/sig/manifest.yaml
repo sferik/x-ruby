@@ -4,3 +4,4 @@ dependencies:
   - name: net-http
   - name: openssl
   - name: uri
+  - name: zlib

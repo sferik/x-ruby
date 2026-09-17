@@ -11,5 +11,6 @@ target :lib do
   library "simple_oauth"
   library "tmpdir"
   library "uri"
+  library "zlib"
   configure_code_diagnostics(Steep::Diagnostic::Ruby.strict)
 end

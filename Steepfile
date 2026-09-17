@@ -16,5 +16,6 @@ target :lib do
   library "time"
   library "tmpdir"
   library "uri"
+  library "zlib"
   configure_code_diagnostics(Steep::Diagnostic::Ruby.strict)
 end

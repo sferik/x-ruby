@@ -97,5 +97,14 @@ module X
         assert_raises(NetworkError) { @connection.perform(request:) }
       end
     end
+
+    def test_wraps_the_errors_that_descend_from_those_it_names
+      [Errno::ECONNABORTED, Errno::ENETDOWN, Net::ReadTimeout, Zlib::BufError,
+        Net::HTTPClientException.new("407 Proxy Authentication Required", nil)].each do |error|
+        stub_request(:get, "https://example.com").to_raise(error)
+
+        assert_raises(NetworkError) { @connection.perform(request: Net::HTTP::Get.new(URI("https://example.com"))) }
+      end
+    end
   end
 end

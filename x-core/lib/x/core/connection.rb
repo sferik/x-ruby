@@ -1,6 +1,7 @@
 require "net/http"
 require "openssl"
 require "uri"
+require "zlib"
 require_relative "connection_pool"
 require_relative "connection_proxy"
 require_relative "errors/network_error"
@@ -27,23 +28,21 @@ module X
     DEFAULT_WRITE_TIMEOUT = 60 # seconds
     # Network errors that should be wrapped in NetworkError
     #
-    # IOError covers EOFError, and a read from a socket closed under it. A dropped network can also refuse a
-    # write with EPIPE, or find no route with ENETUNREACH, and a connection cut off mid-response can leave
-    # Net::HTTP a status line it cannot parse.
+    # IOError covers EOFError, and a read from a socket closed under it. SystemCallError covers every error the
+    # operating system reports for a socket, such as a refused, reset, or aborted connection, a network that is down
+    # or has no route, or a write refused with EPIPE. Timeout::Error covers the open, read, and write timeouts of
+    # Net::HTTP. A connection cut off mid-response can leave Net::HTTP a status line it cannot parse, or a compressed
+    # body that Zlib cannot inflate, and a proxy that refuses to open a tunnel, such as with 407 Proxy Authentication
+    # Required, raises a Net::ProtocolError.
     NETWORK_ERRORS = [
-      Errno::ECONNREFUSED,
-      Errno::ECONNRESET,
-      Errno::EHOSTUNREACH,
-      Errno::ENETUNREACH,
-      Errno::EPIPE,
-      Errno::ETIMEDOUT,
       IOError,
       Net::HTTPBadResponse,
-      Net::OpenTimeout,
-      Net::ReadTimeout,
-      Net::WriteTimeout,
+      Net::ProtocolError,
       OpenSSL::SSL::SSLError,
-      SocketError
+      SocketError,
+      SystemCallError,
+      Timeout::Error,
+      Zlib::Error
     ].freeze
 
     # The timeout for opening connections in seconds
