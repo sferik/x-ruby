@@ -16,7 +16,8 @@ module X
       # @param client [Object] the client used to make the request
       # @param reply_to [Post, String, Integer, nil] the post to reply to or its identifier
       # @param quote [Post, String, Integer, nil] the post to quote or its identifier
-      # @param media_ids [Array<String, Integer, Hash>, nil] the identifiers of uploaded media to attach, or the upload responses
+      # @param media_ids [Array<String, Integer, #fetch>, nil] the identifiers of uploaded media to attach, or what
+      #   the uploads returned
       # @param community [Community, String, Integer, nil] the community to post in or its identifier
       # @param params [Hash] additional request body fields, such as poll or reply_settings
       # @return [Post, nil] the created post, holding only its identifier and text
@@ -93,7 +94,8 @@ module X
       # @api private
       # @param reply_to [Post, String, Integer, nil] the post to reply to or its identifier
       # @param quote [Post, String, Integer, nil] the post to quote or its identifier
-      # @param media_ids [Array<String, Integer, Hash>, nil] the identifiers of uploaded media, or the upload responses
+      # @param media_ids [Array<String, Integer, #fetch>, nil] the identifiers of uploaded media, or what the uploads
+      #   returned
       # @param community [Community, String, Integer, nil] the community to post in or its identifier
       # @return [Hash{Symbol => Object}] the fields, without those given nil
       def referenced(reply_to:, quote:, media_ids:, community:)

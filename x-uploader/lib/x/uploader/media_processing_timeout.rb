@@ -7,7 +7,7 @@ module X
     class MediaProcessingTimeout < Error
       # The last processing status X reported, with the state and progress
       # @api public
-      # @return [Hash{String => Object}] the status
+      # @return [UploadedMedia, Hash{String => Object}] the status, which reads as a Hash
       # @example Read how far processing got
       #   error.status.dig("processing_info", "progress_percent") # => 42
       attr_reader :status
@@ -15,7 +15,7 @@ module X
       # Initialize the error with the last status and the time that was allowed
       #
       # @api public
-      # @param status [Hash{String => Object}] the last processing status X reported
+      # @param status [UploadedMedia, Hash{String => Object}] the last processing status X reported
       # @param timeout [Integer] the seconds await_processing was allowed to wait
       # @return [MediaProcessingTimeout] a new error
       # @example Raise the error after ten minutes

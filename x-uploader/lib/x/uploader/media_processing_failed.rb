@@ -10,7 +10,7 @@ module X
 
       # The processing status X reported, whose processing_info holds the error
       # @api public
-      # @return [Hash{String => Object}] the status
+      # @return [UploadedMedia, Hash{String => Object}] the status, which reads as a Hash
       # @example Read the error X reported
       #   error.status.dig("processing_info", "error", "name") # => "InvalidMedia"
       attr_reader :status
@@ -18,7 +18,7 @@ module X
       # Initialize the error with the reason X gives for the failure
       #
       # @api public
-      # @param status [Hash{String => Object}] the processing status X reported
+      # @param status [UploadedMedia, Hash{String => Object}] the processing status X reported
       # @return [MediaProcessingFailed] a new error
       # @example Raise the error for a failed status
       #   raise X::Uploader::MediaProcessingFailed.new(status)

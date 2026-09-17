@@ -137,13 +137,19 @@ module X
         Integer(value.to_s, 10) unless value.nil?
       end
 
-      # Extract a media identifier from an upload response or a raw value
+      # Extract a media identifier from what an upload returned, or a raw value
+      #
+      # What an upload returns is read with fetch, which a Hash answers and so does the uploaded media of
+      # x-uploader, which this gem does not depend on.
       #
       # @api private
-      # @param value [Hash, String, Integer] an upload response holding an id, or an identifier
+      # @param value [#fetch, String, Integer] what an upload returned, holding an id, or an identifier
       # @return [String] the media identifier
       def media_id_of(value)
-        value.is_a?(Hash) ? value.fetch("id").to_s : value.to_s
+        case value
+        when String, Integer then value.to_s
+        else value.fetch("id").to_s
+        end
       end
 
       # Check whether a value identifies a resource rather than naming one

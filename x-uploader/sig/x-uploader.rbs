@@ -3,6 +3,42 @@ module X
     VERSION: Gem::Version
     JSON_CLASSES: Hash[Symbol, singleton(Array) | singleton(Hash)]
 
+    # Media to act on: what an upload returned, or the identifier of media
+    type media = UploadedMedia | Hash[String, untyped] | String | Integer
+
+    class UploadedMedia
+      FINAL_STATES: Array[String]
+
+      @received_at: Time
+
+      attr_reader attrs: Hash[String, untyped]
+      alias to_h attrs
+
+      def self.from: (Hash[String, untyped]? attrs) -> UploadedMedia?
+      def initialize: (Hash[String, untyped] attrs) -> void
+      def id: () -> Integer
+      def media_key: () -> String?
+      def size: () -> Integer?
+      def expires_at: () -> Time?
+      def processing_info: () -> Hash[String, untyped]?
+      def state: () -> String?
+      def check_after_secs: () -> Integer?
+      def processing?: () -> bool
+      def failed?: () -> bool
+      def ready?: () -> bool
+      def []: (String key) -> untyped
+      def fetch: (String key) ?{ (String key) -> untyped } -> untyped
+      def dig: (*String | Integer keys) -> untyped
+      def key?: (String key) -> bool
+      def ==: (untyped other) -> bool
+      alias eql? ==
+      def hash: () -> Integer
+      def inspect: () -> String
+
+      private
+      def deep_freeze: (untyped value) -> untyped
+    end
+
     # What the uploaders ask of a client, which X::Client provides
     interface _Client
       def get: (String endpoint, **untyped) -> untyped
@@ -11,11 +47,11 @@ module X
     end
 
     module API : _Client
-      def upload_media: (path file_path, **untyped options) -> untyped
-      def upload_media_binary: (String content, media_category: String) -> untyped
-      def await_media_processing: (Hash[String, untyped] | String | Integer media, **untyped options) -> untyped
-      def add_alt_text: (untyped media, String text) -> untyped
-      def add_subtitles: (untyped video, untyped subtitles, String language_code, **untyped options) -> untyped
+      def upload_media: (path file_path, **untyped options) -> UploadedMedia?
+      def upload_media_binary: (String content, media_category: String) -> UploadedMedia?
+      def await_media_processing: (media media, **untyped options) -> UploadedMedia?
+      def add_alt_text: (media media, String text) -> untyped
+      def add_subtitles: (media video, media subtitles, String language_code, **untyped options) -> untyped
       def update_profile_image: (path file_path) -> untyped
       def update_profile_banner: (path file_path, **untyped options) -> untyped
     end
@@ -24,22 +60,22 @@ module X
     end
 
     class MediaProcessingTimeout < Error
-      attr_reader status: Hash[String, untyped]
-      def initialize: (Hash[String, untyped] status, Integer timeout) -> void
+      attr_reader status: UploadedMedia | Hash[String, untyped]
+      def initialize: (UploadedMedia | Hash[String, untyped] status, Integer timeout) -> void
     end
 
     class MediaProcessingFailed < Error
       DEFAULT_MESSAGE: String
 
-      attr_reader status: Hash[String, untyped]
-      def initialize: (Hash[String, untyped] status) -> void
+      attr_reader status: UploadedMedia | Hash[String, untyped]
+      def initialize: (UploadedMedia | Hash[String, untyped] status) -> void
     end
 
     module Utils
       extend Utils
 
       def extension: (path file_path) -> String
-      def media_id: (untyped media) -> String
+      def media_id: (media media) -> String
     end
 
     module Multipart
@@ -103,12 +139,12 @@ module X
       CATEGORY_MIME_TYPES: Hash[String, Array[String]]
       extend Media
 
-      def upload: (path file_path, client: _Client, ?media_category: String, ?alt_text: String?, ?processing_timeout: Integer, ?media_type: String?, ?chunk_size_mb: Float | Integer, ?concurrency: Integer) -> untyped
+      def upload: (path file_path, client: _Client, ?media_category: String, ?alt_text: String?, ?processing_timeout: Integer, ?media_type: String?, ?chunk_size_mb: Float | Integer, ?concurrency: Integer) -> UploadedMedia?
       def infer_media_category: (path file_path) -> String
-      def upload_binary: (String content, client: _Client, media_category: String) -> untyped
-      def chunked_upload: (path file_path, client: _Client, ?media_category: String, ?media_type: String?, ?chunk_size_mb: Float | Integer, ?concurrency: Integer) -> untyped
-      def await_processing: (Hash[String, untyped] | String | Integer media, client: _Client, ?processing_timeout: Integer) -> untyped
-      def await_processing!: (Hash[String, untyped] | String | Integer media, client: _Client, ?processing_timeout: Integer) -> untyped
+      def upload_binary: (String content, client: _Client, media_category: String) -> UploadedMedia?
+      def chunked_upload: (path file_path, client: _Client, ?media_category: String, ?media_type: String?, ?chunk_size_mb: Float | Integer, ?concurrency: Integer) -> UploadedMedia?
+      def await_processing: (media media, client: _Client, ?processing_timeout: Integer) -> UploadedMedia?
+      def await_processing!: (media media, client: _Client, ?processing_timeout: Integer) -> UploadedMedia?
       def infer_media_type: (path file_path, String media_category) -> String
     end
 
@@ -132,8 +168,8 @@ module X
       AMPLIFY_SUBTITLED_MEDIA_CATEGORY: String
       extend Metadata
 
-      def add_alt_text: (untyped media, String text, client: _Client) -> untyped
-      def add_subtitles: (untyped video, untyped subtitles, String language_code, client: _Client, ?display_name: String?, ?media_category: String) -> untyped
+      def add_alt_text: (media media, String text, client: _Client) -> untyped
+      def add_subtitles: (media video, media subtitles, String language_code, client: _Client, ?display_name: String?, ?media_category: String) -> untyped
     end
 
     module Validator

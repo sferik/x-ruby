@@ -17,7 +17,7 @@ module X
       # Describe uploaded media with alt text, for people who cannot see it
       #
       # @api public
-      # @param media [Hash, String, Integer] the upload response, or the media identifier
+      # @param media [UploadedMedia, Hash, String, Integer] the uploaded media, or the media identifier
       # @param text [String] the alt text, up to 1,000 characters
       # @param client [Client] the X API client
       # @return [Hash, nil] the media identifier and the metadata now associated with it
@@ -30,8 +30,8 @@ module X
       # Attach uploaded subtitles to an uploaded video
       #
       # @api public
-      # @param video [Hash, String, Integer] the upload response of the video, or its media identifier
-      # @param subtitles [Hash, String, Integer] the upload response of the .srt file, or its media identifier
+      # @param video [UploadedMedia, Hash, String, Integer] the uploaded video, or its media identifier
+      # @param subtitles [UploadedMedia, Hash, String, Integer] the uploaded .srt file, or its media identifier
       # @param language_code [String] the two-letter language code of the subtitles, such as EN
       # @param client [Client] the X API client
       # @param display_name [String, nil] the name of the language shown to viewers, such as English

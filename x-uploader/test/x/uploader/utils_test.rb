@@ -28,6 +28,15 @@ module X
       assert_equal "7", Uploader::Utils.media_id(response)
     end
 
+    def test_media_id_of_uploaded_media
+      assert_equal "7", Uploader::Utils.media_id(Uploader::UploadedMedia.new({"id" => "7"}))
+      assert_equal "7", Uploader::Utils.media_id(Class.new(Uploader::UploadedMedia).new({"id" => "7"}))
+    end
+
+    def test_media_id_of_uploaded_media_without_an_id
+      assert_raises(KeyError) { Uploader::Utils.media_id(Uploader::UploadedMedia.new({"media_key" => "3_7"})) }
+    end
+
     def test_media_id_of_an_identifier
       assert_equal "7", Uploader::Utils.media_id(7)
       assert_equal "8", Uploader::Utils.media_id("8")

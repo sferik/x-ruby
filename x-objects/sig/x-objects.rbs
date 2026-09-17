@@ -64,6 +64,11 @@ module X
     type id = String | Integer | Resource
     type key = Array[String]
 
+    # What an upload returned, holding the identifier of the media: a Hash, or the uploaded media of x-uploader
+    interface _UploadedMedia
+      def fetch: (String key) -> untyped
+    end
+
     interface _Client
       def get: (String endpoint, **untyped) -> untyped
       def post: (String endpoint, ?String? body, **untyped) -> untyped
@@ -83,7 +88,7 @@ module X
       def merge_params: (params defaults, params params) -> query
       def id_of: (untyped value, ?raw: bool) -> String
       def username: (untyped value) -> String
-      def media_id_of: (untyped value) -> String
+      def media_id_of: (String | Integer | _UploadedMedia value) -> String
       def integer: (String | Integer | nil value) -> Integer?
       def oauth1_user_id: (untyped client) -> Integer?
       def app_client: (untyped client) -> untyped
@@ -281,14 +286,14 @@ module X
     end
 
     module PostWrites : _Lookup[Post]
-      def create: (?String? text, client: _Client, ?reply_to: id?, ?quote: id?, ?media_ids: Array[String | Integer | Hash[String, untyped]]?, ?community: id?, **untyped params) -> Post?
+      def create: (?String? text, client: _Client, ?reply_to: id?, ?quote: id?, ?media_ids: Array[String | Integer | _UploadedMedia]?, ?community: id?, **untyped params) -> Post?
       def delete: (id post, client: _Client) -> bool
       def hide: (id post, client: _Client) -> bool
       def unhide: (id post, client: _Client) -> bool
 
       private
       def change_visibility: (id post, bool hidden, client: _Client) -> bool?
-      def referenced: (reply_to: id?, quote: id?, media_ids: Array[String | Integer | Hash[String, untyped]]?, community: id?) -> Hash[Symbol, untyped]
+      def referenced: (reply_to: id?, quote: id?, media_ids: Array[String | Integer | _UploadedMedia]?, community: id?) -> Hash[Symbol, untyped]
     end
 
     # The class side of DirectMessage, which builds its messages

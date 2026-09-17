@@ -20,6 +20,13 @@ module X
         assert_equal "3", Utils.media_id_of("3")
       end
 
+      def test_media_id_of_uploaded_media_that_is_no_hash
+        uploaded = Struct.new(:attrs) { def fetch(key) = attrs.fetch(key) }
+
+        assert_equal "3", Utils.media_id_of(uploaded.new({"id" => "3"}))
+        assert_raises(KeyError) { Utils.media_id_of(uploaded.new({"media_key" => "3_3"})) }
+      end
+
       def test_media_id_of_a_response_without_an_id
         assert_raises(KeyError) { Utils.media_id_of({"media_key" => "3_3"}) }
       end

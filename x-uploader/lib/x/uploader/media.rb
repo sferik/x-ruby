@@ -9,6 +9,7 @@ require_relative "media_processing_failed"
 require_relative "media_processing_timeout"
 require_relative "metadata"
 require_relative "multipart"
+require_relative "uploaded_media"
 require_relative "utils"
 require_relative "validator"
 require_relative "version"
@@ -48,8 +49,6 @@ module X
       VIDEO_MIME_TYPES = [MP4_MIME_TYPE, QUICKTIME_MIME_TYPE, WEBM_MIME_TYPE, MPEG_TS_MIME_TYPE].freeze
       # MIME types of the subtitles the API takes, the first of which subtitles of no known type are uploaded as
       SUBTITLES_MIME_TYPES = [SUBRIP_MIME_TYPE, WEBVTT_MIME_TYPE].freeze
-      # Processing states that indicate completion
-      PROCESSING_INFO_STATES = %w[failed succeeded].freeze
       # Default number of seconds await_processing waits between checks before it gives up
       DEFAULT_PROCESSING_TIMEOUT = 600
       # Default number of chunks uploaded at once
@@ -76,7 +75,7 @@ module X
       private_constant :MIME_TYPES, :BMP_MIME_TYPE, :GIF_MIME_TYPE, :JPEG_MIME_TYPE, :PJPEG_MIME_TYPE, :PNG_MIME_TYPE,
         :TIFF_MIME_TYPE, :WEBP_MIME_TYPE, :GLTF_BINARY_MIME_TYPE, :USDZ_MIME_TYPE, :SUBRIP_MIME_TYPE, :WEBVTT_MIME_TYPE,
         :MPEG_TS_MIME_TYPE, :MP4_MIME_TYPE, :QUICKTIME_MIME_TYPE, :WEBM_MIME_TYPE, :MIME_TYPE_MAP, :VIDEO_MIME_TYPES,
-        :SUBTITLES_MIME_TYPES, :PROCESSING_INFO_STATES, :MIN_CHECK_AFTER_SECS, :VIDEO_CATEGORIES, :CHUNKED_CATEGORIES,
+        :SUBTITLES_MIME_TYPES, :MIN_CHECK_AFTER_SECS, :VIDEO_CATEGORIES, :CHUNKED_CATEGORIES,
         :CATEGORY_MAP, :CATEGORY_MIME_TYPES
 
       # Upload a file, in chunks for video and subtitles, awaiting any processing
@@ -90,7 +89,8 @@ module X
       # @param media_type [String, nil] the MIME type of media uploaded in chunks, inferred from the file and category when nil
       # @param chunk_size_mb [Float, Integer] the size of each chunk of media uploaded in chunks, in megabytes
       # @param concurrency [Integer] the number of chunks uploaded at once
-      # @return [Hash, nil] the upload response data, or the processing status of media that X processes
+      # @return [UploadedMedia, nil] the uploaded media, which holds the upload response, or the processing status of
+      #   media that X processes
       # @raise [Errno::ENOENT] if the file does not exist
       # @raise [ArgumentError] if the media category is invalid, the chunk size is not positive, or the concurrency is
       #   less than one
@@ -113,7 +113,8 @@ module X
           upload_binary(File.binread(file_path), client:, media_category:)
         end
         media = await_processing!(media, client:, processing_timeout:) if media&.key?("processing_info")
-        media.tap { Metadata.add_alt_text(media, alt_text, client:) unless alt_text.nil? }
+        Metadata.add_alt_text(media, alt_text, client:) unless media.nil? || alt_text.nil?
+        media
       end
 
       # Infer the media category of a post attachment from a file
@@ -137,7 +138,7 @@ module X
       # @param content [String] the binary content to upload
       # @param client [Client] the X API client
       # @param media_category [String] the media category, which content cannot be inferred from, in any case
-      # @return [Hash, nil] the upload response data
+      # @return [UploadedMedia, nil] the uploaded media, which holds the upload response
       # @raise [ArgumentError] if the media category is invalid
       # @example Upload binary content
       #   Uploader::Media.upload_binary(data, client: client, media_category: "tweet_image")
@@ -145,7 +146,7 @@ module X
         Validator.validate_media_category!(media_category)
         boundary = SecureRandom.hex
         upload_body = Multipart.body("media", content, boundary:, media_category: media_category.downcase)
-        client.post("media/upload", upload_body, headers: Multipart.headers(boundary), **JSON_CLASSES)&.fetch("data")
+        UploadedMedia.from(client.post("media/upload", upload_body, headers: Multipart.headers(boundary), **JSON_CLASSES)&.fetch("data"))
       end
 
       # Perform a chunked upload for large files
@@ -157,7 +158,7 @@ module X
       # @param media_type [String, nil] the MIME type of the media, inferred from the file and category when nil
       # @param chunk_size_mb [Float, Integer] the size of each chunk in megabytes, rounded up to a whole byte
       # @param concurrency [Integer] the number of chunks uploaded at once
-      # @return [Hash, nil] the upload response data
+      # @return [UploadedMedia, nil] the uploaded media, which holds the upload response
       # @raise [Errno::ENOENT] if the file does not exist
       # @raise [ArgumentError] if the media category is invalid, the chunk size is not positive, or the concurrency is
       #   less than one
@@ -172,7 +173,7 @@ module X
         media_type ||= infer_media_type(file_path, media_category)
         media = Chunks.init(client:, file_path:, media_type:, media_category: media_category.downcase)
         Chunks.append(client:, file_path:, chunk_size: (chunk_size_mb * BYTES_PER_MB).ceil, media:, boundary: SecureRandom.hex, concurrency:)
-        client.post("media/upload/#{media.fetch("id")}/finalize", **JSON_CLASSES)&.fetch("data")
+        UploadedMedia.from(client.post("media/upload/#{media.fetch("id")}/finalize", **JSON_CLASSES)&.fetch("data"))
       end
 
       # Wait for media processing to complete
@@ -181,10 +182,10 @@ module X
       # processing timeout, once those waits would add up to more than the processing timeout.
       #
       # @api public
-      # @param media [Hash, String, Integer] the upload response, or the media identifier
+      # @param media [UploadedMedia, Hash, String, Integer] the uploaded media, or the media identifier
       # @param client [Client] the X API client
       # @param processing_timeout [Integer] the seconds to wait between checks, in all, before giving up
-      # @return [Hash, nil] the processing status
+      # @return [UploadedMedia, nil] the uploaded media, which holds the processing status
       # @raise [KeyError] if an upload response has no id
       # @raise [MediaProcessingTimeout] if the media is still processing once the processing timeout would pass
       # @example Wait for processing
@@ -197,11 +198,10 @@ module X
         waited = 0
         media_id = Utils.media_id(media)
         loop do
-          status = client.get("media/upload?command=STATUS&media_id=#{media_id}", **JSON_CLASSES)&.fetch("data")
-          processing_info = status&.dig("processing_info")
-          return status if processing_info.nil? || PROCESSING_INFO_STATES.include?(processing_info["state"])
+          status = UploadedMedia.from(client.get("media/upload?command=STATUS&media_id=#{media_id}", **JSON_CLASSES)&.fetch("data"))
+          return status unless status&.processing?
 
-          wait = [processing_info["check_after_secs"].to_i, MIN_CHECK_AFTER_SECS].max
+          wait = [status.check_after_secs.to_i, MIN_CHECK_AFTER_SECS].max
           raise MediaProcessingTimeout.new(status, processing_timeout) if (waited += wait) > processing_timeout
 
           sleep wait
@@ -211,17 +211,17 @@ module X
       # Wait for media processing and raise on failure
       #
       # @api public
-      # @param media [Hash, String, Integer] the upload response, or the media identifier
+      # @param media [UploadedMedia, Hash, String, Integer] the uploaded media, or the media identifier
       # @param client [Client] the X API client
       # @param processing_timeout [Integer] the seconds to wait between checks, in all, before giving up
-      # @return [Hash, nil] the processing status
+      # @return [UploadedMedia, nil] the uploaded media, which holds the processing status
       # @raise [KeyError] if an upload response has no id
       # @raise [MediaProcessingFailed] if media processing failed, with the status X reported
       # @raise [MediaProcessingTimeout] if the media is still processing once the processing timeout would pass
       # @example Wait for processing with error handling
       #   Uploader::Media.await_processing!(media, client: client)
       def await_processing!(media, client:, processing_timeout: DEFAULT_PROCESSING_TIMEOUT)
-        await_processing(media, client:, processing_timeout:).tap { |status| raise MediaProcessingFailed.new(status) if status&.dig("processing_info", "state").eql?("failed") }
+        await_processing(media, client:, processing_timeout:).tap { |status| raise MediaProcessingFailed.new(status) if status&.failed? }
       end
 
       # Infer the media type from file path and category

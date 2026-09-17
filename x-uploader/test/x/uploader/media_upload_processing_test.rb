@@ -43,7 +43,7 @@ module X
     def test_upload_an_image_that_needs_no_processing
       stub_request(:post, BASE_URL).to_return(headers: JSON_HEADERS, body: {data: {id: TEST_MEDIA_ID}}.to_json)
 
-      assert_equal({"id" => TEST_MEDIA_ID}, Uploader::Media.upload("test/sample_files/sample.png", client: @client))
+      assert_equal(Uploader::UploadedMedia.new({"id" => TEST_MEDIA_ID}), Uploader::Media.upload("test/sample_files/sample.png", client: @client))
       assert_not_requested :get, STATUS_URL
     end
 

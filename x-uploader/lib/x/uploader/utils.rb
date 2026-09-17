@@ -1,3 +1,5 @@
+require_relative "uploaded_media"
+
 module X
   module Uploader
     # Helpers shared across the uploaders
@@ -26,7 +28,12 @@ module X
       # @raise [KeyError] if an upload response has no id
       # @example The identifier of uploaded media
       #   Uploader::Utils.media_id({"id" => "1880028106020515840"}) # => "1880028106020515840"
-      def media_id(media) = media.is_a?(Hash) ? media.fetch("id").to_s : media.to_s
+      def media_id(media)
+        case media
+        when Hash, UploadedMedia then media.fetch("id").to_s
+        else media.to_s
+        end
+      end
     end
   end
 end

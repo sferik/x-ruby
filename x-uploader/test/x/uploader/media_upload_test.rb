@@ -75,7 +75,7 @@ module X
       stub_chunked_workflow(processing: false)
       response = Uploader::Media.upload("test/sample_files/sample.srt", client: @client)
 
-      assert_equal({"id" => TEST_MEDIA_ID}, response)
+      assert_equal(Uploader::UploadedMedia.new({"id" => TEST_MEDIA_ID}), response)
       assert_requested :post, "#{BASE_URL}/initialize", body: {media_type: "text/srt", media_category: "subtitles", total_bytes: 0}.to_json
       assert_not_requested :get, "#{BASE_URL}?command=STATUS&media_id=#{TEST_MEDIA_ID}"
     end
@@ -93,8 +93,16 @@ module X
       stub_request(:post, "https://api.x.com/2/media/metadata").to_return(headers: JSON_HEADERS, body: {data: {id: TEST_MEDIA_ID}}.to_json)
       response = Uploader::Media.upload("test/sample_files/sample.png", client: @client, alt_text: "A pixel")
 
-      assert_equal({"id" => TEST_MEDIA_ID}, response)
+      assert_equal(Uploader::UploadedMedia.new({"id" => TEST_MEDIA_ID}), response)
       assert_requested :post, "https://api.x.com/2/media/metadata", body: {id: TEST_MEDIA_ID, metadata: {alt_text: {text: "A pixel"}}}.to_json
+    end
+
+    def test_an_upload_that_returns_nothing_is_given_no_alt_text
+      stub_request(:post, BASE_URL).to_return(status: 204)
+      metadata = stub_request(:post, "https://api.x.com/2/media/metadata")
+
+      assert_nil Uploader::Media.upload("test/sample_files/sample.png", client: @client, alt_text: "A pixel")
+      assert_not_requested metadata
     end
 
     def test_upload_without_alt_text_sends_no_metadata

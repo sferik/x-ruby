@@ -22,7 +22,7 @@ module X
     def test_upload_an_image
       stub_request(:post, UPLOAD_URL).to_return(JSON_RESPONSE)
 
-      assert_equal({"id" => TEST_MEDIA_ID}, Uploader::Media.upload("test/sample_files/sample.png", client: @client))
+      assert_equal(Uploader::UploadedMedia.new({"id" => TEST_MEDIA_ID}), Uploader::Media.upload("test/sample_files/sample.png", client: @client))
     end
 
     def test_upload_a_video_in_chunks_and_await_processing

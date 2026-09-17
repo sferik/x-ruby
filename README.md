@@ -287,11 +287,14 @@ x_client.close
 # The media category is inferred from the file: an image, an animated GIF, a video, or subtitles.
 # A GIF with a single frame is uploaded as an image, since X processes only animated GIFs as GIFs.
 media = x_client.upload_media("cat.jpg", alt_text: "A cat asleep on a keyboard")
+media.id                               # => 1880028106020515840, and media["id"] reads it as the API gave it
+media.expires_at                       # => 2026-09-19 12:00:00 UTC, after which it cannot be attached to a post
 x_client.create_post("Look at this cat", media_ids: [media])
 
 # A video is uploaded in chunks, four at a time unless concurrency says otherwise, and upload waits until a video or
 # an animated GIF has been processed, for up to ten minutes unless processing_timeout says otherwise
 video = x_client.upload_media("cat.mp4")
+video.ready?                           # => true, since upload_media waited; state is "succeeded"
 subtitles = x_client.upload_media("cat.srt")
 x_client.add_subtitles(video, subtitles, "EN", display_name: "English")
 x_client.create_post("Look at this cat move", media_ids: [video])

@@ -60,7 +60,7 @@ module X
     def test_an_upload_reaches_the_api_through_the_client
       stub_request(:post, "https://api.x.com/2/media/upload").to_return(headers: {"content-type" => "application/json"}, body: {data: {id: "7"}}.to_json)
 
-      assert_equal({"id" => "7"}, @client.upload_media_binary("GIF89a", media_category: "tweet_image"))
+      assert_equal(Uploader::UploadedMedia.new({"id" => "7"}), @client.upload_media_binary("GIF89a", media_category: "tweet_image"))
     end
   end
 end
