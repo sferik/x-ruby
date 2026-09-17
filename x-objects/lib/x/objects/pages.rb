@@ -1,5 +1,6 @@
 require "monitor"
 require_relative "batch"
+require_relative "finders"
 require_relative "page"
 require_relative "problem"
 require_relative "utils"
@@ -66,9 +67,11 @@ module X
         id_only? ? stubs_from(resources) : resources
       end
 
-      # The stubs of a page, which hydrate together in one lookup for the whole page
+      # The stubs of a page, which hydrate together, a lookup's worth at a time
       #
-      # A resource without a batch lookup, such as a list, hydrates each stub on its own.
+      # Hydrating one stub looks up the stubs of its batch in one request, rather than every stub of a page of up
+      # to a thousand, since the API bills each resource a lookup returns. A resource without a batch lookup, such
+      # as a list, hydrates each stub on its own.
       #
       # @api private
       # @param resources [Array<Resource>] the resources of the page
@@ -76,8 +79,10 @@ module X
       def stubs_from(resources)
         klass = @cursor.klass
         client = @cursor.client
-        batch = (Batch.new(klass, resources, client:) if klass.batchable?)
-        resources.map { |resource| klass.from_id(resource, client:, batch:) }
+        resources.each_slice(Finders::MAX_BATCH_SIZE).flat_map do |slice|
+          batch = (Batch.new(klass, slice, client:) if klass.batchable?)
+          slice.map { |resource| klass.from_id(resource, client:, batch:) }
+        end
       end
 
       # Check whether the cursor requests nothing but identifiers

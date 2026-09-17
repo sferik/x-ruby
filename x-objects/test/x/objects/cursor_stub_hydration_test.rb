@@ -17,7 +17,30 @@ module X
       @user = User.new({"id" => "1"}, client: @client)
     end
 
-    def test_hydrating_one_stub_looks_up_every_stub_of_its_page
+    def test_hydrating_one_stub_of_a_large_page_looks_up_no_more_than_one_batch
+      stub_followers_and_lookup((1..250).map(&:to_s))
+      stubs = @user.followers.stubs.to_a.values_at(149, 100)
+
+      assert_equal ["Name 150", "Name 101"], stubs.map { |stub| stub.hydrate.name }
+      assert_equal ["users/1/followers", "users"], @client.paths
+      assert_equal [nil, [*101..200].join(",")], lookup_ids
+    end
+
+    def test_hydrating_every_stub_of_a_large_page_looks_up_each_batch_once
+      stub_followers_and_lookup((1..250).map(&:to_s))
+
+      assert_equal (1..250).map { |id| "Name #{id}" }, @user.followers.stubs.map { |stub| stub.hydrate.name }
+      assert_equal [100, 100, 50], lookup_ids.drop(1).map { |ids| ids.split(",").size }
+    end
+
+    def lookup_ids = @client.queries.map { |query| query["ids"] }
+
+    def stub_followers_and_lookup(ids)
+      @client.stub(:get, "users/1/followers", {"data" => ids.map { |id| {"id" => id} }})
+      @client.stub(:get, "users", ->(query, _) { {"data" => query["ids"].split(",").map { |id| {"id" => id, "name" => "Name #{id}"} }} })
+    end
+
+    def test_hydrating_one_stub_looks_up_every_stub_of_its_batch
       @client.stub(:get, "users", {"data" => [{"id" => "2", "name" => "Two"}, {"id" => "3", "name" => "Three"}]})
       stubs = @user.followers.stubs.to_a
 

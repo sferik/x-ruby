@@ -2,7 +2,7 @@ require_relative "memo"
 
 module X
   module Objects
-    # A group of stubs that hydrate together, in one batch lookup rather than one request each
+    # A group of stubs, no more than one lookup takes, that hydrate together in one request rather than one each
     # @api private
     class Batch
       # Initialize a batch over some identifiers
