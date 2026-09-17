@@ -44,30 +44,6 @@ module X
     #   client.client_secret
     attr_reader :client_secret
 
-    # The access token for OAuth authentication, as last refreshed
-    #
-    # @api public
-    # @return [String, nil] the access token for OAuth authentication
-    # @example Get the access token
-    #   client.access_token
-    def access_token = oauth2_authenticator_in_use&.access_token || @access_token
-
-    # The OAuth 2.0 refresh token, as last refreshed
-    #
-    # @api public
-    # @return [String, nil] the OAuth 2.0 refresh token
-    # @example Get the refresh token
-    #   client.refresh_token
-    def refresh_token = oauth2_authenticator_in_use&.refresh_token || @refresh_token
-
-    # The time the OAuth 2.0 access token expires, as last refreshed
-    #
-    # @api public
-    # @return [Time, nil] the expiration time, or nil if it is not known
-    # @example Get the expiration time
-    #   client.expires_at
-    def expires_at = oauth2_authenticator_in_use&.expires_at || @expires_at
-
     # Set the API key for OAuth 1.0a authentication
     #
     # @api public
@@ -278,12 +254,19 @@ module X
     end
 
     # Initialize the appropriate authenticator based on available credentials
+    #
+    # A client that no longer holds the OAuth 2.0 authenticator it shared leaves the clients a refresh reports to, so
+    # that its on_token_refresh never receives the tokens of credentials it has replaced.
+    #
     # @api private
-    # @return [Authenticator] the authenticator of the first complete set of credentials, or one that sends none
+    # @return [void]
     def initialize_authenticator
       @app_bearer_token = nil
+      previous = @authenticator
+      clients = @token_refresh_clients
       @authenticator = oauth1_authenticator || oauth2_authenticator || bearer_authenticator || app_only_authenticator ||
         Authenticator.new
+      clients&.delete(self) unless @authenticator.equal?(previous)
     end
 
     # Build an OAuth 1.0a authenticator if credentials are available

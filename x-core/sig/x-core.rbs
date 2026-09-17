@@ -462,7 +462,8 @@ module X
   end
 
   interface _ClientRegistry
-    def []=: (Client client, bool shared) -> bool
+    def []=: (untyped client, bool shared) -> bool
+    def delete: (untyped client) -> bool?
     def keys: () -> Array[Client]
   end
 
@@ -476,10 +477,36 @@ module X
     def settings: () -> Hash[Symbol, untyped]
     def oauth2_authenticator_in_use: () -> OAuth2Authenticator?
     def oauth2_authenticator: () -> OAuth2Authenticator?
+    def access_token: () -> String?
+    def refresh_token: () -> String?
+    def expires_at: () -> Time?
   end
 
   interface _SettingsHost
     def on_token_refresh: () -> _TokenRefreshHook?
+  end
+
+  module ClientTokenRefresh
+    @authenticator: Authenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator
+    @connection: Connection
+    @token_refresh_clients: _ClientRegistry
+    @client_id: String?
+    @client_secret: String?
+    @access_token: String?
+    @refresh_token: String?
+    @expires_at: Time?
+
+    def access_token: () -> String?
+    def refresh_token: () -> String?
+    def expires_at: () -> Time?
+    def share_authenticator: (Authenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator other, _ClientRegistry clients) -> void
+    def oauth2_authenticator_in_use: () -> OAuth2Authenticator?
+    def oauth2_authenticator: -> OAuth2Authenticator?
+
+    private
+    def new_oauth2_authenticator: (client_id: String, access_token: String, refresh_token: String) -> OAuth2Authenticator
+    def oauth2_credentials_of: (OAuth2Authenticator authenticator) -> [String, String?, String, String, Time?]
+    def refreshing_rejected_token: [T] () { () -> T } -> T
   end
 
   module ClientSettings : _SettingsHost
@@ -521,6 +548,7 @@ module X
   module ClientCredentials : _CredentialHost
     @app_bearer_token: String?
     @app_only: Hash[Hash[Symbol, untyped], Client]?
+    @token_refresh_clients: _ClientRegistry
     @connection: Connection
 
     def app_only: () -> (Client | self)
@@ -531,9 +559,6 @@ module X
     @access_token: String?
     @refresh_token: String?
     @expires_at: Time?
-    def access_token: () -> String?
-    def refresh_token: () -> String?
-    def expires_at: () -> Time?
     attr_reader access_token_secret: String?
     attr_reader bearer_token: String?
     attr_reader client_id: String?
@@ -556,7 +581,7 @@ module X
     def replace_credentials: (**String | Time | nil changes) -> void
     def credentials: () -> { api_key: String?, api_key_secret: String?, access_token: String?, access_token_secret: String?, bearer_token: String?, client_id: String?, client_secret: String?, refresh_token: String?, expires_at: Time? }
     def initialize_credentials: (api_key: String?, api_key_secret: String?, access_token: String?, access_token_secret: String?, bearer_token: String?, client_id: String?, client_secret: String?, refresh_token: String?, expires_at: Time?) -> void
-    def initialize_authenticator: () -> (Authenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator)
+    def initialize_authenticator: () -> void
     def oauth1_authenticator: -> OAuth1Authenticator?
     def bearer_authenticator: -> BearerTokenAuthenticator?
     def app_only_authenticator: -> AppOnlyAuthenticator?
@@ -587,6 +612,7 @@ module X
   class Client
     include ClientCredentials
     include ClientSettings
+    include ClientTokenRefresh
     include RequestEncoding
 
     DEFAULT_BASE_URL: String
@@ -616,13 +642,8 @@ module X
     def put: (String endpoint, ?body? body, ?params: params?, ?form: params?, ?headers: Hash[String, String], ?array_class: Class, ?object_class: Class) -> untyped
     def delete: (String endpoint, ?params: params?, ?headers: Hash[String, String], ?array_class: Class, ?object_class: Class) -> untyped
     def streaming: (**untyped options) -> StreamingClient
-    def share_authenticator: (Authenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator other, _ClientRegistry clients) -> void
-    def oauth2_authenticator_in_use: () -> OAuth2Authenticator?
-    def oauth2_authenticator: -> OAuth2Authenticator?
 
     private
-    def oauth2_credentials_of: (OAuth2Authenticator authenticator) -> [String, String?, String, String, Time?]
-    def refreshing_rejected_token: [T] () { () -> T } -> T
     def perform: (:delete | :get | :post | :put http_method, URI::Generic uri, body: String?, headers: Hash[String, String], array_class: Class, object_class: Class) -> untyped
     def execute_request: (:delete | :get | :post | :put http_method, String endpoint, ?body: body?, ?params: params?, ?form: params?, ?headers: Hash[String, String], ?array_class: Class, ?object_class: Class) -> untyped
   end

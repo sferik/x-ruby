@@ -5,6 +5,7 @@ require_relative "authenticator"
 require_relative "bearer_token_authenticator"
 require_relative "client_credentials"
 require_relative "client_settings"
+require_relative "client_token_refresh"
 require_relative "connection"
 require_relative "credential_validator"
 require_relative "oauth1_authenticator"
@@ -23,6 +24,7 @@ module X
   class Client
     include ClientCredentials
     include ClientSettings
+    include ClientTokenRefresh
     include RequestEncoding
 
     # Default base URL for the X API
@@ -223,70 +225,7 @@ module X
       StreamingClient.new(self, **options)
     end
 
-    protected
-
-    # Share an OAuth 2.0 authenticator that holds the same credentials
-    #
-    # A refresh by either client then reaches both. X accepts a refresh token once, so a copy that refreshed with
-    # an authenticator of its own would leave the original client with a refresh token that no longer works.
-    #
-    # @api private
-    # @param other [Authenticator] the authenticator of the client this one was copied from
-    # @param clients [ObjectSpace::WeakMap] the clients that share it, held weakly, which this client joins
-    # @return [void]
-    def share_authenticator(other, clients)
-      current = oauth2_authenticator_in_use
-      return unless current && other.is_a?(OAuth2Authenticator) && oauth2_credentials_of(current).eql?(oauth2_credentials_of(other))
-
-      @authenticator = other
-      @token_refresh_clients = clients
-      clients[self] = true
-    end
-
-    # The OAuth 2.0 authenticator, if the client authenticates with one
-    # @api private
-    # @return [OAuth2Authenticator, nil] the authenticator or nil
-    def oauth2_authenticator_in_use
-      current = @authenticator
-      current if current.is_a?(OAuth2Authenticator)
-    end
-
-    # Build an OAuth 2.0 authenticator on the client's connection, given credentials
-    #
-    # A public client has no client secret, and refreshes its tokens with its client ID alone.
-    #
-    # @api private
-    # @return [OAuth2Authenticator, nil] the OAuth 2.0 authenticator or nil
-    def oauth2_authenticator
-      client_id = @client_id
-      access_token = @access_token
-      refresh_token = @refresh_token
-      return unless client_id && access_token && refresh_token
-
-      clients = @token_refresh_clients = ObjectSpace::WeakMap.new.tap { |registry| registry[self] = true }
-      OAuth2Authenticator.new(client_id:, client_secret: @client_secret, access_token:, refresh_token:, expires_at: @expires_at,
-        connection: @connection, on_refresh: ->(authenticator) { clients.keys.filter_map(&:on_token_refresh).uniq.each { |hook| hook.call(authenticator) } })
-    end
-
     private
-
-    # The credentials an OAuth 2.0 authenticator holds
-    # @api private
-    # @param authenticator [OAuth2Authenticator] the authenticator
-    # @return [Array<String, Time, nil>] the client ID and secret, the tokens, and the expiration time
-    def oauth2_credentials_of(authenticator)
-      [authenticator.client_id, authenticator.client_secret, authenticator.access_token, authenticator.refresh_token,
-        authenticator.expires_at]
-    end
-
-    # Run a request, again if a refresh replaces an OAuth 2.0 token the API rejects
-    # @api private
-    # @yield runs the request
-    # @return [Object] what the block returns
-    def refreshing_rejected_token(&)
-      current = oauth2_authenticator_in_use
-      current.nil? ? yield : current.retrying_rejected_token(&)
-    end
 
     # Execute an HTTP request to the X API
     # @api private
