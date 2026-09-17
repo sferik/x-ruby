@@ -189,10 +189,10 @@ module X
     # @!attribute [r] topic_ids
     #   The identifiers of the topics
     #   @api public
-    #   @return [Array<String>, nil] the topic identifiers
+    #   @return [Array<Integer>, nil] the topic identifiers
     #   @example Get the topic identifiers
     #     space.topic_ids
-    attribute :topic_ids
+    attribute :topic_ids, :integers
 
     # @!method creator
     #   The creator, resolved from the includes or as a stub holding only its identifier

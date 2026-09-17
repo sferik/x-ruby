@@ -12,6 +12,8 @@ module X
   end
 
   class Problem
+    INTEGER_ID_TYPES: Array[String]
+
     attr_reader attrs: Hash[String, untyped]
 
     def self.all_from: (Hash[String, untyped]? body) -> Array[Problem]
@@ -21,11 +23,15 @@ module X
     def detail: () -> String?
     def type: () -> String?
     def resource_type: () -> String?
-    def resource_id: () -> String?
+    def resource_id: () -> (Integer | String)?
     def parameter: () -> String?
     def value: () -> untyped
     def not_found?: () -> bool
     def inspect: () -> String
+
+    private
+    def identifier: (untyped value) -> untyped
+    def numeric_identifier?: (untyped value) -> bool
   end
 
   class Usage
@@ -931,7 +937,7 @@ module X
     def host_ids: () -> Array[Integer]?
     def speaker_ids: () -> Array[Integer]?
     def invited_user_ids: () -> Array[Integer]?
-    def topic_ids: () -> Array[String]?
+    def topic_ids: () -> Array[Integer]?
     def creator: () -> User?
     def hosts: () -> Array[User]
     def speakers: () -> Array[User]

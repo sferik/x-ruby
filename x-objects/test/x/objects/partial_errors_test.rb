@@ -14,7 +14,7 @@ module X
       cover X::Page
 
       PINNED_MISSING = {"title" => "Not Found Error", "detail" => "Could not find tweet with pinned_tweet_id: [9].", "type" => "https://api.x.com/2/problems/resource-not-found", "parameter" => "pinned_tweet_id"}.freeze
-      USER_MISSING = {"title" => "Not Found Error", "detail" => "Could not find user with ids: [5].", "resource_id" => "5", "parameter" => "ids"}.freeze
+      USER_MISSING = {"title" => "Not Found Error", "detail" => "Could not find user with ids: [5].", "resource_type" => "user", "resource_id" => "5", "parameter" => "ids"}.freeze
 
       def setup
         @client = FakeClient.new
@@ -67,7 +67,7 @@ module X
         yielded = []
         X::Post.find_all([5, *(6..105)], client: @client) { |problem| yielded << problem.resource_id }
 
-        assert_equal ["5"], yielded
+        assert_equal [5], yielded
       end
 
       def test_find_all_asks_for_each_identifier_once

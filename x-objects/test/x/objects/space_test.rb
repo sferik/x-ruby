@@ -12,7 +12,7 @@ module X
                           "ended_at" => "2024-01-02T04:04:05.000Z", "scheduled_start" => "2024-01-02T03:00:00.000Z",
                           "updated_at" => "2024-01-02T03:06:05.000Z", "is_ticketed" => true, "participant_count" => 2,
                           "subscriber_count" => 3, "creator_id" => "9", "host_ids" => ["9"], "speaker_ids" => %w[9 8],
-                          "invited_user_ids" => ["7"], "topic_ids" => ["t1"]}, client: @client, includes:)
+                          "invited_user_ids" => ["7"], "topic_ids" => ["848920371311001600"]}, client: @client, includes:)
     end
 
     def test_fields_key
@@ -68,7 +68,7 @@ module X
       assert_equal [9], @space.host_ids
       assert_equal [9, 8], @space.speaker_ids
       assert_equal [7], @space.invited_user_ids
-      assert_equal ["t1"], @space.topic_ids
+      assert_equal [848920371311001600], @space.topic_ids
     end
 
     def test_references

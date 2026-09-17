@@ -4,6 +4,10 @@ module X
   # A problem the API reported in a response that otherwise succeeded, such as a referenced post that no longer exists
   # @api public
   class Problem
+    # The kinds of resource whose identifiers are numbers, as the API names them
+    INTEGER_ID_TYPES = %w[user tweet post list dm_event community poll].freeze
+    private_constant :INTEGER_ID_TYPES
+
     # The raw attributes of the problem
     # @api public
     # @return [Hash{String => Object}] the attributes
@@ -77,11 +81,15 @@ module X
 
     # The identifier of the resource the problem concerns
     #
+    # The identifier is an Integer for a user, post, list, direct message, community, or poll, as the id of the
+    # resource is, so the two compare equal. What is not such an identifier remains a String: the identifier of a
+    # space, place, or media, and the username of a user who was looked up by name.
+    #
     # @api public
-    # @return [String, nil] the resource identifier
+    # @return [Integer, String, nil] the resource identifier
     # @example Get the resource identifier
-    #   problem.resource_id # => "1"
-    def resource_id = attrs["resource_id"]
+    #   problem.resource_id # => 1
+    def resource_id = identifier(attrs["resource_id"])
 
     # The request parameter the problem concerns
     #
@@ -93,11 +101,13 @@ module X
 
     # The value of the parameter the problem concerns
     #
+    # A value that identifies a resource is an Integer when resource_id is, and anything else is as the API gave it.
+    #
     # @api public
     # @return [Object, nil] the value
     # @example Get the value
-    #   problem.value # => "1"
-    def value = attrs["value"]
+    #   problem.value # => 1
+    def value = identifier(attrs["value"])
 
     # Check whether the problem is a resource that was not found
     #
@@ -114,5 +124,25 @@ module X
     # @example Inspect a problem
     #   problem.inspect # => #<X::Problem Not Found Error: Could not find tweet with pinned_tweet_id: [1].>
     def inspect = "#<#{self.class} #{[title, detail].compact.join(": ")}>"
+
+    private
+
+    # Read a value as an Integer if it is the numeric identifier of a resource
+    # @api private
+    # @param value [Object] the value the API gave
+    # @return [Object] the identifier as an Integer, or the value as it is
+    def identifier(value)
+      numeric_identifier?(value) ? Integer(value, 10) : value
+    end
+
+    # Check whether a value is the numeric identifier of a resource
+    # @api private
+    # @param value [Object] the value the API gave
+    # @return [Boolean] true for digits that identify, rather than name, a resource whose identifiers are numbers
+    def numeric_identifier?(value)
+      return false unless INTEGER_ID_TYPES.include?(resource_type) && String === value
+
+      !parameter.to_s.end_with?("username", "usernames") && value.match?(/\A\d+\z/)
+    end
   end
 end
