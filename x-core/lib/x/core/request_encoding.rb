@@ -1,5 +1,4 @@
 require "json"
-require "time"
 require "uri"
 
 module X
