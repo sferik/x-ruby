@@ -68,9 +68,7 @@ module X
       CHUNKED_CATEGORIES: Array[String]
       CATEGORY_MAP: Hash[String, String]
       CATEGORY_MIME_TYPES: Hash[String, Array[String]]
-      # Media extends Chunks, and include lets the checker see the methods of Chunks from the methods of Media
       include Chunks
-      extend Chunks
       extend Media
 
       def upload: (String file_path, client: Client, ?media_category: String, ?alt_text: String?, ?processing_timeout: Integer, ?media_type: String?, ?chunk_size_mb: Float | Integer, ?concurrency: Integer) -> untyped

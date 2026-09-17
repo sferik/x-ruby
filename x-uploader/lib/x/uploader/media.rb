@@ -16,8 +16,8 @@ module X
     # Uploads media files to the X API
     # @api public
     module Media
+      include Chunks
       extend self
-      extend Chunks
 
       # Number of bytes per megabyte
       BYTES_PER_MB = 1_048_576
@@ -91,7 +91,7 @@ module X
       # @example Upload a video and wait until it can be attached to a post
       #   Uploader::Media.upload("video.mp4", client: client)
       def upload(file_path, client:, media_category: infer_media_category(file_path), alt_text: nil,
-        processing_timeout: DEFAULT_PROCESSING_TIMEOUT, media_type: nil, chunk_size_mb: 1, concurrency: Chunks::DEFAULT_CONCURRENCY)
+        processing_timeout: DEFAULT_PROCESSING_TIMEOUT, media_type: nil, chunk_size_mb: 1, concurrency: DEFAULT_CONCURRENCY)
         Validator.validate_file_path!(file_path)
         Validator.validate_chunks!(chunk_size_mb:, concurrency:)
         transfer(file_path, media_category, client:, processing_timeout:, media_type:, chunk_size_mb:, concurrency:)
@@ -144,7 +144,7 @@ module X
       # @example Upload a large video
       #   Uploader::Media.chunked_upload("video.mp4", client: client)
       def chunked_upload(file_path, client:, media_category: infer_media_category(file_path),
-        media_type: nil, chunk_size_mb: 1, concurrency: Chunks::DEFAULT_CONCURRENCY)
+        media_type: nil, chunk_size_mb: 1, concurrency: DEFAULT_CONCURRENCY)
         Validator.validate_file_path!(file_path)
         Validator.validate_media_category!(media_category)
         Validator.validate_chunks!(chunk_size_mb:, concurrency:)
