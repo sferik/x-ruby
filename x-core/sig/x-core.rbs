@@ -644,6 +644,7 @@ module X
     def put: (String endpoint, ?body? body, ?params: params?, ?form: params?, ?headers: Hash[String, String], ?array_class: Class, ?object_class: Class) -> untyped
     def delete: (String endpoint, ?params: params?, ?headers: Hash[String, String], ?array_class: Class, ?object_class: Class) -> untyped
     def streaming: (**untyped options) -> StreamingClient
+    def close: () -> void
 
     private
     def perform: (:delete | :get | :post | :put http_method, URI::Generic uri, body: String?, headers: Hash[String, String], array_class: Class, object_class: Class) -> untyped

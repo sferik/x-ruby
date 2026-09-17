@@ -272,6 +272,9 @@ ads_client = X::Client.new(base_url: "https://ads-api.x.com/12/", **x_credential
 
 # Get your ad accounts
 ads_client.get("accounts")
+
+# Close the connections a client keeps open between requests; a later request opens one again
+x_client.close
 ```
 
 ### Media

@@ -225,6 +225,20 @@ module X
       StreamingClient.new(self, **options)
     end
 
+    # Close the connections the client keeps open between requests
+    #
+    # A later request opens a connection again. The app-only copy of a client that signs with OAuth 1.0a keeps
+    # connections of its own, which close with the client's.
+    #
+    # @api public
+    # @return [void]
+    # @example Close the connections before a long pause
+    #   client.close
+    def close
+      @connection.close
+      @app_only&.each_value(&:close)
+    end
+
     private
 
     # Execute an HTTP request to the X API
