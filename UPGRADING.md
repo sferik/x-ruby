@@ -25,6 +25,19 @@ client.update_credentials(access_token: "new_token", access_token_secret: "new_s
 
 A client authenticates with the first complete set of credentials it holds, so a setter that clears a credential no longer keeps the authenticator it had: `client.bearer_token = nil` sends requests without credentials, and `client.access_token_secret = nil` authenticates as the app when the client holds an API key and secret. `update_credentials` changes several credentials before the client builds its authenticator again, and raises `ArgumentError`, leaving the client as it was, for credentials that do not form a complete set.
 
+### Requests
+
+An endpoint that begins with a slash is relative to the base URL, like one without, where 0.19 resolved it against the host and dropped the path of the base URL, such as the `/2/` of the API version. Pass a whole URL, or derive a client with `copy`, to reach another version of the API:
+
+```ruby
+# 0.19
+client.get("/1.1/account/settings.json")
+
+# 1.0
+client.copy(base_url: "https://api.x.com/1.1/").get("account/settings.json")
+client.get("https://api.x.com/1.1/account/settings.json")
+```
+
 ### Renamed classes
 
 | 0.19 | 1.0 |

@@ -149,7 +149,8 @@ module X
     # Perform a GET request to the X API
     #
     # @api public
-    # @param endpoint [String] the endpoint, with or without a query string
+    # @param endpoint [String] the endpoint, relative to the base URL with or without a leading slash, with or
+    #   without a query string
     # @param params [Hash, nil] query parameters appended to the endpoint; nil values are dropped and arrays are joined with commas
     # @param headers [Hash] additional headers for the request
     # @param array_class [Class] the class for parsing JSON arrays
@@ -166,7 +167,8 @@ module X
     # Perform a POST request to the X API
     #
     # @api public
-    # @param endpoint [String] the endpoint, with or without a query string
+    # @param endpoint [String] the endpoint, relative to the base URL with or without a leading slash, with or
+    #   without a query string
     # @param body [String, Hash, nil] the request body; a Hash is encoded as JSON
     # @param params [Hash, nil] query parameters appended to the endpoint
     # @param form [Hash, nil] fields to send as a form-encoded body instead of the body
@@ -185,7 +187,8 @@ module X
     # Perform a PUT request to the X API
     #
     # @api public
-    # @param endpoint [String] the endpoint, with or without a query string
+    # @param endpoint [String] the endpoint, relative to the base URL with or without a leading slash, with or
+    #   without a query string
     # @param body [String, Hash, nil] the request body; a Hash is encoded as JSON
     # @param params [Hash, nil] query parameters appended to the endpoint
     # @param form [Hash, nil] fields to send as a form-encoded body instead of the body
@@ -202,7 +205,8 @@ module X
     # Perform a DELETE request to the X API
     #
     # @api public
-    # @param endpoint [String] the endpoint, with or without a query string
+    # @param endpoint [String] the endpoint, relative to the base URL with or without a leading slash, with or
+    #   without a query string
     # @param params [Hash, nil] query parameters appended to the endpoint
     # @param headers [Hash] additional headers for the request
     # @param array_class [Class] the class for parsing JSON arrays

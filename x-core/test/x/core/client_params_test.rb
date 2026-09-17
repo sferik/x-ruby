@@ -37,6 +37,27 @@ module X
       assert_requested :get, "https://api.x.com/2/users?ids=1"
     end
 
+    def test_an_endpoint_with_a_leading_slash_is_relative_to_the_base_url
+      stub_request(:get, "https://api.x.com/2/users/me")
+      @client.get("/users/me")
+
+      assert_requested :get, "https://api.x.com/2/users/me"
+    end
+
+    def test_an_endpoint_with_leading_slashes_never_names_another_host
+      stub_request(:get, "https://api.x.com/2/example.com/users?ids=1")
+      @client.get("//example.com/users", params: {ids: 1})
+
+      assert_requested :get, "https://api.x.com/2/example.com/users?ids=1"
+    end
+
+    def test_only_the_slashes_that_begin_an_endpoint_are_removed
+      stub_request(:get, "https://api.x.com/2/users/by/username/sferik/")
+      @client.get("users/by/username/sferik/")
+
+      assert_requested :get, "https://api.x.com/2/users/by/username/sferik/"
+    end
+
     def test_params_extend_an_existing_query_string
       stub_request(:get, "https://api.x.com/2/users?ids=1&max_results=5")
       @client.get("users?ids=1", params: {max_results: 5})

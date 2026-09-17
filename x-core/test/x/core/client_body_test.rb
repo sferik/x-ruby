@@ -47,7 +47,7 @@ module X
 
     def test_post_encodes_a_form
       stub_request(:post, "https://api.x.com/1.1/account/settings.json")
-      @client.post("/1.1/account/settings.json", form: {lang: "en", tile: true})
+      @client.post("https://api.x.com/1.1/account/settings.json", form: {lang: "en", tile: true})
 
       assert_requested :post, "https://api.x.com/1.1/account/settings.json", body: "lang=en&tile=true",
         headers: {"Content-Type" => Client::FORM_CONTENT_TYPE}

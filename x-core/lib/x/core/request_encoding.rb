@@ -5,14 +5,23 @@ module X
   # Encodes the query strings and bodies of requests, included into Client
   # @api private
   module RequestEncoding
+    # The slashes that begin an endpoint, which would resolve against the host of the base URL rather than its path
+    LEADING_SLASHES = %r{\A/+}
+    private_constant :LEADING_SLASHES
+
     private
 
-    # Append query parameters to an endpoint
+    # Append query parameters to an endpoint, relative to the base URL
+    #
+    # An endpoint resolves against the base URL, which would drop the path of the base URL, such as the /2/ of the
+    # API version, for an endpoint that begins with a slash, so leading slashes are removed.
+    #
     # @api private
-    # @param endpoint [String] the endpoint, with or without a query string
+    # @param endpoint [String] the endpoint, with or without a leading slash or a query string
     # @param params [Hash, nil] the query parameters
-    # @return [String] the endpoint with the parameters in its query string
+    # @return [String] the endpoint, without leading slashes, with the parameters in its query string
     def endpoint_with(endpoint, params)
+      endpoint = endpoint.sub(LEADING_SLASHES, "")
       query = URI.encode_www_form(params.to_h.compact.transform_values { |value| query_value(value) })
       return endpoint if query.empty?
 

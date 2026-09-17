@@ -78,7 +78,7 @@ module X
     # receives each one, as well as a failed response.
     #
     # @api public
-    # @param endpoint [String] the streaming API endpoint
+    # @param endpoint [String] the streaming API endpoint, relative to the base URL with or without a leading slash
     # @param params [Hash, nil] query parameters appended to the endpoint
     # @param headers [Hash] additional headers for the request
     # @param array_class [Class] the class for parsing JSON arrays

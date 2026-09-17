@@ -590,6 +590,8 @@ module X
   end
 
   module RequestEncoding
+    LEADING_SLASHES: Regexp
+
     private
     def endpoint_with: (String endpoint, params? params) -> String
     def query_value: (untyped value) -> untyped

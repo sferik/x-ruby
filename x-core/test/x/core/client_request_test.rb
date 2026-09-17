@@ -56,74 +56,74 @@ module X
 
     def test_redirect_handler_preserves_authentication
       client = Client.new(bearer_token: TEST_BEARER_TOKEN, max_redirects: 5)
-      stub_request(:get, "https://api.x.com/old_endpoint")
+      stub_request(:get, "https://api.x.com/2/old_endpoint")
         .with(headers: {"Authorization" => /Bearer #{TEST_BEARER_TOKEN}/o})
         .to_return(status: 301, headers: {"Location" => "https://api.x.com/new_endpoint"})
       stub_request(:get, "https://api.x.com/new_endpoint")
         .with(headers: {"Authorization" => /Bearer #{TEST_BEARER_TOKEN}/o})
-      client.get("/old_endpoint")
+      client.get("old_endpoint")
 
-      assert_requested :get, "https://api.x.com/old_endpoint"
+      assert_requested :get, "https://api.x.com/2/old_endpoint"
       assert_requested :get, "https://api.x.com/new_endpoint"
     end
 
     def test_redirect_handler_preserves_custom_headers
       headers = {"X-Custom" => "value"}
-      stub_request(:get, "https://api.x.com/old_endpoint")
+      stub_request(:get, "https://api.x.com/2/old_endpoint")
         .with(headers:)
         .to_return(status: 301, headers: {"Location" => "https://api.x.com/new_endpoint"})
       stub_request(:get, "https://api.x.com/new_endpoint").with(headers:)
-      @client.get("/old_endpoint", headers:)
+      @client.get("old_endpoint", headers:)
 
       assert_requested :get, "https://api.x.com/new_endpoint", headers:
     end
 
     def test_follows_301_redirect
-      stub_request(:get, "https://api.x.com/old_endpoint")
+      stub_request(:get, "https://api.x.com/2/old_endpoint")
         .to_return(status: 301, headers: {"Location" => "https://api.x.com/new_endpoint"})
       stub_request(:get, "https://api.x.com/new_endpoint")
-      @client.get("/old_endpoint")
+      @client.get("old_endpoint")
 
       assert_requested :get, "https://api.x.com/new_endpoint"
     end
 
     def test_follows_302_redirect
-      stub_request(:get, "https://api.x.com/old_endpoint")
+      stub_request(:get, "https://api.x.com/2/old_endpoint")
         .to_return(status: 302, headers: {"Location" => "https://api.x.com/new_endpoint"})
       stub_request(:get, "https://api.x.com/new_endpoint")
-      @client.get("/old_endpoint")
+      @client.get("old_endpoint")
 
       assert_requested :get, "https://api.x.com/new_endpoint"
     end
 
     def test_follows_307_redirect
-      stub_request(:post, "https://api.x.com/temporary_redirect")
+      stub_request(:post, "https://api.x.com/2/temporary_redirect")
         .to_return(status: 307, headers: {"Location" => "https://api.x.com/new_endpoint"})
       body = {key: "value"}.to_json
       stub_request(:post, "https://api.x.com/new_endpoint")
         .with(body:)
-      @client.post("/temporary_redirect", body)
+      @client.post("temporary_redirect", body)
 
       assert_requested :post, "https://api.x.com/new_endpoint", body:
     end
 
     def test_follows_308_redirect
-      stub_request(:put, "https://api.x.com/temporary_redirect")
+      stub_request(:put, "https://api.x.com/2/temporary_redirect")
         .to_return(status: 308, headers: {"Location" => "https://api.x.com/new_endpoint"})
       body = {key: "value"}.to_json
       stub_request(:put, "https://api.x.com/new_endpoint")
         .with(body:)
-      @client.put("/temporary_redirect", body)
+      @client.put("temporary_redirect", body)
 
       assert_requested :put, "https://api.x.com/new_endpoint", body:
     end
 
     def test_avoids_infinite_redirect_loop
-      stub_request(:get, "https://api.x.com/infinite_loop")
-        .to_return(status: 302, headers: {"Location" => "https://api.x.com/infinite_loop"})
+      stub_request(:get, "https://api.x.com/2/infinite_loop")
+        .to_return(status: 302, headers: {"Location" => "https://api.x.com/2/infinite_loop"})
 
       assert_raises TooManyRedirects do
-        @client.get("/infinite_loop")
+        @client.get("infinite_loop")
       end
     end
   end
