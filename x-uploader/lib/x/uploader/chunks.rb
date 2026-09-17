@@ -37,7 +37,8 @@ module X
       #
       # Each worker reads its chunk from the file as it uploads it, so no more than concurrency chunks are held
       # in memory at once. A chunk that fails stops the chunks not yet begun, and once the chunks already begun
-      # have finished, the first error is raised.
+      # have finished, the first error is raised. An exception raised in the caller while it waits, such as a
+      # timeout or an interrupt, stops every chunk, so that no thread goes on uploading once the caller has gone.
       #
       # @api private
       # @param client [Client] the X API client
@@ -53,11 +54,26 @@ module X
         queue = chunk_queue(file_path, chunk_size)
         errors = Queue.new
         media_id = media.fetch("id")
-        Array.new([concurrency, queue.size].min) { append_worker(queue, errors, client:, file_path:, chunk_size:, media_id:, boundary:) }.each(&:join)
+        await Array.new([concurrency, queue.size].min) { append_worker(queue, errors, client:, file_path:, chunk_size:, media_id:, boundary:) }
         raise errors.deq unless errors.empty?
       end
 
       private
+
+      # Wait for the workers to finish, stopping them if the wait is cut short
+      #
+      # Every worker has finished when the wait ends on its own, so there is nothing left to stop. When an exception
+      # is raised in the waiting thread, the workers are killed, which closes the connection of a request under way,
+      # and waited for, so that none outlives the call.
+      #
+      # @api private
+      # @param workers [Array<Thread>] the threads that upload the chunks
+      # @return [void]
+      def await(workers)
+        workers.each(&:join)
+      ensure
+        workers.each(&:kill).each(&:join)
+      end
 
       # A closed queue of the index and byte offset of each chunk of a file, in order
       # @api private

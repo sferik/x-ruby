@@ -41,6 +41,7 @@ module X
       def append: (client: Client, file_path: path, chunk_size: Integer, media: untyped, boundary: String, concurrency: Integer) -> void
 
       private
+      def await: (Array[Thread] workers) -> void
       def chunk_queue: (path file_path, Integer chunk_size) -> Thread::Queue
       def append_worker: (Thread::Queue queue, Thread::Queue errors, client: Client, file_path: path, chunk_size: Integer, media_id: String, boundary: String) -> Thread
       def upload_chunk: (client: Client, media_id: String, upload_body: String, headers: Hash[String, String]) -> untyped

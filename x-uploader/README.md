@@ -33,7 +33,7 @@ Every method that takes a file takes its path as a `String` or a `Pathname`, and
 
 `upload` infers the media category from the file. A GIF with a single frame is an image, because X processes only animated GIFs as GIFs, and `X::Uploader::Gif.animated?` tells the two apart. Videos are MP4, QuickTime, WebM, or MPEG-TS files and subtitles are SubRip (`.srt`) or WebVTT (`.vtt`) files, each uploaded in chunks as the type its extension names.
 
-A chunked upload sends four chunks at once, `X::Uploader::Media::DEFAULT_CONCURRENCY`, unless `concurrency:` says otherwise.
+A chunked upload sends four chunks at once, `X::Uploader::Media::DEFAULT_CONCURRENCY`, unless `concurrency:` says otherwise. An exception raised in the thread that uploads, such as a timeout or an interrupt, stops every chunk, so no thread goes on uploading after the call has ended.
 
 The methods of `X::Uploader::Media`, `X::Uploader::Account`, and `X::Uploader::Metadata` can be called on the module, or on an instance of a class that includes it. Such a class gains the documented public methods alone, so its own methods, whatever their names, cannot change an upload.
 
