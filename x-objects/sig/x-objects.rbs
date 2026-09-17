@@ -423,11 +423,11 @@ module X
 
         module Posts : _Client
           def find_post: (id id, **untyped params) ?{ (Problem problem) -> void } -> Post?
-          def find_tweet: (id id, **untyped params) -> Post?
+          def find_tweet: (id id, **untyped params) ?{ (Problem problem) -> void } -> Post?
           def find_post!: (id id, **untyped params) -> Post
           def find_tweet!: (id id, **untyped params) -> Post
           def find_posts: (Array[id] ids, **untyped params) ?{ (Problem problem) -> void } -> Array[Post]
-          def find_tweets: (Array[id] ids, **untyped params) -> Array[Post]
+          def find_tweets: (Array[id] ids, **untyped params) ?{ (Problem problem) -> void } -> Array[Post]
           def search_posts: (String query, **untyped params) -> Cursor
           def search: (String query, **untyped params) -> Cursor
           def search_tweets: (String query, **untyped params) -> Cursor
@@ -466,7 +466,7 @@ module X
 
         module DirectMessages : _Client
           def find_direct_message: (id id, **untyped params) ?{ (Problem problem) -> void } -> DirectMessage?
-          def find_dm: (id id, **untyped params) -> DirectMessage?
+          def find_dm: (id id, **untyped params) ?{ (Problem problem) -> void } -> DirectMessage?
           def find_direct_message!: (id id, **untyped params) -> DirectMessage
           def find_dm!: (id id, **untyped params) -> DirectMessage
           def direct_messages: (**untyped params) -> Cursor
@@ -742,7 +742,7 @@ module X
     def self.search: (String query, client: Objects::_Client, **untyped params) -> Cursor
     def self.search_all: (String query, client: Objects::_Client, **untyped params) -> Cursor
     def self.reposts_of_me: (client: Objects::_Client, **untyped params) -> Cursor
-    def self.context_annotations?: (Hash[Symbol, untyped] params) -> bool
+    private def self.context_annotations?: (Hash[Symbol, untyped] params) -> bool
 
     def text: () -> String?
     def lang: () -> String?
