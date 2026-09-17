@@ -786,12 +786,12 @@ module X
     def permalink: () -> String
     def uri: () -> URI::Generic
     def expanded_text: () -> String?
-
-    private
-    def full: () -> Hash[String, untyped]
     def delete: () -> bool
     def hide: () -> bool
     def unhide: () -> bool
+
+    private
+    def full: () -> Hash[String, untyped]
   end
 
   class Tweet = Post
