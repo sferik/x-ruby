@@ -29,13 +29,24 @@ module X
       assert_nil perform_chunked_upload
     end
 
-    def test_init_returns_nil_when_server_returns_empty_response
+    def test_init_raises_when_server_returns_empty_response
       stub_request(:post, init_url).to_return(status: 204)
 
-      response = Uploader.const_get(:Chunks).init(client: @client, file_path: VIDEO_FILE,
-        media_type: VIDEO_MIME_TYPE, media_category: Uploader::Media::TWEET_VIDEO)
+      assert_raises(KeyError) { init }
+    end
 
-      assert_nil response
+    def test_init_raises_when_server_returns_a_response_without_data
+      stub_request(:post, init_url).to_return(status: 202, headers: json_headers, body: "{}")
+
+      assert_raises(KeyError) { init }
+    end
+
+    def test_chunked_upload_raises_before_a_chunk_is_uploaded_when_init_returns_no_media
+      stub_request(:post, init_url).to_return(status: 204)
+      append = stub_append_request
+
+      assert_raises(KeyError) { perform_chunked_upload }
+      assert_not_requested append
     end
 
     def test_append_uploads_chunks_with_segment_indices
@@ -72,6 +83,11 @@ module X
 
     def append(chunk_size:)
       Uploader.const_get(:Chunks).append(client: @client, file_path: VIDEO_FILE, chunk_size:, media: media_hash, boundary: TEST_BOUNDARY, concurrency: 4)
+    end
+
+    def init
+      Uploader.const_get(:Chunks).init(client: @client, file_path: VIDEO_FILE, media_type: VIDEO_MIME_TYPE,
+        media_category: Uploader::Media::TWEET_VIDEO)
     end
 
     def media_hash = {"id" => TEST_MEDIA_ID}

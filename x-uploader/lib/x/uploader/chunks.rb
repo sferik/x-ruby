@@ -20,17 +20,22 @@ module X
 
       # Initialize a chunked upload
       #
+      # The chunks that follow are appended to the media this returns, so a response that holds none, whether it has
+      # no body at all or a body without data, raises here rather than leave the upload to fail with a NoMethodError
+      # on the first chunk.
+      #
       # @api private
       # @param client [Client] the X API client
       # @param file_path [String, Pathname] the file path
       # @param media_type [String] the MIME type
       # @param media_category [String] the media category
-      # @return [Hash, nil] the initialization response
+      # @return [Hash] the initialization response
+      # @raise [KeyError] if the response holds no data to append the chunks to
       # @example Initialize the upload of a video
       #   Uploader::Chunks.init(client:, file_path: "cat.mp4", media_type: "video/mp4", media_category: "tweet_video")
       def init(client:, file_path:, media_type:, media_category:)
         body = {media_type:, media_category:, total_bytes: File.size(file_path)}
-        client.post("media/upload/initialize", body, **JSON_CLASSES)&.fetch("data")
+        client.post("media/upload/initialize", body, **JSON_CLASSES).to_h.fetch("data")
       end
 
       # Append the chunks of a file to a chunked upload, a few at a time

@@ -98,7 +98,7 @@ module X
       RETRY_BACKOFF: Integer
       extend Chunks
 
-      def init: (client: _Client, file_path: path, media_type: String, media_category: String) -> untyped
+      def init: (client: _Client, file_path: path, media_type: String, media_category: String) -> Hash[String, untyped]
       def append: (client: _Client, file_path: path, chunk_size: Integer, media: untyped, boundary: String, concurrency: Integer) -> void
 
       private

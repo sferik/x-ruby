@@ -201,6 +201,7 @@ module X
       # @raise [ArgumentError] if the media category is invalid, the chunk size is not positive or would need more
       #   segments than the API numbers, or the concurrency is less than one
       # @raise [InvalidMediaType] if no media type is given and none can be inferred
+      # @raise [KeyError] if the response that initializes the upload holds no media to append the chunks to
       # @example Upload a large video
       #   Uploader::Media.chunked_upload("video.mp4", client: client)
       def chunked_upload(file_path, client:, media_category: infer_media_category(file_path),
