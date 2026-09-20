@@ -28,6 +28,10 @@ module X
       end
     end
 
+    def test_idempotent_methods_may_be_sent_again
+      assert_equal [true, true, true, false], %i[get put delete post].map { |http_method| Core::RequestBuilder.idempotent?(http_method) }
+    end
+
     def test_a_request_with_a_body_is_given_the_json_content_type
       request = @request_builder.build(http_method: :post, uri: @uri, body: "{}", authenticator: @authenticator)
 

@@ -6,6 +6,7 @@ require "uri"
 require "zlib"
 require_relative "connection_pool"
 require_relative "connection_proxy"
+require_relative "connection_request"
 require_relative "errors/network_error"
 require_relative "errors/stream_callback_error"
 
@@ -18,6 +19,7 @@ module X
   # @api public
   class Connection
     include Core::ConnectionProxy
+    include Core::ConnectionRequest
 
     # Default host for the X API
     DEFAULT_HOST = "api.x.com"
@@ -37,26 +39,6 @@ module X
     # Default time to keep a connection open for the next request to the same host, in seconds; X holds an idle
     # connection open for more than five minutes, so a connection closed within this time was closed by a proxy
     DEFAULT_KEEP_ALIVE_TIMEOUT = 30 # seconds
-    # Network errors that should be wrapped in NetworkError
-    #
-    # IOError covers EOFError, and a read from a socket closed under it. SystemCallError covers every error the
-    # operating system reports for a socket, such as a refused, reset, or aborted connection, a network that is down
-    # or has no route, or a write refused with EPIPE. Timeout::Error covers the open, read, and write timeouts of
-    # Net::HTTP. A connection cut off mid-response can leave Net::HTTP a status line it cannot parse, or a compressed
-    # body that Zlib cannot inflate, and a proxy that refuses to open a tunnel, such as with 407 Proxy Authentication
-    # Required, raises a Net::ProtocolError.
-    NETWORK_ERRORS = [
-      IOError,
-      Net::HTTPBadResponse,
-      Net::ProtocolError,
-      OpenSSL::SSL::SSLError,
-      SocketError,
-      SystemCallError,
-      Timeout::Error,
-      Zlib::Error
-    ].freeze
-    private_constant :NETWORK_ERRORS
-
     # The timeout for opening connections in seconds
     # @api public
     # @return [Integer, Float] the timeout for opening connections in seconds
@@ -145,7 +127,7 @@ module X
       hostname, port = host_and_port(uri)
       use_ssl = uri.scheme.eql?("https")
       open = -> { build_http_client(uri).tap { |http_client| http_client.use_ssl = use_ssl } }
-      @pool.with([use_ssl, hostname, port], open) { |http_client| configure_timeouts(http_client).request(request) }
+      send_request(request, [use_ssl, hostname, port], open)
     rescue *NETWORK_ERRORS => e
       raise NetworkError, "Network error: #{e}"
     end

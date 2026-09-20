@@ -48,11 +48,11 @@ module X
       @pid: Integer?
 
       def initialize: () -> void
-      def with: [T] ([bool, String, Integer] key, ^() -> Net::HTTP open) { (Net::HTTP) -> T } -> T
+      def with: [T] ([bool, String, Integer] key, ^() -> Net::HTTP open) { (Net::HTTP, bool) -> T } -> T
       def clear: () -> void
 
       private
-      def checkout: ([bool, String, Integer] key, ^() -> Net::HTTP open) -> [Hash[[bool, String, Integer], Array[Net::HTTP]], Net::HTTP]
+      def checkout: ([bool, String, Integer] key, ^() -> Net::HTTP open) -> [Hash[[bool, String, Integer], Array[Net::HTTP]], Net::HTTP, bool]
       def checkin: ([bool, String, Integer] key, Net::HTTP http_client, Hash[[bool, String, Integer], Array[Net::HTTP]] pool) -> Array[Net::HTTP]?
       def forget_after_fork: () -> void
       def close: (Net::HTTP http_client) -> void
@@ -62,7 +62,9 @@ module X
       HTTP_METHODS: Hash[Symbol, (singleton(Net::HTTP::Get) | singleton(Net::HTTP::Post) | singleton(Net::HTTP::Put) | singleton(Net::HTTP::Delete))]
       DEFAULT_HEADERS: Hash[String, String]
       BODY_HEADERS: Hash[String, String]
+      IDEMPOTENT_METHODS: Array[Symbol]
 
+      def self.idempotent?: (Symbol http_method) -> bool
       def build: (http_method: Symbol, uri: URI::Generic, ?body: String?, ?headers: Hash[String, String], ?authenticator: Authenticator) -> (Net::HTTPRequest)
 
       private
@@ -84,6 +86,17 @@ module X
 
       private
       def wait_before_retry: (TooManyRequests error, Integer retries) -> Integer
+    end
+
+    module ConnectionRequest
+      NETWORK_ERRORS: Array[singleton(IOError) | singleton(Net::HTTPBadResponse) | singleton(Net::ProtocolError) | singleton(OpenSSL::SSL::SSLError) | singleton(SocketError) | singleton(SystemCallError) | singleton(Timeout::Error) | singleton(Zlib::Error)]
+
+      @pool: ConnectionPool
+
+      private
+      def send_request: (Net::HTTPRequest request, [bool, String, Integer] key, ^() -> Net::HTTP open) -> Net::HTTPResponse
+      def idempotent?: (Net::HTTPRequest request) -> bool
+      def configure_timeouts: (Net::HTTP http_client) -> Net::HTTP
     end
 
     class ReconnectHandler
@@ -503,9 +516,8 @@ module X
     DEFAULT_WRITE_TIMEOUT: Integer
     DEFAULT_KEEP_ALIVE_TIMEOUT: Integer
 
-    NETWORK_ERRORS: Array[singleton(IOError) | singleton(Net::HTTPBadResponse) | singleton(Net::ProtocolError) | singleton(OpenSSL::SSL::SSLError) | singleton(SocketError) | singleton(SystemCallError) | singleton(Timeout::Error) | singleton(Zlib::Error)]
-
     include Core::ConnectionProxy
+    include Core::ConnectionRequest
 
     attr_accessor open_timeout : Float | Integer
     attr_accessor read_timeout : Float | Integer

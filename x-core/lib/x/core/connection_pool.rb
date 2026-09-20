@@ -26,16 +26,19 @@ module X
 
       # Run a block with an open connection, keeping it for later if the block returns
       #
+      # The block is told whether the connection was one the pool had kept open, since a connection the peer closed
+      # while it was idle fails the request that takes it, where one opened for the request did not go stale.
+      #
       # @api private
       # @param key [Array] the scheme, host, and port the connection is to
       # @param open [Proc] builds a connection to the host, when none is idle
-      # @yield [Net::HTTP] the started connection
+      # @yield [Net::HTTP, Boolean] the started connection, and whether it came from the pool
       # @return [Object] what the block returns
       def with(key, open)
-        pool, http_client = checkout(key, open)
+        pool, http_client, pooled = checkout(key, open)
         kept = nil
         begin
-          result = yield http_client
+          result = yield http_client, pooled
           kept = checkin(key, http_client, pool)
           result
         ensure
@@ -64,7 +67,8 @@ module X
       # @api private
       # @param key [Array] the scheme, host, and port
       # @param open [Proc] builds a connection to the host
-      # @return [Array(Hash, Net::HTTP)] the idle connections the connection returns to, and the started connection
+      # @return [Array(Hash, Net::HTTP, bool)] the idle connections the connection returns to, the started
+      #   connection, and whether it was idle rather than opened for this request
       def checkout(key, open)
         pool, idle = @lock.synchronize do
           forget_after_fork
@@ -72,7 +76,7 @@ module X
         end
         http_client = idle || open.call
         http_client.start unless http_client.started?
-        [pool, http_client]
+        [pool, http_client, !idle.nil?]
       end
 
       # Keep a connection for later, unless the pool was cleared or is full

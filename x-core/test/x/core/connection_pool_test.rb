@@ -23,6 +23,16 @@ module X
       assert_equal [true, :ok], @pool.with(KEY, open) { |http| [http.started?, :ok] }
     end
 
+    def test_with_tells_the_block_whether_the_connection_was_one_it_had_kept_open
+      assert_equal [false, true], Array.new(2) { @pool.with(KEY, open) { |_, pooled| pooled } }
+    end
+
+    def test_with_tells_the_block_a_connection_it_opened_apart_from_one_it_kept
+      @pool.with(KEY, open) { nil }
+
+      assert_equal [true, false], @pool.with(KEY, open) { |_, pooled| [pooled, @pool.with(KEY, open) { |_, nested| nested }] }
+    end
+
     def test_reuses_the_connection_given_back_last
       nest(2)
 
@@ -174,6 +184,7 @@ module X
 
   class ConnectionKeepAliveTest < Minitest::Test
     cover Connection
+    cover Core::ConnectionRequest
 
     def setup
       stub_request(:get, "https://example.com/")

@@ -27,6 +27,18 @@ module X
         put: Net::HTTP::Put,
         delete: Net::HTTP::Delete
       }.freeze
+      # The HTTP methods a request may be sent again with, since sending one again asks the API for what sending it
+      # once did, where a second POST would post a second time
+      IDEMPOTENT_METHODS = %i[get put delete].freeze
+
+      # Check whether sending a request again has the same effect as sending it once
+      #
+      # @api private
+      # @param http_method [Symbol] the HTTP method (:get, :post, :put, :delete)
+      # @return [Boolean] true for a GET, PUT, or DELETE
+      # @example Check whether a post may be sent again
+      #   X::Core::RequestBuilder.idempotent?(:post) # => false
+      def self.idempotent?(http_method) = IDEMPOTENT_METHODS.include?(http_method)
 
       # Build an HTTP request
       #
