@@ -87,9 +87,17 @@ module X
 
     cover Connection
 
+    # The first net-http that can request a host named by an IPv6 literal, which Ruby 4.0 ships; the 0.6 of Ruby 3.4
+    # builds the Host header of such a request without the brackets, then empties it, and raises before it connects
+    NET_HTTP_WITH_IPV6_LITERALS = Gem::Version.new("0.8")
+
     def setup
       @connection = Connection.new
+      skip "net-http #{Net::HTTP::VERSION} cannot request an IPv6 literal host" if net_http < NET_HTTP_WITH_IPV6_LITERALS
     end
+
+    # The version of the net-http that Net::HTTP comes from
+    def net_http = Gem::Version.new(Net::HTTP::VERSION)
 
     def teardown
       @connection.close

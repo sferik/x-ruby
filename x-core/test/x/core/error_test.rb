@@ -24,7 +24,7 @@ module X
 
     [IOError, Net::HTTPBadResponse, Net::ProtocolError, OpenSSL::SSL::SSLError, SocketError, SystemCallError,
       Timeout::Error, Zlib::Error].each do |error_class|
-      define_method "test_#{error_class.name.split("::").last.downcase}_raises_network_error" do
+      define_method "test_#{error_class.name.gsub("::", "_").downcase}_raises_network_error" do
         stub_request(:get, "https://api.x.com/2/tweets").to_raise(error_class)
 
         assert_raises NetworkError do
