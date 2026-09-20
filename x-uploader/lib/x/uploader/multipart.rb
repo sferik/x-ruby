@@ -37,5 +37,6 @@ module X
           "--#{boundary}--\r\n"
       end
     end
+    private_constant :Multipart
   end
 end

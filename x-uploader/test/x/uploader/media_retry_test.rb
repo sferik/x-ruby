@@ -4,7 +4,7 @@ require "x/uploader/media"
 module X
   class MediaRetryTest < Minitest::Test
     cover Uploader::Media
-    cover Uploader::Chunks
+    cover Uploader.const_get(:Chunks)
 
     BASE_URL = "https://api.x.com/2/media/upload".freeze
     VIDEO_FILE = "test/sample_files/sample.mp4".freeze
@@ -75,7 +75,7 @@ module X
     end
 
     def perform_upload
-      Uploader::Chunks.stub(:sleep, ->(seconds) { @waits << seconds }) do
+      Uploader.const_get(:Chunks).stub(:sleep, ->(seconds) { @waits << seconds }) do
         Uploader::Media.chunked_upload(VIDEO_FILE, client: @client, media_category: Uploader::Media::TWEET_VIDEO)
       end
     end

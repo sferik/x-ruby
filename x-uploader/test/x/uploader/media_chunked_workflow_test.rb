@@ -5,7 +5,7 @@ require "x/uploader/media"
 module X
   class MediaChunkedWorkflowTest < Minitest::Test
     cover Uploader::Media
-    cover Uploader::Chunks
+    cover Uploader.const_get(:Chunks)
 
     BASE_URL = "https://api.x.com/2/media/upload".freeze
     INIT_URL = "#{BASE_URL}/initialize".freeze

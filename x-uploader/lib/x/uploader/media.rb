@@ -27,12 +27,12 @@ module X
       extend self
 
       # Number of bytes per megabyte
-      BYTES_PER_MB = Uploader::Validator::BYTES_PER_MB
+      BYTES_PER_MB = Validator::BYTES_PER_MB
       # Greatest number of bytes the API takes in a single upload request, above which an animated GIF, which it
       # takes in chunks of up to 15 MB, uploads in chunks
       MAX_SIMPLE_UPLOAD_BYTES = 5 * BYTES_PER_MB
       # Media category constants
-      AMPLIFY_VIDEO, DM_GIF, DM_IMAGE, DM_VIDEO, SUBTITLES, TWEET_GIF, TWEET_IMAGE, TWEET_VIDEO = Uploader::Validator::MEDIA_CATEGORIES
+      AMPLIFY_VIDEO, DM_GIF, DM_IMAGE, DM_VIDEO, SUBTITLES, TWEET_GIF, TWEET_IMAGE, TWEET_VIDEO = Validator::MEDIA_CATEGORIES
       # Supported MIME types: every media type the API documents for an upload
       MIME_TYPES = %w[image/bmp image/gif image/jpeg image/pjpeg image/png image/tiff image/webp model/gltf-binary
         model/vnd.usdz+zip text/srt text/vtt video/mp2t video/mp4 video/quicktime video/webm].freeze

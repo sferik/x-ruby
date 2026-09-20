@@ -25,13 +25,13 @@ module X
 
     def test_the_limits_of_an_upload_are_constants
       assert_equal [1_048_576, 5_242_880], [Uploader::Media::BYTES_PER_MB, Uploader::Media::MAX_SIMPLE_UPLOAD_BYTES]
-      assert_equal [1000, 1000], [Uploader::Validator::MAX_SEGMENTS, Uploader::Validator::MAX_ALT_TEXT_LENGTH]
+      assert_equal [1000, 1000], [Uploader.const_get(:Validator)::MAX_SEGMENTS, Uploader.const_get(:Validator)::MAX_ALT_TEXT_LENGTH]
     end
 
     def test_media_holds_none_of_the_constants_of_the_chunked_upload
       assert_equal %i[AMPLIFY_VIDEO BYTES_PER_MB DEFAULT_CONCURRENCY DEFAULT_PROCESSING_TIMEOUT DM_GIF DM_IMAGE DM_VIDEO
         MAX_SIMPLE_UPLOAD_BYTES SUBTITLES TWEET_GIF TWEET_IMAGE TWEET_VIDEO], Uploader::Media.constants.sort
-      assert_empty Uploader::Chunks.constants
+      assert_empty Uploader.const_get(:Chunks).constants
     end
 
     private

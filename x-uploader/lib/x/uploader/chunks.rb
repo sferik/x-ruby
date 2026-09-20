@@ -127,5 +127,6 @@ module X
         end
       end
     end
+    private_constant :Chunks
   end
 end

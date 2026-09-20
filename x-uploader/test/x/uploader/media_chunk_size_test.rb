@@ -64,7 +64,7 @@ module X
     # The size of the chunks the upload of the block would have appended, which it appends none of
     def upload(file_path, **)
       chunk_size = nil
-      Uploader::Chunks.stub(:append, ->(**options) { chunk_size = options.fetch(:chunk_size) }) do
+      Uploader.const_get(:Chunks).stub(:append, ->(**options) { chunk_size = options.fetch(:chunk_size) }) do
         Uploader::Media.upload(file_path, client: @client, media_category: "tweet_video", media_type: "video/mp4", **)
       end
       chunk_size

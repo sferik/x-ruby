@@ -6,7 +6,7 @@ require "x/uploader/media"
 module X
   class MediaRequestTest < Minitest::Test
     cover Uploader::Media
-    cover Uploader::Chunks
+    cover Uploader.const_get(:Chunks)
 
     UPLOAD_URL = "https://api.x.com/2/media/upload".freeze
     CONTENT = "\x89PNG\r\n\x1A\n\x00\x00\x00...".b.freeze

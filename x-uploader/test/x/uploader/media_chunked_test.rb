@@ -4,7 +4,7 @@ require "x/uploader/media"
 module X
   class MediaChunkedTest < Minitest::Test
     cover Uploader::Media
-    cover Uploader::Chunks
+    cover Uploader.const_get(:Chunks)
 
     BASE_URL = "https://api.x.com/2/media/upload".freeze
     TEST_BOUNDARY = "AaB03x".freeze
@@ -32,7 +32,7 @@ module X
     def test_init_returns_nil_when_server_returns_empty_response
       stub_request(:post, init_url).to_return(status: 204)
 
-      response = Uploader::Chunks.init(client: @client, file_path: VIDEO_FILE,
+      response = Uploader.const_get(:Chunks).init(client: @client, file_path: VIDEO_FILE,
         media_type: VIDEO_MIME_TYPE, media_category: Uploader::Media::TWEET_VIDEO)
 
       assert_nil response
@@ -71,7 +71,7 @@ module X
     private
 
     def append(chunk_size:)
-      Uploader::Chunks.append(client: @client, file_path: VIDEO_FILE, chunk_size:, media: media_hash, boundary: TEST_BOUNDARY, concurrency: 4)
+      Uploader.const_get(:Chunks).append(client: @client, file_path: VIDEO_FILE, chunk_size:, media: media_hash, boundary: TEST_BOUNDARY, concurrency: 4)
     end
 
     def media_hash = {"id" => TEST_MEDIA_ID}

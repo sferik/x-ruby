@@ -53,7 +53,7 @@ A request is sent once. In 0.19, `Net::HTTP` sent a GET, PUT, or DELETE request 
 
 Remove `require "x/media_uploader"` and `require "x/account_uploader"`. `require "x"` loads the uploaders.
 
-`X::Uploader::Validator` is private API, which the uploaders validate their arguments with, and the MIME type and media category tables of `X::Uploader::Media` are private constants: `MIME_TYPES`, `MIME_TYPE_MAP`, and the MIME type constants, such as `GIF_MIME_TYPE`, `MP4_MIME_TYPE`, and `SUBRIP_MIME_TYPE`. `PROCESSING_INFO_STATES` is gone, since `X::Uploader::UploadedMedia#processing?` tells whether media is still processing. The media category constants, such as `TWEET_IMAGE`, and `BYTES_PER_MB` remain public. Pass a file to `upload`, which raises `Errno::ENOENT` for a missing file and `ArgumentError` for an invalid category, or infer a type with `infer_media_type`.
+`X::Uploader::Validator`, which the uploaders validate their arguments with, is a private constant, as are `X::Uploader::Chunks`, `X::Uploader::Multipart`, and `X::Uploader::Utils`, which they upload and read files with, and the MIME type and media category tables of `X::Uploader::Media` are private constants: `MIME_TYPES`, `MIME_TYPE_MAP`, and the MIME type constants, such as `GIF_MIME_TYPE`, `MP4_MIME_TYPE`, and `SUBRIP_MIME_TYPE`. `PROCESSING_INFO_STATES` is gone, since `X::Uploader::UploadedMedia#processing?` tells whether media is still processing. The media category constants, such as `TWEET_IMAGE`, and `BYTES_PER_MB` remain public. Pass a file to `upload`, which raises `Errno::ENOENT` for a missing file and `ArgumentError` for an invalid category, or infer a type with `infer_media_type`.
 
 ### Uploads
 

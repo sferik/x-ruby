@@ -56,5 +56,6 @@ module X
         end
       end
     end
+    private_constant :Utils
   end
 end

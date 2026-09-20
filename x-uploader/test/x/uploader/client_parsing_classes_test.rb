@@ -8,7 +8,7 @@ module X
 
   class ClientParsingClassesTest < Minitest::Test
     cover Uploader::Account
-    cover Uploader::Chunks
+    cover Uploader.const_get(:Chunks)
     cover Uploader::Media
     cover Uploader::Metadata
 

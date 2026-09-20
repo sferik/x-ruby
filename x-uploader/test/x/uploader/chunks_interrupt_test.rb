@@ -6,7 +6,7 @@ require "x/uploader/chunks"
 
 module X
   class ChunksInterruptTest < Minitest::Test
-    cover Uploader::Chunks
+    cover Uploader.const_get(:Chunks)
 
     CHUNK_BYTES = 1024
 
@@ -33,7 +33,7 @@ module X
       @path = File.join(@dir, "video.mp4")
       File.binwrite(@path, "\x01".b * (6 * CHUNK_BYTES))
       @client = StalledClient.new
-      @uploader = Thread.new { Uploader::Chunks.append(client: @client, file_path: @path, chunk_size: CHUNK_BYTES, media: {"id" => "1"}, boundary: "b", concurrency: 2) }
+      @uploader = Thread.new { Uploader.const_get(:Chunks).append(client: @client, file_path: @path, chunk_size: CHUNK_BYTES, media: {"id" => "1"}, boundary: "b", concurrency: 2) }
       @uploader.report_on_exception = false
       @workers = Array.new(2) { @client.started.pop(timeout: 1) }
     end

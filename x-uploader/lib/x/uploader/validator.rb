@@ -142,5 +142,6 @@ module X
         raise ArgumentError, "Invalid media_category: #{media_category}. Valid values: #{MEDIA_CATEGORIES.join(", ")}"
       end
     end
+    private_constant :Validator
   end
 end

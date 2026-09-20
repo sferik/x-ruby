@@ -5,7 +5,7 @@ module X
   class MediaPathnameTest < Minitest::Test
     cover Uploader::Media
     cover Uploader::Account
-    cover Uploader::Chunks
+    cover Uploader.const_get(:Chunks)
 
     UPLOAD_URL = "https://api.x.com/2/media/upload".freeze
     JSON = {headers: {"content-type" => "application/json"}, body: {data: {id: TEST_MEDIA_ID}}.to_json}.freeze
