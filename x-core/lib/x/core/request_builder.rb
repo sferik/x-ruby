@@ -14,7 +14,7 @@ module X
       # Default headers for API requests
       DEFAULT_HEADERS = {
         "Content-Type" => "application/json; charset=utf-8",
-        "User-Agent" => "X-Client/#{Core::VERSION} #{RUBY_ENGINE}/#{RUBY_VERSION} (#{RUBY_PLATFORM})"
+        "User-Agent" => "x-ruby/#{Core::VERSION} #{RUBY_ENGINE}/#{RUBY_VERSION} (#{RUBY_PLATFORM})"
       }.freeze
       # Mapping of HTTP method symbols to Net::HTTP classes
       HTTP_METHODS = {
