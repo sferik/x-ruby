@@ -2,6 +2,11 @@ module X
   # Mixin for client authentication credentials
   # @api private
   module ClientCredentials
+    # The message of the error raised for a change to a credential a client does not take, as Ruby words the error
+    # that building a client from one raised before
+    UNKNOWN_CREDENTIAL = "unknown keyword: %s".freeze
+    private_constant :UNKNOWN_CREDENTIAL
+
     # The API key for OAuth 1.0a authentication
     # @api public
     # @return [String, nil] the API key for OAuth 1.0a authentication
@@ -157,9 +162,13 @@ module X
     # a mix of old and new credentials, as it could between two setters when rotating an OAuth 1.0a access token and
     # its secret. Credentials left out keep their values, and a credential passed as nil is cleared.
     #
+    # The credentials are checked as initialize checks them, before any of them is replaced, so a change the client
+    # would refuse leaves it as it was.
+    #
     # @api public
     # @param changes [Hash{Symbol => String, Time, nil}] the credentials to change, as initialize accepts them
     # @return [void]
+    # @raise [ArgumentError] if a change names a credential a client does not take
     # @raise [ArgumentError] if the credentials, once changed, do not form a complete set, as initialize would raise,
     #   which leaves the client as it was
     # @example Rotate an OAuth 1.0a access token
@@ -167,7 +176,13 @@ module X
     # @example Stop sending credentials
     #   client.update_credentials(bearer_token: nil)
     def update_credentials(**changes)
-      self.class.new(**credentials, **changes)
+      held = credentials
+      unknown = changes.keys - held.keys
+      raise ArgumentError, format(UNKNOWN_CREDENTIAL, unknown.map(&:inspect).join(", ")) unless unknown.empty?
+
+      updated = held.merge(changes)
+      CredentialValidator.validate_values!(updated)
+      CredentialValidator.validate!(updated)
       replace_credentials(**changes)
     end
 

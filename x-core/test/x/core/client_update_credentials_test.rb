@@ -34,9 +34,25 @@ module X
 
     def test_update_credentials_refuses_an_unknown_credential
       client = Client.new(**test_oauth_credentials)
+      error = assert_raises(ArgumentError) { client.update_credentials(password: "secret") }
 
-      assert_raises(ArgumentError) { client.update_credentials(password: "secret") }
+      assert_equal "unknown keyword: :password", error.message
       assert_instance_of OAuth1Authenticator, client.authenticator
+    end
+
+    def test_update_credentials_names_every_unknown_credential
+      client = Client.new(**test_oauth_credentials)
+      error = assert_raises(ArgumentError) { client.update_credentials(password: "secret", pin: "1234") }
+
+      assert_equal "unknown keyword: :password, :pin", error.message
+    end
+
+    def test_update_credentials_refuses_an_empty_credential_as_empty_rather_than_incomplete
+      client = Client.new(**test_oauth_credentials)
+      error = assert_raises(ArgumentError) { client.update_credentials(api_key: nil, access_token_secret: "") }
+
+      assert_match(/\Aaccess_token_secret is empty/, error.message)
+      assert_equal [TEST_API_KEY, TEST_ACCESS_TOKEN_SECRET], [client.api_key, client.access_token_secret]
     end
 
     def test_update_credentials_clears_every_credential

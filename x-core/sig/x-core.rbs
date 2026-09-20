@@ -595,6 +595,8 @@ module X
   end
 
   module ClientCredentials : _CredentialHost
+    UNKNOWN_CREDENTIAL: String
+
     @app_bearer_token: String?
     @token_refresh_clients: _ClientRegistry
     @connection: Connection
