@@ -79,8 +79,11 @@ module X
     module Utils
       extend Utils
 
+      SUBTITLED_MEDIA_CATEGORIES: Hash[String, String]
+
       def extension: (path file_path) -> String
       def media_id: (media media) -> String
+      def subtitled_media_category: (String | Symbol media_category) -> String
     end
 
     module Multipart
@@ -176,7 +179,7 @@ module X
       extend Metadata
 
       def add_alt_text: (media media, String text, client: _Client) -> untyped
-      def add_subtitles: (media video, media subtitles, String language_code, client: _Client, ?display_name: String?, ?media_category: String) -> untyped
+      def add_subtitles: (media video, media subtitles, String language_code, client: _Client, ?display_name: String?, ?media_category: String | Symbol) -> untyped
     end
 
     module Validator

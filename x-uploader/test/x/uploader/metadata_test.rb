@@ -4,6 +4,7 @@ require "x/uploader/metadata"
 module X
   class MetadataTest < Minitest::Test
     cover Uploader::Metadata
+    cover Uploader.const_get(:Utils)
 
     METADATA_URL = "https://api.x.com/2/media/metadata".freeze
     SUBTITLES_URL = "https://api.x.com/2/media/subtitles".freeze
@@ -57,6 +58,25 @@ module X
       Uploader::Metadata.add_subtitles(7, 8, "EN", client: @client, media_category: Uploader::Metadata::AMPLIFY_SUBTITLED_MEDIA_CATEGORY)
 
       assert_requested :post, SUBTITLES_URL, body: {id: "7", media_category: "AmplifyVideo", subtitles: {id: "8", language_code: "EN"}}.to_json
+    end
+
+    def test_add_subtitles_takes_the_category_the_video_was_uploaded_as_in_any_case
+      stub_request(:post, SUBTITLES_URL).to_return(status: 204)
+      {"TweetVideo" => [:tweet_video, "TWEET_VIDEO", "tweetVideo"], "AmplifyVideo" => [:amplify_video, "Amplify_Video", "AmplifyVideo"]}.each do |sent, given|
+        given.each do |media_category|
+          WebMock.reset_executed_requests!
+          Uploader::Metadata.add_subtitles(7, 8, "EN", client: @client, media_category:)
+
+          assert_requested :post, SUBTITLES_URL, body: {id: "7", media_category: sent, subtitles: {id: "8", language_code: "EN"}}.to_json
+        end
+      end
+    end
+
+    def test_add_subtitles_refuses_any_other_category_before_a_request
+      error = assert_raises(ArgumentError) { Uploader::Metadata.add_subtitles(7, 8, "EN", client: @client, media_category: :tweet_image) }
+
+      assert_equal "Invalid media_category: tweet_image. Valid values: tweet_video, amplify_video", error.message
+      assert_not_requested :post, SUBTITLES_URL
     end
   end
 end

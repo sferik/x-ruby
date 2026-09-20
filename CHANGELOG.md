@@ -191,6 +191,7 @@ See [UPGRADING.md](https://github.com/sferik/x-ruby/blob/main/UPGRADING.md) for 
 * Give the spaces of `X::Space.search` and the posts of `X::Space#posts` the client they were given, as `X::Space.find` does, so `space.creator.follow` and `post.like` act as the user, while the cursors still fetch their pages with the app-only client, which the space endpoints take; the resources held the app-only client, which every action they took was refused with
 * Attach nothing for an empty `media_ids:` in `create_post`, `create_direct_message`, and their `X::Post` and `X::DirectMessage` equivalents, as for nil, so a post or message of an empty list and text sends its text alone, and one of an empty list alone raises `ArgumentError`, where either sent an empty `media` or `attachments` field for the API to refuse
 * Read `X::Uploader::UploadedMedia#id` from an identifier held as an Integer, as a Hash built by hand to refer to media uploaded before may hold it, rather than raise `ArgumentError`
+* Take the `media_category:` of `X::Uploader::Metadata.add_subtitles` as the uploaders take a category, `tweet_video` or `amplify_video` as a String or a Symbol in any case, as well as the `TweetVideo` and `AmplifyVideo` the subtitles endpoint names them, and raise `ArgumentError` for any other, where a category given as the uploaders take it was sent as given for the endpoint to refuse
 
 ## [0.19.0] - 2026-03-01
 * Add streaming support for filtered stream and volume stream endpoints

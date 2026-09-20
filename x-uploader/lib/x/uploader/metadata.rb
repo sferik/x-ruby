@@ -35,18 +35,21 @@ module X
       # @param language_code [String] the two-letter language code of the subtitles, such as EN
       # @param client [Client] the X API client
       # @param display_name [String, nil] the name of the language shown to viewers, such as English
-      # @param media_category [String] TweetVideo, or AmplifyVideo for a video uploaded as amplify_video
+      # @param media_category [String, Symbol] the category the video was uploaded as, tweet_video or amplify_video,
+      #   in any case, as the uploaders take it, or as the subtitles endpoint names it, TweetVideo or AmplifyVideo
       # @return [Hash, nil] the video identifier and the subtitles now associated with it
+      # @raise [ArgumentError] if the media category is neither tweet_video nor amplify_video
       # @example Upload a video and its English subtitles
       #   video = Uploader::Media.upload("cat.mp4", client: client)
       #   subtitles = Uploader::Media.upload("cat.srt", client: client)
       #   Uploader::Metadata.add_subtitles(video, subtitles, "EN", client: client, display_name: "English")
       # @example Subtitle an Amplify video
-      #   video = Uploader::Media.upload("cat.mp4", client: client, media_category: "amplify_video")
-      #   Uploader::Metadata.add_subtitles(video, subtitles, "EN", client: client, media_category: "AmplifyVideo")
+      #   video = Uploader::Media.upload("cat.mp4", client: client, media_category: :amplify_video)
+      #   Uploader::Metadata.add_subtitles(video, subtitles, "EN", client: client, media_category: :amplify_video)
       def add_subtitles(video, subtitles, language_code, client:, display_name: nil, media_category: SUBTITLED_MEDIA_CATEGORY)
         track = {id: Utils.media_id(subtitles), language_code: language_code.upcase, display_name:}.compact
-        client.post("media/subtitles", {id: Utils.media_id(video), media_category:, subtitles: track}, **JSON_CLASSES)&.fetch("data")
+        body = {id: Utils.media_id(video), media_category: Utils.subtitled_media_category(media_category), subtitles: track}
+        client.post("media/subtitles", body, **JSON_CLASSES)&.fetch("data")
       end
     end
   end
