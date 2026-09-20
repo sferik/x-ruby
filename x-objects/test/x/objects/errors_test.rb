@@ -17,6 +17,18 @@ module X
         assert_operator X::Error, :<, StandardError
       end
 
+      def test_every_error_of_the_object_layer_descends_from_its_own_base
+        assert_operator MissingResource, :<, Objects::Error
+        assert_operator Objects::Error, :<, X::Error
+      end
+
+      # The object layer's own base class shares the name of x-core's, so a rescue inside X::Objects that means every
+      # error of the API, such as the one the connection status of a user falls back from, must name X::Error.
+      def test_the_base_of_the_object_layer_catches_none_of_the_errors_of_x_core
+        refute_operator X::Error, :<, Objects::Error
+        refute_operator UnsupportedOperation, :<, Objects::Error
+      end
+
       def test_unsupported_operation_is_an_x_error
         assert_operator UnsupportedOperation, :<, X::Error
       end

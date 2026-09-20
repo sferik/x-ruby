@@ -106,7 +106,7 @@ module X
     def test_find_by_username_bang_raises_when_the_user_is_not_found
       @client.stub(:get, "users/by/username/nobody", {"errors" => [{"title" => "Not Found Error", "detail" => "Could not find user."}]})
 
-      error = assert_raises(MissingResource) { @client.find_user_by_username!("@nobody") }
+      error = assert_raises(Objects::MissingResource) { @client.find_user_by_username!("@nobody") }
 
       assert_equal "Could not find X::User @nobody: Could not find user.", error.message
       assert_equal ["Not Found Error"], error.problems.map(&:title)

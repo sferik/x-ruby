@@ -225,7 +225,7 @@ module X
       def authenticated_user_id
         current = client! #: untyped
         current.current_user_id if current.respond_to?(:current_user_id)
-      rescue Error
+      rescue X::Error
         nil
       end
 

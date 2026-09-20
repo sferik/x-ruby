@@ -1,8 +1,13 @@
 module X
-  class MissingResource < ::X::Error
-    attr_reader problems: Array[Problem]
+  module Objects
+    class Error < ::X::Error
+    end
 
-    def initialize: (?String? message, ?problems: Array[Problem]) -> void
+    class MissingResource < Objects::Error
+      attr_reader problems: Array[Problem]
+
+      def initialize: (?String? message, ?problems: Array[Problem]) -> void
+    end
   end
 
   class Problem
