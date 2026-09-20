@@ -32,5 +32,5 @@ Gem::Specification.new do |spec|
     "LICENSE.txt"
   ], base: __dir__)
   spec.require_paths = ["lib"]
-  spec.add_dependency("x-core", version)
+  spec.add_dependency("x-core", "~> #{version}")
 end
