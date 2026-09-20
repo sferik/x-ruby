@@ -81,6 +81,14 @@ module X
       assert_includes error.message, "/tmp/tempfile123"
     end
 
+    def test_media_category_constants_are_frozen
+      categories = [Uploader::Media::AMPLIFY_VIDEO, Uploader::Media::DM_GIF, Uploader::Media::DM_IMAGE,
+        Uploader::Media::DM_VIDEO, Uploader::Media::SUBTITLES, Uploader::Media::TWEET_GIF,
+        Uploader::Media::TWEET_IMAGE, Uploader::Media::TWEET_VIDEO]
+
+      assert categories.all?(&:frozen?)
+    end
+
     private
 
     def stub_upload_request

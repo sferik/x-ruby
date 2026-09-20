@@ -35,7 +35,7 @@ module X
       AMPLIFY_VIDEO, DM_GIF, DM_IMAGE, DM_VIDEO, SUBTITLES, TWEET_GIF, TWEET_IMAGE, TWEET_VIDEO = Validator::MEDIA_CATEGORIES
       # Supported MIME types: every media type the API documents for an upload
       MIME_TYPES = %w[image/bmp image/gif image/jpeg image/pjpeg image/png image/tiff image/webp model/gltf-binary
-        model/vnd.usdz+zip text/srt text/vtt video/mp2t video/mp4 video/quicktime video/webm].freeze
+        model/vnd.usdz+zip text/srt text/vtt video/mp2t video/mp4 video/quicktime video/webm].map(&:freeze).freeze
       # MIME type constants
       BMP_MIME_TYPE, GIF_MIME_TYPE, JPEG_MIME_TYPE, PJPEG_MIME_TYPE, PNG_MIME_TYPE, TIFF_MIME_TYPE, WEBP_MIME_TYPE,
         GLTF_BINARY_MIME_TYPE, USDZ_MIME_TYPE, SUBRIP_MIME_TYPE, WEBVTT_MIME_TYPE, MPEG_TS_MIME_TYPE, MP4_MIME_TYPE,

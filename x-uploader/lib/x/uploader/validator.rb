@@ -19,7 +19,7 @@ module X
       # upload in more chunks than these would fail partway, once the media uploaded so far had been billed
       MAX_SEGMENTS = 1000
       # Valid media category values
-      MEDIA_CATEGORIES = %w[amplify_video dm_gif dm_image dm_video subtitles tweet_gif tweet_image tweet_video].freeze
+      MEDIA_CATEGORIES = %w[amplify_video dm_gif dm_image dm_video subtitles tweet_gif tweet_image tweet_video].map(&:freeze).freeze
 
       # Validate the arguments of an upload, and give its media category in lowercase
       #
