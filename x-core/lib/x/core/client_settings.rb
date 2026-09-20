@@ -39,6 +39,13 @@ module X
       #   client.on_response = ->(response) { total += response.resource_count }
       attr_accessor :on_response
 
+      # The headers sent with every request the client makes
+      # @api public
+      # @return [Hash{String => String}] the headers, frozen
+      # @example Read the headers a client sends
+      #   client.headers # => {"User-Agent" => "my-app/1.0"}
+      attr_reader :headers
+
       # Set the base URL for API requests
       #
       # An endpoint is resolved against the base URL, which drops the last segment of a path that does not end with a
@@ -54,6 +61,22 @@ module X
         @base_url = base_url.end_with?("/") ? base_url : "#{base_url}/"
       end
 
+      # Set the headers sent with every request the client makes
+      #
+      # They are defaults: a header of the same name passed to a request, or to a stream, is sent in place of the
+      # client's, and each of them is sent in place of a default of the gem, such as its User-Agent. A header that
+      # carries credentials, such as Authorization or Cookie, is dropped by a redirect to another origin, as one
+      # passed to a request is.
+      #
+      # @api public
+      # @param headers [Hash{String => String}] the headers, which are copied and frozen
+      # @return [void]
+      # @example Name the application in the User-Agent of every request
+      #   client.headers = {"User-Agent" => "my-app/1.0 (+https://example.com)"}
+      def headers=(headers)
+        @headers = headers.dup.freeze
+      end
+
       def_delegators :@connection, :open_timeout, :read_timeout, :write_timeout, :keep_alive_timeout, :proxy_url, :debug_output
       def_delegators :@connection, :open_timeout=, :read_timeout=, :write_timeout=, :keep_alive_timeout=, :proxy_url=, :debug_output=
       def_delegators :@redirect_handler, :max_redirects, :max_redirects=
@@ -66,8 +89,8 @@ module X
       # @return [Hash{Symbol => Object}] the settings
       def settings
         {base_url:, open_timeout:, read_timeout:, write_timeout:, keep_alive_timeout:, debug_output:, proxy_url:,
-         default_array_class:, default_object_class:, max_redirects:, max_rate_limit_retries:, max_rate_limit_wait:,
-         on_response:, on_token_refresh:}
+         default_array_class:, default_object_class:, headers:, max_redirects:, max_rate_limit_retries:,
+         max_rate_limit_wait:, on_response:, on_token_refresh:}
       end
 
       private
@@ -77,20 +100,29 @@ module X
       # @param base_url [String] the base URL for API requests
       # @param default_array_class [Class] the default class for parsing JSON arrays
       # @param default_object_class [Class] the default class for parsing JSON objects
+      # @param headers [Hash{String => String}] the headers sent with every request
       # @param on_response [#call, nil] the callable passed an X::Response after every request and streamed object
       # @param max_redirects [Integer] the maximum number of redirects to follow
       # @param max_rate_limit_retries [Integer] the maximum number of times to retry a request refused for a rate limit
       # @param max_rate_limit_wait [Integer] the maximum number of seconds to wait for a rate limit to reset
       # @return [void]
-      def initialize_settings(base_url:, default_array_class:, default_object_class:, on_response:, max_redirects:,
-        max_rate_limit_retries:, max_rate_limit_wait:)
+      def initialize_settings(base_url:, default_array_class:, default_object_class:, headers:, on_response:,
+        max_redirects:, max_rate_limit_retries:, max_rate_limit_wait:)
         self.base_url = base_url
         @default_array_class = default_array_class
         @default_object_class = default_object_class
+        self.headers = headers
         @on_response = on_response
         @redirect_handler = RedirectHandler.new(connection: @connection, request_builder: @request_builder, max_redirects:)
         @rate_limit_handler = RateLimitHandler.new(max_rate_limit_retries:, max_rate_limit_wait:)
       end
+
+      # The headers of a request, the client's under the request's own
+      #
+      # @api private
+      # @param request_headers [Hash{String => String}] the headers passed to the request
+      # @return [Hash{String => String}] the headers to send
+      def headers_for(request_headers) = headers.merge(request_headers)
 
       # Pass a response to on_response, if there is one
       # @api private

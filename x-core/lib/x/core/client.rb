@@ -81,6 +81,9 @@ module X
     # @param proxy_url [String, URI::Generic, nil] the proxy URL for requests
     # @param default_array_class [Class] the default class for parsing JSON arrays
     # @param default_object_class [Class] the default class for parsing JSON objects
+    # @param headers [Hash{String => String}] headers sent with every request the client makes, as defaults: a
+    #   header of the same name passed to a request is sent in place of one of these, and each of these is sent in
+    #   place of a default of the gem, such as its User-Agent
     # @param max_redirects [Integer] the maximum number of redirects to follow
     # @param max_rate_limit_retries [Integer] the maximum number of times to retry a request refused for a rate limit,
     #   after waiting for the limit to reset
@@ -107,6 +110,8 @@ module X
     #   client = X::Client.new(api_key: "key", api_key_secret: "secret")
     # @example Create a client that retries a rate-limited request up to three times
     #   client = X::Client.new(bearer_token: "your_bearer_token", max_rate_limit_retries: 3)
+    # @example Create a client that names the application in the User-Agent of every request
+    #   client = X::Client.new(bearer_token: "your_bearer_token", headers: {"User-Agent" => "my-app/1.0"})
     def initialize(api_key: nil, api_key_secret: nil, access_token: nil, access_token_secret: nil,
       bearer_token: nil, client_id: nil, client_secret: nil, refresh_token: nil, expires_at: nil,
       base_url: DEFAULT_BASE_URL,
@@ -118,6 +123,7 @@ module X
       proxy_url: nil,
       default_array_class: DEFAULT_ARRAY_CLASS,
       default_object_class: DEFAULT_OBJECT_CLASS,
+      headers: {},
       max_redirects: DEFAULT_MAX_REDIRECTS,
       max_rate_limit_retries: DEFAULT_MAX_RATE_LIMIT_RETRIES,
       max_rate_limit_wait: DEFAULT_MAX_RATE_LIMIT_WAIT,
@@ -132,7 +138,7 @@ module X
       @on_token_refresh = on_token_refresh
       initialize_authenticator
       Core::CredentialValidator.validate!(credentials)
-      initialize_settings(base_url:, default_array_class:, default_object_class:, on_response:, max_redirects:, max_rate_limit_retries:, max_rate_limit_wait:)
+      initialize_settings(base_url:, default_array_class:, default_object_class:, headers:, on_response:, max_redirects:, max_rate_limit_retries:, max_rate_limit_wait:)
     end
 
     # Summarize the client for the console without revealing credentials
@@ -271,6 +277,7 @@ module X
     def execute_request(http_method, endpoint, body: nil, params: nil, form: nil, headers: {}, array_class: default_array_class, object_class: default_object_class)
       uri = URI.join(base_url, endpoint_with(endpoint, params))
       headers = {"Content-Type" => FORM_CONTENT_TYPE}.merge(headers) unless form.nil?
+      headers = headers_for(headers)
       @rate_limit_handler.handle do
         refreshing_rejected_token do
           perform(http_method, uri, body: encode_body(body, form), headers:, array_class:, object_class:)

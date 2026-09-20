@@ -88,7 +88,8 @@ module X
     # @api public
     # @param endpoint [String] the streaming API endpoint, relative to the base URL with or without a leading slash
     # @param params [Hash, nil] query parameters appended to the endpoint
-    # @param headers [Hash] additional headers for the request
+    # @param headers [Hash] additional headers for the request, sent in place of the client's headers of the same
+    #   name, which are themselves sent in place of the defaults of the gem
     # @param array_class [Class] the class for parsing JSON arrays
     # @param object_class [Class] the class for parsing JSON objects, or one that responds to from_response
     #   and builds objects from each whole object the stream delivers, which it receives with the client
@@ -115,12 +116,16 @@ module X
     private
 
     # Build a request that authenticates as the app
+    #
+    # The client's headers are sent with a stream as they are with a request, and a header of the same name passed
+    # to the stream is sent in place of one of them.
+    #
     # @api private
     # @param uri [URI::Generic] the URI of the stream
     # @param headers [Hash] additional headers for the request
     # @return [Net::HTTPRequest] the request
     def request_for(uri, headers)
-      @request_builder.build(http_method: :get, uri:, headers:, authenticator: client.app_only.authenticator)
+      @request_builder.build(http_method: :get, uri:, headers: client.headers.merge(headers), authenticator: client.app_only.authenticator)
     end
 
     # Pass a response, or one object of a stream, to the client's on_response

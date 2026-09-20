@@ -192,6 +192,8 @@ module X
       attr_accessor default_array_class: Class
       attr_accessor default_object_class: Class
       attr_accessor on_response: _ResponseHook?
+      attr_reader headers: Hash[String, String]
+      def headers=: (Hash[String, String] headers) -> void
       def open_timeout: () -> (Float | Integer)
       def read_timeout: () -> (Float | Integer)
       def write_timeout: () -> (Float | Integer)
@@ -214,7 +216,8 @@ module X
       def settings: () -> Hash[Symbol, untyped]
 
       private
-      def initialize_settings: (base_url: String, default_array_class: Class, default_object_class: Class, on_response: _ResponseHook?, max_redirects: Integer, max_rate_limit_retries: Integer, max_rate_limit_wait: Integer) -> void
+      def initialize_settings: (base_url: String, default_array_class: Class, default_object_class: Class, headers: Hash[String, String], on_response: _ResponseHook?, max_redirects: Integer, max_rate_limit_retries: Integer, max_rate_limit_wait: Integer) -> void
+      def headers_for: (Hash[String, String] request_headers) -> Hash[String, String]
       def report: (Symbol http_method, URI::Generic uri, Net::HTTPResponse response) -> void
     end
 
@@ -697,7 +700,7 @@ module X
 
     attr_accessor on_token_refresh: _TokenRefreshHook?
     attr_reader authenticator: Authenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator
-    def initialize: (?api_key: String?, ?api_key_secret: String?, ?access_token: String?, ?access_token_secret: String?, ?bearer_token: String?, ?client_id: String?, ?client_secret: String?, ?refresh_token: String?, ?expires_at: Time?, ?base_url: String, ?open_timeout: Float | Integer, ?read_timeout: Float | Integer, ?write_timeout: Float | Integer, ?keep_alive_timeout: Float | Integer, ?debug_output: IO?, ?proxy_url: (URI::Generic | String)?, ?default_array_class: Class, ?default_object_class: Class, ?max_redirects: Integer, ?max_rate_limit_retries: Integer, ?max_rate_limit_wait: Integer, ?on_response: _ResponseHook?, ?on_token_refresh: _TokenRefreshHook?) -> void
+    def initialize: (?api_key: String?, ?api_key_secret: String?, ?access_token: String?, ?access_token_secret: String?, ?bearer_token: String?, ?client_id: String?, ?client_secret: String?, ?refresh_token: String?, ?expires_at: Time?, ?base_url: String, ?open_timeout: Float | Integer, ?read_timeout: Float | Integer, ?write_timeout: Float | Integer, ?keep_alive_timeout: Float | Integer, ?debug_output: IO?, ?proxy_url: (URI::Generic | String)?, ?default_array_class: Class, ?default_object_class: Class, ?headers: Hash[String, String], ?max_redirects: Integer, ?max_rate_limit_retries: Integer, ?max_rate_limit_wait: Integer, ?on_response: _ResponseHook?, ?on_token_refresh: _TokenRefreshHook?) -> void
     def inspect: () -> String
     def copy: (**untyped options) -> Client
     def get: (String endpoint, ?params: params?, ?headers: Hash[String, String], ?array_class: Class, ?object_class: Class) -> untyped
