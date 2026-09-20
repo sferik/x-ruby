@@ -582,14 +582,14 @@ module X
     attr_reader bearer_token: String?
     attr_reader client_id: String?
     attr_reader client_secret: String?
-    def api_key=: (String api_key) -> void
-    def api_key_secret=: (String api_key_secret) -> void
-    def access_token=: (String access_token) -> void
-    def access_token_secret=: (String access_token_secret) -> void
-    def bearer_token=: (String bearer_token) -> void
-    def client_id=: (String client_id) -> void
-    def client_secret=: (String client_secret) -> void
-    def refresh_token=: (String refresh_token) -> void
+    def api_key=: (String? api_key) -> void
+    def api_key_secret=: (String? api_key_secret) -> void
+    def access_token=: (String? access_token) -> void
+    def access_token_secret=: (String? access_token_secret) -> void
+    def bearer_token=: (String? bearer_token) -> void
+    def client_id=: (String? client_id) -> void
+    def client_secret=: (String? client_secret) -> void
+    def refresh_token=: (String? refresh_token) -> void
     def expires_at=: (Time? expires_at) -> void
     def update_credentials: (**String | Time | nil changes) -> void
 

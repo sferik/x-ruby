@@ -186,6 +186,7 @@ See [UPGRADING.md](https://github.com/sferik/x-ruby/blob/main/UPGRADING.md) for 
 * Raise `Errno::ENOENT` from the uploaders for a `Pathname` of a file that does not exist, instead of `TypeError`, and take a `String` or a `Pathname` wherever an uploader takes a file path
 * Send the media category of an upload in lowercase, as the API documents it, rather than as given, since the uploaders accept a category in any case, such as `TWEET_VIDEO`
 * Round a fractional `chunk_size_mb` up to a whole number of bytes, rather than read each chunk at a fractional offset, which skipped a byte between some chunks and uploaded a corrupt file
+* Declare the credential setters of `X::Client` as taking nil in the signatures of x-core, as `client.bearer_token = nil` clears a credential, so that code which clears one type-checks
 
 ## [0.19.0] - 2026-03-01
 * Add streaming support for filtered stream and volume stream endpoints

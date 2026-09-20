@@ -52,7 +52,7 @@ module X
     # Set the API key for OAuth 1.0a authentication
     #
     # @api public
-    # @param api_key [String] the API key for OAuth 1.0a authentication
+    # @param api_key [String, nil] the API key for OAuth 1.0a authentication, or nil to clear it
     # @return [void]
     # @example Set the API key
     #   client.api_key = "new_key"
@@ -63,7 +63,7 @@ module X
     # Set the API key secret for OAuth 1.0a authentication
     #
     # @api public
-    # @param api_key_secret [String] the API key secret for OAuth 1.0a authentication
+    # @param api_key_secret [String, nil] the API key secret for OAuth 1.0a authentication, or nil to clear it
     # @return [void]
     # @example Set the API key secret
     #   client.api_key_secret = "new_secret"
@@ -74,7 +74,7 @@ module X
     # Set the access token for OAuth authentication
     #
     # @api public
-    # @param access_token [String] the access token for OAuth authentication
+    # @param access_token [String, nil] the access token for OAuth authentication, or nil to clear it
     # @return [void]
     # @example Set the access token
     #   client.access_token = "new_token"
@@ -85,7 +85,7 @@ module X
     # Set the access token secret for OAuth 1.0a authentication
     #
     # @api public
-    # @param access_token_secret [String] the access token secret for OAuth 1.0a authentication
+    # @param access_token_secret [String, nil] the access token secret for OAuth 1.0a authentication, or nil to clear it
     # @return [void]
     # @example Set the access token secret
     #   client.access_token_secret = "new_secret"
@@ -100,7 +100,7 @@ module X
     # credentials at once with {#update_credentials}.
     #
     # @api public
-    # @param bearer_token [String] the bearer token for authentication
+    # @param bearer_token [String, nil] the bearer token for authentication, or nil to clear it
     # @return [void]
     # @example Set the bearer token
     #   client.bearer_token = "new_token"
@@ -111,7 +111,7 @@ module X
     # Set the OAuth 2.0 client ID
     #
     # @api public
-    # @param client_id [String] the OAuth 2.0 client ID
+    # @param client_id [String, nil] the OAuth 2.0 client ID, or nil to clear it
     # @return [void]
     # @example Set the client ID
     #   client.client_id = "new_id"
@@ -122,7 +122,7 @@ module X
     # Set the OAuth 2.0 client secret
     #
     # @api public
-    # @param client_secret [String] the OAuth 2.0 client secret
+    # @param client_secret [String, nil] the OAuth 2.0 client secret, or nil to clear it
     # @return [void]
     # @example Set the client secret
     #   client.client_secret = "new_secret"
@@ -133,7 +133,7 @@ module X
     # Set the OAuth 2.0 refresh token
     #
     # @api public
-    # @param refresh_token [String] the OAuth 2.0 refresh token
+    # @param refresh_token [String, nil] the OAuth 2.0 refresh token, or nil to clear it
     # @return [void]
     # @example Set the refresh token
     #   client.refresh_token = "new_token"
