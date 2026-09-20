@@ -44,7 +44,9 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        ruby: ["3.4", "4.0", "ruby-head", "jruby-head"]
+        # JRuby is left out: its line coverage misses lines it runs, such as an empty array literal, so the
+        # suite cannot hold to the 100% floor there
+        ruby: ["3.4", "4.0", "ruby-head"]
         include:
           - os: macos-latest
             ruby: "3.4"
