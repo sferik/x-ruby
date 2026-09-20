@@ -117,6 +117,8 @@ module X
         Cursor.new(self, "users/reposts_of_me", client:, params: {max_results: MAX_RESULTS}.merge(params))
       end
 
+      alias_method :retweets_of_me, :reposts_of_me
+
       private
 
       # Check whether a request asks for the context annotations of its posts

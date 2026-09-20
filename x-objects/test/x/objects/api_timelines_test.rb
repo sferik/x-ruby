@@ -58,6 +58,7 @@ module X
         assert_equal ["users/reposts_of_me", 10, Post], [cursor.path, cursor.params["max_results"], cursor.resource_class]
         assert_same @client, cursor.client
         assert_equal "users/reposts_of_me", @client.retweets_of_me.path
+        assert_equal "users/reposts_of_me", Post.retweets_of_me(client: @client).path
       end
 
       def test_reposts_of_me_requests_the_largest_page

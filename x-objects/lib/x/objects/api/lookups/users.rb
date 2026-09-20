@@ -79,6 +79,23 @@ module X
             User.find_all(ids_or_usernames, client: self, **params, &)
           end
 
+          # Look up many users by username, in parallel batches
+          #
+          # A String of digits is a username, so this looks the accounts whose handles are those numbers up, where
+          # find_users would take them for identifiers.
+          #
+          # @api public
+          # @param usernames [Array<String>] the usernames, with or without leading at signs
+          # @param params [Hash] query parameters merged over the default parameters
+          # @return [Array<User>] the users that were found
+          # @raise [ArgumentError] if a value is not a username
+          # @yieldparam problem [Problem] each problem the API reported, such as a username that was not found
+          # @example Look up many users by username
+          #   client.find_users_by_username(["sferik", "1234567890"])
+          def find_users_by_username(usernames, **params, &)
+            User.find_all_by_username(usernames, client: self, **params, &)
+          end
+
           # The authenticated user, fetched once per client and credentials
           #
           # A client whose credentials change authenticates as someone else, so a client that has an authenticator

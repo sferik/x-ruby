@@ -49,6 +49,7 @@ module X
 
       alias_method :retweeted_by, :reposted_by
       alias_method :retweets, :reposts
+      alias_method :quote_tweets, :quotes
     end
   end
 end

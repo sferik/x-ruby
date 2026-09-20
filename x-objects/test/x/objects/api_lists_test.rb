@@ -39,6 +39,20 @@ module X
         refute @client.delete_list(List.new({"id" => "1"}))
       end
 
+      def test_add_list_member
+        @client.stub(:post, "lists/1/members", {"data" => {"is_member" => true}})
+
+        assert @client.add_list_member("1", User.new({"id" => "7"}))
+        assert_equal [{method: :post, path: "lists/1/members", query: {}, body: {user_id: "7"}.to_json}], @client.requests
+      end
+
+      def test_remove_list_member
+        @client.stub(:delete, "lists/1/members/7", {"data" => {"is_member" => false}})
+
+        assert @client.remove_list_member(List.new({"id" => "1"}), 7)
+        assert_equal ["lists/1/members/7"], @client.paths
+      end
+
       def test_follow_list
         @client.stub(:post, "users/9/followed_lists", {"data" => {"following" => true}})
 

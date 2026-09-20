@@ -43,6 +43,30 @@ module X
             List.delete(list, client: self)
           end
 
+          # Add a member to a list as the authenticated user
+          #
+          # @api public
+          # @param list [List, String, Integer] the list or its identifier
+          # @param user [User, String, Integer] the user or their identifier
+          # @return [Boolean] true if the user is now a member
+          # @example Add a member to a list
+          #   client.add_list_member("1234567890", user)
+          def add_list_member(list, user)
+            List.from_id(list, client: self).add_member(user)
+          end
+
+          # Remove a member from a list as the authenticated user
+          #
+          # @api public
+          # @param list [List, String, Integer] the list or its identifier
+          # @param user [User, String, Integer] the user or their identifier
+          # @return [Boolean] true if the user is no longer a member
+          # @example Remove a member from a list
+          #   client.remove_list_member("1234567890", user)
+          def remove_list_member(list, user)
+            List.from_id(list, client: self).remove_member(user)
+          end
+
           # Follow a list as the authenticated user
           #
           # @api public

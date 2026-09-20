@@ -47,6 +47,7 @@ module X
       assert_equal "tweets/1/retweeted_by", @post.reposted_by.path
       assert_equal "tweets/1/retweeted_by", @post.retweeted_by.path
       assert_equal "tweets/1/quote_tweets", @post.quotes.path
+      assert_equal "tweets/1/quote_tweets", @post.quote_tweets.path
     end
 
     def test_cursor_classes
