@@ -102,7 +102,7 @@ module X
 
       def test_current_user_missing
         @client.stub(:get, "users/me", {"errors" => []})
-        error = assert_raises(ResourceNotFound) { @client.like("1") }
+        error = assert_raises(MissingResource) { @client.like("1") }
 
         assert_equal "users/me returned no user", error.message
       end

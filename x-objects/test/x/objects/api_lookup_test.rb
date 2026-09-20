@@ -49,7 +49,7 @@ module X
         assert_equal "hi", @client.find_tweet(1).text
         assert_equal "hi", @client.find_tweet!(1).text
         assert_equal [1, 2], @client.find_tweets([1, 2]).map(&:id)
-        assert_raises(ResourceNotFound) { @client.find_tweet!(2) }
+        assert_raises(MissingResource) { @client.find_tweet!(2) }
       end
 
       def test_search_posts

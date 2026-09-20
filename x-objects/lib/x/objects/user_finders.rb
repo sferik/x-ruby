@@ -85,12 +85,12 @@ module X
       # @param params [Hash] query parameters merged over the default parameters
       # @return [User] the user
       # @raise [ArgumentError] if the value is not a username
-      # @raise [ResourceNotFound] if the user was not found
+      # @raise [MissingResource] if the user was not found
       # @example Look up a user by username
       #   X::User.find_by_username!("sferik", client: client)
       def find_by_username!(username, client:, **params)
         problems = [] #: Array[Problem]
-        find_by_username(username, client:, **params) { |problem| problems << problem } || raise(ResourceNotFound.new("Could not find #{self} @#{Utils.username(username)}", problems:))
+        find_by_username(username, client:, **params) { |problem| problems << problem } || raise(MissingResource.new("Could not find #{self} @#{Utils.username(username)}", problems:))
       end
 
       # Look up the authenticated user
@@ -112,12 +112,12 @@ module X
       # @param client [Object] the client used to make the request
       # @param params [Hash] query parameters merged over the default parameters
       # @return [User] the authenticated user
-      # @raise [ResourceNotFound] if the API returns no user
+      # @raise [MissingResource] if the API returns no user
       # @example Look up the authenticated user
       #   X::User.current!(client: client)
       def current!(client:, **params)
         problems = [] #: Array[Problem]
-        current(client:, **params) { |problem| problems << problem } || raise(ResourceNotFound.new("users/me returned no user", problems:))
+        current(client:, **params) { |problem| problems << problem } || raise(MissingResource.new("users/me returned no user", problems:))
       end
 
       private

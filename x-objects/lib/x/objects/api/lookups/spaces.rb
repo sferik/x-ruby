@@ -26,7 +26,7 @@ module X
           # @param id [String, Integer, Space] the identifier
           # @param params [Hash] query parameters merged over the default parameters
           # @return [Space] the space
-          # @raise [ResourceNotFound] if the space was not found
+          # @raise [MissingResource] if the space was not found
           # @example Look up a space
           #   client.find_space!("1DXxyRYNejbKM").title
           def find_space!(id, **params)

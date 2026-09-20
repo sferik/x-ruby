@@ -26,7 +26,7 @@ module X
           # @param id [String, Integer, List] the identifier
           # @param params [Hash] query parameters merged over the default parameters
           # @return [List] the list
-          # @raise [ResourceNotFound] if the list was not found
+          # @raise [MissingResource] if the list was not found
           # @example Look up a list
           #   client.find_list!(1234567890).name
           def find_list!(id, **params)

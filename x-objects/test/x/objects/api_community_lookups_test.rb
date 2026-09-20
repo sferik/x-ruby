@@ -24,7 +24,7 @@ module X
 
         assert_equal "Rubyists", @client.find_community!(7, "community.fields": "id").name
         assert_equal "id", @client.queries.first["community.fields"]
-        assert_raises(ResourceNotFound) { @client.find_community!(8) }
+        assert_raises(MissingResource) { @client.find_community!(8) }
       end
 
       def test_search_communities

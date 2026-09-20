@@ -3,7 +3,7 @@ require_relative "../../test_helper"
 module X
   module Objects
     class ErrorsTest < Minitest::Test
-      cover ResourceNotFound
+      cover MissingResource
       cover Resource
       cover Objects::Finders
       cover API::Lookups
@@ -13,7 +13,7 @@ module X
       end
 
       def test_not_found_is_an_x_error
-        assert_operator ResourceNotFound, :<, X::Error
+        assert_operator MissingResource, :<, X::Error
         assert_operator X::Error, :<, StandardError
       end
 
@@ -36,7 +36,7 @@ module X
 
       def test_find_bang_not_found
         @client.stub(:get, "tweets/1", {"errors" => []})
-        error = assert_raises(ResourceNotFound) { Post.find!(1, client: @client) }
+        error = assert_raises(MissingResource) { Post.find!(1, client: @client) }
 
         assert_equal "Could not find X::Post 1", error.message
       end
@@ -47,7 +47,7 @@ module X
 
         assert_equal "sferik", @client.find_user!("sferik", "user.fields": "id").username
         assert_equal "id", @client.queries.first["user.fields"]
-        assert_raises(ResourceNotFound) { @client.find_user!("nobody") }
+        assert_raises(MissingResource) { @client.find_user!("nobody") }
       end
 
       def test_find_post_bang
@@ -56,7 +56,7 @@ module X
 
         assert_equal "hi", @client.find_post!(1, "post.fields": "id").text
         assert_equal "id", @client.queries.first["post.fields"]
-        assert_raises(ResourceNotFound) { @client.find_post!(2) }
+        assert_raises(MissingResource) { @client.find_post!(2) }
       end
 
       def test_find_media_bang
@@ -65,7 +65,7 @@ module X
 
         assert_equal "photo", @client.find_media!("3_1", "media.fields": "type").type
         assert_equal "type", @client.queries.first["media.fields"]
-        assert_raises(ResourceNotFound) { @client.find_media!("3_2") }
+        assert_raises(MissingResource) { @client.find_media!("3_2") }
       end
 
       def test_find_space_bang
@@ -74,7 +74,7 @@ module X
 
         assert_equal "Ruby", @client.find_space!("1", "space.fields": "id").title
         assert_equal "id", @client.queries.first["space.fields"]
-        assert_raises(ResourceNotFound) { @client.find_space!("2") }
+        assert_raises(MissingResource) { @client.find_space!("2") }
       end
 
       def test_find_direct_message_bang
@@ -83,7 +83,7 @@ module X
 
         assert_equal "hi", @client.find_direct_message!("1", "dm_event.fields": "id").text
         assert_equal "id", @client.queries.first["dm_event.fields"]
-        assert_raises(ResourceNotFound) { @client.find_direct_message!("2") }
+        assert_raises(MissingResource) { @client.find_direct_message!("2") }
       end
 
       def test_find_list_bang
@@ -92,12 +92,12 @@ module X
 
         assert_equal "Ruby", @client.find_list!(1, "list.fields": "id").name
         assert_equal "id", @client.queries.first["list.fields"]
-        assert_raises(ResourceNotFound) { @client.find_list!(2) }
+        assert_raises(MissingResource) { @client.find_list!(2) }
       end
 
       def test_current_user_missing_raises_not_found
         @client.stub(:get, "users/me", {"errors" => []})
-        error = assert_raises(ResourceNotFound) { @client.current_user }
+        error = assert_raises(MissingResource) { @client.current_user }
 
         assert_equal "users/me returned no user", error.message
       end

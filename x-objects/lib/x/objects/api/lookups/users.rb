@@ -28,7 +28,7 @@ module X
           # @param id_or_username [Integer, User, String] an identifier or a user, or a username
           # @param params [Hash] query parameters merged over the default parameters
           # @return [User] the user
-          # @raise [ResourceNotFound] if the user was not found
+          # @raise [MissingResource] if the user was not found
           # @example Look up a user by username
           #   client.find_user!("sferik")
           def find_user!(id_or_username, **params)
@@ -59,7 +59,7 @@ module X
           # @param params [Hash] query parameters merged over the default parameters
           # @return [User] the user
           # @raise [ArgumentError] if the value is not a username
-          # @raise [ResourceNotFound] if the user was not found
+          # @raise [MissingResource] if the user was not found
           # @example Look up a user by username
           #   client.find_user_by_username!("sferik")
           def find_user_by_username!(username, **params)
@@ -103,7 +103,7 @@ module X
           #
           # @api public
           # @return [User] the authenticated user
-          # @raise [ResourceNotFound] if the API returns no user
+          # @raise [MissingResource] if the API returns no user
           # @example Print the home timeline of the authenticated user
           #   client.current_user.home_timeline.each { |post| puts post.text }
           def current_user

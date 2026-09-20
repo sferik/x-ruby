@@ -1,5 +1,5 @@
 module X
-  class ResourceNotFound < ::X::Error
+  class MissingResource < ::X::Error
     attr_reader problems: Array[Problem]
 
     def initialize: (?String? message, ?problems: Array[Problem]) -> void

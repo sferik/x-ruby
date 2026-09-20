@@ -10,7 +10,7 @@ module X
 
     def test_every_error_of_every_gem_descends_from_error
       assert_operator HTTPError, :<, Error
-      assert_operator ResourceNotFound, :<, Error
+      assert_operator MissingResource, :<, Error
       assert_operator Uploader::Error, :<, Error
     end
   end

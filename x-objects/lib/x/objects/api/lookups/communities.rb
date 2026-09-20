@@ -26,7 +26,7 @@ module X
           # @param id [String, Integer, Community] the identifier
           # @param params [Hash] query parameters merged over the default parameters
           # @return [Community] the community
-          # @raise [ResourceNotFound] if the community was not found
+          # @raise [MissingResource] if the community was not found
           # @example Look up a community
           #   client.find_community!(1234567890).name
           def find_community!(id, **params)

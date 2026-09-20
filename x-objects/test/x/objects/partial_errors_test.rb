@@ -49,7 +49,7 @@ module X
 
         assert_nil User.find(5, client: @client) { |problem| yielded << problem.detail }
         assert_equal ["Could not find user with ids: [5]."], yielded
-        error = assert_raises(ResourceNotFound) { @client.find_user!(5) }
+        error = assert_raises(MissingResource) { @client.find_user!(5) }
         assert_equal "Could not find X::User 5: Could not find user with ids: [5].", error.message
         assert_equal [USER_MISSING], error.problems.map(&:to_h)
       end
@@ -117,7 +117,7 @@ module X
 
       def test_current_user_missing_explains_itself
         @client.stub(:get, "users/me", {"errors" => [{"title" => "Unauthorized", "detail" => "The token was revoked."}]})
-        error = assert_raises(ResourceNotFound) { @client.current_user }
+        error = assert_raises(MissingResource) { @client.current_user }
 
         assert_equal "users/me returned no user: The token was revoked.", error.message
       end

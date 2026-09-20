@@ -27,7 +27,7 @@ module X
           # @param id [String, Integer, Post] the identifier
           # @param params [Hash] query parameters merged over the default parameters
           # @return [Post] the post
-          # @raise [ResourceNotFound] if the post was not found
+          # @raise [MissingResource] if the post was not found
           # @example Look up a post
           #   client.find_post!(1234567890).text
           def find_post!(id, **params)

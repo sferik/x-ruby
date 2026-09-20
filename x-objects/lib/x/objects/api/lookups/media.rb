@@ -32,7 +32,7 @@ module X
           # @param media_key [String, X::Media] the media key
           # @param params [Hash] query parameters merged over the default parameters
           # @return [X::Media] the media
-          # @raise [ResourceNotFound] if the media was not found
+          # @raise [MissingResource] if the media was not found
           # @example Look up media that must exist
           #   client.find_media!("3_1880028106020515840")
           def find_media!(media_key, **params)

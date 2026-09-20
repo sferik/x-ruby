@@ -26,7 +26,7 @@ module X
           # @param id [String, Integer, DirectMessage] the identifier
           # @param params [Hash] query parameters merged over the default parameters
           # @return [DirectMessage] the event
-          # @raise [ResourceNotFound] if the event was not found
+          # @raise [MissingResource] if the event was not found
           # @example Look up a direct message
           #   client.find_direct_message!(1234567890).text
           def find_direct_message!(id, **params)

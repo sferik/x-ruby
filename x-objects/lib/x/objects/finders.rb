@@ -32,12 +32,12 @@ module X
       # @param params [Hash] query parameters merged over the default parameters; one that overrides a default field
       #   or expansion parameter builds resources that are not hydrated, so hydrate fetches the rest
       # @return [Resource] the resource
-      # @raise [ResourceNotFound] if the resource was not found
+      # @raise [MissingResource] if the resource was not found
       # @example Look up a post by identifier
       #   X::Post.find!(1234567890, client: client)
       def find!(id, client:, **params)
         problems = [] #: Array[Problem]
-        find(id, client:, **params) { |problem| problems << problem } || raise(ResourceNotFound.new("Could not find #{self} #{id}", problems:))
+        find(id, client:, **params) { |problem| problems << problem } || raise(MissingResource.new("Could not find #{self} #{id}", problems:))
       end
 
       # Replace the resources that are not hydrated with the full resources
