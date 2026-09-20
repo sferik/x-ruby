@@ -304,12 +304,17 @@ subtitles = x_client.upload_media("cat.srt")
 x_client.add_subtitles(video, subtitles, "EN", display_name: "English")
 x_client.create_post("Look at this cat move", media_ids: [video])
 
-# Update the profile image and banner of the authenticated user
-x_client.update_profile_image("avatar.png")
-x_client.update_profile_banner("banner.png")
+# Update the profile image and banner of the authenticated user. These two call the API v1.1, which the API v2 has
+# no endpoint for, so they answer in its shape rather than with an X::User: update_profile_image returns the updated
+# user as a Hash, keyed as v1.1 keys it, and update_profile_banner returns nil, since its endpoint sends no body.
+user = x_client.update_profile_image("avatar.png")
+user["screen_name"]                    # => "sferik", the v1.1 name for a username
+x_client.update_profile_banner("banner.png") # => nil
 ```
 
 Each of these methods calls an uploader with the client: `upload_media`, `upload_media_binary`, and `await_media_processing` call `X::Uploader::Media`, `add_alt_text` and `add_subtitles` call `X::Uploader::Metadata`, and `update_profile_image` and `update_profile_banner` call `X::Uploader::Account`. The uploaders do more, such as `X::Uploader::Media.chunked_upload("cat.mp4", client: x_client, chunk_size_mb: 4)`, and take any client as `client:`.
+
+What each returns: `upload_media`, `upload_media_binary`, `await_media_processing`, and `await_media_processing!` return an `X::Uploader::UploadedMedia`, which reads as the Hash the API answered with as well as by its own methods; `add_alt_text` and `add_subtitles` return the `data` of the response as a Hash; `update_profile_image` returns the updated user as a Hash of the API v1.1, whose keys are the v1.1 ones, such as `screen_name` rather than `username`; and `update_profile_banner` returns nil, since its endpoint answers with no body. The two profile methods are the only ones in these gems that call the v1.1 API, which is why they alone answer outside the object layer.
 
 ### Streaming
 
