@@ -95,7 +95,9 @@ module X
       # @param media_category [String, Symbol] the media category, in any case, inferred from the file by default
       # @param alt_text [String, nil] alt text describing the media, for people who cannot see it, of 1 to 1,000 characters
       # @param processing_timeout [Integer] the seconds to wait for media, such as a video or an animated GIF, to process
-      # @param media_type [String, nil] the MIME type of media uploaded in chunks, inferred from the file and category when nil
+      # @param media_type [String, nil] the MIME type of media uploaded in chunks, inferred from the file and category
+      #   when nil; an upload in a single request sends no type, since the API types the media itself, so one given
+      #   for an image is not sent
       # @param chunk_size_mb [Float, Integer, nil] the size of each chunk of media uploaded in chunks, in megabytes,
       #   derived from the size of the file when nil, so that an upload of any size fits the segments the API numbers
       # @param concurrency [Integer] the number of chunks uploaded at once
