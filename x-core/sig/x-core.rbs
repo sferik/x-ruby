@@ -621,9 +621,11 @@ module X
   module CredentialValidator
     INCOMPLETE_CREDENTIALS: String
     INVALID_EXPIRES_AT: String
+    EMPTY_CREDENTIAL: String
     CREDENTIAL_SETS: Array[Array[Symbol]]
     extend CredentialValidator
 
+    def validate_values!: (Hash[Symbol, String | Time | nil] credentials) -> void
     def validate_expires_at!: (untyped expires_at) -> void
     def validate!: (Hash[Symbol, String | Time | nil] credentials) -> void
 

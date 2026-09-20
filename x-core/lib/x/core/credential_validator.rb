@@ -36,6 +36,31 @@ module X
       "epoch, or nil if it is not known".freeze
     private_constant :INVALID_EXPIRES_AT
 
+    # The message of the error raised for a credential that is an empty String
+    EMPTY_CREDENTIAL = "%s is empty. Pass the credential, or leave it out, since an empty one authenticates nothing".freeze
+    private_constant :EMPTY_CREDENTIAL
+
+    # Raise for an empty credential, or an expiration time that is not a Time
+    #
+    # An environment variable that is not set is often read as an empty String, as ENV.fetch("X_BEARER_TOKEN", "")
+    # reads it, which would send an Authorization header that authenticates nothing, for the API to refuse.
+    #
+    # @api private
+    # @param credentials [Hash{Symbol => String, Time, nil}] the credentials, as Client#initialize accepts them
+    # @return [void]
+    # @raise [ArgumentError] if a credential is an empty String, or one of whitespace alone, or if the expiration
+    #   time is neither a Time nor nil
+    # @example Check the credentials of a client
+    #   X::CredentialValidator.validate_values!(bearer_token: "", expires_at: nil)
+    def validate_values!(credentials)
+      credentials.each do |name, value|
+        case value
+        when String then raise ArgumentError, format(EMPTY_CREDENTIAL, name) unless value.match?(/\S/)
+        end
+      end
+      validate_expires_at!(credentials.fetch(:expires_at))
+    end
+
     # Raise for an expiration time that is not a Time
     #
     # A token refresh compares the expiration time with the current time before every request, which fails for a time

@@ -83,6 +83,8 @@ module X
     # @return [Client] a new client instance
     # @raise [ArgumentError] if credentials are given that do not form a complete set, which would send requests
     #   without them, or authenticate as the app rather than a user
+    # @raise [ArgumentError] if a credential is an empty String, as an environment variable that is not set is often
+    #   read, which would send an Authorization header that authenticates nothing
     # @raise [ArgumentError] if expires_at is neither a Time nor nil
     # @example Create a client with bearer token authentication
     #   client = X::Client.new(bearer_token: "your_bearer_token")

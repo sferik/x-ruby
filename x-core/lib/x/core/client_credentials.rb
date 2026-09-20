@@ -244,7 +244,7 @@ module X
     # @return [void]
     def initialize_credentials(api_key:, api_key_secret:, access_token:, access_token_secret:, bearer_token:,
       client_id:, client_secret:, refresh_token:, expires_at:)
-      CredentialValidator.validate_expires_at!(expires_at)
+      CredentialValidator.validate_values!(api_key:, api_key_secret:, access_token:, access_token_secret:, bearer_token:, client_id:, client_secret:, refresh_token:, expires_at:)
       @api_key = api_key
       @api_key_secret = api_key_secret
       @access_token = access_token
