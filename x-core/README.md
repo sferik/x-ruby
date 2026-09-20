@@ -20,6 +20,10 @@ client = X::Client.new(bearer_token: "INSERT YOUR BEARER TOKEN HERE")
 client.get("users/by/username/sferik")
 # {"data"=>{"id"=>"7505382", "name"=>"Erik Berlin", "username"=>"sferik"}}
 
+# A block reads the response of that one request: its status, headers, rate limits, and the resources it was
+# billed for. The on_response of a client receives the same summary, for every request the client makes.
+client.get("users/me") { |response| puts response.rate_limit&.remaining }
+
 client.streaming.add_stream_rules([{value: "ruby -is:retweet", tag: "ruby"}, "crystal"])
 client.streaming.stream("tweets/search/stream") { |post| puts post["data"]["text"] }
 

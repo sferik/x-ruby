@@ -31,7 +31,7 @@ than here.
 ## Handling credentials
 
 The gems hold API keys, access tokens, and bearer tokens for as long as a client lives, and send them in the
-`Authorization` header of every request. Three things are worth knowing:
+`Authorization` header of every request. Four things are worth knowing:
 
 * `X::Client#inspect` prints the base URL and the class of the authenticator, and no token or secret, so a client
   is safe to log or to show in a backtrace. An OAuth 2.0 authenticator adds its client ID and expiration time, which
@@ -39,6 +39,11 @@ The gems hold API keys, access tokens, and bearer tokens for as long as a client
 * `debug_output` is not. It writes every request and response to the IO it is given, headers included, so it writes
   the `Authorization` header of each request, and the tokens in the body of an OAuth 2.0 token refresh. Send it to a
   file you control, never to a log that is shipped elsewhere, and leave it unset in production.
+* A client that is given no `proxy_url` takes the proxy the environment names, in `https_proxy` or `http_proxy`, as
+  most HTTP clients do. Requests then reach X through whatever that names: a proxy of an HTTPS request is asked to
+  tunnel it, so it sees the host and not the credentials, but one that terminates TLS, with a certificate the
+  process trusts, sees every header. Set `no_proxy`, or pass a `proxy_url` of your own, where the environment is not
+  yours to trust.
 * A request that leaves the origin of the `base_url`, and a redirect that leads off it, is sent without the
   `Authorization` header the authenticator signs and without any `Authorization`, `Cookie`, or
   `Proxy-Authorization` header of the client or the request. Those three names are the whole of what is dropped. A
