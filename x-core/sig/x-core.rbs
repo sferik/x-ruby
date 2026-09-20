@@ -608,6 +608,7 @@ module X
 
   module RequestEncoding
     LEADING_SLASHES: Regexp
+    BODY_AND_FORM: String
 
     private
     def endpoint_with: (String endpoint, params? params) -> String
@@ -616,7 +617,7 @@ module X
   end
 
   type params = Hash[String | Symbol, untyped]
-  type body = String | Hash[untyped, untyped]
+  type body = String | Hash[untyped, untyped] | Array[untyped]
 
   module CredentialValidator
     INCOMPLETE_CREDENTIALS: String

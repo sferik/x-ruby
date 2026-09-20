@@ -53,11 +53,26 @@ module X
         headers: {"Content-Type" => "application/x-www-form-urlencoded; charset=utf-8"}
     end
 
-    def test_form_takes_precedence_over_the_body
-      stub_request(:put, "https://api.x.com/2/settings")
-      @client.put("settings", {ignored: true}, form: {lang: "en"})
+    def test_a_body_beside_a_form_is_refused_before_any_request
+      error = assert_raises(ArgumentError) { @client.put("settings", {dropped: true}, form: {lang: "en"}) }
 
-      assert_requested :put, "https://api.x.com/2/settings", body: "lang=en"
+      assert_equal "Pass a body or form fields, not both, since a request sends one body", error.message
+      assert_not_requested :put, "https://api.x.com/2/settings"
+    end
+
+    def test_post_encodes_an_array_body_as_json
+      stub_request(:post, "https://api.x.com/2/tweets")
+      @client.post("tweets", [{text: "Hello"}, {text: "World"}])
+
+      assert_requested :post, "https://api.x.com/2/tweets", body: '[{"text":"Hello"},{"text":"World"}]',
+        headers: {"Content-Type" => "application/json; charset=utf-8"}
+    end
+
+    def test_post_sends_a_string_subclass_body_as_given
+      stub_request(:post, "https://api.x.com/2/tweets")
+      @client.post("tweets", Class.new(String).new('{"text": "Hello"}'))
+
+      assert_requested :post, "https://api.x.com/2/tweets", body: '{"text": "Hello"}'
     end
 
     def test_form_headers_can_be_overridden

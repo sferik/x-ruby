@@ -172,13 +172,15 @@ module X
     # @api public
     # @param endpoint [String] the endpoint, relative to the base URL with or without a leading slash, with or
     #   without a query string
-    # @param body [String, Hash, nil] the request body; a Hash is encoded as JSON
+    # @param body [String, Hash, Array, nil] the request body; a body that is not a String, such as a Hash or an
+    #   Array, is encoded as JSON
     # @param params [Hash, nil] query parameters appended to the endpoint
-    # @param form [Hash, nil] fields to send as a form-encoded body instead of the body
+    # @param form [Hash, nil] fields to send as a form-encoded body, in place of a body
     # @param headers [Hash] additional headers for the request
     # @param array_class [Class] the class for parsing JSON arrays
     # @param object_class [Class] the class for parsing JSON objects, or one that responds to from_response
     # @return [Object, nil] the parsed response body, or what an object_class that responds to from_response builds
+    # @raise [ArgumentError] if both a body and form fields are given
     # @example Create a post
     #   client.post("tweets", {text: "Hello, World!"})
     # @example Post a form to the v1.1 API
@@ -192,13 +194,15 @@ module X
     # @api public
     # @param endpoint [String] the endpoint, relative to the base URL with or without a leading slash, with or
     #   without a query string
-    # @param body [String, Hash, nil] the request body; a Hash is encoded as JSON
+    # @param body [String, Hash, Array, nil] the request body; a body that is not a String, such as a Hash or an
+    #   Array, is encoded as JSON
     # @param params [Hash, nil] query parameters appended to the endpoint
-    # @param form [Hash, nil] fields to send as a form-encoded body instead of the body
+    # @param form [Hash, nil] fields to send as a form-encoded body, in place of a body
     # @param headers [Hash] additional headers for the request
     # @param array_class [Class] the class for parsing JSON arrays
     # @param object_class [Class] the class for parsing JSON objects, or one that responds to from_response
     # @return [Object, nil] the parsed response body, or what an object_class that responds to from_response builds
+    # @raise [ArgumentError] if both a body and form fields are given
     # @example Update a resource
     #   client.put("some/endpoint", {key: "value"})
     def put(endpoint, body = nil, params: nil, form: nil, headers: {}, array_class: default_array_class, object_class: default_object_class)

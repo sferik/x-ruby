@@ -9,6 +9,10 @@ module X
     LEADING_SLASHES = %r{\A/+}
     private_constant :LEADING_SLASHES
 
+    # The message of the error raised for a request given both a body and form fields
+    BODY_AND_FORM = "Pass a body or form fields, not both, since a request sends one body".freeze
+    private_constant :BODY_AND_FORM
+
     private
 
     # Append query parameters to an endpoint, relative to the base URL
@@ -43,15 +47,24 @@ module X
       end
     end
 
-    # Encode a form as form fields, a Hash as JSON, and any other body as given
+    # Encode a form as form fields, a String body as given, and any other body as JSON
+    #
+    # A body that is not a String, such as a Hash or an Array, is encoded as JSON, since Net::HTTP sends nothing but a
+    # String, which it would raise NoMethodError for once the connection was open.
+    #
     # @api private
-    # @param body [String, Hash, nil] the request body
+    # @param body [String, Hash, Array, nil] the request body
     # @param form [Hash, nil] the form fields
     # @return [String, nil] the encoded body
+    # @raise [ArgumentError] if both a body and form fields are given, which would send one and drop the other
     def encode_body(body, form)
+      raise ArgumentError, BODY_AND_FORM if body && form
       return URI.encode_www_form(form) unless form.nil?
 
-      body.is_a?(Hash) ? JSON.generate(body) : body
+      case body
+      when nil, String then body
+      else JSON.generate(body)
+      end
     end
   end
 end
