@@ -233,6 +233,17 @@ module X
       assert_same @connection.debug_output, clients.last.instance_variable_get(:@debug_output)
     end
 
+    def test_changing_the_keep_alive_timeout_opens_new_connections_with_it
+      clients = opened do
+        perform
+        @connection.keep_alive_timeout = 5
+        perform
+      end
+
+      assert_equal [false, true], clients.map(&:started?)
+      assert_equal [30, 5], clients.map(&:keep_alive_timeout)
+    end
+
     def test_changing_the_proxy_opens_new_connections
       clients = opened do
         perform

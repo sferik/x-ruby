@@ -69,6 +69,8 @@ module X
     # @param open_timeout [Integer, Float] the timeout for opening connections in seconds
     # @param read_timeout [Integer, Float] the timeout for reading responses in seconds
     # @param write_timeout [Integer, Float] the timeout for writing requests in seconds
+    # @param keep_alive_timeout [Integer, Float] the time to keep a connection open for the next request to the same
+    #   host, in seconds, which a proxy that closes idle connections sooner than X does may need lowered
     # @param debug_output [IO, nil] the IO object for debug output
     # @param proxy_url [String, URI::Generic, nil] the proxy URL for requests
     # @param default_array_class [Class] the default class for parsing JSON arrays
@@ -105,6 +107,7 @@ module X
       open_timeout: Connection::DEFAULT_OPEN_TIMEOUT,
       read_timeout: Connection::DEFAULT_READ_TIMEOUT,
       write_timeout: Connection::DEFAULT_WRITE_TIMEOUT,
+      keep_alive_timeout: Connection::DEFAULT_KEEP_ALIVE_TIMEOUT,
       debug_output: nil,
       proxy_url: nil,
       default_array_class: DEFAULT_ARRAY_CLASS,
@@ -114,7 +117,7 @@ module X
       max_rate_limit_wait: RateLimitHandler::DEFAULT_MAX_WAIT,
       on_response: nil,
       on_token_refresh: nil)
-      @connection = Connection.new(open_timeout:, read_timeout:, write_timeout:, debug_output:, proxy_url:)
+      @connection = Connection.new(open_timeout:, read_timeout:, write_timeout:, keep_alive_timeout:, debug_output:, proxy_url:)
       @app_only = {}
       @app_only_monitor = Monitor.new
       @request_builder = RequestBuilder.new

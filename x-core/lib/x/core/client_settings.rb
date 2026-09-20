@@ -53,8 +53,8 @@ module X
       @base_url = base_url.end_with?("/") ? base_url : "#{base_url}/"
     end
 
-    def_delegators :@connection, :open_timeout, :read_timeout, :write_timeout, :proxy_url, :debug_output
-    def_delegators :@connection, :open_timeout=, :read_timeout=, :write_timeout=, :proxy_url=, :debug_output=
+    def_delegators :@connection, :open_timeout, :read_timeout, :write_timeout, :keep_alive_timeout, :proxy_url, :debug_output
+    def_delegators :@connection, :open_timeout=, :read_timeout=, :write_timeout=, :keep_alive_timeout=, :proxy_url=, :debug_output=
     def_delegators :@redirect_handler, :max_redirects, :max_redirects=
     def_delegators :@rate_limit_handler, :max_rate_limit_retries, :max_rate_limit_retries=, :max_rate_limit_wait, :max_rate_limit_wait=
 
@@ -64,8 +64,9 @@ module X
     # @api private
     # @return [Hash{Symbol => Object}] the settings
     def settings
-      {base_url:, open_timeout:, read_timeout:, write_timeout:, debug_output:, proxy_url:, default_array_class:,
-       default_object_class:, max_redirects:, max_rate_limit_retries:, max_rate_limit_wait:, on_response:, on_token_refresh:}
+      {base_url:, open_timeout:, read_timeout:, write_timeout:, keep_alive_timeout:, debug_output:, proxy_url:,
+       default_array_class:, default_object_class:, max_redirects:, max_rate_limit_retries:, max_rate_limit_wait:,
+       on_response:, on_token_refresh:}
     end
 
     private

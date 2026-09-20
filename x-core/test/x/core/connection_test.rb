@@ -44,7 +44,15 @@ module X
     end
 
     def test_http_client_keeps_a_connection_open_beyond_a_burst_of_requests
+      assert_equal Connection::DEFAULT_KEEP_ALIVE_TIMEOUT, @connection.keep_alive_timeout
       assert_equal 30, @connection.send(:build_http_client).keep_alive_timeout
+    end
+
+    def test_http_client_keeps_a_connection_open_for_the_keep_alive_timeout_given
+      connection = Connection.new(keep_alive_timeout: 5)
+
+      assert_equal 5, connection.keep_alive_timeout
+      assert_equal 5, connection.send(:build_http_client).keep_alive_timeout
     end
 
     def test_debug_output

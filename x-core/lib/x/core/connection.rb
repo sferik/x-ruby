@@ -29,7 +29,8 @@ module X
     DEFAULT_READ_TIMEOUT = 60 # seconds
     # Default timeout for writing requests in seconds
     DEFAULT_WRITE_TIMEOUT = 60 # seconds
-    # Default time to keep a connection open for the next request to the same host, in seconds
+    # Default time to keep a connection open for the next request to the same host, in seconds; X holds an idle
+    # connection open for more than five minutes, so a connection closed within this time was closed by a proxy
     DEFAULT_KEEP_ALIVE_TIMEOUT = 30 # seconds
     # Network errors that should be wrapped in NetworkError
     #
@@ -79,12 +80,21 @@ module X
     #   connection.debug_output
     attr_reader :debug_output
 
+    # The time to keep a connection open for the next request, in seconds
+    # @api public
+    # @return [Integer, Float] the time in seconds
+    # @example Get the keep-alive timeout
+    #   connection.keep_alive_timeout # => 30
+    attr_reader :keep_alive_timeout
+
     # Initialize a new connection
     #
     # @api public
     # @param open_timeout [Integer, Float] the timeout for opening connections in seconds
     # @param read_timeout [Integer, Float] the timeout for reading responses in seconds
     # @param write_timeout [Integer, Float] the timeout for writing requests in seconds
+    # @param keep_alive_timeout [Integer, Float] the time to keep a connection open for the next request to the same
+    #   host, in seconds, which a proxy that closes idle connections sooner than X does may need lowered
     # @param debug_output [IO, nil] the IO object for debug output
     # @param proxy_url [String, URI::Generic, nil] the proxy URL for requests
     # @return [Connection] a new connection instance
@@ -93,10 +103,11 @@ module X
     # @example Create a connection with custom timeouts
     #   connection = X::Connection.new(open_timeout: 30, read_timeout: 30)
     def initialize(open_timeout: DEFAULT_OPEN_TIMEOUT, read_timeout: DEFAULT_READ_TIMEOUT,
-      write_timeout: DEFAULT_WRITE_TIMEOUT, debug_output: nil, proxy_url: nil)
+      write_timeout: DEFAULT_WRITE_TIMEOUT, keep_alive_timeout: DEFAULT_KEEP_ALIVE_TIMEOUT, debug_output: nil, proxy_url: nil)
       @open_timeout = open_timeout
       @read_timeout = read_timeout
       @write_timeout = write_timeout
+      @keep_alive_timeout = keep_alive_timeout
       @debug_output = debug_output
       @pool = ConnectionPool.new
       self.proxy_url = proxy_url
@@ -174,6 +185,21 @@ module X
       @pool.clear
     end
 
+    # Set the time to keep a connection open, closing the connections kept open
+    #
+    # A connection that a proxy closed while it was kept open fails the next request with NetworkError, so a client
+    # behind a proxy that closes idle connections sooner than X does keeps them for less time.
+    #
+    # @api public
+    # @param keep_alive_timeout [Integer, Float] the time in seconds
+    # @return [void]
+    # @example Keep a connection open for five seconds
+    #   connection.keep_alive_timeout = 5
+    def keep_alive_timeout=(keep_alive_timeout)
+      @keep_alive_timeout = keep_alive_timeout
+      @pool.clear
+    end
+
     # Close the connections kept open between requests
     #
     # A later request opens a connection again. Connections also close when the connection is garbage collected.
@@ -212,7 +238,7 @@ module X
     # that fails raises NetworkError, and the caller decides whether to send it again.
     #
     # Net::HTTP keeps a connection for two seconds by default, which reuses it within a burst of requests alone, so
-    # it keeps one for DEFAULT_KEEP_ALIVE_TIMEOUT instead.
+    # it keeps one for keep_alive_timeout instead.
     #
     # @api private
     # @param http_client [Net::HTTP] the HTTP client to configure
@@ -220,7 +246,7 @@ module X
     def configure_http_client(http_client)
       configure_timeouts(http_client).tap do |c|
         c.max_retries = 0
-        c.keep_alive_timeout = DEFAULT_KEEP_ALIVE_TIMEOUT
+        c.keep_alive_timeout = keep_alive_timeout
         c.set_debug_output(debug_output)
       end
     end
