@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 $LOAD_PATH.unshift File.expand_path("../lib", __dir__)
 
 unless $PROGRAM_NAME.include?("mutant")
@@ -48,24 +50,24 @@ module Minitest
   end
 end
 
-TEST_BEARER_TOKEN = "TEST_BEARER_TOKEN".freeze
-TEST_API_KEY = "TEST_API_KEY".freeze
-TEST_API_KEY_SECRET = "TEST_API_KEY_SECRET".freeze
-TEST_ACCESS_TOKEN = "TEST_ACCESS_TOKEN".freeze
-TEST_ACCESS_TOKEN_SECRET = "TEST_ACCESS_TOKEN_SECRET".freeze
-TEST_OAUTH_NONCE = "TEST_OAUTH_NONCE".freeze
+TEST_BEARER_TOKEN = "TEST_BEARER_TOKEN"
+TEST_API_KEY = "TEST_API_KEY"
+TEST_API_KEY_SECRET = "TEST_API_KEY_SECRET"
+TEST_ACCESS_TOKEN = "TEST_ACCESS_TOKEN"
+TEST_ACCESS_TOKEN_SECRET = "TEST_ACCESS_TOKEN_SECRET"
+TEST_OAUTH_NONCE = "TEST_OAUTH_NONCE"
 TEST_OAUTH_TIMESTAMP = Time.utc(1983, 11, 24).to_i.to_s
-TEST_CLIENT_ID = "TEST_CLIENT_ID".freeze
-TEST_CLIENT_SECRET = "TEST_CLIENT_SECRET".freeze
-TEST_REFRESH_TOKEN = "TEST_REFRESH_TOKEN".freeze
+TEST_CLIENT_ID = "TEST_CLIENT_ID"
+TEST_CLIENT_SECRET = "TEST_CLIENT_SECRET"
+TEST_REFRESH_TOKEN = "TEST_REFRESH_TOKEN"
 # The messages of X::Core::CredentialValidator, which is private about the constants that hold them
 TEST_INCOMPLETE_CREDENTIALS = "The credentials given do not form a complete set. Pass api_key, api_key_secret, " \
   "access_token, and access_token_secret for OAuth 1.0a; client_id, access_token, and refresh_token, with the " \
   "client_secret of a confidential client, for OAuth 2.0; bearer_token for a bearer token, such as an OAuth 2.0 " \
   "access token that is not refreshed; or api_key and api_key_secret to authenticate as the app. Leave out any " \
-  "credential of a set that is not complete".freeze
+  "credential of a set that is not complete"
 TEST_INVALID_EXPIRES_AT = "expires_at must be a Time, such as Time.at(seconds) for a time stored as seconds since " \
-  "the epoch, or nil if it is not known".freeze
+  "the epoch, or nil if it is not known"
 
 def test_oauth_credentials
   {
@@ -106,7 +108,7 @@ end
 # Answer one request from a server on the loopback interface, for the requests webmock cannot stand in for
 module LocalServer
   # A response that says nothing, which a server writes before it closes the connection
-  EMPTY_RESPONSE = "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n".freeze
+  EMPTY_RESPONSE = "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n"
 
   # Answer the next request the server accepts with response, on a thread of its own
   def serve_once(server, response)

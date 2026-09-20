@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require_relative "error"
 
 module X
@@ -6,7 +8,7 @@ module X
     # @api public
     class MediaProcessingFailed < Error
       # The message of a failure X gives no reason for
-      DEFAULT_MESSAGE = "Media processing failed".freeze
+      DEFAULT_MESSAGE = "Media processing failed"
 
       # The processing status X reported, whose processing_info holds the error
       # @api public

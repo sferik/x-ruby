@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "tempfile"
 require_relative "../../test_helper"
 require "x/uploader/media"
@@ -6,8 +8,8 @@ module X
   class MediaUploadValidationTest < Minitest::Test
     cover Uploader::Media
 
-    BASE_URL = "https://api.x.com/2/media/upload".freeze
-    METADATA_URL = "https://api.x.com/2/media/metadata".freeze
+    BASE_URL = "https://api.x.com/2/media/upload"
+    METADATA_URL = "https://api.x.com/2/media/metadata"
     JSON_HEADERS = {"content-type" => "application/json"}.freeze
 
     def setup

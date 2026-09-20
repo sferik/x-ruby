@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require_relative "../../test_helper"
 require "x/uploader/media"
 
@@ -5,7 +7,7 @@ module X
   class MediaTest < Minitest::Test
     cover Uploader::Media
 
-    UPLOAD_URL = "https://api.x.com/2/media/upload".freeze
+    UPLOAD_URL = "https://api.x.com/2/media/upload"
     SAMPLE_BINARY_CONTENT = "\x89PNG\r\n\x1A\n\x00\x00\x00...".b.freeze
 
     def setup

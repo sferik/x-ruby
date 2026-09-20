@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module X
   module Uploader
     # Builds the multipart form requests of the uploads

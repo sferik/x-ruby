@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "json"
 require_relative "page"
 require_relative "pages"
@@ -10,7 +12,7 @@ module X
     include Enumerable
 
     # The query parameter most endpoints take the token of the next page in
-    DEFAULT_TOKEN_PARAM = "pagination_token".freeze
+    DEFAULT_TOKEN_PARAM = "pagination_token"
 
     # The class of the resources in this collection
     # @api public

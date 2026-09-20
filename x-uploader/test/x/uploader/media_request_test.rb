@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "fileutils"
 require "tmpdir"
 require_relative "../../test_helper"
@@ -8,9 +10,9 @@ module X
     cover Uploader::Media
     cover Uploader.const_get(:Chunks)
 
-    UPLOAD_URL = "https://api.x.com/2/media/upload".freeze
+    UPLOAD_URL = "https://api.x.com/2/media/upload"
     CONTENT = "\x89PNG\r\n\x1A\n\x00\x00\x00...".b.freeze
-    GIF_FILE = "test/sample_files/sample.gif".freeze
+    GIF_FILE = "test/sample_files/sample.gif"
     HEX_BOUNDARY = %r{\Amultipart/form-data; boundary=(\h{32})\z}
 
     def setup

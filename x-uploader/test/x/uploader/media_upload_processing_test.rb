@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require_relative "../../test_helper"
 require "x/uploader/media"
 
@@ -5,10 +7,10 @@ module X
   class MediaUploadProcessingTest < Minitest::Test
     cover Uploader::Media
 
-    BASE_URL = "https://api.x.com/2/media/upload".freeze
+    BASE_URL = "https://api.x.com/2/media/upload"
     STATUS_URL = "#{BASE_URL}?command=STATUS&media_id=#{TEST_MEDIA_ID}".freeze
     JSON_HEADERS = {"content-type" => "application/json"}.freeze
-    ANIMATED_GIF = "test/sample_files/sample_animated.gif".freeze
+    ANIMATED_GIF = "test/sample_files/sample_animated.gif"
 
     def setup
       @client = Client.new

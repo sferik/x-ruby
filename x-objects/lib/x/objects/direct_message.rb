@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require_relative "cursor"
 require_relative "direct_message_conversations"
 require_relative "resource"

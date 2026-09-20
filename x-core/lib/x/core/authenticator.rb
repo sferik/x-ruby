@@ -1,10 +1,12 @@
+# frozen_string_literal: true
+
 # A Ruby client for the X API
 module X
   # Base class for authentication
   # @api public
   class Authenticator
     # The HTTP header name for authentication
-    AUTHENTICATION_HEADER = "Authorization".freeze
+    AUTHENTICATION_HEADER = "Authorization"
 
     # Generate the authentication header for a request, which has none
     #

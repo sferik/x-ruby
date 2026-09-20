@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require_relative "objects/version"
 require_relative "objects/errors"
 require_relative "objects/problem"

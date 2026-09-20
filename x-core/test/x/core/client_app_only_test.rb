@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require_relative "../../test_helper"
 
 module X
@@ -5,7 +7,7 @@ module X
     cover_client
     cover StreamingClient
 
-    STREAM_URL = "https://api.x.com/2/tweets/sample/stream".freeze
+    STREAM_URL = "https://api.x.com/2/tweets/sample/stream"
 
     def setup
       @token_request = stub_request(:post, AppOnlyAuthenticator::TOKEN_URL)

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module X
   module Objects
     # The collections of a post: the users who liked and reposted it, and its reposts and quotes, included into Post

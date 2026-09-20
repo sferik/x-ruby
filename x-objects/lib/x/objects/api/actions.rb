@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require_relative "actions/direct_messages"
 require_relative "actions/engagement"
 require_relative "actions/lists"

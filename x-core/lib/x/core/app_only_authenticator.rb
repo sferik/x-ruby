@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "simple_oauth"
 require_relative "authenticator"
 require_relative "connection"
@@ -9,9 +11,9 @@ module X
   # @api public
   class AppOnlyAuthenticator < Authenticator
     # The endpoint that exchanges an API key and secret for a bearer token
-    TOKEN_URL = "https://api.x.com/oauth2/token".freeze
+    TOKEN_URL = "https://api.x.com/oauth2/token"
     # The message raised when the token endpoint describes no reason for the failure
-    DEFAULT_ERROR_MESSAGE = "Bearer token request failed".freeze
+    DEFAULT_ERROR_MESSAGE = "Bearer token request failed"
     private_constant :DEFAULT_ERROR_MESSAGE
 
     # The API key

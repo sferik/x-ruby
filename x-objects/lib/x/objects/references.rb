@@ -1,16 +1,18 @@
+# frozen_string_literal: true
+
 module X
   module Objects
     # Resolves the posts a post refers to through its referenced_posts attribute
     # @api public
     module References
       # Referenced post type for replies
-      REPLIED_TO = "replied_to".freeze
+      REPLIED_TO = "replied_to"
       # Referenced post type for quotes
-      QUOTED = "quoted".freeze
+      QUOTED = "quoted"
       # Referenced post type for reposts, as the API labels them
-      REPOSTED = "reposted".freeze
+      REPOSTED = "reposted"
       # Referenced post type for reposts, as the API documentation labels them
-      RETWEETED = "retweeted".freeze
+      RETWEETED = "retweeted"
 
       # The referenced posts, resolved from the includes or built as stubs
       #

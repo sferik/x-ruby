@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # The version every gem in this repository is released at
 version = File.read(File.expand_path("VERSION", __dir__)).strip
 

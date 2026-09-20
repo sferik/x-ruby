@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "forwardable"
 require "uri"
 require_relative "connection"
@@ -32,7 +34,7 @@ module X
     # Default maximum number of times in a row to reconnect a stream that drops without delivering an object
     DEFAULT_MAX_RECONNECTS = Core::ReconnectHandler::DEFAULT_MAX_RECONNECTS
     # The message of the error raised for a stream without a block to deliver its objects to
-    NO_BLOCK_MESSAGE = "stream takes a block, which receives each object the stream delivers".freeze
+    NO_BLOCK_MESSAGE = "stream takes a block, which receives each object the stream delivers"
     private_constant :NO_BLOCK_MESSAGE
 
     # The client the stream authenticates and parses with

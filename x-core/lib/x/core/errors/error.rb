@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module X
   # The base class of every error the X gems raise
   # @api public

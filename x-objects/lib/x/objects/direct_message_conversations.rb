@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require_relative "cursor"
 require_relative "utils"
 

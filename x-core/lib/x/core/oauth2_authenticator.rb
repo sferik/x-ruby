@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "simple_oauth"
 require_relative "authenticator"
 require_relative "connection"
@@ -14,12 +16,12 @@ module X
   # @api public
   class OAuth2Authenticator < Authenticator
     # The endpoint that refreshes an access token
-    TOKEN_URL = "https://api.x.com/2/oauth2/token".freeze
+    TOKEN_URL = "https://api.x.com/2/oauth2/token"
     # Buffer time in seconds to account for clock skew and network latency
     EXPIRATION_BUFFER = 30
     private_constant :EXPIRATION_BUFFER
     # The message raised when the token endpoint describes no reason for the failure
-    DEFAULT_ERROR_MESSAGE = "Token refresh failed".freeze
+    DEFAULT_ERROR_MESSAGE = "Token refresh failed"
     private_constant :DEFAULT_ERROR_MESSAGE
 
     # The OAuth 2.0 client ID

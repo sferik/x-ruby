@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module X
   module Objects
     # Runs blocks across a bounded pool of threads

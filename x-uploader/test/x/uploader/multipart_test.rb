@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require_relative "../../test_helper"
 require "x/uploader/multipart"
 
@@ -6,7 +8,7 @@ module X
     cover Uploader.const_get(:Multipart)
 
     FILE_PART = "--b\r\nContent-Disposition: form-data; name=\"media\"\r\n" \
-      "Content-Type: application/octet-stream\r\n\r\ncontent\r\n--b--\r\n".freeze
+      "Content-Type: application/octet-stream\r\n\r\ncontent\r\n--b--\r\n"
 
     def test_headers_name_the_boundary
       assert_equal({"Content-Type" => "multipart/form-data; boundary=b"}, Uploader.const_get(:Multipart).headers("b"))

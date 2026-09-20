@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module X
   module Core
     # Checks that the credentials of a new client form complete sets
@@ -19,7 +21,7 @@ module X
         "access_token, and access_token_secret for OAuth 1.0a; client_id, access_token, and refresh_token, with the " \
         "client_secret of a confidential client, for OAuth 2.0; bearer_token for a bearer token, such as an OAuth 2.0 " \
         "access token that is not refreshed; or api_key and api_key_secret to authenticate as the app. Leave out any " \
-        "credential of a set that is not complete".freeze
+        "credential of a set that is not complete"
       private_constant :INCOMPLETE_CREDENTIALS
 
       # The credentials of each set: OAuth 1.0a, OAuth 2.0 for a confidential and for a public client, a bearer token,
@@ -34,11 +36,11 @@ module X
 
       # The message of the error raised for an expiration time that is not a Time
       INVALID_EXPIRES_AT = "expires_at must be a Time, such as Time.at(seconds) for a time stored as seconds since the " \
-        "epoch, or nil if it is not known".freeze
+        "epoch, or nil if it is not known"
       private_constant :INVALID_EXPIRES_AT
 
       # The message of the error raised for a credential that is an empty String
-      EMPTY_CREDENTIAL = "%s is empty. Pass the credential, or leave it out, since an empty one authenticates nothing".freeze
+      EMPTY_CREDENTIAL = "%s is empty. Pass the credential, or leave it out, since an empty one authenticates nothing"
       private_constant :EMPTY_CREDENTIAL
 
       # Raise for an empty credential, or an expiration time that is not a Time

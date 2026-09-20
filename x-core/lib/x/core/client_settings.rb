@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "forwardable"
 require_relative "rate_limit_handler"
 require_relative "redirect_handler"

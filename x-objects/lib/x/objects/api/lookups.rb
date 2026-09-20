@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require_relative "lookups/communities"
 require_relative "lookups/direct_messages"
 require_relative "lookups/lists"

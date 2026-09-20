@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module X
   module Uploader
     # Tells an animated GIF from a still one by reading its blocks, without decoding any image

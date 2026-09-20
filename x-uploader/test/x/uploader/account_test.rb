@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "tempfile"
 require_relative "../../test_helper"
 require "x/uploader/account"
@@ -6,7 +8,7 @@ module X
   class AccountProfileImageTest < Minitest::Test
     cover Uploader::Account
 
-    V1_PROFILE_IMAGE_URL = "https://api.x.com/1.1/account/update_profile_image.json".freeze
+    V1_PROFILE_IMAGE_URL = "https://api.x.com/1.1/account/update_profile_image.json"
     SAMPLE_BINARY_CONTENT = "\x89PNG\r\n\x1A\n\x00\x00\x00...".b.freeze
 
     def setup
@@ -85,7 +87,7 @@ module X
   class AccountProfileBannerTest < Minitest::Test
     cover Uploader::Account
 
-    V1_PROFILE_BANNER_URL = "https://api.x.com/1.1/account/update_profile_banner.json".freeze
+    V1_PROFILE_BANNER_URL = "https://api.x.com/1.1/account/update_profile_banner.json"
     SAMPLE_BINARY_CONTENT = "\x89PNG\r\n\x1A\n\x00\x00\x00...".b.freeze
 
     def setup

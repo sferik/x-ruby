@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module X
   module Uploader
     # The classes the uploaders parse responses into, whatever parsing classes a client defaults to

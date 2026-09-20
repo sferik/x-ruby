@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "monitor"
 require_relative "batch"
 require_relative "finders"

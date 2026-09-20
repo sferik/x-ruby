@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "simplecov"
 
 SimpleCov.start "strict" do
@@ -9,4 +11,4 @@ require "minitest/autorun"
 require "webmock/minitest"
 require "x"
 
-TEST_BEARER_TOKEN = "TEST_BEARER_TOKEN".freeze
+TEST_BEARER_TOKEN = "TEST_BEARER_TOKEN"

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "json"
 require_relative "../../test_helper"
 
@@ -5,7 +7,7 @@ module X
   class StreamingClientReconnectTest < Minitest::Test
     cover StreamingClient
 
-    STREAM_URL = "https://api.x.com/2/tweets/sample/stream".freeze
+    STREAM_URL = "https://api.x.com/2/tweets/sample/stream"
 
     def setup
       @client = Client.new(bearer_token: TEST_BEARER_TOKEN)

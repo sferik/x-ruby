@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "x/core"
 require "x/uploader"
 require "x/objects"

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "json"
 require "uri"
 
@@ -11,7 +13,7 @@ module X
       private_constant :LEADING_SLASHES
 
       # The message of the error raised for a request given both a body and form fields
-      BODY_AND_FORM = "Pass a body or form fields, not both, since a request sends one body".freeze
+      BODY_AND_FORM = "Pass a body or form fields, not both, since a request sends one body"
       private_constant :BODY_AND_FORM
 
       private

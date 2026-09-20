@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "monitor"
 require_relative "app_only_authenticator"
 require_relative "errors/unsupported_operation"
@@ -9,7 +11,7 @@ module X
     module ClientAppOnly
       # The message of the error raised for a client that holds no credentials of the app to authenticate with
       NO_APP_CREDENTIALS = "A client that authenticates with OAuth 2.0 as a user holds no credentials of the app, so " \
-        "it cannot authenticate as the app. Build a client from the app's bearer token, or its API key and secret, instead".freeze
+        "it cannot authenticate as the app. Build a client from the app's bearer token, or its API key and secret, instead"
       private_constant :NO_APP_CREDENTIALS
 
       # A client that authenticates as the app, for the endpoints that refuse OAuth 1.0a

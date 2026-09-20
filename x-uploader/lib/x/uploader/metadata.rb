@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "x/core"
 require_relative "json_classes"
 require_relative "utils"
@@ -10,9 +12,9 @@ module X
       extend self
 
       # The media category the subtitles endpoint takes for a video attached to a post
-      SUBTITLED_MEDIA_CATEGORY = "TweetVideo".freeze
+      SUBTITLED_MEDIA_CATEGORY = "TweetVideo"
       # The media category the subtitles endpoint takes for a video uploaded as amplify_video
-      AMPLIFY_SUBTITLED_MEDIA_CATEGORY = "AmplifyVideo".freeze
+      AMPLIFY_SUBTITLED_MEDIA_CATEGORY = "AmplifyVideo"
 
       # Describe uploaded media with alt text, for people who cannot see it
       #

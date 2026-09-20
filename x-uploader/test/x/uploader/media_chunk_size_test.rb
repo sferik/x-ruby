@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "tmpdir"
 require_relative "../../test_helper"
 require "x/uploader/media"
@@ -6,7 +8,7 @@ module X
   class MediaChunkSizeTest < Minitest::Test
     cover Uploader::Media
 
-    BASE_URL = "https://api.x.com/2/media/upload".freeze
+    BASE_URL = "https://api.x.com/2/media/upload"
     JSON_HEADERS = {"content-type" => "application/json"}.freeze
     # A video larger than the 1,000 chunks of a megabyte the API numbers the segments of
     LARGE_VIDEO_BYTES = 1100 * Uploader::Media::BYTES_PER_MB

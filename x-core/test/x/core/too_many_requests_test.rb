@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require_relative "../../test_helper"
 
 # Build a 429 that reports a 15-minute limit and a 24-hour app limit, both used up

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "json"
 require "securerandom"
 require "x/core"
@@ -59,7 +61,7 @@ module X
       # Fewest seconds to wait between checks, for a status that asks for no wait
       MIN_CHECK_AFTER_SECS = 1
       # The command that asks the upload endpoint how far the processing of media has got
-      STATUS_COMMAND = "STATUS".freeze
+      STATUS_COMMAND = "STATUS"
       # Media categories that are uploaded in chunks and processed after the upload
       VIDEO_CATEGORIES = [AMPLIFY_VIDEO, DM_VIDEO, TWEET_VIDEO].freeze
       # Media categories uploaded in chunks: videos, and subtitles, which the API takes no other way

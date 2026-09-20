@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require_relative "errors/conflict"
 require_relative "errors/invalid_response"
 require_relative "errors/network_error"

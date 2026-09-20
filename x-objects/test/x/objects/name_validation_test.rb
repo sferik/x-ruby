@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require_relative "../../test_helper"
 
 module X
@@ -7,7 +9,7 @@ module X
     cover Objects::API::Lookups
     cover Objects::Finders
 
-    RAW_MESSAGE = "\"a/b?c=d\" is not an identifier: pass a resource, or a String of word characters".freeze
+    RAW_MESSAGE = "\"a/b?c=d\" is not an identifier: pass a resource, or a String of word characters"
 
     def setup
       @client = FakeClient.new

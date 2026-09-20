@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "json"
 require_relative "../../test_helper"
 
@@ -12,7 +14,7 @@ module X
     cover Core::StreamParser
     cover StreamingClient
 
-    STREAM_URL = "https://api.x.com/2/tweets/sample/stream".freeze
+    STREAM_URL = "https://api.x.com/2/tweets/sample/stream"
 
     def setup
       @refused = ->(_response) { raise Errno::ECONNREFUSED }

@@ -47,3 +47,7 @@ Metrics/PerceivedComplexity:
 
 Minitest/MultipleAssertions:
   Max: 5
+
+# Standard disables this cop; require the magic comment so that every string literal is frozen
+Style/FrozenStringLiteralComment:
+  Enabled: true

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require_relative "../../test_helper"
 require "x/uploader/metadata"
 
@@ -6,8 +8,8 @@ module X
     cover Uploader::Metadata
     cover Uploader.const_get(:Utils)
 
-    METADATA_URL = "https://api.x.com/2/media/metadata".freeze
-    SUBTITLES_URL = "https://api.x.com/2/media/subtitles".freeze
+    METADATA_URL = "https://api.x.com/2/media/metadata"
+    SUBTITLES_URL = "https://api.x.com/2/media/subtitles"
     JSON_HEADERS = {"content-type" => "application/json"}.freeze
 
     def setup

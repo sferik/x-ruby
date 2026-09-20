@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require_relative "serialization"
 require_relative "utils"
 
@@ -12,7 +14,7 @@ module X
     include Objects::Serialization
 
     # The endpoint that reports the post usage of the project
-    ENDPOINT = "usage/tweets".freeze
+    ENDPOINT = "usage/tweets"
     # Every field of the usage
     FIELDS = %w[cap_reset_day daily_client_app_usage daily_project_usage project_cap project_id project_usage].freeze
 

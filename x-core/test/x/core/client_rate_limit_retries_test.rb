@@ -1,10 +1,12 @@
+# frozen_string_literal: true
+
 require_relative "../../test_helper"
 
 module X
   class ClientRateLimitRetriesTest < Minitest::Test
     cover_client
 
-    URL = "https://api.x.com/2/users/me".freeze
+    URL = "https://api.x.com/2/users/me"
     SUCCESS = {status: 200, body: '{"data":{"id":"1"}}', headers: {"Content-Type" => "application/json"}}.freeze
 
     def setup

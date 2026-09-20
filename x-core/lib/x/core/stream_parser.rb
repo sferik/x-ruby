@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "json"
 require "net/http"
 require_relative "errors/stream_callback_error"
@@ -12,7 +14,7 @@ module X
     # @api private
     class StreamParser
       # Line delimiter for streaming responses
-      LINE_DELIMITER = "\r\n".freeze
+      LINE_DELIMITER = "\r\n"
 
       # Process a streaming response and yield parsed JSON objects
       #

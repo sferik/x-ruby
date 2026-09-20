@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require_relative "../../test_helper"
 require "x/uploader/media"
 
@@ -6,8 +8,8 @@ module X
     cover Uploader::Media
     cover Uploader.const_get(:Chunks)
 
-    BASE_URL = "https://api.x.com/2/media/upload".freeze
-    VIDEO_FILE = "test/sample_files/sample.mp4".freeze
+    BASE_URL = "https://api.x.com/2/media/upload"
+    VIDEO_FILE = "test/sample_files/sample.mp4"
 
     def setup
       @client = Client.new

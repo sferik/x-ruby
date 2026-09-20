@@ -1,8 +1,10 @@
+# frozen_string_literal: true
+
 require_relative "../test_helper"
 
 module X
   class ClientUploaderAPITest < Minitest::Test
-    BASE = "https://api.x.com/2/".freeze
+    BASE = "https://api.x.com/2/"
 
     def setup
       @client = Client.new(bearer_token: TEST_BEARER_TOKEN)

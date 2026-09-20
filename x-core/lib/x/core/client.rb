@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "json"
 require "uri"
 require_relative "app_only_authenticator"
@@ -30,7 +32,7 @@ module X
     include Core::RequestEncoding
 
     # Default base URL for the X API
-    DEFAULT_BASE_URL = "https://api.x.com/2/".freeze
+    DEFAULT_BASE_URL = "https://api.x.com/2/"
     # Default class for parsing JSON arrays
     DEFAULT_ARRAY_CLASS = Array
     # Default class for parsing JSON objects
@@ -42,7 +44,7 @@ module X
     # Default maximum number of seconds to wait for a rate limit to reset
     DEFAULT_MAX_RATE_LIMIT_WAIT = Core::RateLimitHandler::DEFAULT_MAX_WAIT
     # Content type of a form-encoded request body
-    FORM_CONTENT_TYPE = "application/x-www-form-urlencoded; charset=utf-8".freeze
+    FORM_CONTENT_TYPE = "application/x-www-form-urlencoded; charset=utf-8"
     private_constant :FORM_CONTENT_TYPE
 
     # The authenticator for API requests

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require_relative "json_classes"
 require_relative "multipart"
 

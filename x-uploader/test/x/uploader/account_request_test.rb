@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require_relative "../../test_helper"
 require "x/uploader/account"
 
@@ -5,10 +7,10 @@ module X
   class AccountRequestTest < Minitest::Test
     cover Uploader::Account
 
-    V1_URL = "https://api.x.com/1.1/account/".freeze
+    V1_URL = "https://api.x.com/1.1/account/"
     V1_URL_PATTERN = /\A#{Regexp.escape(V1_URL)}/
     CONTENT = "\x89PNG\r\n\x1A\n\x00\x00\x00...".b.freeze
-    PNG_FILE = "test/sample_files/sample.png".freeze
+    PNG_FILE = "test/sample_files/sample.png"
     HEX_BOUNDARY = %r{\Amultipart/form-data; boundary=(\h{32})\z}
 
     def setup

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "tmpdir"
 require_relative "../../test_helper"
 require "x/uploader/media"
@@ -6,7 +8,7 @@ module X
   class MediaFractionalChunksTest < Minitest::Test
     cover Uploader::Media
 
-    BASE_URL = "https://api.x.com/2/media/upload".freeze
+    BASE_URL = "https://api.x.com/2/media/upload"
     APPEND_URL = "#{BASE_URL}/#{TEST_MEDIA_ID}/append".freeze
     CONTENT = Array.new(4000) { |index| (index % 251).chr }.join.b.freeze
 

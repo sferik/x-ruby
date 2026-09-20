@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 $LOAD_PATH.unshift File.expand_path("../lib", __dir__)
 
 unless $PROGRAM_NAME.include?("mutant")
@@ -26,11 +28,11 @@ end
 require "webmock/minitest"
 require "x/uploader"
 
-TEST_API_KEY = "TEST_API_KEY".freeze
-TEST_API_KEY_SECRET = "TEST_API_KEY_SECRET".freeze
-TEST_ACCESS_TOKEN = "TEST_ACCESS_TOKEN".freeze
-TEST_ACCESS_TOKEN_SECRET = "TEST_ACCESS_TOKEN_SECRET".freeze
-TEST_MEDIA_ID = "1880028106020515840".freeze
+TEST_API_KEY = "TEST_API_KEY"
+TEST_API_KEY_SECRET = "TEST_API_KEY_SECRET"
+TEST_ACCESS_TOKEN = "TEST_ACCESS_TOKEN"
+TEST_ACCESS_TOKEN_SECRET = "TEST_ACCESS_TOKEN_SECRET"
+TEST_MEDIA_ID = "1880028106020515840"
 
 def test_oauth_credentials
   {

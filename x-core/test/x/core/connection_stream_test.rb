@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "net/http"
 require "uri"
 require_relative "../../test_helper"
@@ -38,7 +40,7 @@ module X
     end
 
     def test_perform_stream_reports_a_connection_that_drops_while_reading_as_a_network_error
-      truncated = "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n8\r\n{\"data\":\r\n".freeze
+      truncated = "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n8\r\n{\"data\":\r\n"
       with_local_server(response: truncated) do |port|
         request = Net::HTTP::Get.new(URI("http://127.0.0.1:#{port}/"))
 

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "x"
 
 # The filtered stream and its rules take app-only authentication. A client with OAuth 1.0a credentials can use

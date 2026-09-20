@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "securerandom"
 require "simple_oauth"
 require "uri"
@@ -17,7 +19,7 @@ module X
   # @api public
   class OAuth2Authorization
     # The page that asks a user to authorize an app
-    AUTHORIZATION_URL = "https://x.com/i/oauth2/authorize".freeze
+    AUTHORIZATION_URL = "https://x.com/i/oauth2/authorize"
     # The endpoint that exchanges an authorization code for tokens
     TOKEN_URL = OAuth2Authenticator::TOKEN_URL
     # The scopes that read posts and users, and keep a refresh token to act for the user after the access token expires
@@ -26,10 +28,10 @@ module X
     STATE_BYTES = 32
     private_constant :STATE_BYTES
     # The message raised when X describes no reason for a failed authorization
-    DEFAULT_ERROR_MESSAGE = "Authorization failed".freeze
+    DEFAULT_ERROR_MESSAGE = "Authorization failed"
     private_constant :DEFAULT_ERROR_MESSAGE
     # The message raised for a redirect back from X that is not a valid URL
-    INVALID_CALLBACK_MESSAGE = "The redirect back from X is not a valid URL".freeze
+    INVALID_CALLBACK_MESSAGE = "The redirect back from X is not a valid URL"
     private_constant :INVALID_CALLBACK_MESSAGE
 
     # The OAuth 2.0 client ID of the app

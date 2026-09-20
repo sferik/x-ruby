@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "base64"
 require "digest"
 require_relative "../../test_helper"
@@ -7,7 +9,7 @@ module X
     cover OAuth2Authorization
     cover Core::TokenEndpoint
 
-    REDIRECT_URI = "https://example.com/callback".freeze
+    REDIRECT_URI = "https://example.com/callback"
     CODE_VERIFIER = ("a" * 43).freeze
 
     def authorization(**options)
@@ -90,7 +92,7 @@ module X
     cover OAuth2Authorization
     cover Core::TokenEndpoint
 
-    REDIRECT_URI = "https://example.com/callback".freeze
+    REDIRECT_URI = "https://example.com/callback"
     CODE_VERIFIER = ("a" * 43).freeze
     TOKEN_BODY = "grant_type=authorization_code&code=CODE&redirect_uri=#{URI.encode_www_form_component(REDIRECT_URI)}&code_verifier=#{CODE_VERIFIER}".freeze
     TOKENS = {token_type: "bearer", access_token: "ACCESS", refresh_token: "REFRESH", expires_in: 7200}.freeze

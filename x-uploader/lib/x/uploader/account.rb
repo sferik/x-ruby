@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "securerandom"
 require "x/core"
 require_relative "invalid_media_type"
@@ -18,7 +20,7 @@ module X
       extend self
 
       # Base URL for X API v1.1 account endpoints
-      V1_BASE_URL = "https://api.x.com/1.1/".freeze
+      V1_BASE_URL = "https://api.x.com/1.1/"
       # URL of the endpoint that updates the profile image of the authenticating user
       PROFILE_IMAGE_URL = "#{V1_BASE_URL}account/update_profile_image.json".freeze
       # URL of the endpoint that updates the profile banner of the authenticating user

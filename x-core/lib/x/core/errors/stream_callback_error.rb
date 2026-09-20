@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module X
   module Core
     # Stands in for an error a callback of a stream raised, so that the connection does not take it for its own

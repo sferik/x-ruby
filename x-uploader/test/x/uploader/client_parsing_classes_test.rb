@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require_relative "../../test_helper"
 
 module X
@@ -12,7 +14,7 @@ module X
     cover Uploader::Media
     cover Uploader::Metadata
 
-    UPLOAD_URL = "https://api.x.com/2/media/upload".freeze
+    UPLOAD_URL = "https://api.x.com/2/media/upload"
     JSON_RESPONSE = {headers: {"content-type" => "application/json"}, body: {data: {id: TEST_MEDIA_ID}}.to_json}.freeze
 
     def setup

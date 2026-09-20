@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require_relative "invalid_media_type"
 require_relative "utils"
 

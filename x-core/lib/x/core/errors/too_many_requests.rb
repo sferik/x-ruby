@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "time"
 require_relative "client_error"
 require_relative "../rate_limit"
@@ -7,7 +9,7 @@ module X
   # @api public
   class TooManyRequests < ClientError
     # The header that says how long to wait, which X sends beside the headers of the limits it reports
-    RETRY_AFTER_HEADER = "retry-after".freeze
+    RETRY_AFTER_HEADER = "retry-after"
     private_constant :RETRY_AFTER_HEADER
     # The value of a Retry-After header that counts seconds, rather than naming the time to wait until
     RETRY_AFTER_SECONDS = /\A\d+\z/

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module X
   module Core
     # Mixin for client authentication credentials
@@ -5,7 +7,7 @@ module X
     module ClientCredentials
       # The message of the error raised for a change to a credential a client does not take, as Ruby words the error
       # that building a client from one raised before
-      UNKNOWN_CREDENTIAL = "unknown keyword: %s".freeze
+      UNKNOWN_CREDENTIAL = "unknown keyword: %s"
       private_constant :UNKNOWN_CREDENTIAL
 
       # The API key for OAuth 1.0a authentication

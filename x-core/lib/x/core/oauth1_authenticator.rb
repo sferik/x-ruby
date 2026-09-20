@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "simple_oauth"
 require "uri"
 require_relative "authenticator"
@@ -7,7 +9,7 @@ module X
   # @api public
   class OAuth1Authenticator < Authenticator
     # The media type whose body OAuth 1.0a signs as request parameters
-    FORM_CONTENT_TYPE = "application/x-www-form-urlencoded".freeze
+    FORM_CONTENT_TYPE = "application/x-www-form-urlencoded"
     private_constant :FORM_CONTENT_TYPE
 
     # The API key (consumer key)

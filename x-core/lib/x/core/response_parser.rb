@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "json"
 require "net/http"
 require_relative "errors/bad_gateway"

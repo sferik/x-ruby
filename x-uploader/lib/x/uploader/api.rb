@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require_relative "account"
 require_relative "media"
 require_relative "metadata"

@@ -1,13 +1,15 @@
+# frozen_string_literal: true
+
 module X
   # Represents rate limit information from an API response
   # @api public
   class RateLimit
     # Rate limit type identifier
-    RATE_LIMIT_TYPE = "rate-limit".freeze
+    RATE_LIMIT_TYPE = "rate-limit"
     # App limit type identifier
-    APP_LIMIT_TYPE = "app-limit-24hour".freeze
+    APP_LIMIT_TYPE = "app-limit-24hour"
     # User limit type identifier
-    USER_LIMIT_TYPE = "user-limit-24hour".freeze
+    USER_LIMIT_TYPE = "user-limit-24hour"
     # All supported rate limit types
     TYPES = [RATE_LIMIT_TYPE, APP_LIMIT_TYPE, USER_LIMIT_TYPE].freeze
 

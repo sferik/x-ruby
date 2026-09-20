@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module X
   module Objects
     # Equality and hashing by class and identifier, so the same resource fetched twice compares equal

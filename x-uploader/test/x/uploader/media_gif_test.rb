@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "tmpdir"
 require_relative "../../test_helper"
 require "x/uploader/media"
@@ -6,7 +8,7 @@ module X
   class MediaGifTest < Minitest::Test
     cover Uploader::Media
 
-    BASE_URL = "https://api.x.com/2/media/upload".freeze
+    BASE_URL = "https://api.x.com/2/media/upload"
     JSON_HEADERS = {"content-type" => "application/json"}.freeze
     MAX_SIMPLE = Uploader::Media::MAX_SIMPLE_UPLOAD_BYTES
 

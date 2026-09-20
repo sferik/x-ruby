@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require_relative "../../test_helper"
 
 module X
@@ -8,7 +10,7 @@ module X
     cover Objects::Relationships
     cover Objects::API::Actions::Relationships
 
-    MESSAGE = "\"sferik\" is not an identifier: pass a resource, an Integer, or a String of digits".freeze
+    MESSAGE = "\"sferik\" is not an identifier: pass a resource, an Integer, or a String of digits"
 
     def setup
       @client = FakeClient.new

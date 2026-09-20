@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require_relative "../../direct_message"
 
 module X

@@ -1,10 +1,12 @@
+# frozen_string_literal: true
+
 require_relative "../../test_helper"
 
 module X
   class ClientTokenRefreshTest < Minitest::Test
     cover_client
 
-    USERS_ME = "https://api.x.com/2/users/me".freeze
+    USERS_ME = "https://api.x.com/2/users/me"
 
     def setup
       @refresh = stub_token_refresh("NEW_ACCESS_TOKEN", "NEW_REFRESH_TOKEN")

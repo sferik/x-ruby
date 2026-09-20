@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "net/http"
 require "openssl"
 require "uri"
@@ -18,7 +20,7 @@ module X
     include Core::ConnectionProxy
 
     # Default host for the X API
-    DEFAULT_HOST = "api.x.com".freeze
+    DEFAULT_HOST = "api.x.com"
     private_constant :DEFAULT_HOST
     # Default port for HTTPS connections
     DEFAULT_PORT = 443

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "bundler/gem_tasks"
 
 # The gems in this repository, in dependency order, released in lockstep

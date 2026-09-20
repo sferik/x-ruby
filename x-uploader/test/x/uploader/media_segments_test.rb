@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "tmpdir"
 require_relative "../../test_helper"
 require "x/uploader/media"
@@ -7,9 +9,9 @@ module X
     cover Uploader::Media
     cover Uploader.const_get(:Chunks)
 
-    BASE_URL = "https://api.x.com/2/media/upload".freeze
+    BASE_URL = "https://api.x.com/2/media/upload"
     APPEND_URL = "#{BASE_URL}/#{TEST_MEDIA_ID}/append".freeze
-    VIDEO_FILE = "test/sample_files/sample.mp4".freeze
+    VIDEO_FILE = "test/sample_files/sample.mp4"
     CHUNK_BYTES = 65_536
     HEX_BOUNDARY = %r{\Amultipart/form-data; boundary=(\h{32})\z}
 

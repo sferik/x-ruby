@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "net/http"
 require_relative "../../test_helper"
 
@@ -99,11 +101,11 @@ module X
   class OAuth1AuthenticatorDocumentedExampleTest < Minitest::Test
     cover OAuth1Authenticator
 
-    NONCE = "kYjzVBB8Y0ZFabxSWbWovY3uYSQ2pTgmZeNu2VS4cg".freeze
+    NONCE = "kYjzVBB8Y0ZFabxSWbWovY3uYSQ2pTgmZeNu2VS4cg"
     TIMESTAMP = 1_318_622_958
-    URL = "https://api.twitter.com/1.1/statuses/update.json?include_entities=true".freeze
-    BODY = "status=Hello%20Ladies%20%2B%20Gentlemen%2C%20a%20signed%20OAuth%20request%21".freeze
-    SIGNATURE = "hCtSmYh%2BiHYCEqBWrE7C7hYmtUk%3D".freeze
+    URL = "https://api.twitter.com/1.1/statuses/update.json?include_entities=true"
+    BODY = "status=Hello%20Ladies%20%2B%20Gentlemen%2C%20a%20signed%20OAuth%20request%21"
+    SIGNATURE = "hCtSmYh%2BiHYCEqBWrE7C7hYmtUk%3D"
 
     def setup
       @authenticator = OAuth1Authenticator.new(api_key: "xvz1evFS4wEEPTGEFPHBog",
@@ -144,8 +146,8 @@ module X
   class OAuth1AuthenticatorBodyTest < Minitest::Test
     cover OAuth1Authenticator
 
-    URL = "https://api.x.com/2/tweets".freeze
-    FORM_BODY = "status=Hello".freeze
+    URL = "https://api.x.com/2/tweets"
+    FORM_BODY = "status=Hello"
 
     def setup
       @authenticator = OAuth1Authenticator.new(api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET,

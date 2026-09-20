@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "fileutils"
 require "tmpdir"
 require_relative "../../test_helper"
@@ -7,7 +9,7 @@ module X
   class AccountClientTest < Minitest::Test
     cover Uploader::Account
 
-    V1_URL = "https://api.x.com/1.1/account/".freeze
+    V1_URL = "https://api.x.com/1.1/account/"
     V1_URL_PATTERN = /\A#{Regexp.escape(V1_URL)}/
 
     def setup

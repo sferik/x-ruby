@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "time"
 require_relative "utils"
 
@@ -11,11 +13,11 @@ module X
     # @api public
     module PostCounts
       # The endpoint that counts the posts from the last seven days
-      RECENT_ENDPOINT = "tweets/counts/recent".freeze
+      RECENT_ENDPOINT = "tweets/counts/recent"
       # The endpoint that counts the posts from the full archive
-      ALL_ENDPOINT = "tweets/counts/all".freeze
+      ALL_ENDPOINT = "tweets/counts/all"
       # The granularity that makes the fewest periods, and so the least data
-      DEFAULT_GRANULARITY = "day".freeze
+      DEFAULT_GRANULARITY = "day"
 
       # Count the recent posts that match a query, without reading them
       #
