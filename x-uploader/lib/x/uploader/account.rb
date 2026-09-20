@@ -33,6 +33,7 @@ module X
       # @param client [Client] the X API client
       # @return [Hash, nil] the updated user object
       # @raise [Errno::ENOENT] if the file does not exist
+      # @raise [ArgumentError] if the file is empty, which holds nothing to upload
       # @raise [InvalidMediaType] if the file type is not supported
       # @example Update profile image from a file
       #   Uploader::Account.update_profile_image("avatar.png", client: client)
@@ -68,6 +69,7 @@ module X
       # @param offset_top [Integer, nil] the top offset of the banner
       # @return [Hash, nil] nil on success (204 No Content)
       # @raise [Errno::ENOENT] if the file does not exist
+      # @raise [ArgumentError] if the file is empty, which holds nothing to upload
       # @raise [InvalidMediaType] if the file type is not supported
       # @example Update profile banner from a file
       #   Uploader::Account.update_profile_banner("banner.png", client: client)

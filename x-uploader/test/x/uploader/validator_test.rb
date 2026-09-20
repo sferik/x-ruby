@@ -1,10 +1,19 @@
 require "tmpdir"
+require "tempfile"
 require_relative "../../test_helper"
 require "x/uploader/validator"
 
 module X
   class ValidatorTest < Minitest::Test
     cover Uploader.const_get(:Validator)
+
+    def test_validate_file_path_refuses_an_empty_file
+      Tempfile.create(["empty", ".png"]) do |file|
+        error = assert_raises(ArgumentError) { Uploader.const_get(:Validator).validate_file_path!(file.path) }
+
+        assert_equal "#{file.path} is empty: there is nothing to upload", error.message
+      end
+    end
 
     def test_validate_file_path
       assert_nil Uploader.const_get(:Validator).validate_file_path!("test/sample_files/sample.jpg")

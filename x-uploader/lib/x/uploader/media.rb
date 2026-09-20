@@ -104,6 +104,7 @@ module X
       # @return [UploadedMedia, nil] the uploaded media, which holds the upload response, or the processing status of
       #   media that X processes
       # @raise [Errno::ENOENT] if the file does not exist
+      # @raise [ArgumentError] if the file is empty, which holds nothing to upload
       # @raise [ArgumentError] if the media category is invalid, the alt text is empty or longer than the API takes,
       #   the chunk size is not positive or would need more segments than the API numbers, or the concurrency is
       #   less than one
@@ -194,6 +195,7 @@ module X
       # @param concurrency [Integer] the number of chunks uploaded at once
       # @return [UploadedMedia, nil] the uploaded media, which holds the upload response
       # @raise [Errno::ENOENT] if the file does not exist
+      # @raise [ArgumentError] if the file is empty, which holds nothing to upload
       # @raise [ArgumentError] if the media category is invalid, the chunk size is not positive or would need more
       #   segments than the API numbers, or the concurrency is less than one
       # @raise [InvalidMediaType] if no media type is given and none can be inferred

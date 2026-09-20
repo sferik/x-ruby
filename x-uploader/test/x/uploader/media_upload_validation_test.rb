@@ -1,3 +1,4 @@
+require "tempfile"
 require_relative "../../test_helper"
 require "x/uploader/media"
 
@@ -17,6 +18,18 @@ module X
       error = assert_raises(Errno::ENOENT) { Uploader::Media.upload("nope.png", client: @client) }
 
       assert_equal "No such file or directory - nope.png", error.message
+      assert_not_requested :post, BASE_URL
+    end
+
+    def test_upload_rejects_an_empty_file_before_any_request
+      %w[.mp4 .png].each do |extension|
+        Tempfile.create(["empty", extension]) do |file|
+          assert_raises(ArgumentError) { Uploader::Media.upload(file.path, client: @client) }
+          assert_raises(ArgumentError) { Uploader::Media.chunked_upload(file.path, client: @client, media_category: :tweet_video) }
+        end
+      end
+
+      assert_not_requested :post, "#{BASE_URL}/initialize"
       assert_not_requested :post, BASE_URL
     end
 
@@ -68,7 +81,7 @@ module X
       stub_chunked_workflow
       Uploader::Media.chunked_upload("test/sample_files/sample.srt", client: @client, media_category: :SUBTITLES)
 
-      assert_requested :post, "#{BASE_URL}/initialize", body: {media_type: "text/srt", media_category: "subtitles", total_bytes: 0}.to_json
+      assert_requested :post, "#{BASE_URL}/initialize", body: {media_type: "text/srt", media_category: "subtitles", total_bytes: File.size("test/sample_files/sample.srt")}.to_json
     end
 
     def test_upload_raises_for_a_media_category_that_names_none

@@ -45,16 +45,21 @@ module X
         validate_media_category!(media_category)
       end
 
-      # Validate that a file path exists
+      # Validate that a file path exists, and that the file holds something to upload
+      #
+      # An empty file would initialize an upload in chunks and finalize it without a chunk, or send a single request
+      # without media, for the API to refuse either.
       #
       # @api private
       # @param file_path [String, Pathname] the file path to validate
       # @return [void]
       # @raise [Errno::ENOENT] if the file does not exist
+      # @raise [ArgumentError] if the file is empty
       # @example Validate a file path
       #   Uploader::Validator.validate_file_path!("image.png")
       def validate_file_path!(file_path)
         raise Errno::ENOENT, File.path(file_path) unless File.exist?(file_path)
+        raise ArgumentError, "#{file_path} is empty: there is nothing to upload" if File.zero?(file_path)
       end
 
       # Validate that a file has one of the extensions an upload supports

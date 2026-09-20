@@ -77,15 +77,15 @@ module X
       assert_requested(:post, APPEND_URL, times: 2)
     end
 
-    def test_an_empty_file_appends_nothing
+    def test_an_empty_file_is_refused_before_the_upload_is_initialized
       stub_workflow
       Dir.mktmpdir do |dir|
         path = File.join(dir, "empty.mp4")
         File.binwrite(path, "")
-        Uploader::Media.chunked_upload(path, client: @client, media_category: "tweet_video")
-      end
 
-      assert_not_requested(:post, APPEND_URL)
+        assert_raises(ArgumentError) { Uploader::Media.chunked_upload(path, client: @client, media_category: "tweet_video") }
+      end
+      assert_not_requested(:post, INIT_URL)
     end
 
     private

@@ -1,3 +1,4 @@
+require "tempfile"
 require_relative "../../test_helper"
 require "x/uploader/account"
 
@@ -32,6 +33,13 @@ module X
       error = assert_raises(Errno::ENOENT) { update_profile_image("nonexistent.png") }
 
       assert_includes error.message, "No such file or directory"
+    end
+
+    def test_update_profile_image_raises_for_an_empty_file
+      Tempfile.create(["empty", ".png"]) do |file|
+        assert_raises(ArgumentError) { update_profile_image(file.path) }
+      end
+      assert_not_requested :post, V1_PROFILE_IMAGE_URL
     end
 
     def test_update_profile_image_raises_for_unsupported_file_type

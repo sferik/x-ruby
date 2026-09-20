@@ -76,7 +76,7 @@ module X
       response = Uploader::Media.upload("test/sample_files/sample.srt", client: @client)
 
       assert_equal(Uploader::UploadedMedia.new({"id" => TEST_MEDIA_ID}), response)
-      assert_requested :post, "#{BASE_URL}/initialize", body: {media_type: "text/srt", media_category: "subtitles", total_bytes: 0}.to_json
+      assert_requested :post, "#{BASE_URL}/initialize", body: {media_type: "text/srt", media_category: "subtitles", total_bytes: File.size("test/sample_files/sample.srt")}.to_json
       assert_not_requested :get, "#{BASE_URL}?command=STATUS&media_id=#{TEST_MEDIA_ID}"
     end
 

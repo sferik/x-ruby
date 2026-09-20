@@ -193,6 +193,7 @@ See [UPGRADING.md](https://github.com/sferik/x-ruby/blob/main/UPGRADING.md) for 
 * Read `X::Uploader::UploadedMedia#id` from an identifier held as an Integer, as a Hash built by hand to refer to media uploaded before may hold it, rather than raise `ArgumentError`
 * Take the `media_category:` of `X::Uploader::Metadata.add_subtitles` as the uploaders take a category, `tweet_video` or `amplify_video` as a String or a Symbol in any case, as well as the `TweetVideo` and `AmplifyVideo` the subtitles endpoint names them, and raise `ArgumentError` for any other, where a category given as the uploaders take it was sent as given for the endpoint to refuse
 * Raise `ArgumentError` from `X::Uploader::Media.upload_binary` for the `amplify_video` category, which the API takes in chunks alone, before a request it would refuse; `upload` uploads such a file in chunks
+* Raise `ArgumentError` from the uploaders for an empty file, before any request, where an upload in chunks initialized an upload and finalized it without a chunk, and an upload in a single request sent no media, for the API to refuse either
 
 ## [0.19.0] - 2026-03-01
 * Add streaming support for filtered stream and volume stream endpoints

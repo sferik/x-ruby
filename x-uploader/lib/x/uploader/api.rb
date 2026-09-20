@@ -21,6 +21,7 @@ module X
       # @return [UploadedMedia, nil] the uploaded media, which holds the upload response, or the processing status of
       #   media that X processes
       # @raise [Errno::ENOENT] if the file does not exist
+      # @raise [ArgumentError] if the file is empty, which holds nothing to upload
       # @raise [MediaProcessingFailed] if media processing failed, with the status X reported
       # @raise [MediaProcessingTimeout] if the media is still processing once the processing timeout would pass
       # @example Upload an image with alt text and post it
@@ -106,6 +107,7 @@ module X
       # @param file_path [String, Pathname] the path to the image file
       # @return [Hash, nil] the user whose profile image was updated
       # @raise [Errno::ENOENT] if the file does not exist
+      # @raise [ArgumentError] if the file is empty, which holds nothing to upload
       # @raise [InvalidMediaType] if the file is not a GIF, JPEG, or PNG image
       # @example Update the profile image
       #   client.update_profile_image("avatar.png")
@@ -120,6 +122,7 @@ module X
       # @param options [Hash] the options of {Account.update_profile_banner}: width, height, offset_left, and offset_top
       # @return [Hash, nil] nil once the banner is updated, which the API answers without content
       # @raise [Errno::ENOENT] if the file does not exist
+      # @raise [ArgumentError] if the file is empty, which holds nothing to upload
       # @raise [InvalidMediaType] if the file is not a GIF, JPEG, or PNG image
       # @example Update the profile banner
       #   client.update_profile_banner("banner.png", width: 1500, height: 500)
