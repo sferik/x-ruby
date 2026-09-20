@@ -58,6 +58,8 @@ module X
       DEFAULT_CONCURRENCY = 4
       # Fewest seconds to wait between checks, for a status that asks for no wait
       MIN_CHECK_AFTER_SECS = 1
+      # The command that asks the upload endpoint how far the processing of media has got
+      STATUS_COMMAND = "STATUS".freeze
       # Media categories that are uploaded in chunks and processed after the upload
       VIDEO_CATEGORIES = [AMPLIFY_VIDEO, DM_VIDEO, TWEET_VIDEO].freeze
       # Media categories uploaded in chunks: videos, and subtitles, which the API takes no other way
@@ -80,7 +82,7 @@ module X
       private_constant :MIME_TYPES, :BMP_MIME_TYPE, :GIF_MIME_TYPE, :JPEG_MIME_TYPE, :PJPEG_MIME_TYPE, :PNG_MIME_TYPE,
         :TIFF_MIME_TYPE, :WEBP_MIME_TYPE, :GLTF_BINARY_MIME_TYPE, :USDZ_MIME_TYPE, :SUBRIP_MIME_TYPE, :WEBVTT_MIME_TYPE,
         :MPEG_TS_MIME_TYPE, :MP4_MIME_TYPE, :QUICKTIME_MIME_TYPE, :WEBM_MIME_TYPE, :MIME_TYPE_MAP, :VIDEO_MIME_TYPES,
-        :SUBTITLES_MIME_TYPES, :MIN_CHECK_AFTER_SECS, :VIDEO_CATEGORIES, :CHUNKED_CATEGORIES, :GIF_CATEGORIES,
+        :SUBTITLES_MIME_TYPES, :MIN_CHECK_AFTER_SECS, :STATUS_COMMAND, :VIDEO_CATEGORIES, :CHUNKED_CATEGORIES, :GIF_CATEGORIES,
         :CATEGORY_MAP, :CATEGORY_MIME_TYPES
 
       # Upload a file, in chunks when the API needs them, awaiting any processing
@@ -235,7 +237,7 @@ module X
         waited = 0
         media_id = Utils.media_id(media)
         loop do
-          status = UploadedMedia.from(client.get("media/upload?command=STATUS&media_id=#{media_id}", **JSON_CLASSES)&.fetch("data"))
+          status = UploadedMedia.from(client.get("media/upload", params: {command: STATUS_COMMAND, media_id:}, **JSON_CLASSES)&.fetch("data"))
           return status unless status&.processing?
 
           wait = [status.check_after_secs.to_i, MIN_CHECK_AFTER_SECS].max

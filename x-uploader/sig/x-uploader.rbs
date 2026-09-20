@@ -141,6 +141,7 @@ module X
       DEFAULT_CONCURRENCY: Integer
       MAX_SIMPLE_UPLOAD_BYTES: Integer
       MIN_CHECK_AFTER_SECS: Integer
+      STATUS_COMMAND: String
       VIDEO_CATEGORIES: Array[String]
       CHUNKED_CATEGORIES: Array[String]
       GIF_CATEGORIES: Array[String]
