@@ -75,10 +75,8 @@ module X
 
       # The OAuth 2.0 authenticator of the client's credentials, if they form a set
       #
-      # A client keeps the authenticator it has while its client ID and secret and its tokens are the ones the
-      # authenticator holds, so that changing another credential or setting leaves it sharing the authenticator with
-      # its copies. A new expiration time is set on that authenticator, for every client that shares it, since an
-      # authenticator of its own would hold a refresh token that X accepts once from either.
+      # A copy of a client shares the authenticator of the client it was copied from, rather than the one this
+      # builds, when the two hold the same credentials; see share_authenticator.
       #
       # @api private
       # @return [OAuth2Authenticator, nil] the OAuth 2.0 authenticator or nil
@@ -88,11 +86,7 @@ module X
         refresh_token = @refresh_token
         return unless client_id && access_token && refresh_token
 
-        current = oauth2_authenticator_in_use
-        held = [client_id, @client_secret, access_token, refresh_token]
-        return new_oauth2_authenticator(client_id:, access_token:, refresh_token:) unless current && oauth2_credentials_of(current).eql?(held)
-
-        current.tap { |authenticator| authenticator.update_expires_at(@expires_at) }
+        new_oauth2_authenticator(client_id:, access_token:, refresh_token:)
       end
 
       private

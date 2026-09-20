@@ -77,10 +77,10 @@ module X
     def test_a_rejected_token_already_replaced_is_not_refreshed_again
       stub_users_me(TEST_ACCESS_TOKEN, status: 401)
       stub_users_me("REPLACED")
-      client = Client.new(**test_oauth2_credentials)
+      authenticator = nil #: OAuth2Authenticator?
+      client = Client.new(**test_oauth2_credentials, on_response: ->(_) { authenticator&.instance_variable_set(:@access_token, "REPLACED") })
       authenticator = client.authenticator
       authenticator.stub(:header, ->(_) { {"Authorization" => "Bearer #{authenticator.access_token}"} }) do
-        client.on_response = ->(_) { authenticator.instance_variable_set(:@access_token, "REPLACED") }
         client.get("users/me")
       end
 
@@ -122,13 +122,13 @@ module X
       assert_equal [client.authenticator], refreshed
     end
 
-    def test_on_token_refresh_can_be_set_later_and_is_optional
+    def test_on_token_refresh_is_optional_and_a_copy_can_add_one
       client = Client.new(**test_oauth2_credentials)
       client.authenticator.refresh_token!
       refreshed = []
-      client.on_token_refresh = ->(authenticator) { refreshed << authenticator.refresh_token }
+      copy = client.copy(on_token_refresh: ->(authenticator) { refreshed << authenticator.refresh_token })
       stub_token_refresh("NEWER_ACCESS_TOKEN", "NEWER_REFRESH_TOKEN")
-      client.authenticator.refresh_token!
+      copy.authenticator.refresh_token!
 
       assert_equal ["NEWER_REFRESH_TOKEN"], refreshed
     end
@@ -149,19 +149,11 @@ module X
       assert_equal expires_at, Client.new(**test_oauth2_credentials, expires_at:).authenticator.expires_at
     end
 
-    def test_expires_at_can_be_set
-      client = Client.new(**test_oauth2_credentials)
-      expires_at = Time.now + 60
-      client.expires_at = expires_at
+    def test_tokens_are_kept_when_another_set_authenticates
+      client = Client.new(**test_oauth_credentials, **test_oauth2_credentials)
 
-      assert_equal [expires_at, expires_at], [client.expires_at, client.authenticator.expires_at]
-    end
-
-    def test_tokens_are_kept_without_oauth2
-      client = Client.new(bearer_token: TEST_BEARER_TOKEN)
-      client.refresh_token = TEST_REFRESH_TOKEN
-
-      assert_equal [TEST_REFRESH_TOKEN, nil], [client.refresh_token, client.access_token]
+      assert_instance_of OAuth1Authenticator, client.authenticator
+      assert_equal [TEST_REFRESH_TOKEN, TEST_ACCESS_TOKEN], [client.refresh_token, client.access_token]
     end
 
     def test_expires_at_is_kept_without_oauth2
@@ -170,28 +162,27 @@ module X
       assert_equal expires_at, Client.new(bearer_token: TEST_BEARER_TOKEN, expires_at:).expires_at
     end
 
-    def test_changing_a_credential_keeps_the_refreshed_tokens
+    def test_a_copy_with_another_credential_keeps_the_refreshed_tokens
       client = Client.new(**test_oauth2_credentials)
       client.authenticator.refresh_token!
-      client.client_secret = "NEW_CLIENT_SECRET"
+      copy = client.copy(client_secret: "NEW_CLIENT_SECRET")
 
       assert_equal ["NEW_CLIENT_SECRET", "NEW_ACCESS_TOKEN", "NEW_REFRESH_TOKEN"],
-        [client.authenticator.client_secret, client.authenticator.access_token, client.authenticator.refresh_token]
+        [copy.authenticator.client_secret, copy.authenticator.access_token, copy.authenticator.refresh_token]
     end
 
-    def test_setting_a_token_replaces_the_refreshed_one
+    def test_a_copy_given_a_token_replaces_the_refreshed_one
       client = Client.new(**test_oauth2_credentials)
       client.authenticator.refresh_token!
-      client.access_token = "GIVEN_ACCESS_TOKEN"
+      copy = client.copy(access_token: "GIVEN_ACCESS_TOKEN")
 
-      assert_equal ["GIVEN_ACCESS_TOKEN", "NEW_REFRESH_TOKEN"], [client.authenticator.access_token, client.authenticator.refresh_token]
+      assert_equal ["GIVEN_ACCESS_TOKEN", "NEW_REFRESH_TOKEN"], [copy.authenticator.access_token, copy.authenticator.refresh_token]
     end
 
-    def test_an_oauth1_client_signs_with_a_new_access_token
-      client = Client.new(**test_oauth_credentials)
-      client.access_token = "GIVEN_ACCESS_TOKEN"
+    def test_an_oauth1_copy_signs_with_a_new_access_token
+      copy = Client.new(**test_oauth_credentials).copy(access_token: "GIVEN_ACCESS_TOKEN")
 
-      assert_equal "GIVEN_ACCESS_TOKEN", client.authenticator.access_token
+      assert_equal "GIVEN_ACCESS_TOKEN", copy.authenticator.access_token
     end
 
     def test_a_copy_shares_the_authenticator_so_a_refresh_reaches_both

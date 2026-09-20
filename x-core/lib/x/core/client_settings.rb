@@ -9,6 +9,11 @@ module X
   module Core
     # The settings of a client other than its credentials: its base URL, parsing classes, hook, and the settings of
     # its connection and handlers, included into Client
+    #
+    # A client is built with the settings it keeps for as long as it lives. {Client#copy} derives a client whose
+    # settings differ, rather than replacing the ones a client holds, so that a request never runs under a setting
+    # another thread is halfway through changing.
+    #
     # @api private
     module ClientSettings
       extend Forwardable
@@ -23,47 +28,25 @@ module X
       # The default class for parsing JSON arrays
       # @api public
       # @return [Class] the default class for parsing JSON arrays
-      # @example Get or set the default array class
-      #   client.default_array_class = Set
-      attr_accessor :default_array_class
+      # @example Get the default array class
+      #   client.default_array_class # => Array
+      attr_reader :default_array_class
 
       # The default class for parsing JSON objects
       # @api public
       # @return [Class] the default class for parsing JSON objects
-      # @example Get or set the default object class
-      #   client.default_object_class = OpenStruct
-      attr_accessor :default_object_class
+      # @example Get the default object class
+      #   client.default_object_class # => Hash
+      attr_reader :default_object_class
 
       # A callable passed an X::Response after each request and streamed object
       # @api public
       # @return [#call, nil] the callable, or nil for none
-      # @example Total the resources a client reads
-      #   client.on_response = ->(response) { total += response.resource_count }
-      attr_accessor :on_response
+      # @example Read the hook a client reports to
+      #   client.on_response
+      attr_reader :on_response
 
       # The headers sent with every request the client makes
-      # @api public
-      # @return [Hash{String => String}] the headers, frozen
-      # @example Read the headers a client sends
-      #   client.headers # => {"User-Agent" => "my-app/1.0"}
-      attr_reader :headers
-
-      # Set the base URL for API requests
-      #
-      # An endpoint is resolved against the base URL, which drops the last segment of a path that does not end with a
-      # slash, so a slash is added to a base URL without one.
-      #
-      # @api public
-      # @param base_url [String] the base URL for API requests
-      # @return [void]
-      # @example Set the base URL
-      #   client.base_url = "https://api.x.com/1.1"
-      #   client.base_url # => "https://api.x.com/1.1/"
-      def base_url=(base_url)
-        @base_url = base_url.end_with?("/") ? base_url : "#{base_url}/"
-      end
-
-      # Set the headers sent with every request the client makes
       #
       # They are defaults: a header of the same name passed to a request, or to a stream, is sent in place of the
       # client's, and each of them is sent in place of a default of the gem, such as its User-Agent. A header that
@@ -71,18 +54,14 @@ module X
       # passed to a request is.
       #
       # @api public
-      # @param headers [Hash{String => String}] the headers, which are copied and frozen
-      # @return [void]
-      # @example Name the application in the User-Agent of every request
-      #   client.headers = {"User-Agent" => "my-app/1.0 (+https://example.com)"}
-      def headers=(headers)
-        @headers = headers.dup.freeze
-      end
+      # @return [Hash{String => String}] the headers, frozen
+      # @example Read the headers a client sends
+      #   client.headers # => {"User-Agent" => "my-app/1.0"}
+      attr_reader :headers
 
       def_delegators :@connection, :open_timeout, :read_timeout, :write_timeout, :keep_alive_timeout, :proxy_url, :debug_output
-      def_delegators :@connection, :open_timeout=, :read_timeout=, :write_timeout=, :keep_alive_timeout=, :proxy_url=, :debug_output=
-      def_delegators :@redirect_handler, :max_redirects, :max_redirects=
-      def_delegators :@rate_limit_handler, :max_rate_limit_retries, :max_rate_limit_retries=, :max_rate_limit_wait, :max_rate_limit_wait=
+      def_delegators :@redirect_handler, :max_redirects
+      def_delegators :@rate_limit_handler, :max_rate_limit_retries, :max_rate_limit_wait
 
       protected
 
@@ -98,6 +77,11 @@ module X
       private
 
       # Initialize the settings, and the handlers of redirects and rate limits
+      #
+      # An endpoint is resolved against the base URL, which drops the last segment of a path that does not end with a
+      # slash, so a slash is added to a base URL without one. The headers are copied and frozen, so that changing the
+      # Hash a client was built with never changes what it sends.
+      #
       # @api private
       # @param base_url [String] the base URL for API requests
       # @param default_array_class [Class] the default class for parsing JSON arrays
@@ -110,10 +94,10 @@ module X
       # @return [void]
       def initialize_settings(base_url:, default_array_class:, default_object_class:, headers:, on_response:,
         max_redirects:, max_rate_limit_retries:, max_rate_limit_wait:)
-        self.base_url = base_url
+        @base_url = base_url.end_with?("/") ? base_url : "#{base_url}/"
         @default_array_class = default_array_class
         @default_object_class = default_object_class
-        self.headers = headers
+        @headers = headers.dup.freeze
         @on_response = on_response
         @redirect_handler = RedirectHandler.new(connection: @connection, request_builder: @request_builder, max_redirects:)
         @rate_limit_handler = RateLimitHandler.new(max_rate_limit_retries:, max_rate_limit_wait:)

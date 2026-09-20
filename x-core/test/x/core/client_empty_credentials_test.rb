@@ -31,21 +31,6 @@ module X
       assert_match(/\Aaccess_token_secret is empty/, error.message)
     end
 
-    def test_setting_an_empty_credential_is_refused_and_leaves_the_client_as_it_was
-      client = Client.new(bearer_token: TEST_BEARER_TOKEN)
-
-      assert_raises(ArgumentError) { client.bearer_token = "" }
-      assert_equal TEST_BEARER_TOKEN, client.bearer_token
-      assert_instance_of BearerTokenAuthenticator, client.authenticator
-    end
-
-    def test_updating_to_an_empty_credential_is_refused_and_leaves_the_client_as_it_was
-      client = Client.new(**test_oauth_credentials)
-
-      assert_raises(ArgumentError) { client.update_credentials(access_token: "", access_token_secret: "") }
-      assert_equal TEST_ACCESS_TOKEN, client.access_token
-    end
-
     def test_copying_with_an_empty_credential_is_refused
       assert_raises(ArgumentError) { Client.new(**test_oauth_credentials).copy(api_key: "") }
     end

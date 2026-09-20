@@ -36,29 +36,6 @@ module X
 
       assert_instance_of AppOnlyAuthenticator, client.authenticator
     end
-
-    def test_setting_oauth_credentials
-      client = Client.new
-      test_oauth_credentials.each do |credential, value|
-        client.public_send(:"#{credential}=", value)
-
-        assert_equal value, client.public_send(credential)
-      end
-
-      assert_instance_of OAuth1Authenticator, client.authenticator
-    end
-
-    def test_setting_oauth_credentials_reinitializes_authenticator
-      client = Client.new
-      test_oauth_credentials.each do |credential, value|
-        initialize_authenticator_called = false
-        client.stub :initialize_authenticator, -> { initialize_authenticator_called = true } do
-          client.public_send(:"#{credential}=", value)
-        end
-
-        assert initialize_authenticator_called, "Expected initialize_authenticator to be called"
-      end
-    end
   end
 
   class ClientOAuth2InitializationTest < Minitest::Test
@@ -89,29 +66,6 @@ module X
         assert_raises(ArgumentError) { Client.new(**test_oauth2_credentials.except(missing_credential)) }
       end
     end
-
-    def test_setting_oauth2_credentials
-      client = Client.new
-      test_oauth2_credentials.each do |credential, value|
-        client.public_send(:"#{credential}=", value)
-
-        assert_equal value, client.public_send(credential)
-      end
-
-      assert_instance_of OAuth2Authenticator, client.authenticator
-    end
-
-    def test_setting_oauth2_credentials_reinitializes_authenticator
-      client = Client.new
-      test_oauth2_credentials.each do |credential, value|
-        initialize_authenticator_called = false
-        client.stub :initialize_authenticator, -> { initialize_authenticator_called = true } do
-          client.public_send(:"#{credential}=", value)
-        end
-
-        assert initialize_authenticator_called, "Expected initialize_authenticator to be called"
-      end
-    end
   end
 
   class ClientAuthenticatorPrecedenceTest < Minitest::Test
@@ -130,21 +84,11 @@ module X
       assert_instance_of OAuth2Authenticator, client.authenticator
     end
 
-    def test_setting_bearer_token
-      client = Client.new
-      client.bearer_token = "bearer_token"
+    def test_a_bearer_token_alone_authenticates_with_it
+      client = Client.new(bearer_token: "bearer_token")
 
       assert_equal "bearer_token", client.bearer_token
       assert_instance_of BearerTokenAuthenticator, client.authenticator
-    end
-
-    def test_clearing_credentials_of_a_client_without_them_sends_none
-      client = Client.new
-
-      client.api_key = nil
-      client.bearer_token = nil
-
-      assert_instance_of Authenticator, client.authenticator
     end
   end
 
@@ -191,9 +135,7 @@ module X
       client = Client.new(base_url: "https://api.x.com/2")
 
       assert_equal "https://api.x.com/2/", client.base_url
-      client.base_url = "https://api.x.com/1.1"
-
-      assert_equal "https://api.x.com/1.1/", client.base_url
+      assert_equal "https://api.x.com/1.1/", client.copy(base_url: "https://api.x.com/1.1").base_url
     end
 
     def test_requests_keep_the_last_segment_of_a_base_url_without_a_slash
@@ -256,12 +198,11 @@ module X
       assert_requested :get, "https://api.x.com/2/tweets/1", times: 2
     end
 
-    def test_setting_access_tokens_switches_to_oauth
+    def test_a_copy_given_access_tokens_switches_to_oauth
       client = Client.new(api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET)
-      client.access_token = TEST_ACCESS_TOKEN
-      client.access_token_secret = TEST_ACCESS_TOKEN_SECRET
+      copy = client.copy(access_token: TEST_ACCESS_TOKEN, access_token_secret: TEST_ACCESS_TOKEN_SECRET)
 
-      assert_instance_of OAuth1Authenticator, client.authenticator
+      assert_instance_of OAuth1Authenticator, copy.authenticator
     end
   end
 end

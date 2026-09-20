@@ -23,14 +23,14 @@ module X
       # @return [Integer] the maximum number of retries
       # @example Get or set the maximum retries
       #   handler.max_rate_limit_retries = 3
-      attr_accessor :max_rate_limit_retries
+      attr_reader :max_rate_limit_retries
 
       # The maximum number of seconds to wait for a rate limit to reset before retrying
       # @api private
       # @return [Integer] the maximum wait in seconds
       # @example Get or set the maximum wait
       #   handler.max_rate_limit_wait = 60
-      attr_accessor :max_rate_limit_wait
+      attr_reader :max_rate_limit_wait
 
       # Initialize a new rate limit handler
       #

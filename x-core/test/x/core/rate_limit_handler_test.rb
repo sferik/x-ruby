@@ -35,16 +35,14 @@ module X
     end
 
     def test_raises_the_error_once_the_retries_run_out
-      handler = Core::RateLimitHandler.new(max_rate_limit_retries: 2)
-      handler.max_rate_limit_retries = 1
+      handler = Core::RateLimitHandler.new(max_rate_limit_retries: 1)
 
       assert_raises(TooManyRequests) { handle(handler) { refuse(reset_in: 0) } }
       assert_equal [2, [0]], [@attempts, @sleeps]
     end
 
     def test_raises_at_once_when_the_limit_resets_after_the_maximum_wait
-      handler = Core::RateLimitHandler.new(max_rate_limit_retries: 3, max_rate_limit_wait: 60)
-      handler.max_rate_limit_wait = 10
+      handler = Core::RateLimitHandler.new(max_rate_limit_retries: 3, max_rate_limit_wait: 10)
 
       assert_raises(TooManyRequests) { handle(handler) { refuse(reset_in: 11) } }
       assert_equal [1, []], [@attempts, @sleeps]

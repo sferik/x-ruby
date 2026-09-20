@@ -38,41 +38,31 @@ module X
 
       private
 
-      # The app-only copy of the client, kept until its credentials or settings change
+      # The app-only copy of the client, built once
       #
-      # The copy is built under a lock, so that threads which ask for it together build one copy and fetch one token,
-      # and the copy that a change of credentials or settings replaces closes the connections it kept open.
+      # The credentials and settings of a client never change, so the copy is built once and returned from then on.
+      # It is built under a lock, so that threads which ask for it together build one copy and fetch one token.
       #
       # @api private
       # @return [Client] the copy
       def app_only_copy
-        @app_only_monitor.synchronize do
-          source = {**credentials, **settings}
-          @app_only.fetch(source) { replace_app_only(source) }
-        end
+        @app_only_monitor.synchronize { @app_only ||= build_app_only }
       end
 
-      # Build the app-only copy, closing the connections of the copy it replaces
+      # Build a copy that holds the app's credentials and bearer token
       # @api private
-      # @param source [Hash{Symbol => Object}] the credentials and settings the copy is built from
       # @return [Client] the copy
-      def replace_app_only(source)
-        @app_only.each_value(&:close)
-        copy(**credentials.to_h { |name, _| [name, nil] }, api_key:, api_key_secret:, bearer_token: app_bearer_token).tap { |app_client| @app_only = {source => app_client} }
+      def build_app_only
+        copy(**credentials.to_h { |name, _| [name, nil] }, api_key:, api_key_secret:, bearer_token: app_bearer_token)
       end
 
-      # The app-only bearer token, fetched once with the API key and secret
+      # The app-only bearer token, the client's own or one it fetches
       # @api private
       # @return [String] the bearer token
-      def app_bearer_token = bearer_token || fetched_app_bearer_token
-
-      # The app-only bearer token this client fetched, fetching it the first time
-      # @api private
-      # @return [String] the bearer token
-      def fetched_app_bearer_token
+      def app_bearer_token
         key = api_key #: String
         secret = api_key_secret #: String
-        @app_bearer_token ||= AppOnlyAuthenticator.new(api_key: key, api_key_secret: secret, connection: @connection).bearer_token
+        bearer_token || AppOnlyAuthenticator.new(api_key: key, api_key_secret: secret, connection: @connection).bearer_token
       end
     end
   end

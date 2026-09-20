@@ -20,14 +20,13 @@ module X
       assert_equal [0, 900], [client.max_rate_limit_retries, client.max_rate_limit_wait]
     end
 
-    def test_options_can_be_set_and_are_copied
+    def test_options_are_copied
       client = Client.new(max_rate_limit_retries: 3, max_rate_limit_wait: 60)
 
-      assert_equal [3, 60], [client.max_rate_limit_retries, client.max_rate_limit_wait]
-      client.max_rate_limit_retries = 1
-      client.max_rate_limit_wait = 10
+      assert_equal [3, 60], [client.copy.max_rate_limit_retries, client.copy.max_rate_limit_wait]
+      copy = client.copy(max_rate_limit_retries: 1, max_rate_limit_wait: 10)
 
-      assert_equal [1, 10], [client.copy.max_rate_limit_retries, client.copy.max_rate_limit_wait]
+      assert_equal [1, 10], [copy.max_rate_limit_retries, copy.max_rate_limit_wait]
     end
 
     def test_a_request_is_signed_afresh_and_retried_after_the_reset

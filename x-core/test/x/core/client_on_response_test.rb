@@ -44,14 +44,13 @@ module X
       assert_equal [[:get, 429, '{"title":"Too Many Requests"}']], @responses.map { |response| [response.http_method, response.status, response.body] }
     end
 
-    def test_on_response_is_optional_and_can_be_set_later
+    def test_on_response_is_optional_and_a_copy_can_add_one
       stub_request(:delete, "https://api.x.com/2/tweets/1")
       client = Client.new
       client.delete("tweets/1")
 
       assert_nil client.on_response
-      client.on_response = ->(response) { @responses << response }
-      client.delete("tweets/1")
+      client.copy(on_response: ->(response) { @responses << response }).delete("tweets/1")
 
       assert_equal [:delete], @responses.map(&:http_method)
     end

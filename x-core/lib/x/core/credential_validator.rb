@@ -9,8 +9,8 @@ module X
     # authenticate as the app, or with a bearer token, rather than as the user it belongs to, and any other credential
     # of a set that is not complete, such as a client ID beside a bearer token, is a mistake that a client would
     # otherwise hide. So every credential must belong to a complete set. A client may hold several, such as the
-    # bearer token of an app beside its API key and secret. A setter changes one credential at a time, and checks
-    # nothing, since the set it changes is complete only once every setter has been called.
+    # bearer token of an app beside its API key and secret. A client never changes the credentials it was
+    # built with, so this runs once, when the client is built.
     #
     # @api private
     module CredentialValidator

@@ -29,8 +29,7 @@ module X
     end
 
     def test_an_app_only_copy_holds_the_credentials_of_the_app_alone
-      client = Client.new(**test_oauth_credentials, **test_oauth2_credentials, expires_at: Time.now + 60)
-      client.client_secret = nil
+      client = Client.new(**test_oauth_credentials, **test_oauth2_credentials.except(:client_secret), expires_at: Time.now + 60)
       copy = client.app_only
 
       assert_instance_of BearerTokenAuthenticator, copy.authenticator
@@ -63,8 +62,7 @@ module X
     end
 
     def test_the_client_connection_settings_reach_the_token_request
-      client = Client.new(api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET)
-      client.proxy_url = "http://proxy.example.com:8080"
+      client = Client.new(api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET, proxy_url: "http://proxy.example.com:8080")
 
       assert_equal "http://proxy.example.com:8080", client.authenticator.connection.proxy_url
     end

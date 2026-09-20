@@ -79,8 +79,8 @@ module X
       DEFAULT_MAX_WAIT: Integer
       UNREPORTED_RESET_WAIT: Integer
 
-      attr_accessor max_rate_limit_retries: Integer
-      attr_accessor max_rate_limit_wait: Integer
+      attr_reader max_rate_limit_retries: Integer
+      attr_reader max_rate_limit_wait: Integer
       def initialize: (?max_rate_limit_retries: Integer, ?max_rate_limit_wait: Integer) -> void
       def handle: [T] () { () -> T } -> T
 
@@ -132,7 +132,7 @@ module X
 
       attr_reader connection: Connection
       attr_reader request_builder: RequestBuilder
-      attr_accessor max_redirects: Integer
+      attr_reader max_redirects: Integer
       def initialize: (?connection: Connection, ?request_builder: RequestBuilder, ?max_redirects: Integer) -> void
       def handle: (response: Net::HTTPResponse, request: Net::HTTPRequest, ?headers: Hash[String, String], ?authenticator: Authenticator, ?redirect_count: Integer) -> Net::HTTPResponse
 
@@ -202,12 +202,10 @@ module X
       @rate_limit_handler: RateLimitHandler
 
       attr_reader base_url: String
-      def base_url=: (String base_url) -> void
-      attr_accessor default_array_class: Class
-      attr_accessor default_object_class: Class
-      attr_accessor on_response: _ResponseHook?
+      attr_reader default_array_class: Class
+      attr_reader default_object_class: Class
+      attr_reader on_response: _ResponseHook?
       attr_reader headers: Hash[String, String]
-      def headers=: (Hash[String, String] headers) -> void
       def open_timeout: () -> (Float | Integer)
       def read_timeout: () -> (Float | Integer)
       def write_timeout: () -> (Float | Integer)
@@ -217,15 +215,6 @@ module X
       def max_redirects: () -> Integer
       def max_rate_limit_retries: () -> Integer
       def max_rate_limit_wait: () -> Integer
-      def open_timeout=: (Float | Integer timeout) -> (Float | Integer)
-      def read_timeout=: (Float | Integer timeout) -> (Float | Integer)
-      def write_timeout=: (Float | Integer timeout) -> (Float | Integer)
-      def keep_alive_timeout=: (Float | Integer keep_alive_timeout) -> void
-      def proxy_url=: ((URI::Generic | String)? proxy_url) -> void
-      def debug_output=: (IO? debug_output) -> void
-      def max_redirects=: (Integer max_redirects) -> Integer
-      def max_rate_limit_retries=: (Integer max_rate_limit_retries) -> Integer
-      def max_rate_limit_wait=: (Integer max_rate_limit_wait) -> Integer
 
       def settings: () -> Hash[Symbol, untyped]
 
@@ -238,8 +227,7 @@ module X
     module ClientAppOnly : _CredentialHost
       NO_APP_CREDENTIALS: String
 
-      @app_bearer_token: String?
-      @app_only: Hash[Hash[Symbol, untyped], Client]
+      @app_only: Client?
       @app_only_monitor: Monitor
       @connection: Connection
 
@@ -247,9 +235,8 @@ module X
 
       private
       def app_only_copy: () -> Client
-      def replace_app_only: (Hash[Symbol, untyped] source) -> Client
+      def build_app_only: () -> Client
       def app_bearer_token: () -> String
-      def fetched_app_bearer_token: () -> String
       def credentials: () -> { api_key: String?, api_key_secret: String?, access_token: String?, access_token_secret: String?, bearer_token: String?, client_id: String?, client_secret: String?, refresh_token: String?, expires_at: Time? }
       def api_key: () -> String?
       def api_key_secret: () -> String?
@@ -257,9 +244,6 @@ module X
     end
 
     module ClientCredentials : _CredentialHost
-      UNKNOWN_CREDENTIAL: String
-
-      @app_bearer_token: String?
       @token_refresh_clients: _ClientRegistry
       @connection: Connection
 
@@ -274,19 +258,8 @@ module X
       attr_reader bearer_token: String?
       attr_reader client_id: String?
       attr_reader client_secret: String?
-      def api_key=: (String? api_key) -> void
-      def api_key_secret=: (String? api_key_secret) -> void
-      def access_token=: (String? access_token) -> void
-      def access_token_secret=: (String? access_token_secret) -> void
-      def bearer_token=: (String? bearer_token) -> void
-      def client_id=: (String? client_id) -> void
-      def client_secret=: (String? client_secret) -> void
-      def refresh_token=: (String? refresh_token) -> void
-      def expires_at=: (Time? expires_at) -> void
-      def update_credentials: (**String | Time | nil changes) -> void
 
       private
-      def replace_credentials: (**String | Time | nil changes) -> void
       def credentials: () -> { api_key: String?, api_key_secret: String?, access_token: String?, access_token_secret: String?, bearer_token: String?, client_id: String?, client_secret: String?, refresh_token: String?, expires_at: Time? }
       def initialize_credentials: (api_key: String?, api_key_secret: String?, access_token: String?, access_token_secret: String?, bearer_token: String?, client_id: String?, client_secret: String?, refresh_token: String?, expires_at: Time?) -> void
       def initialize_authenticator: () -> void
@@ -711,7 +684,7 @@ module X
     @refresh_token: String?
     @expires_at: Time?
 
-    attr_accessor on_token_refresh: _TokenRefreshHook?
+    attr_reader on_token_refresh: _TokenRefreshHook?
     attr_reader authenticator: Authenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator
     def initialize: (?api_key: String?, ?api_key_secret: String?, ?access_token: String?, ?access_token_secret: String?, ?bearer_token: String?, ?client_id: String?, ?client_secret: String?, ?refresh_token: String?, ?expires_at: Time?, ?base_url: String, ?open_timeout: Float | Integer, ?read_timeout: Float | Integer, ?write_timeout: Float | Integer, ?keep_alive_timeout: Float | Integer, ?debug_output: IO?, ?proxy_url: (URI::Generic | String)?, ?default_array_class: Class, ?default_object_class: Class, ?headers: Hash[String, String], ?max_redirects: Integer, ?max_rate_limit_retries: Integer, ?max_rate_limit_wait: Integer, ?on_response: _ResponseHook?, ?on_token_refresh: _TokenRefreshHook?) -> void
     def inspect: () -> String

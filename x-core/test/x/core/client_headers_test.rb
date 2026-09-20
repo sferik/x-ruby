@@ -53,15 +53,6 @@ module X
       assert_equal({"X-Trace" => "abc"}, client.headers)
     end
 
-    def test_the_headers_can_be_replaced
-      client = Client.new(headers: {"X-Trace" => "abc"})
-      client.headers = {"X-Trace" => "xyz"}
-      stub_request(:get, "https://api.x.com/2/users/me")
-      client.get("users/me")
-
-      assert_requested :get, "https://api.x.com/2/users/me", headers: {"X-Trace" => "xyz"}
-    end
-
     def test_a_copy_keeps_the_headers
       assert_equal({"X-Trace" => "abc"}, Client.new(headers: {"X-Trace" => "abc"}).copy(max_redirects: 1).headers)
     end

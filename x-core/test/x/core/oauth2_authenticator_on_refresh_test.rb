@@ -77,8 +77,8 @@ module X
 
     def test_on_token_refresh_can_send_a_request_with_the_client
       users = []
-      client = Client.new(**test_oauth2_credentials, expires_at: Time.now - 1)
-      client.on_token_refresh = ->(_) { users << client.get("users/me") }
+      client = nil #: Client?
+      client = Client.new(**test_oauth2_credentials, expires_at: Time.now - 1, on_token_refresh: ->(_) { users << client&.get("users/me") })
 
       assert_equal({"data" => {"id" => "1"}}, client.get("users/me"))
       assert_equal [{"data" => {"id" => "1"}}], users

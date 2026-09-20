@@ -33,10 +33,10 @@ module X
       assert_same expires_at, Client.new(**test_oauth2_credentials, expires_at:).expires_at
     end
 
-    def test_setting_an_expiration_time_that_is_not_a_time_is_refused
+    def test_copying_with_an_expiration_time_that_is_not_a_time_is_refused
       client = Client.new(**test_oauth2_credentials, expires_at: Time.now + 60)
 
-      assert_raises(ArgumentError) { client.expires_at = "2026-09-16T00:00:00Z" }
+      assert_raises(ArgumentError) { client.copy(expires_at: "2026-09-16T00:00:00Z") }
       assert_kind_of Time, client.expires_at
     end
 
@@ -101,13 +101,6 @@ module X
       client = Client.new(**test_oauth_credentials)
 
       assert_raises(ArgumentError) { client.copy(access_token_secret: nil) }
-    end
-
-    def test_setting_one_credential_at_a_time_keeps_the_authenticator_until_a_set_is_complete
-      client = Client.new(bearer_token: TEST_BEARER_TOKEN)
-      client.access_token = TEST_ACCESS_TOKEN
-
-      assert_instance_of BearerTokenAuthenticator, client.authenticator
     end
   end
 end

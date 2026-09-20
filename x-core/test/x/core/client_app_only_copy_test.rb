@@ -11,15 +11,12 @@ module X
         .to_return(status: 200, body: {token_type: "bearer", access_token: TEST_BEARER_TOKEN}.to_json)
     end
 
-    def test_an_oauth1_client_returns_the_same_copy_until_its_settings_change
+    def test_an_oauth1_client_returns_the_same_copy
       client = Client.new(**test_oauth_credentials)
       copy = client.app_only
 
       assert_same copy, client.app_only
-      client.read_timeout = 5
-
-      refute_same copy, client.app_only
-      assert_equal 5, client.app_only.read_timeout
+      assert_requested @token_request, times: 1
     end
 
     def test_threads_that_ask_for_the_copy_together_get_one_copy_and_fetch_one_token
@@ -35,12 +32,10 @@ module X
       assert_requested token_request, times: 1
     end
 
-    def test_changing_credentials_fetches_the_token_again
+    def test_a_copy_of_a_client_fetches_a_token_of_its_own
       client = Client.new(**test_oauth_credentials)
-      copy = client.app_only
-      client.api_key = "NEW_API_KEY"
 
-      refute_same copy, client.app_only
+      refute_same client.app_only, client.copy.app_only
       assert_requested @token_request, times: 2
     end
   end

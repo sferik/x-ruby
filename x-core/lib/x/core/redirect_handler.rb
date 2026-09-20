@@ -26,7 +26,7 @@ module X
       # @return [Integer] the maximum number of redirects to follow
       # @example Get or set the maximum redirects
       #   handler.max_redirects = 5
-      attr_accessor :max_redirects
+      attr_reader :max_redirects
 
       # The connection for making requests
       # @api private

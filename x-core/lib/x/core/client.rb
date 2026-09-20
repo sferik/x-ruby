@@ -57,9 +57,9 @@ module X
     # A callable passed the OAuth 2.0 authenticator after each refresh
     # @api public
     # @return [#call, nil] the callable, or nil for none
-    # @example Store the tokens of each refresh
-    #   client.on_token_refresh = ->(auth) { store.save(auth.access_token, auth.refresh_token, auth.expires_at) }
-    attr_accessor :on_token_refresh
+    # @example Read the hook a refresh reports to
+    #   client.on_token_refresh
+    attr_reader :on_token_refresh
 
     # Initialize a new X API client
     #
@@ -132,7 +132,6 @@ module X
       on_response: nil,
       on_token_refresh: nil)
       @connection = Connection.new(open_timeout:, read_timeout:, write_timeout:, keep_alive_timeout:, debug_output:, proxy_url:)
-      @app_only = {}
       @app_only_monitor = Monitor.new
       @request_builder = Core::RequestBuilder.new
       @response_parser = Core::ResponseParser.new
@@ -268,7 +267,7 @@ module X
     #   client.close
     def close
       @connection.close
-      @app_only.each_value(&:close)
+      @app_only&.close
     end
 
     private
