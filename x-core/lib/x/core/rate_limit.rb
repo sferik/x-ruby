@@ -110,13 +110,5 @@ module X
     def reset_in
       [(reset_at - Time.now).ceil, 0].max
     end
-
-    # @!method retry_after
-    #   Alias for reset_in, returns the seconds until the rate limit resets
-    #   @api public
-    #   @return [Integer] the seconds until the rate limit resets
-    #   @example Get the retry after time
-    #     rate_limit.retry_after
-    alias_method :retry_after, :reset_in
   end
 end

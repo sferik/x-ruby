@@ -325,7 +325,6 @@ module X
     def exhausted?: -> bool
     def reset_at: -> Time
     def reset_in: -> Integer
-    def retry_after: -> Integer
   end
 
   class RequestBuilder
