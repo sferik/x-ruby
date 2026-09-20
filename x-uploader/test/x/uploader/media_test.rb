@@ -40,6 +40,13 @@ module X
       assert_equal TEST_MEDIA_ID, response["id"]
     end
 
+    def test_upload_binary_refuses_amplify_video_before_a_request
+      error = assert_raises(ArgumentError) { Uploader::Media.upload_binary("data", client: @client, media_category: :amplify_video) }
+
+      assert_equal "amplify_video uploads in chunks alone: pass the file to upload or chunked_upload", error.message
+      assert_not_requested :post, "https://api.x.com/2/media/upload"
+    end
+
     def test_upload_binary_returns_nil_for_empty_response
       stub_request(:post, UPLOAD_URL).to_return(status: 204)
 

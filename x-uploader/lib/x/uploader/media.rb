@@ -167,11 +167,14 @@ module X
       # @param client [Client] the X API client
       # @param media_category [String, Symbol] the media category, which content cannot be inferred from, in any case
       # @return [UploadedMedia, nil] the uploaded media, which holds the upload response
-      # @raise [ArgumentError] if the media category is invalid
+      # @raise [ArgumentError] if the media category is invalid, or is amplify_video, which the API takes in chunks
+      #   alone
       # @example Upload binary content
       #   Uploader::Media.upload_binary(data, client: client, media_category: "tweet_image")
       def upload_binary(content, client:, media_category:)
         media_category = Validator.validate_media_category!(media_category)
+        raise ArgumentError, "amplify_video uploads in chunks alone: pass the file to upload or chunked_upload" if media_category.eql?(AMPLIFY_VIDEO)
+
         boundary = SecureRandom.hex
         upload_body = Multipart.body("media", content, boundary:, media_category:)
         UploadedMedia.from(client.post("media/upload", upload_body, headers: Multipart.headers(boundary), **JSON_CLASSES)&.fetch("data"))
