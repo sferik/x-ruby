@@ -105,7 +105,7 @@ module X
       stream = stub_request(:get, "https://api.x.com/2/tweets/search/stream")
       error = assert_raises(ArgumentError) { streaming.stream("tweets/search/stream") }
 
-      assert_equal StreamingClient::NO_BLOCK_MESSAGE, error.message
+      assert_equal "stream takes a block, which receives each object the stream delivers", error.message
       assert_not_requested stream
     end
 

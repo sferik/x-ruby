@@ -12,6 +12,7 @@ module X
     TOKEN_URL = "https://api.x.com/oauth2/token".freeze
     # The message raised when the token endpoint describes no reason for the failure
     DEFAULT_ERROR_MESSAGE = "Bearer token request failed".freeze
+    private_constant :DEFAULT_ERROR_MESSAGE
 
     # The API key
     # @api public
@@ -52,7 +53,10 @@ module X
 
     # Generate the authentication header, fetching the bearer token first if needed
     #
-    # @api public
+    # Internal to x-core: RequestBuilder signs its requests with it, and it takes the Net::HTTP request it signs,
+    # so that it can change within 1.x, as that request may.
+    #
+    # @api private
     # @param _request [Net::HTTPRequest, nil] the request, which app-only authentication does not sign
     # @return [Hash{String => String}] the authorization header
     # @raise [AuthorizationError] if X refuses to issue the bearer token

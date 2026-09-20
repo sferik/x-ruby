@@ -22,6 +22,14 @@ module X
       assert_nil error.retry_after
     end
 
+    def test_all_from_reads_every_limit_a_response_reports_in_the_order_of_the_types
+      http_response = response(FULL.merge("x-user-limit-24hour-limit" => "25", "x-user-limit-24hour-remaining" => "5",
+        "x-user-limit-24hour-reset" => "2"))
+
+      assert_equal [["rate-limit", 0], ["user-limit-24hour", 5]],
+        RateLimit.all_from(http_response).map { |limit| [limit.type, limit.remaining] }
+    end
+
     def test_a_summary_leaves_out_a_limit_without_every_header
       http_response = response(FULL.except("x-rate-limit-limit"))
 

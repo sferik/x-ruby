@@ -1,5 +1,6 @@
 require "json"
 require "net/http"
+require_relative "errors/stream_callback_error"
 require_relative "response_parser"
 
 module X
@@ -27,13 +28,17 @@ module X
     # @return [void]
     # @raise [HTTPError] if the response is not successful
     # @raise [InvalidResponse] if a line of the stream is not JSON, which the error holds as its body
+    # @raise [StreamCallbackError] if on_body, or the object_class that builds each object, raises, so that the
+    #   connection raises that error rather than take it for a network error and reconnect
     # @example Process a streaming response
     #   handler.process(response: response, response_parser: parser) { |json| puts json }
     def process(response:, response_parser:, array_class: nil, object_class: nil, client: nil, on_body: nil, &block)
       raise_unless_successful(response:, response_parser:, on_body:)
       decode = lambda do |line|
-        on_body&.call(line)
-        response_parser.decode(line, array_class:, object_class:, client:)
+        tagging_callback_errors do
+          on_body&.call(line)
+          response_parser.decode(line, array_class:, object_class:, client:)
+        end
       rescue JSON::ParserError
         raise InvalidResponse.new(response:, body: line)
       end
@@ -49,11 +54,31 @@ module X
     # @param on_body [#call, nil] a callable called before the error is raised
     # @return [void]
     # @raise [HTTPError] if the response is not successful
+    # @raise [StreamCallbackError] if on_body raises
     def raise_unless_successful(response:, response_parser:, on_body:)
       return if response.is_a?(Net::HTTPSuccess)
 
-      on_body&.call
+      tagging_callback_errors { on_body&.call }
       response_parser.parse(response:)
+    end
+
+    # Run the callbacks of a line, tagging the error one of them raises
+    #
+    # The errors a socket raises are the errors a stream reconnects after, so a callback that raises one of them is
+    # told apart from a connection that dropped. A JSON::ParserError is left as it is, so that a line that is not
+    # JSON still raises InvalidResponse, which a stream reconnects after.
+    #
+    # @api private
+    # @yield [] runs the callbacks
+    # @return [Object] what the callbacks returned
+    # @raise [JSON::ParserError] if the line is not JSON
+    # @raise [StreamCallbackError] if a callback raised any other error
+    def tagging_callback_errors
+      yield
+    rescue JSON::ParserError
+      raise
+    rescue => e
+      raise StreamCallbackError, e
     end
 
     # Read the body in chunks and yield each line as it completes

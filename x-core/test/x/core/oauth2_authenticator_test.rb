@@ -80,7 +80,7 @@ module X
 
     def test_token_expired_returns_true_at_buffer_boundary
       now = Time.now
-      expires_at = now + OAuth2Authenticator::EXPIRATION_BUFFER
+      expires_at = now + 30
       authenticator = OAuth2Authenticator.new(**test_oauth2_credentials, expires_at: expires_at)
 
       Time.stub :now, now do
@@ -90,7 +90,7 @@ module X
 
     def test_token_expired_returns_true_within_buffer
       now = Time.now
-      expires_at = now + (OAuth2Authenticator::EXPIRATION_BUFFER - 1)
+      expires_at = now + 29
       authenticator = OAuth2Authenticator.new(**test_oauth2_credentials, expires_at: expires_at)
 
       Time.stub :now, now do
@@ -100,7 +100,7 @@ module X
 
     def test_token_expired_returns_false_just_outside_buffer
       now = Time.now
-      expires_at = now + OAuth2Authenticator::EXPIRATION_BUFFER + 1
+      expires_at = now + 31
       authenticator = OAuth2Authenticator.new(**test_oauth2_credentials, expires_at: expires_at)
 
       Time.stub :now, now do

@@ -31,6 +31,15 @@ module X
       assert_equal "{\"data\":", error.body
     end
 
+    def test_process_leaves_the_error_of_a_connection_that_drops_while_reading_untagged
+      response = Net::HTTPOK.new("1.1", "200", "OK")
+      response.define_singleton_method(:read_body) { |&_block| raise Errno::ECONNRESET }
+
+      assert_raises(Errno::ECONNRESET) do
+        @stream_parser.process(response:, response_parser: @response_parser) { flunk "unexpected yield" }
+      end
+    end
+
     private
 
     def streaming_response(chunks:)

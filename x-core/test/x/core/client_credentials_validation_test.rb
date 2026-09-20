@@ -8,7 +8,7 @@ module X
     def assert_incomplete(**credentials)
       error = assert_raises(ArgumentError) { Client.new(**credentials) }
 
-      assert_equal CredentialValidator::INCOMPLETE_CREDENTIALS, error.message
+      assert_equal TEST_INCOMPLETE_CREDENTIALS, error.message
     end
 
     def test_no_credentials_send_requests_without_them
@@ -22,7 +22,7 @@ module X
     def test_an_expiration_time_that_is_not_a_time_is_refused
       error = assert_raises(ArgumentError) { Client.new(**test_oauth2_credentials, expires_at: 1_789_600_000) }
 
-      assert_equal CredentialValidator::INVALID_EXPIRES_AT, error.message
+      assert_equal TEST_INVALID_EXPIRES_AT, error.message
     end
 
     def test_an_expiration_time_of_a_subclass_of_time_is_allowed

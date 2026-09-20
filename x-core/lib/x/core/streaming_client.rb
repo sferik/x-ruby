@@ -26,6 +26,7 @@ module X
     DEFAULT_READ_TIMEOUT = 30 # seconds
     # The message of the error raised for a stream without a block to deliver its objects to
     NO_BLOCK_MESSAGE = "stream takes a block, which receives each object the stream delivers".freeze
+    private_constant :NO_BLOCK_MESSAGE
 
     # The client the stream authenticates and parses with
     # @api public
@@ -72,10 +73,10 @@ module X
     #
     # The stream endpoints take app-only authentication, so a client that signs with OAuth 1.0a streams with the
     # bearer token its app_only client holds. A client that authenticates with OAuth 2.0 as a user holds no app-only
-    # credentials, and X refuses its streams with 403 Forbidden, so stream with a client built from the app's bearer
-    # token, or its API key and secret. A stream that drops reconnects, backing off as X recommends, up to
-    # max_reconnects times in a row. The API bills each object a stream delivers, so the client's on_response
-    # receives each one, as well as a failed response.
+    # credentials, so it raises ArgumentError before it connects, rather than open a stream X would refuse with 403
+    # Forbidden; stream with a client built from the app's bearer token, or its API key and secret, instead. A
+    # stream that drops reconnects, backing off as X recommends, up to max_reconnects times in a row. The API bills
+    # each object a stream delivers, so the client's on_response receives each one, as well as a failed response.
     #
     # @api public
     # @param endpoint [String] the streaming API endpoint, relative to the base URL with or without a leading slash
@@ -86,7 +87,8 @@ module X
     #   and builds objects from each whole object the stream delivers, which it receives with the client
     # @yield [Hash, Array] each parsed JSON object from the stream
     # @return [nil] once the stream ends with no reconnects left
-    # @raise [ArgumentError] if no block is given, before the stream is opened
+    # @raise [ArgumentError] if no block is given, or if the client authenticates with OAuth 2.0 as a user, before
+    #   the stream is opened
     # @raise [HTTPError] if the response is not successful and the stream may not reconnect
     # @example Stream filtered posts
     #   streaming_client.stream("tweets/search/stream") { |post| puts post }

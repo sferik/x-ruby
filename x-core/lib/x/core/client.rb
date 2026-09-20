@@ -35,6 +35,7 @@ module X
     DEFAULT_OBJECT_CLASS = Hash
     # Content type of a form-encoded request body
     FORM_CONTENT_TYPE = "application/x-www-form-urlencoded; charset=utf-8".freeze
+    private_constant :FORM_CONTENT_TYPE
 
     # The authenticator for API requests
     # @api public

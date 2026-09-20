@@ -2,6 +2,11 @@ module X
   # Mixin for client authentication credentials
   # @api private
   module ClientCredentials
+    # The message of the error raised for a client that holds no credentials of the app to authenticate with
+    NO_APP_CREDENTIALS = "A client that authenticates with OAuth 2.0 as a user holds no credentials of the app, so " \
+      "it cannot authenticate as the app. Build a client from the app's bearer token, or its API key and secret, instead".freeze
+    private_constant :NO_APP_CREDENTIALS
+
     # The API key for OAuth 1.0a authentication
     # @api public
     # @return [String, nil] the API key for OAuth 1.0a authentication
@@ -175,17 +180,19 @@ module X
     #
     # A client that signs with OAuth 1.0a fetches an app-only bearer token with its API key and secret the first
     # time, and returns the same copy, with the connections it keeps open, until its credentials or settings change.
-    # Any other client is returned as it is: one with a bearer token or an API
-    # key and secret already authenticates as the app, and one that authenticates with OAuth 2.0 as a user holds no
-    # credentials of the app to authenticate with, so the endpoints that take app-only authentication refuse it.
+    # A client with a bearer token or an API key and secret already authenticates as the app, and is returned as it
+    # is. A client that authenticates with OAuth 2.0 as a user holds no credentials of the app, so it raises rather
+    # than send the user's credentials to an endpoint that would refuse them with 403 Forbidden.
     #
     # @api public
     # @return [Client] a copy that authenticates with the bearer token, or the client itself
+    # @raise [ArgumentError] if the client authenticates with OAuth 2.0 as a user
     # @example Add a filtered stream rule, which takes app-only authentication
     #   client.app_only.post("tweets/search/stream/rules", {add: [{value: "ruby"}]})
     def app_only
       case authenticator
       when OAuth1Authenticator then app_only_copy
+      when OAuth2Authenticator then raise ArgumentError, NO_APP_CREDENTIALS
       else self
       end
     end
@@ -216,9 +223,7 @@ module X
     # The app-only bearer token, fetched once with the API key and secret
     # @api private
     # @return [String] the bearer token
-    def app_bearer_token
-      bearer_token || fetched_app_bearer_token
-    end
+    def app_bearer_token = bearer_token || fetched_app_bearer_token
 
     # The app-only bearer token this client fetched, fetching it the first time
     # @api private
@@ -232,10 +237,7 @@ module X
     # The credentials, as initialize accepts them
     # @api private
     # @return [Hash{Symbol => String, nil}] the credentials
-    def credentials
-      {api_key:, api_key_secret:, access_token:, access_token_secret:, bearer_token:, client_id:, client_secret:,
-       refresh_token:, expires_at:}
-    end
+    def credentials = {api_key:, api_key_secret:, access_token:, access_token_secret:, bearer_token:, client_id:, client_secret:, refresh_token:, expires_at:}
 
     # Initialize credential instance variables
     # @api private

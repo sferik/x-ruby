@@ -181,6 +181,29 @@ module X
       assert_equal [nil], authorizations_sent_to("https://example.com:443/steal")
     end
 
+    def headers_sent_to(url)
+      WebMock::RequestRegistry.instance.requested_signatures.hash.keys
+        .select { |signature| signature.uri.to_s.eql?(url) }.map { |signature| signature.headers.to_h }
+    end
+
+    def test_drops_every_header_that_carries_credentials_on_another_host
+      stub_request(:get, "https://example.com:443/steal")
+      redirect("https://api.x.com/2/users", "https://example.com/steal",
+        headers: {"cookie" => "session=secret", "Authorization" => "Basic secret", "Proxy-Authorization" => "Basic proxy", "X-Custom" => "kept"})
+
+      headers = headers_sent_to("https://example.com:443/steal").fetch(0)
+
+      assert_equal ["kept", nil, nil, nil], headers.values_at("X-Custom", "Authorization", "Cookie", "Proxy-Authorization")
+    end
+
+    def test_keeps_every_header_that_carries_credentials_on_the_same_origin
+      stub_request(:get, "https://api.x.com:443/2/next")
+      redirect("https://api.x.com/2/users", "https://api.x.com/2/next",
+        headers: {"Cookie" => "session=secret", "Proxy-Authorization" => "Basic proxy"})
+
+      assert_requested :get, "https://api.x.com/2/next", headers: {"Cookie" => "session=secret", "Proxy-Authorization" => "Basic proxy"}
+    end
+
     def test_drops_an_authorization_header_named_by_a_symbol_on_another_host
       stub_request(:get, "https://example.com:443/steal")
       redirect("https://api.x.com/2/users", "https://example.com/steal", headers: {Authorization: "Bearer secret"})

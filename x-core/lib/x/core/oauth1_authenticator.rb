@@ -8,6 +8,7 @@ module X
   class OAuth1Authenticator < Authenticator
     # The media type whose body OAuth 1.0a signs as request parameters
     FORM_CONTENT_TYPE = "application/x-www-form-urlencoded".freeze
+    private_constant :FORM_CONTENT_TYPE
 
     # The API key (consumer key)
     # @api public
@@ -65,7 +66,10 @@ module X
     # form-encoded body. Bodies of any other media type, such as the JSON and multipart
     # bodies the X API takes, are not signed.
     #
-    # @api public
+    # Internal to x-core: RequestBuilder signs its requests with it, and it takes the Net::HTTP request it signs,
+    # so that it can change within 1.x, as that request may.
+    #
+    # @api private
     # @param request [Net::HTTPRequest] the HTTP request
     # @return [Hash{String => String}] the authentication header with OAuth signature
     # @example Generate an OAuth authentication header

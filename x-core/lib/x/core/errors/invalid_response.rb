@@ -23,7 +23,10 @@ module X
 
     # Initialize a new InvalidResponse
     #
-    # @api public
+    # Internal to x-core: ResponseParser and StreamParser raise it, and it takes the Net::HTTP response of a
+    # request, so that it can change within 1.x, as that response may.
+    #
+    # @api private
     # @param response [Net::HTTPResponse] the HTTP response
     # @param body [String, nil] the body that is not JSON
     # @return [InvalidResponse] a new instance

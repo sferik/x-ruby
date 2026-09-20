@@ -1,3 +1,5 @@
+# RBS has no private constants, so the constants x-core hides with private_constant are declared here all the same,
+# since Steep resolves every constant a method body names through these signatures.
 module X
   module Core
     VERSION: Gem::Version
@@ -146,6 +148,12 @@ module X
   class NetworkError < Error
   end
 
+  class StreamCallbackError < StandardError
+    attr_reader error: StandardError
+
+    def initialize: (StandardError error) -> void
+  end
+
   class NotAcceptable < ClientError
   end
 
@@ -174,8 +182,10 @@ module X
   class TooManyRequests < ClientError
     @rate_limits: Array[RateLimit]
 
-    def rate_limit: -> RateLimit?
     def rate_limits: -> Array[RateLimit]
+    def rate_limit: -> RateLimit?
+    def exhausted_rate_limits: -> Array[RateLimit]
+    def limiting_rate_limit: -> RateLimit?
     def reset_at: -> Time?
     def reset_in: -> Integer?
     def retry_after: -> Integer?
@@ -193,6 +203,7 @@ module X
     DEFAULT_OPEN_TIMEOUT: Integer
     DEFAULT_READ_TIMEOUT: Integer
     DEFAULT_WRITE_TIMEOUT: Integer
+    DEFAULT_KEEP_ALIVE_TIMEOUT: Integer
 
     NETWORK_ERRORS: Array[singleton(IOError) | singleton(Net::HTTPBadResponse) | singleton(Net::ProtocolError) | singleton(OpenSSL::SSL::SSLError) | singleton(SocketError) | singleton(SystemCallError) | singleton(Timeout::Error) | singleton(Zlib::Error)]
 
@@ -292,6 +303,7 @@ module X
 
     attr_reader type: String
     attr_reader response: Net::HTTPResponse
+    def self.all_from: (Net::HTTPResponse response) -> Array[RateLimit]
     def self.reported?: (String type, Net::HTTPResponse response) -> bool
     def initialize: (type: String, response: Net::HTTPResponse) -> void
     def limit: -> Integer
@@ -393,6 +405,7 @@ module X
 
   class RedirectHandler
     DEFAULT_MAX_REDIRECTS: Integer
+    CREDENTIAL_HEADERS: Array[String]
 
     attr_reader connection: Connection
     attr_reader request_builder: RequestBuilder
@@ -405,7 +418,7 @@ module X
     def credentials_for: (URI::Generic from, URI::Generic to, Authenticator authenticator, Hash[String, String] headers) -> [Authenticator, Hash[String, String]]
     def same_origin?: (URI::Generic uri, URI::Generic other) -> bool
     def origin: (URI::Generic uri) -> [String?, String?, Integer?]
-    def without_authorization: (Hash[String, String] headers) -> Hash[String, String]
+    def without_credentials: (Hash[String, String] headers) -> Hash[String, String]
     def build_request: (Net::HTTPRequest request, URI::Generic new_uri, Integer response_code, Hash[String, String] headers, Authenticator authenticator) -> Net::HTTPRequest
   end
 
@@ -428,6 +441,7 @@ module X
 
     private
     def raise_unless_successful: (response: Net::HTTPResponse, response_parser: ResponseParser, on_body: _BodyHook?) -> void
+    def tagging_callback_errors: [T] () { () -> T } -> T
     def read_lines: (response: Net::HTTPResponse, decode: ^(String) -> untyped) { (untyped) -> void } -> void
     def process_buffer: (buffer: String, decode: ^(String) -> untyped) { (untyped) -> void } -> void
     def process_remaining: (buffer: String, decode: ^(String) -> untyped) { (untyped) -> void } -> void
@@ -549,6 +563,8 @@ module X
   end
 
   module ClientCredentials : _CredentialHost
+    NO_APP_CREDENTIALS: String
+
     @app_bearer_token: String?
     @app_only: Hash[Hash[Symbol, untyped], Client]?
     @token_refresh_clients: _ClientRegistry

@@ -14,6 +14,9 @@ module X
   class RedirectHandler
     # Default maximum number of redirects to follow
     DEFAULT_MAX_REDIRECTS = 10
+    # The headers that carry credentials, which a redirect to another origin drops
+    CREDENTIAL_HEADERS = [Authenticator::AUTHENTICATION_HEADER, "Cookie", "Proxy-Authorization"].freeze
+    private_constant :CREDENTIAL_HEADERS
 
     # The maximum number of redirects to follow
     # @api private
@@ -54,8 +57,10 @@ module X
 
     # Handle redirects for an HTTP response
     #
-    # A redirect to another scheme, host, or port drops the credentials, the authenticator's and any
-    # Authorization header among the headers, so that they never reach a host they were not meant for.
+    # A redirect to another scheme, host, or port drops the credentials, the authenticator's and any Authorization,
+    # Cookie, or Proxy-Authorization header among the headers, so that they never reach a host they were not meant
+    # for. A 307 or 308 keeps the method and the body of the request, so a request whose body holds something
+    # private replays it to the host it is redirected to, whatever its origin.
     #
     # A redirect that cannot be followed, such as 304 Not Modified or one whose location is missing, is not a
     # valid URL, or is not an HTTP or HTTPS URL, is returned as it is, so that the client raises an HTTPError for it.
@@ -113,7 +118,7 @@ module X
     def credentials_for(from, to, authenticator, headers)
       return [authenticator, headers] if same_origin?(from, to)
 
-      [Authenticator.new, without_authorization(headers)]
+      [Authenticator.new, without_credentials(headers)]
     end
 
     # Check whether two URIs share a scheme, host, and port
@@ -132,15 +137,16 @@ module X
       [normalized.scheme, normalized.host, normalized.port]
     end
 
-    # Headers without an Authorization header
+    # Headers without the ones that carry credentials
     #
-    # The header is dropped whatever its case, whether a String or a Symbol names it.
+    # Authorization, Cookie, and Proxy-Authorization are dropped, whatever their case, whether a String or a Symbol
+    # names them.
     #
     # @api private
     # @param headers [Hash{String, Symbol => String}] the headers
-    # @return [Hash{String, Symbol => String}] the headers other than Authorization
-    def without_authorization(headers)
-      headers.reject { |name, _| name.to_s.casecmp?(Authenticator::AUTHENTICATION_HEADER) }
+    # @return [Hash{String, Symbol => String}] the headers that carry no credentials
+    def without_credentials(headers)
+      headers.reject { |name, _| CREDENTIAL_HEADERS.any? { |header| name.to_s.casecmp?(header) } }
     end
 
     # Build a new request for the redirect

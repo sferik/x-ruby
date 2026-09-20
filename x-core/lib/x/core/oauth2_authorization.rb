@@ -24,10 +24,13 @@ module X
     DEFAULT_SCOPES = %w[tweet.read users.read offline.access].freeze
     # The number of random bytes in a generated state
     STATE_BYTES = 32
+    private_constant :STATE_BYTES
     # The message raised when X describes no reason for a failed authorization
     DEFAULT_ERROR_MESSAGE = "Authorization failed".freeze
+    private_constant :DEFAULT_ERROR_MESSAGE
     # The message raised for a redirect back from X that is not a valid URL
     INVALID_CALLBACK_MESSAGE = "The redirect back from X is not a valid URL".freeze
+    private_constant :INVALID_CALLBACK_MESSAGE
 
     # The OAuth 2.0 client ID of the app
     # @api public

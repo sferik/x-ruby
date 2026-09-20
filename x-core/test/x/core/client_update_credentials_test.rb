@@ -27,7 +27,7 @@ module X
       authenticator = client.authenticator
       error = assert_raises(ArgumentError) { client.update_credentials(access_token_secret: nil, bearer_token: nil, api_key: nil) }
 
-      assert_equal CredentialValidator::INCOMPLETE_CREDENTIALS, error.message
+      assert_equal TEST_INCOMPLETE_CREDENTIALS, error.message
       assert_same authenticator, client.authenticator
       assert_equal TEST_ACCESS_TOKEN_SECRET, client.access_token_secret
     end

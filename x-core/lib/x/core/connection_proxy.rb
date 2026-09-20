@@ -19,13 +19,13 @@ module X
     #   connection.proxy_uri
     attr_reader :proxy_uri
 
-    # The host of the proxy
+    # The host of the proxy, without the brackets of an IPv6 literal
     #
     # @api public
     # @return [String, nil] the proxy host, or nil without a proxy
     # @example Get the proxy host
     #   connection.proxy_host
-    def proxy_host = proxy_uri&.host
+    def proxy_host = proxy_uri&.hostname
 
     # The port of the proxy
     #

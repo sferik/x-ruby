@@ -7,6 +7,7 @@ module X
   class HTTPError < Error
     # Regular expression to match JSON content types
     JSON_CONTENT_TYPE_REGEXP = %r{application/(problem\+|)json}
+    private_constant :JSON_CONTENT_TYPE_REGEXP
 
     # The HTTP response
     # @api public
@@ -24,7 +25,10 @@ module X
 
     # Initialize a new HTTPError
     #
-    # @api public
+    # Internal to x-core: ResponseParser raises the errors of the responses it parses, and it takes the Net::HTTP
+    # response of a request, so that it can change within 1.x, as that response may.
+    #
+    # @api private
     # @param response [Net::HTTPResponse] the HTTP response
     # @return [HTTPError] a new instance
     # @example Create an HTTP error

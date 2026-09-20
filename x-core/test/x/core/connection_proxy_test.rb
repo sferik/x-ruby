@@ -56,6 +56,12 @@ module X
       assert_nil @connection.proxy_pass
     end
 
+    def test_proxy_host_strips_the_brackets_of_an_ipv6_literal
+      @connection.proxy_url = "http://[::1]:8080"
+
+      assert_equal "::1", @connection.proxy_host
+    end
+
     def test_proxy_host_and_port_without_a_proxy
       assert_nil @connection.proxy_host
       assert_nil @connection.proxy_port

@@ -5,6 +5,7 @@ require "zlib"
 require_relative "connection_pool"
 require_relative "connection_proxy"
 require_relative "errors/network_error"
+require_relative "errors/stream_callback_error"
 
 module X
   # Manages HTTP connections to the X API
@@ -18,14 +19,18 @@ module X
 
     # Default host for the X API
     DEFAULT_HOST = "api.x.com".freeze
+    private_constant :DEFAULT_HOST
     # Default port for HTTPS connections
     DEFAULT_PORT = 443
+    private_constant :DEFAULT_PORT
     # Default timeout for opening connections in seconds
     DEFAULT_OPEN_TIMEOUT = 60 # seconds
     # Default timeout for reading responses in seconds
     DEFAULT_READ_TIMEOUT = 60 # seconds
     # Default timeout for writing requests in seconds
     DEFAULT_WRITE_TIMEOUT = 60 # seconds
+    # Default time to keep a connection open for the next request to the same host, in seconds
+    DEFAULT_KEEP_ALIVE_TIMEOUT = 30 # seconds
     # Network errors that should be wrapped in NetworkError
     #
     # IOError covers EOFError, and a read from a socket closed under it. SystemCallError covers every error the
@@ -44,6 +49,7 @@ module X
       Timeout::Error,
       Zlib::Error
     ].freeze
+    private_constant :NETWORK_ERRORS
 
     # The timeout for opening connections in seconds
     # @api public
@@ -120,11 +126,11 @@ module X
     #   response = connection.perform(request: request)
     def perform(request:)
       uri = request.uri
-      host = uri.host || DEFAULT_HOST
+      hostname = uri.hostname || DEFAULT_HOST
       port = uri.port || DEFAULT_PORT
       use_ssl = uri.scheme.eql?("https")
-      open = -> { build_http_client(host, port).tap { |http_client| http_client.use_ssl = use_ssl } }
-      @pool.with([use_ssl, host, port], open) { |http_client| configure_timeouts(http_client).request(request) }
+      open = -> { build_http_client(hostname, port).tap { |http_client| http_client.use_ssl = use_ssl } }
+      @pool.with([use_ssl, hostname, port], open) { |http_client| configure_timeouts(http_client).request(request) }
     rescue *NETWORK_ERRORS => e
       raise NetworkError, "Network error: #{e}"
     end
@@ -132,6 +138,10 @@ module X
     # Perform a streaming HTTP request
     #
     # Internal to x-core: StreamingClient opens its streams with it.
+    #
+    # An error the block raises, which StreamParser tags as a StreamCallbackError, is raised as it was, rather than
+    # reported as a network error: the callbacks of a stream run inside the request that reads it, and the errors a
+    # socket raises are the ones a stream reconnects after.
     #
     # @api private
     # @param request [Net::HTTPRequest] the HTTP request to perform
@@ -141,11 +151,13 @@ module X
     # @example Perform a streaming request
     #   connection.perform_stream(request: request) { |response| response.read_body { |chunk| } }
     def perform_stream(request:, &)
-      host = request.uri.host || DEFAULT_HOST
+      hostname = request.uri.hostname || DEFAULT_HOST
       port = request.uri.port || DEFAULT_PORT
-      http_client = build_http_client(host, port)
+      http_client = build_http_client(hostname, port)
       http_client.use_ssl = request.uri.scheme.eql?("https")
       http_client.request(request, &)
+    rescue StreamCallbackError => e
+      raise e.error
     rescue *NETWORK_ERRORS => e
       raise NetworkError, "Network error: #{e}"
     end
@@ -199,12 +211,16 @@ module X
     # same OAuth 1.0a nonce and signature, which the API may bill twice, so its retries are turned off: a request
     # that fails raises NetworkError, and the caller decides whether to send it again.
     #
+    # Net::HTTP keeps a connection for two seconds by default, which reuses it within a burst of requests alone, so
+    # it keeps one for DEFAULT_KEEP_ALIVE_TIMEOUT instead.
+    #
     # @api private
     # @param http_client [Net::HTTP] the HTTP client to configure
     # @return [Net::HTTP] the configured HTTP client
     def configure_http_client(http_client)
       configure_timeouts(http_client).tap do |c|
         c.max_retries = 0
+        c.keep_alive_timeout = DEFAULT_KEEP_ALIVE_TIMEOUT
         c.set_debug_output(debug_output)
       end
     end

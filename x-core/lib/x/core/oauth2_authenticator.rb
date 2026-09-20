@@ -17,8 +17,10 @@ module X
     TOKEN_URL = "https://api.x.com/2/oauth2/token".freeze
     # Buffer time in seconds to account for clock skew and network latency
     EXPIRATION_BUFFER = 30
+    private_constant :EXPIRATION_BUFFER
     # The message raised when the token endpoint describes no reason for the failure
     DEFAULT_ERROR_MESSAGE = "Token refresh failed".freeze
+    private_constant :DEFAULT_ERROR_MESSAGE
 
     # The OAuth 2.0 client ID
     # @api public
@@ -98,7 +100,10 @@ module X
 
     # Generate the authentication header, refreshing an expired token first
     #
-    # @api public
+    # Internal to x-core: RequestBuilder signs its requests with it, and it takes the Net::HTTP request it signs,
+    # so that it can change within 1.x, as that request may.
+    #
+    # @api private
     # @param _request [Net::HTTPRequest, nil] the HTTP request (unused)
     # @return [Hash{String => String}] the authentication header
     # @raise [AuthorizationError] if the token has expired and X refuses to refresh it

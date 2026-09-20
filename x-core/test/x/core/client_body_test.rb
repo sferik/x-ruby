@@ -50,7 +50,7 @@ module X
       @client.post("https://api.x.com/1.1/account/settings.json", form: {lang: "en", tile: true})
 
       assert_requested :post, "https://api.x.com/1.1/account/settings.json", body: "lang=en&tile=true",
-        headers: {"Content-Type" => Client::FORM_CONTENT_TYPE}
+        headers: {"Content-Type" => "application/x-www-form-urlencoded; charset=utf-8"}
     end
 
     def test_form_takes_precedence_over_the_body
@@ -73,7 +73,7 @@ module X
       stub_request(:post, "https://api.x.com/2/new")
       @client.post("old", form: {lang: "en"})
 
-      assert_requested :post, "https://api.x.com/2/new", body: "lang=en", headers: {"Content-Type" => Client::FORM_CONTENT_TYPE}
+      assert_requested :post, "https://api.x.com/2/new", body: "lang=en", headers: {"Content-Type" => "application/x-www-form-urlencoded; charset=utf-8"}
     end
 
     def test_form_body_is_signed

@@ -25,9 +25,21 @@ module X
     #   rate_limit.response["x-rate-limit-limit"]
     attr_reader :response
 
-    # Check whether a response has the limit, remaining, and reset of a rate limit
+    # Every rate limit a response reports in full, in the order of TYPES
     #
     # @api public
+    # @param response [Net::HTTPResponse] the HTTP response
+    # @return [Array<RateLimit>] the 15-minute limit, and the 24-hour app and user limits, when reported
+    # @example Print how many requests remain in each window
+    #   X::RateLimit.all_from(response).each { |limit| puts "#{limit.type}: #{limit.remaining}" }
+    def self.all_from(response) = TYPES.filter_map { |type| new(type:, response:) if reported?(type, response) }
+
+    # Check whether a response has the limit, remaining, and reset of a rate limit
+    #
+    # Internal to x-core: it takes the Net::HTTP response of a request, so that it can change within 1.x, as that
+    # response may.
+    #
+    # @api private
     # @param type [String] the type of rate limit
     # @param response [Net::HTTPResponse] the HTTP response
     # @return [Boolean] true if the response has every header of the rate limit
@@ -37,7 +49,10 @@ module X
 
     # Initialize a new RateLimit
     #
-    # @api public
+    # Internal to x-core: it takes the Net::HTTP response of a request, so that it can change within 1.x, as that
+    # response may.
+    #
+    # @api private
     # @param type [String] the type of rate limit
     # @param response [Net::HTTPResponse] the HTTP response containing rate limit headers
     # @return [RateLimit] a new instance

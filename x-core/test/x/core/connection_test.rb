@@ -32,8 +32,8 @@ module X
     def test_http_client_defaults
       http_client = @connection.send(:build_http_client)
 
-      assert_equal Connection::DEFAULT_HOST, http_client.address
-      assert_equal Connection::DEFAULT_PORT, http_client.port
+      assert_equal "api.x.com", http_client.address
+      assert_equal 443, http_client.port
       assert_equal Connection::DEFAULT_OPEN_TIMEOUT, http_client.open_timeout
       assert_equal Connection::DEFAULT_READ_TIMEOUT, http_client.read_timeout
       assert_equal Connection::DEFAULT_WRITE_TIMEOUT, http_client.write_timeout
@@ -41,6 +41,10 @@ module X
 
     def test_http_client_leaves_retries_to_the_caller
       assert_equal 0, @connection.send(:build_http_client).max_retries
+    end
+
+    def test_http_client_keeps_a_connection_open_beyond_a_burst_of_requests
+      assert_equal 30, @connection.send(:build_http_client).keep_alive_timeout
     end
 
     def test_debug_output
@@ -78,6 +82,41 @@ module X
     end
   end
 
+  class ConnectionIPv6Test < Minitest::Test
+    include LocalServer
+
+    cover Connection
+
+    def setup
+      @connection = Connection.new
+    end
+
+    def teardown
+      @connection.close
+    end
+
+    def test_perform_connects_to_an_ipv6_literal_host
+      with_local_server(host: "::1") do |port|
+        assert_kind_of Net::HTTPSuccess, @connection.perform(request: Net::HTTP::Get.new(URI("http://[::1]:#{port}/")))
+      end
+    rescue Errno::EADDRNOTAVAIL, Errno::EAFNOSUPPORT, SocketError => e
+      skip "this host cannot serve ::1: #{e}"
+    end
+
+    def test_perform_stream_connects_to_an_ipv6_literal_host
+      with_local_server(host: "::1", response: "HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\n{}") do |port|
+        chunks = []
+        @connection.perform_stream(request: Net::HTTP::Get.new(URI("http://[::1]:#{port}/"))) do |response|
+          response.read_body { |chunk| chunks << chunk }
+        end
+
+        assert_equal ["{}"], chunks
+      end
+    rescue Errno::EADDRNOTAVAIL, Errno::EAFNOSUPPORT, SocketError => e
+      skip "this host cannot serve ::1: #{e}"
+    end
+  end
+
   class ConnectionNetworkErrorTest < Minitest::Test
     cover Connection
 
@@ -93,7 +132,8 @@ module X
       assert_equal "Network error: Connection refused - Exception from WebMock", error.message
     end
 
-    Connection::NETWORK_ERRORS.each do |error_class|
+    [IOError, Net::HTTPBadResponse, Net::ProtocolError, OpenSSL::SSL::SSLError, SocketError, SystemCallError,
+      Timeout::Error, Zlib::Error].each do |error_class|
       define_method(:"test_wraps_#{error_class.name.downcase.tr(":", "_")}") do
         stub_request(:get, "https://example.com").to_raise(error_class)
         request = Net::HTTP::Get.new(URI("https://example.com"))

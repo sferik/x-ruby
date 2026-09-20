@@ -95,10 +95,28 @@ module X
     end
 
     def test_other_clients_are_already_app_only_enough
-      [Client.new, Client.new(bearer_token: TEST_BEARER_TOKEN), Client.new(**test_oauth2_credentials)].each do |client|
+      [Client.new, Client.new(bearer_token: TEST_BEARER_TOKEN)].each do |client|
         assert_same client, client.app_only
       end
       assert_not_requested @token_request
+    end
+
+    def test_an_oauth2_user_client_holds_no_credentials_of_the_app
+      client = Client.new(**test_oauth2_credentials)
+      error = assert_raises(ArgumentError) { client.app_only }
+
+      assert_equal "A client that authenticates with OAuth 2.0 as a user holds no credentials of the app, so it " \
+        "cannot authenticate as the app. Build a client from the app's bearer token, or its API key and secret, " \
+        "instead", error.message
+      assert_not_requested @token_request
+    end
+
+    def test_an_oauth2_user_client_cannot_stream
+      stream = stub_request(:get, STREAM_URL)
+      client = Client.new(**test_oauth2_credentials)
+
+      assert_raises(ArgumentError) { client.streaming.stream("tweets/sample/stream") { |_post| flunk "unexpected yield" } }
+      assert_not_requested stream
     end
 
     def test_an_oauth1_client_streams_with_the_bearer_token_and_builds_objects_with_itself

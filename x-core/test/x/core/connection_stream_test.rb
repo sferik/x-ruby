@@ -4,7 +4,10 @@ require_relative "../../test_helper"
 
 module X
   class ConnectionStreamTest < Minitest::Test
+    include LocalServer
+
     cover Connection
+    cover StreamCallbackError
 
     def setup
       @connection = Connection.new
@@ -32,6 +35,31 @@ module X
       end
 
       assert_equal "Network error: Connection refused - Exception from WebMock", error.message
+    end
+
+    def test_perform_stream_reports_a_connection_that_drops_while_reading_as_a_network_error
+      truncated = "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n8\r\n{\"data\":\r\n".freeze
+      with_local_server(response: truncated) do |port|
+        request = Net::HTTP::Get.new(URI("http://127.0.0.1:#{port}/"))
+
+        assert_raises(NetworkError) { @connection.perform_stream(request:) { |response| response.read_body { |_chunk| } } }
+      end
+    end
+
+    def test_perform_stream_raises_the_error_a_callback_of_the_stream_raised
+      stub_request(:get, "http://example.com:80")
+      request = Net::HTTP::Get.new(URI("http://example.com:80"))
+
+      assert_raises(Errno::ECONNREFUSED) do
+        @connection.perform_stream(request:) { |_response| raise StreamCallbackError, Errno::ECONNREFUSED.new }
+      end
+    end
+
+    def test_a_stream_callback_error_holds_the_error_a_callback_raised_and_its_message
+      error = StreamCallbackError.new(Errno::ECONNREFUSED.new("the hook failed"))
+
+      assert_kind_of Errno::ECONNREFUSED, error.error
+      assert_equal "Connection refused - the hook failed", error.message
     end
 
     def test_perform_stream_no_host_or_port

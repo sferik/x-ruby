@@ -29,7 +29,10 @@ module X
 
     # Summarize a response
     #
-    # @api public
+    # Internal to x-core: it takes the Net::HTTP response of a request, so that it can change within 1.x, as that
+    # response may.
+    #
+    # @api private
     # @param http_method [Symbol] the HTTP method of the request
     # @param uri [URI::Generic] the URI of the request
     # @param http_response [Net::HTTPResponse] the HTTP response
@@ -74,9 +77,7 @@ module X
     # @return [Array<RateLimit>] the 15-minute limit, and the 24-hour app and user limits when reported
     # @example Print how many requests remain in each window
     #   response.rate_limits.each { |limit| puts "#{limit.type}: #{limit.remaining}" }
-    def rate_limits
-      RateLimit::TYPES.filter_map { |type| RateLimit.new(type:, response: http_response) if RateLimit.reported?(type, http_response) }
-    end
+    def rate_limits = RateLimit.all_from(http_response)
 
     # The 15-minute rate limit of the endpoint, which nearly every response reports
     #
