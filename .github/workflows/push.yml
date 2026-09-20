@@ -16,6 +16,7 @@ jobs:
       name: rubygems.org
       url: https://rubygems.org/gems/x
     permissions:
+      actions: read
       contents: write
       id-token: write
     steps:
@@ -35,6 +36,37 @@ jobs:
             exit 1
           fi
           bundle exec rake check_versions
+      - name: Check that CI passed on the tagged commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          # Every workflow that must have passed before the gems are pushed. A release commit triggers each of them,
+          # since `rake update_versions` writes the version into a version.rb of every gem, and the linter runs on any
+          # Ruby file. This workflow is left out, since it is the one running.
+          REQUIRED_WORKFLOWS: x-core x-uploader x-objects x linter
+        run: |
+          deadline=$((SECONDS + 1800))
+          while :; do
+            runs=$(gh run list --commit "$GITHUB_SHA" --limit 100 --json name,status,conclusion)
+            failed=$(jq -r --arg self "$GITHUB_WORKFLOW" \
+              '[.[] | select(.name != $self and .conclusion != null and .conclusion != "success" and .conclusion != "skipped") | .name] | unique | join(", ")' <<<"$runs")
+            if [ -n "$failed" ]; then
+              echo "::error::CI did not pass on $GITHUB_SHA: $failed"
+              exit 1
+            fi
+            waiting=""
+            for workflow in $REQUIRED_WORKFLOWS; do
+              passed=$(jq --arg workflow "$workflow" '[.[] | select(.name == $workflow and .conclusion == "success")] | length' <<<"$runs")
+              [ "$passed" -gt 0 ] || waiting="$waiting $workflow"
+            done
+            [ -n "$waiting" ] || break
+            if [ "$SECONDS" -ge "$deadline" ]; then
+              echo "::error::Timed out waiting for CI on $GITHUB_SHA:$waiting"
+              exit 1
+            fi
+            echo "Waiting for CI on $GITHUB_SHA:$waiting"
+            sleep 30
+          done
+          echo "CI passed on $GITHUB_SHA"
       - name: Build gems
         run: bundle exec rake build
       - name: Sign, push, and await each gem in dependency order
