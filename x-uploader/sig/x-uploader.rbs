@@ -38,6 +38,7 @@ module X
       def inspect: () -> String
 
       private
+      def with_integer_id: (Hash[String, untyped] attrs) -> Hash[String, untyped]
       def deep_freeze: (untyped value) -> untyped
     end
 

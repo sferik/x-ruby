@@ -31,14 +31,14 @@ module X
       stub_chunked_upload
       media = MediaUploader.new.chunked_upload("test/sample_files/sample.mp4", client: Client.new, media_category: "tweet_video")
 
-      assert_equal TEST_MEDIA_ID, media["id"]
+      assert_equal TEST_MEDIA_ID.to_i, media["id"]
     end
 
     def test_a_class_with_methods_of_its_own_uploads_a_video
       stub_chunked_upload
       media = Attachment.new.upload("test/sample_files/sample.mp4", client: Client.new)
 
-      assert_equal TEST_MEDIA_ID, media["id"]
+      assert_equal TEST_MEDIA_ID.to_i, media["id"]
       assert_requested(:post, "#{BASE_URL}/#{TEST_MEDIA_ID}/append")
     end
 
@@ -47,7 +47,7 @@ module X
       stub_request(:post, "https://api.x.com/2/media/metadata").to_return(status: 204)
       media = Attachment.new.upload("test/sample_files/sample.gif", client: Client.new, alt_text: "A cat")
 
-      assert_equal TEST_MEDIA_ID, media["id"]
+      assert_equal TEST_MEDIA_ID.to_i, media["id"]
       assert_requested(:post, "https://api.x.com/2/media/metadata", body: {id: TEST_MEDIA_ID, metadata: {alt_text: {text: "A cat"}}}.to_json)
     end
 
@@ -55,7 +55,7 @@ module X
       stub_request(:get, "#{BASE_URL}?command=STATUS&media_id=#{TEST_MEDIA_ID}").to_return(JSON)
       attachment = Attachment.new
 
-      assert_equal TEST_MEDIA_ID, attachment.await_processing!({"id" => TEST_MEDIA_ID}, client: Client.new)["id"]
+      assert_equal TEST_MEDIA_ID.to_i, attachment.await_processing!({"id" => TEST_MEDIA_ID}, client: Client.new)["id"]
       assert_equal "video/webm", attachment.infer_media_type("clip.webm", "tweet_video")
     end
 

@@ -6,7 +6,11 @@ module X
     #
     # Both hold the identifier and the media key, and the status of media that X processes, such as a video, holds
     # the state of its processing. The object is frozen, and reads as the Hash it was built from with [], fetch,
-    # dig, key?, and to_json, so media["id"] works as it did when an upload returned a Hash.
+    # dig, key?, and to_json, so media["size"] works as it did when an upload returned a Hash.
+    #
+    # The identifier is read as an Integer, however the response held it, so that media["id"] and media.id are one
+    # number rather than a String beside an Integer, and the attributes the media reads as, compares by, and writes
+    # itself as hold that one value.
     #
     # @api public
     class UploadedMedia
@@ -18,7 +22,7 @@ module X
       # @api public
       # @return [Hash{String => Object}] the frozen attributes
       # @example Get the attributes
-      #   media.attrs # => {"id" => "1880028106020515840", "media_key" => "3_1880028106020515840", ...}
+      #   media.attrs # => {"id" => 1880028106020515840, "media_key" => "3_1880028106020515840", ...}
       attr_reader :attrs
       alias_method :to_h, :attrs
 
@@ -38,10 +42,11 @@ module X
       # @api public
       # @param attrs [Hash{String => Object}] the data of an upload or status response
       # @return [UploadedMedia] a new, frozen instance
+      # @raise [ArgumentError] if the response held an id that names no number
       # @example Refer to media that was uploaded before
       #   X::Uploader::UploadedMedia.new({"id" => "1880028106020515840"})
       def initialize(attrs)
-        @attrs = deep_freeze(attrs)
+        @attrs = deep_freeze(with_integer_id(attrs))
         @received_at = Time.now
         freeze
       end
@@ -53,7 +58,7 @@ module X
       # @raise [KeyError] if the response held no id
       # @example Get the identifier
       #   media.id # => 1880028106020515840
-      def id = Integer(fetch("id").to_s, 10)
+      def id = fetch("id")
 
       # The media key
       #
@@ -137,8 +142,8 @@ module X
       # @api public
       # @param key [String] the name of the attribute
       # @return [Object, nil] the value, or nil if the response holds none
-      # @example Get the identifier as the API gave it
-      #   media["id"] # => "1880028106020515840"
+      # @example Get the identifier
+      #   media["id"] # => 1880028106020515840
       def [](key) = attrs[key]
 
       # Fetch an attribute of the response, as from the Hash an upload used to return
@@ -150,8 +155,8 @@ module X
       # @yieldreturn [Object] the value to return in its place
       # @return [Object] the value
       # @raise [KeyError] if the response holds no such attribute and neither a default nor a block is given
-      # @example Fetch the identifier as the API gave it
-      #   media.fetch("id") # => "1880028106020515840"
+      # @example Fetch the identifier
+      #   media.fetch("id") # => 1880028106020515840
       # @example Fetch what a response may hold none of
       #   media.fetch("processing_info", nil)
       def fetch(key, *default, &) = attrs.fetch(key, *default, &) # steep:ignore UnresolvedOverloading
@@ -220,6 +225,20 @@ module X
       def inspect = "#<#{self.class} id=#{self["id"].inspect} media_key=#{media_key.inspect} state=#{state.inspect}>"
 
       private
+
+      # The attributes, with the identifier read as an Integer
+      #
+      # The response holds the identifier as a String, or as an Integer where it was written by an encoder of its
+      # own, and the attributes hold the one number either way.
+      #
+      # @api private
+      # @param attrs [Hash{String => Object}] the data of an upload or status response
+      # @return [Hash{String => Object}] the attributes, holding an identifier that is an Integer
+      # @raise [ArgumentError] if the response held an id that names no number
+      def with_integer_id(attrs)
+        id = attrs["id"]
+        id.nil? ? attrs : attrs.merge("id" => Integer(id.to_s, 10))
+      end
 
       # Copy and freeze a value of a response, and what it holds
       # @api private
