@@ -89,7 +89,8 @@ module X
 
     # The number of resources the body holds, as data and as each kind of include
     #
-    # The API bills reads by the resource, so these counts are the units a request consumed.
+    # The API bills reads by the resource, so these counts are the units a request consumed. The body is parsed
+    # once, however many times a summary is asked what it holds.
     #
     # @api public
     # @return [Hash{String => Integer}] the count of data and of each include, such as users and posts
@@ -113,10 +114,21 @@ module X
 
     private
 
-    # The body parsed as a JSON object, or an empty one
+    # The body parsed as a JSON object, read once and kept
+    #
+    # A hook that reads a summary reads a body the client has parsed already, so parsing it again for each count
+    # would parse every response of a client twice.
+    #
     # @api private
     # @return [Hash{String => Object}] the parsed body
     def parsed_body
+      @parsed_body ||= parse_body
+    end
+
+    # The body parsed as a JSON object, or an empty one for a body that holds none
+    # @api private
+    # @return [Hash{String => Object}] the parsed body
+    def parse_body
       Hash.try_convert(JSON.parse(body.to_s)) || {}
     rescue JSON::ParserError
       {}

@@ -62,6 +62,19 @@ module X
       assert_equal 0, summarize(Net::HTTPOK, body: "[1, 2]").resource_count
     end
 
+    def test_the_body_is_parsed_once_however_many_counts_are_read
+      response = summarize(Net::HTTPOK, body: {data: [{id: "1"}, {id: "2"}]}.to_json)
+      parses = 0
+      parse = lambda do |_json|
+        parses += 1
+        {"data" => [{"id" => "1"}, {"id" => "2"}]}
+      end
+      counts = JSON.stub(:parse, parse) { [response.resource_counts, response.resource_count, response.resource_counts] }
+
+      assert_equal 1, parses
+      assert_equal [{"data" => 2}, 2, {"data" => 2}], counts
+    end
+
     def test_a_part_of_the_body
       http_response = summarize(Net::HTTPOK, body: '{"data":[{"id":"1"},{"id":"2"}]}').http_response
       response = Response.new(:get, URI_ME, http_response, body: '{"data":{"id":"1"}}')

@@ -290,6 +290,7 @@ module X
     attr_reader http_response: Net::HTTPResponse
 
     @body: String?
+    @parsed_body: Hash[String, untyped]?
 
     def initialize: (Symbol http_method, URI::Generic uri, Net::HTTPResponse http_response, ?body: String?) -> void
     def body: () -> String?
@@ -302,6 +303,7 @@ module X
 
     private
     def parsed_body: () -> Hash[String, untyped]
+    def parse_body: () -> Hash[String, untyped]
   end
 
   class RateLimit
