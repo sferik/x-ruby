@@ -63,7 +63,6 @@ module X
       exception = assert_raises(BadRequest) { @response_parser.parse(response:) }
 
       assert_kind_of Net::HTTPBadRequest, exception.response
-      assert_equal "400", exception.code
       assert_equal 400, exception.status
     end
 

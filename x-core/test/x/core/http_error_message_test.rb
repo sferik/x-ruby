@@ -26,7 +26,7 @@ module X
       error = assert_raises(NotFound) { @response_parser.parse(response:) }
 
       assert_kind_of Net::HTTPNotFound, error.response
-      assert_equal ["404", 404, "Not Found Error: Could not find user"], [error.code, error.status, error.message]
+      assert_equal [404, "Not Found Error: Could not find user"], [error.status, error.message]
     end
 
     def test_error_with_title_only_falls_back_to_status

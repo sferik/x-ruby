@@ -23,7 +23,7 @@ module X
       error = assert_raises(TooManyRequests) { handle(Core::RateLimitHandler.new) { refuse(headers: {"x-rate-limit-remaining" => "0"}) } }
 
       assert_equal [1, []], [@attempts, @sleeps]
-      assert_equal "429", error.code
+      assert_equal 429, error.status
     end
 
     def test_retries_after_waiting_for_the_reset

@@ -16,13 +16,6 @@ module X
     #   error.response
     attr_reader :response
 
-    # The HTTP status code, as the String Net::HTTP reads
-    # @api public
-    # @return [String] the HTTP status code
-    # @example Get the status code
-    #   error.code # => "404"
-    attr_reader :code
-
     # Initialize a new HTTPError
     #
     # Internal to x-core: ResponseParser raises the errors of the responses it parses, and it takes the Net::HTTP
@@ -36,7 +29,6 @@ module X
     def initialize(response:)
       super(error_message(response))
       @response = response
-      @code = response.code
     end
 
     # The HTTP status code, as an Integer like X::Response#status
@@ -45,7 +37,7 @@ module X
     # @return [Integer] the HTTP status code
     # @example Handle a status the errors do not name
     #   retry if error.status.eql?(408)
-    def status = Integer(code)
+    def status = Integer(response.code)
 
     private
 
