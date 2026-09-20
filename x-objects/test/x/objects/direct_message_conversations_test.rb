@@ -41,7 +41,7 @@ module X
         assert_raises(ArgumentError) { DirectMessage.create_in("9-8", client: @client, attachments: nil) }
       ]
 
-      assert_equal ["a direct message needs text, or something else to show, such as attachments"] * 2, errors.map(&:message)
+      assert_equal ["a direct message needs text, or something else to show, such as media_ids"] * 2, errors.map(&:message)
       assert_empty @client.requests
     end
 
@@ -74,7 +74,7 @@ module X
       cursor = DirectMessage.in(DirectMessage.new({"id" => "1", "dm_conversation_id" => "1582838223204016129"}), client: @client, event_types: "MessageCreate")
 
       assert_equal ["dm_conversations/1582838223204016129/dm_events", DirectMessage, 100, "MessageCreate"],
-        [cursor.path, cursor.klass, cursor.params["max_results"], cursor.params["event_types"]]
+        [cursor.path, cursor.resource_class, cursor.params["max_results"], cursor.params["event_types"]]
       assert_same @client, cursor.client
     end
 

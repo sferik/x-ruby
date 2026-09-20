@@ -74,7 +74,7 @@ module X
     def test_pinned_lists_are_lists_of_the_user
       cursor = @user.pinned_lists
 
-      assert_equal [List, "users/1/pinned_lists", @client], [cursor.klass, cursor.path, cursor.client]
+      assert_equal [List, "users/1/pinned_lists", @client], [cursor.resource_class, cursor.path, cursor.client]
     end
 
     def test_pinned_lists_request_no_page_size

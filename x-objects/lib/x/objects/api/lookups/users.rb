@@ -35,6 +35,37 @@ module X
             User.find!(id_or_username, client: self, **params)
           end
 
+          # Look up a user by username
+          #
+          # A String of digits is a username, so this looks the account whose handle is that number up, where
+          # find_user would take it for an identifier.
+          #
+          # @api public
+          # @param username [String] the username, with or without a leading at sign
+          # @param params [Hash] query parameters merged over the default parameters
+          # @return [User, nil] the user or nil if the user was not found
+          # @raise [ArgumentError] if the value is not a username
+          # @yieldparam problem [Problem] each problem the API reported, such as a resource that was not found
+          # @example Look up a user whose username is a number
+          #   client.find_user_by_username("1234567890")
+          def find_user_by_username(username, **params, &)
+            User.find_by_username(username, client: self, **params, &)
+          end
+
+          # Look up a user by username, which must exist
+          #
+          # @api public
+          # @param username [String] the username, with or without a leading at sign
+          # @param params [Hash] query parameters merged over the default parameters
+          # @return [User] the user
+          # @raise [ArgumentError] if the value is not a username
+          # @raise [ResourceNotFound] if the user was not found
+          # @example Look up a user by username
+          #   client.find_user_by_username!("sferik")
+          def find_user_by_username!(username, **params)
+            User.find_by_username!(username, client: self, **params)
+          end
+
           # Look up many users by identifier or username, in parallel batches
           #
           # @api public

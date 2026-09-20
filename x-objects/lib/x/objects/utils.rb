@@ -9,6 +9,17 @@ module X
       # Parsing options that make a client return plain hashes and arrays, whatever its defaults
       JSON_CLASSES = {array_class: Array, object_class: Hash}.freeze
 
+      # The pattern of an identifier that is a number, which most resources are identified by
+      NUMERIC_ID = /\A\d+\z/
+
+      # The pattern of an identifier that is not a number: the word characters a space identifier and a media key are
+      # written with, or the two numbers a one-to-one conversation identifier joins with a hyphen
+      RAW_ID = /\A(?:\w+|\d+-\d+)\z/
+
+      # The pattern of a username: one to fifteen word characters, which the at sign a handle is often written with
+      # may precede
+      USERNAME = /\A@?\w{1,15}\z/
+
       extend self
 
       # Return a deep-frozen copy of a value with string keys
@@ -75,19 +86,29 @@ module X
       # Extract an identifier from a resource or a raw value
       #
       # The identifiers of most resources are numbers, so a value that is not, such as a username, raises rather than
-      # reach the API as an identifier it cannot be.
+      # reach the API as an identifier it cannot be. The identifiers that are not numbers, such as those of spaces and
+      # media, are word characters, so anything else raises rather than reach the API as part of a path.
       #
       # @api private
       # @param value [#id, String, Integer] a resource or an identifier
       # @param raw [Boolean] true for a resource whose identifiers are not numbers, such as a space
       # @return [String] the identifier
-      # @raise [ArgumentError] if the identifier is not a number, unless raw
+      # @raise [ArgumentError] if the identifier is not a number, or is not word characters when raw
       def id_of(value, raw: false)
-        id = value.respond_to?(:id) ? value.id.to_s : value.to_s
-        return id if raw || id.match?(/\A\d+\z/)
+        id = id_from(value)
+        return id if id.match?(raw ? RAW_ID : NUMERIC_ID)
 
-        raise ArgumentError, "#{value.inspect} is not an identifier: pass a resource, an Integer, or a String of digits"
+        raise ArgumentError, "#{value.inspect} is not an identifier: pass a resource, #{raw ? "or a String of word characters" : "an Integer, or a String of digits"}"
       end
+
+      # The identifier a value carries, read from a resource or taken as it is
+      #
+      # The resource this builds checks the identifier when it is made, so this only reads one.
+      #
+      # @api private
+      # @param value [#id, String, Integer] a resource or an identifier
+      # @return [String] the identifier
+      def id_from(value) = value.respond_to?(:id) ? value.id.to_s : value.to_s
 
       # Normalize a username, dropping the at sign a handle is often written with
       #
@@ -96,6 +117,19 @@ module X
       # @return [String] the username
       def username(value)
         value.to_s.delete_prefix("@")
+      end
+
+      # Normalize a username, which must be one, so nothing else reaches a path
+      #
+      # @api private
+      # @param value [String] the username, with or without a leading at sign
+      # @return [String] the username, without the at sign
+      # @raise [ArgumentError] if the value is not one to fifteen word characters
+      def username!(value)
+        name = value.to_s
+        return name.delete_prefix("@") if name.match?(USERNAME)
+
+        raise ArgumentError, "#{value.inspect} is not a username: pass one to fifteen letters, digits, or underscores"
       end
 
       # The identifier of the user an OAuth 1.0a access token begins with
@@ -151,6 +185,15 @@ module X
         else value.fetch("id").to_s
         end
       end
+
+      # The media identifiers of one upload or of several
+      #
+      # One upload needs no array around it, so a single value is read as a list of one.
+      #
+      # @api private
+      # @param media_ids [Array, #fetch, String, Integer] what the uploads returned, or identifiers, one or many
+      # @return [Array<String>] the media identifiers
+      def media_ids_of(media_ids) = (media_ids.is_a?(Array) ? media_ids : [media_ids]).map { |media| media_id_of(media) }
 
       # Check whether a value identifies a resource rather than naming one
       #

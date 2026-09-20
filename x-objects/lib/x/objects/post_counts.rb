@@ -1,3 +1,4 @@
+require "time"
 require_relative "utils"
 
 module X
@@ -44,10 +45,10 @@ module X
       # @param query [String] the search query
       # @param client [Object] the client used to make the requests
       # @param params [Hash] query parameters, such as granularity, which is day by default
-      # @return [Hash{Time => Integer}] the number of matching posts, keyed by the start of each period
+      # @return [Hash{Time => Integer}] the number of matching posts, keyed by the start of each period, oldest first
       # @example Count the recent posts about Ruby by hour
-      #   X::Post.counts("ruby", client: client, granularity: "hour")
-      def counts(query, client:, **params) = periods(pages(RECENT_ENDPOINT, query, client:, **params))
+      #   X::Post.count_by_period("ruby", client: client, granularity: "hour")
+      def count_by_period(query, client:, **params) = periods(pages(RECENT_ENDPOINT, query, client:, **params))
 
       # Count the posts from the full archive that match a query, by period
       #
@@ -55,10 +56,10 @@ module X
       # @param query [String] the search query
       # @param client [Object] the client used to make the requests
       # @param params [Hash] query parameters, such as granularity, which is day by default
-      # @return [Hash{Time => Integer}] the number of matching posts, keyed by the start of each period
+      # @return [Hash{Time => Integer}] the number of matching posts, keyed by the start of each period, oldest first
       # @example Count every post about Ruby by day
-      #   X::Post.counts_all("ruby", client: client)
-      def counts_all(query, client:, **params) = periods(pages(ALL_ENDPOINT, query, client:, **params))
+      #   X::Post.count_all_by_period("ruby", client: client)
+      def count_all_by_period(query, client:, **params) = periods(pages(ALL_ENDPOINT, query, client:, **params))
 
       private
 
@@ -87,12 +88,17 @@ module X
       # @return [Integer] the total
       def total(bodies) = bodies.sum { |body| body.dig("meta", "total_tweet_count") || body.dig("meta", "total_post_count") || 0 }
 
-      # The count of each period of every page, keyed by the start of the period
+      # The count of each period of every page, oldest first
+      #
+      # The API serves the newest page first while each page runs oldest to newest, so the periods of a paginated
+      # count are sorted before they are frozen, and the result reads in time order however many pages it took.
+      #
       # @api private
       # @param bodies [Array<Hash>] the response bodies
-      # @return [Hash{Time => Integer}] the counts
+      # @return [Hash{Time => Integer}] the counts, keyed by the start of each period, in time order
       def periods(bodies)
-        bodies.flat_map { |body| Array(body["data"]) }.to_h { |period| [Utils.time(period.fetch("start")), period.fetch("tweet_count") { period.fetch("post_count") }] }.freeze
+        entries = bodies.flat_map { |body| Array(body["data"]) } #: Array[Hash[String, untyped]]
+        entries.to_h { |period| [Time.iso8601(period.fetch("start")), period.fetch("tweet_count") { period.fetch("post_count") }] }.sort.to_h.freeze
       end
     end
   end

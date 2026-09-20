@@ -1,9 +1,12 @@
+require_relative "serialization"
 require_relative "utils"
 
 module X
   # A problem the API reported in a response that otherwise succeeded, such as a referenced post that no longer exists
   # @api public
   class Problem
+    include Objects::Serialization
+
     # The kinds of resource whose identifiers are numbers, as the API names them
     INTEGER_ID_TYPES = %w[user tweet post list dm_event community poll].freeze
     private_constant :INTEGER_ID_TYPES

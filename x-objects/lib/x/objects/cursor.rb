@@ -1,3 +1,4 @@
+require "json"
 require_relative "page"
 require_relative "pages"
 require_relative "utils"
@@ -15,8 +16,8 @@ module X
     # @api public
     # @return [Class] the resource class
     # @example Get the resource class
-    #   user.followers.klass # => X::User
-    attr_reader :klass
+    #   user.followers.resource_class # => X::User
+    attr_reader :resource_class
 
     # The client used to fetch pages
     # @api public
@@ -56,7 +57,7 @@ module X
     # Initialize a new cursor
     #
     # @api public
-    # @param klass [Class] the class of the resources in the collection
+    # @param resource_class [Class] the class of the resources in the collection
     # @param path [String] the endpoint path
     # @param client [Object] the client used to fetch pages
     # @param params [Hash] query parameters merged over the resource class's default parameters
@@ -72,11 +73,11 @@ module X
     #   X::Cursor.new(X::User, "users/7505382/followers", client: client, params: {max_results: 1000})
     # @example Create a cursor over an endpoint that pages with next_token
     #   X::Cursor.new(X::User, "users/search", client: client, params: {query: "ruby"}, token_param: "next_token")
-    def initialize(klass, path, client:, params: {}, prefetch: false, token_param: DEFAULT_TOKEN_PARAM, min_results: 1, limit: nil, total: nil)
-      @klass = klass
+    def initialize(resource_class, path, client:, params: {}, prefetch: false, token_param: DEFAULT_TOKEN_PARAM, min_results: 1, limit: nil, total: nil)
+      @resource_class = resource_class
       @client = client
       @path = path
-      @params = Objects::Utils.merge_params(klass.default_params, params).freeze
+      @params = Objects::Utils.merge_params(resource_class.default_params, params).freeze
       @prefetch = prefetch
       @token_param = token_param
       @min_results = min_results
@@ -126,9 +127,12 @@ module X
 
     # Fetch a page by index, using the cache when possible
     #
+    # The pages before the one asked for are read first, since the token of each asks for the next.
+    #
     # @api public
     # @param index [Integer] the zero-based page index
     # @return [Page, nil] the page or nil if the collection has fewer pages
+    # @raise [ArgumentError] if the index is negative, since pages are read forward from the first
     # @example Fetch the first page
     #   user.followers.page(0)
     def page(index) = @pages.at(index)
@@ -139,7 +143,7 @@ module X
     # @return [Cursor] a new cursor
     # @example Iterate again with fresh data
     #   followers = user.followers.refresh
-    def refresh = self.class.new(klass, path, client:, params: own_params, prefetch: prefetch?, token_param:, min_results:, total: @total)
+    def refresh = self.class.new(resource_class, path, client:, params: own_params, prefetch: prefetch?, token_param:, min_results:, total: @total)
 
     # Return a new cursor over the same collection with prefetching enabled
     #
@@ -147,7 +151,7 @@ module X
     # @return [Cursor] a new cursor
     # @example Fetch every follower while overlapping requests with processing
     #   user.followers.prefetch.each { |follower| process(follower) }
-    def prefetch = self.class.new(klass, path, client:, params: own_params, prefetch: true, token_param:, min_results:, total: @total)
+    def prefetch = self.class.new(resource_class, path, client:, params: own_params, prefetch: true, token_param:, min_results:, total: @total)
 
     # Return a new cursor over the same collection that yields stubs
     #
@@ -159,15 +163,16 @@ module X
     # @raise [UnsupportedOperation] if the resource class has no fields parameter
     # @example Check whether a user is among thousands of followers without fetching their fields
     #   user.followers.stubs.any?(other)
-    def stubs = self.class.new(klass, path, client:, params: id_only_params, token_param:, min_results:, total: @total)
+    def stubs = self.class.new(resource_class, path, client:, params: id_only_params, prefetch: prefetch?, token_param:, min_results:, total: @total)
 
     # The first resource, or the first few, requesting pages no larger than needed
     #
     # Iterating a cursor requests the largest page an endpoint allows, which costs the least in requests.
     # The API bills each resource returned, so first asks for a page of the size it needs instead, raised to
     # the endpoint's minimum, and each page after the first asks for no more than the pages before it left.
-    # A page of the cursor's own size reuses its cache. The API may serve an empty page with the token of the next,
-    # having left out what it filters, such as suspended users, so first reads on until it finds a resource.
+    # The API may serve an empty page with the token of the next, having left out what it filters, such as
+    # suspended users, so first reads on until it finds a resource. A cursor whose pages already hold what is
+    # asked for answers from them, without a request.
     #
     # @api public
     # @param count [Integer, nil] the number of resources, or nil for the first resource alone
@@ -187,7 +192,7 @@ module X
     # @raise [TypeError] if the count is not a number
     # @example Read three followers in one request for three users
     #   user.followers.take(3)
-    def take(count) = first(Integer(count)) #: Array[Objects::Resource]
+    def take(count) = first(Integer(count))
 
     # Check whether the collection holds any resource, requesting one
     #
@@ -247,24 +252,14 @@ module X
       take(2).size.eql?(1)
     end
 
-    # The number of resources the collection serves, reading every page of it
-    #
-    # Like count, this pages through the whole collection, which costs a request per page, and the API bills each
-    # resource it returns. To learn how many followers a user has without reading them, use published_count.
-    #
-    # @api public
-    # @return [Integer] the number of resources
-    # @example Count the users a user mutes, reading every one of them
-    #   user.muting.size
-    def size = count
-
     # The number the API publishes for the collection, without reading any of it
     #
     # The API publishes a number for a user's followers, followed users, and list memberships, and for a list's
     # members and followers. Reading it costs no request when the user or list holds it, and one lookup when it is a
     # stub. The number counts what the collection holds, which can differ from what count reads, since the
     # endpoint leaves out what the authenticated user cannot see, such as private lists and suspended users. count
-    # and size instead read every page of the collection, a request per page, and the API bills each resource.
+    # instead reads every page of the collection, a request per page, and the API bills each resource. A cursor
+    # answers no size, so that Ruby's own methods, such as each_slice and lazy, do not page a collection to size it.
     #
     # @api public
     # @return [Integer, nil] the published number, or nil for a collection the API publishes no number for
@@ -281,14 +276,34 @@ module X
     #   user.followers.ids
     def ids = stubs.map(&:id)
 
+    # Every resource of the collection, as a JSON encoder and ActiveSupport read them
+    #
+    # Serializing a cursor reads every page of the collection, a request per page, and the API bills each resource
+    # it returns, so serialize what first or take read instead when the whole collection is not wanted.
+    #
+    # @api public
+    # @return [Array<Objects::Resource>] the resources
+    # @example Serialize the first ten followers rather than every one of them
+    #   user.followers.first(10).as_json
+    def as_json(*) = to_a
+
+    # The collection as a JSON array of attributes, reading every page
+    #
+    # @api public
+    # @param state [JSON::State, nil] the state a JSON encoder passes, which the attributes are given
+    # @return [String] the resources as a JSON array
+    # @example Serialize a whole collection
+    #   list.members.to_json # => "[{\"id\":\"7505382\"}]"
+    def to_json(state = nil) = as_json.to_json(state)
+
     # Summarize the cursor for the console
     #
     # @api public
     # @return [String] the class name, resource class, and path
     # @example Inspect a cursor
-    #   user.followers.inspect # => #<X::Cursor klass=X::User path="users/7505382/followers">
+    #   user.followers.inspect # => #<X::Cursor resource_class=X::User path="users/7505382/followers">
     def inspect
-      "#<#{self.class} klass=#{klass} path=#{path.inspect}>"
+      "#<#{self.class} resource_class=#{resource_class} path=#{path.inspect}>"
     end
 
     private
@@ -299,10 +314,9 @@ module X
     # @return [Cursor] this cursor, or a cursor with a smaller page size
     def sized(count)
       maximum = params["max_results"]
-      return self if maximum.nil?
+      return self if maximum.nil? || @pages.satisfy?(count)
 
-      maximum = Integer(maximum)
-      count.eql?(maximum) ? self : with_max_results(count.clamp(min_results, maximum), count)
+      with_max_results(count.clamp(min_results, Integer(maximum)), count)
     end
 
     # A cursor over the same collection with another page size, stopping at a limit
@@ -310,14 +324,14 @@ module X
     # @param size [Integer] the size of the first page
     # @param limit [Integer] the number of resources wanted
     # @return [Cursor] a new cursor
-    def with_max_results(size, limit) = self.class.new(klass, path, client:, params: own_params.merge("max_results" => size), prefetch: prefetch?, token_param:, min_results:, limit:, total: @total)
+    def with_max_results(size, limit) = self.class.new(resource_class, path, client:, params: own_params.merge("max_results" => size), prefetch: prefetch?, token_param:, min_results:, limit:, total: @total)
 
     # The parameters of this cursor, keeping dropped defaults dropped
     # @api private
     # @return [Hash{String => Object}] the parameters
     def own_params
       dropped = {} #: Hash[String, nil]
-      klass.default_params.each_key { |key| dropped[key] = nil }
+      resource_class.default_params.each_key { |key| dropped[key] = nil }
       dropped.merge(params)
     end
 
@@ -326,10 +340,10 @@ module X
     # @return [Hash{String => Object}] the query parameters
     # @raise [UnsupportedOperation] if the resource class has no fields parameter
     def id_only_params
-      fields_key = klass.fields_key || raise(UnsupportedOperation, "#{klass} has no fields parameter")
+      fields_key = resource_class.fields_key || raise(UnsupportedOperation, "#{resource_class} has no fields parameter")
       dropped = {} #: Hash[String, nil]
-      klass.default_params.each_key { |key| dropped[key] = nil }
-      params.merge(dropped, fields_key => klass.id_key)
+      resource_class.default_params.each_key { |key| dropped[key] = nil }
+      params.merge(dropped, fields_key => resource_class.id_key)
     end
   end
 end

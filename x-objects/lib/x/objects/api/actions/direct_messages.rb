@@ -12,13 +12,16 @@ module X
           # @api public
           # @param user [User, String, Integer] the recipient or their identifier
           # @param text [String, nil] the text of the message, or nil for a message of attachments alone
-          # @param params [Hash] additional request body fields, such as attachments
+          # @param params [Hash] additional request body fields, such as media_ids or attachments
+          # @option params [Array<String, Integer, #fetch>, String, Integer, #fetch] :media_ids the identifiers of
+          #   uploaded media to attach, or what the uploads returned, one or many
           # @return [DirectMessage, nil] the sent message, holding only its identifiers
-          # @raise [ArgumentError] if the message has neither text nor any other field
+          # @raise [ArgumentError] if the message has neither text nor any other field, or has both media_ids and
+          #   attachments
           # @example Send a direct message
           #   client.create_direct_message(user, "Hello!")
           # @example Send an image without text
-          #   client.create_direct_message(user, attachments: [{media_id: media["id"]}])
+          #   client.create_direct_message(user, media_ids: media)
           def create_direct_message(user, text = nil, **params)
             DirectMessage.create(user, text, client: self, **params)
           end
@@ -28,11 +31,16 @@ module X
           # @api public
           # @param users [Array<User, String, Integer>] the other participants or their identifiers
           # @param text [String, nil] the text of the first message, or nil for a message of attachments alone
-          # @param params [Hash] additional fields of the message, such as attachments
+          # @param params [Hash] additional fields of the message, such as media_ids or attachments
+          # @option params [Array<String, Integer, #fetch>, String, Integer, #fetch] :media_ids the identifiers of
+          #   uploaded media to attach, or what the uploads returned, one or many
           # @return [DirectMessage, nil] the sent message, holding only its identifiers, among them the conversation's
-          # @raise [ArgumentError] if the message has neither text nor any other field
+          # @raise [ArgumentError] if the message has neither text nor any other field, or has both media_ids and
+          #   attachments
           # @example Start a group conversation
           #   client.create_group_direct_message([alice, bob], "Hello, both of you!")
+          # @example Start a group conversation with an image
+          #   client.create_group_direct_message([alice, bob], media_ids: media)
           def create_group_direct_message(users, text = nil, **params)
             DirectMessage.create_group(users, text, client: self, **params)
           end
@@ -44,11 +52,16 @@ module X
           # @api public
           # @param conversation [DirectMessage, String, Integer] a message of the conversation, or the conversation's identifier
           # @param text [String, nil] the text of the message, or nil for a message of attachments alone
-          # @param params [Hash] additional request body fields, such as attachments
+          # @param params [Hash] additional request body fields, such as media_ids or attachments
+          # @option params [Array<String, Integer, #fetch>, String, Integer, #fetch] :media_ids the identifiers of
+          #   uploaded media to attach, or what the uploads returned, one or many
           # @return [DirectMessage, nil] the sent message, holding only its identifiers
-          # @raise [ArgumentError] if the conversation identifier is not one, or the message has neither text nor any other field
+          # @raise [ArgumentError] if the conversation identifier is not one, the message has neither text nor any
+          #   other field, or it has both media_ids and attachments
           # @example Reply to the conversation of a message
           #   client.create_direct_message_in(message, "Sounds good")
+          # @example Reply with an image
+          #   client.create_direct_message_in(message, media_ids: media)
           def create_direct_message_in(conversation, text = nil, **params)
             DirectMessage.create_in(conversation, text, client: self, **params)
           end

@@ -11,9 +11,12 @@ module X
     include Objects::Relationships
     extend Objects::UserFinders
 
-    # Every public user field; the identifiers of referenced posts come with their expansions
-    FIELDS = %w[created_at description entities id location name profile_image_url protected public_metrics url
-      username verified verified_type withheld].freeze
+    # The user fields the object layer requests: every one that does not depend on who is authenticated, since a
+    # field that does, such as connection_status, would make every request fail for a client that cannot read it;
+    # the identifiers of referenced posts come with their expansions
+    FIELDS = %w[affiliation created_at description entities id is_identity_verified location name parody
+      profile_banner_url profile_image_url protected public_metrics subscription_type url username verified
+      verified_followers_count verified_type withheld].freeze
     # Every expansion available on user endpoints that refers to a modeled resource
     EXPANSIONS = %w[most_recent_post_id pinned_post_id].freeze
     # Maximum number of followers or followed users per page
@@ -133,6 +136,14 @@ module X
     #     user.profile_image_url
     attribute :profile_image_url
 
+    # @!attribute [r] profile_banner_url
+    #   The profile banner URL
+    #   @api public
+    #   @return [String, nil] the profile banner URL
+    #   @example Get the profile banner URL
+    #     user.profile_banner_url
+    attribute :profile_banner_url
+
     # @!attribute [r] created_at
     #   The time when the account was created
     #   @api public
@@ -178,6 +189,53 @@ module X
     #   @example Get the verification type
     #     user.verified_type
     attribute :verified_type
+
+    # @!attribute [r] parody
+    #   Whether the account labels itself a parody
+    #   @api public
+    #   @return [Boolean, nil] true if the account is labelled a parody
+    #   @example Check whether a user is a parody account
+    #     user.parody?
+    attribute :parody, :boolean
+
+    # @!method parody?
+    #   Check whether the account labels itself a parody
+    #   @api public
+    #   @return [Boolean] true if the account is labelled a parody
+    #   @example Leave out the parody accounts
+    #     users.reject(&:parody?)
+
+    # @!attribute [r] is_identity_verified
+    #   Whether the account's identity is verified
+    #   @api public
+    #   @return [Boolean, nil] true if the identity is verified
+    #   @example Get the raw flag
+    #     user.is_identity_verified
+    attribute :is_identity_verified
+
+    # @!attribute [r] subscription_type
+    #   The subscription the account pays for: Basic, Premium, PremiumPlus, or None
+    #   @api public
+    #   @return [String, nil] the subscription type
+    #   @example Get the subscription type
+    #     user.subscription_type
+    attribute :subscription_type
+
+    # @!attribute [r] affiliation
+    #   The organization the account is affiliated with, with its badge
+    #   @api public
+    #   @return [Hash, nil] the affiliation
+    #   @example Get the affiliated organization
+    #     user.affiliation&.fetch("description")
+    attribute :affiliation
+
+    # @!attribute [r] verified_followers_count
+    #   The number of verified followers
+    #   @api public
+    #   @return [Integer, nil] the verified follower count
+    #   @example Get the verified follower count
+    #     user.verified_followers_count
+    attribute :verified_followers_count
 
     # @!attribute [r] connection_status
     #   How the authenticated user and this user are connected
@@ -297,6 +355,14 @@ module X
     alias_method :pinned_tweet, :pinned_post
     alias_method :most_recent_tweet, :most_recent_post
 
+    # Check whether the account's identity is verified
+    #
+    # @api public
+    # @return [Boolean] true if the identity is verified
+    # @example Check whether a user's identity is verified
+    #   user.identity_verified?
+    def identity_verified? = is_identity_verified.eql?(true)
+
     # The permalink of the profile, by username when known and by identifier otherwise
     #
     # @api public
@@ -403,14 +469,15 @@ module X
 
     # The posts bookmarked by the authenticated user
     #
+    # The bookmark endpoints take only OAuth 2.0 user context, which the object layer cannot route around, so a
+    # client that signs with OAuth 1.0a is refused.
+    #
     # @api public
     # @param params [Hash] query parameters merged over the default parameters
     # @return [Cursor] a cursor over the bookmarked posts
     # @example Print the bookmarked posts
     #   client.current_user.bookmarks.each { |post| puts post.text }
-    def bookmarks(**params)
-      cursor(Post, "users/#{id}/bookmarks", max_results: MAX_RESULTS, **params)
-    end
+    def bookmarks(**params) = cursor(Post, "users/#{id}/bookmarks", max_results: MAX_RESULTS, **params)
 
     # The lists owned by this user
     #

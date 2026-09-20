@@ -27,6 +27,21 @@ module X
         assert_raises(KeyError) { Utils.media_id_of(uploaded.new({"media_key" => "3_3"})) }
       end
 
+      def test_media_ids_of_many
+        assert_equal %w[3 4 5], Utils.media_ids_of([{"id" => 3}, "4", 5])
+        assert_empty Utils.media_ids_of([])
+      end
+
+      def test_media_ids_of_an_array_subclass
+        assert_equal %w[3 4], Utils.media_ids_of(Class.new(Array).new(%w[3 4]))
+      end
+
+      def test_media_ids_of_one
+        assert_equal %w[3], Utils.media_ids_of({"id" => "3"})
+        assert_equal %w[4], Utils.media_ids_of("4")
+        assert_equal %w[5], Utils.media_ids_of(5)
+      end
+
       def test_media_id_of_a_response_without_an_id
         assert_raises(KeyError) { Utils.media_id_of({"media_key" => "3_3"}) }
       end

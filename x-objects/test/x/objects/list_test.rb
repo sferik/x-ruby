@@ -45,9 +45,9 @@ module X
     end
 
     def test_cursor_classes
-      assert_equal User, @list.members.klass
-      assert_equal User, @list.followers.klass
-      assert_equal Post, @list.posts.klass
+      assert_equal User, @list.members.resource_class
+      assert_equal User, @list.followers.resource_class
+      assert_equal Post, @list.posts.resource_class
       assert_same @client, @list.members.client
     end
 

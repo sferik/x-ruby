@@ -41,6 +41,20 @@ module X
       assert_equal ["users/9/following"], @client.paths
     end
 
+    def test_an_app_only_client_that_cannot_read_the_authenticated_user_scans
+      @client.stub(:get, "users/me", ->(*) { raise Error, "403 Forbidden" })
+      @client.stub(:get, "users/5/following", {"data" => [{"id" => "6"}]})
+
+      assert User.new({"id" => "5"}, client: @client).follows?(6)
+      assert_equal ["users/me", "users/5/following"], @client.paths
+    end
+
+    def test_an_error_that_is_no_x_error_ends_the_check
+      @client.stub(:get, "users/me", ->(*) { raise IOError, "closed" })
+
+      assert_raises(IOError) { User.new({"id" => "5"}, client: @client).follows?(6) }
+    end
+
     def test_connection_status_attribute
       assert_equal %w[following followed_by], User.new({"id" => "5", "connection_status" => %w[following followed_by]}).connection_status
       assert_nil User.new({"id" => "5"}).connection_status

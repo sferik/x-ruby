@@ -29,20 +29,50 @@ module X
       # @api private
       # @param index [Integer] the zero-based page index
       # @return [Page, nil] the page or nil if the collection has fewer pages
+      # @raise [ArgumentError] if the index is negative, since pages are read forward from the first
       def at(index)
+        raise ArgumentError, "#{index} is not a page index: pages are numbered from zero" if index.negative?
+
         current = cached(index)
         prefetch(index + 1) if @cursor.prefetch? && current&.next_token
         current
       end
 
+      # Check whether the pages already fetched answer a request for so many resources
+      #
+      # A cursor that has been read holds its pages, so first, take, and the predicates built on them read what is
+      # there rather than pay for another request.
+      #
+      # @api private
+      # @param count [Integer] the number of resources wanted
+      # @return [Boolean] true if the pages fetched hold that many, or the last of them ends the collection
+      def satisfy?(count)
+        fetched = @monitor.synchronize { @pages.take_while { |page| !page.nil? } }
+        last = fetched.fetch(-1, nil)
+        return false if last.nil?
+
+        fetched.sum { |page| page.to_a.size } >= count || last.next_token.nil?
+      end
+
       private
 
-      # Fetch a page by index, storing it in the cache
+      # Fetch the pages up to an index, in order, storing each in the cache
+      #
+      # The token of one page asks for the next, so the pages before an index are read first, one after another
+      # rather than one within another, since a collection of many pages would otherwise nest as deep as it is long.
+      #
       # @api private
       # @param index [Integer] the zero-based page index
       # @return [Page, nil] the page or nil if the collection has fewer pages
       def cached(index)
-        @monitor.synchronize { @pages[index] ||= fetch(index) }
+        @monitor.synchronize do
+          page = nil #: Page?
+          (0..index).each do |current|
+            page = @pages[current] ||= fetch(current)
+            break if page.nil?
+          end
+          page
+        end
       end
 
       # Fetch a page from the API
@@ -62,7 +92,7 @@ module X
       # @param body [Hash, nil] the response body
       # @return [Array<Resource>] the resources
       def resources_from(body)
-        klass = @cursor.klass
+        klass = @cursor.resource_class
         resources = klass.collection_from_response(body, client: @cursor.client, hydrated: klass.fully_requested_by?(@cursor.params))
         id_only? ? stubs_from(resources) : resources
       end
@@ -77,7 +107,7 @@ module X
       # @param resources [Array<Resource>] the resources of the page
       # @return [Array<Resource>] the stubs
       def stubs_from(resources)
-        klass = @cursor.klass
+        klass = @cursor.resource_class
         client = @cursor.client
         resources.each_slice(Finders::MAX_BATCH_SIZE).flat_map do |slice|
           batch = (Batch.new(klass, slice, client:) if klass.batchable?)
@@ -88,16 +118,20 @@ module X
       # Check whether the cursor requests nothing but identifiers
       # @api private
       # @return [Boolean] true if the fields parameter selects only the identifier
-      def id_only? = @cursor.params[@cursor.klass.fields_key].eql?(@cursor.klass.id_key)
+      def id_only? = @cursor.params[@cursor.resource_class.fields_key].eql?(@cursor.resource_class.id_key)
 
       # Build the query parameters for a page, including the previous page token
+      #
+      # The page before this one is already fetched, since the pages are read in order.
+      #
       # @api private
       # @param index [Integer] the zero-based page index
       # @return [Hash{String => Object}, nil] the parameters or nil if the previous page was the last
       def params_for(index)
         return @cursor.params if index.zero?
 
-        token = cached(index - 1)&.next_token
+        previous = @pages.fetch(index - 1) #: Page
+        token = previous.next_token
         next_params(token) unless token.nil?
       end
 

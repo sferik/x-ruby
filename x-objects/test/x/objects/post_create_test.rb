@@ -96,5 +96,36 @@ module X
 
       assert_equal({text: "Hello"}.to_json, @client.requests.first[:body])
     end
+
+    def test_create_keeps_the_other_reply_fields_beside_reply_to
+      Post.create("Hello", client: @client, reply_to: 5, reply: {exclude_reply_user_ids: ["1"]})
+
+      assert_equal({text: "Hello", reply: {exclude_reply_user_ids: ["1"], in_reply_to_tweet_id: "5"}}.to_json, @client.requests.first[:body])
+    end
+
+    def test_create_keeps_the_other_media_fields_beside_media_ids
+      Post.create("Hello", client: @client, media_ids: [4], media: {tagged_user_ids: ["2"]})
+
+      assert_equal({text: "Hello", media: {tagged_user_ids: ["2"], media_ids: ["4"]}}.to_json, @client.requests.first[:body])
+    end
+
+    def test_reply_to_and_media_ids_win_the_one_field_each_of_them_sets
+      Post.create("Hello", client: @client, reply_to: 5, reply: {in_reply_to_tweet_id: "9"}, media_ids: [4], media: {media_ids: ["9"]})
+
+      assert_equal({text: "Hello", reply: {in_reply_to_tweet_id: "5"}, media: {media_ids: ["4"]}}.to_json, @client.requests.first[:body])
+    end
+
+    def test_create_keeps_reply_and_media_given_without_the_convenience_keys
+      Post.create("Hello", client: @client, reply: {in_reply_to_tweet_id: "9"}, media: {media_ids: ["9"]})
+
+      assert_equal({text: "Hello", reply: {in_reply_to_tweet_id: "9"}, media: {media_ids: ["9"]}}.to_json, @client.requests.first[:body])
+    end
+
+    def test_create_accepts_one_media_id
+      Post.create("Hello", client: @client, media_ids: 4)
+      Post.create("Hello", client: @client, media_ids: {"id" => "5"})
+
+      assert_equal [{text: "Hello", media: {media_ids: ["4"]}}.to_json, {text: "Hello", media: {media_ids: ["5"]}}.to_json], @client.requests.map { |request| request[:body] }
+    end
   end
 end

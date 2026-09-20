@@ -61,6 +61,42 @@ module X
     #   X::Media.id_type # => :raw
     def self.id_type = :raw
 
+    # The media key of what an upload returned, or of a value that is one already
+    #
+    # What an upload returns holds both a media key and a numeric identifier, and the lookup endpoint takes the
+    # media key, so this reads that rather than the identifier a resource is usually found by.
+    #
+    # @api private
+    # @param media [#media_key, String] the media, or its media key
+    # @return [Object] the media key
+    # @example Get the media key of an upload
+    #   X::Media.key_of(uploaded) # => "3_1880028106020515840"
+    def self.key_of(media) = media.respond_to?(:media_key) ? media.media_key : media
+
+    # Look up media by media key
+    #
+    # @api public
+    # @param media [#media_key, String, Media] the media key, what an upload returned, or media
+    # @param client [Object] the client used to make the request
+    # @param params [Hash] query parameters merged over the default parameters
+    # @return [Media, nil] the media, or nil if it was not found
+    # @yieldparam problem [Problem] each problem the API reported
+    # @example Look up what an upload returned
+    #   X::Media.find(uploaded, client: client)
+    def self.find(media, client:, **params) = super(key_of(media), client:, **params)
+
+    # Look up many media by media key, in parallel batches
+    #
+    # @api public
+    # @param media [Array<#media_key, String, Media>] the media keys, what the uploads returned, or media
+    # @param client [Object] the client used to make the requests
+    # @param params [Hash] query parameters merged over the default parameters
+    # @return [Array<Media>] the media that was found
+    # @yieldparam problem [Problem] each problem the API reported
+    # @example Look up what the uploads returned
+    #   X::Media.find_all(uploads, client: client)
+    def self.find_all(media, client:, **params) = super(media.map { |value| key_of(value) }, client:, **params)
+
     # The key under which media appear in the includes of a response
     #
     # @api private

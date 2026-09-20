@@ -48,7 +48,7 @@ module X
           # @example Hide a reply
           #   client.hide_reply("1234567890")
           def hide_reply(post)
-            Post.hide(post, client: self)
+            Post.hide_reply(post, client: self)
           end
 
           # Show a reply to a post of the authenticated user after hiding it
@@ -59,7 +59,7 @@ module X
           # @example Show a hidden reply
           #   client.unhide_reply("1234567890")
           def unhide_reply(post)
-            Post.unhide(post, client: self)
+            Post.unhide_reply(post, client: self)
           end
 
           alias_method :create_tweet, :create_post

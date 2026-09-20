@@ -1,3 +1,4 @@
+require_relative "errors"
 require_relative "utils"
 
 module X
@@ -14,13 +15,14 @@ module X
       # @param client [Object] the client used to make the request
       # @param params [Hash] query parameters merged over the default parameters
       # @return [User, nil] the user or nil if the user was not found
+      # @raise [ArgumentError] if the value is neither an identifier nor a username
       # @yieldparam problem [Problem] each problem the API reported, such as a user that was not found
       # @example Look up a user by username
       #   X::User.find("sferik", client: client)
       def find(id_or_username, client:, **params, &)
         return super if Utils.id?(id_or_username)
 
-        lookup("users/by/username/#{Utils.username(id_or_username)}", client:, **params, &)
+        find_by_username(id_or_username, client:, **params, &)
       end
 
       # Look up many users by identifier or username, in parallel batches
@@ -49,11 +51,46 @@ module X
       # @param client [Object] the client used to make the requests
       # @param params [Hash] query parameters merged over the default parameters
       # @return [Array<User>] the users that were found
+      # @raise [ArgumentError] if a value is not a username
       # @yieldparam problem [Problem] each problem the API reported, such as a username that was not found
       # @example Look up many users by username
       #   X::User.find_all_by_username(["sferik", "gem"], client: client)
       def find_all_by_username(usernames, client:, **params, &)
-        lookup_in_batches("users/by", :usernames, usernames.map { |username| normalize(username) }, client:, **params, &) #: Array[User]
+        lookup_in_batches("users/by", :usernames, usernames.map { |username| normalize(Utils.username!(username)) }, client:, **params, &) #: Array[User]
+      end
+
+      # Look up a user by username
+      #
+      # A String of digits is a username, so this looks the account whose handle is that number up, where find would
+      # take it for an identifier.
+      #
+      # @api public
+      # @param username [String] the username, with or without a leading at sign
+      # @param client [Object] the client used to make the request
+      # @param params [Hash] query parameters merged over the default parameters
+      # @return [User, nil] the user or nil if the user was not found
+      # @raise [ArgumentError] if the value is not a username
+      # @yieldparam problem [Problem] each problem the API reported, such as a user that was not found
+      # @example Look up a user by username
+      #   X::User.find_by_username("sferik", client: client)
+      def find_by_username(username, client:, **params, &)
+        lookup("users/by/username/#{Utils.username!(username)}", client:, **params, &) #: User?
+      end
+
+      # Look up a user by username, which must exist
+      #
+      # @api public
+      # @param username [String] the username, with or without a leading at sign
+      # @param client [Object] the client used to make the request
+      # @param params [Hash] query parameters merged over the default parameters
+      # @return [User] the user
+      # @raise [ArgumentError] if the value is not a username
+      # @raise [ResourceNotFound] if the user was not found
+      # @example Look up a user by username
+      #   X::User.find_by_username!("sferik", client: client)
+      def find_by_username!(username, client:, **params)
+        problems = [] #: Array[Problem]
+        find_by_username(username, client:, **params) { |problem| problems << problem } || raise(ResourceNotFound.new("Could not find #{self} @#{Utils.username(username)}", problems:))
       end
 
       private

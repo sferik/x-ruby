@@ -18,7 +18,7 @@ module X
     end
 
     def test_readers
-      assert_equal User, @cursor.klass
+      assert_equal User, @cursor.resource_class
       assert_same @client, @cursor.client
       assert_equal "users/1/followers", @cursor.path
       refute_predicate @cursor, :prefetch?
@@ -114,7 +114,7 @@ module X
     end
 
     def test_inspect
-      assert_equal '#<X::Cursor klass=X::User path="users/1/followers">', @cursor.inspect
+      assert_equal '#<X::Cursor resource_class=X::User path="users/1/followers">', @cursor.inspect
     end
   end
 end

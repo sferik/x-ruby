@@ -13,7 +13,7 @@ module X
     def test_reposts
       cursor = @post.reposts
 
-      assert_equal ["tweets/1/retweets", Post, 100, 1], [cursor.path, cursor.klass, cursor.params["max_results"], cursor.min_results]
+      assert_equal ["tweets/1/retweets", Post, 100, 1], [cursor.path, cursor.resource_class, cursor.params["max_results"], cursor.min_results]
       assert_equal Post.default_params["post.fields"].join(","), cursor.params["post.fields"]
       assert_same @client, cursor.client
     end

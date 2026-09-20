@@ -120,6 +120,9 @@ module X
 
       # Bookmark a post, acting as this user, which must be the authenticated user
       #
+      # The bookmark endpoints take only OAuth 2.0 user context, which the object layer cannot route around, so a
+      # client that signs with OAuth 1.0a is refused.
+      #
       # @api public
       # @param post [Resource, String, Integer] the post or its identifier
       # @return [Boolean] true if this user has bookmarked the post
@@ -130,6 +133,9 @@ module X
       end
 
       # Remove a bookmark, acting as this user, which must be the authenticated user
+      #
+      # The bookmark endpoints take only OAuth 2.0 user context, which the object layer cannot route around, so a
+      # client that signs with OAuth 1.0a is refused.
       #
       # @api public
       # @param post [Resource, String, Integer] the post or its identifier
@@ -188,7 +194,8 @@ module X
       #
       # When either user is the authenticated user, one lookup of the other's connection_status answers.
       # Otherwise the users this user follows are scanned until one matches, up to 1,000 a page, and the
-      # API bills every user returned, so checking an account that follows thousands can cost dollars.
+      # API bills every user returned, so checking an account that follows thousands can cost dollars. A client
+      # that authenticates as the app alone has no authenticated user, so it scans.
       #
       # @api public
       # @param user [User, String, Integer] the user or their identifier
@@ -210,11 +217,17 @@ module X
       private
 
       # The identifier of the authenticated user, when the client knows it
+      #
+      # A client that authenticates as the app alone has no authenticated user, and asks the API for one in vain,
+      # so an error leaves the identifier unknown rather than end the check.
+      #
       # @api private
-      # @return [Integer, nil] the identifier or nil if the client has no current_user_id
+      # @return [Integer, nil] the identifier, or nil if the client has no current_user_id or cannot read one
       def authenticated_user_id
         current = client! #: untyped
         current.current_user_id if current.respond_to?(:current_user_id)
+      rescue Error
+        nil
       end
 
       # How the authenticated user is connected to a user, in one lookup

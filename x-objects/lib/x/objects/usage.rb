@@ -1,3 +1,4 @@
+require_relative "serialization"
 require_relative "utils"
 
 module X
@@ -8,6 +9,8 @@ module X
   #
   # @api public
   class Usage
+    include Objects::Serialization
+
     # The endpoint that reports the post usage of the project
     ENDPOINT = "usage/tweets".freeze
     # Every field of the usage

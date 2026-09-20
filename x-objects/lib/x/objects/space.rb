@@ -3,6 +3,10 @@ require_relative "resource"
 
 module X
   # A live audio space
+  #
+  # The space endpoints take only app-only authentication, so a client that signs with OAuth 1.0a reads spaces with a
+  # copy that authenticates as the app.
+  #
   # @api public
   class Space < Objects::Resource
     # Every public space field
@@ -31,6 +35,18 @@ module X
       # @example Get the identifier type
       #   X::Space.id_type # => :raw
       def id_type = :raw
+
+      # The client a space lookup requests with, which authenticates as the app
+      #
+      # The space endpoints refuse OAuth 1.0a, so a client that signs with it looks spaces up with a copy that
+      # reuses its bearer token.
+      #
+      # @api private
+      # @param client [Object] the client the lookup was given
+      # @return [Object] the client's app-only client, which reuses its bearer token, or the client itself
+      # @example Get the client a space lookup requests with
+      #   X::Space.client_for(client)
+      def client_for(client) = Objects::Utils.app_client(client)
 
       # The query parameter that selects space fields
       #
@@ -62,7 +78,7 @@ module X
       # @example Print the live spaces about Ruby
       #   X::Space.search("ruby", client: client, state: "live").each { |space| puts space.title }
       def search(query, client:, **params)
-        Cursor.new(self, "spaces/search", client:, params: {query:, max_results: MAX_RESULTS}.merge(params))
+        Cursor.new(self, "spaces/search", client: client_for(client), params: {query:, max_results: MAX_RESULTS}.merge(params))
       end
     end
 
@@ -242,7 +258,7 @@ module X
     # @example Print the shared posts
     #   space.posts.each { |post| puts post.text }
     def posts(**params)
-      cursor(Post, "spaces/#{id}/tweets", max_results: MAX_RESULTS, **params)
+      cursor(Post, "spaces/#{id}/tweets", max_results: MAX_RESULTS, client: self.class.client_for(client!), **params)
     end
 
     alias_method :tweets, :posts

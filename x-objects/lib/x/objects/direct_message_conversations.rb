@@ -16,13 +16,18 @@ module X
       # @param users [Array<User, String, Integer>] the other participants or their identifiers
       # @param text [String, nil] the text of the first message, or nil for a message of attachments alone
       # @param client [Object] the client used to make the request
+      # @param media_ids [Array<String, Integer, #fetch>, String, Integer, #fetch, nil] the identifiers of uploaded
+      #   media to attach, or what the uploads returned, one or many
       # @param params [Hash] additional fields of the message, such as attachments
       # @return [DirectMessage, nil] the sent message, holding only its identifiers, among them the new conversation's
-      # @raise [ArgumentError] if the message has neither text nor any other field
+      # @raise [ArgumentError] if the message has neither text nor any other field, or has both media_ids and
+      #   attachments
       # @example Start a group conversation
       #   X::DirectMessage.create_group([alice, bob], "Hello, both of you!", client: client)
-      def create_group(users, text = nil, client:, **params)
-        body = {conversation_type: "Group", participant_ids: users.map { |user| Utils.id_of(user) }, message: message(text, params)}
+      # @example Start a group conversation with an image
+      #   X::DirectMessage.create_group([alice, bob], client: client, media_ids: media)
+      def create_group(users, text = nil, client:, media_ids: nil, **params)
+        body = {conversation_type: "Group", participant_ids: users.map { |user| Utils.id_of(user) }, message: message(text, params, media_ids)}
         sent(client.post("dm_conversations", JSON.generate(body), **Utils::JSON_CLASSES), client:)
       end
 
@@ -32,14 +37,19 @@ module X
       # @param conversation [DirectMessage, String, Integer] a message of the conversation, or the conversation's identifier
       # @param text [String, nil] the text of the message, or nil for a message of attachments alone
       # @param client [Object] the client used to make the request
+      # @param media_ids [Array<String, Integer, #fetch>, String, Integer, #fetch, nil] the identifiers of uploaded
+      #   media to attach, or what the uploads returned, one or many
       # @param params [Hash] additional request body fields, such as attachments
       # @return [DirectMessage, nil] the sent message, holding only its identifiers
-      # @raise [ArgumentError] if the conversation identifier is not one, or the message has neither text nor any other field
+      # @raise [ArgumentError] if the conversation identifier is not one, the message has neither text nor any other
+      #   field, or it has both media_ids and attachments
       # @example Reply to the conversation of a message
       #   X::DirectMessage.create_in(message, "Sounds good", client: client)
-      def create_in(conversation, text = nil, client:, **params)
+      # @example Reply with an image
+      #   X::DirectMessage.create_in(message, client: client, media_ids: media)
+      def create_in(conversation, text = nil, client:, media_ids: nil, **params)
         path = "dm_conversations/#{conversation_id_of(conversation)}/messages"
-        sent(client.post(path, JSON.generate(message(text, params)), **Utils::JSON_CLASSES), client:)
+        sent(client.post(path, JSON.generate(message(text, params, media_ids)), **Utils::JSON_CLASSES), client:)
       end
 
       # The direct message events of a conversation, one-to-one or group
@@ -75,14 +85,24 @@ module X
       end
 
       # The fields of a message to send, which needs text or attachments
+      #
+      # The API takes media as attachments, each an object holding the identifier of one upload as a String, so
+      # media_ids builds them, and a caller who builds them itself passes attachments instead.
+      #
       # @api private
       # @param text [String, nil] the text of the message
       # @param params [Hash] additional fields of the message, such as attachments
+      # @param media_ids [Array, #fetch, String, Integer, nil] the identifiers of uploaded media to attach, or what
+      #   the uploads returned, one or many
       # @return [Hash{Symbol => Object}] the fields, without the text when there is none
-      # @raise [ArgumentError] if the message has neither text nor any other field
-      def message(text, params)
+      # @raise [ArgumentError] if the message has neither text nor any other field, or has both media_ids and
+      #   attachments
+      def message(text, params, media_ids)
+        raise ArgumentError, "pass media_ids or attachments, not both" if !media_ids.nil? && params.key?(:attachments)
+
         fields = {text:, **params}.compact
-        raise ArgumentError, "a direct message needs text, or something else to show, such as attachments" if fields.empty?
+        fields[:attachments] = Utils.media_ids_of(media_ids).map { |media_id| {media_id:} } unless media_ids.nil?
+        raise ArgumentError, "a direct message needs text, or something else to show, such as media_ids" if fields.empty?
 
         fields
       end

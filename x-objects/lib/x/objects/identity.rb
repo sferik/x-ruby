@@ -33,15 +33,6 @@ module X
         [self.class, id].hash
       end
 
-      # Deconstruct the resource into its identifier, so it matches an array pattern
-      #
-      # @api public
-      # @return [Array] the identifier alone
-      # @example Match a user by identifier
-      #   case user in [7505382] then puts "sferik"
-      #   end
-      def deconstruct = [id]
-
       # Deconstruct the resource into its attributes, so it matches a hash pattern
       #
       # Every attribute the resource declares is read as its own method reads it, so a pattern sees the

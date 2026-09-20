@@ -48,14 +48,14 @@ module X
 
         assert_equal "users/search", cursor.path
         assert_equal ["ruby", 10, "next_token"], [cursor.params["query"], cursor.params["max_results"], cursor.token_param]
-        assert_equal User, cursor.klass
+        assert_equal User, cursor.resource_class
         assert_same @client, cursor.client
       end
 
       def test_reposts_of_me
         cursor = @client.reposts_of_me(max_results: 10)
 
-        assert_equal ["users/reposts_of_me", 10, Post], [cursor.path, cursor.params["max_results"], cursor.klass]
+        assert_equal ["users/reposts_of_me", 10, Post], [cursor.path, cursor.params["max_results"], cursor.resource_class]
         assert_same @client, cursor.client
         assert_equal "users/reposts_of_me", @client.retweets_of_me.path
       end

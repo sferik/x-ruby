@@ -1,5 +1,6 @@
 # The standard libraries the signatures of x-objects refer to, which rbs collection loads for code that depends on it
 dependencies:
   - name: forwardable
+  - name: json
   - name: monitor
   - name: uri

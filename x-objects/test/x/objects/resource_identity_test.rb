@@ -60,6 +60,19 @@ module X
         assert_equal "3_1", Media.new({"media_key" => "3_1"}).id
       end
 
+      def test_refuses_an_identifier_that_is_not_one
+        error = assert_raises(ArgumentError) { User.new({"id" => "abc"}) }
+
+        assert_equal "\"abc\" is not an identifier: pass a resource, an Integer, or a String of digits", error.message
+        assert_raises(ArgumentError) { Space.new({"id" => "a/b"}) }
+        assert_raises(ArgumentError) { Media.new({"media_key" => ""}) }
+      end
+
+      def test_takes_the_identifiers_the_api_gives
+        assert_equal [7_505_382, "1DXxyRYNejbKM", "3_1", "01a9a39529b27f36"],
+          [User.new({"id" => "7505382"}), Space.new({"id" => "1DXxyRYNejbKM"}), Media.new({"media_key" => "3_1"}), Place.new({"id" => "01a9a39529b27f36"})].map(&:id)
+      end
+
       def test_frozen
         assert_predicate @user, :frozen?
       end

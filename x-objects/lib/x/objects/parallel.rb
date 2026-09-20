@@ -11,7 +11,9 @@ module X
       # Map over items concurrently while preserving order
       #
       # A block that raises stops the items not yet begun, since each is a request the API bills, and once the
-      # items already begun have finished, the first error raised is raised again.
+      # items already begun have finished, the first error raised is raised again. An interruption of the wait,
+      # such as a timeout, a shutdown, or a signal, stops them the same way, rather than leave the threads to
+      # spend what the caller is no longer waiting for.
       #
       # @api private
       # @param items [Enumerable] the items to map
@@ -21,18 +23,30 @@ module X
       # @raise [StandardError] the first error raised by any block
       def map(items, concurrency: DEFAULT_CONCURRENCY, &block)
         items = items.to_a
-        results = [] #: Array[untyped]
+        results = Array.new(items.size) #: Array[untyped]
         queue = Queue.new
         items.each_index { |index| queue << index }
         queue.close
         errors = Queue.new
-        Array.new([concurrency, items.size].min) { worker(queue, errors, items, results, &block) }.each(&:join)
+        drain(queue, Array.new([concurrency, items.size].min) { worker(queue, errors, items, results, &block) })
         raise errors.deq unless errors.empty?
 
         results
       end
 
       private
+
+      # Wait for the workers, emptying the queue however the wait ends
+      #
+      # @api private
+      # @param queue [Queue] the queue of item indexes
+      # @param threads [Array<Thread>] the worker threads
+      # @return [void]
+      def drain(queue, threads)
+        threads.each(&:join)
+      ensure
+        queue.clear
+      end
 
       # Start a worker thread that drains the queue, emptying it if the block raises
       #

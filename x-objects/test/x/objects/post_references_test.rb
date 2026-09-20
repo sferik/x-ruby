@@ -50,9 +50,9 @@ module X
     end
 
     def test_cursor_classes
-      assert_equal User, @post.liked_by.klass
-      assert_equal User, @post.reposted_by.klass
-      assert_equal Post, @post.quotes.klass
+      assert_equal User, @post.liked_by.resource_class
+      assert_equal User, @post.reposted_by.resource_class
+      assert_equal Post, @post.quotes.resource_class
       assert_same @client, @post.quotes.client
     end
 

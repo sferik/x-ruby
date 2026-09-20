@@ -27,7 +27,7 @@ module X
     def test_prefetch_keeps_configuration
       assert_equal @plain.params, @cursor.params
       assert_equal "users/1/followers", @cursor.path
-      assert_equal User, @cursor.klass
+      assert_equal User, @cursor.resource_class
       assert_same @client, @cursor.client
     end
 

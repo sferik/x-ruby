@@ -62,11 +62,11 @@ module X
       assert_equal %w[1000 1000 1000], @client.queries.map { |query| query["max_results"] }
     end
 
-    def test_count_and_size_read_every_page
+    def test_count_reads_every_page
       @client.stub(:get, "users/1/followers", {"data" => [{"id" => "2"}, {"id" => "3"}]})
 
-      assert_equal [2, 2], [@user.followers.count, @user.followers.size]
-      assert_equal %w[users/1/followers users/1/followers], @client.paths
+      assert_equal 2, @user.followers.count
+      assert_equal %w[users/1/followers], @client.paths
     end
 
     def test_published_count_reads_the_number_the_api_publishes

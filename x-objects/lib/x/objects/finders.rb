@@ -40,26 +40,29 @@ module X
         find(id, client:, **params) { |problem| problems << problem } || raise(ResourceNotFound.new("Could not find #{self} #{id}", problems:))
       end
 
-      # Replace the stubs among some resources with the full resources
+      # Replace the resources that are not hydrated with the full resources
       #
-      # A stub whose resource was not found is dropped, and a resource that is not a stub is kept as it is. Resources
-      # without a stub need no lookup, so they are returned even for a resource that cannot be looked up in batches.
+      # A resource that hydrate would look up is looked up, which is a stub and also a resource a response included
+      # without every field, so what comes back is hydrated throughout. A resource that was not found is dropped, and
+      # a hydrated resource is kept as it is. Resources that are all hydrated need no lookup, so they are returned
+      # even for a resource that cannot be looked up in batches. What was found is stored in each original, so
+      # hydrating one of them afterwards costs no request.
       #
       # @api public
-      # @param resources [Array<Resource>] the resources, some of which may be stubs
+      # @param resources [Array<Resource>] the resources, some of which may not be hydrated
       # @param client [Object] the client used to make the requests
       # @param params [Hash] query parameters merged over the default parameters; one that overrides a default field
       #   or expansion parameter builds resources that are not hydrated, so hydrate fetches the rest
-      # @return [Array<Resource>] the resources, in order, with the stubs replaced
-      # @yieldparam problem [Problem] each problem the API reported, such as a stub whose resource was not found
+      # @return [Array<Resource>] the resources, in order, with the ones that were not hydrated replaced
+      # @yieldparam problem [Problem] each problem the API reported, such as a resource that was not found
       # @example Expand the authors a search did not include
       #   X::User.hydrate_all(posts.map(&:author), client: client)
       def hydrate_all(resources, client:, **params, &)
-        stubs = resources.select(&:stub?)
-        return resources.dup if stubs.empty?
+        partial = resources.reject(&:hydrated?)
+        return resources.dup if partial.empty?
 
-        found = find_all(stubs, client:, **params, &).to_h { |resource| [resource.id, resource] }
-        resources.filter_map { |resource| resource.stub? ? found[resource.id] : resource }
+        found = find_all(partial, client:, **params, &).to_h { |resource| [resource.id, resource] }
+        resources.filter_map { |resource| resource.hydrated? ? resource : resource.hydrated_with(found[resource.id]) }
       end
 
       # Look up many resources by identifier, in parallel batches, once each
@@ -109,6 +112,18 @@ module X
         collection_from_response(reporting(get(path, client:, query:), &), client:, hydrated: fully_requested_by?(query))
       end
 
+      # The client a lookup of this resource makes its requests with
+      #
+      # Most endpoints take the client as it is, and one that refuses the credentials a client signs with, such as the
+      # space endpoints, which refuse OAuth 1.0a, replaces it with a client that authenticates as the app.
+      #
+      # @api private
+      # @param client [Object] the client the lookup was given
+      # @return [Object] the client the request is made with
+      # @example Get the client a user lookup requests with
+      #   X::User.client_for(client) # => client
+      def client_for(client) = client
+
       private
 
       # Request an endpoint
@@ -118,7 +133,7 @@ module X
       # @param query [Hash] the query parameters, merged over the default parameters
       # @return [Hash, nil] the parsed response body
       def get(path, client:, query:)
-        client.get(Utils.path(path, query), **Utils::JSON_CLASSES)
+        client_for(client).get(Utils.path(path, query), **Utils::JSON_CLASSES)
       end
 
       # Look up values in parallel batches, asking for each value once

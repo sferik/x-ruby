@@ -1,4 +1,5 @@
 require "forwardable"
+require "json"
 
 module X
   # One page of results from a paginated endpoint
@@ -72,5 +73,22 @@ module X
     def result_count
       meta["result_count"]
     end
+
+    # The resources of this page, as a JSON encoder and ActiveSupport read them
+    #
+    # @api public
+    # @return [Array<Objects::Resource>] the resources
+    # @example Serialize a page
+    #   page.as_json
+    def as_json(*) = items
+
+    # The resources of this page as a JSON array of their attributes
+    #
+    # @api public
+    # @param state [JSON::State, nil] the state a JSON encoder passes, which the attributes are given
+    # @return [String] the resources as a JSON array
+    # @example Serialize a page
+    #   page.to_json # => "[{\"id\":\"7505382\"}]"
+    def to_json(state = nil) = as_json.to_json(state)
   end
 end

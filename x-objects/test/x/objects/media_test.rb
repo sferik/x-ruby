@@ -47,6 +47,48 @@ module X
       refute_includes client.queries.first, "ids"
     end
 
+    def test_find_prefers_the_media_key_of_what_an_upload_returned
+      uploaded = Struct.new(:id, :media_key).new(1_880_028_106_020_515_840, "3_1880028106020515840")
+      client = FakeClient.new
+      client.stub(:get, "media/3_1880028106020515840", {"data" => {"media_key" => "3_1880028106020515840"}})
+
+      assert_equal "3_1880028106020515840", client.find_media(uploaded).id
+      assert_equal "3_1880028106020515840", client.find_media!(uploaded).id
+      assert_equal ["media/3_1880028106020515840"] * 2, client.paths
+    end
+
+    def test_find_all_prefers_the_media_keys_of_what_the_uploads_returned
+      uploaded = Struct.new(:id, :media_key).new(1, "3_1")
+      client = FakeClient.new
+      client.stub(:get, "media", {"data" => [{"media_key" => "3_1"}]})
+
+      assert_equal %w[3_1], Media.find_all([uploaded, "7_2"], client:).map(&:id)
+      assert_equal "3_1,7_2", client.queries.first["media_keys"]
+    end
+
+    def test_find_merges_params_and_reports_problems
+      client = FakeClient.new.stub(:get, "media/3_9", {"errors" => [{"title" => "Not Found Error"}]})
+      yielded = []
+
+      assert_nil Media.find("3_9", client:, "media.fields": "url") { |problem| yielded << problem.title }
+      assert_equal ["Not Found Error"], yielded
+      assert_equal %w[url], client.queries.map { |query| query["media.fields"] }
+    end
+
+    def test_find_all_merges_params_and_reports_problems
+      client = FakeClient.new.stub(:get, "media", {"errors" => [{"title" => "Not Found Error"}]})
+      yielded = []
+
+      assert_empty Media.find_all(%w[3_9], client:, "media.fields": "alt_text") { |problem| yielded << problem.title }
+      assert_equal ["Not Found Error"], yielded
+      assert_equal %w[alt_text], client.queries.map { |query| query["media.fields"] }
+    end
+
+    def test_key_of_takes_a_media_key_as_it_is
+      assert_equal "3_1", Media.key_of("3_1")
+      assert_equal "3_1", Media.key_of(@media)
+    end
+
     def test_the_media_of_a_post_hydrates_to_the_full_media
       client = FakeClient.new
       client.stub(:get, "media/3_1", {"data" => {"media_key" => "3_1", "alt_text" => "A cat"}})

@@ -12,6 +12,8 @@ module X
   end
 
   class Problem
+    include Objects::Serialization
+
     INTEGER_ID_TYPES: Array[String]
 
     attr_reader attrs: Hash[String, untyped]
@@ -35,6 +37,8 @@ module X
   end
 
   class Usage
+    include Objects::Serialization
+
     ENDPOINT: String
     FIELDS: Array[String]
 
@@ -76,10 +80,24 @@ module X
       def put: (String endpoint, ?String? body, **untyped) -> untyped
     end
 
+    # Serialization of what an API response held, by its attributes alone
+    module Serialization : _Attributed
+      def as_json: (*untyped) -> Hash[String, untyped]
+      def to_json: (?JSON::State? state) -> String
+    end
+
+    # Anything the object layer built from an API response, which holds its attributes
+    interface _Attributed
+      def attrs: () -> Hash[String, untyped]
+    end
+
     module Utils
       extend Utils
 
       JSON_CLASSES: Hash[Symbol, singleton(Array) | singleton(Hash)]
+      NUMERIC_ID: Regexp
+      RAW_ID: Regexp
+      USERNAME: Regexp
 
       def deep_freeze: (untyped value) -> untyped
       def path: (String base, params params) -> String
@@ -87,7 +105,10 @@ module X
       def query_value: (untyped value) -> untyped
       def merge_params: (params defaults, params params) -> query
       def id_of: (untyped value, ?raw: bool) -> String
+      def id_from: (untyped value) -> String
+      def media_ids_of: (untyped media_ids) -> Array[String]
       def username: (untyped value) -> String
+      def username!: (untyped value) -> String
       def media_id_of: (String | Integer | _UploadedMedia value) -> String
       def integer: (String | Integer | nil value) -> Integer?
       def oauth1_user_id: (untyped client) -> Integer?
@@ -103,21 +124,23 @@ module X
       DEFAULT_CONCURRENCY: Integer
 
       def map: [T, U] (Enumerable[T] items, ?concurrency: Integer) { (T) -> U } -> Array[U]
+      private def drain: (Thread::Queue queue, Array[Thread] threads) -> void
       private def worker: [T, U] (Thread::Queue queue, Thread::Queue errors, Array[T] items, Array[U?] results) { (T) -> U } -> Thread
     end
 
     class Pages
-      @cursor: Cursor
+      @cursor: Cursor[untyped]
       @limit: Integer?
       @monitor: Monitor
-      @pages: Array[Page?]
+      @pages: Array[Page[untyped]?]
 
-      def initialize: (Cursor cursor, Integer? limit) -> void
-      def at: (Integer index) -> Page?
+      def initialize: (Cursor[untyped] cursor, Integer? limit) -> void
+      def at: (Integer index) -> Page[untyped]?
+      def satisfy?: (Integer count) -> bool
 
       private
-      def cached: (Integer index) -> Page?
-      def fetch: (Integer index) -> Page?
+      def cached: (Integer index) -> Page[untyped]?
+      def fetch: (Integer index) -> Page[untyped]?
       def resources_from: (body body) -> Array[Resource]
       def stubs_from: (Array[Resource] resources) -> Array[Resource]
       def id_only?: () -> bool
@@ -213,12 +236,11 @@ module X
       def ==: (untyped other) -> bool
       def eql?: (untyped other) -> bool
       def hash: () -> Integer
-      def deconstruct: () -> Array[untyped]
       def deconstruct_keys: (Array[Symbol]? keys) -> Hash[Symbol, untyped]
     end
 
     interface _Following
-      def following: (**untyped params) -> Cursor
+      def following: (**untyped params) -> Cursor[User]
     end
 
     module Relationships : Resource, _Following
@@ -263,6 +285,8 @@ module X
       def find: (id id_or_username, client: _Client, **untyped params) ?{ (Problem problem) -> void } -> Resource?
       def find_all: (Array[id] ids_or_usernames, client: _Client, **untyped params) ?{ (Problem problem) -> void } -> Array[User]
       def find_all_by_username: (Array[id] usernames, client: _Client, **untyped params) ?{ (Problem problem) -> void } -> Array[User]
+      def find_by_username: (untyped username, client: _Client, **untyped params) ?{ (Problem problem) -> void } -> User?
+      def find_by_username!: (untyped username, client: _Client, **untyped params) -> User
 
       private
       def in_order: (Array[User] users, Array[id] ids_or_usernames) -> Array[User]
@@ -279,6 +303,7 @@ module X
       def find_all: (Array[id] ids, client: _Client, **untyped params) ?{ (Problem problem) -> void } -> Array[Resource]
       def lookup: (String path, client: _Client, **untyped params) ?{ (Problem problem) -> void } -> Resource?
       def lookup_all: (String path, client: _Client, **untyped params) ?{ (Problem problem) -> void } -> Array[Resource]
+      def client_for: (_Client client) -> _Client
 
       private
       def get: (String path, client: _Client, query: Hash[String, untyped]) -> body
@@ -287,14 +312,15 @@ module X
     end
 
     module PostWrites : _Lookup[Post]
-      def create: (?String? text, client: _Client, ?reply_to: id?, ?quote: id?, ?media_ids: Array[String | Integer | _UploadedMedia]?, ?community: id?, **untyped params) -> Post?
+      def create: (?String? text, client: _Client, ?reply_to: id?, ?quote: id?, ?media_ids: untyped, ?community: id?, **untyped params) -> Post?
       def delete: (id post, client: _Client) -> bool
-      def hide: (id post, client: _Client) -> bool
-      def unhide: (id post, client: _Client) -> bool
+      def hide_reply: (id post, client: _Client) -> bool
+      def unhide_reply: (id post, client: _Client) -> bool
 
       private
       def change_visibility: (id post, bool hidden, client: _Client) -> bool?
-      def referenced: (reply_to: id?, quote: id?, media_ids: Array[String | Integer | _UploadedMedia]?, community: id?) -> Hash[Symbol, untyped]
+      def referenced: (Hash[Symbol, untyped] params, reply_to: id?, quote: id?, media_ids: untyped, community: id?) -> Hash[Symbol, untyped]
+      def merged: (Hash[Symbol, untyped] params, Symbol key, **untyped field) -> Hash[Symbol, untyped]
     end
 
     # The class side of DirectMessage, which builds its messages
@@ -305,13 +331,13 @@ module X
     module DirectMessageConversations : _DirectMessageClass
       CONVERSATION_ID: Regexp
 
-      def create_group: (Array[id] users, ?String? text, client: _Client, **untyped params) -> DirectMessage?
-      def create_in: (DirectMessage | String | Integer conversation, ?String? text, client: _Client, **untyped params) -> DirectMessage?
-      def `in`: (DirectMessage | String | Integer conversation, client: _Client, **untyped params) -> Cursor
+      def create_group: (Array[id] users, ?String? text, client: _Client, ?media_ids: untyped, **untyped params) -> DirectMessage?
+      def create_in: (DirectMessage | String | Integer conversation, ?String? text, client: _Client, ?media_ids: untyped, **untyped params) -> DirectMessage?
+      def `in`: (DirectMessage | String | Integer conversation, client: _Client, **untyped params) -> Cursor[DirectMessage]
 
       private
       def conversation_id_of: (DirectMessage | String | Integer conversation) -> String
-      def message: (String? text, Hash[Symbol, untyped] params) -> Hash[Symbol, untyped]
+      def message: (String? text, Hash[Symbol, untyped] params, untyped media_ids) -> Hash[Symbol, untyped]
       def sent: (body body, client: _Client) -> DirectMessage?
     end
 
@@ -322,19 +348,20 @@ module X
 
       def count: (String query, client: _Client, **untyped params) -> Integer
       def count_all: (String query, client: _Client, **untyped params) -> Integer
-      def counts: (String query, client: _Client, **untyped params) -> Hash[Time?, Integer?]
-      def counts_all: (String query, client: _Client, **untyped params) -> Hash[Time?, Integer?]
+      def count_by_period: (String query, client: _Client, **untyped params) -> Hash[Time, Integer]
+      def count_all_by_period: (String query, client: _Client, **untyped params) -> Hash[Time, Integer]
 
       private
       def pages: (String path, String query, client: _Client, **untyped params) -> Array[Hash[String, untyped]]
       def total: (Array[Hash[String, untyped]] bodies) -> Integer
-      def periods: (Array[Hash[String, untyped]] bodies) -> Hash[Time?, Integer]
+      def periods: (Array[Hash[String, untyped]] bodies) -> Hash[Time, Integer]
     end
 
     class Resource
       extend Attributes
       extend Finders
       include Identity
+      include Serialization
 
       MAX_BATCH_SIZE: Integer
 
@@ -370,24 +397,28 @@ module X
       def stub?: () -> bool
       def hydrate: () -> Resource?
       def refresh: () -> Resource?
+      def hydrated_with: (Resource? resource) -> Resource?
+      def marshal_dump: () -> attrs
+      def marshal_load: (attrs attrs) -> void
       def inspect: () -> String
 
       private
+      def identify: () -> String
       def fetch: () -> Resource?
       def look_up: () -> Resource?
       def client!: () -> _Client
       def resolve: (singleton(Resource) klass, untyped id) -> Resource?
-      def cursor: (singleton(Resource) klass, String path, max_results: Integer?, ?min_results: Integer, ?total: Symbol?, **untyped params) -> Cursor
+      def cursor: (singleton(Resource) klass, String path, max_results: Integer?, ?min_results: Integer, ?total: Symbol?, ?client: _Client, **untyped params) -> Cursor[untyped]
       def counter: (Symbol? total) -> (^() -> Integer?)?
     end
 
     module PostCollections : Resource
-      def liked_by: (**untyped params) -> Cursor
-      def reposted_by: (**untyped params) -> Cursor
-      def retweeted_by: (**untyped params) -> Cursor
-      def reposts: (**untyped params) -> Cursor
-      def retweets: (**untyped params) -> Cursor
-      def quotes: (**untyped params) -> Cursor
+      def liked_by: (**untyped params) -> Cursor[User]
+      def reposted_by: (**untyped params) -> Cursor[User]
+      def retweeted_by: (**untyped params) -> Cursor[User]
+      def reposts: (**untyped params) -> Cursor[Post]
+      def retweets: (**untyped params) -> Cursor[Post]
+      def quotes: (**untyped params) -> Cursor[Post]
     end
 
     module References : Resource
@@ -435,10 +466,12 @@ module X
 
           def find_user: (id | String id_or_username, **untyped params) ?{ (Problem problem) -> void } -> User?
           def find_user!: (id | String id_or_username, **untyped params) -> User
+          def find_user_by_username: (String username, **untyped params) ?{ (Problem problem) -> void } -> User?
+          def find_user_by_username!: (String username, **untyped params) -> User
           def find_users: (Array[id | String] ids_or_usernames, **untyped params) ?{ (Problem problem) -> void } -> Array[User]
           def current_user: () -> User
           def current_user_id: () -> Integer
-          def search_users: (String query, **untyped params) -> Cursor
+          def search_users: (String query, **untyped params) -> Cursor[User]
         end
 
         module Posts : _Client
@@ -448,22 +481,22 @@ module X
           def find_tweet!: (id id, **untyped params) -> Post
           def find_posts: (Array[id] ids, **untyped params) ?{ (Problem problem) -> void } -> Array[Post]
           def find_tweets: (Array[id] ids, **untyped params) ?{ (Problem problem) -> void } -> Array[Post]
-          def search_posts: (String query, **untyped params) -> Cursor
-          def search: (String query, **untyped params) -> Cursor
-          def search_tweets: (String query, **untyped params) -> Cursor
-          def search_all_posts: (String query, **untyped params) -> Cursor
-          def reposts_of_me: (**untyped params) -> Cursor
-          def retweets_of_me: (**untyped params) -> Cursor
-          def search_all_tweets: (String query, **untyped params) -> Cursor
+          def search_posts: (String query, **untyped params) -> Cursor[Post]
+          def search: (String query, **untyped params) -> Cursor[Post]
+          def search_tweets: (String query, **untyped params) -> Cursor[Post]
+          def search_all_posts: (String query, **untyped params) -> Cursor[Post]
+          def reposts_of_me: (**untyped params) -> Cursor[Post]
+          def retweets_of_me: (**untyped params) -> Cursor[Post]
+          def search_all_tweets: (String query, **untyped params) -> Cursor[Post]
           def usage: (**untyped params) -> Usage
           def count_posts: (String query, **untyped params) -> Integer
           def count_tweets: (String query, **untyped params) -> Integer
           def count_all_posts: (String query, **untyped params) -> Integer
           def count_all_tweets: (String query, **untyped params) -> Integer
-          def post_counts: (String query, **untyped params) -> Hash[Time?, Integer?]
-          def tweet_counts: (String query, **untyped params) -> Hash[Time?, Integer?]
-          def post_counts_all: (String query, **untyped params) -> Hash[Time?, Integer?]
-          def tweet_counts_all: (String query, **untyped params) -> Hash[Time?, Integer?]
+          def count_posts_by_period: (String query, **untyped params) -> Hash[Time, Integer]
+          def count_tweets_by_period: (String query, **untyped params) -> Hash[Time, Integer]
+          def count_all_posts_by_period: (String query, **untyped params) -> Hash[Time, Integer]
+          def count_all_tweets_by_period: (String query, **untyped params) -> Hash[Time, Integer]
         end
 
         module Lists : _Client
@@ -475,7 +508,7 @@ module X
           def find_space: (id id, **untyped params) ?{ (Problem problem) -> void } -> Space?
           def find_space!: (id id, **untyped params) -> Space
           def find_spaces: (Array[id] ids, **untyped params) ?{ (Problem problem) -> void } -> Array[Space]
-          def search_spaces: (String query, **untyped params) -> Cursor
+          def search_spaces: (String query, **untyped params) -> Cursor[Space]
         end
 
         module Media : _Client
@@ -486,7 +519,7 @@ module X
         module Communities : _Client
           def find_community: (id id, **untyped params) ?{ (Problem problem) -> void } -> Community?
           def find_community!: (id id, **untyped params) -> Community
-          def search_communities: (String query, **untyped params) -> Cursor
+          def search_communities: (String query, **untyped params) -> Cursor[Community]
         end
 
         module DirectMessages : _Client
@@ -494,12 +527,12 @@ module X
           def find_dm: (id id, **untyped params) ?{ (Problem problem) -> void } -> DirectMessage?
           def find_direct_message!: (id id, **untyped params) -> DirectMessage
           def find_dm!: (id id, **untyped params) -> DirectMessage
-          def direct_messages: (**untyped params) -> Cursor
-          def dms: (**untyped params) -> Cursor
-          def direct_messages_with: (id user, **untyped params) -> Cursor
-          def dms_with: (id user, **untyped params) -> Cursor
-          def direct_messages_in: (DirectMessage | String | Integer conversation, **untyped params) -> Cursor
-          def dms_in: (DirectMessage | String | Integer conversation, **untyped params) -> Cursor
+          def direct_messages: (**untyped params) -> Cursor[DirectMessage]
+          def dms: (**untyped params) -> Cursor[DirectMessage]
+          def direct_messages_with: (id user, **untyped params) -> Cursor[DirectMessage]
+          def dms_with: (id user, **untyped params) -> Cursor[DirectMessage]
+          def direct_messages_in: (DirectMessage | String | Integer conversation, **untyped params) -> Cursor[DirectMessage]
+          def dms_in: (DirectMessage | String | Integer conversation, **untyped params) -> Cursor[DirectMessage]
         end
       end
 
@@ -563,27 +596,29 @@ module X
     end
   end
 
-  class Page
+  class Page[R < Objects::Resource = Objects::Resource]
     extend Forwardable
-    include Enumerable[Objects::Resource]
+    include Enumerable[R]
 
-    attr_reader items: Array[Objects::Resource]
+    attr_reader items: Array[R]
     attr_reader meta: Hash[String, untyped]
     attr_reader problems: Array[Problem]
 
-    def initialize: (Array[Objects::Resource] items, Hash[untyped, untyped] meta, ?problems: Array[Problem]) -> void
-    def each: () { (Objects::Resource) -> void } -> Array[Objects::Resource]
-            | () -> Enumerator[Objects::Resource, Array[Objects::Resource]]
+    def initialize: (Array[R] items, Hash[untyped, untyped] meta, ?problems: Array[Problem]) -> void
+    def each: () { (R) -> void } -> Array[R]
+            | () -> Enumerator[R, Array[R]]
     def next_token: () -> String?
     def result_count: () -> Integer?
+    def as_json: (*untyped) -> Array[R]
+    def to_json: (?JSON::State? state) -> String
   end
 
-  class Cursor
-    include Enumerable[Objects::Resource]
+  class Cursor[R < Objects::Resource = Objects::Resource]
+    include Enumerable[R]
 
     DEFAULT_TOKEN_PARAM: String
 
-    attr_reader klass: singleton(Objects::Resource)
+    attr_reader resource_class: singleton(Objects::Resource)
     attr_reader client: Objects::_Client
     attr_reader path: String
     attr_reader params: Objects::query
@@ -594,31 +629,33 @@ module X
     @total: (^() -> Integer?)?
     @pages: Objects::Pages
 
-    def initialize: (singleton(Objects::Resource) klass, String path, client: Objects::_Client, ?params: Objects::params, ?prefetch: bool, ?token_param: String, ?min_results: Integer, ?limit: Integer?, ?total: (^() -> Integer?)?) -> void
+    def initialize: (singleton(Objects::Resource) resource_class, String path, client: Objects::_Client, ?params: Objects::params, ?prefetch: bool, ?token_param: String, ?min_results: Integer, ?limit: Integer?, ?total: (^() -> Integer?)?) -> void
     def prefetch?: () -> bool
-    def each: () { (Objects::Resource) -> void } -> self
-            | () -> Enumerator[Objects::Resource, self]
-    def each_page: () { (Page) -> void } -> self
-                 | () -> Enumerator[Page, self]
-    def page: (Integer index) -> Page?
-    def refresh: () -> Cursor
-    def prefetch: () -> Cursor
-    def stubs: () -> Cursor
-    def first: (?Integer? count) -> (Objects::Resource | Array[Objects::Resource] | nil)
-    def take: (Integer count) -> Array[Objects::Resource]
+    def each: () { (R) -> void } -> self
+            | () -> Enumerator[R, self]
+    def each_page: () { (Page[R]) -> void } -> self
+                 | () -> Enumerator[Page[R], self]
+    def page: (Integer index) -> Page[R]?
+    def refresh: () -> Cursor[R]
+    def prefetch: () -> Cursor[R]
+    def stubs: () -> Cursor[R]
+    def first: () -> R?
+             | (Integer count) -> Array[R]
+    def take: (Integer count) -> Array[R]
     def ids: () -> Array[Integer | String]
-    def any?: (*untyped pattern) ?{ (Objects::Resource) -> boolish } -> bool
-    def none?: (*untyped pattern) ?{ (Objects::Resource) -> boolish } -> bool
+    def any?: (*untyped pattern) ?{ (R) -> boolish } -> bool
+    def none?: (*untyped pattern) ?{ (R) -> boolish } -> bool
     def empty?: () -> bool
-    def one?: (*untyped pattern) ?{ (Objects::Resource) -> boolish } -> bool
-    def size: () -> Integer
+    def one?: (*untyped pattern) ?{ (R) -> boolish } -> bool
     def published_count: () -> Integer?
+    def as_json: (*untyped) -> Array[R]
+    def to_json: (?JSON::State? state) -> String
     def inspect: () -> String
 
     private
-    def sized: (Integer count) -> Cursor
+    def sized: (Integer count) -> Cursor[R]
     def own_params: () -> Objects::params
-    def with_max_results: (Integer size, Integer limit) -> Cursor
+    def with_max_results: (Integer size, Integer limit) -> Cursor[R]
     def id_only_params: () -> Objects::params
   end
 
@@ -633,6 +670,11 @@ module X
     def self.id_key: () -> String
     def self.includes_key: () -> String
     def self.endpoint: () -> String
+    def self.key_of: (untyped media) -> untyped
+    def self.find: (untyped media, client: Objects::_Client, **untyped params) ?{ (Problem problem) -> void } -> Media?
+                 | ...
+    def self.find_all: (Array[untyped] media, client: Objects::_Client, **untyped params) ?{ (Problem problem) -> void } -> Array[Media]
+                     | ...
     def self.batch_key: () -> Symbol
     def self.fields_key: () -> String
     def self.default_params: () -> Hash[String, Array[String]]
@@ -698,7 +740,7 @@ module X
     def self.includes_key: () -> String
     def self.fields_key: () -> String
     def self.default_params: () -> Hash[String, Array[String]]
-    def self.search: (String query, client: Objects::_Client, **untyped params) -> Cursor
+    def self.search: (String query, client: Objects::_Client, **untyped params) -> Cursor[User]
     def self.current: (client: Objects::_Client, **untyped params) ?{ (Problem problem) -> void } -> User?
 
     def name: () -> String?
@@ -707,12 +749,20 @@ module X
     def location: () -> String?
     def url: () -> String?
     def profile_image_url: () -> String?
+    def profile_banner_url: () -> String?
     def created_at: () -> Time?
     def protected: () -> bool?
     def protected?: () -> bool
     def verified: () -> bool?
     def verified?: () -> bool
     def verified_type: () -> String?
+    def parody: () -> bool?
+    def parody?: () -> bool
+    def is_identity_verified: () -> bool?
+    def identity_verified?: () -> bool
+    def subscription_type: () -> String?
+    def affiliation: () -> Hash[String, untyped]?
+    def verified_followers_count: () -> Integer?
     def connection_status: () -> Array[String]?
     def pinned_post_id: () -> Integer?
     def pinned_tweet_id: () -> Integer?
@@ -734,21 +784,21 @@ module X
     def most_recent_tweet: () -> Post?
     def permalink: () -> String
     def uri: () -> URI::Generic
-    def followers: (**untyped params) -> Cursor
-    def following: (**untyped params) -> Cursor
-    def blocking: (**untyped params) -> Cursor
-    def muting: (**untyped params) -> Cursor
-    def posts: (**untyped params) -> Cursor
-    def tweets: (**untyped params) -> Cursor
-    def home_timeline: (**untyped params) -> Cursor
-    def mentions: (**untyped params) -> Cursor
-    def liked_posts: (**untyped params) -> Cursor
-    def liked_tweets: (**untyped params) -> Cursor
-    def bookmarks: (**untyped params) -> Cursor
-    def owned_lists: (**untyped params) -> Cursor
-    def list_memberships: (**untyped params) -> Cursor
-    def followed_lists: (**untyped params) -> Cursor
-    def pinned_lists: (**untyped params) -> Cursor
+    def followers: (**untyped params) -> Cursor[User]
+    def following: (**untyped params) -> Cursor[User]
+    def blocking: (**untyped params) -> Cursor[User]
+    def muting: (**untyped params) -> Cursor[User]
+    def posts: (**untyped params) -> Cursor[Post]
+    def tweets: (**untyped params) -> Cursor[Post]
+    def home_timeline: (**untyped params) -> Cursor[Post]
+    def mentions: (**untyped params) -> Cursor[Post]
+    def liked_posts: (**untyped params) -> Cursor[Post]
+    def liked_tweets: (**untyped params) -> Cursor[Post]
+    def bookmarks: (**untyped params) -> Cursor[Post]
+    def owned_lists: (**untyped params) -> Cursor[List]
+    def list_memberships: (**untyped params) -> Cursor[List]
+    def followed_lists: (**untyped params) -> Cursor[List]
+    def pinned_lists: (**untyped params) -> Cursor[List]
   end
 
   class Post < Objects::Resource
@@ -769,9 +819,9 @@ module X
     def self.includes_key: () -> String
     def self.fields_key: () -> String
     def self.default_params: () -> Hash[String, Array[String]]
-    def self.search: (String query, client: Objects::_Client, **untyped params) -> Cursor
-    def self.search_all: (String query, client: Objects::_Client, **untyped params) -> Cursor
-    def self.reposts_of_me: (client: Objects::_Client, **untyped params) -> Cursor
+    def self.search: (String query, client: Objects::_Client, **untyped params) -> Cursor[Post]
+    def self.search_all: (String query, client: Objects::_Client, **untyped params) -> Cursor[Post]
+    def self.reposts_of_me: (client: Objects::_Client, **untyped params) -> Cursor[Post]
     private def self.context_annotations?: (Hash[Symbol, untyped] params) -> bool
 
     def text: () -> String?
@@ -817,8 +867,8 @@ module X
     def uri: () -> URI::Generic
     def expanded_text: () -> String?
     def delete: () -> bool
-    def hide: () -> bool
-    def unhide: () -> bool
+    def hide_reply: () -> bool
+    def unhide_reply: () -> bool
 
     private
     def full: () -> Hash[String, untyped]
@@ -837,7 +887,7 @@ module X
     def self.endpoint: () -> String
     def self.fields_key: () -> String
     def self.default_params: () -> Hash[String, Array[String]]
-    def self.search: (String query, client: Objects::_Client, **untyped params) -> Cursor
+    def self.search: (String query, client: Objects::_Client, **untyped params) -> Cursor[Community]
 
     def name: () -> String?
     def description: () -> String?
@@ -874,10 +924,10 @@ module X
     def private: () -> bool?
     def private?: () -> bool
     def owner: () -> User?
-    def members: (**untyped params) -> Cursor
-    def followers: (**untyped params) -> Cursor
-    def posts: (**untyped params) -> Cursor
-    def tweets: (**untyped params) -> Cursor
+    def members: (**untyped params) -> Cursor[User]
+    def followers: (**untyped params) -> Cursor[User]
+    def posts: (**untyped params) -> Cursor[Post]
+    def tweets: (**untyped params) -> Cursor[Post]
     def permalink: () -> String
     def uri: () -> URI::Generic
     def member?: (Objects::id user) -> bool
@@ -904,9 +954,9 @@ module X
     def self.endpoint: () -> String
     def self.fields_key: () -> String
     def self.default_params: () -> Hash[String, Array[String]]
-    def self.all: (client: Objects::_Client, **untyped params) -> Cursor
-    def self.with: (Objects::id user, client: Objects::_Client, **untyped params) -> Cursor
-    def self.create: (Objects::id user, ?String? text, client: Objects::_Client, **untyped params) -> DirectMessage?
+    def self.all: (client: Objects::_Client, **untyped params) -> Cursor[DirectMessage]
+    def self.with: (Objects::id user, client: Objects::_Client, **untyped params) -> Cursor[DirectMessage]
+    def self.create: (Objects::id user, ?String? text, client: Objects::_Client, ?media_ids: untyped, **untyped params) -> DirectMessage?
     def self.delete: (Objects::id message, client: Objects::_Client) -> bool
 
     def text: () -> String?
@@ -919,6 +969,7 @@ module X
     def referenced_posts: () -> Array[Hash[String, String]]?
     def referenced_tweets: () -> Array[Hash[String, String]]?
     def attachments: () -> Hash[String, untyped]?
+    def entities: () -> Hash[String, untyped]?
     def sender: () -> User?
     def participants: () -> Array[User]
     def media: () -> Array[Media]
@@ -940,9 +991,10 @@ module X
     def id: () -> String
 
     def self.endpoint: () -> String
+    def self.client_for: (Objects::_Client client) -> Objects::_Client
     def self.fields_key: () -> String
     def self.default_params: () -> Hash[String, Array[String]]
-    def self.search: (String query, client: Objects::_Client, **untyped params) -> Cursor
+    def self.search: (String query, client: Objects::_Client, **untyped params) -> Cursor[Space]
 
     def title: () -> String?
     def state: () -> String?
@@ -965,7 +1017,7 @@ module X
     def hosts: () -> Array[User]
     def speakers: () -> Array[User]
     def invited_users: () -> Array[User]
-    def posts: (**untyped params) -> Cursor
-    def tweets: (**untyped params) -> Cursor
+    def posts: (**untyped params) -> Cursor[Post]
+    def tweets: (**untyped params) -> Cursor[Post]
   end
 end

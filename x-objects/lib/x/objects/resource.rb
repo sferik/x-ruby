@@ -1,3 +1,4 @@
+require "json"
 require_relative "attributes"
 require_relative "errors"
 require_relative "finders"
@@ -5,6 +6,7 @@ require_relative "identity"
 require_relative "includes"
 require_relative "memo"
 require_relative "problem"
+require_relative "serialization"
 require_relative "utils"
 
 module X
@@ -15,6 +17,7 @@ module X
       extend Attributes
       extend Finders
       include Identity
+      include Serialization
 
       # Maximum number of identifiers accepted by a batch lookup endpoint
       MAX_BATCH_SIZE = Finders::MAX_BATCH_SIZE
@@ -102,7 +105,7 @@ module X
         # @raise [ArgumentError] if the identifier is not a number, for a resource whose identifiers are numbers
         # @example Page through the followers of a user without looking the user up
         #   X::User.from_id(7505382, client: client).followers
-        def from_id(id, client: nil, batch: nil) = new({id_key => Utils.id_of(id, raw: id_type.eql?(:raw))}, client:, batch:)
+        def from_id(id, client: nil, batch: nil) = new({id_key => Utils.id_from(id)}, client:, batch:)
 
         # The default query parameters requesting every field and expansion
         #
@@ -110,9 +113,7 @@ module X
         # @return [Hash{String => String}] the default query parameters
         # @example Get the default parameters
         #   X::User.default_params
-        def default_params
-          {}
-        end
+        def default_params = {}
 
         # Check whether a request asks for every default field and expansion
         #
@@ -233,13 +234,12 @@ module X
       # @param batch [Batch, nil] internal to the object layer, which may change it within 1.x: the batch this stub
       #   hydrates with, in one lookup for every stub of the batch
       # @return [Resource] a new resource
-      # @raise [ArgumentError] if the attributes do not include the identifier
+      # @raise [ArgumentError] if the attributes do not include the identifier, or the identifier is not one
       # @example Create a user from attributes
       #   X::User.new({"id" => "7505382", "username" => "sferik"}, client: client)
       def initialize(attrs, client: nil, includes: Includes.new, hydrated: false, batch: nil)
         @attrs = Utils.deep_freeze(attrs)
-        raise ArgumentError, "#{self.class} requires #{self.class.id_key}" if @attrs[self.class.id_key].nil?
-
+        identify
         @client = client
         @includes = includes
         @hydrated = hydrated
@@ -317,17 +317,62 @@ module X
         @memo.store(look_up)
       end
 
+      # Store the full resource a lookup of many found, so hydrate reads it
+      #
+      # @api private
+      # @param resource [Resource, nil] the full resource, or nil if it no longer exists
+      # @return [Resource, nil] the resource that was stored
+      # @example Store what a batch lookup found
+      #   stub.hydrated_with(found)
+      def hydrated_with(resource) = @memo.store(resource)
+
+      # The state Marshal writes: the attributes alone, without the client
+      #
+      # @api public
+      # @return [Hash{String => Object}] the attributes
+      # @example Cache a user
+      #   Rails.cache.write("user", user)
+      def marshal_dump = attrs
+
+      # Restore a resource Marshal read, which has no client and so cannot hydrate
+      #
+      # The client is left out of what Marshal writes, since it holds credentials and a connection, so what Marshal
+      # reads is a client-less resource that answers its readers and raises from hydrate, refresh, and its collections.
+      #
+      # @api public
+      # @param attrs [Hash{String => Object}] the attributes Marshal wrote
+      # @return [void]
+      # @example Read a cached user
+      #   Marshal.load(Marshal.dump(user)).username # => "sferik"
+      def marshal_load(attrs) = initialize(attrs)
+
       # Summarize the resource for the console
       #
       # @api public
       # @return [String] the class name and attributes
       # @example Inspect a user
       #   user.inspect # => #<X::User id="7505382" username="sferik">
-      def inspect
-        "#<#{self.class} #{attrs.map { |key, value| "#{key}=#{value.inspect}" }.join(" ")}>"
-      end
+      def inspect = "#<#{self.class} #{attrs.map { |key, value| "#{key}=#{value.inspect}" }.join(" ")}>"
 
       private
+
+      # Read the identifier once, at the point the resource is made
+      #
+      # Attributes that hold no identifier, or hold one the API could not have given, would otherwise raise from a
+      # reader, an equality test, or a Hash the resource is a key of, far from where they were written.
+      #
+      # @api private
+      # @return [String] the identifier
+      # @raise [ArgumentError] if the attributes hold no identifier, or hold one that is not one
+      # @example Refuse a user whose identifier is not a number
+      #   X::User.new({"id" => "abc"})
+      def identify
+        key = self.class.id_key
+        value = attrs[key]
+        raise ArgumentError, "#{self.class} requires #{key}" if value.nil?
+
+        Utils.id_of(value, raw: self.class.id_type.eql?(:raw))
+      end
 
       # Fetch the full resource from the API, in the lookup of its batch if it has one
       # @api private
@@ -366,11 +411,13 @@ module X
       # @param max_results [Integer, nil] the maximum number of items per page, or nil for an endpoint without pages
       # @param min_results [Integer] the smallest page the endpoint accepts
       # @param total [Symbol, nil] the attribute holding the number of resources the API publishes
+      # @param client [Object] the client the cursor fetches pages with, which is this resource's client unless the
+      #   endpoint takes another, such as the app-only client a space endpoint takes
       # @param params [Hash] query parameters merged over the default parameters
       # @return [Cursor] the cursor
-      def cursor(klass, path, max_results:, min_results: 1, total: nil, **params)
+      def cursor(klass, path, max_results:, min_results: 1, total: nil, client: client!, **params)
         defaults = {max_results:} #: Hash[Symbol, untyped]
-        Cursor.new(klass, path, client: client!, params: defaults.merge(params), min_results:, total: counter(total))
+        Cursor.new(klass, path, client:, params: defaults.merge(params), min_results:, total: counter(total))
       end
 
       # A block reading the attribute holding the number the API publishes

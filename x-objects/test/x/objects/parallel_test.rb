@@ -1,3 +1,4 @@
+require "timeout"
 require_relative "../../test_helper"
 
 module X
@@ -70,6 +71,22 @@ module X
         end
 
         assert_equal "boom 1", error.message
+      end
+
+      def test_map_stops_the_items_not_yet_begun_when_the_wait_is_interrupted
+        began = Queue.new
+        gate = Queue.new
+        assert_raises(Timeout::Error) do
+          Timeout.timeout(0.1) { Parallel.map(1..40, concurrency: 2) { |value| began << value.tap { gate.pop } } }
+        end
+        40.times { gate << true }
+        sleep 0.05
+
+        assert_equal 2, began.size
+      end
+
+      def test_map_gives_every_item_a_place_in_the_results_before_a_thread_starts
+        assert_equal [nil, nil, nil], Parallel.map(1..3, concurrency: 0) { |value| value }
       end
 
       def test_map_does_not_report_exceptions_on_stderr

@@ -9,8 +9,9 @@ module X
   class DirectMessage < Objects::Resource
     extend Objects::DirectMessageConversations
 
-    # Every public direct message event field
-    FIELDS = %w[attachments created_at dm_conversation_id event_type id text].freeze
+    # The direct message event fields the object layer requests; the sender, the participants, and the posts a
+    # message refers to come with their expansions
+    FIELDS = %w[attachments created_at dm_conversation_id entities event_type id text].freeze
     # Every expansion available on direct message endpoints
     EXPANSIONS = %w[attachments.media_keys participant_ids referenced_posts sender_id].freeze
     # Maximum number of events per page
@@ -101,16 +102,19 @@ module X
       # @param user [User, String, Integer] the recipient or their identifier
       # @param text [String, nil] the text of the message, or nil for a message of attachments alone
       # @param client [Object] the client used to make the request
+      # @param media_ids [Array<String, Integer, #fetch>, String, Integer, #fetch, nil] the identifiers of uploaded
+      #   media to attach, or what the uploads returned, one or many
       # @param params [Hash] additional request body fields, such as attachments
       # @return [DirectMessage, nil] the sent message, holding only its identifiers
-      # @raise [ArgumentError] if the message has neither text nor any other field
+      # @raise [ArgumentError] if the message has neither text nor any other field, or has both media_ids and
+      #   attachments
       # @example Send a direct message
       #   X::DirectMessage.create(user, "Hello!", client: client)
       # @example Send an image without text
-      #   X::DirectMessage.create(user, client: client, attachments: [{media_id: media["id"]}])
-      def create(user, text = nil, client:, **params)
+      #   X::DirectMessage.create(user, client: client, media_ids: media)
+      def create(user, text = nil, client:, media_ids: nil, **params)
         path = "dm_conversations/with/#{Objects::Utils.id_of(user)}/messages"
-        sent(client.post(path, JSON.generate(message(text, params)), **Objects::Utils::JSON_CLASSES), client:)
+        sent(client.post(path, JSON.generate(message(text, params, media_ids)), **Objects::Utils::JSON_CLASSES), client:)
       end
 
       # Delete a direct message event as the authenticated user
@@ -190,6 +194,14 @@ module X
     #   @example Get the attachments
     #     message.attachments
     attribute :attachments
+
+    # @!attribute [r] entities
+    #   The entities found in the text: its URLs, hashtags, mentions, and cashtags
+    #   @api public
+    #   @return [Hash, nil] the entities
+    #   @example Get the URLs of a message
+    #     message.entities&.fetch("urls")
+    attribute :entities
 
     # @!method sender
     #   The sender, resolved from the includes or as a stub holding only its identifier

@@ -53,6 +53,9 @@ module X
 
           # Bookmark a post as the authenticated user
           #
+          # The bookmark endpoints take only OAuth 2.0 user context, which the object layer cannot route around, so
+          # a client that signs with OAuth 1.0a is refused.
+          #
           # @api public
           # @param post [Post, String, Integer] the post or its identifier
           # @return [Boolean] true if the authenticated user has bookmarked the post
@@ -63,6 +66,9 @@ module X
           end
 
           # Remove a bookmark as the authenticated user
+          #
+          # The bookmark endpoints take only OAuth 2.0 user context, which the object layer cannot route around, so
+          # a client that signs with OAuth 1.0a is refused.
           #
           # @api public
           # @param post [Post, String, Integer] the post or its identifier

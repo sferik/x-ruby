@@ -59,12 +59,20 @@ module X
       assert_equal [1, 1, 1], [@user.followers, @user.home_timeline, Post.new({"id" => "2"}, client: @client).liked_by].map(&:min_results)
     end
 
-    def test_first_of_the_page_size_uses_the_cursor_and_its_cache
+    def test_first_of_the_page_size_sizes_its_own_pages
       followers = @user.followers(max_results: 3)
       followers.first(3)
-      followers.to_a
 
-      assert_equal [{"max_results" => "3"}, {"max_results" => "3", "pagination_token" => "p2"}], @client.queries.map { |query| query.slice("max_results", "pagination_token") }
+      assert_equal [{"max_results" => "3"}], @client.queries.map { |query| query.slice("max_results", "pagination_token") }
+    end
+
+    def test_a_later_page_asks_for_no_more_than_the_pages_before_it_left
+      @client.stub(:get, "users/1/followers", lambda { |query, _|
+        {"data" => query["pagination_token"] ? [{"id" => "3"}] : [{"id" => "1"}, {"id" => "2"}], "meta" => {"next_token" => "p2"}.reject { query["pagination_token"] }}
+      })
+
+      assert_equal [1, 2, 3], @user.followers(max_results: 3).first(3).map(&:id)
+      assert_equal [{"max_results" => "3"}, {"max_results" => "1", "pagination_token" => "p2"}], @client.queries.map { |query| query.slice("max_results", "pagination_token") }
     end
 
     def test_first_of_a_cursor_without_a_page_size
@@ -82,17 +90,16 @@ module X
 
     def test_first_reads_a_page_size_given_as_a_string
       followers = @user.followers(max_results: "3")
-      followers.first(3)
-      followers.to_a
+      followers.first(5)
 
-      assert_equal %w[3 3], @client.queries.map { |query| query["max_results"] }
+      assert_equal %w[3 2], @client.queries.map { |query| query["max_results"] }
     end
 
     def test_a_sized_cursor_keeps_the_settings_of_the_cursor
       cursor = Cursor.new(User, "users/1/followers", client: @client, params: {max_results: 1000, "user.fields": nil}, prefetch: true, token_param: "next_token", min_results: 2)
       sized = cursor.send(:sized, 1)
 
-      assert_equal [User, "users/1/followers", true, "next_token", 2], [sized.klass, sized.path, sized.prefetch?, sized.token_param, sized.min_results]
+      assert_equal [User, "users/1/followers", true, "next_token", 2], [sized.resource_class, sized.path, sized.prefetch?, sized.token_param, sized.min_results]
       assert_equal({"max_results" => 2}, sized.params.slice("max_results", "user.fields"))
       assert_same @client, sized.client
     end

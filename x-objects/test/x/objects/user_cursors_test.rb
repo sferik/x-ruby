@@ -31,22 +31,22 @@ module X
 
     def test_user_cursors
       THOUSANDS.each do |method|
-        assert_equal [User, 1000], [@user.public_send(method).klass, @user.public_send(method).params["max_results"]], method
+        assert_equal [User, 1000], [@user.public_send(method).resource_class, @user.public_send(method).params["max_results"]], method
       end
     end
 
     def test_post_cursor_classes
-      assert_equal Post, @user.posts.klass
-      assert_equal Post, @user.home_timeline.klass
-      assert_equal Post, @user.mentions.klass
-      assert_equal Post, @user.liked_posts.klass
-      assert_equal Post, @user.bookmarks.klass
+      assert_equal Post, @user.posts.resource_class
+      assert_equal Post, @user.home_timeline.resource_class
+      assert_equal Post, @user.mentions.resource_class
+      assert_equal Post, @user.liked_posts.resource_class
+      assert_equal Post, @user.bookmarks.resource_class
     end
 
     def test_list_cursor_classes
-      assert_equal List, @user.owned_lists.klass
-      assert_equal List, @user.list_memberships.klass
-      assert_equal List, @user.followed_lists.klass
+      assert_equal List, @user.owned_lists.resource_class
+      assert_equal List, @user.list_memberships.resource_class
+      assert_equal List, @user.followed_lists.resource_class
     end
 
     def test_reposts_of_me_belongs_to_the_client_rather_than_a_user

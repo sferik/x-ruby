@@ -13,13 +13,14 @@ module X
       @post = Post.new({"id" => "1", "public_metrics" => {"like_count" => 100}})
     end
 
-    def test_a_resource_matches_an_array_pattern_by_identifier
+    def test_a_resource_matches_no_array_pattern
       matched = case @user
-      in [7505382] then :found
+      in [7505382] then :array
+      in X::User then :resource
       end
 
-      assert_equal :found, matched
-      assert_equal [7505382], @user.deconstruct
+      assert_equal :resource, matched
+      refute_respond_to @user, :deconstruct
     end
 
     def test_a_resource_matches_a_hash_pattern_as_its_readers_read_it

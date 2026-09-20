@@ -12,7 +12,8 @@ module X
       @message = DirectMessage.new({"id" => "1", "text" => "hi", "event_type" => "MessageCreate",
                                     "created_at" => "2024-01-02T03:04:05.000Z", "sender_id" => "9",
                                     "dm_conversation_id" => "9-8", "participant_ids" => %w[9 8],
-                                    "referenced_posts" => [{"id" => "5"}], "attachments" => {"media_keys" => ["3_1"]}},
+                                    "referenced_posts" => [{"id" => "5"}], "attachments" => {"media_keys" => ["3_1"]},
+                                    "entities" => {"urls" => [{"expanded_url" => "https://x.com"}]}},
         client: @client, includes:)
     end
 
@@ -41,6 +42,12 @@ module X
       assert_equal({"media_keys" => ["3_1"]}, @message.attachments)
     end
 
+    def test_entities
+      assert_equal({"urls" => [{"expanded_url" => "https://x.com"}]}, @message.entities)
+      assert_nil DirectMessage.new({"id" => "1"}).entities
+      assert_includes DirectMessage::FIELDS, "entities"
+    end
+
     def test_references
       assert_equal "sferik", @message.sender.username
       assert_equal [9, 8], @message.participants.map(&:id)
@@ -58,7 +65,7 @@ module X
       @client.stub(:get, "dm_events", {"data" => [{"id" => "1", "text" => "hi"}]})
       cursor = DirectMessage.all(client: @client, max_results: 5)
 
-      assert_equal DirectMessage, cursor.klass
+      assert_equal DirectMessage, cursor.resource_class
       assert_equal "dm_events", cursor.path
       assert_equal 5, cursor.params["max_results"]
       assert_equal ["hi"], cursor.map(&:text)
@@ -76,7 +83,7 @@ module X
       cursor = DirectMessage.with(User.new({"id" => "8"}), client: @client, max_results: 5)
 
       assert_equal "dm_conversations/with/8/dm_events", cursor.path
-      assert_equal DirectMessage, cursor.klass
+      assert_equal DirectMessage, cursor.resource_class
       assert_equal 5, cursor.params["max_results"]
       assert_equal "dm_conversations/with/8/dm_events", DirectMessage.with(8, client: @client).path
       assert_same @client, cursor.client

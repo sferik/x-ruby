@@ -116,10 +116,10 @@ module X
           # @api public
           # @param query [String] the search query
           # @param params [Hash] query parameters, such as granularity, which is day by default
-          # @return [Hash{Time => Integer}] the number of matching posts, keyed by the start of each period
+          # @return [Hash{Time => Integer}] the number of matching posts, keyed by the start of each period, oldest first
           # @example Count the recent posts about Ruby by hour
-          #   client.post_counts("ruby", granularity: "hour")
-          def post_counts(query, **params) = Post.counts(query, client: self, **params)
+          #   client.count_posts_by_period("ruby", granularity: "hour")
+          def count_posts_by_period(query, **params) = Post.count_by_period(query, client: self, **params)
 
           # Count the posts from the full archive that match a query, by period
           #
@@ -129,10 +129,10 @@ module X
           # @api public
           # @param query [String] the search query
           # @param params [Hash] query parameters, such as granularity, which is day by default
-          # @return [Hash{Time => Integer}] the number of matching posts, keyed by the start of each period
+          # @return [Hash{Time => Integer}] the number of matching posts, keyed by the start of each period, oldest first
           # @example Count the posts about Ruby by day in 2024
-          #   client.post_counts_all("ruby", start_time: "2024-01-01T00:00:00Z", end_time: "2025-01-01T00:00:00Z")
-          def post_counts_all(query, **params) = Post.counts_all(query, client: self, **params)
+          #   client.count_all_posts_by_period("ruby", start_time: "2024-01-01T00:00:00Z", end_time: "2025-01-01T00:00:00Z")
+          def count_all_posts_by_period(query, **params) = Post.count_all_by_period(query, client: self, **params)
 
           # Look up how many posts the app's project has read
           #
@@ -164,8 +164,8 @@ module X
           alias_method :retweets_of_me, :reposts_of_me
           alias_method :count_tweets, :count_posts
           alias_method :count_all_tweets, :count_all_posts
-          alias_method :tweet_counts, :post_counts
-          alias_method :tweet_counts_all, :post_counts_all
+          alias_method :count_tweets_by_period, :count_posts_by_period
+          alias_method :count_all_tweets_by_period, :count_all_posts_by_period
         end
       end
     end

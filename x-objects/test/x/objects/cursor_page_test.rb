@@ -30,6 +30,21 @@ module X
       assert_equal 3, @client.requests.size
     end
 
+    def test_a_negative_page_index_is_refused
+      assert_equal "-1 is not a page index: pages are numbered from zero", assert_raises(ArgumentError) { @cursor.page(-1) }.message
+      assert_empty @client.requests
+      @cursor.to_a
+
+      assert_raises(ArgumentError) { @cursor.page(-1) }
+      assert_raises(ArgumentError) { @cursor.page(-2) }
+    end
+
+    def test_a_far_page_reads_the_pages_before_it_in_order
+      assert_nil @cursor.page(1_000)
+      assert_equal %w[p2 p3], @client.queries.drop(1).map { |query| query["pagination_token"] }
+      assert_equal 3, @client.requests.size
+    end
+
     def test_page_items_hold_client
       assert_same @client, @cursor.page(0).items.first.client
     end
@@ -77,7 +92,7 @@ module X
 
       assert_equal @cursor.params, refreshed.params
       assert_equal "users/1/followers", refreshed.path
-      assert_equal User, refreshed.klass
+      assert_equal User, refreshed.resource_class
       assert_same @client, refreshed.client
     end
 

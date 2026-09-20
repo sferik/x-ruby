@@ -460,9 +460,9 @@ module X
     # @api public
     # @return [Boolean] true if the reply is now hidden
     # @example Hide a reply
-    #   reply.hide
-    def hide
-      self.class.hide(self, client: client!)
+    #   reply.hide_reply
+    def hide_reply
+      self.class.hide_reply(self, client: client!)
     end
 
     # Show this reply after hiding it, as the author of the post it replies to
@@ -470,9 +470,9 @@ module X
     # @api public
     # @return [Boolean] true if the reply is no longer hidden
     # @example Show a hidden reply
-    #   reply.unhide
-    def unhide
-      self.class.unhide(self, client: client!)
+    #   reply.unhide_reply
+    def unhide_reply
+      self.class.unhide_reply(self, client: client!)
     end
 
     private

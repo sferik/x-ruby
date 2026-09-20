@@ -16,24 +16,27 @@ module X
       # @param client [Object] the client used to make the request
       # @param reply_to [Post, String, Integer, nil] the post to reply to or its identifier
       # @param quote [Post, String, Integer, nil] the post to quote or its identifier
-      # @param media_ids [Array<String, Integer, #fetch>, nil] the identifiers of uploaded media to attach, or what
-      #   the uploads returned
+      # @param media_ids [Array<String, Integer, #fetch>, String, Integer, #fetch, nil] the identifiers of uploaded
+      #   media to attach, or what the uploads returned, one or many
       # @param community [Community, String, Integer, nil] the community to post in or its identifier
-      # @param params [Hash] additional request body fields, such as poll or reply_settings
+      # @param params [Hash] additional request body fields, such as poll or reply_settings, among them reply and
+      #   media, whose other fields reply_to and media_ids are merged into
       # @return [Post, nil] the created post, holding only its identifier and text
       # @raise [ArgumentError] if the post has neither text nor any other field
       # @example Create a post
       #   X::Post.create("Hello, World!", client: client)
       # @example Post an image without text
-      #   X::Post.create(client: client, media_ids: [media])
+      #   X::Post.create(client: client, media_ids: media)
       # @example Reply to a post with an image
       #   X::Post.create("Hello!", client: client, reply_to: post, media_ids: [media["id"]])
+      # @example Reply without the users a thread would otherwise mention
+      #   X::Post.create("Hello!", client: client, reply_to: post, reply: {exclude_reply_user_ids: ["7505382"]})
       # @example Post in a community
       #   X::Post.create("Hello, Rubyists!", client: client, community: community)
       # @example Quote a post
       #   X::Post.create("Worth reading", client: client, quote: post)
       def create(text = nil, client:, reply_to: nil, quote: nil, media_ids: nil, community: nil, **params)
-        fields = {text:, **params, **referenced(reply_to:, quote:, media_ids:, community:)}.compact
+        fields = {text:, **params, **referenced(params, reply_to:, quote:, media_ids:, community:)}.compact
         raise ArgumentError, "a post needs text, or something else to show, such as media_ids" if fields.empty?
 
         resource_from_response(client.post("tweets", JSON.generate(fields), **Utils::JSON_CLASSES), client:)
@@ -61,8 +64,8 @@ module X
       # @param client [Object] the client used to make the request
       # @return [Boolean] true if the reply is now hidden
       # @example Hide a reply
-      #   X::Post.hide("1234567890", client: client)
-      def hide(post, client:)
+      #   X::Post.hide_reply("1234567890", client: client)
+      def hide_reply(post, client:)
         change_visibility(post, true, client:).eql?(true)
       end
 
@@ -73,8 +76,8 @@ module X
       # @param client [Object] the client used to make the request
       # @return [Boolean] true if the reply is no longer hidden
       # @example Show a hidden reply
-      #   X::Post.unhide("1234567890", client: client)
-      def unhide(post, client:)
+      #   X::Post.unhide_reply("1234567890", client: client)
+      def unhide_reply(post, client:)
         change_visibility(post, false, client:).eql?(false)
       end
 
@@ -91,21 +94,36 @@ module X
       end
 
       # The fields of a new post that refer to other posts, media, or a community
+      #
+      # The API nests the post replied to within reply, and the media within media, beside other fields a caller may
+      # set, so reply_to and media_ids are merged into what the caller gave rather than replace it, and they win the
+      # one field each of them sets.
+      #
       # @api private
+      # @param params [Hash] the request body fields the caller gave, such as reply, media, or poll
       # @param reply_to [Post, String, Integer, nil] the post to reply to or its identifier
       # @param quote [Post, String, Integer, nil] the post to quote or its identifier
-      # @param media_ids [Array<String, Integer, #fetch>, nil] the identifiers of uploaded media, or what the uploads
-      #   returned
+      # @param media_ids [Array, #fetch, String, Integer, nil] the identifiers of uploaded media, or what the uploads
+      #   returned, one or many
       # @param community [Community, String, Integer, nil] the community to post in or its identifier
       # @return [Hash{Symbol => Object}] the fields, without those given nil
-      def referenced(reply_to:, quote:, media_ids:, community:)
+      def referenced(params, reply_to:, quote:, media_ids:, community:)
         fields = {} #: Hash[Symbol, untyped]
-        fields[:reply] = {in_reply_to_tweet_id: Utils.id_of(reply_to)} unless reply_to.nil?
+        fields[:reply] = merged(params, :reply, in_reply_to_tweet_id: Utils.id_of(reply_to)) unless reply_to.nil?
         fields[:quote_tweet_id] = Utils.id_of(quote) unless quote.nil?
-        fields[:media] = {media_ids: media_ids.map { |media| Utils.media_id_of(media) }} unless media_ids.nil?
+        fields[:media] = merged(params, :media, media_ids: Utils.media_ids_of(media_ids)) unless media_ids.nil?
         fields[:community_id] = Utils.id_of(community) unless community.nil?
         fields
       end
+
+      # One nested field, with the convenience key merged over what the caller gave
+      #
+      # @api private
+      # @param params [Hash] the request body fields the caller gave
+      # @param key [Symbol] the nested field, reply or media
+      # @param field [Hash] the one field the convenience key sets, which wins
+      # @return [Hash{Symbol => Object}] the nested field
+      def merged(params, key, **field) = params[key].to_h.merge(field)
     end
   end
 end

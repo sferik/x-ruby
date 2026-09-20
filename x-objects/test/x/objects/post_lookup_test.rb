@@ -21,7 +21,7 @@ module X
     def test_search_defaults
       cursor = Post.search("ruby", client: @client)
 
-      assert_equal Post, cursor.klass
+      assert_equal Post, cursor.resource_class
       assert_equal 100, cursor.params["max_results"]
       assert_equal Post::FIELDS.join(","), cursor.params["post.fields"]
       assert_same @client, cursor.client
@@ -38,7 +38,7 @@ module X
     def test_search_all_defaults
       cursor = Post.search_all("ruby", client: @client)
 
-      assert_equal Post, cursor.klass
+      assert_equal Post, cursor.resource_class
       assert_equal 100, cursor.params["max_results"]
       assert_equal Post::FIELDS.join(","), cursor.params["post.fields"]
       assert_same @client, cursor.client

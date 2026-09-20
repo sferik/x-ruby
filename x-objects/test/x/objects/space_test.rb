@@ -28,7 +28,7 @@ module X
     def test_search
       cursor = Space.search("ruby", client: @client, state: "live")
 
-      assert_equal ["spaces/search", Space, "ruby", "live", 100], [cursor.path, cursor.klass, cursor.params["query"], cursor.params["state"], cursor.params["max_results"]]
+      assert_equal ["spaces/search", Space, "ruby", "live", 100], [cursor.path, cursor.resource_class, cursor.params["query"], cursor.params["state"], cursor.params["max_results"]]
       assert_equal Space::FIELDS.join(","), cursor.params["space.fields"]
       assert_same @client, cursor.client
     end
@@ -81,7 +81,7 @@ module X
     def test_posts
       assert_equal "spaces/1/tweets", @space.posts.path
       assert_equal "spaces/1/tweets", @space.tweets.path
-      assert_equal Post, @space.posts.klass
+      assert_equal Post, @space.posts.resource_class
       assert_same @client, @space.posts.client
     end
 
