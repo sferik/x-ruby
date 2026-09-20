@@ -120,9 +120,7 @@ module X
     module Parallel
       extend Parallel
 
-      DEFAULT_CONCURRENCY: Integer
-
-      def map: [T, U] (Enumerable[T] items, ?concurrency: Integer) { (T) -> U } -> Array[U]
+      def map: [T, U] (Enumerable[T] items, concurrency: Integer) { (T) -> U } -> Array[U]
       private def drain: (Thread::Queue queue, Array[Thread] threads) -> void
       private def worker: [T, U] (Thread::Queue queue, Thread::Queue errors, Array[T] items, Array[U?] results) { (T) -> U } -> Thread
     end
@@ -212,8 +210,8 @@ module X
     interface _Lookup[R]
       def find: (id id, client: _Client, **untyped params) ?{ (Problem problem) -> void } -> R?
       def find!: (id id, client: _Client, **untyped params) -> R
-      def find_all: (Array[id] ids, client: _Client, **untyped params) ?{ (Problem problem) -> void } -> Array[R]
-      def hydrate_all: (Array[R] resources, client: _Client, **untyped params) ?{ (Problem problem) -> void } -> Array[R]
+      def find_all: (Array[id] ids, client: _Client, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[R]
+      def hydrate_all: (Array[R] resources, client: _Client, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[R]
       def from_id: (id id, ?client: _Client?, ?batch: Batch?) -> R
       def lookup: (String path, client: _Client, **untyped params) ?{ (Problem problem) -> void } -> R?
       def lookup_all: (String path, client: _Client, **untyped params) ?{ (Problem problem) -> void } -> Array[R]
@@ -274,6 +272,7 @@ module X
 
     interface _FinderHost
       def endpoint!: () -> String
+      def batchable?: () -> bool
       def id_type: () -> Symbol
       def default_params: () -> Hash[String, Array[String]]
       def batch_key: () -> Symbol
@@ -284,8 +283,8 @@ module X
 
     module UserFinders : Finders
       def find: (id id_or_username, client: _Client, **untyped params) ?{ (Problem problem) -> void } -> Resource?
-      def find_all: (Array[id] ids_or_usernames, client: _Client, **untyped params) ?{ (Problem problem) -> void } -> Array[User]
-      def find_all_by_username: (Array[id] usernames, client: _Client, **untyped params) ?{ (Problem problem) -> void } -> Array[User]
+      def find_all: (Array[id] ids_or_usernames, client: _Client, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[User]
+      def find_all_by_username: (Array[id] usernames, client: _Client, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[User]
       def find_by_username: (untyped username, client: _Client, **untyped params) ?{ (Problem problem) -> void } -> User?
       def find_by_username!: (untyped username, client: _Client, **untyped params) -> User
       def current: (client: _Client, **untyped params) ?{ (Problem problem) -> void } -> User?
@@ -299,18 +298,21 @@ module X
 
     module Finders : _FinderHost
       MAX_BATCH_SIZE: Integer
+      DEFAULT_CONCURRENCY: Integer
+      INVALID_CONCURRENCY: String
+      NO_BATCH_LOOKUP: String
 
       def find: (id id, client: _Client, **untyped params) ?{ (Problem problem) -> void } -> Resource?
       def find!: (id id, client: _Client, **untyped params) -> Resource
-      def hydrate_all: (Array[Resource] resources, client: _Client, **untyped params) ?{ (Problem problem) -> void } -> Array[Resource]
-      def find_all: (Array[id] ids, client: _Client, **untyped params) ?{ (Problem problem) -> void } -> Array[Resource]
+      def hydrate_all: (Array[Resource] resources, client: _Client, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[Resource]
+      def find_all: (Array[id] ids, client: _Client, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[Resource]
       def lookup: (String path, client: _Client, **untyped params) ?{ (Problem problem) -> void } -> Resource?
       def lookup_all: (String path, client: _Client, **untyped params) ?{ (Problem problem) -> void } -> Array[Resource]
       def client_for: (_Client client) -> _Client
 
       private
       def get: (String path, client: _Client, query: Hash[String, untyped]) -> body
-      def lookup_in_batches: (String path, Symbol key, Array[String] values, client: _Client, **untyped params) ?{ (Problem problem) -> void } -> Array[Resource]
+      def lookup_in_batches: (String path, Symbol key, Array[String] values, client: _Client, concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[Resource]
       def reporting: (body body) ?{ (Problem problem) -> void } -> body
     end
 
@@ -367,6 +369,7 @@ module X
       include Serialization
 
       MAX_BATCH_SIZE: Integer
+      DEFAULT_CONCURRENCY: Integer
 
       attr_reader attrs: attrs
       attr_reader client: _Client?
@@ -472,8 +475,8 @@ module X
           def find_user!: (id | String id_or_username, **untyped params) -> User
           def find_user_by_username: (String username, **untyped params) ?{ (Problem problem) -> void } -> User?
           def find_user_by_username!: (String username, **untyped params) -> User
-          def find_users: (Array[id | String] ids_or_usernames, **untyped params) ?{ (Problem problem) -> void } -> Array[User]
-          def find_users_by_username: (Array[String] usernames, **untyped params) ?{ (Problem problem) -> void } -> Array[User]
+          def find_users: (Array[id | String] ids_or_usernames, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[User]
+          def find_users_by_username: (Array[String] usernames, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[User]
           def current_user: () -> User
           def current_user_id: () -> Integer
           def search_users: (String query, **untyped params) -> Cursor[User]
@@ -484,7 +487,7 @@ module X
           def find_tweet: (id id, **untyped params) ?{ (Problem problem) -> void } -> Post?
           def find_post!: (id id, **untyped params) -> Post
           def find_tweet!: (id id, **untyped params) -> Post
-          def find_posts: (Array[id] ids, **untyped params) ?{ (Problem problem) -> void } -> Array[Post]
+          def find_posts: (Array[id] ids, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[Post]
           def find_tweets: (Array[id] ids, **untyped params) ?{ (Problem problem) -> void } -> Array[Post]
           def search_posts: (String query, **untyped params) -> Cursor[Post]
           def search: (String query, **untyped params) -> Cursor[Post]
@@ -512,7 +515,7 @@ module X
         module Spaces : _Client
           def find_space: (id id, **untyped params) ?{ (Problem problem) -> void } -> Space?
           def find_space!: (id id, **untyped params) -> Space
-          def find_spaces: (Array[id] ids, **untyped params) ?{ (Problem problem) -> void } -> Array[Space]
+          def find_spaces: (Array[id] ids, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[Space]
           def search_spaces: (String query, **untyped params) -> Cursor[Space]
         end
 
@@ -680,7 +683,7 @@ module X
     def self.key_of: (untyped media) -> untyped
     def self.find: (untyped media, client: Objects::_Client, **untyped params) ?{ (Problem problem) -> void } -> Media?
                  | ...
-    def self.find_all: (Array[untyped] media, client: Objects::_Client, **untyped params) ?{ (Problem problem) -> void } -> Array[Media]
+    def self.find_all: (Array[untyped] media, client: Objects::_Client, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[Media]
                      | ...
     def self.batch_key: () -> Symbol
     def self.fields_key: () -> String

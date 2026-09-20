@@ -61,19 +61,6 @@ module X
         Cursor.new(self, "communities/search", client:, params: {query:, max_results: MAX_RESULTS}.merge(params),
           token_param: "next_token", min_results: 10)
       end
-
-      # Refuse a batch lookup, which the API does not offer for communities
-      #
-      # @api public
-      # @param ids [Array<String, Integer, Community>] the identifiers
-      # @param client [Object] the client, which is not used
-      # @return [void]
-      # @raise [UnsupportedOperation] always, since communities can only be looked up one at a time
-      # @example Look communities up one at a time instead
-      #   ids.map { |id| X::Community.find(id, client: client) }
-      def find_all(ids, client:, **)
-        raise UnsupportedOperation, "#{self} cannot be fetched in batches; find #{ids.size} communities one at a time"
-      end
     end
 
     # @!attribute [r] name

@@ -13,6 +13,17 @@ module X
       # Maximum number of identifiers accepted by a batch lookup endpoint
       MAX_BATCH_SIZE = 100
 
+      # Default number of batch lookups a request makes at once, which matches the chunks an upload sends at once
+      DEFAULT_CONCURRENCY = 4
+
+      # The message of the error raised for a concurrency that would look nothing up
+      INVALID_CONCURRENCY = "concurrency must be an Integer of at least 1, not %s"
+      private_constant :INVALID_CONCURRENCY
+
+      # The message of the error raised for a batch lookup of a resource the API offers none for
+      NO_BATCH_LOOKUP = "%s cannot be fetched in batches; look %d of them up one at a time"
+      private_constant :NO_BATCH_LOOKUP
+
       # Look up a resource by identifier
       #
       # @api public
@@ -53,17 +64,19 @@ module X
       # @api public
       # @param resources [Array<Resource>] the resources, some of which may not be hydrated
       # @param client [Object] the client used to make the requests
+      # @param concurrency [Integer] the number of batch lookups made at once, which must be at least one
       # @param params [Hash] query parameters merged over the default parameters; one that overrides a default field
       #   or expansion parameter builds resources that are not hydrated, so hydrate fetches the rest
       # @return [Array<Resource>] the resources, in order, with the ones that were not hydrated replaced
+      # @raise [ArgumentError] if the concurrency is less than one
       # @yieldparam problem [Problem] each problem the API reported, such as a resource that was not found
       # @example Expand the authors a search did not include
       #   X::User.hydrate_all(posts.map(&:author), client: client)
-      def hydrate_all(resources, client:, **params, &)
+      def hydrate_all(resources, client:, concurrency: DEFAULT_CONCURRENCY, **params, &)
         partial = resources.reject(&:hydrated?)
         return resources.dup if partial.empty?
 
-        found = find_all(partial, client:, **params, &).to_h { |resource| [resource.id, resource] }
+        found = find_all(partial, client:, concurrency:, **params, &).to_h { |resource| [resource.id, resource] }
         resources.filter_map { |resource| resource.hydrated? ? resource : resource.hydrated_with(found[resource.id]) }
       end
 
@@ -72,14 +85,23 @@ module X
       # @api public
       # @param ids [Array<String, Integer, Resource>] the identifiers
       # @param client [Object] the client used to make the requests
+      # @param concurrency [Integer] the number of batches looked up at once, which must be at least one; each is a
+      #   request of up to MAX_BATCH_SIZE identifiers, so a lower number spends a rate limit more slowly
       # @param params [Hash] query parameters merged over the default parameters; one that overrides a default field
       #   or expansion parameter builds resources that are not hydrated, so hydrate fetches the rest
       # @return [Array<Resource>] the resources that were found
+      # @raise [ArgumentError] if the concurrency is less than one
+      # @raise [UnsupportedOperation] if the API offers no batch lookup of the resource, as it offers none for
+      #   communities, lists, or direct message events, which are looked up one at a time
       # @yieldparam problem [Problem] each problem the API reported, such as an identifier that was not found
       # @example Look up many posts by identifier, reporting the ones that were not found
       #   X::Post.find_all([1234567890, 1234567891], client: client) { |problem| warn problem.detail }
-      def find_all(ids, client:, **params, &)
-        lookup_in_batches(endpoint!, batch_key, ids.map { |id| Utils.id_of(id, raw: id_type.eql?(:raw)) }, client:, **params, &)
+      # @example Look up many posts one batch at a time, to spend a rate limit more slowly
+      #   X::Post.find_all(ids, client: client, concurrency: 1)
+      def find_all(ids, client:, concurrency: DEFAULT_CONCURRENCY, **params, &)
+        raise UnsupportedOperation, format(NO_BATCH_LOOKUP, self, ids.size) unless batchable?
+
+        lookup_in_batches(endpoint!, batch_key, ids.map { |id| Utils.id_of(id, raw: id_type.eql?(:raw)) }, client:, concurrency:, **params, &)
       end
 
       # Fetch a single resource from an endpoint
@@ -144,13 +166,17 @@ module X
       # @param key [Symbol] the query parameter the values go in, such as ids or usernames
       # @param values [Array<String>] the values
       # @param client [Object] the client used to make the requests
+      # @param concurrency [Integer] the number of batches looked up at once
       # @param params [Hash] query parameters merged over the default parameters; one that overrides a default field
       #   or expansion parameter builds resources that are not hydrated, so hydrate fetches the rest
       # @return [Array<Resource>] the resources that were found
+      # @raise [ArgumentError] if the concurrency is less than one
       # @yieldparam problem [Problem] each problem the responses reported
-      def lookup_in_batches(path, key, values, client:, **params, &)
+      def lookup_in_batches(path, key, values, client:, concurrency:, **params, &)
+        raise ArgumentError, format(INVALID_CONCURRENCY, concurrency) unless concurrency.integer? && concurrency.positive?
+
         query = Utils.merge_params(default_params, params)
-        bodies = Parallel.map(values.uniq.each_slice(MAX_BATCH_SIZE)) { |batch| get(path, client:, query: query.merge(Utils.query(key => batch))) }
+        bodies = Parallel.map(values.uniq.each_slice(MAX_BATCH_SIZE), concurrency:) { |batch| get(path, client:, query: query.merge(Utils.query(key => batch))) }
         bodies.flat_map { |body| collection_from_response(reporting(body, &), client:, hydrated: fully_requested_by?(query)) }
       end
 

@@ -5,12 +5,12 @@ module X
     # Runs blocks across a bounded pool of threads
     # @api private
     module Parallel
-      # Default number of threads used for concurrent requests
-      DEFAULT_CONCURRENCY = 8
-
       extend self
 
       # Map over items concurrently while preserving order
+      #
+      # Every item is given its place in the results before any thread starts, so that a worker never resizes the
+      # array it writes into, which keeps the writes of the workers safe on a Ruby that runs them in parallel.
       #
       # A block that raises stops the items not yet begun, since each is a request the API bills, and once the
       # items already begun have finished, the first error raised is raised again. An interruption of the wait,
@@ -19,11 +19,11 @@ module X
       #
       # @api private
       # @param items [Enumerable] the items to map
-      # @param concurrency [Integer] the maximum number of concurrent threads
+      # @param concurrency [Integer] the maximum number of concurrent threads, which callers check is at least one
       # @yield [Object] each item
       # @return [Array] the results in the same order as the items
       # @raise [StandardError] the first error raised by any block
-      def map(items, concurrency: DEFAULT_CONCURRENCY, &block)
+      def map(items, concurrency:, &block)
         items = items.to_a
         results = Array.new(items.size) #: Array[untyped]
         queue = Queue.new

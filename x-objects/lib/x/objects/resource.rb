@@ -24,6 +24,9 @@ module X
       # Maximum number of identifiers accepted by a batch lookup endpoint
       MAX_BATCH_SIZE = Finders::MAX_BATCH_SIZE
 
+      # Default number of batch lookups a request makes at once
+      DEFAULT_CONCURRENCY = Finders::DEFAULT_CONCURRENCY
+
       # The frozen attributes returned by the API
       # @api public
       # @return [Hash{String => Object}] the attributes

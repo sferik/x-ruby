@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative "errors"
+require_relative "finders"
 require_relative "utils"
 
 module X
@@ -35,15 +36,18 @@ module X
       # @api public
       # @param ids_or_usernames [Array<Integer, User, String>] identifiers or users, or usernames
       # @param client [Object] the client used to make the requests
+      # @param concurrency [Integer] the number of batches looked up at once, which must be at least one; the
+      #   identifiers and the usernames are looked up one kind after the other, each kind that many batches at a time
       # @param params [Hash] query parameters merged over the default parameters
       # @return [Array<User>] the users that were found
+      # @raise [ArgumentError] if the concurrency is less than one
       # @yieldparam problem [Problem] each problem the API reported, such as a user that was not found
       # @example Look up many users by username
       #   X::User.find_all(["sferik", "gem"], client: client)
-      def find_all(ids_or_usernames, client:, **params, &)
+      def find_all(ids_or_usernames, client:, concurrency: Finders::DEFAULT_CONCURRENCY, **params, &)
         ids, usernames = ids_or_usernames.partition { |value| Utils.id?(value) }
-        found = super(ids, client:, **params) #: Array[User]
-        in_order(found + find_all_by_username(usernames, client:, **params, &), ids_or_usernames)
+        found = super(ids, client:, concurrency:, **params) #: Array[User]
+        in_order(found + find_all_by_username(usernames, client:, concurrency:, **params, &), ids_or_usernames)
       end
 
       # Look up many users by username, in parallel batches, once each
@@ -51,14 +55,15 @@ module X
       # @api public
       # @param usernames [Array<String>] the usernames, with or without leading at signs
       # @param client [Object] the client used to make the requests
+      # @param concurrency [Integer] the number of batches looked up at once, which must be at least one
       # @param params [Hash] query parameters merged over the default parameters
       # @return [Array<User>] the users that were found
-      # @raise [ArgumentError] if a value is not a username
+      # @raise [ArgumentError] if a value is not a username, or if the concurrency is less than one
       # @yieldparam problem [Problem] each problem the API reported, such as a username that was not found
       # @example Look up many users by username
       #   X::User.find_all_by_username(["sferik", "gem"], client: client)
-      def find_all_by_username(usernames, client:, **params, &)
-        lookup_in_batches("users/by", :usernames, usernames.map { |username| normalize(Utils.username!(username)) }, client:, **params, &) #: Array[User]
+      def find_all_by_username(usernames, client:, concurrency: Finders::DEFAULT_CONCURRENCY, **params, &)
+        lookup_in_batches("users/by", :usernames, usernames.map { |username| normalize(Utils.username!(username)) }, client:, concurrency:, **params, &) #: Array[User]
       end
 
       # Look up a user by username

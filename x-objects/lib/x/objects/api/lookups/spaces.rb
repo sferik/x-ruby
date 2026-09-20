@@ -39,13 +39,15 @@ module X
           #
           # @api public
           # @param ids [Array<String, Integer, Space>] the identifiers
+          # @param concurrency [Integer] the number of batches looked up at once, which must be at least one
           # @param params [Hash] query parameters merged over the default parameters
           # @return [Array<Space>] the spaces that were found
+          # @raise [ArgumentError] if the concurrency is less than one
           # @yieldparam problem [Problem] each problem the API reported, such as a resource that was not found
           # @example Look up many spaces
           #   client.find_spaces(["1DXxyRYNejbKM", "1OwGWzarWnNKQ"]).map(&:title)
-          def find_spaces(ids, **params, &)
-            Space.find_all(ids, client: self, **params, &)
+          def find_spaces(ids, concurrency: Finders::DEFAULT_CONCURRENCY, **params, &)
+            Space.find_all(ids, client: self, concurrency:, **params, &)
           end
 
           # Search spaces by their titles

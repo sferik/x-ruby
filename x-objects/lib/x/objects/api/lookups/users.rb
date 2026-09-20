@@ -72,13 +72,18 @@ module X
           #
           # @api public
           # @param ids_or_usernames [Array<Integer, User, String>] identifiers or users, or usernames
+          # @param concurrency [Integer] the number of batches looked up at once, which must be at least one; each is
+          #   a request of up to 100 users, so a lower number spends a rate limit more slowly
           # @param params [Hash] query parameters merged over the default parameters
           # @return [Array<User>] the users that were found
+          # @raise [ArgumentError] if the concurrency is less than one
           # @yieldparam problem [Problem] each problem the API reported, such as a resource that was not found
           # @example Look up many users by username
           #   client.find_users(["sferik", "gem"])
-          def find_users(ids_or_usernames, **params, &)
-            User.find_all(ids_or_usernames, client: self, **params, &)
+          # @example Look up many users one batch at a time
+          #   client.find_users(ids, concurrency: 1)
+          def find_users(ids_or_usernames, concurrency: Finders::DEFAULT_CONCURRENCY, **params, &)
+            User.find_all(ids_or_usernames, client: self, concurrency:, **params, &)
           end
 
           # Look up many users by username, in parallel batches
@@ -88,14 +93,15 @@ module X
           #
           # @api public
           # @param usernames [Array<String>] the usernames, with or without leading at signs
+          # @param concurrency [Integer] the number of batches looked up at once, which must be at least one
           # @param params [Hash] query parameters merged over the default parameters
           # @return [Array<User>] the users that were found
-          # @raise [ArgumentError] if a value is not a username
+          # @raise [ArgumentError] if a value is not a username, or if the concurrency is less than one
           # @yieldparam problem [Problem] each problem the API reported, such as a username that was not found
           # @example Look up many users by username
           #   client.find_users_by_username(["sferik", "1234567890"])
-          def find_users_by_username(usernames, **params, &)
-            User.find_all_by_username(usernames, client: self, **params, &)
+          def find_users_by_username(usernames, concurrency: Finders::DEFAULT_CONCURRENCY, **params, &)
+            User.find_all_by_username(usernames, client: self, concurrency:, **params, &)
           end
 
           # The authenticated user, fetched once per client and credentials

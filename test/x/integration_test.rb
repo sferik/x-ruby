@@ -135,4 +135,10 @@ module X
         .to_return(body: JSON.generate(body), headers: {"content-type" => "application/json"})
     end
   end
+
+  class ConcurrencyTest < Minitest::Test
+    def test_the_batches_of_a_lookup_and_the_chunks_of_an_upload_run_as_wide
+      assert_equal Uploader::Media::DEFAULT_CONCURRENCY, Objects::Finders::DEFAULT_CONCURRENCY
+    end
+  end
 end

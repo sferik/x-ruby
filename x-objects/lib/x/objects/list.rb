@@ -82,19 +82,6 @@ module X
         body.to_h.dig("data", "updated").eql?(true)
       end
 
-      # Refuse a batch lookup, which the API does not offer for lists
-      #
-      # @api public
-      # @param ids [Array<String, Integer, List>] the identifiers
-      # @param client [Object] the client, which is not used
-      # @return [void]
-      # @raise [UnsupportedOperation] always, since lists can only be looked up one at a time
-      # @example Look lists up one at a time instead
-      #   ids.map { |id| X::List.find(id, client: client) }
-      def find_all(ids, client:, **)
-        raise UnsupportedOperation, "#{self} cannot be fetched in batches; find #{ids.size} lists one at a time"
-      end
-
       # Delete a list as the authenticated user
       #
       # @api public

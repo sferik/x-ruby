@@ -40,13 +40,18 @@ module X
           #
           # @api public
           # @param ids [Array<String, Integer, Post>] the identifiers
+          # @param concurrency [Integer] the number of batches looked up at once, which must be at least one; each is
+          #   a request of up to 100 posts, so a lower number spends a rate limit more slowly
           # @param params [Hash] query parameters merged over the default parameters
           # @return [Array<Post>] the posts that were found
+          # @raise [ArgumentError] if the concurrency is less than one
           # @yieldparam problem [Problem] each problem the API reported, such as a resource that was not found
           # @example Look up many posts
           #   client.find_posts([1234567890, 1234567891])
-          def find_posts(ids, **params, &)
-            Post.find_all(ids, client: self, **params, &)
+          # @example Look up many posts one batch at a time
+          #   client.find_posts(ids, concurrency: 1)
+          def find_posts(ids, concurrency: Finders::DEFAULT_CONCURRENCY, **params, &)
+            Post.find_all(ids, client: self, concurrency:, **params, &)
           end
 
           # Search recent posts

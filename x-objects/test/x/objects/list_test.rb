@@ -5,6 +5,7 @@ require_relative "../../test_helper"
 module X
   class ListTest < Minitest::Test
     cover List
+    cover Objects::Finders
 
     def setup
       @client = FakeClient.new
@@ -68,7 +69,7 @@ module X
     def test_find_all_is_not_supported
       error = assert_raises(UnsupportedOperation) { List.find_all([1, 2], client: @client) }
 
-      assert_equal "X::List cannot be fetched in batches; find 2 lists one at a time", error.message
+      assert_equal "X::List cannot be fetched in batches; look 2 of them up one at a time", error.message
       assert_empty @client.requests
     end
 

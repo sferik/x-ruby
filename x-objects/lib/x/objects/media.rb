@@ -92,12 +92,12 @@ module X
     # @api public
     # @param media [Array<#media_key, String, Media>] the media keys, what the uploads returned, or media
     # @param client [Object] the client used to make the requests
-    # @param params [Hash] query parameters merged over the default parameters
+    # @param params [Hash] query parameters merged over the default parameters, and the concurrency of the batches
     # @return [Array<Media>] the media that was found
     # @yieldparam problem [Problem] each problem the API reported
     # @example Look up what the uploads returned
     #   X::Media.find_all(uploads, client: client)
-    def self.find_all(media, client:, **params) = super(media.map { |value| key_of(value) }, client:, **params)
+    def self.find_all(media, client:, concurrency: DEFAULT_CONCURRENCY, **params) = super(media.map { |value| key_of(value) }, client:, concurrency:, **params)
 
     # The key under which media appear in the includes of a response
     #
