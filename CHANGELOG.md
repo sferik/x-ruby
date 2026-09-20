@@ -320,7 +320,7 @@ See [UPGRADING.md](https://github.com/sferik/x-ruby/blob/main/UPGRADING.md) for 
 ## [0.1.0] - 2023-08-02
 * Initial release
 
-[unreleased]: https://github.com/sferik/x-ruby/compare/v0.19.0...HEAD
+[unreleased]: https://github.com/sferik/x-ruby/compare/v1.0.0...HEAD
 [1.0.0]: https://github.com/sferik/x-ruby/compare/v0.19.0...v1.0.0
 [0.19.0]: https://github.com/sferik/x-ruby/compare/v0.18.0...v0.19.0
 [0.18.0]: https://github.com/sferik/x-ruby/compare/v0.17.0...v0.18.0
