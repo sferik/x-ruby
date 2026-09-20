@@ -1,4 +1,3 @@
-require "json"
 require_relative "cursor"
 require_relative "direct_message_conversations"
 require_relative "resource"
@@ -114,7 +113,7 @@ module X
       #   X::DirectMessage.create(user, client: client, media_ids: media)
       def create(user, text = nil, client:, media_ids: nil, **params)
         path = "dm_conversations/with/#{Objects::Utils.id_of(user)}/messages"
-        sent(client.post(path, JSON.generate(message(text, params, media_ids)), **Objects::Utils::JSON_CLASSES), client:)
+        sent(client.post(path, message(text, params, media_ids), **Objects::Utils::JSON_CLASSES), client:)
       end
 
       # Delete a direct message event as the authenticated user

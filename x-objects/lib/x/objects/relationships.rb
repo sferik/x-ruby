@@ -1,4 +1,3 @@
-require "json"
 require_relative "utils"
 
 module X
@@ -247,7 +246,7 @@ module X
       # @param states [Array<String>] the response fields reporting the state, any of which is true once it exists
       # @return [Boolean] true if the relation now exists
       def relate(relation, key, target, *states)
-        body = client!.post("users/#{id}/#{relation}", JSON.generate({key => Utils.id_of(target)}), **Utils::JSON_CLASSES)
+        body = client!.post("users/#{id}/#{relation}", {key => Utils.id_of(target)}, **Utils::JSON_CLASSES)
         states.any? { |state| body.to_h.dig("data", state).eql?(true) }
       end
 

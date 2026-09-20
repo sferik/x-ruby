@@ -72,9 +72,9 @@ module X
 
     interface _Client
       def get: (String endpoint, **untyped) -> untyped
-      def post: (String endpoint, ?String? body, **untyped) -> untyped
+      def post: (String endpoint, ?(String | Hash[untyped, untyped])? body, **untyped) -> untyped
       def delete: (String endpoint, **untyped) -> untyped
-      def put: (String endpoint, ?String? body, **untyped) -> untyped
+      def put: (String endpoint, ?(String | Hash[untyped, untyped])? body, **untyped) -> untyped
     end
 
     # Serialization of what an API response held, by its attributes alone

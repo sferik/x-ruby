@@ -1,4 +1,3 @@
-require "json"
 require "uri"
 require_relative "cursor"
 require_relative "resource"
@@ -63,7 +62,7 @@ module X
       # @example Create a private list
       #   X::List.create("Rubyists", client: client, description: "People who write Ruby", private: true)
       def create(name, client:, **params)
-        body = client.post("lists", JSON.generate({name:, **params}), **Objects::Utils::JSON_CLASSES)
+        body = client.post("lists", {name:, **params}, **Objects::Utils::JSON_CLASSES)
         resource_from_response(body, client:)
       end
 
@@ -77,7 +76,7 @@ module X
       # @example Rename a list and make it private
       #   X::List.update("1234567890", client: client, name: "Rubyists", private: true)
       def update(list, client:, **params)
-        body = client.put("lists/#{Objects::Utils.id_of(list)}", JSON.generate(params), **Objects::Utils::JSON_CLASSES)
+        body = client.put("lists/#{Objects::Utils.id_of(list)}", params, **Objects::Utils::JSON_CLASSES)
         body.to_h.dig("data", "updated").eql?(true)
       end
 
@@ -255,7 +254,7 @@ module X
     # @example Add a member
     #   list.add_member(user)
     def add_member(user)
-      body = client!.post("lists/#{id}/members", JSON.generate({user_id: Objects::Utils.id_of(user)}), **Objects::Utils::JSON_CLASSES)
+      body = client!.post("lists/#{id}/members", {user_id: Objects::Utils.id_of(user)}, **Objects::Utils::JSON_CLASSES)
       body.to_h.dig("data", "is_member").eql?(true)
     end
 

@@ -1,4 +1,3 @@
-require "json"
 require_relative "utils"
 
 module X
@@ -39,7 +38,7 @@ module X
         fields = {text:, **params, **referenced(params, reply_to:, quote:, media_ids:, community:)}.compact
         raise ArgumentError, "a post needs text, or something else to show, such as media_ids" if fields.empty?
 
-        resource_from_response(client.post("tweets", JSON.generate(fields), **Utils::JSON_CLASSES), client:)
+        resource_from_response(client.post("tweets", fields, **Utils::JSON_CLASSES), client:)
       end
 
       # Delete a post as the authenticated user
@@ -90,7 +89,7 @@ module X
       # @param client [Object] the client used to make the request
       # @return [Boolean, nil] whether the reply is hidden, as the response reports, or nil if it does not
       def change_visibility(post, hidden, client:)
-        client.put("tweets/#{Utils.id_of(post)}/hidden", JSON.generate({hidden:}), **Utils::JSON_CLASSES).to_h.dig("data", "hidden")
+        client.put("tweets/#{Utils.id_of(post)}/hidden", {hidden:}, **Utils::JSON_CLASSES).to_h.dig("data", "hidden")
       end
 
       # The fields of a new post that refer to other posts, media, or a community

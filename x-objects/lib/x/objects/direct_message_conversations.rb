@@ -1,4 +1,3 @@
-require "json"
 require_relative "cursor"
 require_relative "utils"
 
@@ -28,7 +27,7 @@ module X
       #   X::DirectMessage.create_group([alice, bob], client: client, media_ids: media)
       def create_group(users, text = nil, client:, media_ids: nil, **params)
         body = {conversation_type: "Group", participant_ids: users.map { |user| Utils.id_of(user) }, message: message(text, params, media_ids)}
-        sent(client.post("dm_conversations", JSON.generate(body), **Utils::JSON_CLASSES), client:)
+        sent(client.post("dm_conversations", body, **Utils::JSON_CLASSES), client:)
       end
 
       # Send a direct message to a conversation as the authenticated user
@@ -49,7 +48,7 @@ module X
       #   X::DirectMessage.create_in(message, client: client, media_ids: media)
       def create_in(conversation, text = nil, client:, media_ids: nil, **params)
         path = "dm_conversations/#{conversation_id_of(conversation)}/messages"
-        sent(client.post(path, JSON.generate(message(text, params, media_ids)), **Utils::JSON_CLASSES), client:)
+        sent(client.post(path, message(text, params, media_ids), **Utils::JSON_CLASSES), client:)
       end
 
       # The direct message events of a conversation, one-to-one or group

@@ -6,6 +6,7 @@ unless $PROGRAM_NAME.include?("mutant")
   SimpleCov.start "strict"
 end
 
+require "json"
 require "minitest/autorun"
 require "minitest/mock"
 require "mutant/minitest/coverage"
@@ -62,9 +63,22 @@ class FakeClient
     raise ArgumentError, "expected #{JSON_CLASSES} but got #{options}" unless options.eql?(JSON_CLASSES)
 
     uri = URI.parse(endpoint)
-    query = URI.decode_www_form(uri.query.to_s).to_h
-    @mutex.synchronize { @requests << {method:, path: uri.path, query:, body:} }
+    query = record(method, uri, body)
     response = @responses.fetch([method, uri.path]) { raise KeyError, "unstubbed #{method} #{uri.path}" }
-    response.respond_to?(:call) ? response.call(query, body) : response
+    response.respond_to?(:call) ? response.call(query, encoded(body)) : response
+  end
+
+  # Record a request as it was sent, and give the query it carried
+  def record(method, uri, body)
+    query = URI.decode_www_form(uri.query.to_s).to_h
+    @mutex.synchronize { @requests << {method:, path: uri.path, query:, body: encoded(body)} }
+    query
+  end
+
+  # The body as X::Client sends it: a String as it is, and anything else, such as a Hash, as JSON
+  def encoded(body)
+    return body if body.nil? || body.is_a?(String)
+
+    JSON.generate(body)
   end
 end
