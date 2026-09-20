@@ -27,13 +27,21 @@ jobs:
       - uses: rubygems/configure-rubygems-credentials@v2.1.0
       - name: Update RubyGems
         run: gem update --system
+      - name: Check that the tag and each gem version.rb hold the version in VERSION
+        run: |
+          version=$(cat VERSION)
+          if [ "${GITHUB_REF_NAME#v}" != "$version" ]; then
+            echo "Tag $GITHUB_REF_NAME does not name the version in VERSION, $version"
+            exit 1
+          fi
+          bundle exec rake check_versions
       - name: Build gems
         run: bundle exec rake build
       - name: Sign, push, and await each gem in dependency order
         run: |
           version=$(cat VERSION)
           for name in x-core x-uploader x-objects x; do
-            file=$(ls pkg/$name-[0-9]*.gem)
+            file=pkg/$name-$version.gem
             # A rerun after a failed push skips the gems the failed run already published
             if curl --silent --fail --output /dev/null "https://rubygems.org/api/v2/rubygems/$name/versions/$version.json"; then
               echo "$name $version is already published"
