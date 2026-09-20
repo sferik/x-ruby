@@ -34,7 +34,7 @@ module X
         @connection.perform_stream(request:) { |_response| flunk "unexpected yield" }
       end
 
-      assert_equal "Network error: Connection refused - Exception from WebMock", error.message
+      assert_equal "Network error: #{Errno::ECONNREFUSED.new("Exception from WebMock").message}", error.message
     end
 
     def test_perform_stream_reports_a_connection_that_drops_while_reading_as_a_network_error
@@ -59,7 +59,7 @@ module X
       error = Core::StreamCallbackError.new(Errno::ECONNREFUSED.new("the hook failed"))
 
       assert_kind_of Errno::ECONNREFUSED, error.error
-      assert_equal "Connection refused - the hook failed", error.message
+      assert_equal Errno::ECONNREFUSED.new("the hook failed").message, error.message
     end
 
     def test_perform_stream_no_host_or_port

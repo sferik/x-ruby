@@ -145,7 +145,7 @@ module X
       request = Net::HTTP::Get.new(URI("https://example.com"))
       error = assert_raises(NetworkError) { @connection.perform(request:) }
 
-      assert_equal "Network error: Connection refused - Exception from WebMock", error.message
+      assert_equal "Network error: #{Errno::ECONNREFUSED.new("Exception from WebMock").message}", error.message
     end
 
     [IOError, Net::HTTPBadResponse, Net::ProtocolError, OpenSSL::SSL::SSLError, SocketError, SystemCallError,
