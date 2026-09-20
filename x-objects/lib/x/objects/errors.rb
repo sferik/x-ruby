@@ -1,4 +1,5 @@
 require "x/core/errors/error"
+require "x/core/errors/unsupported_operation"
 
 module X
   # Raised when a resource that was asked for by identifier or name does not exist
@@ -29,8 +30,4 @@ module X
       @problems = problems.dup.freeze
     end
   end
-
-  # Raised when the API offers no way to do what was asked, such as looking up lists in a batch
-  # @api public
-  class UnsupportedOperation < Error; end
 end

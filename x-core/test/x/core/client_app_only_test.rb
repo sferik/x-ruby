@@ -83,7 +83,7 @@ module X
 
     def test_an_oauth2_user_client_holds_no_credentials_of_the_app
       client = Client.new(**test_oauth2_credentials)
-      error = assert_raises(ArgumentError) { client.app_only }
+      error = assert_raises(UnsupportedOperation) { client.app_only }
 
       assert_equal "A client that authenticates with OAuth 2.0 as a user holds no credentials of the app, so it " \
         "cannot authenticate as the app. Build a client from the app's bearer token, or its API key and secret, " \
@@ -95,7 +95,7 @@ module X
       stream = stub_request(:get, STREAM_URL)
       client = Client.new(**test_oauth2_credentials)
 
-      assert_raises(ArgumentError) { client.streaming.stream("tweets/sample/stream") { |_post| flunk "unexpected yield" } }
+      assert_raises(UnsupportedOperation) { client.streaming.stream("tweets/sample/stream") { |_post| flunk "unexpected yield" } }
       assert_not_requested stream
     end
 

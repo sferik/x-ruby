@@ -1,5 +1,6 @@
 require "monitor"
 require_relative "app_only_authenticator"
+require_relative "errors/unsupported_operation"
 
 module X
   # The app-only copy of a client, for the endpoints that refuse OAuth 1.0a, included into Client
@@ -21,13 +22,13 @@ module X
     #
     # @api public
     # @return [Client] a copy that authenticates with the bearer token, or the client itself
-    # @raise [ArgumentError] if the client authenticates with OAuth 2.0 as a user
+    # @raise [UnsupportedOperation] if the client authenticates with OAuth 2.0 as a user
     # @example Add a filtered stream rule, which takes app-only authentication
     #   client.app_only.post("tweets/search/stream/rules", {add: [{value: "ruby"}]})
     def app_only
       case authenticator
       when OAuth1Authenticator then app_only_copy
-      when OAuth2Authenticator then raise ArgumentError, NO_APP_CREDENTIALS
+      when OAuth2Authenticator then raise UnsupportedOperation, NO_APP_CREDENTIALS
       else self
       end
     end

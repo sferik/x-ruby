@@ -172,6 +172,9 @@ module X
   class TooManyRedirects < Error
   end
 
+  class UnsupportedOperation < Error
+  end
+
   class InvalidResponse < Error
     attr_reader response: Net::HTTPResponse
     attr_reader body: String?

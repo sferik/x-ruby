@@ -5,9 +5,6 @@ module X
     def initialize: (?String? message, ?problems: Array[Problem]) -> void
   end
 
-  class UnsupportedOperation < ::X::Error
-  end
-
   class Problem
     include Objects::Serialization
 
