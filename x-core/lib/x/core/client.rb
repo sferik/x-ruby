@@ -19,6 +19,7 @@ require_relative "request_builder"
 require_relative "request_encoding"
 require_relative "response"
 require_relative "response_parser"
+require_relative "retry_handler"
 require_relative "streaming_client"
 
 module X
@@ -43,6 +44,8 @@ module X
     DEFAULT_MAX_RATE_LIMIT_RETRIES = Core::RateLimitHandler::DEFAULT_MAX_RETRIES
     # Default maximum number of seconds to wait for a rate limit to reset
     DEFAULT_MAX_RATE_LIMIT_WAIT = Core::RateLimitHandler::DEFAULT_MAX_WAIT
+    # Default maximum number of times to send an idempotent request again after a failure
+    DEFAULT_MAX_RETRIES = Core::RetryHandler::DEFAULT_MAX_RETRIES
     # Content type of a form-encoded request body
     FORM_CONTENT_TYPE = "application/x-www-form-urlencoded; charset=utf-8"
     private_constant :FORM_CONTENT_TYPE
@@ -91,6 +94,10 @@ module X
     #   after waiting for the limit to reset
     # @param max_rate_limit_wait [Integer] the maximum number of seconds to wait for a rate limit to reset; a request
     #   whose limit resets later raises TooManyRequests at once
+    # @param max_retries [Integer] the maximum number of times to send a request again after the API failed to answer
+    #   it, with a 5xx status, or after its answer never arrived, waiting a second before the first retry and twice as
+    #   long before each retry after; only a GET, PUT, or DELETE is sent again, since the API may have acted on a POST
+    #   whose answer never arrived
     # @param on_response [#call, nil] a callable passed an X::Response after every request, failed ones included, and
     #   every object a stream delivers
     # @param on_token_refresh [#call, nil] a callable passed the OAuth 2.0 authenticator after each refresh, to store
@@ -112,6 +119,8 @@ module X
     #   client = X::Client.new(api_key: "key", api_key_secret: "secret")
     # @example Create a client that retries a rate-limited request up to three times
     #   client = X::Client.new(bearer_token: "your_bearer_token", max_rate_limit_retries: 3)
+    # @example Create a client that sends a lookup again after the API fails to answer it
+    #   client = X::Client.new(bearer_token: "your_bearer_token", max_retries: 2)
     # @example Create a client that names the application in the User-Agent of every request
     #   client = X::Client.new(bearer_token: "your_bearer_token", headers: {"User-Agent" => "my-app/1.0"})
     def initialize(api_key: nil, api_key_secret: nil, access_token: nil, access_token_secret: nil,
@@ -129,6 +138,7 @@ module X
       max_redirects: DEFAULT_MAX_REDIRECTS,
       max_rate_limit_retries: DEFAULT_MAX_RATE_LIMIT_RETRIES,
       max_rate_limit_wait: DEFAULT_MAX_RATE_LIMIT_WAIT,
+      max_retries: DEFAULT_MAX_RETRIES,
       on_response: nil,
       on_token_refresh: nil)
       @connection = Connection.new(open_timeout:, read_timeout:, write_timeout:, keep_alive_timeout:, debug_output:, proxy_url:)
@@ -139,7 +149,7 @@ module X
       @on_token_refresh = on_token_refresh
       initialize_authenticator
       Core::CredentialValidator.validate!(credentials)
-      initialize_settings(base_url:, default_array_class:, default_object_class:, headers:, on_response:, max_redirects:, max_rate_limit_retries:, max_rate_limit_wait:)
+      initialize_settings(base_url:, default_array_class:, default_object_class:, headers:, on_response:, max_redirects:, max_rate_limit_retries:, max_rate_limit_wait:, max_retries:)
     end
 
     # Summarize the client for the console without revealing credentials
@@ -279,9 +289,11 @@ module X
       uri = URI.join(base_url, endpoint_with(endpoint, params))
       headers = {"Content-Type" => FORM_CONTENT_TYPE}.merge(headers) unless form.nil?
       headers = headers_for(headers)
-      @rate_limit_handler.handle do
-        refreshing_rejected_token do
-          perform(http_method, uri, body: encode_body(body, form), headers:, array_class:, object_class:)
+      @retry_handler.handle(idempotent: Core::RequestBuilder.idempotent?(http_method)) do
+        @rate_limit_handler.handle do
+          refreshing_rejected_token do
+            perform(http_method, uri, body: encode_body(body, form), headers:, array_class:, object_class:)
+          end
         end
       end
     end

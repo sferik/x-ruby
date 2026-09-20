@@ -4,6 +4,7 @@ require "forwardable"
 require_relative "rate_limit_handler"
 require_relative "redirect_handler"
 require_relative "response"
+require_relative "retry_handler"
 
 module X
   module Core
@@ -62,6 +63,7 @@ module X
       def_delegators :@connection, :open_timeout, :read_timeout, :write_timeout, :keep_alive_timeout, :proxy_url, :debug_output
       def_delegators :@redirect_handler, :max_redirects
       def_delegators :@rate_limit_handler, :max_rate_limit_retries, :max_rate_limit_wait
+      def_delegators :@retry_handler, :max_retries
 
       protected
 
@@ -71,12 +73,12 @@ module X
       def settings
         {base_url:, open_timeout:, read_timeout:, write_timeout:, keep_alive_timeout:, debug_output:, proxy_url:,
          default_array_class:, default_object_class:, headers:, max_redirects:, max_rate_limit_retries:,
-         max_rate_limit_wait:, on_response:, on_token_refresh:}
+         max_rate_limit_wait:, max_retries:, on_response:, on_token_refresh:}
       end
 
       private
 
-      # Initialize the settings, and the handlers of redirects and rate limits
+      # Initialize the settings, and the handlers of redirects, rate limits, and retries
       #
       # An endpoint is resolved against the base URL, which drops the last segment of a path that does not end with a
       # slash, so a slash is added to a base URL without one. The headers are copied and frozen, so that changing the
@@ -91,9 +93,10 @@ module X
       # @param max_redirects [Integer] the maximum number of redirects to follow
       # @param max_rate_limit_retries [Integer] the maximum number of times to retry a request refused for a rate limit
       # @param max_rate_limit_wait [Integer] the maximum number of seconds to wait for a rate limit to reset
+      # @param max_retries [Integer] the maximum number of times to send an idempotent request again after a failure
       # @return [void]
       def initialize_settings(base_url:, default_array_class:, default_object_class:, headers:, on_response:,
-        max_redirects:, max_rate_limit_retries:, max_rate_limit_wait:)
+        max_redirects:, max_rate_limit_retries:, max_rate_limit_wait:, max_retries:)
         @base_url = base_url.end_with?("/") ? base_url : "#{base_url}/"
         @default_array_class = default_array_class
         @default_object_class = default_object_class
@@ -101,6 +104,7 @@ module X
         @on_response = on_response
         @redirect_handler = RedirectHandler.new(connection: @connection, request_builder: @request_builder, max_redirects:)
         @rate_limit_handler = RateLimitHandler.new(max_rate_limit_retries:, max_rate_limit_wait:)
+        @retry_handler = RetryHandler.new(max_retries:)
       end
 
       # The headers of a request, the client's under the request's own

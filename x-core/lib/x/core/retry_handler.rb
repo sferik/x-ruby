@@ -1,0 +1,68 @@
+# frozen_string_literal: true
+
+require_relative "errors/network_error"
+require_relative "errors/server_error"
+
+module X
+  module Core
+    # Sends a request again after the API failed to answer it, or after its answer never arrived
+    #
+    # Internal to x-core: Client retries with it, and takes max_retries.
+    #
+    # @api private
+    class RetryHandler
+      # Default maximum number of retries, which retries nothing
+      DEFAULT_MAX_RETRIES = 0
+      # Seconds to wait before the first retry, doubled for each retry after
+      INITIAL_WAIT = 1
+      # The failures a retry may follow, neither of which the request itself is the reason for
+      RETRIABLE_ERRORS = [NetworkError, ServerError].freeze
+
+      # The maximum number of times to send an idempotent request again after a failure
+      # @api private
+      # @return [Integer] the maximum number of retries
+      # @example Read the maximum retries
+      #   handler.max_retries # => 2
+      attr_reader :max_retries
+
+      # Initialize a new retry handler
+      #
+      # @api private
+      # @param max_retries [Integer] the maximum number of times to send an idempotent request again
+      # @return [RetryHandler] a new instance
+      # @example Create a handler that sends a failed request twice more
+      #   handler = X::Core::RetryHandler.new(max_retries: 2)
+      def initialize(max_retries: DEFAULT_MAX_RETRIES)
+        @max_retries = max_retries
+      end
+
+      # Run a request, running it again after a failure of the API or of the network
+      #
+      # A request is sent again while retries remain, after waiting a second before the first retry and twice as
+      # long before each retry after. Only an idempotent request is retried: the API may have acted on a POST whose
+      # answer never arrived, so sending that again could post twice. The block must build its request anew each
+      # time, so that each attempt is signed afresh.
+      #
+      # @api private
+      # @param idempotent [Boolean] whether sending the request again has the same effect as sending it once
+      # @yield runs the request
+      # @return [Object] what the block returns
+      # @raise [NetworkError] if the request fails once more than the retries allow
+      # @raise [ServerError] if the API fails to answer once more than the retries allow
+      # @example Retry a lookup
+      #   handler.handle(idempotent: true) { client.get("users/me") }
+      def handle(idempotent:)
+        retries = 0
+        begin
+          yield
+        rescue *RETRIABLE_ERRORS
+          retries += 1
+          raise unless idempotent && retries <= max_retries
+
+          sleep(INITIAL_WAIT << (retries - 1))
+          retry
+        end
+      end
+    end
+  end
+end

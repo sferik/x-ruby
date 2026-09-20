@@ -99,6 +99,16 @@ module X
       def configure_timeouts: (Net::HTTP http_client) -> Net::HTTP
     end
 
+    class RetryHandler
+      DEFAULT_MAX_RETRIES: Integer
+      INITIAL_WAIT: Integer
+      RETRIABLE_ERRORS: Array[singleton(NetworkError) | singleton(ServerError)]
+
+      attr_reader max_retries: Integer
+      def initialize: (?max_retries: Integer) -> void
+      def handle: [T] (idempotent: bool) { () -> T } -> T
+    end
+
     class ReconnectHandler
       DEFAULT_MAX_RECONNECTS: Float
       NETWORK_BACKOFF_STEP: Float
@@ -200,6 +210,7 @@ module X
       @request_builder: RequestBuilder
       @redirect_handler: RedirectHandler
       @rate_limit_handler: RateLimitHandler
+      @retry_handler: RetryHandler
 
       attr_reader base_url: String
       attr_reader default_array_class: Class
@@ -215,11 +226,12 @@ module X
       def max_redirects: () -> Integer
       def max_rate_limit_retries: () -> Integer
       def max_rate_limit_wait: () -> Integer
+      def max_retries: () -> Integer
 
       def settings: () -> Hash[Symbol, untyped]
 
       private
-      def initialize_settings: (base_url: String, default_array_class: Class, default_object_class: Class, headers: Hash[String, String], on_response: _ResponseHook?, max_redirects: Integer, max_rate_limit_retries: Integer, max_rate_limit_wait: Integer) -> void
+      def initialize_settings: (base_url: String, default_array_class: Class, default_object_class: Class, headers: Hash[String, String], on_response: _ResponseHook?, max_redirects: Integer, max_rate_limit_retries: Integer, max_rate_limit_wait: Integer, max_retries: Integer) -> void
       def headers_for: (Hash[String, String] request_headers) -> Hash[String, String]
       def report: (Symbol http_method, URI::Generic uri, Net::HTTPResponse response) -> void
     end
@@ -670,12 +682,14 @@ module X
     DEFAULT_MAX_REDIRECTS: Integer
     DEFAULT_MAX_RATE_LIMIT_RETRIES: Integer
     DEFAULT_MAX_RATE_LIMIT_WAIT: Integer
+    DEFAULT_MAX_RETRIES: Integer
     FORM_CONTENT_TYPE: String
     @authenticator: Authenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator
     @connection: Connection
     @request_builder: Core::RequestBuilder
     @redirect_handler: Core::RedirectHandler
     @rate_limit_handler: Core::RateLimitHandler
+    @retry_handler: Core::RetryHandler
     @response_parser: Core::ResponseParser
     @token_refresh_clients: _ClientRegistry
     @client_id: String?
@@ -686,7 +700,7 @@ module X
 
     attr_reader on_token_refresh: _TokenRefreshHook?
     attr_reader authenticator: Authenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator
-    def initialize: (?api_key: String?, ?api_key_secret: String?, ?access_token: String?, ?access_token_secret: String?, ?bearer_token: String?, ?client_id: String?, ?client_secret: String?, ?refresh_token: String?, ?expires_at: Time?, ?base_url: String, ?open_timeout: Float | Integer, ?read_timeout: Float | Integer, ?write_timeout: Float | Integer, ?keep_alive_timeout: Float | Integer, ?debug_output: IO?, ?proxy_url: (URI::Generic | String)?, ?default_array_class: Class, ?default_object_class: Class, ?headers: Hash[String, String], ?max_redirects: Integer, ?max_rate_limit_retries: Integer, ?max_rate_limit_wait: Integer, ?on_response: _ResponseHook?, ?on_token_refresh: _TokenRefreshHook?) -> void
+    def initialize: (?api_key: String?, ?api_key_secret: String?, ?access_token: String?, ?access_token_secret: String?, ?bearer_token: String?, ?client_id: String?, ?client_secret: String?, ?refresh_token: String?, ?expires_at: Time?, ?base_url: String, ?open_timeout: Float | Integer, ?read_timeout: Float | Integer, ?write_timeout: Float | Integer, ?keep_alive_timeout: Float | Integer, ?debug_output: IO?, ?proxy_url: (URI::Generic | String)?, ?default_array_class: Class, ?default_object_class: Class, ?headers: Hash[String, String], ?max_redirects: Integer, ?max_rate_limit_retries: Integer, ?max_rate_limit_wait: Integer, ?max_retries: Integer, ?on_response: _ResponseHook?, ?on_token_refresh: _TokenRefreshHook?) -> void
     def inspect: () -> String
     def copy: (**untyped options) -> Client
     def get: (String endpoint, ?params: params?, ?headers: Hash[String, String], ?array_class: Class, ?object_class: Class) -> untyped
