@@ -180,6 +180,9 @@ module X
   end
 
   class TooManyRequests < ClientError
+    RETRY_AFTER_HEADER: String
+    RETRY_AFTER_SECONDS: Regexp
+
     @rate_limits: Array[RateLimit]
 
     def rate_limits: -> Array[RateLimit]
@@ -189,6 +192,10 @@ module X
     def reset_at: -> Time?
     def reset_in: -> Integer?
     def retry_after: -> Integer?
+
+    private
+    def retry_after_header: -> Integer?
+    def seconds_until: (String value) -> Integer?
   end
 
   class Unauthorized < ClientError

@@ -11,7 +11,8 @@ module X
     DEFAULT_MAX_RETRIES = 0
     # Default maximum number of seconds to wait for a rate limit to reset, the length of a 15-minute window
     DEFAULT_MAX_WAIT = 900
-    # Seconds to wait before the first retry of a request refused without a reset time, doubled for each retry after
+    # Seconds to wait before the first retry of a request refused without a Retry-After header or a reset time,
+    # doubled for each retry after
     UNREPORTED_RESET_WAIT = 60
 
     # The maximum number of times to retry a request refused for a rate limit
@@ -43,10 +44,10 @@ module X
 
     # Run a request, running it again after a rate limit resets
     #
-    # A request is retried while retries remain and the limit resets within the maximum wait; otherwise the
-    # error is raised. A response that does not say when its limit resets waits a minute before the first retry,
-    # doubling the wait for each retry after, as X recommends. The block must build its request anew each time,
-    # so that each attempt is signed afresh.
+    # A request is retried while retries remain and the wait the response asks for is within the maximum wait;
+    # otherwise the error is raised. A response that asks for neither a wait nor a reset time waits a minute
+    # before the first retry, doubling the wait for each retry after, as X recommends. The block must build its
+    # request anew each time, so that each attempt is signed afresh.
     #
     # @api private
     # @yield runs the request
@@ -71,8 +72,8 @@ module X
     # @api private
     # @param error [TooManyRequests] the error the request raised
     # @param retries [Integer] the number of the retry, counting from one
-    # @return [Integer] the seconds until the rate limit resets
-    # @raise [TooManyRequests] the error being rescued, if no retries remain or the limit resets too late
+    # @return [Integer] the seconds the response asks the request to wait
+    # @raise [TooManyRequests] the error being rescued, if no retries remain or the wait is too long
     def wait_before_retry(error, retries)
       raise if retries > max_rate_limit_retries
 

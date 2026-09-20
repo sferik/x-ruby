@@ -4,5 +4,6 @@ dependencies:
   - name: monitor
   - name: net-http
   - name: openssl
+  - name: time
   - name: uri
   - name: zlib

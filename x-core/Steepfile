@@ -8,6 +8,7 @@ target :lib do
   library "openssl"
   library "securerandom"
   library "simple_oauth"
+  library "time"
   library "uri"
   library "zlib"
   configure_code_diagnostics(Steep::Diagnostic::Ruby.strict)

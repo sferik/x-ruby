@@ -167,4 +167,73 @@ module X
       end
     end
   end
+
+  class TooManyRequestsRetryAfterHeaderTest < Minitest::Test
+    include RateLimitedResponse
+
+    cover TooManyRequests
+
+    def setup
+      @exception = rate_limited_error
+    end
+
+    def test_retry_after_counts_the_seconds_the_header_asks_for
+      @exception.response["retry-after"] = "42"
+
+      assert_equal 42, @exception.retry_after
+    end
+
+    def test_retry_after_counts_a_padded_header_in_tens_rather_than_eights
+      @exception.response["retry-after"] = "060"
+
+      assert_equal 60, @exception.retry_after
+    end
+
+    def test_retry_after_prefers_the_header_to_the_reset_time_of_the_limit
+      Time.stub :now, Time.utc(1983, 11, 24) do
+        @exception.response["retry-after"] = "42"
+
+        assert_equal [42, 61], [@exception.retry_after, @exception.reset_in]
+      end
+    end
+
+    def test_retry_after_waits_until_the_time_the_header_names
+      Time.stub :now, Time.utc(1983, 11, 24) do
+        @exception.response["retry-after"] = (Time.now + 300).httpdate
+
+        assert_equal 300, @exception.retry_after
+      end
+    end
+
+    def test_retry_after_waits_out_the_part_of_a_second_an_http_date_leaves_off
+      Time.stub :now, Time.utc(1983, 11, 24, 0, 0, 0, 900_000) do
+        @exception.response["retry-after"] = (Time.now + 62).httpdate
+
+        assert_equal 62, @exception.retry_after
+      end
+    end
+
+    def test_retry_after_is_never_negative_for_a_time_that_has_passed
+      Time.stub :now, Time.utc(1983, 11, 24) do
+        @exception.response["retry-after"] = (Time.now - 300).httpdate
+
+        assert_equal 0, @exception.retry_after
+      end
+    end
+
+    def test_retry_after_falls_back_on_the_reset_time_for_a_header_that_says_no_time
+      Time.stub :now, Time.utc(1983, 11, 24) do
+        @exception.response["retry-after"] = "whenever you like"
+
+        assert_equal 61, @exception.retry_after
+      end
+    end
+
+    def test_retry_after_is_nothing_when_a_response_reports_no_limit_and_names_no_time
+      response = Net::HTTPTooManyRequests.new("1.1", 429, "Too Many Requests")
+      response["retry-after"] = "whenever you like"
+
+      assert_nil TooManyRequests.new(response:).retry_after
+    end
+  end
 end
