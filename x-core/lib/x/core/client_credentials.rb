@@ -2,11 +2,6 @@ module X
   # Mixin for client authentication credentials
   # @api private
   module ClientCredentials
-    # The message of the error raised for a client that holds no credentials of the app to authenticate with
-    NO_APP_CREDENTIALS = "A client that authenticates with OAuth 2.0 as a user holds no credentials of the app, so " \
-      "it cannot authenticate as the app. Build a client from the app's bearer token, or its API key and secret, instead".freeze
-    private_constant :NO_APP_CREDENTIALS
-
     # The API key for OAuth 1.0a authentication
     # @api public
     # @return [String, nil] the API key for OAuth 1.0a authentication
@@ -176,37 +171,7 @@ module X
       replace_credentials(**changes)
     end
 
-    # A client that authenticates as the app, for the endpoints that refuse OAuth 1.0a
-    #
-    # A client that signs with OAuth 1.0a fetches an app-only bearer token with its API key and secret the first
-    # time, and returns the same copy, with the connections it keeps open, until its credentials or settings change.
-    # A client with a bearer token or an API key and secret already authenticates as the app, and is returned as it
-    # is. A client that authenticates with OAuth 2.0 as a user holds no credentials of the app, so it raises rather
-    # than send the user's credentials to an endpoint that would refuse them with 403 Forbidden.
-    #
-    # @api public
-    # @return [Client] a copy that authenticates with the bearer token, or the client itself
-    # @raise [ArgumentError] if the client authenticates with OAuth 2.0 as a user
-    # @example Add a filtered stream rule, which takes app-only authentication
-    #   client.app_only.post("tweets/search/stream/rules", {add: [{value: "ruby"}]})
-    def app_only
-      case authenticator
-      when OAuth1Authenticator then app_only_copy
-      when OAuth2Authenticator then raise ArgumentError, NO_APP_CREDENTIALS
-      else self
-      end
-    end
-
     private
-
-    # The app-only copy of the client, kept until its credentials or settings change
-    # @api private
-    # @return [Client] the copy
-    def app_only_copy
-      source = {**credentials, **settings}
-      @app_only&.[](source) ||
-        copy(**credentials.to_h { |name, _| [name, nil] }, api_key:, api_key_secret:, bearer_token: app_bearer_token).tap { |app_client| @app_only = {source => app_client} }
-    end
 
     # Replace some credentials, keeping the tokens of the last refresh
     #
@@ -218,20 +183,6 @@ module X
     def replace_credentials(**changes)
       initialize_credentials(**credentials, **changes)
       initialize_authenticator
-    end
-
-    # The app-only bearer token, fetched once with the API key and secret
-    # @api private
-    # @return [String] the bearer token
-    def app_bearer_token = bearer_token || fetched_app_bearer_token
-
-    # The app-only bearer token this client fetched, fetching it the first time
-    # @api private
-    # @return [String] the bearer token
-    def fetched_app_bearer_token
-      key = api_key #: String
-      secret = api_key_secret #: String
-      @app_bearer_token ||= AppOnlyAuthenticator.new(api_key: key, api_key_secret: secret, connection: @connection).bearer_token
     end
 
     # The credentials, as initialize accepts them

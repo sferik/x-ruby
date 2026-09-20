@@ -5,6 +5,7 @@ target :lib do
   check "lib"
   library "forwardable"
   library "json"
+  library "monitor"
   library "net-http"
   library "openssl"
   library "securerandom"

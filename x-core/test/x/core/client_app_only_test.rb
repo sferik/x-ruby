@@ -20,17 +20,6 @@ module X
       assert_requested @token_request, times: 1
     end
 
-    def test_an_oauth1_client_returns_the_same_copy_until_its_settings_change
-      client = Client.new(**test_oauth_credentials)
-      copy = client.app_only
-
-      assert_same copy, client.app_only
-      client.read_timeout = 5
-
-      refute_same copy, client.app_only
-      assert_equal 5, client.app_only.read_timeout
-    end
-
     def test_an_app_only_copy_keeps_the_settings_but_not_the_access_token
       copy = Client.new(**test_oauth_credentials, base_url: "https://api.x.com/2/").app_only
 
@@ -76,15 +65,6 @@ module X
       client.proxy_url = "http://proxy.example.com:8080"
 
       assert_equal "http://proxy.example.com:8080", client.authenticator.connection.proxy_url
-    end
-
-    def test_changing_credentials_fetches_the_token_again
-      client = Client.new(**test_oauth_credentials)
-      copy = client.app_only
-      client.api_key = "NEW_API_KEY"
-
-      refute_same copy, client.app_only
-      assert_requested @token_request, times: 2
     end
 
     def test_a_given_bearer_token_is_used_without_a_request

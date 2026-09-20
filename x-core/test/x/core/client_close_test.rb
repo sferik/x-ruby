@@ -49,8 +49,23 @@ module X
       assert_equal [false], http_clients.map(&:started?)
     end
 
-    def test_close_returns_nothing_of_the_app_only_copy_it_never_made
-      assert_nil Client.new(**test_oauth_credentials).close
+    def test_a_change_of_settings_closes_the_connections_of_the_app_only_copy_it_replaces
+      client = Client.new(**test_oauth_credentials)
+      copy = client.app_only
+      http_clients = opened_by(copy) do
+        copy.get("tweets")
+        client.read_timeout = 5
+        client.app_only
+      end
+
+      assert_equal [false], http_clients.map(&:started?)
+    end
+
+    def test_close_makes_no_app_only_copy
+      client = Client.new(**test_oauth_credentials)
+      client.close
+
+      assert_empty client.instance_variable_get(:@app_only)
     end
   end
 end

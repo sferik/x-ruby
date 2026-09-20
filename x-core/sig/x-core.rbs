@@ -562,15 +562,32 @@ module X
     def report: (Symbol http_method, URI::Generic uri, Net::HTTPResponse response) -> void
   end
 
-  module ClientCredentials : _CredentialHost
+  module ClientAppOnly : _CredentialHost
     NO_APP_CREDENTIALS: String
 
     @app_bearer_token: String?
-    @app_only: Hash[Hash[Symbol, untyped], Client]?
-    @token_refresh_clients: _ClientRegistry
+    @app_only: Hash[Hash[Symbol, untyped], Client]
+    @app_only_monitor: Monitor
     @connection: Connection
 
     def app_only: () -> (Client | self)
+
+    private
+    def app_only_copy: () -> Client
+    def replace_app_only: (Hash[Symbol, untyped] source) -> Client
+    def app_bearer_token: () -> String
+    def fetched_app_bearer_token: () -> String
+    def credentials: () -> { api_key: String?, api_key_secret: String?, access_token: String?, access_token_secret: String?, bearer_token: String?, client_id: String?, client_secret: String?, refresh_token: String?, expires_at: Time? }
+    def api_key: () -> String?
+    def api_key_secret: () -> String?
+    def bearer_token: () -> String?
+  end
+
+  module ClientCredentials : _CredentialHost
+    @app_bearer_token: String?
+    @token_refresh_clients: _ClientRegistry
+    @connection: Connection
+
     @authenticator: Authenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator
 
     attr_reader api_key: String?
@@ -594,9 +611,6 @@ module X
     def update_credentials: (**String | Time | nil changes) -> void
 
     private
-    def app_only_copy: () -> Client
-    def app_bearer_token: () -> String
-    def fetched_app_bearer_token: () -> String
     def replace_credentials: (**String | Time | nil changes) -> void
     def credentials: () -> { api_key: String?, api_key_secret: String?, access_token: String?, access_token_secret: String?, bearer_token: String?, client_id: String?, client_secret: String?, refresh_token: String?, expires_at: Time? }
     def initialize_credentials: (api_key: String?, api_key_secret: String?, access_token: String?, access_token_secret: String?, bearer_token: String?, client_id: String?, client_secret: String?, refresh_token: String?, expires_at: Time?) -> void
@@ -635,6 +649,7 @@ module X
   end
 
   class Client
+    include ClientAppOnly
     include ClientCredentials
     include ClientSettings
     include ClientTokenRefresh

@@ -3,6 +3,7 @@ require "uri"
 require_relative "app_only_authenticator"
 require_relative "authenticator"
 require_relative "bearer_token_authenticator"
+require_relative "client_app_only"
 require_relative "client_credentials"
 require_relative "client_settings"
 require_relative "client_token_refresh"
@@ -22,6 +23,7 @@ module X
   # A client for interacting with the X API
   # @api public
   class Client
+    include ClientAppOnly
     include ClientCredentials
     include ClientSettings
     include ClientTokenRefresh
@@ -113,6 +115,8 @@ module X
       on_response: nil,
       on_token_refresh: nil)
       @connection = Connection.new(open_timeout:, read_timeout:, write_timeout:, debug_output:, proxy_url:)
+      @app_only = {}
+      @app_only_monitor = Monitor.new
       @request_builder = RequestBuilder.new
       @response_parser = ResponseParser.new
       initialize_credentials(api_key:, api_key_secret:, access_token:, access_token_secret:, bearer_token:, client_id:, client_secret:, refresh_token:, expires_at:)
@@ -247,7 +251,7 @@ module X
     #   client.close
     def close
       @connection.close
-      @app_only&.each_value(&:close)
+      @app_only.each_value(&:close)
     end
 
     private
