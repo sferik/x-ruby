@@ -68,12 +68,12 @@ module X
       assert_equal 1, @client.requests.size
     end
 
-    def test_a_cursor_whose_pages_fall_short_asks_for_the_rest_in_pages_of_its_own
+    def test_a_cursor_whose_pages_fall_short_asks_for_the_rest_in_the_pages_after_them
       followers = @user.followers(max_results: 3)
       followers.page(0)
 
       assert_equal [1, 2, 3, 1, 2, 3], followers.first(6).map(&:id)
-      assert_equal [{"max_results" => "3"}, {"max_results" => "3"}, {"max_results" => "3", "pagination_token" => "p2"}], @client.queries.map { |query| query.slice("max_results", "pagination_token") }
+      assert_equal [{"max_results" => "3"}, {"max_results" => "3", "pagination_token" => "p2"}], @client.queries.map { |query| query.slice("max_results", "pagination_token") }
     end
 
     def test_stubs_keeps_prefetching

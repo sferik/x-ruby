@@ -14,11 +14,9 @@ module X
       #
       # @api private
       # @param cursor [Cursor] the cursor whose pages these are
-      # @param limit [Integer, nil] the number of resources wanted, which sizes the pages and ends the cursor
       # @return [Pages] the pages
-      def initialize(cursor, limit)
+      def initialize(cursor)
         @cursor = cursor
-        @limit = limit
         @monitor = Monitor.new
         @pages = []
         freeze
@@ -38,23 +36,45 @@ module X
         current
       end
 
-      # Check whether the pages already fetched answer a request for so many resources
+      # The first resources, reading pages no larger than needed and keeping them
       #
-      # A cursor that has been read holds its pages, so first, take, and the predicates built on them read what is
-      # there rather than pay for another request.
+      # The pages already fetched are read first, so a cursor that holds what is asked for pays for no request, and
+      # each page fetched asks for no more than what is asked for that the pages before it left, raised to the
+      # smallest page the endpoint accepts. The pages it fetches are kept, as every page is, so an iteration after
+      # it requests only what it left.
       #
       # @api private
       # @param count [Integer] the number of resources wanted
-      # @return [Boolean] true if the pages fetched hold that many, or the last of them ends the collection
-      def satisfy?(count)
-        fetched = @monitor.synchronize { @pages.take_while { |page| !page.nil? } }
-        last = fetched.fetch(-1, nil)
-        return false if last.nil?
-
-        fetched.sum { |page| page.to_a.size } >= count || last.next_token.nil?
+      # @return [Array<Resource>] the first resources, fewer if the collection holds fewer
+      # @raise [ArgumentError] if the count is negative, which Array#first raises for
+      def read(count)
+        @monitor.synchronize do
+          resources = fetched.flat_map(&:to_a)
+          while resources.size < count && (page = next_page(count - resources.size))
+            resources.concat(page.to_a)
+          end
+          resources.first(count)
+        end
       end
 
       private
+
+      # The pages fetched so far
+      #
+      # A nil marks the end of the collection, and only ever follows every page, so what is not nil is every page.
+      #
+      # @api private
+      # @return [Array<Page>] the pages
+      def fetched = @pages.compact
+
+      # Fetch and keep the page after the pages fetched so far, sized for what is wanted
+      # @api private
+      # @param wanted [Integer] the number of resources wanted from the page
+      # @return [Page, nil] the page, or nil if the collection has no more
+      def next_page(wanted)
+        index = fetched.size
+        @pages[index] ||= fetch(index, wanted)
+      end
 
       # Fetch the pages up to an index, in order, storing each in the cache
       #
@@ -78,11 +98,13 @@ module X
       # Fetch a page from the API
       # @api private
       # @param index [Integer] the zero-based page index
+      # @param wanted [Integer, nil] the number of resources wanted from the page, or nil for the page size
       # @return [Page, nil] the page or nil if the previous page was the last
-      def fetch(index)
+      def fetch(index, wanted = nil)
         params = params_for(index)
         return if params.nil?
 
+        params = sized(params, wanted) unless wanted.nil?
         body = @cursor.client.get(Utils.path(@cursor.path, params), **Utils::JSON_CLASSES)
         Page.new(resources_from(body), body.to_h["meta"].to_h, problems: Problem.all_from(body))
       end
@@ -132,21 +154,22 @@ module X
 
         previous = @pages.fetch(index - 1) #: Page
         token = previous.next_token
-        next_params(token) unless token.nil?
+        @cursor.params.merge(@cursor.token_param => token) unless token.nil?
       end
 
-      # The query parameters of a page, asking for what the pages before it left
+      # The query parameters of a page, asking for no more than the resources wanted
+      #
+      # A cursor over an endpoint without a page size asks for the page as it is.
+      #
       # @api private
-      # @param token [String] the token of the next page
-      # @return [Hash{String => Object}, nil] the parameters, or nil once the limit is fetched
-      def next_params(token)
-        params = @cursor.params
-        paged = params.merge(@cursor.token_param => token)
-        limit = @limit
-        return paged if limit.nil?
+      # @param params [Hash{String => Object}] the query parameters of the page
+      # @param wanted [Integer] the number of resources wanted
+      # @return [Hash{String => Object}] the parameters, with the page size wanted, within the endpoint's limits
+      def sized(params, wanted)
+        maximum = params["max_results"]
+        return params if maximum.nil?
 
-        remaining = limit - @pages.sum { |page| page.to_a.size }
-        paged.merge("max_results" => remaining.clamp(@cursor.min_results, Integer(params.fetch("max_results")))) if remaining.positive?
+        params.merge("max_results" => wanted.clamp(@cursor.min_results, Integer(maximum)))
       end
 
       # Fetch a page in a background thread; errors resurface when the page is requested

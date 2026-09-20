@@ -28,14 +28,6 @@ module X
       assert_equal %w[3 3 1], @client.queries.map { |query| query["max_results"] }
     end
 
-    def test_a_cursor_with_a_limit_ends_once_it_has_what_it_asked_for
-      stub_paging_followers
-      cursor = Cursor.new(User, "users/2/followers", client: @client, params: {max_results: "3"}, limit: 7)
-
-      assert_equal 7, cursor.to_a.size
-      assert_equal %w[3 3 1], @client.queries.map { |query| query["max_results"] }
-    end
-
     def test_a_page_after_the_first_rises_to_the_minimum_of_the_endpoint
       cursor = Cursor.new(User, "users/1/followers", client: @client, params: {max_results: 10}, min_results: 5)
 
@@ -44,7 +36,7 @@ module X
     end
 
     def test_the_pages_of_a_cursor_are_frozen
-      assert_predicate Objects::Pages.new(@user.followers, nil), :frozen?
+      assert_predicate Objects::Pages.new(@user.followers), :frozen?
     end
 
     private

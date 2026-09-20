@@ -130,22 +130,23 @@ module X
 
     class Pages
       @cursor: Cursor[untyped]
-      @limit: Integer?
       @monitor: Monitor
       @pages: Array[Page[untyped]?]
 
-      def initialize: (Cursor[untyped] cursor, Integer? limit) -> void
+      def initialize: (Cursor[untyped] cursor) -> void
       def at: (Integer index) -> Page[untyped]?
-      def satisfy?: (Integer count) -> bool
+      def read: (Integer count) -> Array[Resource]
 
       private
+      def fetched: () -> Array[Page[untyped]]
+      def next_page: (Integer wanted) -> Page[untyped]?
       def cached: (Integer index) -> Page[untyped]?
-      def fetch: (Integer index) -> Page[untyped]?
+      def fetch: (Integer index, ?Integer? wanted) -> Page[untyped]?
       def resources_from: (body body) -> Array[Resource]
       def stubs_from: (Array[Resource] resources) -> Array[Resource]
       def id_only?: () -> bool
       def params_for: (Integer index) -> query?
-      def next_params: (String token) -> query?
+      def sized: (query params, Integer wanted) -> query
       def prefetch: (Integer index) -> Thread
     end
 
@@ -629,7 +630,7 @@ module X
     @total: (^() -> Integer?)?
     @pages: Objects::Pages
 
-    def initialize: (singleton(Objects::Resource) resource_class, String path, client: Objects::_Client, ?params: Objects::params, ?prefetch: bool, ?token_param: String, ?min_results: Integer, ?limit: Integer?, ?total: (^() -> Integer?)?) -> void
+    def initialize: (singleton(Objects::Resource) resource_class, String path, client: Objects::_Client, ?params: Objects::params, ?prefetch: bool, ?token_param: String, ?min_results: Integer, ?total: (^() -> Integer?)?) -> void
     def prefetch?: () -> bool
     def each: () { (R) -> void } -> self
             | () -> Enumerator[R, self]
@@ -653,9 +654,7 @@ module X
     def inspect: () -> String
 
     private
-    def sized: (Integer count) -> Cursor[R]
     def own_params: () -> Objects::params
-    def with_max_results: (Integer size, Integer limit) -> Cursor[R]
     def id_only_params: () -> Objects::params
   end
 

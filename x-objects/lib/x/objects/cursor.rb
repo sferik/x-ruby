@@ -64,8 +64,6 @@ module X
     # @param prefetch [Boolean] whether to fetch the next page in a background thread while the current page is consumed
     # @param token_param [String] the query parameter the token of the next page is sent in
     # @param min_results [Integer] the smallest page the endpoint accepts, which first never asks below
-    # @param limit [Integer, nil] internal to the object layer, which may change it within 1.x: the number of
-    #   resources wanted, which sizes the pages and ends the cursor
     # @param total [Proc, nil] internal to the object layer, which may change it within 1.x: a block returning the
     #   number of resources the API publishes for the collection
     # @return [Cursor] a new cursor
@@ -73,7 +71,7 @@ module X
     #   X::Cursor.new(X::User, "users/7505382/followers", client: client, params: {max_results: 1000})
     # @example Create a cursor over an endpoint that pages with next_token
     #   X::Cursor.new(X::User, "users/search", client: client, params: {query: "ruby"}, token_param: "next_token")
-    def initialize(resource_class, path, client:, params: {}, prefetch: false, token_param: DEFAULT_TOKEN_PARAM, min_results: 1, limit: nil, total: nil)
+    def initialize(resource_class, path, client:, params: {}, prefetch: false, token_param: DEFAULT_TOKEN_PARAM, min_results: 1, total: nil)
       @resource_class = resource_class
       @client = client
       @path = path
@@ -82,7 +80,7 @@ module X
       @token_param = token_param
       @min_results = min_results
       @total = total
-      @pages = Objects::Pages.new(self, limit)
+      @pages = Objects::Pages.new(self)
       freeze
     end
 
@@ -171,17 +169,22 @@ module X
     # The API bills each resource returned, so first asks for a page of the size it needs instead, raised to
     # the endpoint's minimum, and each page after the first asks for no more than the pages before it left.
     # The API may serve an empty page with the token of the next, having left out what it filters, such as
-    # suspended users, so first reads on until it finds a resource. A cursor whose pages already hold what is
-    # asked for answers from them, without a request.
+    # suspended users, so first reads on until it finds a resource. The cursor keeps the pages first reads, as it
+    # keeps every page, so a cursor whose pages already hold what is asked for answers from them, without a request,
+    # and an iteration after first requests only what first left.
     #
     # @api public
     # @param count [Integer, nil] the number of resources, or nil for the first resource alone
     # @return [Objects::Resource, Array<Objects::Resource>, nil] the first resource, or the first resources
+    # @raise [ArgumentError] if the count is negative
     # @example Read ten followers in one request for ten users
     #   user.followers.first(10)
     def first(count = nil)
-      cursor = sized(count || 1)
-      count.nil? ? Enumerable.instance_method(:first).bind_call(cursor) : Enumerable.instance_method(:first).bind_call(cursor, count)
+      resources = @pages.read(count || 1) #: Array[untyped]
+      return resources unless count.nil?
+
+      resource, = resources
+      resource
     end
 
     # The first few resources, requesting pages no larger than needed, as first does
@@ -307,24 +310,6 @@ module X
     end
 
     private
-
-    # A cursor with pages no larger than needed, within the endpoint's limits
-    # @api private
-    # @param count [Integer] the number of resources needed
-    # @return [Cursor] this cursor, or a cursor with a smaller page size
-    def sized(count)
-      maximum = params["max_results"]
-      return self if maximum.nil? || @pages.satisfy?(count)
-
-      with_max_results(count.clamp(min_results, Integer(maximum)), count)
-    end
-
-    # A cursor over the same collection with another page size, stopping at a limit
-    # @api private
-    # @param size [Integer] the size of the first page
-    # @param limit [Integer] the number of resources wanted
-    # @return [Cursor] a new cursor
-    def with_max_results(size, limit) = self.class.new(resource_class, path, client:, params: own_params.merge("max_results" => size), prefetch: prefetch?, token_param:, min_results:, limit:, total: @total)
 
     # The parameters of this cursor, keeping dropped defaults dropped
     # @api private

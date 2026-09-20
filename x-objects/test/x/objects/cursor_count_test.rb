@@ -113,7 +113,6 @@ module X
 
     def test_derived_cursors_keep_the_published_number
       assert_equal [12, 12, 12], [@user.followers.refresh, @user.followers.prefetch, @user.followers.stubs].map(&:published_count)
-      assert_equal 12, @user.followers.send(:sized, 3).published_count
     end
 
     def test_the_collections_the_api_publishes_a_number_for

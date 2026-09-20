@@ -24,7 +24,6 @@ module X
     def test_first_count_requests_a_page_of_that_size
       assert_equal [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], @user.followers.first(10).map(&:id)
       assert_equal [{"max_results" => "10"}], @client.queries.map { |query| query.slice("max_results") }
-      refute_predicate @user.followers.send(:sized, 10), :prefetch?
     end
 
     def test_take_requests_a_page_of_that_size
@@ -93,15 +92,6 @@ module X
       followers.first(5)
 
       assert_equal %w[3 2], @client.queries.map { |query| query["max_results"] }
-    end
-
-    def test_a_sized_cursor_keeps_the_settings_of_the_cursor
-      cursor = Cursor.new(User, "users/1/followers", client: @client, params: {max_results: 1000, "user.fields": nil}, prefetch: true, token_param: "next_token", min_results: 2)
-      sized = cursor.send(:sized, 1)
-
-      assert_equal [User, "users/1/followers", true, "next_token", 2], [sized.resource_class, sized.path, sized.prefetch?, sized.token_param, sized.min_results]
-      assert_equal({"max_results" => 2}, sized.params.slice("max_results", "user.fields"))
-      assert_same @client, sized.client
     end
 
     def test_refresh_and_prefetch_keep_dropped_defaults
