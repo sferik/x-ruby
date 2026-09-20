@@ -10,196 +10,589 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 See [UPGRADING.md](https://github.com/sferik/x-ruby/blob/main/UPGRADING.md) for the changes that code written for 0.19 needs.
 
 ### Added
-* Split the gem into gems released in lockstep: `x-core` (the HTTP client), `x-uploader` (media, profile image, and banner uploads), `x-objects` (resource objects), and `x` (a meta-gem that depends on all three and mixes the object methods into `X::Client`)
-* Add immutable, thread-safe resource classes: `X::User`, `X::Post` (aliased as `X::Tweet`), `X::List`, `X::DirectMessage`, `X::Space`, `X::Media`, `X::Poll`, and `X::Place`
-* Compare resources by class and ID with `==`, `eql?`, and `hash`, so the same resource fetched in different requests is equal
-* Resolve references such as `post.author` and `post.replied_to` to included objects or ID stubs, sharing one object per resource within a response
-* Add `hydrate`, which fetches and memoizes the full resource, and `refresh`, which fetches it again; a lookup or a cursor given a parameter that overrides a default field or expansion parameter, such as `"user.fields": "name"`, returns resources that are not hydrated, so `hydrate` fetches the fields the request left out, as `refresh` does
-* Add `X::Cursor`, an `Enumerable` collection that requests the maximum page size, fetches pages lazily, caches them, and offers `refresh` and `prefetch`
-* Check a collection without paging it: `X::Cursor#any?`, `X::Cursor#none?`, and `X::Cursor#one?` request one or two resources, rather than a full page, when they are given no block or pattern
-* Request only the expansions of the resources a post refers to that the object layer resolves, leaving out `edit_history_post_ids`, which included every post again as a version of itself, and `entities.mentions.username`, which included every user a post mentions, since nothing reads either include
-* Count a collection without paging it: `X::Cursor#published_count` reads the number the API publishes for a user's followers, followed users, and list memberships, and for a list's members and followers, looking up a stub, such as the user of `X::User.from_id(id).followers`, to read the number, and returns nil for a collection the API publishes no number for; `count` and `size` page through the collection, as `Enumerable` does
-* Look up users and posts by ID in parallel batches of 100 with `X::User.find_all` and `X::Post.find_all`, asking for each ID once
-* Add `find_user`, `find_users`, `current_user`, `find_post`, `find_posts`, `search_posts`, `search_all_posts`, `create_post`, `delete_post`, `find_list`, `find_space`, `direct_messages`, `create_direct_message`, `follow`, `unfollow`, `like`, `unlike`, `repost`, and `unrepost` to `X::Client`; the finders have `find_tweet` aliases and `search` is short for `search_posts`, and `follow` reports true once it has asked to follow a protected user, whose acceptance is pending
-* Pass a resource class, such as `X::User`, as the `object_class` of any request to build objects from the response, or an array of them from a list; a client passes the parsed body and itself to any `object_class` that responds to `from_response`, and the objects it builds hydrate to the full resource, since a request may have asked for only some fields
-* Pass query parameters to `get`, `post`, `put`, `delete`, and `stream` as `params:`, which drops nil values and joins arrays with commas, so callers no longer build query strings by hand
-* Encode a body passed to `post` or `put` that is not a String, such as a Hash or an Array, as JSON, and encode `form:` fields as a form body with the matching content type; a request given both a body and form fields raises `ArgumentError`, since it sends one body
-* Authenticate as an app when a client is given an `api_key` and `api_key_secret` without access tokens: `X::AppOnlyAuthenticator` fetches a bearer token with the client credentials grant on the first request and keeps it
-* Page an endpoint that names its page token differently with the `token_param:` of `X::Cursor`, and search users with `X::User.search` and `client.search_users`, which page with `next_token`
-* Request nothing but identifiers from a cursor with `ids`, as in `user.followers.ids`
-* Refer to a resource without a request with `X::User.from_id` and its equivalents, and tell such stubs and unexpanded references apart from expanded ones with `stub?`
-* Add `home_timeline`, `blocking`, and `muting` cursors to `X::User`, and read the authenticated user's posts that others have reposted with `reposts_of_me` on the client, aliased as `retweets_of_me`, and `X::Post.reposts_of_me`, aliased the same
-* Add `block`, `unblock`, `mute`, and `unmute` to the actions of `X::User` and `X::Client`
-* Add `X::List.create`, `X::List.update`, `X::List.delete`, `list.add_member`, `list.remove_member`, `list.update`, and `list.delete`, with `create_list`, `update_list`, `delete_list`, `add_list_member`, and `remove_list_member` on the client
-* Add `X::DirectMessage.delete`, `message.delete`, and `delete_direct_message` on the client, and `message.peer(user)`, the other participant of a one-to-one conversation as the user given sees it, usually the authenticated user, which is nil for a group conversation, as `message.group?` tells
-* Read the authenticated user with `current_user` and `current_user!` on the client, which look the user up each time, as `X::User.current` and `X::User.current!` do, taking their query parameters, and the first of which returns nil, yielding the problems the API reported, where the other raises; `current_user_id` keeps the identifier a lookup found for the credentials the client holds, so a copy that holds other credentials looks up the user those credentials authenticate as, and a frozen client, which keeps nothing, looks the user up each time
-* Look up a mix of identifiers and usernames with `find_all_users`, which batches each kind separately instead of treating everything as a username, and returns the users in the order they were asked for, and look up usernames alone, even ones that are all digits, with `find_all_users_by_username`
-* Look many resources up at once with `find_all_users`, `find_all_users_by_username`, `find_all_posts`, `find_all_spaces`, and `find_all_media`, each named for the `find_all` of the resource class it calls, so a finder of many is never a letter away from a finder of one
-* Look up a direct message with `find_direct_message`, many spaces with `find_all_spaces`, and the conversation with a user with `direct_messages_with`
-* Look up the live and scheduled spaces of many users by the users who created them with `X::Space.find_all_by_creator` and `find_all_spaces_by_creator` on the client, which take users or their identifiers, a hundred at a time in parallel batches, as `find_all` does, asking for every field and expansion, as the app for a client that signs with OAuth 1.0a, and yield each problem the API reported
-* Look up media by media key with `X::Media.find`, `find!`, and `find_all`, which asks for up to 100 `media_keys` at a time, and with `find_media`, `find_all_media`, and `find_media!` on the client, each of which takes a media key, media, or what an upload returned, whose media key it reads, as `X::Media.from_id` does, and raises `ArgumentError` for anything else, such as the numeric media ID, which the lookup would not find, and names that media key when it finds nothing, so the media of a post hydrates to every field, and `client.find_media(uploaded)` reads what an upload became, with its URL and variants, looking it up by the media key the endpoint takes
-* Read the media ID of media with `X::Media#media_id`, the Integer its media key names after the number of its type, as `X::UploadedMedia#media_id` reads it, so media and uploaded media answer `media_id` and `media_key` alike, while `X::Media#id` is the media key, which the API looks media up by
-* Add `X::Community`, looked up with `find_community` and `find_community!`, searched with `search_communities`, referred to by `post.community`, and posted in with the `community:` of `create_post`
-* Shorten every client method named for direct messages with a `dm` alias: `find_dm`, `find_dm!`, `dms`, `dms_with`, `create_dm`, and `delete_dm`
-* Build the `reply` and `media` fields of a new post from the `reply_to:` and `media_ids:` of `create_post`
-* Describe uploaded media with alt text, through the `alt_text:` of `X::Uploader::Media.upload` or `X::Uploader::Metadata.add_alt_text`, and attach uploaded subtitles to a video with `X::Uploader::Metadata.add_subtitles`
-* Upload a GIF with a single frame as an image, since X fails to process it as a GIF, telling a still GIF from an animated one with `X::Uploader::Gif.animated?`
-* Request a page no larger than needed from `X::Cursor#first` and `X::Cursor#take`, raised to the endpoint's minimum, since the API bills each resource returned, and ask each page after the first for no more than the pages before it left
-* Check `list.member?` by scanning the smaller of a public list's members and the lists the user is on, comparing `member_count` with `listed_count`; a private list still scans its members
-* Check `follows?` with one lookup of `connection_status` when either user is the authenticated user, instead of scanning every user followed, and read that field with `X::User#connection_status`
-* Infer the media category of an upload from the file extension, upload a video in chunks, and wait for a video or an animated GIF to be processed, so `X::Uploader::Media.upload("cat.mp4", client:)` handles any file, taking the `media_type:`, `chunk_size_mb:`, and `concurrency:` of a chunked upload, none of which an upload in a single request sends, since the API types an image itself, and raising `ArgumentError` for any other keyword
-* Take the file path, content, or media as the positional argument of the `X::Uploader::Media`, `X::Uploader::Validator`, and `X::Uploader::Account` methods, with `client:` as a keyword, as the object layer does
-* Copy a client with some options changed with `X::Client#copy`, such as `client.copy(base_url: "https://api.x.com/1.1/")` for the v1.1 API or `client.copy(access_token: nil, access_token_secret: nil)` for an app-only client
-* Raise `X::ResourceNotFound`, an `X::Error`, from `current_user`, `X::User.current!`, and the new `find!`, `find_user!`, `find_post!`, `find_list!`, `find_space!`, and `find_direct_message!`, so a missing resource is an error a caller can rescue in one place
-* Replace the stubs among some resources with the full resources in parallel batches with `X::User.hydrate_all` and its equivalents, which make no lookup when no resource is a stub
-* Accept a username with a leading at sign in `find_user`, `find_users`, and `X::User.find_all_by_username`
-* Add `X::DirectMessage#from?`, `X::Post#coordinates`, `permalink`, the x.com address of a post, user, list, or community, and `uri`, the same address as a `URI`
-* Match resources against `case/in` patterns: `deconstruct` gives the identifier and `deconstruct_keys` every attribute the resource declares, read as its own method reads it, so `post in {like_count: 100..}` matches a metric the API nests
-* Accept what `X::Uploader::Media.upload` returns directly as the `media_ids:` of `create_post`, reading the identifier from anything that answers `fetch`, as a Hash and an `X::Uploader::UploadedMedia` do
-* Return an `X::Uploader::UploadedMedia` from `upload`, `upload_binary`, `chunked_upload`, `await_processing`, and `await_processing!`, and from `upload_media`, `upload_media_binary`, and `await_media_processing` on the client, in place of a Hash: a frozen object that reads the media's `id`, as an Integer, `media_key`, `size`, `expires_at`, `processing_info`, `state`, and `check_after_secs`, tells `processing?`, `failed?`, and `ready?`, compares by its attributes, and still reads as the Hash with `[]`, `fetch`, `dig`, `key?`, and `to_h`, so `media["id"]` works as it did; the uploaders and `create_post` take it wherever they take media, and `X::Uploader::MediaProcessingFailed#status` and `X::Uploader::MediaProcessingTimeout#status` hold it
-* Load `x-uploader` from `require "x"`, so `X::Uploader::Media` and `X::Uploader::Account` need no further require
-* Add `upload_media`, `upload_media_binary`, `await_media_processing`, which raises if processing failed, `add_alt_text`, `add_subtitles`, `update_profile_image`, and `update_profile_banner` to `X::Client`, each of which calls an uploader with the client, as in `client.create_post("Look", media_ids: [client.upload_media("cat.jpg")])`; they are the methods of `X::Uploader::API`, which `x` includes into `X::Client`, and which code that depends on `x-core` and `x-uploader` alone can include itself
-* Scan a cursor with nothing but identifiers with `stubs`, and check a relationship without fetching every page with `user.follows?` and `list.member?`
-* Resolve the posts a post or direct message refers to with `references`, and pair `liked_by` with `reposted_by` on `X::Post`, beside `reposts`, the reposts themselves, each a post by the user who reposted it
-* Add `X::Post#urls` and `X::Post#expanded_text`, the text with every shortened link replaced by the URL it stands for
-* Read the full text of a long post, of more than 280 characters, with `X::Post#text`, which reads it from `note_post` rather than the text the API cuts short, and read the entities and links of the full text with `entities` and `urls`, which read the post's own entities when its note carries none, such as the annotations of a long post without links
-* Look up a user by identifier when given an Integer and by username when given a String, so an account whose username is all digits is found by name; everywhere else, such as `follow`, `from_id`, and `find_post`, an identifier that is not a number raises `ArgumentError`, rather than reach the API as a username it would take for an identifier
-* Name the interface after posts rather than tweets, including `post_count`, `pinned_post_id`, `most_recent_post_id`, `edit_history_post_ids`, `note_post`, `referenced_posts`, and `repost_count`; the tweet-named methods, such as `create_tweet`, `tweets`, `quote_tweets`, and `retweet_count`, remain as aliases
-* Add `inspect` to `Client` and the authenticators that never reveals credentials
-* Preserve custom headers passed to `get`, `post`, `put`, and `delete` across redirects
-* Count the posts that match a query with `X::Post.count` and `X::Post.count_all`, or by period with `X::Post.counts` and `X::Post.counts_all`, and on a client with `count_posts`, `count_all_posts`, `post_counts`, and `post_counts_all`, which have tweet-named aliases; a client that signs with OAuth 1.0a counts with a copy that authenticates as the app, since the counts endpoints refuse OAuth 1.0a
-* Report the partial errors of a successful response as `X::Problem` objects: `problems` on a resource and on each page of a cursor, a block given to a finder, which receives each problem, and `X::ResourceNotFound#problems`, whose first problem explains the message
-* Pass an `X::Response` to the `on_response` of a client after every request, and for each object a stream delivers, which counts the resources the response returned with `resource_counts` and reads its rate limits with `rate_limits` and `rate_limit`
-* Retry a request refused for a rate limit after the limit resets, up to `max_rate_limit_retries` times, which is 0 by default, for a limit that resets within `max_rate_limit_wait` seconds, which is 900 by default; a refusal that does not say when its limit resets waits a minute, doubling for each retry after
-* Refresh an OAuth 2.0 access token when it expires, given the `expires_at:` of `X::Client`, a `Time`, since anything else raises `ArgumentError`, or when the API rejects it with 401 Unauthorized, sending the request again with the new token, and forgetting the expiration time when a refresh reports no lifetime, rather than refreshing again on every request; a lock lets requests on several threads refresh once, and `on_token_refresh:`, or the `on_refresh` of `X::OAuth2Authenticator`, receives the authenticator after each refresh to store its tokens, as does the `on_token_refresh` of each copy of the client that shares its authenticator, once for each distinct callable
-* Read the status of an `X::HTTPError` as an Integer with `status`, as `X::Response#status` reads it, beside `code`, the String that `Net::HTTP` gives
-* Keep connections open between requests to the same host, up to eight idle per host and for the 30 seconds of `keep_alive_timeout`, a setting of `X::Client` and `X::Connection`, which X holds an idle connection well beyond, and which a client behind a proxy that closes idle connections sooner can lower, so a request no longer opens a TCP and TLS connection of its own; a connection whose request fails is closed, `X::Connection#close` closes the idle ones, a change of proxy or debug output opens new ones, and a forked process opens its own and leaves its parent's open when it closes them; `X::Client#close` closes the connections a client keeps open, and those of its app-only copy, and a later request opens one again
-* Authenticate as the app with `X::Client#app_only`, a copy of a client that signs with OAuth 1.0a, which fetches the app's bearer token once and reuses it, and which the client returns again, with the connections it keeps open, until the client's credentials or settings change, when it closes the connections of the copy it replaces; threads that ask for the copy together get one copy, and fetch one token
-* Stream with app-only authentication from a client that signs with OAuth 1.0a, since the stream endpoints refuse it
-* Stream with `X::StreamingClient`, which `X::Client#streaming` builds from a client, sharing its credentials, base URL, parsing classes, and `on_response` hook while keeping the settings of a long-lived connection; `stream` raises `ArgumentError` when given no block, before it opens the stream, rather than after reading the first object, which the API bills
-* Reconnect a stream that ends or drops, or that delivers a line that is not JSON, which raises `X::InvalidResponse` rather than `JSON::ParserError`, backing off as X recommends, up to the `max_reconnects` of the streaming client, which is unlimited by default; a rate limit waits until it resets, or from a minute, doubling each attempt
-* Read a stream with the `read_timeout` of the streaming client, 30 seconds by default, half again the 20-second interval of the keep-alive X sends, so a stream that goes quiet reconnects rather than waiting for the timeout of an ordinary request
-* Report how many posts the app's project has read with `X::Usage.find` and `client.usage`, including its monthly cap and its usage by day and by app
-* Take the authenticated user's ID for actions from the prefix of an OAuth 1.0a access token, with `current_user_id`, instead of requesting `users/me`
-* Refresh the tokens of a public OAuth 2.0 client, such as a native or single-page app, given a `client_id`, `access_token`, and `refresh_token` without a `client_secret`; the refresh sends the client ID in its body rather than authenticating with a secret
-* Read the number of photos and videos a user has posted with `X::User#media_count`
-* Bookmark a post and remove the bookmark with `bookmark` and `unbookmark` on `X::User` and `X::Client`, beside the `bookmarks` cursor that reads them
-* Follow, unfollow, pin, and unpin a list with `follow_list`, `unfollow_list`, `pin_list`, and `unpin_list` on `X::User` and `X::Client`, and read a user's pinned lists with `X::User#pinned_lists`
-* Quote a post with the `quote:` of `create_post` and `X::Post.create`, which builds the `quote_tweet_id` of the new post
-* Hide a reply to a post of the authenticated user, and show it again, with `X::Post#hide` and `#unhide`, `X::Post.hide` and `.unhide`, and `hide_reply` and `unhide_reply` on the client
-* Authorize an app to act for a user with the OAuth 2.0 authorization code flow and PKCE: `X::OAuth2Authorization` builds the URL that asks the user, with a state and code verifier to store until X redirects back, and exchanges the code of the redirect for `credentials` or a `client`, raising `X::AuthorizationError`, whose `error_code` is the OAuth 2.0 error code, when the user declines, the state does not match, X refuses the code, or the redirect is not a valid URL; a nil or empty state raises `ArgumentError`, since it would accept the redirect of any authorization
-* Change several credentials at once with `X::Client#update_credentials`, which builds the authenticator once, so rotating an OAuth 1.0a access token and its secret never signs a request with a mismatched pair, and raises `ArgumentError` for credentials that do not form a complete set
-* Start a group conversation of direct messages with `X::DirectMessage.create_group` and `create_group_direct_message` on the client, send to any conversation with `X::DirectMessage.create_in` and `create_direct_message_in`, and read any conversation with `X::DirectMessage.in` and `direct_messages_in`, each given a message of the conversation or its identifier; the client methods have `create_group_dm`, `create_dm_in`, and `dms_in` aliases
-* Search spaces with `X::Space.search` and `search_spaces` on the client, a cursor over the live or scheduled spaces that match a query
-* Read what a successful response held instead of JSON with `X::InvalidResponse#body`: the body of a response, or the line of a stream, whose response cannot be read for its body once the stream is open
-* Take the identifier of media, a String or an Integer, as well as the response of an upload, in `X::Uploader::Media.await_processing` and `await_processing!`, as `X::Uploader::Metadata.add_alt_text` and `add_subtitles` do
-* Add `X::Uploader::Media::DEFAULT_CONCURRENCY`, the four chunks a chunked upload sends at once unless `concurrency:` says otherwise
-* Check whether a collection is empty without paging it with `X::Cursor#empty?`, which requests one resource, as `none?` does
-* Post media without text, and send a direct message of attachments alone: the text of `create_post`, `X::Post.create`, `create_direct_message`, `create_group_direct_message`, `create_direct_message_in`, and their `X::DirectMessage` equivalents is optional, a post or message without text sends no `text` field rather than a null one, and one with neither text nor any other field raises `ArgumentError`
-* Match a resource by the tweet-named aliases of its attributes, such as `post in {retweet_count: 100..}` and `user in {pinned_tweet_id: Integer}`, and by `conversation_id` on a direct message; a pattern that asks for every attribute gets each once, by the name the resource declares
-* Ship a `CHANGELOG.md` with `x-core`, `x-uploader`, and `x-objects`, holding the entries of this file that are changes to that gem, which the `changelog_uri` of each gemspec names in place of this file
+* Split the gem into five gems released in lockstep: `x-core`, `x-uploader`, `x-streaming`, `x-objects`, and `x`
+  * `x-core` is the HTTP client and declares `X::Error`, the base of every error the gems raise
+  * `x-uploader` uploads media, profile images, and banners; `x-streaming` reads streams and filtered-stream rules
+  * `x-objects` holds the resource objects and makes its requests through the client it is given
+  * `x` depends on all four and mixes the object, upload, and streaming methods into `X::Client`
+  * Every public class is named directly under `X`; the gems depend on each other with `>= 1.0.0, < 2`
+* Add `X::Objects::Error`, `X::Uploader::Error`, and `X::Streaming::Error` to rescue the failures of one gem alone
+* Ship a `CHANGELOG.md` with `x-core`, `x-uploader`, `x-streaming`, and `x-objects`, which each gemspec's `changelog_uri` names
+* Publish the API documentation of every gem at https://sferik.github.io/x-ruby/api/, which the `documentation_uri` of `x` names
+  * Each gem ships a `.yardopts`, so its documentation on rubydoc.info leaves out the private API
+* Add `X.gem_version` and the `gem_version` of `X::Core`, `X::Uploader`, `X::Streaming`, and `X::Objects`, each a `Gem::Version`
+* Load `x-uploader` from `require "x"`, so `X::Uploader::MediaUpload` and `X::Uploader::Account` need no further require
+* Add `X::Client#get_stream`, which sends a GET and yields the `Net::HTTPResponse` before its body is read
+  * Sends the client's credentials, headers, timeouts, and proxy, and refreshes a rejected token as any request does
+  * Raises the `X::HTTPError` of a failed response; otherwise returns what the block returns
+  * A socket error while reading the body raises `X::NetworkError`; an error of the block reaches the caller as raised
+  * `x-streaming` reads the streams of the API with it
+* Add `X::Client#with_retries`, `memoized`, and `memoize`, kept throughout 1.x for the gems that extend a client
+  * `x-uploader` sends each chunk of an upload with `with_retries`; `x-objects` keeps the authenticated user with `memoize`
+* Pass a block to `get`, `post`, `put`, and `delete` to receive the `X::Response` of each response the request gets
+  * It is passed what `on_response` is passed, at the same points, refused responses and retries included
+  * The client's `on_response` runs first
+* Pass query parameters to `get`, `post`, `put`, `delete`, and `stream` as `params:`
+  * nil values are dropped, Arrays are joined with commas, and a `Time` is sent in UTC as ISO 8601
+* Encode a `post` or `put` body that is not a String, such as a Hash or an Array, as JSON
+* Send a form body with the `form:` of `post` and `put`, whose fields are encoded as `params:` are
+  * Passing both a body and `form:` raises `ArgumentError`
+* Add the `headers:` option of `X::Client.new`, headers sent with every request and stream of the client
+  * A Hash of String or Symbol names to String values; anything else raises `ArgumentError` when the client is built
+  * A header passed to a request or `get_stream` replaces the client's, which replaces the gem's default of that name
+  * Names are case-insensitive, copies made with `with` keep them, and credential headers are dropped on a cross-origin redirect
+  * `X::Client#headers` reads them back frozen, each named by the String it is sent with, as `{"user-agent" => ...}`
+  * Token requests carry them too: the app-only token fetch, OAuth 2.0 refreshes, and the code exchange of `X::OAuth2Authorization`
+  * The token request's own `Authorization` and `Content-Type` win, and a client's `Authorization` header is never sent with one
+* Pass an `X::Response` to the `on_response` of a client after every request, and for each object a stream delivers
+  * `X::Response#resource_counts`, `rate_limits`, and `rate_limit` read what the response spent
+  * An `on_response` that is neither nil nor responds to `call` raises `ArgumentError` when the client is built
+* Add `X::Response#headers` and `X::HTTPError#headers`, frozen Hashes with lowercase names and repeated fields comma-joined
+  * Read each `Set-Cookie` with `http_response.get_fields("set-cookie")`
+* Retry a request refused for a rate limit up to `max_rate_limit_retries` times (default 0)
+  * It waits as long as the refusal asks, up to `max_rate_limit_wait` seconds (default 900), plus up to 5 seconds of jitter
+  * A refusal that asks no wait and names no reset waits a minute, doubling for each retry after
+  * A refusal for the usage cap of the project, which `X::Problem#usage_capped?` tells, raises at once
+* Retry a failed request up to the `max_retries:` of `X::Client.new` (default 2; 0 raises at once)
+  * A `GET`, `PUT`, or `DELETE` is retried after `X::ServerError`, `X::RequestTimeout`, or a network error before it was sent
+  * The wait starts at up to a second and doubles, up to a minute, with jitter; a longer `Retry-After` is waited out
+  * A `Retry-After` of more than a minute raises at once; a `POST` and any other 4xx are never retried
+  * An error raised by `on_response`, a request's block, or `from_response` is never retried
+* Add the defaults of `X::Client` as constants: `DEFAULT_MAX_REDIRECTS`, `DEFAULT_MAX_RATE_LIMIT_RETRIES`, `DEFAULT_MAX_RATE_LIMIT_WAIT`, `DEFAULT_MAX_RETRIES`
+  * `X::Client::DEFAULT_OPEN_TIMEOUT`, `DEFAULT_READ_TIMEOUT`, `DEFAULT_WRITE_TIMEOUT`, and `DEFAULT_KEEP_ALIVE_TIMEOUT` replace those of `X::Connection`
+  * `X::StreamingClient::DEFAULT_MAX_RECONNECTS` sits beside its `DEFAULT_READ_TIMEOUT`
+* Keep up to 16 idle connections open per host between requests, for `keep_alive_timeout` seconds (default 30)
+  * `keep_alive_timeout` is a setting of `X::Client` and `X::OAuth2Authorization`
+  * Copies made with `with` that connect the same way share the client's connections
+  * `X::Client#close` closes them, and those of the copies that share them; a later request opens one again
+* Copy a client with some options changed with `X::Client#with`, which takes the options of `X::Client.new`
+  * e.g. `client.with(base_url: "https://api.x.com/1.1/")`, or `client.with(access_token: nil, access_token_secret: nil)` for app-only
+  * A copy given no new credentials shares the client's authenticator, and so its fetched or refreshed tokens
+  * A copy that shares an OAuth 2.0 authenticator raises `ArgumentError` for an `expires_at`
+  * A copy with other credentials holds `refresh_token`, `expires_at`, `scopes`, `save_tokens`, and `load_tokens` only when given them
+  * `X::Client#expires_at` reads the expiration of the last refresh
+* Authenticate a client with an authenticator built elsewhere, given as the `authenticator:` of `X::Client.new` or `with`
+  * Raises `ArgumentError` beside credentials or an `expires_at`, or for anything that is not an `X::Authenticator`
+  * A custom authenticator subclasses `X::Authenticator` and overrides its public `headers`
+  * `headers` is passed a request answering `http_method`, `uri`, `body`, and `[]`, typed as `X::_AuthenticatorRequest`
+  * The refreshes of a shared `X::OAuth2Authenticator` reach the `save_tokens` of every client that uses it
+  * A client given an `X::OAuth2Authenticator` holds no app credentials, so its `app_only` raises `X::UnsupportedOperation`
+* Add `X::Client#app_only`, a copy of a client that authenticates as the app
+  * It sends the client's bearer token, or one it fetches once with the API key and secret, shared with copies
+  * It raises `X::UnsupportedOperation` for an OAuth 2.0 user client that holds no bearer token, API key, or secret
+* Authenticate as the app given an `api_key` and `api_key_secret` without access tokens, through `X::AppOnlyAuthenticator`
+  * It fetches a bearer token on the first request, and fetches another and resends once when the API answers 401
+* Refresh an OAuth 2.0 access token when it expires, given the `expires_at:` (a `Time`) of `X::Client`, or when the API answers 401
+  * The request is sent again with the new token; a token refreshed less than a minute ago is not refreshed again
+  * A 401 from another origin refreshes nothing
+* Store the tokens of each OAuth 2.0 refresh with the `save_tokens:` of `X::Client.new`, a callable passed an `X::OAuth2Tokens`
+  * It is called once the refresh releases its lock, in order, skipping a refresh another has replaced
+  * If a hook raises, the others still run, then `X::TokenReportFailed` is raised, holding the `tokens` and `client`
+  * A `save_tokens` that does not respond to `call` raises `ArgumentError` when the client is built
+  * An authenticator built by hand reports its refreshes to no hook
+* Add `X::OAuth2Tokens`, the frozen `access_token`, `refresh_token`, `expires_at`, and `scopes` of a refresh or code exchange
+  * `as_json`/`to_json` write it, and `X::OAuth2Tokens.from_json` reads it back, with String or Symbol keys
+  * It marshals, and writes YAML, in a versioned format every 1.x release reads
+  * `X::OAuth2Tokens.new` raises `ArgumentError` for an empty or non-String token or an `expires_at` that is not a `Time`
+* Share a user's tokens among processes with `load_tokens:`, a callable that returns the stored `X::OAuth2Tokens` or nil
+  * Taken by `X::Client.new`, `X::Client#with`, `X::OAuth2Authorization#client`, and `X::OAuth2Authenticator.new`
+  * A refresh reads the store first and takes newer tokens there rather than spend its own refresh token
+  * A refresh refused with `invalid_request` or `invalid_grant` reads the store again before raising
+  * One that does not respond to `call` raises `ArgumentError`; one that returns anything else raises `TypeError`
+* Read the scopes X granted an OAuth 2.0 token with `scopes` on `X::OAuth2Tokens`, `X::OAuth2Authenticator`, and `X::Client`
+  * A frozen Array of Strings, or nil when not known
+  * `X::Client.new`, `with`, and `X::OAuth2Authenticator.new` take `scopes:`, so `X::Client.new(client_id:, **tokens.to_h)` works
+  * Scopes that are not an Array of scope names, or given beside other than OAuth 2.0 credentials, raise `ArgumentError`
+* Authorize an app with the OAuth 2.0 authorization code flow and PKCE with `X::OAuth2Authorization`
+  * It builds the authorization URL, and exchanges the code of the redirect for `tokens` or a `client`
+  * The tokens hold no app credentials; build a client as `X::Client.new(client_id:, client_secret:, **tokens.to_h)`
+  * It raises `X::AuthorizationDenied` when the user declines, the state does not match, or the redirect is invalid
+  * It raises `X::AuthorizationError` when X refuses the code, and `ArgumentError` for an empty state, client ID, or redirect URI
+  * `client` checks its options before spending the code, and passes the first tokens to its `save_tokens`
+  * It takes `headers:`, which the code is exchanged with and the client it builds is given, as a gateway may require
+* Refresh the tokens of a public OAuth 2.0 client, given a `client_id`, `access_token`, and `refresh_token` without a `client_secret`
+* Authenticate with an OAuth 2.0 access token that is not refreshed, given a `client_id` and `access_token` without a `refresh_token`
+  * An access token the API rejects raises `X::Unauthorized`, and `refresh!` raises `X::UnsupportedOperation`
+* Add `X::Authenticator#user_id`, the user an OAuth 1.0a access token acts for, or nil
+* Add `inspect` to `X::Client` and the authenticators that never reveals credentials
+* Add `X::HTTPError#status`, `body`, `problems`, and `problem`, and `http_response` for the `Net::HTTPResponse`
+  * `status` is an Integer, as `X::Response#status` is
+  * `problem` is the problem the body describes, or else the first error it names
+* Add `X::Problem`, what the API said of a request, answered by `X::HTTPError#problem` and reported by `x-objects`
+  * Reads `title`, `detail`, `type`, `resource_type`, `resource_id`, `parameter`, `value`, and `message`
+  * `about?` tells whether it names a resource, or an Integer or String identifier, comparing them as Strings
+  * Equals a problem of the same attributes, writes JSON with `as_json`/`to_json`, and marshals in a versioned format
+* Add `X::UnsupportedMarshalFormat`, an `X::Error` raised when reading back a marshal format a release does not read
+* Raise `X::PaymentRequired` (402), `X::MethodNotAllowed` (405), `X::RequestTimeout` (408), `X::UnsupportedMediaType` (415), and `X::UnavailableForLegalReasons` (451)
+  * Each is an `X::ClientError`; X sends 402 when the account that pays for the app has no credit left
+* Name the request an error was raised for: `X::HTTPError`, `X::NetworkError`, `X::InvalidResponse`, and `X::TooManyRedirects` read `http_method` and `uri`
+  * The message names it without its query, as `GET /2/users/1: Could not find user`
+  * A redirected request is named by the last request sent
+* Add `X::InvalidResponse#body`, `status`, and `headers` for a successful response that is not JSON
+  * `body` falls back to the body of the response once it has been read whole, and never reads a stream
+* Add `X::TooManyRequests#exhausted_rate_limits` and `#limiting_rate_limit`
+* Add `X::UnsupportedOperation`, an `X::Error` declared by `x-core`, raised for anything the API offers no way to do
+  * e.g. hydrating or refreshing an `X::Poll` or an `X::Place` that is not hydrated, as in "X::Poll cannot be fetched by id"
+  * A finder the API lacks is not defined: `X::Poll` and `X::Place` answer none, `X::List`, `X::Community`, and `X::DirectMessage` only `find` and `find!`
+* Add the upload methods to `X::Client`: `upload_media`, `chunked_upload_media`, `await_media_processing`, and `await_media_processing!`
+  * And `add_alt_text`, `add_subtitles`, `update_profile_image`, and `update_profile_banner`, each calling an uploader with the client
+  * As in `client.create_post("Look", media_ids: [client.upload_media("cat.jpg")])`
+  * `chunked_upload_media` returns the `X::UploadedMedia` once it is finalized, without waiting for processing
+  * `await_media_processing!` raises if processing failed, where `await_media_processing` returns the status
+  * Media that already says its processing ended, or an image's upload response, is returned without a request
+  * They come from `X::Uploader::API`, which code using `x-core` and `x-uploader` alone can include; a `client:` option raises `ArgumentError`
+* Return an `X::UploadedMedia` in place of a Hash from the uploaders and their client methods
+  * From `upload`, `chunked_upload`, `await_processing`, `await_processing!`, `add_alt_text`, and `add_subtitles`
+  * It reads `id` and `media_id` (Integers), `media_key`, `bytesize`, `expires_after_secs`, `processing_info`, `state`, and `check_after_secs`
+  * It tells `processing?`, `failed?`, and `ready?`, and still reads as a Hash with `[]`, `fetch`, `dig`, `key?`, and `to_h`
+  * It is frozen, writes `as_json`/`to_json`, and marshals in a versioned format; one without an `"id"` of 1 to 19 digits raises `ArgumentError`
+  * `add_alt_text` and `add_subtitles` return the media they describe, ready to attach to a post
+* Infer the media category of an upload from the bytes the media begins with, or else its extension, so `upload` takes any file
+  * Videos and large GIFs upload in chunks, and `upload` waits for X to process them
+  * `upload` takes `media_type:`, `chunk_size:`, and `concurrency:`, and raises `ArgumentError` for any other unknown keyword
+* Take the media as the positional argument of the `X::Uploader::MediaUpload` and `X::Uploader::Account` methods, with `client:` as a keyword
+* Describe uploaded media with the `alt_text:` of `X::Uploader::MediaUpload.upload` or with `X::Uploader::Metadata.add_alt_text`
+  * Alt text that is not a String, not UTF-8, empty, or over 1,000 characters raises `ArgumentError` before a request
+  * It is sent again after a server or network error
+  * An upload that cannot add its alt text raises `X::AltTextFailed`, which holds the uploaded `media`, whatever the error
+* Attach uploaded subtitles to a video with `X::Uploader::Metadata.add_subtitles`
+  * `media_category:` defaults to `"tweet_video"`, and takes `"amplify_video"` in any case, or `TweetVideo`/`AmplifyVideo`
+  * Any other category raises `ArgumentError`
+  * It is sent again after a server or network error
+* Share uploaded media, or give it other owners, with the `shared:` and `additional_owners:` of `upload`, `chunked_upload`, and `upload_media`
+  * Media given `shared: true` uploads in chunks; an image of unknown type, such as HEIC, is sent as JPEG
+  * A `shared` other than true, false, or nil, or `additional_owners` that are not user IDs, raise `ArgumentError`
+* Add `X::Uploader::MediaUpload::DEFAULT_CONCURRENCY` (4) and `MAX_CONCURRENCY` (16), the chunks a chunked upload sends at once
+* Add `X::Uploader::MediaUpload::DEFAULT_PROCESSING_TIMEOUT` (600 seconds) and `AMPLIFY_VIDEO`, beside `TWEET_VIDEO`
+* Name the media category of an upload with a Symbol, in any case, as in `media_category: :tweet_video`
+* Rescue the errors `x-uploader` raises of its own with `X::Uploader::Error`
+  * It is the base of `X::AltTextFailed`, `X::ChunkedUploadFailed`, `X::InvalidMedia`, and `X::MissingMediaData`
+  * And of `X::MediaProcessingCheckFailed`, `X::MediaProcessingFailed`, and `X::MediaProcessingTimeout`
+  * `X::InvalidMediaType`, an `X::InvalidMedia`, is raised for media of a type the API does not take
+  * A bad category, chunk size, concurrency, alt text, or processing timeout raises `ArgumentError` instead
+  * Each error that holds media takes an optional message and `media:`; `X::MediaProcessingTimeout` takes `timeout:` too
+* Raise `X::MediaProcessingCheckFailed`, which holds the uploaded `media`, when a check of its processing fails
+* Raise `X::ChunkedUploadFailed`, which holds the initialized `media`, when a chunk or the finalize fails
+  * Such as a server error, a file deleted, closed, or shrunk mid-upload, or a finalize response without media
+  * It and `X::MediaProcessingCheckFailed` are raised for any `StandardError`, as the `cause`, such as one `on_response` raises
+  * A `Timeout::Error`, an `X::MediaProcessingTimeout`, or an interrupt is raised as it is
+* Take an upload's result, a media ID, a media key, or anything that answers `media_key` in `await_processing`, `await_processing!`, `add_alt_text`, and `add_subtitles`
+  * Anything else, or an ID that is not 1 to 19 digits, raises `ArgumentError` before a request
+  * The signatures type what answers `media_key` as `X::Uploader::_MediaKeyed`
+* Upload a GIF with a single frame as an image, since X fails to process it as a GIF
+* Stream with `X::StreamingClient`, which `X::Client#streaming` builds with the client's credentials, base URL, classes, and `on_response`
+  * `streaming` takes `read_timeout:`, `max_reconnects:`, and `on_reconnect:`; other settings come from a copy, as `client.with(open_timeout: 2).streaming`
+  * `stream` raises `ArgumentError` when given no block, before it opens the stream
+* Stop the streams of a streaming client from any thread, or the trap of a signal, with `X::StreamingClient#stop`
+  * Each stream stops the next time it waits on the API, at once if idle or waiting to reconnect
+  * A stopped streaming client stays stopped: a stream asked of it later returns nil at once, without a request
+  * Each stopped `stream` call returns nil, `stop` returns nil, and `stopped?` tells a stopped streaming client
+  * A block, `on_response`, or `on_reconnect` running at that moment runs to its end first
+  * `streaming` builds a new streaming client each time, so keep the one you stop in a variable
+* Stop a stream from its block: `break` stops it and returns its value, and `throw` unwinds past it
+  * An error of the block, `on_response`, or the object class stops it and reaches the caller, `StopIteration` included
+* Read and change the rules of the filtered stream with `rules`, `add_rules`, and `delete_rules` on `X::StreamingClient`
+  * A rule is a frozen `X::StreamRule` of its `value`, `tag`, and `id` (an Integer, or nil for a rule to add)
+  * An `id` is an Integer that is not negative or a String of digits alone; anything else raises `ArgumentError`
+  * Add an `X::StreamRule`, a Hash of `value` and `tag`, or a String; delete by rule, `id`, or value
+  * An `X::MatchingRule` deletes the rule it names, so `delete_rules(post.matching_rules)` deletes the rules a post matched
+  * Anything else, such as a post, raises `ArgumentError` before a request
+  * `dry_run: true` checks the rules and changes none; `rules` takes `params:` and reads every page
+  * Rules the API does not add or delete are yielded as `X::Problem`s, or without a block raise `X::RulesRejected`
+  * `X::RulesRejected#added` and `#deleted_count` hold what was done; no rules send no request
+* Stream, and read and change stream rules, as the app from a client that signs with OAuth 1.0a, which the stream endpoints refuse
+  * A client of an OAuth 2.0 user without app credentials streams as the user, so X's 403 raises `X::Forbidden`
+* Reconnect a stream that ends, drops, or sends a line that is not JSON, backing off as X recommends
+  * Up to the `max_reconnects` of the streaming client in a row (unlimited by default), reset by each object or keep-alive
+  * Then it raises the last error: `X::NetworkError` for a stream that ended or dropped, `X::InvalidResponse` for a non-JSON line
+  * A rate limit backs off from a minute, up to 320 seconds, but raises `X::TooManyRequests` past `max_rate_limit_wait` or for the usage cap
+  * A server error, 408, or 409 backs off from 5 seconds, up to 320 seconds, or waits longer for its `Retry-After`
+  * A `Retry-After` past `max_rate_limit_wait` raises the error at once
+  * What arrived of a line the stream ended within is dropped, unparsed and unreported, and the stream reconnects as one that ended
+  * An error `on_response` raises for a failed response stops the stream and reaches the caller, as one for an object does
+  * A certificate that does not verify raises its `X::NetworkError` at once, since it would not verify on the next attempt
+* Report each reconnect of a stream to `on_reconnect:`, a callable passed the error and the seconds it waits
+  * It is passed an error every time, never nil, and is called with those two arguments and no others throughout 1.x
+  * It can call `stop` to give up, as on a host that never resolves, and the stream returns nil
+  * An error it raises stops the stream and reaches the caller
+* Read a stream with the `read_timeout` of the streaming client, 30 seconds by default, so a quiet stream reconnects
+* Raise `X::StreamError`, an `X::Streaming::Error`, for a stream line that holds errors and no data
+  * It holds the `problems`, `http_method`, and `uri`; `on_response` is passed the line first
+  * A line of `operational-disconnect`s alone, which `X::Problem#disconnect?` tells, reconnects; other problems stop the stream
+* Add immutable, thread-safe resource classes, which descend from `X::Resource`
+  * `X::User`, `X::Post` (aliased `X::Tweet`), `X::List`, `X::DirectMessage`, `X::Space`, `X::Media`, `X::Poll`, `X::Place`, and `X::Community`
+  * Lists of resources or identifiers are frozen Arrays; copy one to change it
+  * A list the response omits, such as `post.urls`, reads as an empty Array; `user.connection_status` reads nil unless requested
+  * Text reads as the API sends it, so `post.text` and `direct_message.text` hold `&amp;`, `&lt;`, and `&gt;` throughout 1.x
+  * Nested data, such as `post.entities` and `post.public_metrics`, reads as frozen Hashes keyed by String throughout 1.x
+  * Nested data the API sends as anything but an object, or a list of them, raises `X::InvalidAttribute`
+* Rescue the failures of the object layer with `X::Objects::Error`
+  * It is the base of `X::MissingResource`, `X::UnreadableResponse`, `X::InvalidAttribute`, `X::MissingClient`, and `X::PageLimitReached`
+* Include the object methods in a class of your own with `X::Objects::API`
+  * The class answers `get`, `post`, `put`, and `delete` as `X::Objects::_Client` types them, taking keywords it does not read
+  * The other modules and constants of `X::Objects` are private
+* Compare resources by class and ID with `==`, `eql?`, and `hash`, so the same resource from different requests is equal
+* Resolve references such as `post.author` and `post.replied_to` to included objects or ID stubs, one object per resource in a response
+* Add `hydrate`, which fetches and memoizes the full resource, and `refresh`, which fetches it again
+  * A resource fetched with fewer than the default fields or expansions is not hydrated; one fetched with more is
+  * A resource without a client, such as one read back with `Marshal`, raises `X::MissingClient` from any request
+  * `FIELDS` and `EXPANSIONS` may grow in a minor release; add to `default_params` rather than list every value
+* Hydrate the stubs of a page of `stubs`, or of a cursor that requests identifiers alone, together, in batch lookups of up to 100
+  * Lists, communities, and direct messages hydrate one at a time, as does a reference a page did not include; `hydrate_all` batches any
+* Refer to a resource without a request with `X::User.from_id` and its equivalents, and tell such stubs apart with `stub?`
+* Add `X::Cursor`, an `Enumerable` collection that fetches pages lazily at the maximum page size and caches them
+  * `refresh` and `prefetch` fetch pages again or ahead
+  * A page a prefetch failed to fetch raises the prefetch's error once it is reached, rather than be requested again
+  * A page that names as its next a token already read raises `X::UnreadableResponse`
+  * `page` takes an Integer index, raising `TypeError` for any other and `ArgumentError` for a negative one
+  * `X::Cursor.new` is private; cursors come from the collections, searches, and lookups
+* Answer `X::Cursor#first`, `take`, `any?`, `none?`, `one?`, and `empty?` from as few resources as they need
+  * They read from pages already fetched, and request a page no larger than needed, raised to the endpoint's minimum
+  * So `any?`, `none?`, and `empty?` request one resource and `one?` two, or the 5 or 10 an endpoint such as a search takes at least
+  * A count that is not an Integer is converted as `Array#first` does; a String, or nil to `take`, raises `TypeError`
+* Count a collection without paging it with `X::Cursor#published_count`, the number the API publishes
+  * Followers, followed users, and list memberships of a user, and members and followers of a list; nil for others
+* Read a collection a page at a time with `X::Cursor#each_page`, yielding `X::Page`s
+  * A page holds `items`, `meta`, `result_count`, `next_token`, `previous_token`, and `problems`, and reads like an Array
+  * `X::Page.new` raises `ArgumentError` for problems that are not `X::Problem`s
+* Request identifiers alone from a cursor with `ids`, as in `user.followers.ids`, and scan stubs with `stubs`
+* Type-check the resources of a collection: `X::Cursor` and `X::Page` are generic in their signatures
+* Read the collections of a resource as cursors
+  * A user's `followers`, `following`, `affiliates`, `posts`, `mentions`, `liked_posts`, `owned_lists`, `list_memberships`, and `followed_lists`
+  * A list's `members`, `followers`, and `posts`, a post's `quotes`, and a space's `posts` and `buyers` (OAuth 2.0 user only)
+* Add `home_timeline`, `blocking`, and `muting` cursors to `X::User`
+* Read the authenticated user's reposted posts with `reposts_of_me` on the client and `X::Post`, aliased as `retweets_of_me`
+* Tell a post that replies, quotes, or reposts with `reply?`, `quote?`, and `repost?`, and read its target with `replied_to`, `quoted`, and `reposted`
+* Add `X::Post#liked_by`, `reposted_by`, and `reposts`, and `references` on posts and direct messages
+* Look up users and posts by ID in parallel batches of 100 with `X::User.find_all` and `X::Post.find_all`
+  * They return one resource per ID found, in the order asked, an ID given twice coming back twice
+  * Once a batch fails, no further batch is sent and its error is raised
+* Say how many batches a lookup requests at once with `concurrency:` (default 4)
+  * Taken by `find_all`, `find_all_by_username`, `hydrate_all`, and `X::Space.find_all_by_creator`
+  * And by `find_all_users`, `find_all_users_by_username`, `find_all_posts`, `find_all_spaces`, `find_all_media`, and `find_all_spaces_by_creator`
+  * Anything but an Integer of at least 1 raises `ArgumentError`
+* Hydrate many resources in parallel batches with `hydrate_all` on `X::User`, `X::Post`, `X::Space`, and `X::Media`
+  * It drops nil and resources not found, skips hydrated ones, and stores what it found in each resource
+  * A resource of another class raises `ArgumentError` before a request
+* Add lookup, search, and action methods for the resources to `X::Client`
+  * `find_user`, `find_all_users`, `current_user!`, `find_post`, `find_all_posts`, `find_list`, and `find_space`
+  * `search_posts`, `search_all_posts`, `create_post`, `delete_post`, `direct_messages`, and `create_direct_message`
+  * `follow`, `unfollow`, `like`, `unlike`, `repost`, and `unrepost`
+  * The finders have `find_tweet` aliases
+  * Actions return true or false; `follow` returns true once it has asked to follow a protected user
+* Look up a mix of IDs and usernames with `find_all_users`, and usernames alone, even all-digit ones, with `find_all_users_by_username`
+* Look up a user by ID when given an Integer and by username when given a String
+  * Say which with `X::User.find_by_username`, `find_by_username!`, `find_all_by_username`, `find_by_id`, `find_by_id!`, and `find_all_by_id`
+  * Or on the client with `find_user_by_username`, `find_user_by_username!`, `find_all_users_by_username`, `find_user_by_id`, `find_user_by_id!`, and `find_all_users_by_id`
+  * Elsewhere, such as `follow` or `find_post`, an ID that is not a number raises `ArgumentError`
+  * So does a resource of another class, as `client.like(user)`, or any other object that answers `id`
+* Accept a username with a leading `@` in `find_user`, `find_all_users`, and `X::User.find_all_by_username`
+* Search users with `X::User.search` and `client.search_users`
+* Request the largest page each search allows: 500 posts from `search_all_posts` (100 with context annotations), and 1,000 users from `search_users`
+* Look up direct messages with `find_direct_message`, many spaces with `find_all_spaces`, and a conversation with `direct_messages_with`
+* Look up the spaces of many creators with `X::Space.find_all_by_creator` and `find_all_spaces_by_creator`, in batches of 100
+* Search spaces with `X::Space.search` and `search_spaces` on the client, a cursor over live or scheduled spaces
+* Look up and search spaces, and read their posts, whatever the client authenticates with
+  * An OAuth 1.0a client, which the space endpoints refuse, requests them as the app; an OAuth 2.0 user client as the user
+* Read the topics of a space with `X::Space#topics`, each an `X::Topic` with a `name` and `description`
+* Look up media by media key with `X::Media.find`, `find!`, and `find_all`, and `find_media`, `find_media!`, and `find_all_media`
+  * Each takes a media key, media, or an upload's result; a numeric media ID raises `ArgumentError`
+* Read the numeric ID of media with `X::Media#media_id`, as `X::UploadedMedia#media_id` reads it; `X::Media#id` is the media key
+* Add `X::Community`, with `find_community`, `find_community!`, `search_communities`, `post.community`, and the `community:` of `create_post`
+* Alias every client method named for direct messages with `dm`: `find_dm`, `find_dm!`, `dms`, `dms_with`, `dms_in`, `create_dm`, `create_group_dm`, `create_dm_in`, and `delete_dm`
+* Raise `X::MissingResource`, an `X::Objects::Error`, from `current_user!`, `X::User.current!`, `find!`, and the bang finders of the client
+  * `find_user!`, `find_user_by_username!`, `find_post!`, `find_list!`, `find_space!`, `find_media!`, `find_community!`, and `find_direct_message!`
+  * The message names what was looked up, as "Could not find X::User @sferik"; `problems` explains why
+  * It is not `X::NotFound`, which is the 404 of an endpoint that is not there
+* Add `current_user` and `current_user!` to the client, as `X::User.current` and `.current!`; `current_user` returns nil if not found
+* Take the authenticated user's ID from an OAuth 1.0a access token with `current_user_id`, without a request
+* Name the interface after posts: `post_count`, `pinned_post_id`, `most_recent_post_id`, `edit_history_post_ids`, `note_post`, `referenced_posts`, and `repost_count`
+  * The tweet-named methods, such as `create_tweet`, `tweets`, and `retweet_count`, remain as aliases
+  * A response that names fields after tweets, as a stream does, is still read
+* Request fields and expansions by the names the X API documentation gives, such as `post.fields` and `referenced_posts`
+* Request no `edit_history_post_ids` or `entities.mentions.username` expansion, which the object layer never reads
+* Read the IDs of users, posts, lists, direct messages, communities, and polls, and the attributes that refer to them, as Integers
+  * The IDs of spaces, places, and media, media keys, `dm_conversation_id`, and usernames are Strings
+  * `X::Problem#resource_id` and `#value` are Strings, so match a problem to a resource with `problem.about?(user)`
+* Raise `X::MissingResource`, holding the response's problems, when a request that creates a resource is answered without it
+  * From `X::Post.create`, `X::List.create`, `X::DirectMessage.create`, `create_group`, `create_in`, and their client methods
+  * So `create_post`, `create_list`, `create_dm`, and the rest never return nil
+  * A response whose data names no identifier raises it too
+* Build the `reply`, `media`, and quote of a new post with the `reply_to:`, `media_ids:`, and `quote:` of `create_post` and `X::Post.create`
+  * A field passed with a String key, such as `"reply"` or `"attachments"`, is read as its Symbol, so it is sent once
+* Take an upload's result, media, or a media key in the `media_ids:` of `create_post`, reading its media ID
+  * An ID that is not 1 to 19 digits, or anything else, raises `ArgumentError` before the request
+* Post media without text: the text of `create_post`, `create_direct_message`, and their equivalents is optional
+  * A post or message with neither text nor any other field raises `ArgumentError`
+* Attach uploaded media to a direct message with `media_ids:`
+  * Passing both `media_ids:` and `attachments:` raises `ArgumentError`; an empty `media_ids:` attaches nothing
+* Start a group conversation with `X::DirectMessage.create_group` and `create_group_direct_message`, aliased `create_group_dm`
+* Send to and read any conversation with `X::DirectMessage.create_in` and `.in`, and `create_direct_message_in` and `direct_messages_in`
+  * The client methods have `create_dm_in` and `dms_in` aliases
+* Add `X::DirectMessage.delete`, `message.delete`, and `delete_direct_message` on the client
+* Add `X::DirectMessage#peer(user)`, the other participant of a one-to-one conversation, nil for a group conversation
+* Add `X::DirectMessage#from?`, false for a message that does not name its sender
+* Add `X::Post#coordinates`, and `permalink` and `uri`, the x.com address of a post, user, list, or community
+* Add `X::Post#urls` and `X::Post#expanded_text`, the text with each shortened link expanded, every link in one pass
+  * `expanded_text` HTML-escapes each URL it puts in, so the whole text reads escaped, as `text` does
+* Read the full text of a post longer than 280 characters with `X::Post#text`, from its `note_post`
+  * `entities` and `urls` of a long post read from the note alone
+* Add `X::Post#matching_rules`, the filtered-stream rules a post matched, each a frozen `X::MatchingRule` with an `id` and `tag`
+  * An `id` that is not a String of digits or a non-negative Integer raises `ArgumentError`
+* Add `X::User#profile_banner_url`, `parody?`, `identity_verified?`, `subscription_type`, `verified_followers_count`, `subscriber_count`, and `media_count`
+* Add `X::User#receives_your_dm?`, `subscribes_to_you?`, and `subscription`, nil unless `user.fields` names them
+* Add `X::Post#media_source_posts`, aliased `media_source_tweets`, the posts its attached media was first posted with
+  * Resolved from the `attachments.media_source_tweet` expansion, which lookups request
+* Add `X::Post#display_text_range`, an exclusive `Range`, nil when absent, and `scopes`, `card_uri`, `article`, `article_title`, `media_metadata`, and `paid_partnership?`, and `X::DirectMessage#entities`
+* Add `X::User#affiliation`, `affiliated_with_ids`, and `affiliated_with`; a user included in another resource holds none until hydrated
+* Read `is_identity_verified` and `is_ticketed` as `X::User#identity_verified` and `X::Space#ticketed`, with `?` predicates
+* Match resources against `case/in` patterns with `deconstruct_keys`, as in `post in {like_count: 100..}`
+  * Tweet-named aliases match too, as in `user in {pinned_tweet_id: Integer}`
+  * `X::Trend`, `X::PersonalizedTrend`, and `X::PostUsage` match by their readers
+* Write a resource, problem, trend, usage, matching rule, or page as JSON with `as_json` and `to_json`, never with credentials
+  * Each marshals, and writes YAML, in a versioned format every 1.x release reads, coming back frozen
+  * A resource keeps the included objects it refers to, but not its client
+  * Read each but a page as a Hash with `to_h`
+  * A cursor raises `X::UnsupportedOperation` from `as_json`, `to_json`, and `to_h`, and `TypeError` from `Marshal.dump`; serialize `to_a`
+* Report the partial errors of a successful response as `X::Problem`s
+  * `problems` on a resource holds those about it, the resources it refers to directly, or no identifier
+  * `problems` on a page holds every problem of its response; a finder's block receives each one
+* Count posts matching a query with `X::Post.count`, `count_all`, `count_by_period`, and `count_all_by_period`
+  * On the client as `count_posts`, `count_all_posts`, `count_posts_by_period`, and `count_all_posts_by_period`, with tweet-named aliases
+  * Counts by period are keyed by the `Range` of `Time` each period spans
+  * A count that is not a String of digits or a non-negative Integer raises `X::InvalidAttribute`
+  * An OAuth 1.0a client counts as the app; an OAuth 2.0 user client without app credentials counts as the user
+* Report the post usage of the app's project with `X::PostUsage.current` and `client.post_usage`
+  * They return nil, yielding the response's problems to a block, when it holds no usage
+  * `X::PostUsage.current!` and `client.post_usage!` raise `X::MissingResource` instead
+  * Includes its monthly cap, reset day, and usage by day and by app
+* Read the trends of a place with `X::Trend.at` and `trends` on the client, given its WOEID, such as 1 for the world
+  * An ID that is not a number raises `ArgumentError`; `max_trends` limits the 50 returned
+  * An `X::Trend` reads its `name` and `post_count`; an OAuth 1.0a client requests trends as the app
+* Read the trends X picks for the authenticated user with `X::PersonalizedTrend.all` and `personalized_trends`
+  * An `X::PersonalizedTrend` reads its `name`, `category`, `post_count_text`, and `trending_since_text`
+* Bookmark a post and remove the bookmark with `bookmark` and `unbookmark` on `X::User` and `X::Client`
+* Read bookmark folders with `X::User#bookmark_folders`, a cursor of `X::BookmarkFolder`, and a folder's posts with `bookmarks(folder:)`
+* Add `block`, `unblock`, `mute`, and `unmute` to `X::User` and `X::Client`
+* Add `X::List.create`, `.update`, `.delete`, `list.add_member`, `remove_member`, `update`, and `delete`, with client equivalents
+  * `create_list`, `update_list`, `delete_list`, `add_list_member`, and `remove_list_member`
+  * An update with no field to change raises `ArgumentError` before a request
+* Follow, unfollow, pin, and unpin a list with `follow_list`, `unfollow_list`, `pin_list`, and `unpin_list`, and read `X::User#pinned_lists`
+* Hide and show a reply with `X::Post#hide_reply` and `#unhide_reply`, their class methods, and the client's `hide_reply` and `unhide_reply`
+* Check whether a user follows another with `user.follows?`, and a list's membership with `list.member?`, without fetching every page
+  * `follows?` looks up `connection_status` once when either user is the authenticated user, and scans otherwise
+  * `member?` scans the smaller of a public list's members and the user's list memberships
+* Limit the pages a scan or a count of posts reads with `max_pages:` (default nil, no limit)
+  * Taken by `X::List#member?`, `X::User#follows?`, `X::Post.count`, `count_all`, `count_by_period`, `count_all_by_period`, and their client methods
+  * Past the limit, with another page named, it raises `X::PageLimitReached`, an `X::Objects::Error`
+  * A value that is neither an Integer of at least 1 nor nil raises `ArgumentError` before a request
+* Raise `X::InvalidAttribute`, an `X::Objects::Error`, for a response value that cannot be read as the API documents it
+  * Such as a timestamp that is not ISO 8601, a count that is not a whole number, or a flag that is not a boolean
+  * Its cause is the `ArgumentError` that refused the value
+* Validate the identifier of a resource when it is built, so `X::User.new({"id" => "abc"})` raises `ArgumentError`
+  * A space or place ID is word characters alone; a `dm_conversation_id` that is not digits, or two numbers joined by a hyphen, raises `X::InvalidAttribute`
+* Validate a username before building a path from it, so `find_user("../tweets/20")` raises `ArgumentError` without a request
 
 ### Changed
 * Require Ruby 3.4 or later
-* Hydrate the stubs of a page together, in batch lookups of up to 100 rather than one request per stub, so hydrating one stub looks up, and the API bills, no more than 100 resources, and hydrating every stub of a page of 1,000 costs ten lookups; the stubs of lists, communities, and direct messages, which the API cannot look up in batches, hydrate one at a time, and `refresh` looks a stub up again on its own rather than read what the lookup of its page found
-* Split the object methods of the client into `X::Objects::API::Lookups` and `X::Objects::API::Actions`, which `X::Objects::API` includes together, `X::Objects::API::Lookups` into one module per kind of resource: `Users`, `Posts`, `Lists`, `Spaces`, `Communities`, and `DirectMessages`, and `X::Objects::API::Actions` into one module per kind of action: `Posts`, `Lists`, `DirectMessages`, `Relationships`, and `Engagement`
-* Raise `X::ResourceNotFound` instead of `KeyError` from `current_user` when the API returns no user
-* Read only the rate limits a response reports in full, with a limit, remaining requests, and reset time, so `X::TooManyRequests#retry_after` no longer raises `KeyError` for a response without a reset time
-* Return the identifiers of users, posts, lists, direct messages, communities, and polls as Integers, along with the attributes that refer to them, such as `author_id`, `owner_id`, and `participant_ids`; space and place identifiers, media keys, and `dm_conversation_id`, which are not numbers, remain Strings
-* Use the names the X API documentation gives: request `post.fields` and the `referenced_posts`, `pinned_post_id`, and `most_recent_post_id` expansions, and read `referenced_posts`, `edit_history_post_ids`, `note_post`, `pinned_post_id`, `most_recent_post_id`, `repost_count`, `post_count`, and included `posts`; the identifiers of referenced resources come with their expansions rather than as fields, and the authors of referenced posts are no longer expanded, since the documentation offers no expansion for them
-* Send requests to `api.x.com` rather than `api.twitter.com` by default, the host of the token endpoints, the uploads, and the API's documentation
-* Rename `X::User.me` to `X::User.current`, the request behind `current_user`
-* Rename `X::Objects::Actions`, the follow, block, mute, like, and repost methods of `X::User`, to `X::Objects::Relationships`, so it no longer shares a name with `X::Objects::API::Actions`
-* Raise `X::UnsupportedOperation`, an `X::Error`, from `X::List.find_all`, since the API has no batch lookup of lists, instead of sending a request that fails; the object layer raises it for anything else the API offers no way to do, such as hydrating an `X::Poll` or requesting the identifiers alone of a resource without a fields parameter
-* Take the recipient and text of a direct message as the positional arguments of `create_direct_message`, in place of `to:` and `text:`; the text is optional for a message of attachments alone
-* Derive the v1.1 client of `X::Uploader::Account` from the client it is given with `copy`, so it keeps the timeouts, proxy, and other settings
-* Mark `X::RequestBuilder`, `X::RedirectHandler`, `X::ResponseParser`, `X::StreamParser`, `X::RateLimitHandler`, and `X::ReconnectHandler` as `@api private`, the internals of `X::Client` and `X::StreamingClient`, whose settings they expose, so that they can change within 1.x
-* Raise `Errno::ENOENT` from the uploaders for a file that does not exist, and `X::Uploader::MediaProcessingFailed`, an `X::Error` whose `status` holds what X reported and whose message is its reason, for media that fails to process, instead of `RuntimeError`
-* Move `X::InvalidMediaType` to `X::Uploader::InvalidMediaType`, beside the uploaders that raise it
-* Rename `X::ConnectionException`, the error for 409 Conflict, to `X::Conflict`, after its status like every other HTTP error
-* Rename `X::OAuthAuthenticator` to `X::OAuth1Authenticator`, beside `X::OAuth2Authenticator`
-* Move the HTTP client into `x-core`, under `lib/x/core`, and the uploaders into `x-uploader`, under `lib/x/uploader`
-* Rename `X::MediaUploader` to `X::Uploader::Media`, `X::AccountUploader` to `X::Uploader::Account`, and `X::MediaUploadValidator` to `X::Uploader::Validator`, under an `X::Uploader` module that holds the gem's version, since `X::Media` is the media resource
-* Rename `upload_profile_image_binary` and `upload_profile_banner_binary` to `update_profile_image_binary` and `update_profile_banner_binary`, the binary forms of `update_profile_image` and `update_profile_banner`
-* Wrap every network failure in `NetworkError`, so a stream reconnects after it rather than stopping: `IOError`, which includes `EOFError`; `SystemCallError`, which includes every `Errno` error, such as `Errno::ECONNABORTED` and `Errno::ENETDOWN`; `Timeout::Error`, which includes `Net::WriteTimeout`; `Net::ProtocolError`, which a proxy that refuses to open a tunnel raises; `Zlib::Error`, for a compressed body cut off mid-response; and `Net::HTTPBadResponse`
-* Stop following redirects after exactly `max_redirects` hops instead of one more
-* Raise `KeyError` from `X::Uploader::Media.chunked_upload` and `X::Uploader::Media.await_processing` when the media has no `"id"`, instead of requesting a URL with an empty ID
-* Sign OAuth 1.0a requests with the [simple_oauth](https://github.com/laserlemon/simple_oauth) gem, in place of the signing code `X::OAuthAuthenticator` carried; it keeps the same credentials and produces the same header
-* Build and parse the OAuth 2.0 token refresh with simple_oauth, in place of the request and response handling `X::OAuth2Authenticator` carried; it sends the same request and still returns the token response
-* Raise `ArgumentError` from `X::Client.new`, and so from `copy`, for credentials that do not form a complete set, instead of sending requests without credentials, or authenticating as the app when an access token lacks its secret, and for any credential that belongs to no complete set, such as a `client_id` or an `api_key` beside a `bearer_token`, instead of ignoring it, while a client may hold several complete sets, and an `expires_at` beside any; the setters change one credential at a time, and `update_credentials` changes several at once; a credential that is an empty String, as `ENV.fetch("X_BEARER_TOKEN", "")` reads a variable that is not set, raises `ArgumentError` as well, from `new` and from the setters, instead of sending an `Authorization` header that authenticates nothing
-* Raise `X::InvalidResponse`, an `X::Error` that holds the response, for a successful response whose body is not JSON, such as the page of a proxy or captive portal, instead of returning nil as though the response had no body; a successful response without a body still returns nil
-* Move `stream` from `X::Client` to `X::StreamingClient`, so that the client carries no streaming settings
-* Raise `X::AuthorizationError`, an `X::Error`, when X refuses to refresh an OAuth 2.0 token or to issue an app-only bearer token, rather than a bare `X::Error`, with the OAuth 2.0 `error_code`, such as `invalid_request` for a refresh token that was revoked or already used, and the HTTP `status`, which tells a refusal from a failure of the token endpoint
-* Return nil from `X::TooManyRequests#reset_at`, `#reset_in`, and `#retry_after` when the response does not say when the limit resets, instead of `Time.at(0)` and 0, which told a caller to retry at once
-* Mark `X::Connection#perform` and `#perform_stream`, which take a `Net::HTTPRequest`, and `X::OAuth2Authenticator#refresh_rejected_token!` as `@api private`, the internals through which `X::Client` sends requests and refreshes a rejected token, so that they can change within 1.x
-* Make `attribute`, `reference`, and `references`, the class macros that declare what a resource reads, private, and mark `endpoint`, `endpoint!`, `id_key`, `id_type`, `includes_key`, `fields_key`, and `hydratable?`, which name the API's endpoints and keys for each resource class, as `@api private`, so that they can change within 1.x
-* Make `X::Objects::Resource#includes` private, and document the `includes:`, `hydrated:`, and `batch:` of `X::Objects::Resource.new` and `from_id` and the `total:` of `X::Cursor.new` as internal to the object layer, so that they can change within 1.x
-* Make `X::Uploader::Validator`, `X::Uploader::Chunks`, `X::Uploader::Multipart`, and `X::Uploader::Utils`, which the uploaders validate, upload, and read files with, private constants, and make the MIME type and media category tables of `X::Uploader::Media`, the block constants of `X::Uploader::Gif`, and `X::Uploader::JSON_CLASSES` private constants, so that they can change within 1.x, and make `MAX_ATTEMPTS` and `RETRY_BACKOFF` private constants of `X::Uploader::Chunks`, which `X::Uploader::Media` no longer includes, so they are not constants of `X::Uploader::Media`
-* Resolve an endpoint that begins with a slash against the base URL, like one without, so `client.get("/users/me")` requests `https://api.x.com/2/users/me` rather than drop the `/2/` of the API version and request a page that is not found; pass a whole URL to reach another path of the host
-* Send each request once, turning off the retry that `Net::HTTP` makes by itself of a GET, PUT, or DELETE request after a timeout or a dropped connection, which sent the OAuth 1.0a nonce and signature of the first attempt again and could repeat a read the API bills; such a failure raises `X::NetworkError`, and the caller decides whether to send the request again
-* Return `X::Problem#resource_id`, and `#value` when it identifies a resource, as an Integer for a user, post, list, direct message, community, or poll, so that `problem.resource_id == user.id`, while a username, even one that is all digits, and the identifier of a space, place, or media remain Strings; and return `X::Space#topic_ids` as Integers, like every other numeric identifier
-* Name the token endpoint of `X::OAuth2Authenticator` `TOKEN_URL`, as `X::AppOnlyAuthenticator` and `X::OAuth2Authorization` name theirs, in place of `TOKEN_HOST` and `TOKEN_PATH`
+* Hold `VERSION` in a String rather than a `Gem::Version`; use `gem_version` to compare versions
+* Send requests to `api.x.com` rather than `api.twitter.com` by default
+* Name the gem in the `User-Agent` header of every request, token requests included, as `x-ruby/1.0.0 ruby/3.4.0 (arm64-darwin24)`, where it named `X-Client`
+* Move the HTTP client into `x-core` and the uploaders into `x-uploader`
+* Rename `X::MediaUploader` to `X::Uploader::MediaUpload`, `X::AccountUploader` to `X::Uploader::Account`, and `X::MediaUploadValidator` to `X::Uploader::Validator`
+* Rename `X::OAuthAuthenticator` to `X::OAuth1Authenticator`
+* Rename `X::ConnectionException`, the error for 409 Conflict, to `X::Conflict`
+* Rename `X::HTTPError#response` to `http_response`, and make that of `X::RateLimit` private
+* Move `stream` from `X::Client` to `X::StreamingClient`
+* Refresh OAuth 2.0 tokens with `X::OAuth2Authenticator#refresh!`, in place of `refresh_token!`
+  * It returns the frozen `X::OAuth2Tokens` of the refresh rather than the Hash of the token response
+  * It raises `X::UnsupportedOperation` for an authenticator that holds no refresh token
+* Keep secret credentials private on a client and its authenticators
+  * `api_key_secret`, `access_token`, `access_token_secret`, `bearer_token`, `client_secret`, and `refresh_token` no longer read off a client
+  * Nor do the secrets and tokens of the authenticators; `api_key`, `client_id`, and `expires_at` remain public
+  * An authenticator's `headers` still returns the `Authorization` header it sends, which holds a bearer or OAuth 2.0 token
+  * Store refreshed tokens from the `X::OAuth2Tokens` that `save_tokens` is passed
+* Raise `TypeError` from `Marshal.dump`, `YAML.dump`, `as_json`, and `to_json` of a client, streaming client, authenticator, or `X::OAuth2Authorization`
+* Keep the proxy of a client, streaming client, and connection private: `proxy_url` and the `proxy_*` readers are gone
+  * `inspect` summarizes the proxy URL without its user and password
+* Send credentials only to the origin of the `base_url`
+  * An endpoint or stream naming another scheme, host, or port gets no `Authorization`, `Cookie`, or `Proxy-Authorization` header
+  * Another API version on the same origin, such as `https://api.x.com/1.1/account/settings.json`, still gets them
+* Send a header named by a Symbol with its underscores as hyphens, wherever headers are taken
+  * `headers: {content_type: "text/plain"}` sends `content-type`, replacing the default `Content-Type`
+  * It is dropped on a cross-origin redirect like the header it names
+* Raise `ArgumentError` from `X::Client.new` for a `base_url` that is not an absolute http or https URL
+  * Or that holds a user, password, query, or fragment
+* Raise `ArgumentError` from `X::Client.new` for credentials that do not form a complete set
+  * Or for a credential that belongs to no complete set, such as a `client_id` beside a `bearer_token`
+  * Or for OAuth 2.0 credentials beside a complete set of OAuth 1.0a credentials
+  * Or for an empty String credential, or one that is neither a String nor nil
+  * Or for an `expires_at` beside credentials it does not belong to
+* Raise `ArgumentError` from the authenticators for a required credential that is nil or empty, or an `expires_at` that is not a `Time`
+* Raise `ArgumentError` from `X::Client.new`, `with`, and `streaming` for settings out of range, naming the setting
+  * `max_redirects`, `max_rate_limit_retries`, and `max_retries` must be Integers of at least 0
+  * `max_rate_limit_wait` must be a number of at least 0, not NaN; `max_reconnects` an Integer of at least 0 or `Float::INFINITY`
+  * `open_timeout`, `read_timeout`, and `write_timeout` must be finite numbers of at least 0, or nil; `keep_alive_timeout` a finite number
+  * A stream's `read_timeout` must be at least 25 seconds, or nil
+  * `default_array_class` must be a Class, and `default_object_class` a Class or respond to `from_response`
+* Raise `ArgumentError` from `get`, `post`, `put`, `delete`, `get_stream`, and `stream` for an endpoint that is not a valid URL
+  * Such as one that holds a space or bad `%` escape, or does not resolve to an http or https URL with a host
+  * An endpoint that is not a String, such as a Symbol or a URI, raises `ArgumentError` naming its class
+* Raise `ArgumentError` from `post` and `put` for an unknown keyword, as `client.post("tweets", text: "Hello")`
+* Resolve an endpoint that begins with a slash against the base URL, so `client.get("/users/me")` requests `/2/users/me`
+* Open a connection with a 10-second timeout rather than 60; `read_timeout` and `write_timeout` stay 60
+* Send each request once, turning off the automatic retry of `Net::HTTP`; `max_retries` decides what is sent again
+* Send an idempotent request again on a new connection when a kept-alive connection had gone stale
+  * Only before the status and headers of its response are read; a response cut off after that is never sent again
+* Raise `X::NetworkError` for a body cut off before its end, or shorter than its `Content-Length`, rather than read what arrived
+* Wrap every network failure in `X::NetworkError`, so a stream reconnects after it
+  * Including `IOError`, `SystemCallError`, `Timeout::Error`, `Net::ProtocolError`, `Zlib::Error`, `Net::HTTPBadResponse`, `OpenSSL::SSL::SSLError`, and `SocketError`
+* Stop following redirects after exactly `max_redirects` hops instead of one more, so 0 follows none
+* Request the token endpoints at the origin of the base URL, under the path it serves the API at, rather than at `api.x.com`
+  * The path is the base URL's minus a trailing API version segment
+  * With `base_url: "https://gateway.example/x/2/"`, an app-only token comes from `/x/oauth2/token` and a refresh goes to `/x/2/oauth2/token`
+  * `X::OAuth2Authorization` exchanges its code at the base URL of the client it builds
+* Raise `X::AuthorizationError`, an `X::ClientError`, when X refuses a token refresh, code exchange, or app-only token
+  * It holds the OAuth 2.0 `error_code`, such as `invalid_request`, and the `status`, `headers`, and `body` of the response
+  * A token endpoint that fails to answer raises the `X::HTTPError` of its status, such as `X::ServerError`, instead
+  * A refresh refused after a 401 raises it with the `X::Unauthorized` as its cause
+* Raise `X::AuthorizationDenied`, an `X::Error` with the `error_code` the redirect reported, for a redirect back from X that refuses
+* Raise `X::InvalidResponse`, an `X::HTTPError`, for a successful response whose body is not JSON, where it returned nil
+* Tag the bodies of responses, errors, and stream lines as UTF-8, so comparing them with non-ASCII text works
+  * A body that is not valid UTF-8 keeps its bytes; `valid_encoding?` tells it apart
+* Read only rate limits a response reports in full, in base 10
+  * `X::TooManyRequests#retry_after` no longer raises `KeyError` or `ArgumentError` for a missing or malformed header
+* Return nil from `X::TooManyRequests#reset_at`, `#reset_in`, and `#retry_after` when the response does not say when the limit resets
+* Read `Retry-After` with `X::HTTPError#retry_after`, in seconds or as an HTTP date, or nil
+  * `X::TooManyRequests#retry_after` reads it, falling back on `#reset_in`; retries and reconnects wait for it
+* Report every rate limit a response names from `X::TooManyRequests#rate_limits`, not just the exhausted ones
+  * `#rate_limit` reads the 15-minute limit; the exhausted limit that resets last is now `#limiting_rate_limit`
+* Make `X::RateLimit.new` and `.reported?` private
+* Make public, documented constructors for the errors of `x-core` and `X::Response`, so code that rescues them can be tested
+  * `X::HTTPError.new(status:, headers:, body:, http_method: nil, uri: nil)`, or `http_response:` in their place
+  * `raise X::NotFound` and `raise X::TooManyRequests, "slow down"` work as for any exception
+  * `X::Response.new(http_method:, uri:, status:, headers:, body:)`, or `http_response:` in their place
+  * A status outside 100 to 599, or headers that are not a Hash, raise `ArgumentError`
+* Name the internal classes of `x-core` under `X::Core` and those of `x-streaming` under `X::Streaming`, as private constants
+* Make `X::Connection` the internal `X::Core::Connection`
+  * The authenticators take no `connection:`
+  * `X::OAuth2Authorization` takes `base_url`, `proxy_url`, `open_timeout`, `read_timeout`, `write_timeout`, `debug_output`, and `headers` instead
+* Make the constants that hold messages, patterns, or internal defaults of `x-core` private
+  * `X::HTTPError::JSON_CONTENT_TYPE_REGEXP`, `X::OAuth2Authenticator::EXPIRATION_BUFFER`, and its token endpoint (`TOKEN_HOST`, `TOKEN_PATH`)
+* Make `X::Uploader::Validator` and the MIME type and size constants of `X::Uploader::MediaUpload` private
+  * `MIME_TYPES`, `MIME_TYPE_MAP`, the `*_MIME_TYPE` constants, `BYTES_PER_MB`, `MAX_SIMPLE_UPLOAD_BYTES`, and the endpoints of `X::Uploader::Account`
+  * The media category constants, such as `TWEET_IMAGE`, remain public
+* Make `infer_media_type` of `X::Uploader::MediaUpload` internal; pass `media_type:` to override the type an upload infers
+* Ship the signatures of the public interface alone in each gem
+* Document every error class of `x-core` and draw the whole hierarchy on `X::Error`
+* Sign OAuth 1.0a requests, and build OAuth 2.0 token refreshes, with the [simple_oauth](https://github.com/laserlemon/simple_oauth) gem
+* Take media as a path (`String` or `Pathname`) or an IO in `upload_media`, `upload`, `chunked_upload`, `update_profile_image`, and `update_profile_banner`
+  * A `File` or `Tempfile` is read a chunk at a time; another IO, such as a `StringIO`, is read whole
+  * A String holding a NUL byte or a line break raises `ArgumentError`; pass a path or a `StringIO`
+  * An IO that cannot be read raises `X::InvalidMedia`
+* Infer the type of media from the bytes it begins with before the name of its file
+  * GIF, PNG, JPEG, BMP, TIFF, WebP, MP4, QuickTime, WebM, MPEG-TS, and WebVTT are recognized
+  * Media of a type nothing names, such as HEIC or SubRip in a `StringIO`, raises `X::InvalidMediaType` without `media_category:`
+  * A file whose signature does not match its extension, such as TypeScript named `.ts`, raises `X::InvalidMediaType`
+  * A type the media category does not take, such as MP4 with `"tweet_gif"`, raises `X::InvalidMediaType`
+* Raise `X::MissingMediaData` instead of `KeyError` or nil when an upload, status check, or metadata response holds no media
+  * Its `problems` hold the problems the response reported, the first named in its message
+* Raise `X::InvalidMedia` for a file that does not exist, and `X::MediaProcessingFailed` for media that fails to process, instead of `RuntimeError`
+  * `X::MediaProcessingFailed#media` holds what X reported as an `X::UploadedMedia`
+* Raise `ArgumentError` from `await_processing`, `add_alt_text`, and `add_subtitles` for media without an `"id"`
+* Raise `ArgumentError` from `add_subtitles` for a language code that is not two letters
+* Upload in chunks of 4 MB, `X::Uploader::MediaUpload::DEFAULT_CHUNK_SIZE`, rather than 1 MB, so a video takes a quarter of the requests
+  * A file larger than the 16 GB the API takes raises `X::InvalidMedia` before the upload
+  * `chunk_size:` replaces `chunk_size_mb:`, takes bytes, and defaults to nil, which uploads in chunks of 4 MB
+* Upload an animated GIF larger than 5 MB in chunks, which the API takes up to 15 MB of
+* Validate the `alt_text:` of `upload` before uploading, so media is not lost to a refused alt text
+* Post profile images and banners to the API v1.1 through the client's base URL, credentials, and connections
+* Keep the state and helpers of `X::Client` in an internal object, so mixed-in methods never collide with them
+
 ### Removed
-* Remove `X::Uploader::Account::MIME_TYPE_MAP`, which nothing read
-* Remove the `boundary:` of the upload methods of `X::Uploader::Media` and `X::Uploader::Account`, which each upload now generates for itself, since a caller has no reason to choose the boundary of a multipart body
-* Make `X::HTTPError#error_message`, `#message_from_json_response`, and `#json?` private; they build the message an error is initialized with, which `message` returns
-* Remove `require "x/media_uploader"` and `require "x/account_uploader"`; require `x`, `x/uploader/media`, or `x/uploader/account` instead
-* Remove `X::OAuthAuthenticator::OAUTH_SIGNATURE_ALGORITHM`, which named the digest of the signing code that is gone, and `OAUTH_VERSION` and `OAUTH_SIGNATURE_METHOD`, which nothing read once simple_oauth signed requests
-* Remove `X::OAuth2Authenticator::REFRESH_GRANT_TYPE`, which named the grant type simple_oauth now sends
-* Remove the `base64` dependency from `x-core`, which encodes no Base64 of its own now that simple_oauth builds the Basic credentials
-* Remove the setters of `X::RateLimit`, `X::BearerTokenAuthenticator`, `X::OAuth1Authenticator`, and `X::OAuth2Authenticator`, whose attributes are now read-only; change a credential with the setters of `X::Client`, which build a new authenticator, and a token refresh replaces the tokens of an OAuth 2.0 authenticator under its lock
+* Remove `X::MediaUploader.upload_binary`; pass a `StringIO` to `X::Uploader::MediaUpload.upload`
+* Remove `upload_profile_image_binary` and `upload_profile_banner_binary`; pass an IO to `update_profile_image` and `update_profile_banner`
+* Remove `require "x/media_uploader"` and `require "x/account_uploader"`; require `x`, `x/uploader/media_upload`, or `x/uploader/account`
+* Remove the `boundary:` of the upload methods, which each upload now generates for itself
+* Remove `X::AccountUploader::MIME_TYPE_MAP`
+* Remove `X::Uploader::MediaUpload::PROCESSING_INFO_STATES`; use `X::UploadedMedia#processing?`
+* Remove `X::Uploader::MediaUpload::MAX_RETRIES`; a chunk is retried up to the client's `max_retries`
+* Remove `X::HTTPError#code`; use `#status`, an Integer, or `error.http_response.code`
+* Remove `X::HTTPError#error_message` and `#message_from_json_response`, and make `#json?` private
+* Remove `X::RateLimit#retry_after`; read `#reset_in`
+* Remove the setters of `X::Client`; derive a client that differs with `X::Client#with`
+  * `api_key=`, `api_key_secret=`, `access_token=`, `access_token_secret=`, `bearer_token=`, `client_id=`, `client_secret=`, `refresh_token=`
+  * `base_url=`, `default_array_class=`, `default_object_class=`, `open_timeout=`, `read_timeout=`, `write_timeout=`, `proxy_url=`, `debug_output=`, `max_redirects=`
+* Remove the setters of `X::Connection`, `X::RateLimit`, `X::BearerTokenAuthenticator`, `X::OAuth1Authenticator`, and `X::OAuth2Authenticator`
+* Remove `X::Connection::DEFAULT_HOST` and `DEFAULT_PORT`
+* Remove `X::OAuth1Authenticator#access_token`; `user_id` reads the user the token acts for
+* Remove `X::OAuthAuthenticator::OAUTH_SIGNATURE_ALGORITHM`, `OAUTH_VERSION`, and `OAUTH_SIGNATURE_METHOD`
+* Remove `X::OAuth2Authenticator::REFRESH_GRANT_TYPE`
+* Remove the `base64` dependency
 
 ### Fixed
-* Read past an empty page that names a next page in `X::Cursor#first`, `any?`, `none?`, and `empty?`, since the API can serve such a page when it filters what it returns, such as suspended users, instead of reporting an empty collection after one request
-* Parse the responses of the uploaders into Hashes and Arrays whatever the `default_object_class` and `default_array_class` of the client, so a client that defaults to another class, such as `OpenStruct`, uploads media, adds metadata, and updates a profile image or banner instead of raising `NoMethodError`
-* Call `on_token_refresh`, and the `on_refresh` of `X::OAuth2Authenticator`, once the refresh releases its lock, so the callable can send a request with the client, such as looking up the user whose tokens it stores, rather than raise `ThreadError` for recursive locking
-* Resolve a relative redirect against the URL of the request it redirects, rather than the base URL, so a redirect from a request to another host, such as `upload.x.com`, stays on that host, rather than going to the host of the base URL
-* Build the message of an `X::HTTPError` from a body that is not the JSON its content type claims, such as an empty or HTML body, or whose errors have no `message`, instead of raising `JSON::ParserError`, `KeyError`, or `TypeError` in place of the error, so a stream reconnects and a chunk upload retries after such a server error; an error without a `message` gives its `detail` or `title`
-* Look up `current_user` again once the client's credentials change, rather than keep returning the user of the credentials it had when first asked
-* Stop the batches of a parallel lookup, such as `find_users`, that have not begun once one fails, and raise its error after the batches already begun have finished, instead of sending every remaining batch, which the API bills, before raising
-* Request the largest page each search allows: 500 posts from `search_all_posts`, or 100 when the request asks for context annotations, as the default fields do, and 1,000 users from `search_users`, instead of 100 from each
-* Accept the `amplify_video` media category, which the API documents and the validator rejected, uploading it in chunks and awaiting its processing, and subtitle such a video with the `media_category: "AmplifyVideo"` of `add_subtitles`
-* Upload every media type the API documents: WebM, QuickTime, and MPEG-TS videos, WebVTT subtitles, BMP, TIFF, and progressive JPEG images, and glTF and USDZ models, instead of sending any video as MP4 and any subtitles as SubRip whatever the file
-* Upload an `.m4v` file as an MP4 video, in chunks, where `upload` inferred an image from any extension it did not know, read the whole file into memory, and sent it at once for X to refuse, and raise `X::InvalidMediaType` before any request for an `.avi` or `.mkv` file, or media that begins with the header of Matroska, whose containers the API documents no media type for, unless it is a WebM video, which is Matroska and uploads as WebM, rather than send it as a type it is not
-* Give up waiting for media to process after ten minutes, or the `processing_timeout:` of `upload` and `await_processing`, raising `X::Uploader::MediaProcessingTimeout` with the last status, and wait at least a second between checks when X asks for no wait, instead of polling in a tight loop forever
-* Wait before retrying a chunk that failed with a server or network error, a second and then two, instead of retrying at once
-* Upload the chunks of a video no more than four at a time, or the `concurrency:` of `chunked_upload`, reading each from the file as it is sent, instead of starting a thread per chunk and first copying every chunk into a temporary file; a chunk that fails stops the chunks not yet begun
-* Read the tokens of the last OAuth 2.0 refresh from `X::Client#access_token`, `refresh_token`, and `expires_at`, and share the authenticator with a copy that holds the same credentials, so that neither `copy` nor a changed credential brings back a refresh token X no longer accepts, nor an expiration time that a refresh without a lifetime cleared; a client keeps sharing the authenticator when another credential or a setting changes, a new `expires_at`, set on a client or given to a copy, is set on the authenticator they share rather than on one of its own, which would hold the same refresh token, and a client given other OAuth 2.0 credentials leaves it, so its `on_token_refresh` no longer receives the tokens of the client it was copied from
-* Fetch an app-only bearer token and refresh an OAuth 2.0 token over the client's connection, so the proxy, timeouts, and debug output of a client apply to token requests as they do to every other request
-* Drop the credentials, and any `Authorization` header passed in `headers:`, named by a String or a Symbol in any case, when a redirect leads to another scheme, host, or port, so a redirect cannot send them to a host they were not meant for
+* Keep the method and body of a `PUT` or `DELETE` that a 301 or 302 redirects, as RFC 9110 has it
+  * A `POST` redirected by a 301 or 302, and any request redirected by a 303, is still followed with a `GET`
+* Resolve a relative redirect against the URL of the request, rather than the base URL
+* Raise `X::HTTPError` for a redirect that cannot be followed, instead of `KeyError`, `URI::InvalidURIError`, or `ArgumentError`
+  * A 300, 304, or 305, or one whose `Location` is missing, invalid, or not HTTP or HTTPS
+* Send the credentials on every redirected request, not only the first
+* Drop the credentials and any `Authorization`, `Cookie`, or `Proxy-Authorization` header on a redirect to another origin
+* Preserve the headers passed to `get`, `post`, `put`, and `delete` across redirects
 * Send no `Authorization` header from a client without credentials, rather than an empty one
-* Send a `Content-Type` header with a request that carries a body alone, rather than with every request, so a `get` or a `delete`, and a `post` to an endpoint that takes no body, such as the finalize of a chunked upload, no longer names the type of a body it does not send; a body is still sent as JSON unless the caller's headers, or the `form:` of a request, name another type; and a redirect that follows a request with a GET, a 301, 302, or 303, which sends no body, sends no `Content-Type` either, the form type of `form:` and one the caller named among them, where it sent them with the GET
-* Raise `X::ClientError` or `X::ServerError` for a 4xx or 5xx status that no error class names, such as 405 or 501, instead of `X::HTTPError`, so a stream reconnects and a chunk upload retries after any server error
-* Link each gem's `changelog_uri` to the `main` branch, which the repository uses, rather than `master`
-* Upload subtitles as `text/srt` in chunks, as the API requires, instead of as `application/x-subrip` in one request, which it rejects
-* Send the authenticator on every redirected request, not only the first
-* Sign a form-encoded request body, which OAuth 1.0a requires and the signature left out, so such a request no longer fails to authenticate
-* Sign a query parameter that repeats once per value, rather than signing only one of the values
-* Sign the normalized URL, so a request to a host with no path signs the `/` the server sees
-* Form-encode the client credentials before Basic authentication on token refresh, as RFC 6749 Section 2.3.1 requires, so a client ID or secret containing a reserved character authenticates
-* Leave the user and password of a proxy out of the message of an invalid proxy URL, and out of `X::Connection#inspect`, which now summarizes the proxy URL and timeouts; raise `ArgumentError` rather than `URI::InvalidURIError` for a proxy URL that cannot be parsed; and keep the proxy an invalid URL would have replaced
-* Remove a proxy by setting `proxy_url` to nil, which raised `ArgumentError`, and decode a percent-encoded proxy user and password, which were sent to the proxy still encoded
-* Return nil from `X::Connection#proxy_host` and `#proxy_port` without a proxy, which raised `NoMethodError`
-* Connect to an `https://` proxy over TLS, rather than sending it the host to tunnel to and the proxy user and password in plaintext
-* Raise `X::HTTPError` for a redirect that cannot be followed, such as 304 Not Modified or one whose location is missing, is not a valid URL, or is not an HTTP or HTTPS URL, instead of `KeyError`, `URI::InvalidURIError`, or `ArgumentError`
-* Raise `X::UnsupportedOperation` from `X::DirectMessage.find_all`, and so from `hydrate_all`, since the API has no batch lookup of direct message events, instead of sending an `ids` parameter the endpoint does not take
-* End a `base_url` without a trailing slash with one, so that `base_url: "https://api.x.com/2"` sends a request for `users/me` to `/2/users/me` rather than `/users/me`
-* Raise `ArgumentError` from `X::Uploader::Media.chunked_upload`, before any request, for a `chunk_size_mb` that is not positive or a `concurrency` less than one, which initialized an upload and finalized it without a chunk, or raised `ArgumentError: negative array size` after initializing it
-* Stop sending a credential a setter clears, such as `client.bearer_token = nil`, which kept the authenticator of the cleared credential while the client reported it as nil
-* Send a `Time` passed as a query parameter, such as the `start_time:` of `count_posts` or the `params:` of `get`, in UTC in the ISO 8601 form the API takes, rather than as `Time#to_s`, which the API refuses
-* Give a class that includes `X::Uploader::Media`, `X::Uploader::Account`, or `X::Uploader::Metadata` their public methods alone, which call the private modules `X::Uploader::Chunks`, `X::Uploader::Multipart`, and `X::Uploader::Utils` rather than mix methods such as `init`, `append`, `transfer`, `extension`, and `media_id` into the class, so such a class uploads in chunks, and a method it defines under one of those names no longer breaks an upload
-* Stop the chunks of a chunked upload when an exception is raised in the thread that waits for them, such as a timeout or an interrupt, killing the threads that upload them and waiting until they have ended, instead of leaving them to upload the rest of the file, which the API bills, after the call has ended
-* Raise `Errno::ENOENT` from the uploaders for a `Pathname` of a file that does not exist, instead of `TypeError`, and take a `String` or a `Pathname` wherever an uploader takes a file path
-* Send the media category of an upload in lowercase, as the API documents it, rather than as given, since the uploaders accept a category in any case, such as `TWEET_VIDEO`
-* Round a fractional `chunk_size_mb` up to a whole number of bytes, rather than read each chunk at a fractional offset, which skipped a byte between some chunks and uploaded a corrupt file
-* Declare the credential setters of `X::Client` as taking nil in the signatures of x-core, as `client.bearer_token = nil` clears a credential, so that code which clears one type-checks
-* Keep the pages that `X::Cursor#first`, `take`, `any?`, `none?`, `one?`, and `empty?` read, and answer them from the pages a cursor already holds, so a `first` before an iteration, or another `first`, requests only what has not been read, where each of them built a cursor of its own and requested its pages again, which the API billed
-* Give the spaces of `X::Space.search` and the posts of `X::Space#posts` the client they were given, as `X::Space.find` does, so `space.creator.follow` and `post.like` act as the user, while the cursors still fetch their pages with the app-only client, which the space endpoints take; the resources held the app-only client, which every action they took was refused with
-* Attach nothing for an empty `media_ids:` in `create_post`, `create_direct_message`, and their `X::Post` and `X::DirectMessage` equivalents, as for nil, so a post or message of an empty list and text sends its text alone, and one of an empty list alone raises `ArgumentError`, where either sent an empty `media` or `attachments` field for the API to refuse
-* Read `X::Uploader::UploadedMedia#id` from an identifier held as an Integer, as a Hash built by hand to refer to media uploaded before may hold it, rather than raise `ArgumentError`
-* Take the `media_category:` of `X::Uploader::Metadata.add_subtitles` as the uploaders take a category, `tweet_video` or `amplify_video` as a String or a Symbol in any case, as well as the `TweetVideo` and `AmplifyVideo` the subtitles endpoint names them, and raise `ArgumentError` for any other, where a category given as the uploaders take it was sent as given for the endpoint to refuse
-* Raise `ArgumentError` from `X::Uploader::Media.upload_binary` for the `amplify_video` category, which the API takes in chunks alone, before a request it would refuse; `upload` uploads such a file in chunks
-* Raise `ArgumentError` from the uploaders for an empty file, before any request, where an upload in chunks initialized an upload and finalized it without a chunk, and an upload in a single request sent no media, for the API to refuse either
+* Send a `Content-Type` header only with a request that carries a body
+* Build the message of an `X::HTTPError` from a body that is not JSON, or whose errors have no `message`
+  * Instead of raising `JSON::ParserError`, `KeyError`, or `TypeError` in place of the error
+* Raise `X::ClientError` or `X::ServerError` for an unnamed 4xx or 5xx status, such as 411 or 501, instead of `X::HTTPError`
+* Raise the errors of `on_response`, a request's block, or the object class as they were raised
+  * The request is not retried, rate-limited, or refreshed, and a stream does not reconnect for them
+* Send a query parameter without a value, as the `flag` of `get("users?flag")`, without `=`
+* Connect to a host or proxy named by an IPv6 literal, such as `http://[::1]:8080/`; `x-core` depends on net-http 0.8 or later
+* End a `base_url` without a trailing slash with one, so `https://api.x.com/2` requests `/2/users/me`
+* Take the proxy from `https_proxy` for HTTPS requests and `http_proxy` for HTTP, and honor `no_proxy`
+* Connect to an `https://` proxy over TLS
+* Decode a percent-encoded proxy user and password
+* Leave the proxy user and password out of the message of an invalid proxy URL, and raise `ArgumentError` for one
+* Sign a form-encoded request body with OAuth 1.0a
+* Sign every value of a repeated query parameter
+* Sign the normalized URL, so a request to a host with no path signs `/`
+* Form-encode the client credentials before Basic authentication on token refresh, as RFC 6749 Section 2.3.1 requires
+* Refresh an OAuth 2.0 token through the connection of the client that sends the request, with its proxy and timeouts
+* Declare `X::BadGateway` and `X::GatewayTimeout` as `X::ServerError`s in the signatures
+* Declare the standard libraries each gem's signatures refer to in its `sig/manifest.yaml`
+* Link each gem's `changelog_uri` to the `main` branch rather than `master`
+* Parse uploader responses into Hashes and Arrays whatever the client's `default_object_class` and `default_array_class`
+* Return nil from `update_profile_image` and `update_profile_banner`; look the user up to read what it holds
+* Raise `X::InvalidMedia` from `update_profile_image` and `update_profile_banner` for an empty or oversized file
+  * A profile image larger than 700 KB or a banner larger than 5 MB
+  * `X::InvalidMediaType` for one that is not a GIF, JPEG, or PNG; `ArgumentError` for a non-integer banner offset or size
+* Accept the `amplify_video` media category, and subtitle such a video with `add_subtitles`
+* Upload every media type the API documents: WebM, QuickTime, and MPEG-TS videos, WebVTT subtitles, and BMP, TIFF, and progressive JPEG images
+* Upload an `.m4v` file as an MP4 video, in chunks
+* Raise `X::InvalidMediaType` before a request for `.avi`, `.mkv` (other than WebM), `.glb`, and `.usdz` files
+* Upload subtitles in chunks as `text/srt`, the type the API names
+* Send the media category in lowercase, as the API documents it
+* Raise `X::InvalidMedia` from the uploaders, before any request, for media that cannot be uploaded
+  * An empty file, a directory, a file that cannot be read, or an IO open for writing alone
+  * A `Pathname` of a missing file, as for a `String`, instead of `TypeError`
+  * An image over 5 MB, a GIF over 15 MB, or subtitles over 1 MB
+* Raise `X::MissingMediaData` before a chunk is uploaded when the initialize response holds no media, instead of `NoMethodError`
+* Give up waiting for media to process after the `processing_timeout:` (default 600 seconds), raising `X::MediaProcessingTimeout`
+  * Taken by `upload`, `await_processing`, `await_processing!`, `upload_media`, and `await_media_processing(!)`
+  * `processing_timeout:` takes a finite number of seconds of at least 0, or nil for no limit
+  * Anything else, `Float::INFINITY` included, raises `ArgumentError` before the first request
+  * Checks wait at least a second apart when X asks for no wait
+  * Processing that ends in an undocumented state raises `X::MediaProcessingFailed` from `upload` and `await_processing!`
+* Retry a failed chunk, and the finalize request, with the client's `max_retries`, backing off rather than retrying at once
+* Upload the chunks of a video four at a time, or the `concurrency:` of `chunked_upload` (at most 16), instead of a thread per chunk
+  * A chunk that fails stops the chunks not yet begun
+* Stop the chunks of a chunked upload when the waiting thread is interrupted, such as by a timeout
+  * Including a `ThreadError` or interrupt while the chunk threads are being started
+* Raise `ArgumentError` from `chunked_upload`, before any request, for an invalid `chunk_size` or `concurrency`
+  * `chunk_size` must be a positive Integer of at most 5,242,880 bytes, within the 10,000 segments the API numbers
+  * `concurrency` must be an Integer from 1 to `MAX_CONCURRENCY` (16)
+* Read the size of chunked upload media once, so a growing file uploads the declared `total_bytes`
+* Give a class that includes `X::Uploader::MediaUpload` or `X::Uploader::Account` their public methods alone, so its own methods do not break uploads
 
 ## [0.19.0] - 2026-03-01
 * Add streaming support for filtered stream and volume stream endpoints
@@ -326,7 +719,6 @@ See [UPGRADING.md](https://github.com/sferik/x-ruby/blob/main/UPGRADING.md) for 
 ## [0.1.0] - 2023-08-02
 * Initial release
 
-[unreleased]: https://github.com/sferik/x-ruby/compare/v1.0.0...HEAD
 [1.0.0]: https://github.com/sferik/x-ruby/compare/v0.19.0...v1.0.0
 [0.19.0]: https://github.com/sferik/x-ruby/compare/v0.18.0...v0.19.0
 [0.18.0]: https://github.com/sferik/x-ruby/compare/v0.17.0...v0.18.0

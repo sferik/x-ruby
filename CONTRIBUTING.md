@@ -14,7 +14,7 @@
 
        bin/setup
 
-   The root, `x-core`, `x-uploader`, and `x-objects` each have their own bundle, so `bundle update` in the root updates only the root bundle. To update them all:
+   The root, `x-core`, `x-uploader`, `x-streaming`, and `x-objects` each have their own bundle, so `bundle update` in the root updates only the root bundle. To update them all:
 
        bin/update
 
@@ -22,15 +22,15 @@
 
        bundle exec rake
 
-   Each of `x-core`, `x-uploader`, and `x-objects` has its own `Gemfile`, `Rakefile`, `Steepfile`, signatures, test suite, and mutation config, and can be checked on its own:
+   Each of `x-core`, `x-uploader`, `x-streaming`, and `x-objects` has its own `Gemfile`, `Rakefile`, `Steepfile`, signatures, test suite, and mutation config, and can be checked on its own:
 
        cd x-core && bundle exec rake
 
    From the root, `rake test`, `rake mutant`, `rake steep`, and `rake yardstick` run each gem's task inside that gem's directory, with that gem's bundle. Append a gem's name to run one, as in `rake test:x-core`, `rake steep:x-objects`, or `rake yardstick:x`.
 
-   On GitHub, each gem's workflow runs only when that gem, or a gem it depends on, changes. The `x` workflow runs when the meta-gem or the code and signatures of any gem change, and the linter runs when any Ruby file changes. Every workflow runs when `VERSION` changes as well, so the commit that prepares a release runs them all, which the workflow that pushes the gems waits for. A commit that changes none of the files a workflow watches, such as a fix to the documentation made after that commit, runs none of them, so run each on it before tagging it, with `gh workflow run x-core.yml --ref main`, and `x-uploader.yml`, `x-objects.yml`, `x.yml`, and `lint.yml` the same way.
+   On GitHub, each gem's workflow runs only when that gem, or a gem it depends on, changes. The `x` workflow runs when the meta-gem or the code and signatures of any gem change, and the linter runs when any Ruby file changes. Every workflow runs when `VERSION` changes as well, so the commit that prepares a release runs them all, which the workflow that pushes the gems waits for. A commit that changes none of the files a workflow watches, such as a fix to the documentation made after that commit, runs none of them, so run each on it before tagging it, with `gh workflow run x-core.yml --ref main`, and `x-uploader.yml`, `x-streaming.yml`, `x-objects.yml`, `x.yml`, and `lint.yml` the same way.
 
-5. To release, write the new version to `VERSION`, run `rake update_versions` to write it into each gem's `version.rb`, record the release in each of the four changelogs, `CHANGELOG.md`, `x-core/CHANGELOG.md`, `x-uploader/CHANGELOG.md`, and `x-objects/CHANGELOG.md`, with the link to its changes at the foot of each, commit on `main`, and run `rake release`, which checks that the versions agree and that the branch is `main`, builds every gem, and tags the release.
+5. To release, write the new version to `VERSION`, run `rake update_versions` to write it into each gem's `version.rb`, record the release in each of the five changelogs, `CHANGELOG.md`, `x-core/CHANGELOG.md`, `x-uploader/CHANGELOG.md`, `x-streaming/CHANGELOG.md`, and `x-objects/CHANGELOG.md`, with the link to its changes at the foot of each, commit on `main`, and run `rake release`, which checks that the versions agree and that the branch is `main`, builds every gem, and tags the release.
 
 6. Create a new branch for your feature or bug fix:
 
@@ -54,7 +54,7 @@ Pull requests will only be accepted if they meet all the following criteria:
 
        bundle exec rake test
 
-4. 100% mutation coverage in `x-core`, `x-uploader`, and `x-objects`. This can be verified with:
+4. 100% mutation coverage in `x-core`, `x-uploader`, `x-streaming`, and `x-objects`. This can be verified with:
 
        bundle exec rake mutant
 
@@ -65,3 +65,5 @@ Pull requests will only be accepted if they meet all the following criteria:
 6. 100% documentation coverage. This can be verified with:
 
        bundle exec rake yardstick
+
+   `bundle exec rake yard` builds the documentation of every gem together into `doc`, or the directory `YARD_OUTPUT_DIR` names, as the Pages workflow publishes it. Each gem's `.yardopts` hides the API tagged `@api private`, so a module whose methods are public API of the class that includes it is tagged `@api semipublic`.

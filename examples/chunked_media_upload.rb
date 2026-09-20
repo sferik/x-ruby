@@ -19,8 +19,8 @@ file_path = "path/to/your/media.mp4"
 media_category = "tweet_video" # or amplify_video or dm_video: a GIF or subtitles category refuses an MP4 video
 media = X::Uploader::MediaUpload.chunked_upload(file_path, client:, media_category:, chunk_size: 5 * 1024 * 1024, concurrency: 2)
 
-# Wait up to five minutes, raising X::Uploader::MediaProcessingFailed if processing fails
-client.await_media_processing(media, processing_timeout: 300)
+# Wait up to five minutes, raising X::MediaProcessingFailed if processing fails
+client.await_media_processing!(media, processing_timeout: 300)
 
 post = client.create_post("Posting media from @gem!", media_ids: [media])
 

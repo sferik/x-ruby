@@ -5,70 +5,163 @@ All notable changes to `x-uploader` will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-`x-uploader` is released in lockstep with the other gems of the [x-ruby](https://github.com/sferik/x-ruby) repository, at one version across `x-core`, `x-uploader`, `x-objects`, and `x`. This file holds the changes to the uploads; [the changelog of the repository](https://github.com/sferik/x-ruby/blob/main/CHANGELOG.md) holds the changes to every gem.
+`x-uploader` is released in lockstep with the other gems of the [x-ruby](https://github.com/sferik/x-ruby) repository, at one version across `x-core`, `x-uploader`, `x-streaming`, `x-objects`, and `x`. This file holds the changes to the uploads; [the changelog of the repository](https://github.com/sferik/x-ruby/blob/main/CHANGELOG.md) holds the changes to every gem.
 
-## [1.0.0] - 2026-09-20
+## [1.0.0] - 2026-09-18
 
 The first release of `x-uploader`, which 1.0.0 split out of the `x` gem. The entries below are the changes since `x` 0.19, the last release before the split; see [UPGRADING.md](https://github.com/sferik/x-ruby/blob/main/UPGRADING.md) for the changes that code written for 0.19 needs.
 
 ### Added
-* Split the gem into gems released in lockstep: `x-core` (the HTTP client), `x-uploader` (media, profile image, and banner uploads), `x-objects` (resource objects), and `x` (a meta-gem that depends on all three and mixes the object methods into `X::Client`); `x-uploader` and `x-objects` depend on `x-core`, which declares `X::Error`, the base class of every error the gems raise, and every other error named directly under `X`, though `x-objects` makes no request of its own and asks the client it is given to make them; each gem depends on the ones it needs with a pessimistic constraint on the version being released, so the lockstep holds while a patch of `x-core` still installs under the gems of the same minor
-* Describe uploaded media with alt text, through the `alt_text:` of `X::Uploader::Media.upload` or `X::Uploader::Metadata.add_alt_text`, and attach uploaded subtitles to a video with `X::Uploader::Metadata.add_subtitles`
-* Upload a GIF with a single frame as an image, since X fails to process it as a GIF, telling a still GIF from an animated one with `X::Uploader::Gif.animated?`
-* Infer the media category of an upload from the file extension, upload a video in chunks, and wait for a video or an animated GIF to be processed, so `X::Uploader::Media.upload("cat.mp4", client:)` handles any file, taking the `media_type:`, `chunk_size_mb:`, and `concurrency:` of a chunked upload, none of which an upload in a single request sends, since the API types an image itself, and raising `ArgumentError` for any other keyword
-* Take the file path, content, or media as the positional argument of the `X::Uploader::Media`, `X::Uploader::Validator`, and `X::Uploader::Account` methods, with `client:` as a keyword, as the object layer does
-* Return an `X::Uploader::UploadedMedia` from `upload`, `upload_binary`, `chunked_upload`, `await_processing`, and `await_processing!`, and from `upload_media`, `upload_media_binary`, and `await_media_processing` on the client, in place of a Hash: a frozen object that reads the media's `id`, as an Integer, `media_key`, `bytesize`, `expires_at`, `processing_info`, `state`, and `check_after_secs`, tells `processing?`, `failed?`, and `ready?`, compares by its attributes, writes itself as its response with `as_json` and `to_json`, and still reads as the Hash with `[]`, `fetch`, which takes a default value and a block as `Hash#fetch` does, `dig`, `key?`, and `to_h`, so `media["id"]` and `media["size"]` work as they did; the uploaders and `create_post` take it wherever they take media, and `X::Uploader::MediaProcessingFailed#status` and `X::Uploader::MediaProcessingTimeout#status` hold it
-* Add `upload_media`, `upload_media_binary`, `await_media_processing`, and `await_media_processing!`, which raises if processing failed where the other returns the status, `add_alt_text`, `add_subtitles`, `update_profile_image`, and `update_profile_banner` to `X::Client`, each of which calls an uploader with the client, as in `client.create_post("Look", media_ids: [client.upload_media("cat.jpg")])`; they are the methods of `X::Uploader::API`, which `x` includes into `X::Client`, and which code that depends on `x-core` and `x-uploader` alone can include itself
-* Take the identifier of media, a String or an Integer, as well as the response of an upload, in `X::Uploader::Media.await_processing` and `await_processing!`, as `X::Uploader::Metadata.add_alt_text` and `add_subtitles` do
-* Add `X::Uploader::Media::DEFAULT_CONCURRENCY`, the four chunks a chunked upload sends at once unless `concurrency:` says otherwise
-* Rescue the failures of an upload alone with `X::Uploader::Error`, which `X::Uploader::InvalidMediaType`, `X::Uploader::MediaProcessingFailed`, and `X::Uploader::MediaProcessingTimeout` descend from, beside `X::Error`
-* Name the media category of an upload with a Symbol, in any case, wherever a String is taken, as in `media_category: :tweet_video`
-* Check whether a file uploads in chunks with `X::Uploader::Media.chunked_upload?`, and read the most a single upload request takes from `X::Uploader::Media::MAX_SIMPLE_UPLOAD_BYTES`
-* Ship a `CHANGELOG.md` with `x-core`, `x-uploader`, and `x-objects`, holding the entries of this file that are changes to that gem, which the `changelog_uri` of each gemspec names in place of this file
+* Add `X::Uploader.gem_version`, which returns `VERSION` as a `Gem::Version`
+* Split `x` into gems released in lockstep: `x-core`, `x-uploader`, `x-streaming`, `x-objects`, and the `x` meta-gem
+  * `x-core` is the HTTP client and declares `X::Error`, the base of every error the gems raise
+  * `x-uploader` holds the media, profile image, and banner uploads
+  * Public classes are named directly under `X`, whichever gem declares them
+  * Rescue one gem's failures with `X::Uploader::Error`, `X::Objects::Error`, or `X::Streaming::Error`
+  * Each gem depends on the others with `>= 1.0.0, < 2`, so a 1.x release installs beside any later 1.x of the others, never an earlier one
+* Make `X::Uploader::MediaUpload.upload` handle any file: it infers the category, chunks videos, and awaits processing
+  * The category is inferred from the bytes the media begins with, or else from its file extension
+  * It takes the `media_type:`, `chunk_size:`, and `concurrency:` of a chunked upload; others raise `ArgumentError`
+* Add upload methods to `X::Client` with `X::Uploader::API`, which `x` includes into `X::Client`
+  * `upload_media`, `chunked_upload_media`, `await_media_processing`, and `await_media_processing!`
+  * `add_alt_text`, `add_subtitles`, `update_profile_image`, and `update_profile_banner`
+  * `chunked_upload_media` returns once the upload is finalized; wait with `await_media_processing(!)` when needed
+  * Media that already says its processing ended, or an image's upload response, is awaited without a request
+  * With `x-core` and `x-uploader` alone, include it yourself: `X::Client.include(X::Uploader::API)`
+  * Passing `client:` to any of them raises `ArgumentError`
+* Return an `X::UploadedMedia` in place of a Hash from every upload, wait, and metadata method
+  * It reads `id` and `media_id` as Integers, and `media_key`, `bytesize`, `expires_after_secs`, `processing_info`, `state`, and `check_after_secs`
+  * `processing?`, `failed?`, and `ready?` tell the state of its processing
+  * It still reads as a Hash with `[]`, `fetch`, `dig`, `key?`, and `to_h`, so `media["id"]` keeps working
+  * `add_alt_text` and `add_subtitles` return the media they describe, so a call chains to the upload
+  * It is frozen, and raises `ArgumentError` unless built with an `"id"` of 1 to 19 digits, as an Integer or a String
+  * Its Marshal and YAML formats are read by every 1.x release; an unknown one raises `X::UnsupportedMarshalFormat`
+* Add alt text to uploaded media with the `alt_text:` of `upload`, or with `X::Uploader::Metadata.add_alt_text`
+  * Alt text that is not a String of 1 to 1,000 characters convertible to UTF-8 raises `ArgumentError` before a request
+  * `upload` validates `alt_text:` before uploading, so media is not lost to rejected alt text
+  * An upload that cannot add its alt text raises `X::AltTextFailed`, which holds the uploaded `media`, whatever the error
+* Attach uploaded subtitles to a video with `X::Uploader::Metadata.add_subtitles`
+  * `media_category:` defaults to `"tweet_video"`, and takes `tweet_video` or `amplify_video` in any case
+  * It also takes `TweetVideo` or `AmplifyVideo`, as the endpoint names them; any other category raises `ArgumentError`
+  * A language code that is not two letters raises `ArgumentError` before a request; it is sent upcased
+* Accept a media ID, a media key, an upload response, or anything that answers `media_key` as uploaded media
+  * In `await_processing`, `await_processing!`, `add_alt_text`, and `add_subtitles`, and their client methods
+  * Anything else, nil, media without an `"id"`, or an ID that is not 1 to 19 digits raises `ArgumentError`
+* Share uploaded media with the `shared:` and `additional_owners:` of `upload`, `chunked_upload`, and `upload_media`
+  * Shared media always uploads in chunks
+  * An invalid `shared` or `additional_owners` raises `ArgumentError` before any request
+* Upload a GIF with a single frame as an image, since X fails to process it as a GIF
+* Take the media as the positional argument of the `X::Uploader::MediaUpload` and `X::Uploader::Account` methods
+  * `client:` is a keyword, as in the object layer
+* Name a media category with a Symbol, in any case, as in `media_category: :tweet_video`
+* Add `X::Uploader::MediaUpload::DEFAULT_CONCURRENCY` (4) and `MAX_CONCURRENCY` (16), the chunks sent at once
+* Add `X::Uploader::MediaUpload::DEFAULT_PROCESSING_TIMEOUT` (600 seconds) and the `AMPLIFY_VIDEO` category constant
+* Add `X::Uploader::Error`, the base of the errors `x-uploader` raises itself
+  * `X::AltTextFailed`, `X::ChunkedUploadFailed`, `X::InvalidMedia`, and `X::MediaProcessingCheckFailed` descend from it
+  * So do `X::MediaProcessingFailed`, `X::MediaProcessingTimeout`, and `X::MissingMediaData`
+  * `X::InvalidMedia` and its subclass `X::InvalidMediaType` mean media the API would refuse
+  * Mistakes in arguments, such as a bad category, chunk size, or timeout, raise `ArgumentError` instead
+  * Each error that holds media reads it as an `X::UploadedMedia` with `media`, and can be raised with a message alone
+* Raise `X::MediaProcessingCheckFailed`, which holds the uploaded `media`, when an upload's processing check fails
+* Raise `X::ChunkedUploadFailed`, which holds the initialized `media`, when a chunk or the finalize request fails
+  * Also when the file is deleted, closed, or shrinks during the upload, or the finalize response holds no media
+  * It and `X::MediaProcessingCheckFailed` are raised for any `StandardError`, as the `cause`, such as one `on_response` raises
+  * A `Timeout::Error`, an `X::MediaProcessingTimeout`, or an interrupt is raised as it is
+* Ship this changelog with the gem, linked from the `changelog_uri` of its gemspec
+* Ship a `.yardopts` with the gem, so its documentation on rubydoc.info leaves out the private API
 
 ### Changed
+* Hold `VERSION` as a String rather than a `Gem::Version`; compare versions with `gem_version`
 * Require Ruby 3.4 or later
-* Send requests to `api.x.com` rather than `api.twitter.com` by default, the host of the token endpoints, the uploads, and the API's documentation
-* Post the profile image and banner uploads of `X::Uploader::Account` to the absolute URL of the API v1.1 endpoint with the client they are given, so they keep its timeouts, proxy, and other settings, and reuse the connection it holds open, rather than build a copy of it, and its own connection pool, for every upload
-* Raise `Errno::ENOENT` from the uploaders for a file that does not exist, and `X::Uploader::MediaProcessingFailed`, an `X::Error` whose `status` holds what X reported and whose message is its reason, for media that fails to process, instead of `RuntimeError`
-* Move `X::InvalidMediaType` to `X::Uploader::InvalidMediaType`, beside the uploaders that raise it
+* Accept an IO as well as a path in `upload`, `chunked_upload`, `upload_media`, and the profile image and banner methods
+  * A `File` or `Tempfile` is read a chunk at a time, so media of any size is not held in memory
+  * Any other IO, such as a `StringIO`, is read and held; one that can seek is read from its start and left where it was
+  * A String that holds a NUL byte or a line break, as contents do, raises `ArgumentError`; pass a path or a `StringIO`
+  * An IO that cannot be read, such as a closed `StringIO`, raises `X::InvalidMedia`
+* Type media by the bytes it begins with before its file name
+  * Media neither its bytes nor its name types, such as a HEIC photo, raises `X::InvalidMediaType`
+  * Pass `media_category:` to upload such media; it was uploaded as an image
+  * A file named as a signed type, such as `.png` or `.ts`, that lacks the signature raises `X::InvalidMediaType`
+  * Media the category does not take, such as an MP4 with `media_category: "tweet_gif"`, raises `X::InvalidMediaType`
+* Keep `infer_media_type` internal, as are `chunked_upload?`, `infer_media_category`, and `X::Uploader::Gif`
+  * Pass `media_type:` to send a type other than the inferred one
+* Send requests to `api.x.com` rather than `api.twitter.com` by default
+* Post profile image and banner uploads with the client given, resolved against its base URL
+  * They reach the client's host and reuse its connection, credentials, timeouts, and proxy
+* Raise `X::InvalidMedia`, naming the path, for a file that does not exist, before any request
+* Raise `X::MediaProcessingFailed` instead of `RuntimeError` for media that fails to process
+  * Also for processing that ends in a state X does not document; `media` holds the status X reported
 * Move the HTTP client into `x-core`, under `lib/x/core`, and the uploaders into `x-uploader`, under `lib/x/uploader`
-* Rename `X::MediaUploader` to `X::Uploader::Media`, `X::AccountUploader` to `X::Uploader::Account`, and `X::MediaUploadValidator` to `X::Uploader::Validator`, under an `X::Uploader` module that holds the gem's version, since `X::Media` is the media resource
-* Rename `upload_profile_image_binary` and `upload_profile_banner_binary` to `update_profile_image_binary` and `update_profile_banner_binary`, the binary forms of `update_profile_image` and `update_profile_banner`
-* Raise `KeyError` from `X::Uploader::Media.chunked_upload` and `X::Uploader::Media.await_processing` when the media has no `"id"`, instead of requesting a URL with an empty ID
-* Make `X::Uploader::Validator`, `X::Uploader::Chunks`, `X::Uploader::Multipart`, and `X::Uploader::Utils`, which the uploaders validate, upload, and read files with, private constants, and make the MIME type and media category tables of `X::Uploader::Media`, the block constants of `X::Uploader::Gif`, and `X::Uploader::JSON_CLASSES` private constants, so that they can change within 1.x, and make `MAX_ATTEMPTS` and `RETRY_BACKOFF` private constants of `X::Uploader::Chunks`, which `X::Uploader::Media` no longer includes, so they are not constants of `X::Uploader::Media`
-* Derive the chunk size of a chunked upload from the size of the file, so that a file of any size uploads within the 1,000 segments the API numbers, where 1 MB chunks refused a file larger than 1,000 MiB after uploading, and billing, about a gigabyte of it; the `chunk_size_mb:` of `upload` and `chunked_upload` is nil by default, which derives it
-* Upload an animated GIF larger than `X::Uploader::Media::MAX_SIMPLE_UPLOAD_BYTES` in chunks, which the API takes up to 15 MB of, rather than in the single request it takes no more than 5 MB of
-* Validate the `alt_text:` of `X::Uploader::Media.upload` before the upload rather than after it, raising `ArgumentError` for empty text or more than the 1,000 characters the API takes, so media that uploaded is no longer lost to a refusal of its alt text
-* Read the identifier of `X::Uploader::UploadedMedia` as an Integer wherever the media reads it, so `media["id"]`, `media.fetch("id")`, `media.to_h`, and the JSON of `as_json` and `to_json` hold the number that `media.id` returns, rather than the String the API gave beside an `id` that converted it, and media whose identifier names no number raises `ArgumentError` when it is built rather than when it is read; the `media_ids:` of a post or a direct message still sends each identifier as a String
+* Rename `X::MediaUploader` to `X::Uploader::MediaUpload` and `X::AccountUploader` to `X::Uploader::Account`
+  * `X::MediaUploadValidator` became `X::Uploader::Validator`, a private constant
+* Make the internals of the uploaders private constants, so they can change within 1.x
+  * The MIME type tables and constants of `X::Uploader::MediaUpload`, such as `MIME_TYPES` and `GIF_MIME_TYPE`
+  * `BYTES_PER_MB`, `MAX_SIMPLE_UPLOAD_BYTES`, and the base URL and endpoints of `X::Uploader::Account`
+  * The media category constants, such as `TWEET_IMAGE`, remain public
+  * The signatures the gem ships declare its public interface alone
+* Upload in chunks of 4 MB, `X::Uploader::MediaUpload::DEFAULT_CHUNK_SIZE`, rather than 1 MB, so a video takes a quarter of the requests
+  * `chunk_size:` replaces `chunk_size_mb:`, takes bytes, and defaults to nil, which uploads in chunks of 4 MB
+  * Upload a large video with a client whose `max_rate_limit_retries` is set, so a rate limit on a chunk is waited out
+  * A file up to the 16 GB the API takes fits its 10,000 segments; a larger one raises `X::InvalidMedia`
+* Upload an animated GIF larger than 5 MB in chunks, which the API takes up to 15 MB of
+* Raise `X::MissingMediaData` instead of `KeyError`, or returning nil, for a response that holds no media or metadata
+  * Media without an identifier raises it too, so every `X::UploadedMedia` an upload returns has one
+  * Its `problems` hold the problems the response reported, and its message names the first one's detail
 
 ### Removed
-* Remove `X::Uploader::Account::MIME_TYPE_MAP`, which nothing read
-* Remove `X::Uploader::UploadedMedia#size`, the byte count of the media, which read as `Hash#size` would not; it is `bytesize`, beside the unchanged `media["size"]`
-* Remove the `boundary:` of the upload methods of `X::Uploader::Media` and `X::Uploader::Account`, which each upload now generates for itself, since a caller has no reason to choose the boundary of a multipart body
-* Remove `require "x/media_uploader"` and `require "x/account_uploader"`; require `x`, `x/uploader/media`, or `x/uploader/account` instead
+* Remove `X::MediaUploader.upload_binary`; pass a `StringIO` to `X::Uploader::MediaUpload.upload` instead
+* Remove `upload_profile_image_binary` and `upload_profile_banner_binary`; pass an IO, such as a `StringIO`, instead
+* Remove `X::AccountUploader::MIME_TYPE_MAP`, which nothing read
+* Remove the `boundary:` keyword of the upload methods; each upload generates its own
+* Remove `require "x/media_uploader"` and `require "x/account_uploader"`
+  * Require `x`, `x/uploader/media_upload`, or `x/uploader/account` instead
+* Remove `PROCESSING_INFO_STATES`; use `X::UploadedMedia#processing?`
+* Remove `MAX_RETRIES`; a chunk is sent again up to the client's `max_retries`
 
 ### Fixed
-* Raise `KeyError` from a chunked upload whose initialize response holds no media, naming what was missing, instead of `NoMethodError` on nil from the first chunk, and raise it before a chunk is uploaded and billed
-* Parse the responses of the uploaders into Hashes and Arrays whatever the `default_object_class` and `default_array_class` of the client, so a client that defaults to another class, such as `OpenStruct`, uploads media, adds metadata, and updates a profile image or banner instead of raising `NoMethodError`
-* Accept the `amplify_video` media category, which the API documents and the validator rejected, uploading it in chunks and awaiting its processing, and subtitle such a video with the `media_category: "AmplifyVideo"` of `add_subtitles`
-* Upload every media type the API documents: WebM, QuickTime, and MPEG-TS videos, WebVTT subtitles, BMP, TIFF, and progressive JPEG images, and glTF and USDZ models, instead of sending any video as MP4 and any subtitles as SubRip whatever the file
-* Upload an `.m4v` file as an MP4 video, in chunks, where `upload` inferred an image from any extension it did not know, read the whole file into memory, and sent it at once for X to refuse, and raise `X::InvalidMediaType` before any request for an `.avi` or `.mkv` file, or media that begins with the header of Matroska, whose containers the API documents no media type for, unless it is a WebM video, which is Matroska and uploads as WebM, rather than send it as a type it is not
-* Give up waiting for media to process after ten minutes, or the `processing_timeout:` of `upload` and `await_processing`, raising `X::Uploader::MediaProcessingTimeout` with the last status, and wait at least a second between checks when X asks for no wait, instead of polling in a tight loop forever
-* Wait before retrying a chunk that failed with a server or network error, a second and then two, instead of retrying at once
-* Upload the chunks of a video no more than four at a time, or the `concurrency:` of `chunked_upload`, reading each from the file as it is sent, instead of starting a thread per chunk and first copying every chunk into a temporary file; a chunk that fails stops the chunks not yet begun
-* Link each gem's `changelog_uri` to the `main` branch, which the repository uses, rather than `master`
-* Upload subtitles as `text/srt` in chunks, as the API requires, instead of as `application/x-subrip` in one request, which it rejects
-* Raise `ArgumentError` from `X::Uploader::Media.chunked_upload`, before any request, for a `chunk_size_mb` that is not positive, one that would need more than the 1,000 segments the API numbers, or a `concurrency` less than one, which initialized an upload and finalized it without a chunk, uploaded and billed about a gigabyte before the API refused segment 1,000, or raised `ArgumentError: negative array size` after initializing it
-* Give a class that includes `X::Uploader::Media`, `X::Uploader::Account`, or `X::Uploader::Metadata` their public methods alone, which call the private modules `X::Uploader::Chunks`, `X::Uploader::Multipart`, and `X::Uploader::Utils` rather than mix methods such as `init`, `append`, `transfer`, `extension`, and `media_id` into the class, so such a class uploads in chunks, and a method it defines under one of those names no longer breaks an upload
-* Stop the chunks of a chunked upload when an exception is raised in the thread that waits for them, such as a timeout or an interrupt, killing the threads that upload them and waiting until they have ended, instead of leaving them to upload the rest of the file, which the API bills, after the call has ended
-* Raise `Errno::ENOENT` from the uploaders for a `Pathname` of a file that does not exist, instead of `TypeError`, and take a `String` or a `Pathname` wherever an uploader takes a file path
-* Send the media category of an upload in lowercase, as the API documents it, rather than as given, since the uploaders accept a category in any case, such as `TWEET_VIDEO`
-* Round a fractional `chunk_size_mb` up to a whole number of bytes, rather than read each chunk at a fractional offset, which skipped a byte between some chunks and uploaded a corrupt file
-* Take a default value and a block in `X::Uploader::UploadedMedia#fetch`, as `Hash#fetch` does, so `media.fetch("processing_info", nil)` no longer raises `ArgumentError`, and write the media as its response with `as_json` and `to_json`, rather than as a reference to the object
-* Read `X::Uploader::UploadedMedia#id` from an identifier held as an Integer, as a Hash built by hand to refer to media uploaded before may hold it, rather than raise `ArgumentError`
-* Take the `media_category:` of `X::Uploader::Metadata.add_subtitles` as the uploaders take a category, `tweet_video` or `amplify_video` as a String or a Symbol in any case, as well as the `TweetVideo` and `AmplifyVideo` the subtitles endpoint names them, and raise `ArgumentError` for any other, where a category given as the uploaders take it was sent as given for the endpoint to refuse
-* Raise `ArgumentError` from `X::Uploader::Media.upload_binary` for the `amplify_video` category, which the API takes in chunks alone, before a request it would refuse; `upload` uploads such a file in chunks
-* Raise `ArgumentError` from the uploaders for an empty file, before any request, where an upload in chunks initialized an upload and finalized it without a chunk, and an upload in a single request sent no media, for the API to refuse either
+* Give up waiting for processing after `processing_timeout:` seconds, raising `X::MediaProcessingTimeout`
+  * It defaults to 600 seconds; pass `nil` to wait as long as processing takes, as the client's timeouts do
+  * `Float::INFINITY`, a negative number, or a non-number raises `ArgumentError` before any request
+  * Applies to `upload`, `await_processing(!)`, and the client's `upload_media` and `await_media_processing(!)`
+  * Waits at least a second between checks, and as long as X asks, instead of polling in a tight loop
+  * A state X does not document ends the wait; `upload` and `await_processing!` raise `X::MediaProcessingFailed` for it
+* Send a chunk or the finalize request again after a server or network error, up to the client's `max_retries`
+  * It waits as `Retry-After` asks, up to a minute, or with a randomized backoff, instead of retrying at once
+  * A chunk is sent again after a read timeout too, since a chunk sent twice is not billed twice
+* Upload at most `concurrency:` chunks at once, 4 by default, instead of starting a thread per chunk
+  * Each chunk is read from the file as it is sent, rather than copied to a temporary file first
+  * A chunk that fails stops the chunks not yet begun
+  * `x-core` keeps 16 idle connections per host, so each of up to 16 senders keeps its connection between chunks
+* Stop the threads of a chunked upload, and wait for them, when the call is interrupted or times out
+  * A thread that cannot be started (`ThreadError`), or an interrupt while starting them, stops those already started
+* Validate the `chunk_size:` and `concurrency:` of `chunked_upload` before any request
+  * `chunk_size` must be a positive Integer of at most 5,242,880 that fits within the API's 10,000 segments
+  * `concurrency` must be an Integer from 1 to 16, `MAX_CONCURRENCY`
+  * Anything else, such as a String read from the environment, raises `ArgumentError` instead of `NoMethodError`
+* Validate profile images and banners before a request
+  * An empty file, a profile image over 700 KB, or a banner over 5 MB raises `X::InvalidMedia`
+  * A file whose bytes are not a GIF, JPEG, or PNG raises `X::InvalidMediaType`, whatever its name
+  * A banner `width`, `height`, `offset_left`, or `offset_top` that is not a whole number raises `ArgumentError`
+* Return nil from `update_profile_image` and `update_profile_banner`; look the user up to read the new image
+* Raise `X::InvalidMedia` before any request for an empty file, or media that cannot be read
+  * Such as a directory, an unreadable file, or a write-only IO, which raised `Errno::EISDIR`, `EACCES`, or `IOError`
+* Raise `X::InvalidMedia` before any request for an image over 5 MB, a GIF over 15 MB, or subtitles over 1 MB
+  * The size X takes of a video depends on the account, so it is left to X
+* Raise `X::InvalidMedia` instead of `TypeError` for a `Pathname` of a file that does not exist
+* Raise `X::MissingMediaData`, not `NoMethodError`, before any chunk when the initialize response holds no media
+* Accept the `amplify_video` media category, uploading it in chunks and awaiting its processing
+* Upload WebM, QuickTime, and MPEG-TS videos, WebVTT subtitles, and BMP, TIFF, and progressive JPEG images
+  * Each is sent as its own type, where every video was sent as MP4 and all subtitles as SubRip
+* Upload an `.m4v` file as an MP4 video, in chunks, rather than as an image
+* Raise `X::InvalidMediaType` before any request for `.avi`, `.mkv`, `.glb`, and `.usdz` files
+  * A Matroska file that is a WebM video uploads as WebM
+* Upload subtitles in chunks as `text/srt`, the type the API names, instead of as `application/x-subrip` in one request
+* Send the media category in lowercase, as the API documents it, whatever case it was given in
+* Read the size of chunked media once, so a file that grows during the upload sends the `total_bytes` it declared
+* Parse upload responses into Hashes and Arrays whatever the client's `default_object_class` and `default_array_class`
+* Give a class that includes `X::Uploader::MediaUpload` or `X::Uploader::Account` their public methods alone
+  * Helpers such as `init`, `append`, and `media_id` are not mixed in, so a method of one of those names cannot break it
+* Declare `json` in `sig/manifest.yaml`, so `rbs collection` loads it for code that depends on `x-uploader`
+* Link `changelog_uri` to the `main` branch rather than `master`
 
 [1.0.0]: https://github.com/sferik/x-ruby/releases/tag/v1.0.0

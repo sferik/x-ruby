@@ -5,120 +5,249 @@ All notable changes to `x-objects` will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-`x-objects` is released in lockstep with the other gems of the [x-ruby](https://github.com/sferik/x-ruby) repository, at one version across `x-core`, `x-uploader`, `x-objects`, and `x`. This file holds the changes to the object layer; [the changelog of the repository](https://github.com/sferik/x-ruby/blob/main/CHANGELOG.md) holds the changes to every gem.
+`x-objects` is released in lockstep with the other gems of the [x-ruby](https://github.com/sferik/x-ruby) repository, at one version across `x-core`, `x-uploader`, `x-streaming`, `x-objects`, and `x`. This file holds the changes to the object layer; [the changelog of the repository](https://github.com/sferik/x-ruby/blob/main/CHANGELOG.md) holds the changes to every gem.
 
-## [1.0.0] - 2026-09-20
+## [1.0.0] - 2026-09-18
 
-The first release of `x-objects`, which 1.0.0 split out of the `x` gem. The entries below are the changes since `x` 0.19, the last release before the split; see [UPGRADING.md](https://github.com/sferik/x-ruby/blob/main/UPGRADING.md) for the changes that code written for 0.19 needs.
+The first release of `x-objects`, which 1.0.0 split out of the `x` gem. `x` 0.19, the last release before the split, had no object layer, so every entry below is new; see [UPGRADING.md](https://github.com/sferik/x-ruby/blob/main/UPGRADING.md) for the changes that code written for 0.19 needs. It requires Ruby 3.4 or later.
 
 ### Added
-* Rescue the failures of the object layer alone with `X::Objects::Error`, which `X::Objects::MissingResource` descends from, beside `X::Error`, as `X::Uploader::Error` does for uploads
-* Split the gem into gems released in lockstep: `x-core` (the HTTP client), `x-uploader` (media, profile image, and banner uploads), `x-objects` (resource objects), and `x` (a meta-gem that depends on all three and mixes the object methods into `X::Client`); `x-uploader` and `x-objects` depend on `x-core`, which declares `X::Error`, the base class of every error the gems raise, and every other error named directly under `X`, though `x-objects` makes no request of its own and asks the client it is given to make them; each gem depends on the ones it needs with a pessimistic constraint on the version being released, so the lockstep holds while a patch of `x-core` still installs under the gems of the same minor
-* Add immutable, thread-safe resource classes: `X::User`, `X::Post` (aliased as `X::Tweet`), `X::List`, `X::DirectMessage`, `X::Space`, `X::Media`, `X::Poll`, and `X::Place`
-* Compare resources by class and ID with `==`, `eql?`, and `hash`, so the same resource fetched in different requests is equal
-* Resolve references such as `post.author` and `post.replied_to` to included objects or ID stubs, sharing one object per resource within a response
-* Add `hydrate`, which fetches and memoizes the full resource, and `refresh`, which fetches it again; a lookup or a cursor given a parameter that overrides a default field or expansion parameter, such as `"user.fields": "name"`, returns resources that are not hydrated, so `hydrate` fetches the fields the request left out, as `refresh` does
-* Add `X::Cursor`, an `Enumerable` collection that requests the maximum page size, fetches pages lazily, caches them, and offers `refresh` and `prefetch`
-* Check a collection without paging it: `X::Cursor#any?`, `X::Cursor#none?`, and `X::Cursor#one?` request one or two resources, rather than a full page, when they are given no block or pattern
-* Request only the expansions of the resources a post refers to that the object layer resolves, leaving out `edit_history_post_ids`, which included every post again as a version of itself, and `entities.mentions.username`, which included every user a post mentions, since nothing reads either include
-* Count a collection without paging it: `X::Cursor#published_count` reads the number the API publishes for a user's followers, followed users, and list memberships, and for a list's members and followers, looking up a stub, such as the user of `X::User.from_id(id).followers`, to read the number, and returns nil for a collection the API publishes no number for; `count` pages through the collection, as `Enumerable` does
-* Look up users and posts by ID in parallel batches of 100 with `X::User.find_all` and `X::Post.find_all`, asking for each ID once
-* Add `find_user`, `find_users`, `current_user`, `find_post`, `find_posts`, `search_posts`, `search_all_posts`, `create_post`, `delete_post`, `find_list`, `find_space`, `direct_messages`, `create_direct_message`, `follow`, `unfollow`, `like`, `unlike`, `repost`, and `unrepost` to `X::Client`; the finders have `find_tweet` aliases and `search` is short for `search_posts`, and `follow` reports true once it has asked to follow a protected user, whose acceptance is pending
-* Pass a resource class, such as `X::User`, as the `object_class` of any request to build objects from the response, or an array of them from a list; a client passes the parsed body and itself to any `object_class` that responds to `from_response`, and the objects it builds hydrate to the full resource, since a request may have asked for only some fields
-* Page an endpoint that names its page token differently with the `token_param:` of `X::Cursor`, and search users with `X::User.search` and `client.search_users`, which page with `next_token`
-* Request nothing but identifiers from a cursor with `ids`, as in `user.followers.ids`
-* Refer to a resource without a request with `X::User.from_id` and its equivalents, and tell such stubs and unexpanded references apart from expanded ones with `stub?`
-* Add `home_timeline`, `blocking`, and `muting` cursors to `X::User`, and read the authenticated user's posts that others have reposted with `reposts_of_me` on the client, aliased as `retweets_of_me`, and `X::Post.reposts_of_me`, aliased the same
-* Add `block`, `unblock`, `mute`, and `unmute` to the actions of `X::User` and `X::Client`
-* Add `X::List.create`, `X::List.update`, `X::List.delete`, `list.add_member`, `list.remove_member`, `list.update`, and `list.delete`, with `create_list`, `update_list`, `delete_list`, `add_list_member`, and `remove_list_member` on the client
-* Add `X::DirectMessage.delete`, `message.delete`, and `delete_direct_message` on the client, and `message.peer(user)`, the other participant of a one-to-one conversation as the user given sees it, usually the authenticated user, which is nil for a group conversation, as `message.group?` tells
-* Read the authenticated user with `current_user` and `current_user!` on the client, which look the user up each time, as `X::User.current` and `X::User.current!` do, taking their query parameters, and the first of which returns nil, yielding the problems the API reported, where the other raises; `current_user_id` keeps the identifier a lookup found for the credentials the client holds, so a copy that holds other credentials looks up the user those credentials authenticate as, and a frozen client, which keeps nothing, looks the user up each time
-* Look up a mix of identifiers and usernames with `find_all_users`, which batches each kind separately instead of treating everything as a username, and returns the users in the order they were asked for, and look up usernames alone, even ones that are all digits, with `find_all_users_by_username`
-* Look many resources up at once with `find_all_users`, `find_all_users_by_username`, `find_all_posts`, `find_all_spaces`, and `find_all_media`, each named for the `find_all` of the resource class it calls, so a finder of many is never a letter away from a finder of one
-* Look up a direct message with `find_direct_message`, many spaces with `find_all_spaces`, and the conversation with a user with `direct_messages_with`
-* Look up the live and scheduled spaces of many users by the users who created them with `X::Space.find_all_by_creator` and `find_all_spaces_by_creator` on the client, which take users or their identifiers, a hundred at a time in parallel batches, as `find_all` does, asking for every field and expansion, as the app for a client that signs with OAuth 1.0a, and yield each problem the API reported
-* Look up media by media key with `X::Media.find`, `find!`, and `find_all`, which asks for up to 100 `media_keys` at a time, and with `find_media`, `find_all_media`, and `find_media!` on the client, each of which takes a media key, media, or what an upload returned, whose media key it reads, as `X::Media.from_id` does, and raises `ArgumentError` for anything else, such as the numeric media ID, which the lookup would not find, and names that media key when it finds nothing, so the media of a post hydrates to every field, and `client.find_media(uploaded)` reads what an upload became, with its URL and variants, looking it up by the media key the endpoint takes
-* Read the media ID of media with `X::Media#media_id`, the Integer its media key names after the number of its type, as `X::UploadedMedia#media_id` reads it, so media and uploaded media answer `media_id` and `media_key` alike, while `X::Media#id` is the media key, which the API looks media up by
-* Add `X::Community`, looked up with `find_community` and `find_community!`, searched with `search_communities`, referred to by `post.community`, and posted in with the `community:` of `create_post`
-* Shorten every client method named for direct messages with a `dm` alias: `find_dm`, `find_dm!`, `dms`, `dms_with`, `create_dm`, and `delete_dm`
-* Build the `reply` and `media` fields of a new post from the `reply_to:` and `media_ids:` of `create_post`
-* Request a page no larger than needed from `X::Cursor#first` and `X::Cursor#take`, raised to the endpoint's minimum, since the API bills each resource returned, and ask each page after the first for no more than the pages before it left
-* Check `list.member?` by scanning the smaller of a public list's members and the lists the user is on, comparing `member_count` with `listed_count`; a private list still scans its members
-* Check `follows?` with one lookup of `connection_status` when either user is the authenticated user, instead of scanning every user followed, and read that field with `X::User#connection_status`
-* Raise `X::Objects::MissingResource`, an `X::Error`, from `current_user`, `X::User.current!`, and the new `find!`, `find_user!`, `find_post!`, `find_list!`, `find_space!`, and `find_direct_message!`, so a missing resource is an error a caller can rescue in one place; the API answers a lookup of a resource that is not there with 200 OK and no data, so the error is not `X::NotFound`, which is the 404 of an endpoint that is not there
-* Replace the stubs among some resources with the full resources in parallel batches with `X::User.hydrate_all` and its equivalents, which make no lookup when no resource is a stub
-* Accept a username with a leading at sign in `find_user`, `find_users`, and `X::User.find_all_by_username`
-* Add `X::DirectMessage#from?`, `X::Post#coordinates`, `permalink`, the x.com address of a post, user, list, or community, and `uri`, the same address as a `URI`
-* Match resources against `case/in` patterns: `deconstruct_keys` gives every attribute the resource declares, read as its own method reads it, so `post in {like_count: 100..}` matches a metric the API nests
-* Accept what `X::Uploader::Media.upload` returns directly as the `media_ids:` of `create_post`, reading the identifier from anything that answers `fetch`, as a Hash and an `X::Uploader::UploadedMedia` do
-* Scan a cursor with nothing but identifiers with `stubs`, and check a relationship without fetching every page with `user.follows?` and `list.member?`
-* Resolve the posts a post or direct message refers to with `references`, and pair `liked_by` with `reposted_by` on `X::Post`, beside `reposts`, the reposts themselves, each a post by the user who reposted it
-* Add `X::Post#urls` and `X::Post#expanded_text`, the text with every shortened link replaced by the URL it stands for
-* Read the full text of a long post, of more than 280 characters, with `X::Post#text`, which reads it from `note_post` rather than the text the API cuts short, and read the entities and links of the full text with `entities` and `urls`, which read the post's own entities when its note carries none, such as the annotations of a long post without links
-* Look up a user by identifier when given an Integer and by username when given a String, so an account whose username is all digits is found by name, and say which you mean with `X::User.find_by_username`, `find_by_username!`, and `find_user_by_username` and `find_user_by_username!` on the client, since an identifier read from a response or an environment variable is a String; everywhere else, such as `follow`, `from_id`, and `find_post`, an identifier that is not a number raises `ArgumentError`, rather than reach the API as a username it would take for an identifier
-* Name the interface after posts rather than tweets, including `post_count`, `pinned_post_id`, `most_recent_post_id`, `edit_history_post_ids`, `note_post`, `referenced_posts`, and `repost_count`; the tweet-named methods, such as `create_tweet`, `tweets`, `quote_tweets`, and `retweet_count`, remain as aliases
-* Count the posts that match a query with `X::Post.count` and `X::Post.count_all`, or by period with `X::Post.count_by_period` and `X::Post.count_all_by_period`, and on a client with `count_posts`, `count_all_posts`, `count_posts_by_period`, and `count_all_posts_by_period`, which have tweet-named aliases; a client that signs with OAuth 1.0a counts with a copy that authenticates as the app, since the counts endpoints refuse OAuth 1.0a
-* Report the partial errors of a successful response as `X::Problem` objects: `problems` on a resource and on each page of a cursor, a block given to a finder, which receives each problem, and `X::Objects::MissingResource#problems`, whose first problem explains the message
-* Report how many posts the app's project has read with `X::Usage.find` and `client.usage`, including its monthly cap and its usage by day and by app
-* Take the authenticated user's ID for actions from the prefix of an OAuth 1.0a access token, with `current_user_id`, instead of requesting `users/me`
-* Read the number of photos and videos a user has posted with `X::User#media_count`
-* Bookmark a post and remove the bookmark with `bookmark` and `unbookmark` on `X::User` and `X::Client`, beside the `bookmarks` cursor that reads them
-* Follow, unfollow, pin, and unpin a list with `follow_list`, `unfollow_list`, `pin_list`, and `unpin_list` on `X::User` and `X::Client`, and read a user's pinned lists with `X::User#pinned_lists`
-* Quote a post with the `quote:` of `create_post` and `X::Post.create`, which builds the `quote_tweet_id` of the new post
-* Hide a reply to a post of the authenticated user, and show it again, with `X::Post#hide_reply` and `#unhide_reply`, `X::Post.hide_reply` and `.unhide_reply`, and `hide_reply` and `unhide_reply` on the client
-* Start a group conversation of direct messages with `X::DirectMessage.create_group` and `create_group_direct_message` on the client, send to any conversation with `X::DirectMessage.create_in` and `create_direct_message_in`, and read any conversation with `X::DirectMessage.in` and `direct_messages_in`, each given a message of the conversation or its identifier; the client methods have `create_group_dm`, `create_dm_in`, and `dms_in` aliases
-* Search spaces with `X::Space.search` and `search_spaces` on the client, a cursor over the live or scheduled spaces that match a query
-* Check whether a collection is empty without paging it with `X::Cursor#empty?`, which requests one resource, as `none?` does
-* Post media without text, and send a direct message of attachments alone: the text of `create_post`, `X::Post.create`, `create_direct_message`, `create_group_direct_message`, `create_direct_message_in`, and their `X::DirectMessage` equivalents is optional, a post or message without text sends no `text` field rather than a null one, and one with neither text nor any other field raises `ArgumentError`
-* Match a resource by the tweet-named aliases of its attributes, such as `post in {retweet_count: 100..}` and `user in {pinned_tweet_id: Integer}`, and by `conversation_id` on a direct message; a pattern that asks for every attribute gets each once, by the name the resource declares
-* Write a resource as JSON with `as_json` and `to_json`, on `X::Objects::Resource`, `X::Problem`, `X::Usage`, `X::Page`, and `X::Cursor`, which write the attributes the API returned and never the client's credentials, and marshal a resource, which comes back holding its attributes alone, so a resource can be cached; serializing a cursor pages the whole collection
-* Attach uploaded media to a direct message with the `media_ids:` of `create_direct_message`, `create_group_direct_message`, and `create_direct_message_in`, and of their `X::DirectMessage` methods, which takes what an upload returns, as the `media_ids:` of `create_post` does, and builds the attachments the API takes; a call that passes both `media_ids:` and `attachments:` raises `ArgumentError`
-* Read `X::User#profile_banner_url`, `parody?`, `identity_verified?`, `subscription_type`, `affiliation`, and `verified_followers_count`, and `X::DirectMessage#entities`, whose fields the lookups now request
-* Type-check the resources of a collection: `X::Cursor` and `X::Page` are generic in their signatures, so `user.followers.each { |follower| follower.username }` checks, where every element was an `X::Objects::Resource` before
-* Ship a `CHANGELOG.md` with `x-core`, `x-uploader`, and `x-objects`, holding the entries of this file that are changes to that gem, which the `changelog_uri` of each gemspec names in place of this file
-
-### Changed
-* Require Ruby 3.4 or later
-* Move `X::MissingResource` to `X::Objects::MissingResource`, where the errors of the object layer that raises it live, as the errors of `x-uploader` live under `X::Uploader`; it descends from the new `X::Objects::Error`, and through it from `X::Error` as before, so a rescue of `X::Error` is unchanged
-* Hydrate the stubs of a page together, in batch lookups of up to 100 rather than one request per stub, so hydrating one stub looks up, and the API bills, no more than 100 resources, and hydrating every stub of a page of 1,000 costs ten lookups; the stubs of lists, communities, and direct messages, which the API cannot look up in batches, hydrate one at a time, and `refresh` looks a stub up again on its own rather than read what the lookup of its page found
-* Split the object methods of the client into `X::Objects::API::Lookups` and `X::Objects::API::Actions`, which `X::Objects::API` includes together, `X::Objects::API::Lookups` into one module per kind of resource: `Users`, `Posts`, `Lists`, `Spaces`, `Communities`, and `DirectMessages`, and `X::Objects::API::Actions` into one module per kind of action: `Posts`, `Lists`, `DirectMessages`, `Relationships`, and `Engagement`
-* Raise `X::Objects::MissingResource` instead of `KeyError` from `current_user` when the API returns no user
-* Return the identifiers of users, posts, lists, direct messages, communities, and polls as Integers, along with the attributes that refer to them, such as `author_id`, `owner_id`, and `participant_ids`; space and place identifiers, media keys, and `dm_conversation_id`, which are not numbers, remain Strings
-* Use the names the X API documentation gives: request `post.fields` and the `referenced_posts`, `pinned_post_id`, and `most_recent_post_id` expansions, and read `referenced_posts`, `edit_history_post_ids`, `note_post`, `pinned_post_id`, `most_recent_post_id`, `repost_count`, `post_count`, and included `posts`; the identifiers of referenced resources come with their expansions rather than as fields, and the authors of referenced posts are no longer expanded, since the documentation offers no expansion for them
-* Rename `X::User.me` to `X::User.current`, the request behind `current_user`
-* Rename `X::Objects::Actions`, the follow, block, mute, like, and repost methods of `X::User`, to `X::Objects::Relationships`, so it no longer shares a name with `X::Objects::API::Actions`
-* Raise `X::UnsupportedOperation`, an `X::Error` declared by `x-core`, so that code depending on `x-core` alone can rescue it by name, from `X::List.find_all`, since the API has no batch lookup of lists, instead of sending a request that fails; the object layer raises it for anything else the API offers no way to do, such as hydrating an `X::Poll` or requesting the identifiers alone of a resource without a fields parameter
-* Take the recipient and text of a direct message as the positional arguments of `create_direct_message`, in place of `to:` and `text:`; the text is optional for a message of attachments alone
-* Make `attribute`, `reference`, and `references`, the class macros that declare what a resource reads, private, and mark `endpoint`, `endpoint!`, `id_key`, `id_type`, `includes_key`, `fields_key`, and `hydratable?`, which name the API's endpoints and keys for each resource class, as `@api private`, so that they can change within 1.x
-* Make `X::Objects::Resource#includes` private, and document the `includes:`, `hydrated:`, and `batch:` of `X::Objects::Resource.new` and `from_id` and the `total:` of `X::Cursor.new` as internal to the object layer, so that they can change within 1.x
-* Return `X::Problem#resource_id`, and `#value` when it identifies a resource, as an Integer for a user, post, list, direct message, community, or poll, so that `problem.resource_id == user.id`, while a username, even one that is all digits, and the identifier of a space, place, or media remain Strings; and return `X::Space#topic_ids` as Integers, like every other numeric identifier
-* Rename `X::Cursor#klass` to `resource_class`, which names the resources a cursor returns rather than the Ruby word for a class, and print it in `X::Cursor#inspect`
-* Look up in `hydrate_all` every resource `hydrate` would, which is one that is not hydrated rather than a stub alone, so what it returns is hydrated throughout, and store what it found in each resource given, so hydrating one of them afterwards costs no request
-* Validate the identifier of a resource in `X::Objects::Resource.new`, so `X::User.new({"id" => "abc"})` raises `ArgumentError` where the resource it built raised from `id`, `==`, and `hash`
-
-### Removed
-* Remove `X::Cursor#size`, which paged and billed the whole collection where `Enumerable` leaves `size` undefined, so `cursor.each_slice(2)` and `cursor.lazy` no longer page it to size an enumerator; `count` still reads everything, and `published_count` reads nothing
-* Remove `X::Objects::Resource#deconstruct`, so a resource no longer matches an array pattern, such as the `in [first, *rest]` that tells one resource from an Array of them; `deconstruct_keys` matches `in {id:}` as before
-
-### Fixed
-* Read past an empty page that names a next page in `X::Cursor#first`, `any?`, `none?`, and `empty?`, since the API can serve such a page when it filters what it returns, such as suspended users, instead of reporting an empty collection after one request
-* Look up `current_user` again once the client's credentials change, rather than keep returning the user of the credentials it had when first asked
-* Stop the batches of a parallel lookup, such as `find_users`, that have not begun once one fails, and raise its error after the batches already begun have finished, instead of sending every remaining batch, which the API bills, before raising
-* Request the largest page each search allows: 500 posts from `search_all_posts`, or 100 when the request asks for context annotations, as the default fields do, and 1,000 users from `search_users`, instead of 100 from each
-* Link each gem's `changelog_uri` to the `main` branch, which the repository uses, rather than `master`
-* Raise `X::UnsupportedOperation` from `X::DirectMessage.find_all`, and so from `hydrate_all`, since the API has no batch lookup of direct message events, instead of sending an `ids` parameter the endpoint does not take
-* Send a `Time` passed as a query parameter, such as the `start_time:` of `count_posts` or the `params:` of `get`, in UTC in the ISO 8601 form the API takes, rather than as `Time#to_s`, which the API refuses
-* Look up a space with the app-only client of a client that signs with OAuth 1.0a, in `X::Space.find`, `find!`, `find_all`, and `search` and the `posts` of a space, since the space endpoints take app-only or OAuth 2.0 authentication alone and refused every space request an OAuth 1.0a client made
-* Validate a username before building a path from it, so `find_user("")`, `find_user("../tweets/20")`, which requested another endpoint with the client's credentials, `find_user("sferik?expansions=x")`, which dropped the fields the lookup asked for, and `find_user("bad name")`, which raised `URI::InvalidURIError`, each raise `ArgumentError` and send no request; an identifier that is not a number, such as the identifier of a space, is validated the same way
-* Scan for a relationship in `X::User#follows?` when the client cannot read `users/me`, such as one that authenticates as the app, rather than raise `X::Forbidden` from the lookup of the authenticated user
-* Ask each page of `X::Cursor#first` and `take` for no more than the pages before it left, even when the count matches the page size, where a short first page, such as one the API filtered, made the next page a full request, and stop prefetching once the count is read
-* Raise `ArgumentError` from `X::Cursor#page` for a negative index, which recursed until the stack overflowed and otherwise returned whichever page was cached last, and read a far page without recursing once per page
-* Return the periods of `X::Post.count_by_period` and `count_all_by_period` in time order when the count spans more than one page, which came back newest page first
-* Empty the queue of a parallel lookup when the thread waiting for it is interrupted, such as by a timeout or Ctrl-C, so the batches not yet begun, which the API bills, are never sent
-* Keep prefetching in `cursor.prefetch.stubs` and `cursor.prefetch.ids`, which dropped it, unlike `refresh`
-* Keep the fields a caller passes beside a convenience keyword in `create_post`, so `reply_to:` with `reply:`, and `media_ids:` with `media:`, no longer drop the caller's other reply and media fields, and take a single value for `media_ids:` as well as an Array
-* Keep the pages that `X::Cursor#first`, `take`, `any?`, `none?`, `one?`, and `empty?` read, and answer them from the pages a cursor already holds, so a `first` before an iteration, or another `first`, requests only what has not been read, where each of them built a cursor of its own and requested its pages again, which the API billed
-* Give the spaces of `X::Space.search` and the posts of `X::Space#posts` the client they were given, as `X::Space.find` does, so `space.creator.follow` and `post.like` act as the user, while the cursors still fetch their pages with the app-only client, which the space endpoints take; the resources held the app-only client, which every action they took was refused with
-* Attach nothing for an empty `media_ids:` in `create_post`, `create_direct_message`, and their `X::Post` and `X::DirectMessage` equivalents, as for nil, so a post or message of an empty list and text sends its text alone, and one of an empty list alone raises `ArgumentError`, where either sent an empty `media` or `attachments` field for the API to refuse
+* Add `X::Objects.gem_version`, which returns `VERSION` as a `Gem::Version`
+* Split `x` into gems released in lockstep: `x-core`, `x-uploader`, `x-streaming`, `x-objects`, and the `x` meta-gem
+  * `x-core` is the HTTP client and declares `X::Error`, the base of every error the gems raise
+  * `x-objects` makes no request of its own; it asks the client it is given to make them
+  * Public classes are named directly under `X`, whichever gem declares them
+  * Each gem depends on the others with `>= 1.0.0, < 2`, so a 1.x release installs beside any later 1.x of the others, never an earlier one
+* Add `X::Objects::Error`, to rescue the failures of the object layer alone
+  * `X::MissingResource`, `X::UnreadableResponse`, `X::MissingClient`, and `X::PageLimitReached` descend from it
+  * `X::InvalidAttribute` descends from `X::UnreadableResponse`
+* Add immutable, thread-safe resource classes that descend from `X::Resource`
+  * `X::User`, `X::Post` (aliased `X::Tweet`), `X::List`, `X::DirectMessage`, `X::Space`, `X::Media`, and `X::Poll`
+  * `X::Place`, and `X::Community`, found with `find_community(!)` and `search_communities`, and read as `post.community`
+  * Post in a community with the `community:` of `create_post`
+  * Lookups, cursors' `to_a`, and the collections a resource holds are frozen Arrays; copy one to change it
+  * A list the response omits, such as `post.urls`, reads as an empty Array; `user.connection_status` reads nil
+  * Text reads as the API sends it, so `post.text` and `direct_message.text` hold `&amp;`, `&lt;`, and `&gt;` throughout 1.x
+  * Nested data, such as `post.entities` and `post.public_metrics`, reads as frozen Hashes keyed by String throughout 1.x
+  * Nested data the API sends as anything but an object, or a list of them, raises `X::InvalidAttribute`
+* Compare resources by class and ID with `==`, `eql?`, and `hash`
+* Resolve references such as `post.author` to included objects or ID stubs, sharing one object per resource
+* Add `hydrate`, which fetches and memoizes the full resource, and `refresh`, which fetches it again
+  * A resource without a client, such as one read back by `Marshal`, raises `X::MissingClient` from any request
+  * A lookup whose parameters leave out default fields or expansions returns resources that are not hydrated
+  * `FIELDS` and `EXPANSIONS` may grow in a minor release; add to `default_params` rather than list every value
+* Add `X::Cursor`, an `Enumerable` that fetches pages lazily, caches them, and offers `refresh` and `prefetch`
+  * A page a prefetch failed to fetch raises the prefetch's error once it is reached, rather than be requested again
+  * `first`, `take`, `any?`, `none?`, `one?`, and `empty?` answer from the pages already held, and keep what they read
+  * Without a block or pattern, `any?`, `none?`, and `empty?` request one resource and `one?` two, not a full page
+  * That is raised to the endpoint's minimum page size: 5 for a user's posts, mentions, and liked posts; 10 for searches and quotes
+  * `first` and `take` request no larger a page than needed; a count that does not convert raises `TypeError`
+  * A page that names a token already read as its next raises `X::UnreadableResponse`, rather than page forever
+  * `page` takes an Integer index from zero; another type raises `TypeError`, a negative index `ArgumentError`
+* Add `X::Cursor#each_page`, which yields each page as an `X::Page`
+  * A page holds `items`, `meta`, `result_count`, `next_token`, `previous_token`, and `problems`, and reads its items as an Array does
+  * `X::Page.new` takes an Array of resources and `meta:` and `problems:`; other problems raise `ArgumentError`
+  * Pages are equal when they hold the same resources, in order, meta, and problems
+* Add `X::Cursor#published_count`, the number the API publishes for a collection, without paging it
+  * For a user's followers, followed users, and list memberships, and a list's members and followers
+  * It is nil for any other collection; `count` pages through the collection, as `Enumerable` does
+* Add `X::Cursor#ids`, which requests identifiers alone, and `stubs`, which scans a collection as stubs
+* Read the collections of a resource as cursors
+  * A user's `followers`, `following`, `affiliates`, `posts`, `mentions`, `liked_posts`, and `owned_lists`
+  * A user's `list_memberships`, `followed_lists`, `pinned_lists`, `home_timeline`, `blocking`, and `muting`
+  * A list's `members`, `followers`, and `posts`, and a post's `quotes`
+  * A space's `posts` and `buyers`, which the API reads for OAuth 2.0 user context alone
+* Add `X::Post#reply?`, `quote?`, and `repost?`, and read the post referred to with `replied_to`, `quoted`, `reposted`
+* Add `X::Post#liked_by`, `reposted_by`, and `reposts`, and `references`, the posts a post or direct message refers to
+* Look users and posts up by ID in parallel batches of 100 with `X::User.find_all` and `X::Post.find_all`
+  * They return one resource per ID found, in the order asked, so an ID given twice comes back twice
+  * Once a batch fails, or the waiting thread is interrupted, no batch not yet begun is sent
+* Look many resources up at once with `find_all_users`, `find_all_posts`, `find_all_spaces`, and `find_all_media`
+  * `find_all_users` takes a mix of IDs and usernames, batching each kind separately
+  * `find_all_users_by_username` takes usernames alone, even ones that are all digits
+* Set how many batches a lookup requests at once with `concurrency:`, 4 by default
+  * Taken by `find_all`, `find_all_by_username`, `hydrate_all`, `find_all_by_creator`, and their client methods
+  * Anything but an Integer of at least 1 raises `ArgumentError`
+* Hydrate many resources in parallel batches with `hydrate_all` on `X::User`, `X::Post`, `X::Space`, and `X::Media`
+  * It drops nil and resources not found, and looks up none that is already hydrated
+  * It stores what it finds in each resource given, unless the parameters leave out default fields or expansions
+  * A resource of another class raises `ArgumentError` before a request
+* Hydrate the stubs of a page of `stubs`, or of a cursor that requests identifiers alone, together, in batch lookups of up to 100
+  * Lists, communities, and direct messages, which the API looks up one at a time, hydrate one at a time
+  * A reference a page did not include, such as the `author` of a post, hydrates one at a time; `hydrate_all` batches any
+* Add object methods to `X::Client`, with `find_tweet` aliases for the finders
+  * `find_user`, `find_post`, `find_list`, `find_space`, `search_posts`, and `search_all_posts`
+  * `create_post`, `delete_post`, `direct_messages`, and `create_direct_message`
+  * `follow`, `unfollow`, `like`, `unlike`, `repost`, and `unrepost`
+  * `follow` returns true once it asks to follow a protected user; `repost` returns true once the user has reposted
+* Add `block`, `unblock`, `mute`, `unmute`, `bookmark`, and `unbookmark` to `X::User` and `X::Client`
+* Add `follow_list`, `unfollow_list`, `pin_list`, and `unpin_list` to `X::User` and `X::Client`
+* Read the authenticated user's posts that others reposted with `X::Post.reposts_of_me` and `client.reposts_of_me`
+  * Both are aliased as `retweets_of_me`
+* Read the authenticated user with `client.current_user` and `current_user!`, or `X::User.current` and `current!`
+  * `current_user` returns nil, yielding the problems the API reported; `current_user!` raises `X::MissingResource`
+  * `current_user_id` keeps the ID per credentials; a frozen client looks it up each time
+  * With OAuth 1.0a, `current_user_id` reads the ID from the access token, without a request
+* Look a user up by ID when given an Integer and by username when given a String
+  * Say which with `X::User.find_by_id(!)`, `find_all_by_id`, `find_by_username(!)`, and `find_all_by_username`
+  * On the client: `find_user_by_id(!)`, `find_all_users_by_id`, `find_user_by_username(!)`, `find_all_users_by_username`
+  * The `by_id` methods look a String of digits up as an ID, as read from a response or an environment variable
+  * Elsewhere, such as `follow`, `from_id`, or `find_post`, an ID that is not a number raises `ArgumentError`
+  * So does a resource of another class, as in `client.like(user)`, or another object that answers `id`
+* Accept a username with a leading `@` in `find_user`, `find_all_users`, and `X::User.find_all_by_username`
+* Validate a username or a non-numeric ID before building a path from it, raising `ArgumentError` without a request
+  * Such as `find_user("")`, `find_user("../tweets/20")`, `find_user("sferik?expansions=x")`, or `find_user("bad name")`
+* Raise `X::MissingResource` from `current_user!` and every `find…!` method when a lookup finds nothing
+  * Its message names what was looked up, as in "Could not find X::User @sferik"
+  * It is not `X::NotFound`, since the API answers a lookup of a missing resource with 200 OK and no data
+  * Data that holds no identifier counts as not found too, rather than raising `X::InvalidAttribute`
+* Refer to a resource without a request with `X::User.from_id` and its equivalents, and tell stubs apart with `stub?`
+  * `X::Resource` itself keeps `new`, `from_id`, and `from_response` private
+* Pass a resource class, such as `X::User`, as the `object_class` of any request to build objects from the response
+  * A list builds an `X::Page`, which holds the response's `meta` and problems, and is empty when there is no `data`
+  * Any `object_class` that responds to `from_response` is passed the parsed body and `client:`
+  * A `from_response` of your own must take unknown keywords with `**`, since a 1.x release may pass more
+* Include the object methods in a class of your own with `X::Objects::API`
+  * The class is the client of each request, and answers `get`, `post`, `put`, and `delete` (`X::Objects::_Client`)
+  * Those methods must take unknown keywords, since a 1.x release may pass any keyword `X::Client` takes
+  * `X::Objects` names `API`, `Error`, and `VERSION` alone; the modules and helpers behind them are private
+  * Constants a resource class shares are private, so `X::Post::REPLIED_TO` raises `NameError`
+  * The signatures the gem ships declare its public interface alone
+* Search users with `X::User.search` and `client.search_users`
+* Search live and scheduled spaces with `X::Space.search` and `client.search_spaces`
+* Request the largest page each search allows
+  * 500 posts from `search_all_posts`, or 100 when the request asks for context annotations, as the default fields do
+  * 1,000 users from `search_users`
+* Check `list.member?` and `user.follows?` without fetching every page
+  * `member?` scans the smaller of a public list's members and the user's memberships; a private list scans members
+  * `follows?` looks up `X::User#connection_status` once when either user is the authenticated user
+  * A 401 or 403 to that lookup falls back to a scan; any other failure, such as a rate limit, raises
+  * `max_pages:` limits the pages a scan reads, raising `X::PageLimitReached` if the API names another
+  * `max_pages:` defaults to nil, no limit; anything but an Integer of at least 1 or nil raises `ArgumentError`
+* Count the posts that match a query with `X::Post.count`, `count_all`, `count_by_period`, and `count_all_by_period`
+  * On the client: `count_posts`, `count_all_posts`, `count_posts_by_period`, and `count_all_posts_by_period`
+  * Those have tweet-named aliases, and pass `max_pages:` through
+  * The by-period counts are in time order, keyed by the `Range` of `Time` each period spans
+  * A client that signs with OAuth 1.0a counts with a copy that authenticates as the app
+  * An OAuth 2.0 user client without app credentials counts as the user; the full archive refuses it with `X::Forbidden`
+  * Every count takes `max_pages:`, raising `X::PageLimitReached` past it, as `follows?` does
+  * A count by period that is not a String of digits or a non-negative Integer raises `X::InvalidAttribute`
+* Report how many posts the app's project has read with `X::PostUsage.current` and `client.post_usage`
+  * It holds the monthly cap, the day it resets on, and usage by day and by app, each count an Integer
+  * They return nil, yielding the response's problems to a block, when it holds no usage
+  * `X::PostUsage.current!` and `client.post_usage!` raise `X::MissingResource` instead
+  * An OAuth 2.0 user client without app credentials requests as the user, which the API refuses with `X::Forbidden`
+* Report the partial errors of a successful response as `X::Problem` objects, which `x-core` declares
+  * Read them with `problems` on a resource or a page, a block given to a finder, or `X::MissingResource#problems`
+  * A resource holds the problems about it, or a resource it refers to directly, and those that name no resource
+* Look up a direct message with `find_direct_message`, and the conversation with a user with `direct_messages_with`
+* Delete a direct message with `X::DirectMessage.delete`, `message.delete`, and `client.delete_direct_message`
+* Add `X::DirectMessage#peer(user)`, the other participant of a one-to-one conversation as the user given sees it
+  * It is nil for a group conversation, as `group?` tells, and for a user not in the conversation
+* Start a group conversation with `X::DirectMessage.create_group` and `client.create_group_direct_message`
+* Send to and read any conversation with `X::DirectMessage.create_in` and `X::DirectMessage.in`
+  * On the client: `create_direct_message_in` and `direct_messages_in`
+  * Each takes a message of the conversation or its identifier
+* Add `dm` aliases for the client methods named for direct messages
+  * `find_dm`, `find_dm!`, `dms`, `dms_with`, `create_dm`, `delete_dm`, `create_group_dm`, `create_dm_in`, and `dms_in`
+* Attach uploaded media to a direct message with `media_ids:`, as `create_post` takes it
+  * Passing both `media_ids:` and `attachments:` raises `ArgumentError`
+  * An empty `media_ids:` attaches nothing to a post or a message, as nil does
+* Post media without text, and send a direct message of attachments alone
+  * Without text, no `text` field is sent; a call with neither text nor any other field raises `ArgumentError`
+* Build a new post's `reply` and `media` from the `reply_to:` and `media_ids:` of `create_post`
+  * Any other field of a `reply:` or `media:` passed beside them is kept
+  * A field passed with a String key, such as `"reply"` or `"attachments"`, is read as its Symbol, so it is sent once
+  * `media_ids:` takes a single value as well as an Array
+* Accept what an upload returns, media, or a media key in the `media_ids:` of `create_post`
+  * An ID is sent only as 1 to 19 digits; anything else, such as a Hash without an `"id"`, raises `ArgumentError`
+* Quote a post with the `quote:` of `create_post` and `X::Post.create`
+* Raise `X::MissingResource`, holding the response's problems, when a request that creates a resource is answered without it
+  * From `X::Post.create`, `X::List.create`, `X::DirectMessage.create`, `create_group`, `create_in`, and their client methods
+  * So `create_post`, `create_list`, `create_dm`, and the rest never return nil
+  * A response whose data names no identifier raises it too
+* Hide a reply to the authenticated user's post, and show it again, with `hide_reply` and `unhide_reply`
+  * On `X::Post` instances, on the `X::Post` class, and on the client
+* Manage lists with `X::List.create`, `X::List.update`, `X::List.delete`, `list.update`, and `list.delete`
+  * Add and remove members with `list.add_member` and `list.remove_member`
+  * On the client: `create_list`, `update_list`, `delete_list`, `add_list_member`, and `remove_list_member`
+  * An update with no field to change raises `ArgumentError` before a request
+* Add `X::User#bookmark_folders`, a cursor of `X::BookmarkFolder`, and read a folder's posts with `bookmarks(folder:)`
+  * Hydrating or refreshing a folder that is not hydrated raises `X::UnsupportedOperation`, since the API has no lookup
+* Look up the spaces of many creators with `X::Space.find_all_by_creator` and `client.find_all_spaces_by_creator`
+  * They take users or their IDs, 100 at a time in parallel batches, and yield each problem the API reports
+* Look up, search, and read the posts of spaces whatever the client authenticates with
+  * A client that signs with OAuth 1.0a makes those requests with its app-only client
+  * An OAuth 2.0 user client makes them itself, and the spaces and posts returned act as that user
+* Add `X::Space#topics`, each an `X::Topic` with a `name` and a `description`
+* Look up media by media key with `X::Media.find`, `find!`, and `find_all`
+  * On the client: `find_media`, `find_media!`, and `find_all_media`
+  * They take a media key, media, or what an upload returned; the numeric media ID raises `ArgumentError`
+  * `client.find_media(uploaded)` reads what an upload became, with its URL and variants
+* Add `X::Media#media_id`, the Integer its media key names, as `X::UploadedMedia#media_id` reads it
+  * `X::Media#id` is the media key, which the API looks media up by
+* Read the trends of a place with `X::Trend.at` and `client.trends`, given its WOEID, such as 1 for the world
+  * A WOEID that is not a number raises `ArgumentError` before a request
+  * It returns up to 50 trends unless given `max_trends:`, each with a `name` and a `post_count`
+  * A client that signs with OAuth 1.0a, which the endpoint refuses, requests as the app
+* Read the trends X picks for the authenticated user with `X::PersonalizedTrend.all` and `client.personalized_trends`
+  * Read `name`, `category`, and `post_count_text` and `trending_since_text`, the text X shows
+  * Neither trends endpoint has pages, so each returns a frozen Array; trends are equal when their attributes are
+* Read the full text of a long post, over 280 characters, with `X::Post#text`, from its `note_post`
+  * `entities` and `urls` read the note's entities alone, so they lie where `text` holds them
+* Add `X::Post#urls` and `expanded_text`, the text with each shortened link replaced by the URL it stands for, in one pass
+  * `expanded_text` HTML-escapes each URL it puts in, so the whole text reads escaped, as `text` does
+* Add `X::Post#matching_rules`, the filtered stream rules a post matched, each an `X::MatchingRule`
+  * A rule reads the `id` the API gave it, as an Integer, and its `tag`; an `id` that is not digits raises `ArgumentError`
+  * A post that did not come from the filtered stream matched none
+* Add `X::DirectMessage#from?`, `X::Post#coordinates`, and `permalink` and `uri`, the x.com address of a resource
+  * `permalink` and `uri` are on posts, users, lists, and communities
+* Read more fields, which the lookups request
+  * `X::User#profile_banner_url`, `parody?`, `identity_verified?`, `subscription_type`, `verified_followers_count`
+  * `X::User#subscriber_count` and `media_count`
+  * `X::Post#display_text_range`, an exclusive `Range`, nil when absent, and `scopes`, `card_uri`, `article`, `article_title`, `media_metadata`, `paid_partnership?`
+  * `X::DirectMessage#entities`
+  * `X::User#affiliation`, `affiliated_with_ids`, and `affiliated_with`; a user included in another resource has none
+  * Fields only an author, an advertiser, or a program may read are not requested, since asking fails for others
+* Add `X::User#receives_your_dm?`, `subscribes_to_you?`, and `subscription`, nil unless `user.fields` names them
+* Add `X::Post#media_source_posts`, aliased `media_source_tweets`, the posts its attached media was first posted with
+  * Resolved from the `attachments.media_source_tweet` expansion, which lookups request
+* Read the API's `is_` flags as `X::User#identity_verified` and `X::Space#ticketed`, beside their `?` predicates
+* Match resources against `case/in` patterns by every attribute they declare, as in `post in {like_count: 100..}`
+  * Tweet-named aliases match too, as in `user in {pinned_tweet_id: Integer}`
+  * `X::Trend`, `X::PersonalizedTrend`, and `X::PostUsage` match by their readers, as in `trend in {post_count: 10..}`
+* Write resources and value objects as JSON with `as_json` and `to_json`, never with the client's credentials
+  * On `X::Resource`, `X::Problem`, `X::Trend`, `X::PersonalizedTrend`, `X::PostUsage`, `X::MatchingRule`, and `X::Page`
+  * A page writes the shape of its response, which the `from_response` of its resource class reads back
+* Marshal and YAML-dump them in a format every 1.x release reads
+  * An unknown format raises `X::UnsupportedMarshalFormat`, which `x-core` declares
+  * A resource keeps its attributes, the included objects it refers to, and its query, but not its client
+* Raise from a cursor's `as_json`, `to_json`, and `to_h`, and from `Marshal.dump` and `YAML.dump` of one
+  * They raise `X::UnsupportedOperation` and `TypeError`, rather than read every page; serialize `first(n)` or `to_a`
+* Name the interface after posts rather than tweets, as in `post_count`, `pinned_post_id`, and `repost_count`
+  * Tweet-named methods, such as `create_tweet`, `tweets`, `quote_tweets`, and `retweet_count`, remain as aliases
+  * A response that uses tweet names, as a stream does, is read where the post-named field is missing
+* Request fields and expansions by the names the X API documentation gives, such as `post.fields` and `referenced_posts`
+  * The authors of referenced posts are not expanded, since the documentation offers no expansion for them
+* Leave out the `edit_history_post_ids` and `entities.mentions.username` expansions, whose includes nothing reads
+* Read the IDs of users, posts, lists, direct messages, communities, and polls, and references to them, as Integers
+  * `X::Problem#resource_id` and `value` are Strings, so match a problem to a resource with `problem.about?(user)`
+  * IDs of spaces, places, and media, media keys, `dm_conversation_id`, and usernames are Strings
+  * A space or place ID is word characters alone; a `dm_conversation_id` that is not digits, or two numbers joined by a hyphen, raises `X::InvalidAttribute`
+* Raise `X::UnsupportedOperation`, which `x-core` declares, for anything the API offers no way to do
+  * Such as hydrating or refreshing an `X::Poll` or an `X::Place` that is not hydrated
+  * A lookup the API lacks is not defined: `X::Poll` and `X::Place` answer no finder
+  * `X::List`, `X::Community`, and `X::DirectMessage` answer `find` and `find!`, but not `find_all` or `hydrate_all`
+* Validate the attributes of a resource, a page, a trend, or the usage when it is built, raising `ArgumentError`
+  * As in `X::User.new({"id" => "abc"})`, `X::Trend.new(nil)`, or a page of items that are not resources
+* Raise `X::InvalidAttribute` where a value of a response cannot be read as the API documents it
+  * Such as a timestamp that is not ISO 8601, a `public_metrics` that is a String, or a link without a `url`
+  * A count reads a String of digits as a number, and raises for a negative, signed, or fractional value
+  * A flag, such as `protected`, reads true, false, or nil, and raises for anything else
+  * Its cause is the `ArgumentError` that refused the value
+* Type-check collections: `X::Cursor` and `X::Page` are generic in their signatures
+* Ship a `sig/manifest.yaml` naming `uri` and `json`, so `rbs collection` loads them for code that depends on the gem
+* Ship this changelog with the gem, linked from the `changelog_uri` of its gemspec
+* Ship a `.yardopts` with the gem, so its documentation on rubydoc.info leaves out the private API
 
 [1.0.0]: https://github.com/sferik/x-ruby/releases/tag/v1.0.0
