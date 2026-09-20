@@ -3,6 +3,9 @@ source "https://rubygems.org"
 # Specify the gem's dependencies in x-objects.gemspec
 gemspec
 
+# Use the x-core in this repository rather than a released version
+gem "x-core", path: "../x-core"
+
 gem "minitest", ">= 6"
 gem "minitest-mock", ">= 5.27"
 gem "mutant-minitest", ">= 0.16"

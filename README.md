@@ -30,9 +30,9 @@ The `x` gem is a thin meta-gem that combines three gems, which are released from
 | --- | --- | --- |
 | [`x-core`](https://github.com/sferik/x-ruby/tree/main/x-core) | HTTP: authentication, requests, redirects, errors, rate limits, and streaming | `simple_oauth` |
 | [`x-uploader`](https://github.com/sferik/x-ruby/tree/main/x-uploader) | Uploads: images, GIFs, videos, and subtitles, with videos and subtitles in chunks, plus profile images and banners | `x-core` |
-| [`x-objects`](https://github.com/sferik/x-ruby/tree/main/x-objects) | Resources: `User`, `Post`, `List`, `DirectMessage`, `Space`, `Community`, `Media`, `Poll`, `Place`, and cursors | none |
+| [`x-objects`](https://github.com/sferik/x-ruby/tree/main/x-objects) | Resources: `User`, `Post`, `List`, `DirectMessage`, `Space`, `Community`, `Media`, `Poll`, `Place`, and cursors | `x-core` |
 
-`require "x"` loads all three, and mixes the object methods (`find_user`, `find_posts`, `search`, …) and the upload methods (`upload_media`, `add_alt_text`, `update_profile_image`, …) into `X::Client`. Any other request can return objects too, given a resource class as its `object_class`. If you only want raw JSON, depend on `x-core` alone. If you want the objects with your own HTTP client, depend on `x-objects` alone.
+`require "x"` loads all three, and mixes the object methods (`find_user`, `find_posts`, `search`, …) and the upload methods (`upload_media`, `add_alt_text`, `update_profile_image`, …) into `X::Client`. Any other request can return objects too, given a resource class as its `object_class`. If you only want raw JSON, depend on `x-core` alone. If you want the objects with an HTTP client of your own, depend on `x-objects` alone: it takes `x-core` for the errors the X gems share, and asks whatever client you give it to make the requests.
 
 ## Usage
 

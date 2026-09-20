@@ -1,10 +1,6 @@
-module X
-  # The base class of every error the X gems raise
-  #
-  # x-core defines the same class in lib/x/core/errors/error.rb; this gem does not depend on x-core, so keep the two the same
-  # @api public
-  class Error < StandardError; end
+require "x/core/errors/error"
 
+module X
   # Raised when a resource that was asked for by identifier or name does not exist
   # @api public
   class ResourceNotFound < Error

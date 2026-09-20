@@ -1,14 +1,11 @@
 module X
-  class Error < StandardError
-  end
-
-  class ResourceNotFound < Error
+  class ResourceNotFound < ::X::Error
     attr_reader problems: Array[Problem]
 
     def initialize: (?String? message, ?problems: Array[Problem]) -> void
   end
 
-  class UnsupportedOperation < Error
+  class UnsupportedOperation < ::X::Error
   end
 
   class Problem

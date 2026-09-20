@@ -1,6 +1,5 @@
 module X
-  # Base error class for all X API errors
-  #
-  # x-objects defines the same class in lib/x/objects/errors.rb, since it does not depend on x-core; keep the two the same
+  # The base class of every error the X gems raise
+  # @api public
   class Error < StandardError; end
 end

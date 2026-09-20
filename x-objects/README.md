@@ -2,7 +2,7 @@
 
 The object layer of the [`x` gem](https://github.com/sferik/x-ruby): immutable, thread-safe resource classes for the [X API](https://developer.x.com) with identity, references, hydration, cached pagination, and parallel batch lookups.
 
-It has no runtime dependencies and makes no HTTP requests itself. It asks a client to make them.
+It makes no HTTP requests itself: it asks a client to make them. Its one runtime dependency is [`x-core`](https://github.com/sferik/x-ruby/tree/main/x-core), for `X::Error`, the base class of every error the X gems raise.
 
 Most applications should install [`x`](https://rubygems.org/gems/x), which wires this gem to the HTTP client from [`x-core`](https://github.com/sferik/x-ruby/tree/main/x-core).
 
