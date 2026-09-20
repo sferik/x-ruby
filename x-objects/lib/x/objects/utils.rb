@@ -188,12 +188,19 @@ module X
 
       # The media identifiers of one upload or of several
       #
-      # One upload needs no array around it, so a single value is read as a list of one.
+      # One upload needs no array around it, so a single value is read as a list of one, and nil, like an empty
+      # list, as none.
       #
       # @api private
-      # @param media_ids [Array, #fetch, String, Integer] what the uploads returned, or identifiers, one or many
-      # @return [Array<String>] the media identifiers
-      def media_ids_of(media_ids) = (media_ids.is_a?(Array) ? media_ids : [media_ids]).map { |media| media_id_of(media) }
+      # @param media_ids [Array, #fetch, String, Integer, nil] what the uploads returned, or identifiers, one or many
+      # @return [Array<String>] the media identifiers, empty for nil
+      def media_ids_of(media_ids)
+        case media_ids
+        when nil then []
+        when Array then media_ids.map { |media| media_id_of(media) }
+        else [media_id_of(media_ids)]
+        end
+      end
 
       # Check whether a value identifies a resource rather than naming one
       #

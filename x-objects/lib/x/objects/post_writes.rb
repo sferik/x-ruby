@@ -17,12 +17,12 @@ module X
       # @param reply_to [Post, String, Integer, nil] the post to reply to or its identifier
       # @param quote [Post, String, Integer, nil] the post to quote or its identifier
       # @param media_ids [Array<String, Integer, #fetch>, String, Integer, #fetch, nil] the identifiers of uploaded
-      #   media to attach, or what the uploads returned, one or many
+      #   media to attach, or what the uploads returned, one or many; an empty list attaches nothing, as nil does
       # @param community [Community, String, Integer, nil] the community to post in or its identifier
       # @param params [Hash] additional request body fields, such as poll or reply_settings, among them reply and
       #   media, whose other fields reply_to and media_ids are merged into
       # @return [Post, nil] the created post, holding only its identifier and text
-      # @raise [ArgumentError] if the post has neither text nor any other field
+      # @raise [ArgumentError] if the post has neither text nor any other field, which an empty media_ids is not
       # @example Create a post
       #   X::Post.create("Hello, World!", client: client)
       # @example Post an image without text
@@ -97,7 +97,7 @@ module X
       #
       # The API nests the post replied to within reply, and the media within media, beside other fields a caller may
       # set, so reply_to and media_ids are merged into what the caller gave rather than replace it, and they win the
-      # one field each of them sets.
+      # one field each of them sets. An empty media_ids sets no media field, which the API would refuse.
       #
       # @api private
       # @param params [Hash] the request body fields the caller gave, such as reply, media, or poll
@@ -111,7 +111,8 @@ module X
         fields = {} #: Hash[Symbol, untyped]
         fields[:reply] = merged(params, :reply, in_reply_to_tweet_id: Utils.id_of(reply_to)) unless reply_to.nil?
         fields[:quote_tweet_id] = Utils.id_of(quote) unless quote.nil?
-        fields[:media] = merged(params, :media, media_ids: Utils.media_ids_of(media_ids)) unless media_ids.nil?
+        ids = Utils.media_ids_of(media_ids)
+        fields[:media] = merged(params, :media, media_ids: ids) unless ids.empty?
         fields[:community_id] = Utils.id_of(community) unless community.nil?
         fields
       end

@@ -52,6 +52,17 @@ module X
       assert_empty @client.requests
     end
 
+    def test_create_with_no_media_ids_attaches_nothing
+      Post.create("Hello", client: @client, media_ids: [])
+
+      assert_equal({text: "Hello"}.to_json, @client.requests.first[:body])
+    end
+
+    def test_create_with_no_media_ids_and_no_text_is_refused
+      assert_raises(ArgumentError) { Post.create(client: @client, media_ids: []) }
+      assert_empty @client.requests
+    end
+
     def test_create_with_upload_responses_as_media_ids
       Post.create("Hello", client: @client, media_ids: [{"id" => "3", "media_key" => "3_3"}, 4])
 

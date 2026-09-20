@@ -93,7 +93,7 @@ module X
       # @param text [String, nil] the text of the message
       # @param params [Hash] additional fields of the message, such as attachments
       # @param media_ids [Array, #fetch, String, Integer, nil] the identifiers of uploaded media to attach, or what
-      #   the uploads returned, one or many
+      #   the uploads returned, one or many; an empty list attaches nothing, as nil does
       # @return [Hash{Symbol => Object}] the fields, without the text when there is none
       # @raise [ArgumentError] if the message has neither text nor any other field, or has both media_ids and
       #   attachments
@@ -101,7 +101,8 @@ module X
         raise ArgumentError, "pass media_ids or attachments, not both" if !media_ids.nil? && params.key?(:attachments)
 
         fields = {text:, **params}.compact
-        fields[:attachments] = Utils.media_ids_of(media_ids).map { |media_id| {media_id:} } unless media_ids.nil?
+        attachments = Utils.media_ids_of(media_ids).map { |media_id| {media_id:} }
+        fields[:attachments] = attachments unless attachments.empty?
         raise ArgumentError, "a direct message needs text, or something else to show, such as media_ids" if fields.empty?
 
         fields
