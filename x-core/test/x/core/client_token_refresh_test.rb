@@ -2,7 +2,7 @@ require_relative "../../test_helper"
 
 module X
   class ClientTokenRefreshTest < Minitest::Test
-    cover Client
+    cover_client
 
     USERS_ME = "https://api.x.com/2/users/me".freeze
 
@@ -133,7 +133,7 @@ module X
   end
 
   class ClientTokenRefreshCredentialsTest < Minitest::Test
-    cover Client
+    cover_client
 
     def setup
       stub_request(:post, "https://api.x.com/2/oauth2/token")

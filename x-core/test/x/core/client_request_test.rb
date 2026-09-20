@@ -3,13 +3,13 @@ require_relative "../../test_helper"
 
 module X
   class ClientRequestTest < Minitest::Test
-    cover Client
+    cover_client
 
     def setup
       @client = Client.new
     end
 
-    X::RequestBuilder::HTTP_METHODS.each_key do |http_method|
+    X::Core::RequestBuilder::HTTP_METHODS.each_key do |http_method|
       define_method :"test_#{http_method}_request" do
         stub_request(http_method, "https://api.x.com/2/tweets")
         @client.public_send(http_method, "tweets")

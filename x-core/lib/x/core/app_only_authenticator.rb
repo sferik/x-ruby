@@ -84,7 +84,7 @@ module X
     # @return [String] the bearer token
     # @raise [AuthorizationError] if the token endpoint rejects the request
     def fetch_bearer_token
-      TokenEndpoint.fetch(token_request, connection:).access_token
+      Core::TokenEndpoint.fetch(token_request, connection:).access_token
     rescue SimpleOAuth::OAuth2::Error => e
       raise AuthorizationError.from(e, DEFAULT_ERROR_MESSAGE)
     end

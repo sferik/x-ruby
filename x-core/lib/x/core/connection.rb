@@ -15,7 +15,7 @@ module X
   #
   # @api public
   class Connection
-    include ConnectionProxy
+    include Core::ConnectionProxy
 
     # Default host for the X API
     DEFAULT_HOST = "api.x.com".freeze
@@ -109,7 +109,7 @@ module X
       @write_timeout = write_timeout
       @keep_alive_timeout = keep_alive_timeout
       @debug_output = debug_output
-      @pool = ConnectionPool.new
+      @pool = Core::ConnectionPool.new
       self.proxy_url = proxy_url
     end
 
@@ -170,7 +170,7 @@ module X
       http_client = build_http_client(hostname, port)
       http_client.use_ssl = request.uri.scheme.eql?("https")
       http_client.request(request, &)
-    rescue StreamCallbackError => e
+    rescue Core::StreamCallbackError => e
       raise e.error
     rescue *NETWORK_ERRORS => e
       raise NetworkError, "Network error: #{e}"

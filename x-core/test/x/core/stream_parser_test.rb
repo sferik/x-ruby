@@ -3,11 +3,11 @@ require_relative "../../test_helper"
 
 module X
   class StreamParserTest < Minitest::Test
-    cover StreamParser
+    cover Core::StreamParser
 
     def setup
-      @stream_parser = StreamParser.new
-      @response_parser = ResponseParser.new
+      @stream_parser = Core::StreamParser.new
+      @response_parser = Core::ResponseParser.new
     end
 
     def test_process_yields_json_objects

@@ -2,7 +2,7 @@ require_relative "../../test_helper"
 
 module X
   class ClientRateLimitRetriesTest < Minitest::Test
-    cover Client
+    cover_client
 
     URL = "https://api.x.com/2/users/me".freeze
     SUCCESS = {status: 200, body: '{"data":{"id":"1"}}', headers: {"Content-Type" => "application/json"}}.freeze

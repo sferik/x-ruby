@@ -3,12 +3,12 @@ require_relative "../../test_helper"
 
 module X
   class RequestBuilderTest < Minitest::Test
-    cover RequestBuilder
+    cover Core::RequestBuilder
 
     def setup
       @authenticator = OAuth1Authenticator.new(api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET,
         access_token: TEST_ACCESS_TOKEN, access_token_secret: TEST_ACCESS_TOKEN_SECRET)
-      @request_builder = RequestBuilder.new
+      @request_builder = Core::RequestBuilder.new
       @uri = URI("http://example.com")
     end
 

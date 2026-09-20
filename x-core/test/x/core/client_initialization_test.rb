@@ -3,7 +3,7 @@ require_relative "../../test_helper"
 
 module X
   class ClientOAuthInitializationTest < Minitest::Test
-    cover Client
+    cover_client
 
     def test_initialize_oauth_credentials
       client = Client.new(**test_oauth_credentials)
@@ -60,7 +60,7 @@ module X
   end
 
   class ClientOAuth2InitializationTest < Minitest::Test
-    cover Client
+    cover_client
 
     def test_initialize_oauth2_credentials
       client = Client.new(**test_oauth2_credentials)
@@ -113,7 +113,7 @@ module X
   end
 
   class ClientAuthenticatorPrecedenceTest < Minitest::Test
-    cover Client
+    cover_client
 
     def test_oauth1_takes_precedence_over_oauth2
       client = Client.new(**test_oauth_credentials, client_id: TEST_CLIENT_ID, client_secret: TEST_CLIENT_SECRET,
@@ -147,7 +147,7 @@ module X
   end
 
   class ClientConnectionOptionsTest < Minitest::Test
-    cover Client
+    cover_client
 
     def test_initialize_with_default_connection_options
       client = Client.new
@@ -174,7 +174,7 @@ module X
   end
 
   class ClientDefaultsTest < Minitest::Test
-    cover Client
+    cover_client
 
     def test_defaults
       client = Client.new
@@ -222,7 +222,7 @@ module X
   end
 
   class ClientAppOnlyInitializationTest < Minitest::Test
-    cover Client
+    cover_client
 
     def test_initialize_app_only_credentials
       client = Client.new(api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET)

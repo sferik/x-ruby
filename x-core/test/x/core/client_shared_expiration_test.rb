@@ -2,7 +2,7 @@ require_relative "../../test_helper"
 
 module X
   class ClientSharedExpirationTest < Minitest::Test
-    cover Client
+    cover_client
 
     def test_changing_the_expiration_time_sets_it_on_the_authenticator_the_copies_share
       client = Client.new(**test_oauth2_credentials)

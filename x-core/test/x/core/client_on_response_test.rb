@@ -2,7 +2,7 @@ require_relative "../../test_helper"
 
 module X
   class ClientOnResponseTest < Minitest::Test
-    cover Client
+    cover_client
     cover StreamingClient
 
     def setup

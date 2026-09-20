@@ -2,7 +2,7 @@ require_relative "../../test_helper"
 
 module X
   class ClientKeepAliveTest < Minitest::Test
-    cover Client
+    cover_client
 
     def test_a_client_keeps_connections_open_for_the_default_time
       assert_equal Connection::DEFAULT_KEEP_ALIVE_TIMEOUT, Client.new.keep_alive_timeout

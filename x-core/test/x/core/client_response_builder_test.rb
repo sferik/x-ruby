@@ -4,14 +4,14 @@ module X
   class ClientResponseBuilderTest < Minitest::Test
     include StreamHelpers
 
-    cover Client
+    cover_client
     cover StreamingClient
 
     def setup
       @client = Client.new(bearer_token: TEST_BEARER_TOKEN)
     end
 
-    X::RequestBuilder::HTTP_METHODS.each_key do |http_method|
+    X::Core::RequestBuilder::HTTP_METHODS.each_key do |http_method|
       define_method :"test_#{http_method}_request_passes_itself_to_a_response_builder" do
         stub_request(http_method, "https://api.x.com/2/tweets")
           .to_return(body: '{"data": {"id": "1"}}', headers: {"Content-Type" => "application/json"})

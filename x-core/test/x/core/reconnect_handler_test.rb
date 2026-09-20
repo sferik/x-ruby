@@ -2,7 +2,7 @@ require_relative "../../test_helper"
 
 module X
   class ReconnectHandlerTest < Minitest::Test
-    cover ReconnectHandler
+    cover Core::ReconnectHandler
 
     def setup
       @sleeps = []
@@ -11,16 +11,16 @@ module X
     end
 
     def test_reconnects_without_limit_by_default
-      assert_equal Float::INFINITY, ReconnectHandler.new.max_reconnects
+      assert_equal Float::INFINITY, Core::ReconnectHandler.new.max_reconnects
     end
 
     def test_a_stream_that_ends_reconnects_at_once_then_backs_off_linearly
-      assert_nil stream_with(ReconnectHandler.new(max_reconnects: 3)) { @runs += 1 }
+      assert_nil stream_with(Core::ReconnectHandler.new(max_reconnects: 3)) { @runs += 1 }
       assert_equal [4, [0.0, 0.25, 0.5]], [@runs, @sleeps]
     end
 
     def test_a_dropped_connection_backs_off_linearly_up_to_16_seconds_then_raises
-      handler = ReconnectHandler.new(max_reconnects: 1)
+      handler = Core::ReconnectHandler.new(max_reconnects: 1)
       handler.max_reconnects = 70
 
       assert_raises(NetworkError) { stream_with(handler) { fail_with(NetworkError) } }
@@ -29,27 +29,27 @@ module X
     end
 
     def test_a_server_error_or_a_refused_connection_backs_off_exponentially_up_to_320_seconds
-      assert_raises(ServiceUnavailable) { stream_with(ReconnectHandler.new(max_reconnects: 8)) { fail_with(@runs.even? ? ServiceUnavailable : Conflict) } }
+      assert_raises(ServiceUnavailable) { stream_with(Core::ReconnectHandler.new(max_reconnects: 8)) { fail_with(@runs.even? ? ServiceUnavailable : Conflict) } }
       assert_equal [5, 10, 20, 40, 80, 160, 320, 320], @sleeps
     end
 
     def test_a_line_that_is_not_json_backs_off_exponentially
-      assert_raises(InvalidResponse) { stream_with(ReconnectHandler.new(max_reconnects: 3)) { fail_with(InvalidResponse) } }
+      assert_raises(InvalidResponse) { stream_with(Core::ReconnectHandler.new(max_reconnects: 3)) { fail_with(InvalidResponse) } }
       assert_equal [4, [5, 10, 20]], [@runs, @sleeps]
     end
 
     def test_a_rate_limit_waits_until_it_resets_or_backs_off_from_a_minute
-      assert_raises(TooManyRequests) { stream_with(ReconnectHandler.new(max_reconnects: 8)) { refused((@runs > 2) ? 1000 : nil) } }
+      assert_raises(TooManyRequests) { stream_with(Core::ReconnectHandler.new(max_reconnects: 8)) { refused((@runs > 2) ? 1000 : nil) } }
       assert_equal [60, 120, 240, 1000, 1000, 1000, 1000, 1000], @sleeps
     end
 
     def test_a_rate_limit_that_resets_sooner_still_backs_off_from_a_minute
-      assert_raises(TooManyRequests) { stream_with(ReconnectHandler.new(max_reconnects: 2)) { refused(10) } }
+      assert_raises(TooManyRequests) { stream_with(Core::ReconnectHandler.new(max_reconnects: 2)) { refused(10) } }
       assert_equal [60, 120], @sleeps
     end
 
     def test_delivering_an_object_starts_the_count_over
-      handler = ReconnectHandler.new(max_reconnects: 1)
+      handler = Core::ReconnectHandler.new(max_reconnects: 1)
       stream_with(handler) do |deliver|
         @runs += 1
         deliver.call(@runs) if @runs <= 3
@@ -60,7 +60,7 @@ module X
 
     def test_an_error_from_the_consumer_stops_the_stream
       consumer = ->(_) { raise NetworkError, "the consumer's own request failed" }
-      handler = ReconnectHandler.new
+      handler = Core::ReconnectHandler.new
 
       error = assert_raises(NetworkError) { handler.stub(:sleep, ->(seconds) { @sleeps << seconds }) { handler.handle(consumer) { |deliver| deliver.call(1) } } }
       assert_equal ["the consumer's own request failed", []], [error.message, @sleeps]
@@ -68,7 +68,7 @@ module X
     end
 
     def test_other_errors_raise_at_once
-      assert_raises(Unauthorized) { stream_with(ReconnectHandler.new) { fail_with(Unauthorized) } }
+      assert_raises(Unauthorized) { stream_with(Core::ReconnectHandler.new) { fail_with(Unauthorized) } }
       assert_equal [1, []], [@runs, @sleeps]
     end
 

@@ -25,10 +25,12 @@ module X
   # @api public
   class StreamingClient
     extend Forwardable
-    include RequestEncoding
+    include Core::RequestEncoding
 
     # Default timeout for reading from a stream in seconds, half again the 20-second interval of the keep-alive X sends
     DEFAULT_READ_TIMEOUT = 30 # seconds
+    # Default maximum number of times in a row to reconnect a stream that drops without delivering an object
+    DEFAULT_MAX_RECONNECTS = Core::ReconnectHandler::DEFAULT_MAX_RECONNECTS
     # The message of the error raised for a stream without a block to deliver its objects to
     NO_BLOCK_MESSAGE = "stream takes a block, which receives each object the stream delivers".freeze
     private_constant :NO_BLOCK_MESSAGE
@@ -54,14 +56,14 @@ module X
     # @return [StreamingClient] a new instance
     # @example Create a streaming client
     #   streaming_client = X::StreamingClient.new(client, max_reconnects: 5)
-    def initialize(client, read_timeout: DEFAULT_READ_TIMEOUT, max_reconnects: ReconnectHandler::DEFAULT_MAX_RECONNECTS)
+    def initialize(client, read_timeout: DEFAULT_READ_TIMEOUT, max_reconnects: DEFAULT_MAX_RECONNECTS)
       @client = client
       @connection = Connection.new(open_timeout: client.open_timeout, read_timeout:, write_timeout: client.write_timeout,
         debug_output: client.debug_output, proxy_url: client.proxy_url)
-      @reconnect_handler = ReconnectHandler.new(max_reconnects:)
-      @request_builder = RequestBuilder.new
-      @response_parser = ResponseParser.new
-      @stream_parser = StreamParser.new
+      @reconnect_handler = Core::ReconnectHandler.new(max_reconnects:)
+      @request_builder = Core::RequestBuilder.new
+      @response_parser = Core::ResponseParser.new
+      @stream_parser = Core::StreamParser.new
     end
 
     # Summarize the streaming client for the console without revealing credentials

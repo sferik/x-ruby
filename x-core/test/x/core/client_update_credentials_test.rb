@@ -2,7 +2,7 @@ require_relative "../../test_helper"
 
 module X
   class ClientUpdateCredentialsTest < Minitest::Test
-    cover Client
+    cover_client
 
     def test_update_credentials_changes_several_credentials_at_once
       client = Client.new(**test_oauth_credentials)

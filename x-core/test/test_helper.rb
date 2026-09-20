@@ -14,6 +14,26 @@ require "mutant/minitest/coverage"
 require "webmock/minitest"
 require "x/core"
 
+module Minitest
+  class Test
+    # Cover X::Client and the modules of x-core that compose it
+    #
+    # Mutant matches a test to a subject by the expression the test covers, and a method a module mixes into the
+    # client is a subject of the module that defines it, so a test of the client names them here rather than one by
+    # one.
+    #
+    # @return [void]
+    def self.cover_client
+      cover X::Client
+      cover X::Core::ClientAppOnly
+      cover X::Core::ClientCredentials
+      cover X::Core::ClientSettings
+      cover X::Core::ClientTokenRefresh
+      cover X::Core::RequestEncoding
+    end
+  end
+end
+
 TEST_BEARER_TOKEN = "TEST_BEARER_TOKEN".freeze
 TEST_API_KEY = "TEST_API_KEY".freeze
 TEST_API_KEY_SECRET = "TEST_API_KEY_SECRET".freeze
@@ -24,7 +44,7 @@ TEST_OAUTH_TIMESTAMP = Time.utc(1983, 11, 24).to_i.to_s
 TEST_CLIENT_ID = "TEST_CLIENT_ID".freeze
 TEST_CLIENT_SECRET = "TEST_CLIENT_SECRET".freeze
 TEST_REFRESH_TOKEN = "TEST_REFRESH_TOKEN".freeze
-# The messages of X::CredentialValidator, which is private about the constants that hold them
+# The messages of X::Core::CredentialValidator, which is private about the constants that hold them
 TEST_INCOMPLETE_CREDENTIALS = "The credentials given do not form a complete set. Pass api_key, api_key_secret, " \
   "access_token, and access_token_secret for OAuth 1.0a; client_id, access_token, and refresh_token, with the " \
   "client_secret of a confidential client, for OAuth 2.0; bearer_token for a bearer token, such as an OAuth 2.0 " \

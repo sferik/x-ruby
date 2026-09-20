@@ -5,6 +5,7 @@ require_relative "../../test_helper"
 module X
   class OAuth2AuthorizationURLTest < Minitest::Test
     cover OAuth2Authorization
+    cover Core::TokenEndpoint
 
     REDIRECT_URI = "https://example.com/callback".freeze
     CODE_VERIFIER = ("a" * 43).freeze
@@ -87,6 +88,7 @@ module X
 
   class OAuth2AuthorizationCodeTest < Minitest::Test
     cover OAuth2Authorization
+    cover Core::TokenEndpoint
 
     REDIRECT_URI = "https://example.com/callback".freeze
     CODE_VERIFIER = ("a" * 43).freeze

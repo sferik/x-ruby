@@ -2,8 +2,8 @@ require_relative "../../test_helper"
 
 module X
   class ClientCredentialsValidationTest < Minitest::Test
-    cover Client
-    cover CredentialValidator
+    cover_client
+    cover Core::CredentialValidator
 
     def assert_incomplete(**credentials)
       error = assert_raises(ArgumentError) { Client.new(**credentials) }

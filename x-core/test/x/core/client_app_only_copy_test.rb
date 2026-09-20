@@ -2,7 +2,7 @@ require_relative "../../test_helper"
 
 module X
   class ClientAppOnlyCopyTest < Minitest::Test
-    cover Client
+    cover_client
 
     def setup
       @token_request = stub_request(:post, AppOnlyAuthenticator::TOKEN_URL)

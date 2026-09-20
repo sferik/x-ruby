@@ -2,12 +2,12 @@ require_relative "../../test_helper"
 
 module X
   class RedirectHandlerTest < Minitest::Test
-    cover RedirectHandler
+    cover Core::RedirectHandler
 
     def setup
       @connection = Connection.new
-      @request_builder = RequestBuilder.new
-      @redirect_handler = RedirectHandler.new(connection: @connection, request_builder: @request_builder)
+      @request_builder = Core::RequestBuilder.new
+      @redirect_handler = Core::RedirectHandler.new(connection: @connection, request_builder: @request_builder)
     end
 
     def redirect_to(location)
@@ -17,10 +17,10 @@ module X
     end
 
     def test_initialize_with_defaults
-      redirect_handler = RedirectHandler.new
+      redirect_handler = Core::RedirectHandler.new
 
       assert_instance_of Connection, redirect_handler.connection
-      assert_instance_of RequestBuilder, redirect_handler.request_builder
+      assert_instance_of Core::RequestBuilder, redirect_handler.request_builder
     end
 
     def test_handle_with_no_redirects
@@ -107,14 +107,14 @@ module X
       end
 
       assert_equal "Too many redirects", e.message
-      assert_requested :get, "http://example.com/some_path", times: RedirectHandler::DEFAULT_MAX_REDIRECTS
+      assert_requested :get, "http://example.com/some_path", times: Core::RedirectHandler::DEFAULT_MAX_REDIRECTS
     end
 
     def test_handle_beyond_max_redirects
       request = Net::HTTP::Get.new(URI("http://example.com/some_path"))
       response = Net::HTTPFound.new("1.1", "302", "Found")
       response["Location"] = "http://example.com/some_path"
-      redirect_count = RedirectHandler::DEFAULT_MAX_REDIRECTS + 1
+      redirect_count = Core::RedirectHandler::DEFAULT_MAX_REDIRECTS + 1
 
       assert_raises(TooManyRedirects) do
         @redirect_handler.handle(response:, request:, redirect_count:)
@@ -124,12 +124,12 @@ module X
   end
 
   class RedirectHandlerCredentialsTest < Minitest::Test
-    cover RedirectHandler
+    cover Core::RedirectHandler
 
     AUTHORIZATION = "Bearer #{TEST_BEARER_TOKEN}".freeze
 
     def setup
-      @redirect_handler = RedirectHandler.new
+      @redirect_handler = Core::RedirectHandler.new
       @authenticator = BearerTokenAuthenticator.new(bearer_token: TEST_BEARER_TOKEN)
     end
 
@@ -248,12 +248,12 @@ module X
   end
 
   class RedirectHandlerStatusTest < Minitest::Test
-    cover RedirectHandler
+    cover Core::RedirectHandler
 
     def setup
       @connection = Connection.new
-      @request_builder = RequestBuilder.new
-      @redirect_handler = RedirectHandler.new(connection: @connection, request_builder: @request_builder)
+      @request_builder = Core::RequestBuilder.new
+      @redirect_handler = Core::RedirectHandler.new(connection: @connection, request_builder: @request_builder)
     end
 
     def test_handle_with_301_moved_permanently

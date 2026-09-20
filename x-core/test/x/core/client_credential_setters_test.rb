@@ -2,7 +2,7 @@ require_relative "../../test_helper"
 
 module X
   class ClientCredentialSettersTest < Minitest::Test
-    cover Client
+    cover_client
 
     def test_setting_part_of_a_set_sends_requests_without_credentials
       {api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET}.each do |name, value|

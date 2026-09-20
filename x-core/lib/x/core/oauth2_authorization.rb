@@ -147,7 +147,7 @@ module X
     #   store.save(authorization.credentials(request.url))
     def credentials(callback)
       code = SimpleOAuth::OAuth2::AuthorizationResponse.parse(query_of(callback), state:).code
-      token = TokenEndpoint.fetch(oauth2_client.authorization_code_request(code:, redirect_uri:, code_verifier:), connection:)
+      token = Core::TokenEndpoint.fetch(oauth2_client.authorization_code_request(code:, redirect_uri:, code_verifier:), connection:)
       credentials_from(token)
     rescue SimpleOAuth::OAuth2::Error => e
       raise AuthorizationError.from(e, DEFAULT_ERROR_MESSAGE)

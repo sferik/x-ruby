@@ -6,165 +6,167 @@ require_relative "errors/too_many_redirects"
 require_relative "request_builder"
 
 module X
-  # Handles HTTP redirects for API requests
-  #
-  # Internal to x-core: Client follows redirects with it, and max_redirects is set on the client.
-  #
-  # @api private
-  class RedirectHandler
-    # Default maximum number of redirects to follow
-    DEFAULT_MAX_REDIRECTS = 10
-    # The headers that carry credentials, which a redirect to another origin drops
-    CREDENTIAL_HEADERS = [Authenticator::AUTHENTICATION_HEADER, "Cookie", "Proxy-Authorization"].freeze
-    private_constant :CREDENTIAL_HEADERS
-
-    # The maximum number of redirects to follow
-    # @api private
-    # @return [Integer] the maximum number of redirects to follow
-    # @example Get or set the maximum redirects
-    #   handler.max_redirects = 5
-    attr_accessor :max_redirects
-
-    # The connection for making requests
-    # @api private
-    # @return [Connection] the connection for making requests
-    # @example Get the connection
-    #   handler.connection
-    attr_reader :connection
-
-    # The request builder for creating requests
-    # @api private
-    # @return [RequestBuilder] the request builder for creating requests
-    # @example Get the request builder
-    #   handler.request_builder
-    attr_reader :request_builder
-
-    # Initialize a new RedirectHandler
+  module Core
+    # Handles HTTP redirects for API requests
+    #
+    # Internal to x-core: Client follows redirects with it, and max_redirects is set on the client.
     #
     # @api private
-    # @param connection [Connection] the connection for making requests
-    # @param request_builder [RequestBuilder] the request builder for creating requests
-    # @param max_redirects [Integer] the maximum number of redirects to follow
-    # @return [RedirectHandler] a new instance
-    # @example Create a redirect handler
-    #   handler = X::RedirectHandler.new(connection: conn, request_builder: builder)
-    def initialize(connection: Connection.new, request_builder: RequestBuilder.new,
-      max_redirects: DEFAULT_MAX_REDIRECTS)
-      @connection = connection
-      @request_builder = request_builder
-      @max_redirects = max_redirects
-    end
+    class RedirectHandler
+      # Default maximum number of redirects to follow
+      DEFAULT_MAX_REDIRECTS = 10
+      # The headers that carry credentials, which a redirect to another origin drops
+      CREDENTIAL_HEADERS = [Authenticator::AUTHENTICATION_HEADER, "Cookie", "Proxy-Authorization"].freeze
+      private_constant :CREDENTIAL_HEADERS
 
-    # Handle redirects for an HTTP response
-    #
-    # A redirect to another scheme, host, or port drops the credentials, the authenticator's and any Authorization,
-    # Cookie, or Proxy-Authorization header among the headers, so that they never reach a host they were not meant
-    # for. A 307 or 308 keeps the method and the body of the request, so a request whose body holds something
-    # private replays it to the host it is redirected to, whatever its origin.
-    #
-    # A redirect that cannot be followed, such as 304 Not Modified or one whose location is missing, is not a
-    # valid URL, or is not an HTTP or HTTPS URL, is returned as it is, so that the client raises an HTTPError for it.
-    #
-    # @api private
-    # @param response [Net::HTTPResponse] the HTTP response to handle
-    # @param request [Net::HTTPRequest] the request the response answers, built from a URI
-    # @param headers [Hash] additional headers to send with redirected requests
-    # @param authenticator [Authenticator] the authenticator for requests
-    # @param redirect_count [Integer] the current redirect count
-    # @return [Net::HTTPResponse] the final HTTP response after following redirects
-    # @raise [TooManyRedirects] if the maximum number of redirects is exceeded
-    # @example Handle a response
-    #   response = handler.handle(response: resp, request: req)
-    def handle(response:, request:, headers: {}, authenticator: Authenticator.new, redirect_count: 0)
-      return response unless response.is_a?(Net::HTTPRedirection)
-      raise TooManyRedirects, "Too many redirects" if redirect_count >= max_redirects
+      # The maximum number of redirects to follow
+      # @api private
+      # @return [Integer] the maximum number of redirects to follow
+      # @example Get or set the maximum redirects
+      #   handler.max_redirects = 5
+      attr_accessor :max_redirects
 
-      uri = request.uri #: URI::Generic
-      new_uri = build_new_uri(response, uri)
-      return response if new_uri.nil?
+      # The connection for making requests
+      # @api private
+      # @return [Connection] the connection for making requests
+      # @example Get the connection
+      #   handler.connection
+      attr_reader :connection
 
-      authenticator, headers = credentials_for(uri, new_uri, authenticator, headers)
-      new_request = build_request(request, new_uri, Integer(response.code), headers, authenticator)
-      handle(response: connection.perform(request: new_request), request: new_request, headers:, authenticator:,
-        redirect_count: redirect_count + 1)
-    end
+      # The request builder for creating requests
+      # @api private
+      # @return [RequestBuilder] the request builder for creating requests
+      # @example Get the request builder
+      #   handler.request_builder
+      attr_reader :request_builder
 
-    private
-
-    # Build a new URI from the redirect response
-    #
-    # A relative location is relative to the request that was redirected, as RFC 9110 Section 10.2.2 requires,
-    # which need not share the base URL: a request can name a URL of its own.
-    #
-    # @api private
-    # @param response [Net::HTTPResponse] the redirect response
-    # @param uri [URI::Generic] the URI of the request that was redirected
-    # @return [URI::HTTP, nil] the new URI, or nil if the location is missing, invalid, or not an HTTP or HTTPS URL
-    def build_new_uri(response, uri)
-      location = response["location"] or return
-      new_uri = URI.join(uri, location)
-      new_uri if new_uri.is_a?(URI::HTTP)
-    rescue URI::InvalidURIError
-      nil
-    end
-
-    # The authenticator and headers of a redirect, dropping credentials off origin
-    # @api private
-    # @param from [URI::Generic] the URI of the request that was redirected
-    # @param to [URI::Generic] the URI it was redirected to
-    # @param authenticator [Authenticator] the authenticator of the request
-    # @param headers [Hash{String => String}] the headers of the request
-    # @return [Array(Authenticator, Hash{String => String})] the authenticator and headers
-    def credentials_for(from, to, authenticator, headers)
-      return [authenticator, headers] if same_origin?(from, to)
-
-      [Authenticator.new, without_credentials(headers)]
-    end
-
-    # Check whether two URIs share a scheme, host, and port
-    # @api private
-    # @param uri [URI::Generic] the URI of the request that was redirected
-    # @param other [URI::Generic] the URI it was redirected to
-    # @return [Boolean] true if both have the same origin
-    def same_origin?(uri, other) = origin(uri).eql?(origin(other))
-
-    # The scheme, host, and port of a URI, in lowercase
-    # @api private
-    # @param uri [URI::Generic] the URI
-    # @return [Array(String, String, Integer)] the origin
-    def origin(uri)
-      normalized = uri.normalize
-      [normalized.scheme, normalized.host, normalized.port]
-    end
-
-    # Headers without the ones that carry credentials
-    #
-    # Authorization, Cookie, and Proxy-Authorization are dropped, whatever their case, whether a String or a Symbol
-    # names them.
-    #
-    # @api private
-    # @param headers [Hash{String, Symbol => String}] the headers
-    # @return [Hash{String, Symbol => String}] the headers that carry no credentials
-    def without_credentials(headers)
-      headers.reject { |name, _| CREDENTIAL_HEADERS.any? { |header| name.to_s.casecmp?(header) } }
-    end
-
-    # Build a new request for the redirect
-    # @api private
-    # @param request [Net::HTTPRequest] the original request
-    # @param uri [URI] the new URI
-    # @param response_code [Integer] the HTTP response code
-    # @param headers [Hash] additional headers for the request
-    # @param authenticator [Authenticator] the authenticator
-    # @return [Net::HTTPRequest] the new request
-    def build_request(request, uri, response_code, headers, authenticator)
-      http_method = :get
-      if [307, 308].include?(response_code)
-        http_method = request.method.downcase.to_sym
-        body = request.body
+      # Initialize a new RedirectHandler
+      #
+      # @api private
+      # @param connection [Connection] the connection for making requests
+      # @param request_builder [RequestBuilder] the request builder for creating requests
+      # @param max_redirects [Integer] the maximum number of redirects to follow
+      # @return [RedirectHandler] a new instance
+      # @example Create a redirect handler
+      #   handler = X::Core::RedirectHandler.new(connection: conn, request_builder: builder)
+      def initialize(connection: Connection.new, request_builder: RequestBuilder.new,
+        max_redirects: DEFAULT_MAX_REDIRECTS)
+        @connection = connection
+        @request_builder = request_builder
+        @max_redirects = max_redirects
       end
 
-      request_builder.build(http_method:, uri:, body:, headers:, authenticator:)
+      # Handle redirects for an HTTP response
+      #
+      # A redirect to another scheme, host, or port drops the credentials, the authenticator's and any Authorization,
+      # Cookie, or Proxy-Authorization header among the headers, so that they never reach a host they were not meant
+      # for. A 307 or 308 keeps the method and the body of the request, so a request whose body holds something
+      # private replays it to the host it is redirected to, whatever its origin.
+      #
+      # A redirect that cannot be followed, such as 304 Not Modified or one whose location is missing, is not a
+      # valid URL, or is not an HTTP or HTTPS URL, is returned as it is, so that the client raises an HTTPError for it.
+      #
+      # @api private
+      # @param response [Net::HTTPResponse] the HTTP response to handle
+      # @param request [Net::HTTPRequest] the request the response answers, built from a URI
+      # @param headers [Hash] additional headers to send with redirected requests
+      # @param authenticator [Authenticator] the authenticator for requests
+      # @param redirect_count [Integer] the current redirect count
+      # @return [Net::HTTPResponse] the final HTTP response after following redirects
+      # @raise [TooManyRedirects] if the maximum number of redirects is exceeded
+      # @example Handle a response
+      #   response = handler.handle(response: resp, request: req)
+      def handle(response:, request:, headers: {}, authenticator: Authenticator.new, redirect_count: 0)
+        return response unless response.is_a?(Net::HTTPRedirection)
+        raise TooManyRedirects, "Too many redirects" if redirect_count >= max_redirects
+
+        uri = request.uri #: URI::Generic
+        new_uri = build_new_uri(response, uri)
+        return response if new_uri.nil?
+
+        authenticator, headers = credentials_for(uri, new_uri, authenticator, headers)
+        new_request = build_request(request, new_uri, Integer(response.code), headers, authenticator)
+        handle(response: connection.perform(request: new_request), request: new_request, headers:, authenticator:,
+          redirect_count: redirect_count + 1)
+      end
+
+      private
+
+      # Build a new URI from the redirect response
+      #
+      # A relative location is relative to the request that was redirected, as RFC 9110 Section 10.2.2 requires,
+      # which need not share the base URL: a request can name a URL of its own.
+      #
+      # @api private
+      # @param response [Net::HTTPResponse] the redirect response
+      # @param uri [URI::Generic] the URI of the request that was redirected
+      # @return [URI::HTTP, nil] the new URI, or nil if the location is missing, invalid, or not an HTTP or HTTPS URL
+      def build_new_uri(response, uri)
+        location = response["location"] or return
+        new_uri = URI.join(uri, location)
+        new_uri if new_uri.is_a?(URI::HTTP)
+      rescue URI::InvalidURIError
+        nil
+      end
+
+      # The authenticator and headers of a redirect, dropping credentials off origin
+      # @api private
+      # @param from [URI::Generic] the URI of the request that was redirected
+      # @param to [URI::Generic] the URI it was redirected to
+      # @param authenticator [Authenticator] the authenticator of the request
+      # @param headers [Hash{String => String}] the headers of the request
+      # @return [Array(Authenticator, Hash{String => String})] the authenticator and headers
+      def credentials_for(from, to, authenticator, headers)
+        return [authenticator, headers] if same_origin?(from, to)
+
+        [Authenticator.new, without_credentials(headers)]
+      end
+
+      # Check whether two URIs share a scheme, host, and port
+      # @api private
+      # @param uri [URI::Generic] the URI of the request that was redirected
+      # @param other [URI::Generic] the URI it was redirected to
+      # @return [Boolean] true if both have the same origin
+      def same_origin?(uri, other) = origin(uri).eql?(origin(other))
+
+      # The scheme, host, and port of a URI, in lowercase
+      # @api private
+      # @param uri [URI::Generic] the URI
+      # @return [Array(String, String, Integer)] the origin
+      def origin(uri)
+        normalized = uri.normalize
+        [normalized.scheme, normalized.host, normalized.port]
+      end
+
+      # Headers without the ones that carry credentials
+      #
+      # Authorization, Cookie, and Proxy-Authorization are dropped, whatever their case, whether a String or a Symbol
+      # names them.
+      #
+      # @api private
+      # @param headers [Hash{String, Symbol => String}] the headers
+      # @return [Hash{String, Symbol => String}] the headers that carry no credentials
+      def without_credentials(headers)
+        headers.reject { |name, _| CREDENTIAL_HEADERS.any? { |header| name.to_s.casecmp?(header) } }
+      end
+
+      # Build a new request for the redirect
+      # @api private
+      # @param request [Net::HTTPRequest] the original request
+      # @param uri [URI] the new URI
+      # @param response_code [Integer] the HTTP response code
+      # @param headers [Hash] additional headers for the request
+      # @param authenticator [Authenticator] the authenticator
+      # @return [Net::HTTPRequest] the new request
+      def build_request(request, uri, response_code, headers, authenticator)
+        http_method = :get
+        if [307, 308].include?(response_code)
+          http_method = request.method.downcase.to_sym
+          body = request.body
+        end
+
+        request_builder.build(http_method:, uri:, body:, headers:, authenticator:)
+      end
     end
   end
 end

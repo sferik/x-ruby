@@ -209,7 +209,7 @@ module X
     # @return [Hash{String => Object}] the token response
     # @raise [AuthorizationError] if X refuses to refresh the token
     def refresh
-      token = TokenEndpoint.fetch(oauth2_client.refresh_token_request(refresh_token:), connection:)
+      token = Core::TokenEndpoint.fetch(oauth2_client.refresh_token_request(refresh_token:), connection:)
       update_tokens(token)
       token.params
     rescue SimpleOAuth::OAuth2::Error => e

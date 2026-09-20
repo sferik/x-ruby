@@ -5,7 +5,7 @@ require_relative "../../test_helper"
 module X
   class ConnectionProxyTest < Minitest::Test
     cover Connection
-    cover ConnectionProxy
+    cover Core::ConnectionProxy
 
     def setup
       @connection = Connection.new
@@ -140,7 +140,7 @@ module X
 
   class ConnectionProxyHTTPClientTest < Minitest::Test
     cover Connection
-    cover ConnectionProxy
+    cover Core::ConnectionProxy
 
     def test_host_port_with_proxy
       connection = Connection.new(proxy_url: "https://user:pass@example.com")

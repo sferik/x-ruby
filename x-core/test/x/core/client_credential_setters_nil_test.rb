@@ -2,7 +2,7 @@ require_relative "../../test_helper"
 
 module X
   class ClientCredentialSettersNilTest < Minitest::Test
-    cover Client
+    cover_client
 
     def test_each_setter_clears_its_credential_when_given_nil
       %i[api_key api_key_secret access_token access_token_secret bearer_token client_id client_secret refresh_token].each do |name|

@@ -7,7 +7,7 @@ module X
     include LocalServer
 
     cover Connection
-    cover StreamCallbackError
+    cover Core::StreamCallbackError
 
     def setup
       @connection = Connection.new
@@ -51,12 +51,12 @@ module X
       request = Net::HTTP::Get.new(URI("http://example.com:80"))
 
       assert_raises(Errno::ECONNREFUSED) do
-        @connection.perform_stream(request:) { |_response| raise StreamCallbackError, Errno::ECONNREFUSED.new }
+        @connection.perform_stream(request:) { |_response| raise Core::StreamCallbackError, Errno::ECONNREFUSED.new }
       end
     end
 
     def test_a_stream_callback_error_holds_the_error_a_callback_raised_and_its_message
-      error = StreamCallbackError.new(Errno::ECONNREFUSED.new("the hook failed"))
+      error = Core::StreamCallbackError.new(Errno::ECONNREFUSED.new("the hook failed"))
 
       assert_kind_of Errno::ECONNREFUSED, error.error
       assert_equal "Connection refused - the hook failed", error.message

@@ -2,7 +2,7 @@ require_relative "../../test_helper"
 
 module X
   class ClientAppOnlyTest < Minitest::Test
-    cover Client
+    cover_client
     cover StreamingClient
 
     STREAM_URL = "https://api.x.com/2/tweets/sample/stream".freeze

@@ -18,100 +18,102 @@ require_relative "errors/unauthorized"
 require_relative "errors/unprocessable_entity"
 
 module X
-  # Parses HTTP responses from the X API
-  #
-  # Internal to x-core: Client and StreamingClient parse responses with it.
-  #
-  # @api private
-  class ResponseParser
-    # Mapping of HTTP status codes to error classes
-    ERROR_MAP = {
-      400 => BadRequest,
-      401 => Unauthorized,
-      403 => Forbidden,
-      404 => NotFound,
-      406 => NotAcceptable,
-      409 => Conflict,
-      410 => Gone,
-      413 => PayloadTooLarge,
-      422 => UnprocessableEntity,
-      429 => TooManyRequests,
-      500 => InternalServerError,
-      502 => BadGateway,
-      503 => ServiceUnavailable,
-      504 => GatewayTimeout
-    }.freeze
-    # Error classes for the statuses ERROR_MAP does not name, keyed by the class of status: 4xx or 5xx
-    STATUS_CLASS_ERRORS = {4 => ClientError, 5 => ServerError}.freeze
-
-    # Parse an HTTP response
+  module Core
+    # Parses HTTP responses from the X API
     #
-    # A successful response without a body, such as 204 No Content, parses to nil. One whose body is not JSON
-    # raises, rather than parse to nil as though the response had no body.
+    # Internal to x-core: Client and StreamingClient parse responses with it.
     #
     # @api private
-    # @param response [Net::HTTPResponse] the HTTP response to parse
-    # @param array_class [Class, nil] the class for parsing JSON arrays
-    # @param object_class [Class, nil] the class for parsing JSON objects, or a class that builds objects from
-    #   the whole body (see {#decode})
-    # @param client [Client, nil] the client that made the request
-    # @return [Object, nil] the parsed response body
-    # @raise [HTTPError] if the response is not successful
-    # @raise [InvalidResponse] if the body of a successful response is not JSON
-    # @example Parse a response
-    #   parser.parse(response: response)
-    def parse(response:, array_class: nil, object_class: nil, client: nil)
-      raise error(response) unless response.is_a?(Net::HTTPSuccess)
+    class ResponseParser
+      # Mapping of HTTP status codes to error classes
+      ERROR_MAP = {
+        400 => BadRequest,
+        401 => Unauthorized,
+        403 => Forbidden,
+        404 => NotFound,
+        406 => NotAcceptable,
+        409 => Conflict,
+        410 => Gone,
+        413 => PayloadTooLarge,
+        422 => UnprocessableEntity,
+        429 => TooManyRequests,
+        500 => InternalServerError,
+        502 => BadGateway,
+        503 => ServiceUnavailable,
+        504 => GatewayTimeout
+      }.freeze
+      # Error classes for the statuses ERROR_MAP does not name, keyed by the class of status: 4xx or 5xx
+      STATUS_CLASS_ERRORS = {4 => ClientError, 5 => ServerError}.freeze
 
-      body = response.body.to_s
-      return unless body.match?(/\S/)
+      # Parse an HTTP response
+      #
+      # A successful response without a body, such as 204 No Content, parses to nil. One whose body is not JSON
+      # raises, rather than parse to nil as though the response had no body.
+      #
+      # @api private
+      # @param response [Net::HTTPResponse] the HTTP response to parse
+      # @param array_class [Class, nil] the class for parsing JSON arrays
+      # @param object_class [Class, nil] the class for parsing JSON objects, or a class that builds objects from
+      #   the whole body (see {#decode})
+      # @param client [Client, nil] the client that made the request
+      # @return [Object, nil] the parsed response body
+      # @raise [HTTPError] if the response is not successful
+      # @raise [InvalidResponse] if the body of a successful response is not JSON
+      # @example Parse a response
+      #   parser.parse(response: response)
+      def parse(response:, array_class: nil, object_class: nil, client: nil)
+        raise error(response) unless response.is_a?(Net::HTTPSuccess)
 
-      begin
-        decode(body, array_class:, object_class:, client:)
-      rescue JSON::ParserError
-        raise InvalidResponse.new(response:, body:)
+        body = response.body.to_s
+        return unless body.match?(/\S/)
+
+        begin
+          decode(body, array_class:, object_class:, client:)
+        rescue JSON::ParserError
+          raise InvalidResponse.new(response:, body:)
+        end
       end
-    end
 
-    # Decode a JSON document into the classes a request asked for
-    #
-    # JSON gives every object in a document the same object_class, at every depth. A class that
-    # models a whole response instead responds to from_response, which receives the document
-    # parsed into Hashes and Arrays along with the client, and whatever it returns is the result.
-    #
-    # @api private
-    # @param json [String] the JSON document
-    # @param array_class [Class, nil] the class for parsing JSON arrays
-    # @param object_class [Class, #from_response, nil] the class for parsing JSON objects, or one that
-    #   builds objects from the whole document
-    # @param client [Client, nil] the client that made the request, passed to from_response
-    # @return [Object] the decoded document
-    # @raise [JSON::ParserError] if the document is not valid JSON
-    # @example Decode a document into the default classes
-    #   parser.decode('{"data": {"id": "1"}}') # => {"data" => {"id" => "1"}}
-    def decode(json, array_class: nil, object_class: nil, client: nil)
-      return JSON.parse(json, array_class:, object_class:) unless object_class.respond_to?(:from_response)
+      # Decode a JSON document into the classes a request asked for
+      #
+      # JSON gives every object in a document the same object_class, at every depth. A class that
+      # models a whole response instead responds to from_response, which receives the document
+      # parsed into Hashes and Arrays along with the client, and whatever it returns is the result.
+      #
+      # @api private
+      # @param json [String] the JSON document
+      # @param array_class [Class, nil] the class for parsing JSON arrays
+      # @param object_class [Class, #from_response, nil] the class for parsing JSON objects, or one that
+      #   builds objects from the whole document
+      # @param client [Client, nil] the client that made the request, passed to from_response
+      # @return [Object] the decoded document
+      # @raise [JSON::ParserError] if the document is not valid JSON
+      # @example Decode a document into the default classes
+      #   parser.decode('{"data": {"id": "1"}}') # => {"data" => {"id" => "1"}}
+      def decode(json, array_class: nil, object_class: nil, client: nil)
+        return JSON.parse(json, array_class:, object_class:) unless object_class.respond_to?(:from_response)
 
-      object_class.from_response(JSON.parse(json), client:)
-    end
+        object_class.from_response(JSON.parse(json), client:)
+      end
 
-    private
+      private
 
-    # Create an error from a response
-    # @api private
-    # @param response [Net::HTTPResponse] the HTTP response
-    # @return [HTTPError] the error
-    def error(response)
-      error_class(response).new(response:)
-    end
+      # Create an error from a response
+      # @api private
+      # @param response [Net::HTTPResponse] the HTTP response
+      # @return [HTTPError] the error
+      def error(response)
+        error_class(response).new(response:)
+      end
 
-    # Get the error class for a response, falling back on its class of status
-    # @api private
-    # @param response [Net::HTTPResponse] the HTTP response
-    # @return [Class] the error class
-    def error_class(response)
-      status = Integer(response.code)
-      ERROR_MAP.fetch(status) { STATUS_CLASS_ERRORS.fetch(status / 100, HTTPError) }
+      # Get the error class for a response, falling back on its class of status
+      # @api private
+      # @param response [Net::HTTPResponse] the HTTP response
+      # @return [Class] the error class
+      def error_class(response)
+        status = Integer(response.code)
+        ERROR_MAP.fetch(status) { STATUS_CLASS_ERRORS.fetch(status / 100, HTTPError) }
+      end
     end
   end
 end

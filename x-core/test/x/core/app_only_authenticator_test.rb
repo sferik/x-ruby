@@ -4,6 +4,7 @@ require_relative "../../test_helper"
 module X
   class AppOnlyAuthenticatorTest < Minitest::Test
     cover AppOnlyAuthenticator
+    cover Core::TokenEndpoint
 
     def setup
       @authenticator = AppOnlyAuthenticator.new(api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET)

@@ -2,7 +2,7 @@ require_relative "../../test_helper"
 
 module X
   class ClientCopyTest < Minitest::Test
-    cover Client
+    cover_client
 
     def setup
       @client = Client.new(**test_oauth_credentials, base_url: "https://example.com/2/", open_timeout: 5, read_timeout: 6,

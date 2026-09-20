@@ -2,7 +2,7 @@ require_relative "../../test_helper"
 
 module X
   class ClientSharedAuthenticatorTest < Minitest::Test
-    cover Client
+    cover_client
 
     def setup
       stub_request(:post, "https://api.x.com/2/oauth2/token")

@@ -23,11 +23,11 @@ module X
   # A client for interacting with the X API
   # @api public
   class Client
-    include ClientAppOnly
-    include ClientCredentials
-    include ClientSettings
-    include ClientTokenRefresh
-    include RequestEncoding
+    include Core::ClientAppOnly
+    include Core::ClientCredentials
+    include Core::ClientSettings
+    include Core::ClientTokenRefresh
+    include Core::RequestEncoding
 
     # Default base URL for the X API
     DEFAULT_BASE_URL = "https://api.x.com/2/".freeze
@@ -35,6 +35,12 @@ module X
     DEFAULT_ARRAY_CLASS = Array
     # Default class for parsing JSON objects
     DEFAULT_OBJECT_CLASS = Hash
+    # Default maximum number of redirects to follow
+    DEFAULT_MAX_REDIRECTS = Core::RedirectHandler::DEFAULT_MAX_REDIRECTS
+    # Default maximum number of times to retry a request refused for a rate limit
+    DEFAULT_MAX_RATE_LIMIT_RETRIES = Core::RateLimitHandler::DEFAULT_MAX_RETRIES
+    # Default maximum number of seconds to wait for a rate limit to reset
+    DEFAULT_MAX_RATE_LIMIT_WAIT = Core::RateLimitHandler::DEFAULT_MAX_WAIT
     # Content type of a form-encoded request body
     FORM_CONTENT_TYPE = "application/x-www-form-urlencoded; charset=utf-8".freeze
     private_constant :FORM_CONTENT_TYPE
@@ -112,20 +118,20 @@ module X
       proxy_url: nil,
       default_array_class: DEFAULT_ARRAY_CLASS,
       default_object_class: DEFAULT_OBJECT_CLASS,
-      max_redirects: RedirectHandler::DEFAULT_MAX_REDIRECTS,
-      max_rate_limit_retries: RateLimitHandler::DEFAULT_MAX_RETRIES,
-      max_rate_limit_wait: RateLimitHandler::DEFAULT_MAX_WAIT,
+      max_redirects: DEFAULT_MAX_REDIRECTS,
+      max_rate_limit_retries: DEFAULT_MAX_RATE_LIMIT_RETRIES,
+      max_rate_limit_wait: DEFAULT_MAX_RATE_LIMIT_WAIT,
       on_response: nil,
       on_token_refresh: nil)
       @connection = Connection.new(open_timeout:, read_timeout:, write_timeout:, keep_alive_timeout:, debug_output:, proxy_url:)
       @app_only = {}
       @app_only_monitor = Monitor.new
-      @request_builder = RequestBuilder.new
-      @response_parser = ResponseParser.new
+      @request_builder = Core::RequestBuilder.new
+      @response_parser = Core::ResponseParser.new
       initialize_credentials(api_key:, api_key_secret:, access_token:, access_token_secret:, bearer_token:, client_id:, client_secret:, refresh_token:, expires_at:)
       @on_token_refresh = on_token_refresh
       initialize_authenticator
-      CredentialValidator.validate!(credentials)
+      Core::CredentialValidator.validate!(credentials)
       initialize_settings(base_url:, default_array_class:, default_object_class:, on_response:, max_redirects:, max_rate_limit_retries:, max_rate_limit_wait:)
     end
 

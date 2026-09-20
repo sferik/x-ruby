@@ -9,7 +9,7 @@ end
 module X
   class StreamingClientCallbackTest < Minitest::Test
     cover Connection
-    cover StreamParser
+    cover Core::StreamParser
     cover StreamingClient
 
     STREAM_URL = "https://api.x.com/2/tweets/sample/stream".freeze

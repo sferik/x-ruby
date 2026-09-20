@@ -3,13 +3,13 @@ require_relative "../../test_helper"
 
 module X
   class ConnectionPoolTest < Minitest::Test
-    cover ConnectionPool
+    cover Core::ConnectionPool
 
     KEY = [true, "example.com", 443].freeze
 
     def setup
       stub_request(:get, "https://example.com/")
-      @pool = ConnectionPool.new
+      @pool = Core::ConnectionPool.new
       @opened = []
     end
 
@@ -49,12 +49,12 @@ module X
     end
 
     def test_keeps_no_more_than_the_maximum_idle
-      nest(ConnectionPool::MAX_IDLE + 1)
+      nest(Core::ConnectionPool::MAX_IDLE + 1)
 
-      assert_equal ConnectionPool::MAX_IDLE, @opened.count(&:started?)
-      nest(ConnectionPool::MAX_IDLE)
+      assert_equal Core::ConnectionPool::MAX_IDLE, @opened.count(&:started?)
+      nest(Core::ConnectionPool::MAX_IDLE)
 
-      assert_equal ConnectionPool::MAX_IDLE + 1, @opened.size
+      assert_equal Core::ConnectionPool::MAX_IDLE + 1, @opened.size
     end
 
     def test_closes_a_connection_whose_block_raises
@@ -120,13 +120,13 @@ module X
   end
 
   class ConnectionPoolLockTest < Minitest::Test
-    cover ConnectionPool
+    cover Core::ConnectionPool
 
     KEY = ConnectionPoolTest::KEY
 
     def setup
       stub_request(:get, "https://example.com/")
-      @pool = ConnectionPool.new
+      @pool = Core::ConnectionPool.new
       @opened = []
     end
 

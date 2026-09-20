@@ -6,6 +6,7 @@ module X
 
   class OAuth2AuthenticatorInitializationTest < Minitest::Test
     cover OAuth2Authenticator
+    cover Core::TokenEndpoint
 
     def test_initialize_with_required_credentials
       authenticator = OAuth2Authenticator.new(**test_oauth2_credentials)
@@ -38,6 +39,7 @@ module X
 
   class OAuth2AuthenticatorHeaderTest < Minitest::Test
     cover OAuth2Authenticator
+    cover Core::TokenEndpoint
 
     def test_header_returns_bearer_token
       authenticator = OAuth2Authenticator.new(**test_oauth2_credentials)
@@ -50,6 +52,7 @@ module X
 
   class OAuth2AuthenticatorTokenExpirationTest < Minitest::Test
     cover OAuth2Authenticator
+    cover Core::TokenEndpoint
 
     def test_token_expired_returns_false_when_no_expires_at
       authenticator = OAuth2Authenticator.new(**test_oauth2_credentials)
@@ -111,6 +114,7 @@ module X
 
   class OAuth2AuthenticatorRefreshTokenTest < Minitest::Test
     cover OAuth2Authenticator
+    cover Core::TokenEndpoint
 
     def test_refresh_token_sends_correct_content_type
       authenticator = OAuth2Authenticator.new(**test_oauth2_credentials)
@@ -215,6 +219,7 @@ module X
 
   class OAuth2AuthenticatorAutomaticRefreshTest < Minitest::Test
     cover OAuth2Authenticator
+    cover Core::TokenEndpoint
 
     def setup
       @refresh = stub_request(:post, TOKEN_URL)
@@ -345,6 +350,7 @@ module X
 
   class OAuth2AuthenticatorConcurrentRefreshTest < Minitest::Test
     cover OAuth2Authenticator
+    cover Core::TokenEndpoint
 
     # Answer the token endpoint slowly, so that concurrent callers overlap the refresh
     def stub_slow_refresh
@@ -392,6 +398,7 @@ module X
 
   class OAuth2AuthenticatorRefreshTokenErrorTest < Minitest::Test
     cover OAuth2Authenticator
+    cover Core::TokenEndpoint
 
     def test_refresh_token_raises_on_error_with_description
       authenticator = OAuth2Authenticator.new(**test_oauth2_credentials)
