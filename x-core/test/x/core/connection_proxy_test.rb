@@ -92,13 +92,13 @@ module X
     end
 
     def test_inspect_without_a_proxy
-      assert_equal "#<X::Connection proxy_url=nil open_timeout=60 read_timeout=60 write_timeout=60>", @connection.inspect
+      assert_equal "#<X::Connection proxy_url=nil open_timeout=10 read_timeout=60 write_timeout=60>", @connection.inspect
     end
 
     def test_inspect_hides_the_proxy_user_and_password_of_a_uri
       connection = Connection.new(proxy_url: URI("http://user:secret@example.com:8080"))
 
-      assert_equal "#<X::Connection proxy_url=\"http://example.com:8080\" open_timeout=60 read_timeout=60 write_timeout=60>", connection.inspect
+      assert_equal "#<X::Connection proxy_url=\"http://example.com:8080\" open_timeout=10 read_timeout=60 write_timeout=60>", connection.inspect
     end
 
     def test_invalid_proxy_url_message_leaves_out_an_empty_user

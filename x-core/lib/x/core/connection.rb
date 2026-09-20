@@ -23,8 +23,11 @@ module X
     # Default port for HTTPS connections
     DEFAULT_PORT = 443
     private_constant :DEFAULT_PORT
-    # Default timeout for opening connections in seconds
-    DEFAULT_OPEN_TIMEOUT = 60 # seconds
+    # Default timeout for opening connections in seconds; opening a connection is a TCP handshake and a TLS one,
+    # which a reachable host finishes in well under a second, so a host that takes longer is one a request waits
+    # on rather than reaches, and it is given less time than reading a response, which an endpoint may be slow to
+    # send
+    DEFAULT_OPEN_TIMEOUT = 10 # seconds
     # Default timeout for reading responses in seconds
     DEFAULT_READ_TIMEOUT = 60 # seconds
     # Default timeout for writing requests in seconds
@@ -118,7 +121,7 @@ module X
     # @api public
     # @return [String] the class name, proxy URL, and timeouts
     # @example Inspect a connection
-    #   connection.inspect # => #<X::Connection proxy_url="http://proxy.example.com:8080" open_timeout=60 ...>
+    #   connection.inspect # => #<X::Connection proxy_url="http://proxy.example.com:8080" open_timeout=10 ...>
     def inspect
       "#<#{self.class} proxy_url=#{redacted_proxy_url.inspect} open_timeout=#{open_timeout} " \
         "read_timeout=#{read_timeout} write_timeout=#{write_timeout}>"
