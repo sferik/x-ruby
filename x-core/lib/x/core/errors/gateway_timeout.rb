@@ -3,6 +3,7 @@
 require_relative "server_error"
 
 module X
-  # Error raised for HTTP 504 Gateway Timeout responses
+  # Raised for a 504 Gateway Timeout response, which the API sends when the service behind it took too long to answer
+  # @api public
   class GatewayTimeout < ServerError; end
 end

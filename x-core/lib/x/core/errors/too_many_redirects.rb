@@ -3,6 +3,7 @@
 require_relative "error"
 
 module X
-  # Error raised when too many redirects are encountered
+  # Raised for a response that redirected more times than the client's max_redirects allows
+  # @api public
   class TooManyRedirects < Error; end
 end

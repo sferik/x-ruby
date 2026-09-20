@@ -3,6 +3,7 @@
 require_relative "server_error"
 
 module X
-  # Error raised for HTTP 502 Bad Gateway responses
+  # Raised for a 502 Bad Gateway response, which the API sends when it cannot reach the service behind it
+  # @api public
   class BadGateway < ServerError; end
 end

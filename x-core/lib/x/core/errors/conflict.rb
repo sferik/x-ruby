@@ -3,6 +3,8 @@
 require_relative "client_error"
 
 module X
-  # Error raised for HTTP 409 Conflict responses, which a stream gets when it has too many connections
+  # Raised for a 409 Conflict response, which a stream gets when the app already has as many connections open as its
+  # access level allows
+  # @api public
   class Conflict < ClientError; end
 end

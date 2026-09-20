@@ -3,6 +3,8 @@
 require_relative "client_error"
 
 module X
-  # Error raised for HTTP 413 Payload Too Large responses
+  # Raised for a 413 Payload Too Large response, which the API sends for a body larger than the endpoint takes, such
+  # as a media chunk above the size it accepts
+  # @api public
   class PayloadTooLarge < ClientError; end
 end

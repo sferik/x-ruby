@@ -3,6 +3,8 @@
 require_relative "client_error"
 
 module X
-  # Error raised for HTTP 406 Not Acceptable responses
+  # Raised for a 406 Not Acceptable response, which the API sends for a request that asks for a format the endpoint
+  # does not serve
+  # @api public
   class NotAcceptable < ClientError; end
 end

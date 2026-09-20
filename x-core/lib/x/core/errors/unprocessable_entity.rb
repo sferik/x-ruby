@@ -3,6 +3,8 @@
 require_relative "client_error"
 
 module X
-  # Error raised for HTTP 422 Unprocessable Entity responses
+  # Raised for a 422 Unprocessable Entity response, which the API sends for a request it can read but will not act
+  # on, such as a stream rule it rejects
+  # @api public
   class UnprocessableEntity < ClientError; end
 end

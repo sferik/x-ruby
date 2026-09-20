@@ -3,6 +3,7 @@
 require_relative "server_error"
 
 module X
-  # Error raised for HTTP 500 Internal Server Error responses
+  # Raised for a 500 Internal Server Error response, which the API sends when a request it accepted failed
+  # @api public
   class InternalServerError < ServerError; end
 end
