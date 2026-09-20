@@ -18,6 +18,10 @@ module X
       assert_equal [1_880_028_106_020_515_840, "3_1880028106020515840", 1024], [@media.id, @media.media_key, @media.bytesize]
     end
 
+    def test_reads_an_identifier_held_as_an_integer
+      assert_equal 1_880_028_106_020_515_840, Uploader::UploadedMedia.new({"id" => 1_880_028_106_020_515_840}).id
+    end
+
     def test_the_bytes_of_the_media_are_its_bytesize_and_its_size_is_the_hash_it_reads_as
       assert_equal 1024, @media["size"]
       refute_respond_to @media, :size

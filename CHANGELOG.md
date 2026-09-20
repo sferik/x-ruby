@@ -190,6 +190,7 @@ See [UPGRADING.md](https://github.com/sferik/x-ruby/blob/main/UPGRADING.md) for 
 * Keep the pages that `X::Cursor#first`, `take`, `any?`, `none?`, `one?`, and `empty?` read, and answer them from the pages a cursor already holds, so a `first` before an iteration, or another `first`, requests only what has not been read, where each of them built a cursor of its own and requested its pages again, which the API billed
 * Give the spaces of `X::Space.search` and the posts of `X::Space#posts` the client they were given, as `X::Space.find` does, so `space.creator.follow` and `post.like` act as the user, while the cursors still fetch their pages with the app-only client, which the space endpoints take; the resources held the app-only client, which every action they took was refused with
 * Attach nothing for an empty `media_ids:` in `create_post`, `create_direct_message`, and their `X::Post` and `X::DirectMessage` equivalents, as for nil, so a post or message of an empty list and text sends its text alone, and one of an empty list alone raises `ArgumentError`, where either sent an empty `media` or `attachments` field for the API to refuse
+* Read `X::Uploader::UploadedMedia#id` from an identifier held as an Integer, as a Hash built by hand to refer to media uploaded before may hold it, rather than raise `ArgumentError`
 
 ## [0.19.0] - 2026-03-01
 * Add streaming support for filtered stream and volume stream endpoints

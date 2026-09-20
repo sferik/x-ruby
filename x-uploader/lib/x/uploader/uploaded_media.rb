@@ -49,11 +49,11 @@ module X
       # The media identifier, which a post attaches the media by
       #
       # @api public
-      # @return [Integer] the identifier
+      # @return [Integer] the identifier, whether the response held it as a String or an Integer
       # @raise [KeyError] if the response held no id
       # @example Get the identifier
       #   media.id # => 1880028106020515840
-      def id = Integer(fetch("id"), 10)
+      def id = Integer(fetch("id").to_s, 10)
 
       # The media key
       #
