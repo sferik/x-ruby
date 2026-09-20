@@ -27,7 +27,10 @@ module X
       extend self
 
       # Number of bytes per megabyte
-      BYTES_PER_MB = 1_048_576
+      BYTES_PER_MB = Uploader::Validator::BYTES_PER_MB
+      # Greatest number of bytes the API takes in a single upload request, above which an animated GIF, which it
+      # takes in chunks of up to 15 MB, uploads in chunks
+      MAX_SIMPLE_UPLOAD_BYTES = 5 * BYTES_PER_MB
       # Media category constants
       AMPLIFY_VIDEO, DM_GIF, DM_IMAGE, DM_VIDEO, SUBTITLES, TWEET_GIF, TWEET_IMAGE, TWEET_VIDEO = Uploader::Validator::MEDIA_CATEGORIES
       # Supported MIME types: every media type the API documents for an upload
@@ -59,6 +62,8 @@ module X
       VIDEO_CATEGORIES = [AMPLIFY_VIDEO, DM_VIDEO, TWEET_VIDEO].freeze
       # Media categories uploaded in chunks: videos, and subtitles, which the API takes no other way
       CHUNKED_CATEGORIES = [*VIDEO_CATEGORIES, SUBTITLES].freeze
+      # Media categories of animated GIFs, which upload in chunks only when a single request cannot take them
+      GIF_CATEGORIES = [DM_GIF, TWEET_GIF].freeze
       # Mapping of file extensions to the media categories of posts; any other extension is an image. An AVI or
       # Matroska file is a video, though the API documents no type for one, so that it uploads in chunks, as MP4,
       # rather than whole as an image, and X decides whether to process it.
@@ -75,24 +80,30 @@ module X
       private_constant :MIME_TYPES, :BMP_MIME_TYPE, :GIF_MIME_TYPE, :JPEG_MIME_TYPE, :PJPEG_MIME_TYPE, :PNG_MIME_TYPE,
         :TIFF_MIME_TYPE, :WEBP_MIME_TYPE, :GLTF_BINARY_MIME_TYPE, :USDZ_MIME_TYPE, :SUBRIP_MIME_TYPE, :WEBVTT_MIME_TYPE,
         :MPEG_TS_MIME_TYPE, :MP4_MIME_TYPE, :QUICKTIME_MIME_TYPE, :WEBM_MIME_TYPE, :MIME_TYPE_MAP, :VIDEO_MIME_TYPES,
-        :SUBTITLES_MIME_TYPES, :MIN_CHECK_AFTER_SECS, :VIDEO_CATEGORIES, :CHUNKED_CATEGORIES,
+        :SUBTITLES_MIME_TYPES, :MIN_CHECK_AFTER_SECS, :VIDEO_CATEGORIES, :CHUNKED_CATEGORIES, :GIF_CATEGORIES,
         :CATEGORY_MAP, :CATEGORY_MIME_TYPES
 
-      # Upload a file, in chunks for video and subtitles, awaiting any processing
+      # Upload a file, in chunks when the API needs them, awaiting any processing
+      #
+      # A video and subtitles upload in chunks, as does an animated GIF that a single request cannot take. Every
+      # argument is validated before the first request, so that no media is uploaded, and billed, for an upload
+      # that cannot finish.
       #
       # @api public
       # @param file_path [String, Pathname] the path to the file to upload
       # @param client [Client] the X API client
-      # @param media_category [String] the media category, inferred from the file by default
-      # @param alt_text [String, nil] alt text describing the media, for people who cannot see it
+      # @param media_category [String, Symbol] the media category, in any case, inferred from the file by default
+      # @param alt_text [String, nil] alt text describing the media, for people who cannot see it, of 1 to 1,000 characters
       # @param processing_timeout [Integer] the seconds to wait for media, such as a video or an animated GIF, to process
       # @param media_type [String, nil] the MIME type of media uploaded in chunks, inferred from the file and category when nil
-      # @param chunk_size_mb [Float, Integer] the size of each chunk of media uploaded in chunks, in megabytes
+      # @param chunk_size_mb [Float, Integer, nil] the size of each chunk of media uploaded in chunks, in megabytes,
+      #   derived from the size of the file when nil, so that an upload of any size fits the segments the API numbers
       # @param concurrency [Integer] the number of chunks uploaded at once
       # @return [UploadedMedia, nil] the uploaded media, which holds the upload response, or the processing status of
       #   media that X processes
       # @raise [Errno::ENOENT] if the file does not exist
-      # @raise [ArgumentError] if the media category is invalid, the chunk size is not positive, or the concurrency is
+      # @raise [ArgumentError] if the media category is invalid, the alt text is empty or longer than the API takes,
+      #   the chunk size is not positive or would need more segments than the API numbers, or the concurrency is
       #   less than one
       # @raise [InvalidMediaType] if media uploaded in chunks is given no media type and none can be inferred
       # @raise [MediaProcessingFailed] if the media fails to process
@@ -104,10 +115,9 @@ module X
       # @example Upload a video and wait until it can be attached to a post
       #   Uploader::Media.upload("video.mp4", client: client)
       def upload(file_path, client:, media_category: infer_media_category(file_path), alt_text: nil,
-        processing_timeout: DEFAULT_PROCESSING_TIMEOUT, media_type: nil, chunk_size_mb: 1, concurrency: DEFAULT_CONCURRENCY)
-        Validator.validate_file_path!(file_path)
-        Validator.validate_chunks!(chunk_size_mb:, concurrency:)
-        media = if CHUNKED_CATEGORIES.include?(media_category.downcase)
+        processing_timeout: DEFAULT_PROCESSING_TIMEOUT, media_type: nil, chunk_size_mb: nil, concurrency: DEFAULT_CONCURRENCY)
+        media_category = Validator.validate_upload!(file_path, media_category, alt_text:, chunk_size_mb:, concurrency:)
+        media = if chunked_upload?(file_path, media_category)
           chunked_upload(file_path, client:, media_category:, media_type:, chunk_size_mb:, concurrency:)
         else
           upload_binary(File.binread(file_path), client:, media_category:)
@@ -115,6 +125,24 @@ module X
         media = await_processing!(media, client:, processing_timeout:) if media&.key?("processing_info")
         Metadata.add_alt_text(media, alt_text, client:) unless media.nil? || alt_text.nil?
         media
+      end
+
+      # Check whether a file uploads in chunks rather than in a single request
+      #
+      # A video and subtitles upload in chunks whatever their size, since the API takes them no other way, and an
+      # animated GIF uploads in chunks once it is larger than MAX_SIMPLE_UPLOAD_BYTES, which a single request takes
+      # no more of; the API takes a GIF of up to 15 MB in chunks. An image uploads in a single request.
+      #
+      # @api public
+      # @param file_path [String, Pathname] the path to the file to upload
+      # @param media_category [String, Symbol] the media category, in any case
+      # @return [Boolean] true if the file uploads in chunks
+      # @raise [Errno::ENOENT] if a GIF file does not exist
+      # @example Check whether a large animated GIF uploads in chunks
+      #   Uploader::Media.chunked_upload?("cat.gif", "tweet_gif") # => true
+      def chunked_upload?(file_path, media_category)
+        category = media_category.to_s.downcase
+        CHUNKED_CATEGORIES.include?(category) || (GIF_CATEGORIES.include?(category) && File.size(file_path) > MAX_SIMPLE_UPLOAD_BYTES)
       end
 
       # Infer the media category of a post attachment from a file
@@ -137,15 +165,15 @@ module X
       # @api public
       # @param content [String] the binary content to upload
       # @param client [Client] the X API client
-      # @param media_category [String] the media category, which content cannot be inferred from, in any case
+      # @param media_category [String, Symbol] the media category, which content cannot be inferred from, in any case
       # @return [UploadedMedia, nil] the uploaded media, which holds the upload response
       # @raise [ArgumentError] if the media category is invalid
       # @example Upload binary content
       #   Uploader::Media.upload_binary(data, client: client, media_category: "tweet_image")
       def upload_binary(content, client:, media_category:)
-        Validator.validate_media_category!(media_category)
+        media_category = Validator.validate_media_category!(media_category)
         boundary = SecureRandom.hex
-        upload_body = Multipart.body("media", content, boundary:, media_category: media_category.downcase)
+        upload_body = Multipart.body("media", content, boundary:, media_category:)
         UploadedMedia.from(client.post("media/upload", upload_body, headers: Multipart.headers(boundary), **JSON_CLASSES)&.fetch("data"))
       end
 
@@ -154,25 +182,27 @@ module X
       # @api public
       # @param file_path [String, Pathname] the path to the file to upload
       # @param client [Client] the X API client
-      # @param media_category [String] the media category, in any case, inferred from the file extension by default
+      # @param media_category [String, Symbol] the media category, in any case, inferred from the file extension by default
       # @param media_type [String, nil] the MIME type of the media, inferred from the file and category when nil
-      # @param chunk_size_mb [Float, Integer] the size of each chunk in megabytes, rounded up to a whole byte
+      # @param chunk_size_mb [Float, Integer, nil] the size of each chunk in megabytes, rounded up to a whole byte,
+      #   derived from the size of the file when nil: a megabyte, or as much more as the segments the API numbers ask
       # @param concurrency [Integer] the number of chunks uploaded at once
       # @return [UploadedMedia, nil] the uploaded media, which holds the upload response
       # @raise [Errno::ENOENT] if the file does not exist
-      # @raise [ArgumentError] if the media category is invalid, the chunk size is not positive, or the concurrency is
-      #   less than one
+      # @raise [ArgumentError] if the media category is invalid, the chunk size is not positive or would need more
+      #   segments than the API numbers, or the concurrency is less than one
       # @raise [InvalidMediaType] if no media type is given and none can be inferred
       # @example Upload a large video
       #   Uploader::Media.chunked_upload("video.mp4", client: client)
       def chunked_upload(file_path, client:, media_category: infer_media_category(file_path),
-        media_type: nil, chunk_size_mb: 1, concurrency: DEFAULT_CONCURRENCY)
+        media_type: nil, chunk_size_mb: nil, concurrency: DEFAULT_CONCURRENCY)
         Validator.validate_file_path!(file_path)
-        Validator.validate_media_category!(media_category)
+        media_category = Validator.validate_media_category!(media_category)
         Validator.validate_chunks!(chunk_size_mb:, concurrency:)
+        chunk_size = Validator.validate_segments!(file_path, chunk_size_mb)
         media_type ||= infer_media_type(file_path, media_category)
-        media = Chunks.init(client:, file_path:, media_type:, media_category: media_category.downcase)
-        Chunks.append(client:, file_path:, chunk_size: (chunk_size_mb * BYTES_PER_MB).ceil, media:, boundary: SecureRandom.hex, concurrency:)
+        media = Chunks.init(client:, file_path:, media_type:, media_category:)
+        Chunks.append(client:, file_path:, chunk_size:, media:, boundary: SecureRandom.hex, concurrency:)
         UploadedMedia.from(client.post("media/upload/#{media.fetch("id")}/finalize", **JSON_CLASSES)&.fetch("data"))
       end
 
@@ -232,14 +262,14 @@ module X
       #
       # @api public
       # @param file_path [String, Pathname] the file path
-      # @param media_category [String] the media category
+      # @param media_category [String, Symbol] the media category, in any case
       # @return [String] the inferred MIME type
       # @raise [InvalidMediaType] if the MIME type cannot be determined
       # @example Uploader::Media.infer_media_type("image.png", "tweet_image") #=> "image/png"
       # @example Uploader::Media.infer_media_type("clip.webm", "tweet_video") #=> "video/webm"
       def infer_media_type(file_path, media_category)
         from_extension = MIME_TYPE_MAP[Utils.extension(file_path)]
-        taken = CATEGORY_MIME_TYPES.fetch(media_category.downcase, [from_extension])
+        taken = CATEGORY_MIME_TYPES.fetch(media_category.to_s.downcase, [from_extension])
         (taken.include?(from_extension) ? from_extension : taken.first) ||
           raise(InvalidMediaType, "unable to determine MIME type from file extension: #{File.path(file_path).inspect}")
       end

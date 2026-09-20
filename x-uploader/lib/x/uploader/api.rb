@@ -43,6 +43,23 @@ module X
         Media.upload_binary(content, client: self, media_category:)
       end
 
+      # Wait until media has been processed, whether its processing succeeded or failed
+      #
+      # It returns the status X reported, which failed? tells a failure by; await_media_processing! raises for one
+      # instead.
+      #
+      # @api public
+      # @param media [UploadedMedia, Hash, String, Integer] the uploaded media, or the media identifier
+      # @param options [Hash] the options of {Media.await_processing}, such as processing_timeout
+      # @return [UploadedMedia, nil] the uploaded media, which holds the processing status, failed or not
+      # @raise [MediaProcessingTimeout] if the media is still processing once the processing timeout would pass
+      # @example Wait for a video uploaded with chunked_upload
+      #   video = client.await_media_processing(video)
+      #   warn video.processing_info.dig("error", "message") if video.failed?
+      def await_media_processing(media, **options)
+        Media.await_processing(media, client: self, **options)
+      end
+
       # Wait until media has been processed, raising if its processing failed
       #
       # @api public
@@ -51,9 +68,9 @@ module X
       # @return [UploadedMedia, nil] the uploaded media, which holds the processing status
       # @raise [MediaProcessingFailed] if media processing failed, with the status X reported
       # @raise [MediaProcessingTimeout] if the media is still processing once the processing timeout would pass
-      # @example Wait for a video uploaded with chunked_upload
-      #   client.await_media_processing(video)
-      def await_media_processing(media, **options)
+      # @example Wait for a video uploaded with chunked_upload, raising if X could not process it
+      #   client.await_media_processing!(video)
+      def await_media_processing!(media, **options)
         Media.await_processing!(media, client: self, **options)
       end
 

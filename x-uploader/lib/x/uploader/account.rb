@@ -10,7 +10,8 @@ module X
     # Uploads profile images and banners to the X API v1.1
     #
     # Its methods can be called on the module, or on an instance of a class that includes it, which gains its public
-    # methods alone.
+    # methods alone. They post to the absolute URL of the API v1.1 endpoint with the client they are given, which
+    # keeps the connection it holds to the host open for the requests that follow, rather than with a copy of it.
     #
     # @api public
     module Account
@@ -18,6 +19,10 @@ module X
 
       # Base URL for X API v1.1 account endpoints
       V1_BASE_URL = "https://api.x.com/1.1/".freeze
+      # URL of the endpoint that updates the profile image of the authenticating user
+      PROFILE_IMAGE_URL = "#{V1_BASE_URL}account/update_profile_image.json".freeze
+      # URL of the endpoint that updates the profile banner of the authenticating user
+      PROFILE_BANNER_URL = "#{V1_BASE_URL}account/update_profile_banner.json".freeze
       # Supported image extensions for profile uploads
       SUPPORTED_EXTENSIONS = %w[gif jpg jpeg png].freeze
 
@@ -49,7 +54,7 @@ module X
         boundary = SecureRandom.hex
         body = Multipart.body("image", content, boundary:)
         headers = Multipart.headers(boundary)
-        client.copy(base_url: V1_BASE_URL).post("account/update_profile_image.json", body, headers:, **JSON_CLASSES)
+        client.post(PROFILE_IMAGE_URL, body, headers:, **JSON_CLASSES)
       end
 
       # Update the authenticating user's profile banner
@@ -90,7 +95,7 @@ module X
         boundary = SecureRandom.hex
         body = Multipart.body("banner", content, boundary:, width:, height:, offset_left:, offset_top:)
         headers = Multipart.headers(boundary)
-        client.copy(base_url: V1_BASE_URL).post("account/update_profile_banner.json", body, headers:, **JSON_CLASSES)
+        client.post(PROFILE_BANNER_URL, body, headers:, **JSON_CLASSES)
       end
     end
   end

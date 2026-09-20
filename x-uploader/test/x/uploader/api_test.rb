@@ -21,9 +21,15 @@ module X
       end
     end
 
-    def test_await_media_processing_raises_for_media_that_failed_as_await_processing_bang_does
-      Uploader::Media.stub(:await_processing!, @called) do
+    def test_await_media_processing_returns_the_status_of_media_that_failed_as_await_processing_does
+      Uploader::Media.stub(:await_processing, @called) do
         assert_equal [[7], {client: @client, processing_timeout: 60}], @client.await_media_processing(7, processing_timeout: 60)
+      end
+    end
+
+    def test_await_media_processing_bang_raises_for_media_that_failed_as_await_processing_bang_does
+      Uploader::Media.stub(:await_processing!, @called) do
+        assert_equal [[7], {client: @client, processing_timeout: 60}], @client.await_media_processing!(7, processing_timeout: 60)
       end
     end
 
@@ -53,8 +59,17 @@ module X
 
     def test_a_client_gains_nothing_until_it_includes_the_methods
       refute_includes Client.ancestors, Uploader::API
-      assert_equal %i[add_alt_text add_subtitles await_media_processing update_profile_banner update_profile_image upload_media upload_media_binary],
-        Uploader::API.public_instance_methods.sort
+      assert_equal %i[add_alt_text add_subtitles await_media_processing await_media_processing! update_profile_banner update_profile_image
+        upload_media upload_media_binary], Uploader::API.public_instance_methods.sort
+    end
+
+    def test_await_media_processing_reports_a_failure_and_the_bang_raises_it
+      failed = {data: {id: "7", processing_info: {state: "failed", error: {message: "Unsupported video format"}}}}
+      stub_request(:get, "https://api.x.com/2/media/upload?command=STATUS&media_id=7")
+        .to_return(headers: {"content-type" => "application/json"}, body: failed.to_json)
+
+      assert_predicate @client.await_media_processing(7), :failed?
+      assert_raises(Uploader::MediaProcessingFailed) { @client.await_media_processing!(7) }
     end
 
     def test_an_upload_reaches_the_api_through_the_client

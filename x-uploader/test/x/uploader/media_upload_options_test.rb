@@ -16,16 +16,21 @@ module X
     end
 
     def test_upload_passes_the_default_chunk_options_to_the_chunked_upload
-      assert_equal({media_category: "tweet_video", media_type: nil, chunk_size_mb: 1, concurrency: 4}, chunk_options_of)
+      assert_equal({media_category: "tweet_video", media_type: nil, chunk_size_mb: nil, concurrency: 4}, chunk_options_of)
     end
 
     def test_the_default_concurrency_is_a_constant_of_media
       assert_equal 4, Uploader::Media::DEFAULT_CONCURRENCY
     end
 
+    def test_the_limits_of_an_upload_are_constants
+      assert_equal [1_048_576, 5_242_880], [Uploader::Media::BYTES_PER_MB, Uploader::Media::MAX_SIMPLE_UPLOAD_BYTES]
+      assert_equal [1000, 1000], [Uploader::Validator::MAX_SEGMENTS, Uploader::Validator::MAX_ALT_TEXT_LENGTH]
+    end
+
     def test_media_holds_none_of_the_constants_of_the_chunked_upload
-      assert_equal %i[AMPLIFY_VIDEO BYTES_PER_MB DEFAULT_CONCURRENCY DEFAULT_PROCESSING_TIMEOUT DM_GIF DM_IMAGE DM_VIDEO SUBTITLES
-        TWEET_GIF TWEET_IMAGE TWEET_VIDEO], Uploader::Media.constants.sort
+      assert_equal %i[AMPLIFY_VIDEO BYTES_PER_MB DEFAULT_CONCURRENCY DEFAULT_PROCESSING_TIMEOUT DM_GIF DM_IMAGE DM_VIDEO
+        MAX_SIMPLE_UPLOAD_BYTES SUBTITLES TWEET_GIF TWEET_IMAGE TWEET_VIDEO], Uploader::Media.constants.sort
       assert_empty Uploader::Chunks.constants
     end
 

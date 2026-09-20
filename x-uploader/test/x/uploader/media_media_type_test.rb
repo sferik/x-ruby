@@ -25,6 +25,10 @@ module X
       assert_equal "text/srt", Uploader::Media.infer_media_type("a.bin", "SUBTITLES")
     end
 
+    def test_a_category_of_a_symbol
+      assert_equal %w[image/gif video/mp4], [:tweet_gif, :TWEET_VIDEO].map { |category| Uploader::Media.infer_media_type("a.bin", category) }
+    end
+
     def test_image_categories_use_the_extension
       assert_equal "image/png", Uploader::Media.infer_media_type("a.png", "tweet_image")
       assert_equal "image/jpeg", Uploader::Media.infer_media_type("a.jpeg", "dm_image")

@@ -27,20 +27,35 @@ module X
       assert_requested(:post, "#{V1_URL}update_profile_banner.json") { |request| request.headers["Authorization"].include?("oauth_token=\"#{TEST_ACCESS_TOKEN}\"") }
     end
 
-    def test_image_upload_uses_a_v1_client_that_keeps_the_settings_of_the_client
-      client = Client.new(**test_oauth_credentials, read_timeout: 9, max_redirects: 1)
-      v1_client = v1_client_of(client) { Uploader::Account.update_profile_image_binary("image", client:) }
+    def test_an_image_upload_posts_to_the_v1_url_with_the_connection_the_client_holds
+      performed = performed_by(@client) { Uploader::Account.update_profile_image_binary("image", client: @client) }
 
-      assert_equal [Uploader::Account::V1_BASE_URL, 9, 1], [v1_client.base_url, v1_client.read_timeout, v1_client.max_redirects]
-      assert_equal "https://api.x.com/2/", client.base_url
+      assert_equal ["#{V1_URL}update_profile_image.json"], performed
+      assert_equal "https://api.x.com/2/", @client.base_url
     end
 
-    def test_banner_upload_uses_a_v1_client_that_keeps_the_settings_of_the_client
-      client = Client.new(**test_oauth_credentials, read_timeout: 9, max_redirects: 1)
-      v1_client = v1_client_of(client) { Uploader::Account.update_profile_banner_binary("banner", client:) }
+    def test_a_banner_upload_posts_to_the_v1_url_with_the_connection_the_client_holds
+      performed = performed_by(@client) { Uploader::Account.update_profile_banner_binary("banner", client: @client) }
 
-      assert_equal [Uploader::Account::V1_BASE_URL, 9, 1], [v1_client.base_url, v1_client.read_timeout, v1_client.max_redirects]
-      assert_equal "https://api.x.com/2/", client.base_url
+      assert_equal ["#{V1_URL}update_profile_banner.json"], performed
+      assert_equal "https://api.x.com/2/", @client.base_url
+    end
+
+    def test_an_upload_copies_the_client_for_nothing
+      @client.stub(:copy, ->(**) { flunk "the client was copied for an upload" }) do
+        Uploader::Account.update_profile_image_binary("image", client: @client)
+        Uploader::Account.update_profile_banner_binary("banner", client: @client)
+      end
+
+      assert_requested(:post, V1_URL_PATTERN, times: 2)
+    end
+
+    def test_an_upload_keeps_the_settings_of_the_client
+      client = Client.new(**test_oauth_credentials, read_timeout: 9, max_redirects: 1)
+      Uploader::Account.update_profile_image_binary("image", client:)
+
+      assert_requested(:post, "#{V1_URL}update_profile_image.json")
+      assert_equal [9, 1, "https://api.x.com/2/"], [client.read_timeout, client.max_redirects, client.base_url]
     end
 
     def test_missing_file_message
@@ -69,12 +84,17 @@ module X
 
     private
 
-    # The one client that the block copies from a client
-    def v1_client_of(client, &)
-      copies = []
-      copy = client.method(:copy)
-      client.stub(:copy, ->(**options) { copy.call(**options).tap { |copied| copies << copied } }, &)
-      copies.fetch(0)
+    # The URLs of the requests the block performed with the connection the client holds, which a copy would hold none of
+    def performed_by(client, &)
+      performed = []
+      connection = client.instance_variable_get(:@connection)
+      perform = connection.method(:perform)
+      recorder = lambda do |request:|
+        performed << request.uri.to_s
+        perform.call(request:)
+      end
+      connection.stub(:perform, recorder, &)
+      performed
     end
   end
 end

@@ -1,4 +1,4 @@
-require "x/core/errors/error"
+require_relative "error"
 
 module X
   module Uploader

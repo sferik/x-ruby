@@ -15,13 +15,18 @@ module X
     end
 
     def test_reads_the_identifier_as_an_integer_and_the_rest_as_given
-      assert_equal [1_880_028_106_020_515_840, "3_1880028106020515840", 1024], [@media.id, @media.media_key, @media.size]
+      assert_equal [1_880_028_106_020_515_840, "3_1880028106020515840", 1024], [@media.id, @media.media_key, @media.bytesize]
+    end
+
+    def test_the_bytes_of_the_media_are_its_bytesize_and_its_size_is_the_hash_it_reads_as
+      assert_equal 1024, @media["size"]
+      refute_respond_to @media, :size
     end
 
     def test_what_a_response_leaves_out_is_nil
       media = Uploader::UploadedMedia.new({"id" => "7"})
 
-      assert_equal [nil, nil], [media.media_key, media.size]
+      assert_equal [nil, nil], [media.media_key, media.bytesize]
     end
 
     def test_an_identifier_that_is_not_a_decimal_number_raises
@@ -77,13 +82,6 @@ module X
       assert_same @media.attrs, @media.to_h
     end
 
-    def test_fetch_raises_or_falls_back_as_a_hash_does
-      assert_equal "1880028106020515840", @media.fetch("id")
-      assert_equal "1880028106020515840", @media.fetch("id") { flunk "unexpected yield" }
-      assert_equal "missing!", @media.fetch("missing") { |key| "#{key}!" }
-      assert_raises(KeyError) { @media.fetch("missing") }
-    end
-
     def test_holds_a_copy_of_the_attributes_it_was_given
       attrs = {"id" => +"7", "processing_info" => {"state" => +"pending"}, "variants" => [+"a"]}
       media = Uploader::UploadedMedia.new(attrs)
@@ -129,6 +127,43 @@ module X
     def test_inspect_names_the_identifier_the_media_key_and_the_state
       assert_equal '#<X::Uploader::UploadedMedia id="1880028106020515840" media_key="3_1880028106020515840" state=nil>', @media.inspect
       assert_equal '#<X::Uploader::UploadedMedia id="1880028106020515840" media_key="3_1880028106020515840" state="failed">', media_in("failed").inspect
+    end
+  end
+
+  class UploadedMediaHashTest < Minitest::Test
+    cover Uploader::UploadedMedia
+
+    ATTRS = UploadedMediaTest::ATTRS
+
+    def setup
+      @media = Uploader::UploadedMedia.new(ATTRS)
+    end
+
+    def test_fetch_raises_or_falls_back_as_a_hash_does
+      assert_equal "1880028106020515840", @media.fetch("id")
+      assert_equal "1880028106020515840", @media.fetch("id") { flunk "unexpected yield" }
+      assert_equal "missing!", @media.fetch("missing") { |key| "#{key}!" }
+      assert_raises(KeyError) { @media.fetch("missing") }
+    end
+
+    def test_fetch_returns_the_default_given_for_what_a_response_holds_none_of
+      assert_equal [nil, "none", 1024], [@media.fetch("processing_info", nil), @media.fetch("missing", "none"), @media.fetch("size", "none")]
+    end
+
+    def test_fetch_takes_the_arguments_a_hash_takes_and_no_more
+      error = assert_raises(ArgumentError) { @media.fetch("id", "none", "extra") }
+
+      assert_equal "wrong number of arguments (given 3, expected 1..2)", error.message
+    end
+
+    def test_media_is_written_into_json_as_the_attributes_it_reads_as
+      assert_equal ATTRS, @media.as_json
+      assert_equal ATTRS.to_json, @media.to_json
+      assert_equal({"media_ids" => [ATTRS]}, JSON.parse(JSON.generate({media_ids: [@media]})))
+    end
+
+    def test_media_is_written_with_the_state_of_the_json_generated_around_it
+      assert_equal JSON.pretty_generate({"media" => ATTRS}), JSON.pretty_generate({"media" => @media})
     end
   end
 end

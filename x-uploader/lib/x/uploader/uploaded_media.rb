@@ -1,10 +1,12 @@
+require "json"
+
 module X
   module Uploader
     # Media that was uploaded: the response of an upload, or the status of its processing
     #
     # Both hold the identifier and the media key, and the status of media that X processes, such as a video, holds
     # the state of its processing. The object is frozen, and reads as the Hash it was built from with [], fetch,
-    # dig, and key?, so media["id"] works as it did when an upload returned a Hash.
+    # dig, key?, and to_json, so media["id"] works as it did when an upload returned a Hash.
     #
     # @api public
     class UploadedMedia
@@ -66,8 +68,8 @@ module X
       # @api public
       # @return [Integer, nil] the size, if the response reports it
       # @example Get the size
-      #   media.size # => 1048576
-      def size = self["size"]
+      #   media.bytesize # => 1048576
+      def bytesize = self["size"]
 
       # The time after which the media can no longer be attached to a post
       #
@@ -138,21 +140,20 @@ module X
       #   media["id"] # => "1880028106020515840"
       def [](key) = attrs[key]
 
-      # Fetch an attribute of the response, raising if the response holds none
+      # Fetch an attribute of the response, as from the Hash an upload used to return
       #
       # @api public
       # @param key [String] the name of the attribute
+      # @param default [Array<Object>] the value to return for an attribute the response does not hold, if any
       # @yieldparam key [String] the name of an attribute the response does not hold
       # @yieldreturn [Object] the value to return in its place
       # @return [Object] the value
-      # @raise [KeyError] if the response holds no such attribute and no block is given
+      # @raise [KeyError] if the response holds no such attribute and neither a default nor a block is given
       # @example Fetch the identifier as the API gave it
       #   media.fetch("id") # => "1880028106020515840"
-      def fetch(key)
-        return attrs.fetch(key) if key?(key) || !block_given?
-
-        yield key
-      end
+      # @example Fetch what a response may hold none of
+      #   media.fetch("processing_info", nil)
+      def fetch(key, *default, &) = attrs.fetch(key, *default, &) # steep:ignore UnresolvedOverloading
 
       # Read a nested attribute of the response
       #
@@ -171,6 +172,25 @@ module X
       # @example Check whether X processes the media
       #   media.key?("processing_info")
       def key?(key) = attrs.key?(key)
+
+      # The attributes of the response, as an encoder asks of an object of its own
+      #
+      # @api public
+      # @return [Hash{String => Object}] the frozen attributes
+      # @example Build the JSON of a post that attaches the media
+      #   {media: {media_ids: [media.as_json]}}
+      def as_json(*) = attrs
+
+      # The attributes of the response as JSON
+      #
+      # Media written into the body of a request is the response it holds, rather than the object itself.
+      #
+      # @api public
+      # @param state [JSON::State, nil] the state the encoder generating the JSON around it passes
+      # @return [String] the JSON of the attributes
+      # @example Attach the media to a post
+      #   client.post("tweets", {text: "Look at this cat", media: {media_ids: [media.id.to_s]}})
+      def to_json(state = nil) = as_json.to_json(state)
 
       # Check whether another object is the same uploaded media
       #

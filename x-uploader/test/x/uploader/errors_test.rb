@@ -35,4 +35,19 @@ module X
       refute X.const_defined?(:InvalidMediaType)
     end
   end
+
+  class UploaderErrorTest < Minitest::Test
+    cover Uploader::Error
+
+    def test_every_error_of_an_upload_is_an_uploader_error
+      errors = [Uploader::InvalidMediaType.new, Uploader::MediaProcessingFailed.new({}), Uploader::MediaProcessingTimeout.new({}, 600)]
+
+      assert(errors.all? { |error| error.is_a?(Uploader::Error) })
+      assert(errors.all? { |error| error.is_a?(Error) })
+    end
+
+    def test_an_uploader_error_is_an_error_of_the_api
+      assert_equal [Error, StandardError], Uploader::Error.ancestors.grep(Class).drop(1).take(2)
+    end
+  end
 end
