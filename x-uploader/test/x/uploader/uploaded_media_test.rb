@@ -39,6 +39,7 @@ module X
       media = Time.stub(:now, now) { Uploader::UploadedMedia.new(ATTRS) }
 
       assert_equal now + 86_400, media.expires_at
+      assert_predicate media.expires_at, :utc?
       assert_nil Uploader::UploadedMedia.new({"id" => "7"}).expires_at
     end
 

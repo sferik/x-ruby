@@ -73,14 +73,15 @@ module X
 
       # The time after which the media can no longer be attached to a post
       #
-      # X reports the seconds the media has left, which are counted from when the response arrived.
+      # X reports the seconds the media has left, which are counted from when the response arrived, in UTC as the
+      # times of the object layer are.
       #
       # @api public
-      # @return [Time, nil] the expiration time, if the response reports it
+      # @return [Time, nil] the expiration time, in UTC, if the response reports it
       # @example Get the expiration time
-      #   media.expires_at # => 2026-09-19 12:00:00 -0700
+      #   media.expires_at # => 2026-09-19 12:00:00 UTC
       def expires_at
-        self["expires_after_secs"]&.then { |seconds| @received_at + seconds }
+        self["expires_after_secs"]&.then { |seconds| (@received_at + seconds).utc }
       end
 
       # What X reports of the processing of the media
