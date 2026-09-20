@@ -10,7 +10,21 @@ require "securerandom"
 require "socket"
 require "minitest/autorun"
 require "minitest/mock"
-require "mutant/minitest/coverage"
+# Mutant is in the bundle of CRuby alone, where the mutant job of CI runs. Without it, the expression a test
+# declares it covers is read by nothing, so cover does nothing rather than fail the suite on another engine.
+begin
+  require "mutant/minitest/coverage"
+rescue LoadError
+  module Minitest
+    class Test
+      # Ignore the expression this test covers, which only Mutant reads
+      #
+      # @param _expression [Object] the expression the test covers
+      # @return [void]
+      def self.cover(_expression) = nil
+    end
+  end
+end
 require "webmock/minitest"
 require "x/core"
 

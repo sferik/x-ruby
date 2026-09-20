@@ -10,9 +10,14 @@ task :mutant do
   sh "bundle exec mutant run"
 end
 
-require "steep/rake_task"
-
-Steep::RakeTask.new(:steep)
+# Steep is in the bundle of CRuby alone, where the steep job of CI runs, so the task is defined only where it can run
+begin
+  require "steep/rake_task"
+rescue LoadError
+  task(:steep) { abort "steep is not in the bundle of #{RUBY_ENGINE}; type check with CRuby" }
+else
+  Steep::RakeTask.new(:steep)
+end
 
 require "yardstick/rake/measurement"
 require "yardstick/rake/verify"

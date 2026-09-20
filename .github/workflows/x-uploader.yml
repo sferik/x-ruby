@@ -22,9 +22,18 @@ defaults:
 jobs:
   test:
     strategy:
+      fail-fast: false
       matrix:
-        ruby: ["3.4", "4.0"]
-    runs-on: ubuntu-latest
+        os: [ubuntu-latest]
+        ruby: ["3.4", "4.0", "ruby-head", "jruby-head"]
+        include:
+          - os: macos-latest
+            ruby: "3.4"
+          - os: windows-latest
+            ruby: "3.4"
+    runs-on: ${{ matrix.os }}
+    # A head Ruby is informational: it reports a break before the release that carries it, without blocking a merge
+    continue-on-error: ${{ endsWith(matrix.ruby, '-head') }}
     steps:
     - uses: actions/checkout@v7
     - uses: ruby/setup-ruby@v1
