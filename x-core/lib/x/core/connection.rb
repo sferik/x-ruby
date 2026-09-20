@@ -150,6 +150,9 @@ module X
     #
     # Internal to x-core: StreamingClient opens its streams with it.
     #
+    # The connection is opened for this request and closed once the block returns, rather than taken from the
+    # connections kept open and given back, since a stream holds its connection for as long as it reads.
+    #
     # An error the block raises, which StreamParser tags as a StreamCallbackError, is raised as it was, rather than
     # reported as a network error: the callbacks of a stream run inside the request that reads it, and the errors a
     # socket raises are the ones a stream reconnects after.

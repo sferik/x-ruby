@@ -17,6 +17,11 @@ module X
   # base URL, parsing classes, and on_response hook from the client it was built from, and keeps the rest of its
   # settings itself.
   #
+  # Each stream opens a connection of its own and closes it when it ends, rather than keep one open for the request
+  # that follows, as a client does between requests. So a streaming client has neither the keep_alive_timeout of a
+  # client, which says how long a connection is kept open, nor its close, which closes the connections it kept: a
+  # streaming client keeps none between streams, and a stream is stopped by raising from the block that reads it.
+  #
   # @api public
   class StreamingClient
     extend Forwardable
