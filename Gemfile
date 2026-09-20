@@ -24,8 +24,8 @@ gem "webmock", ">= 3.18.1"
 gem "yard", ">= 0.9"
 gem "yardstick", ">= 0.9"
 
-# RBS and Steep run on CRuby alone, so they are left out of the bundle of any other engine, whose job runs the
-# tests alone; the steep and docs jobs of CI all run on CRuby
+# RBS and Steep run on CRuby alone, so they are left out of the bundle on any other engine, where the tests still
+# run. Every CI job runs on CRuby, so the guard is for a contributor working on JRuby or TruffleRuby.
 platforms :mri do
   gem "rbs", ">= 4.0"
   gem "steep", ">= 2.0"
