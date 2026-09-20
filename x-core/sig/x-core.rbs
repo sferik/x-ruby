@@ -33,6 +33,8 @@ module X
       def proxy_url=: ((URI::Generic | String)? proxy_url) -> void
 
       private
+      def proxy_for: (URI::Generic uri) -> URI::Generic?
+      def decode: (String? component) -> String?
       def redacted_proxy_url: () -> String?
       def parse_proxy_url: (URI::Generic | String proxy_url) -> URI::Generic
       def redact: (URI::Generic | String proxy_url) -> String
@@ -519,7 +521,8 @@ module X
     def close: () -> void
 
     private
-    def build_http_client: (?String host, ?Integer port) -> Net::HTTP
+    def host_and_port: (URI::Generic uri) -> [String, Integer]
+    def build_http_client: (URI::Generic uri) -> Net::HTTP
     def configure_http_client: (Net::HTTP http_client) -> Net::HTTP
     def configure_timeouts: (Net::HTTP http_client) -> Net::HTTP
   end

@@ -30,7 +30,7 @@ module X
     end
 
     def test_http_client_defaults
-      http_client = @connection.send(:build_http_client)
+      http_client = @connection.send(:build_http_client, URI("https://api.x.com/2/tweets"))
 
       assert_equal "api.x.com", http_client.address
       assert_equal 443, http_client.port
@@ -40,23 +40,23 @@ module X
     end
 
     def test_http_client_leaves_retries_to_the_caller
-      assert_equal 0, @connection.send(:build_http_client).max_retries
+      assert_equal 0, @connection.send(:build_http_client, URI("https://api.x.com/2/tweets")).max_retries
     end
 
     def test_http_client_keeps_a_connection_open_beyond_a_burst_of_requests
       assert_equal Connection::DEFAULT_KEEP_ALIVE_TIMEOUT, @connection.keep_alive_timeout
-      assert_equal 30, @connection.send(:build_http_client).keep_alive_timeout
+      assert_equal 30, @connection.send(:build_http_client, URI("https://api.x.com/2/tweets")).keep_alive_timeout
     end
 
     def test_http_client_keeps_a_connection_open_for_the_keep_alive_timeout_given
       connection = Connection.new(keep_alive_timeout: 5)
 
       assert_equal 5, connection.keep_alive_timeout
-      assert_equal 5, connection.send(:build_http_client).keep_alive_timeout
+      assert_equal 5, connection.send(:build_http_client, URI("https://api.x.com/2/tweets")).keep_alive_timeout
     end
 
     def test_debug_output
-      http_client = @connection.send(:build_http_client)
+      http_client = @connection.send(:build_http_client, URI("https://api.x.com/2/tweets"))
 
       assert_nil http_client.instance_variable_get(:@debug_output)
     end
@@ -64,7 +64,7 @@ module X
     def test_client_properties
       connection = Connection.new(open_timeout: 10, read_timeout: 20, write_timeout: 30, debug_output: $stderr,
         proxy_url: "https://proxy.com")
-      http_client = connection.send(:build_http_client)
+      http_client = connection.send(:build_http_client, URI("https://api.x.com/2/tweets"))
 
       assert_predicate http_client, :proxy?
       assert_equal 10, http_client.open_timeout

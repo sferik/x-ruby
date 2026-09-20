@@ -137,10 +137,9 @@ module X
     #   response = connection.perform(request: request)
     def perform(request:)
       uri = request.uri
-      hostname = uri.hostname || DEFAULT_HOST
-      port = uri.port || DEFAULT_PORT
+      hostname, port = host_and_port(uri)
       use_ssl = uri.scheme.eql?("https")
-      open = -> { build_http_client(hostname, port).tap { |http_client| http_client.use_ssl = use_ssl } }
+      open = -> { build_http_client(uri).tap { |http_client| http_client.use_ssl = use_ssl } }
       @pool.with([use_ssl, hostname, port], open) { |http_client| configure_timeouts(http_client).request(request) }
     rescue *NETWORK_ERRORS => e
       raise NetworkError, "Network error: #{e}"
@@ -165,9 +164,7 @@ module X
     # @example Perform a streaming request
     #   connection.perform_stream(request: request) { |response| response.read_body { |chunk| } }
     def perform_stream(request:, &)
-      hostname = request.uri.hostname || DEFAULT_HOST
-      port = request.uri.port || DEFAULT_PORT
-      http_client = build_http_client(hostname, port)
+      http_client = build_http_client(request.uri)
       http_client.use_ssl = request.uri.scheme.eql?("https")
       http_client.request(request, &)
     rescue Core::StreamCallbackError => e
@@ -217,19 +214,31 @@ module X
 
     private
 
-    # Build an HTTP client for the given host and port
+    # The host and port to connect to for a URI
     #
-    # The client connects to an HTTPS proxy over TLS.
+    # A URI that names neither, such as a relative one, is reached at the host and port of the API.
     #
     # @api private
-    # @param host [String] the host to connect to
-    # @param port [Integer] the port to connect to
+    # @param uri [URI::Generic] the URI of the request
+    # @return [Array(String, Integer)] the host and the port to connect to
+    def host_and_port(uri) = [uri.hostname || DEFAULT_HOST, uri.port || DEFAULT_PORT]
+
+    # Build an HTTP client for the host of a URI
+    #
+    # The client connects to an HTTPS proxy over TLS. A client that reaches its host directly is given no proxy to
+    # resolve, rather than the :ENV of Net::HTTP, which reads http_proxy for a request of any scheme: the proxy of a
+    # request is resolved from the scheme of its own URI, by ConnectionProxy.
+    #
+    # @api private
+    # @param uri [URI::Generic] the URI of the request
     # @return [Net::HTTP] the HTTP client
-    def build_http_client(host = DEFAULT_HOST, port = DEFAULT_PORT)
-      http_client = if proxy_uri
-        Net::HTTP.new(host, port, proxy_host, proxy_port, proxy_user, proxy_pass, nil, proxy_uri.instance_of?(URI::HTTPS))
+    def build_http_client(uri)
+      host, port = host_and_port(uri)
+      proxy = proxy_for(uri)
+      http_client = if proxy
+        Net::HTTP.new(host, port, proxy.hostname, proxy.port, decode(proxy.user), decode(proxy.password), nil, proxy.instance_of?(URI::HTTPS))
       else
-        Net::HTTP.new(host, port)
+        Net::HTTP.new(host, port, nil)
       end
       configure_http_client(http_client)
     end

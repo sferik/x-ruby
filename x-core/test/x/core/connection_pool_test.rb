@@ -195,6 +195,16 @@ module X
       assert_predicate clients.first, :use_ssl?
     end
 
+    def test_requests_to_two_paths_of_one_host_share_a_connection
+      stub_request(:get, "https://example.com/other")
+      clients = opened do
+        perform
+        @connection.perform(request: Net::HTTP::Get.new(URI("https://example.com/other")))
+      end
+
+      assert_equal 1, clients.size
+    end
+
     def test_a_reused_connection_takes_the_current_timeouts
       clients = opened do
         perform

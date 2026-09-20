@@ -78,7 +78,7 @@ module X
 
     def test_proxy_user_and_password_are_decoded
       @connection.proxy_url = "http://us%40er:p%40ss%3Aword@example.com:8080"
-      http_client = @connection.send(:build_http_client)
+      http_client = @connection.send(:build_http_client, URI("https://api.x.com/2/tweets"))
 
       assert_equal ["us@er", "p@ss:word"], [@connection.proxy_user, @connection.proxy_pass]
       assert_equal ["us@er", "p@ss:word"], [http_client.proxy_user, http_client.proxy_pass]
@@ -115,26 +115,72 @@ module X
 
     def test_proxy_settings_are_respected_in_http_client
       @connection.proxy_url = "http://user:pass@example.com:8080"
-      http_client = @connection.send(:build_http_client)
+      http_client = @connection.send(:build_http_client, URI("https://api.x.com/2/tweets"))
 
       assert_equal "example.com", http_client.proxy_address
       assert_equal 8080, http_client.proxy_port
       assert_equal "user", http_client.proxy_user
       assert_equal "pass", http_client.proxy_pass
     end
+  end
 
-    def test_set_env_proxy
-      old_value = ENV.fetch("http_proxy", nil)
-      ENV["http_proxy"] = "https://user:pass@example.com:8080"
-      http_client = Connection.new.send(:build_http_client)
+  class ConnectionProxyEnvironmentTest < Minitest::Test
+    cover Connection
+    cover Core::ConnectionProxy
 
-      assert_predicate http_client, :proxy?
-      assert_equal "user", http_client.proxy_user
-      assert_equal "pass", http_client.proxy_pass
-      assert_equal "example.com", http_client.proxy_address
-      assert_equal 8080, http_client.proxy_port
+    def test_https_proxy_of_the_environment_is_used_for_an_https_request
+      with_proxy_env(https_proxy: "http://us%40er:p%40ss@example.com:8080") do
+        http_client = Connection.new.send(:build_http_client, URI("https://api.x.com/2/tweets"))
+
+        assert_predicate http_client, :proxy?
+        assert_equal ["example.com", 8080, "us@er", "p@ss"],
+          [http_client.proxy_address, http_client.proxy_port, http_client.proxy_user, http_client.proxy_pass]
+      end
+    end
+
+    def test_http_proxy_of_the_environment_is_used_for_an_http_request
+      with_proxy_env(http_proxy: "http://example.com:8080") do
+        assert_predicate Connection.new.send(:build_http_client, URI("http://api.x.com/2/tweets")), :proxy?
+      end
+    end
+
+    def test_http_proxy_of_the_environment_is_not_used_for_an_https_request
+      with_proxy_env(http_proxy: "http://example.com:8080") do
+        refute_predicate Connection.new.send(:build_http_client, URI("https://api.x.com/2/tweets")), :proxy?
+      end
+    end
+
+    def test_no_proxy_of_the_environment_reaches_the_host_directly
+      with_proxy_env(https_proxy: "http://example.com:8080", no_proxy: "api.x.com") do
+        refute_predicate Connection.new.send(:build_http_client, URI("https://api.x.com/2/tweets")), :proxy?
+      end
+    end
+
+    def test_the_proxy_url_of_a_connection_is_used_rather_than_the_environment
+      with_proxy_env(https_proxy: "http://environment.example.com:8080") do
+        http_client = Connection.new(proxy_url: "http://given.example.com:3128").send(:build_http_client, URI("https://api.x.com/2/tweets"))
+
+        assert_equal "given.example.com", http_client.proxy_address
+      end
+    end
+
+    def test_a_relative_uri_takes_no_proxy_from_the_environment
+      with_proxy_env(https_proxy: "http://example.com:8080") do
+        refute_predicate Connection.new.send(:build_http_client, URI("/2/tweets")), :proxy?
+      end
+    end
+
+    private
+
+    # Run a block with the proxy variables of the environment set to the values given, and the rest of them cleared
+    def with_proxy_env(http_proxy: nil, https_proxy: nil, no_proxy: nil)
+      values = {"http_proxy" => http_proxy, "https_proxy" => https_proxy, "no_proxy" => no_proxy}
+      names = values.keys.flat_map { |name| [name, name.upcase] }
+      original = names.to_h { |name| [name, ENV.fetch(name, nil)] }
+      names.each { |name| ENV[name] = values.fetch(name.downcase) }
+      yield
     ensure
-      ENV["http_proxy"] = old_value
+      original&.each { |name, value| ENV[name] = value }
     end
   end
 
@@ -144,7 +190,7 @@ module X
 
     def test_host_port_with_proxy
       connection = Connection.new(proxy_url: "https://user:pass@example.com")
-      http_client = connection.send(:build_http_client, "example.com", 8080)
+      http_client = connection.send(:build_http_client, URI("https://example.com:8080/"))
 
       assert_predicate http_client, :proxy?
       assert_equal "example.com", http_client.address
@@ -152,13 +198,13 @@ module X
     end
 
     def test_http_proxy_is_connected_to_without_tls
-      http_client = Connection.new(proxy_url: "http://example.com:8080").send(:build_http_client)
+      http_client = Connection.new(proxy_url: "http://example.com:8080").send(:build_http_client, URI("https://api.x.com/2/tweets"))
 
       assert_same false, http_client.instance_variable_get(:@proxy_use_ssl)
     end
 
     def test_https_proxy_is_connected_to_over_tls
-      http_client = Connection.new(proxy_url: "https://user:pass@example.com:8443").send(:build_http_client)
+      http_client = Connection.new(proxy_url: "https://user:pass@example.com:8443").send(:build_http_client, URI("https://api.x.com/2/tweets"))
 
       assert_same true, http_client.instance_variable_get(:@proxy_use_ssl)
     end
