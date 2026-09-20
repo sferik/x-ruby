@@ -3,7 +3,7 @@ require_relative "utils"
 
 module X
   module Objects
-    # Class methods that look users up by identifier or username, extended into User
+    # Class methods that look users up by identifier or username, and the authenticated user, extended into User
     # @api public
     module UserFinders
       # Look up a user by identifier or username
@@ -91,6 +91,33 @@ module X
       def find_by_username!(username, client:, **params)
         problems = [] #: Array[Problem]
         find_by_username(username, client:, **params) { |problem| problems << problem } || raise(ResourceNotFound.new("Could not find #{self} @#{Utils.username(username)}", problems:))
+      end
+
+      # Look up the authenticated user
+      #
+      # @api public
+      # @param client [Object] the client used to make the request
+      # @param params [Hash] query parameters merged over the default parameters
+      # @return [User, nil] the authenticated user
+      # @yieldparam problem [Problem] each problem the API reported
+      # @example Look up the authenticated user
+      #   X::User.current(client: client)
+      def current(client:, **params, &)
+        lookup("users/me", client:, **params, &) #: User?
+      end
+
+      # Look up the authenticated user, who must be found
+      #
+      # @api public
+      # @param client [Object] the client used to make the request
+      # @param params [Hash] query parameters merged over the default parameters
+      # @return [User] the authenticated user
+      # @raise [ResourceNotFound] if the API returns no user
+      # @example Look up the authenticated user
+      #   X::User.current!(client: client)
+      def current!(client:, **params)
+        problems = [] #: Array[Problem]
+        current(client:, **params) { |problem| problems << problem } || raise(ResourceNotFound.new("users/me returned no user", problems:))
       end
 
       private

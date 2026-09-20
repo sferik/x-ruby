@@ -73,19 +73,6 @@ module X
       def search(query, client:, **params)
         Cursor.new(self, "users/search", client:, params: {query:, max_results: MAX_SEARCH_RESULTS}.merge(params), token_param: "next_token")
       end
-
-      # Look up the authenticated user
-      #
-      # @api public
-      # @param client [Object] the client used to make the request
-      # @param params [Hash] query parameters merged over the default parameters
-      # @return [User, nil] the authenticated user
-      # @yieldparam problem [Problem] each problem the API reported
-      # @example Look up the authenticated user
-      #   X::User.current(client: client)
-      def current(client:, **params, &)
-        lookup("users/me", client:, **params, &)
-      end
     end
 
     # @!attribute [r] name

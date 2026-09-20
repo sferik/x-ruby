@@ -94,8 +94,7 @@ module X
             owner, user = @current_user
             return user if user && owner.equal?(authenticator)
 
-            problems = [] #: Array[Problem]
-            user = User.current(client: self) { |problem| problems << problem } || raise(ResourceNotFound.new("users/me returned no user", problems:))
+            user = User.current!(client: self)
             @current_user = [authenticator, user]
             user
           end

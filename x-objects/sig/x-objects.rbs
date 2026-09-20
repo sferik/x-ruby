@@ -289,6 +289,8 @@ module X
       def find_all_by_username: (Array[id] usernames, client: _Client, **untyped params) ?{ (Problem problem) -> void } -> Array[User]
       def find_by_username: (untyped username, client: _Client, **untyped params) ?{ (Problem problem) -> void } -> User?
       def find_by_username!: (untyped username, client: _Client, **untyped params) -> User
+      def current: (client: _Client, **untyped params) ?{ (Problem problem) -> void } -> User?
+      def current!: (client: _Client, **untyped params) -> User
 
       private
       def in_order: (Array[User] users, Array[id] ids_or_usernames) -> Array[User]
@@ -743,7 +745,6 @@ module X
     def self.fields_key: () -> String
     def self.default_params: () -> Hash[String, Array[String]]
     def self.search: (String query, client: Objects::_Client, **untyped params) -> Cursor[User]
-    def self.current: (client: Objects::_Client, **untyped params) ?{ (Problem problem) -> void } -> User?
 
     def name: () -> String?
     def username: () -> String?
