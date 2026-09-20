@@ -45,6 +45,27 @@ module X
       assert_requested(:post, "https://api.x.com/2/tweets") { |request| request.body.to_s.empty? }
     end
 
+    def test_a_get_sends_no_content_type
+      stub_request(:get, "https://api.x.com/2/users/me")
+      @client.get("users/me")
+
+      assert_requested(:get, "https://api.x.com/2/users/me") { |request| request.headers.to_h["Content-Type"].nil? }
+    end
+
+    def test_a_delete_sends_no_content_type
+      stub_request(:delete, "https://api.x.com/2/tweets/1")
+      @client.delete("tweets/1")
+
+      assert_requested(:delete, "https://api.x.com/2/tweets/1") { |request| request.headers.to_h["Content-Type"].nil? }
+    end
+
+    def test_a_post_without_a_body_sends_no_content_type
+      stub_request(:post, "https://api.x.com/2/media/upload/1/finalize")
+      @client.post("media/upload/1/finalize")
+
+      assert_requested(:post, "https://api.x.com/2/media/upload/1/finalize") { |request| request.headers.to_h["Content-Type"].nil? }
+    end
+
     def test_post_encodes_a_form
       stub_request(:post, "https://api.x.com/1.1/account/settings.json")
       @client.post("https://api.x.com/1.1/account/settings.json", form: {lang: "en", tile: true})

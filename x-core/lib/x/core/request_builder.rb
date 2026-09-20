@@ -13,9 +13,11 @@ module X
     class RequestBuilder
       # Default headers for API requests
       DEFAULT_HEADERS = {
-        "Content-Type" => "application/json; charset=utf-8",
         "User-Agent" => "x-ruby/#{Core::VERSION} #{RUBY_ENGINE}/#{RUBY_VERSION} (#{RUBY_PLATFORM})"
       }.freeze
+      # The headers of a request that carries a body, which one without a body does not send, since it has no body
+      # for a content type to describe
+      BODY_HEADERS = {"Content-Type" => "application/json; charset=utf-8"}.freeze
       # Mapping of HTTP method symbols to Net::HTTP classes
       HTTP_METHODS = {
         get: Net::HTTP::Get,
@@ -38,7 +40,7 @@ module X
       #   builder.build(http_method: :get, uri: URI("https://api.x.com/2/users/me"))
       def build(http_method:, uri:, body: nil, headers: {}, authenticator: Authenticator.new)
         request = create_request(http_method:, uri:, body:)
-        add_headers(request:, headers:)
+        add_headers(request:, headers:, body:)
         add_authentication(request:, authenticator:)
         request
       end
@@ -74,12 +76,19 @@ module X
       end
 
       # Add headers to a request
+      #
+      # A request that carries a body is given the JSON content type the API takes, which a header of the caller, such
+      # as the form content type of a request given form fields, replaces. A request without a body, such as a GET or a
+      # DELETE, is given no content type at all, rather than one for a body it does not send.
+      #
       # @api private
       # @param request [Net::HTTPRequest] the request
       # @param headers [Hash] additional headers
+      # @param body [String, nil] the request body, which decides whether a content type is sent
       # @return [void]
-      def add_headers(request:, headers:)
-        DEFAULT_HEADERS.merge(headers).each do |key, value|
+      def add_headers(request:, headers:, body:)
+        defaults = body.nil? ? DEFAULT_HEADERS : DEFAULT_HEADERS.merge(BODY_HEADERS)
+        defaults.merge(headers).each do |key, value|
           request[key] = value
         end
       end

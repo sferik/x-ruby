@@ -61,13 +61,14 @@ module X
     class RequestBuilder
       HTTP_METHODS: Hash[Symbol, (singleton(Net::HTTP::Get) | singleton(Net::HTTP::Post) | singleton(Net::HTTP::Put) | singleton(Net::HTTP::Delete))]
       DEFAULT_HEADERS: Hash[String, String]
+      BODY_HEADERS: Hash[String, String]
 
       def build: (http_method: Symbol, uri: URI::Generic, ?body: String?, ?headers: Hash[String, String], ?authenticator: Authenticator) -> (Net::HTTPRequest)
 
       private
       def create_request: (http_method: Symbol, uri: URI::Generic, body: String?) -> (Net::HTTPRequest)
       def add_authentication: (request: Net::HTTPRequest, authenticator: Authenticator) -> void
-      def add_headers: (request: Net::HTTPRequest, headers: Hash[String, String]) -> void
+      def add_headers: (request: Net::HTTPRequest, headers: Hash[String, String], body: String?) -> void
       def escape_query_params: (URI::Generic uri) -> URI::Generic
     end
 

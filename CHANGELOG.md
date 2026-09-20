@@ -163,6 +163,7 @@ See [UPGRADING.md](https://github.com/sferik/x-ruby/blob/main/UPGRADING.md) for 
 * Fetch an app-only bearer token and refresh an OAuth 2.0 token over the client's connection, so the proxy, timeouts, and debug output of a client apply to token requests as they do to every other request
 * Drop the credentials, and any `Authorization` header passed in `headers:`, named by a String or a Symbol in any case, when a redirect leads to another scheme, host, or port, so a redirect cannot send them to a host they were not meant for
 * Send no `Authorization` header from a client without credentials, rather than an empty one
+* Send a `Content-Type` header with a request that carries a body alone, rather than with every request, so a `get` or a `delete`, and a `post` to an endpoint that takes no body, such as the finalize of a chunked upload, no longer names the type of a body it does not send; a body is still sent as JSON unless the caller's headers, or the `form:` of a request, name another type
 * Raise `X::ClientError` or `X::ServerError` for a 4xx or 5xx status that no error class names, such as 405 or 501, instead of `X::HTTPError`, so a stream reconnects and a chunk upload retries after any server error
 * Link each gem's `changelog_uri` to the `main` branch, which the repository uses, rather than `master`
 * Upload subtitles as `text/srt` in chunks, as the API requires, instead of as `application/x-subrip` in one request, which it rejects

@@ -22,8 +22,40 @@ module X
         assert_equal "GET", request.method
         assert_equal @uri, request.uri
         assert_equal expected, request["Authorization"]
-        assert_equal "application/json; charset=utf-8", request["Content-Type"]
+        assert_nil request["Content-Type"]
       end
+    end
+
+    def test_a_request_with_a_body_is_given_the_json_content_type
+      request = @request_builder.build(http_method: :post, uri: @uri, body: "{}", authenticator: @authenticator)
+
+      assert_equal "application/json; charset=utf-8", request["Content-Type"]
+    end
+
+    def test_a_request_with_a_body_is_given_the_other_default_headers_too
+      request = @request_builder.build(http_method: :post, uri: @uri, body: "{}", authenticator: @authenticator)
+
+      assert_equal Core::RequestBuilder::DEFAULT_HEADERS.fetch("User-Agent"), request["User-Agent"]
+    end
+
+    def test_a_request_without_a_body_is_given_no_content_type
+      request = @request_builder.build(http_method: :delete, uri: @uri, authenticator: @authenticator)
+
+      assert_nil request["Content-Type"]
+    end
+
+    def test_a_content_type_of_the_caller_replaces_the_one_a_body_is_given
+      request = @request_builder.build(http_method: :post, uri: @uri, body: "lang=en",
+        headers: {"Content-Type" => "application/x-www-form-urlencoded"}, authenticator: @authenticator)
+
+      assert_equal "application/x-www-form-urlencoded", request["Content-Type"]
+    end
+
+    def test_a_content_type_of_the_caller_is_sent_without_a_body
+      request = @request_builder.build(http_method: :get, uri: @uri, headers: {"Content-Type" => "text/plain"},
+        authenticator: @authenticator)
+
+      assert_equal "text/plain", request["Content-Type"]
     end
 
     def test_build_post_request
