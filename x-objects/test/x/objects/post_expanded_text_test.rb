@@ -51,8 +51,15 @@ module X
       assert_equal({text: note["text"], urls: [LINK]}, post.deconstruct_keys(%i[text urls]))
     end
 
-    def test_a_long_post_without_entities_in_its_note_has_none
-      post = Post.new({"id" => "1", "text" => "A long post…", "entities" => {"urls" => [LINK]}, "note_post" => {"text" => "A long post"}})
+    def test_a_long_post_without_entities_in_its_note_reads_its_own
+      entities = {"annotations" => [{"normalized_text" => "Ruby"}]}
+      post = Post.new({"id" => "1", "text" => "A long post…", "entities" => entities, "note_post" => {"text" => "A long post"}})
+
+      assert_equal ["A long post", entities, nil], [post.text, post.entities, post.urls]
+    end
+
+    def test_a_long_post_without_entities_anywhere_has_none
+      post = Post.new({"id" => "1", "text" => "A long post…", "note_post" => {"text" => "A long post"}})
 
       assert_equal ["A long post", nil, nil], [post.text, post.entities, post.urls]
     end

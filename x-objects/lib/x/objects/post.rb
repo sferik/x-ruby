@@ -236,13 +236,15 @@ module X
 
     # The entities found in the full text
     #
-    # The entities, such as links, mentions, and hashtags, come from note_post for a long post.
+    # The entities, such as links, mentions, and hashtags, come from note_post for a long post, whose note the API
+    # gives entities when the full text has any, and from the post itself otherwise, which holds the annotations of
+    # a long post as well as the entities of a short one.
     #
     # @api public
     # @return [Hash, nil] the entities
     # @example Get the entities
     #   post.entities
-    def entities = full["entities"]
+    def entities = note_post&.[]("entities") || attrs["entities"]
 
     # The links in the full text, each with its shortened url and its expanded_url
     #
