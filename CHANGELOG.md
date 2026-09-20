@@ -94,6 +94,8 @@ See [UPGRADING.md](https://github.com/sferik/x-ruby/blob/main/UPGRADING.md) for 
 * Check whether a collection is empty without paging it with `X::Cursor#empty?`, which requests one resource, as `none?` does
 * Post media without text, and send a direct message of attachments alone: the text of `create_post`, `X::Post.create`, `create_direct_message`, `create_group_direct_message`, `create_direct_message_in`, and their `X::DirectMessage` equivalents is optional, a post or message without text sends no `text` field rather than a null one, and one with neither text nor any other field raises `ArgumentError`
 * Match a resource by the tweet-named aliases of its attributes, such as `post in {retweet_count: 100..}` and `user in {pinned_tweet_id: Integer}`, and by `conversation_id` on a direct message; a pattern that asks for every attribute gets each once, by the name the resource declares
+* Ship a `CHANGELOG.md` with `x-core`, `x-uploader`, and `x-objects`, holding the entries of this file that are changes to that gem, which the `changelog_uri` of each gemspec names in place of this file
+
 ### Changed
 * Require Ruby 3.4 or later
 * Hydrate the stubs of a page together, in batch lookups of up to 100 rather than one request per stub, so hydrating one stub looks up, and the API bills, no more than 100 resources, and hydrating every stub of a page of 1,000 costs ten lookups; the stubs of lists, communities, and direct messages, which the API cannot look up in batches, hydrate one at a time, and `refresh` looks a stub up again on its own rather than read what the lookup of its page found

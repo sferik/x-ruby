@@ -16,7 +16,7 @@ Gem::Specification.new do |spec|
   spec.metadata = {
     "allowed_push_host" => "https://rubygems.org",
     "bug_tracker_uri" => "https://github.com/sferik/x-ruby/issues",
-    "changelog_uri" => "https://github.com/sferik/x-ruby/blob/main/CHANGELOG.md",
+    "changelog_uri" => "https://github.com/sferik/x-ruby/blob/main/x-uploader/CHANGELOG.md",
     "documentation_uri" => "https://rubydoc.info/gems/x-uploader/",
     "funding_uri" => "https://github.com/sponsors/sferik/",
     "homepage_uri" => spec.homepage,
