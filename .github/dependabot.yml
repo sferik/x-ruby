@@ -6,8 +6,13 @@ updates:
       interval: daily
     cooldown:
       default-days: 7
+  # The root, x-core, x-uploader, and x-objects each have a Gemfile and a bundle of their own
   - package-ecosystem: bundler
-    directory: /
+    directories:
+      - /
+      - /x-core
+      - /x-uploader
+      - /x-objects
     schedule:
       interval: daily
     cooldown:
