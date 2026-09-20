@@ -5,7 +5,8 @@ module X
   # A live audio space
   #
   # The space endpoints take only app-only authentication, so a client that signs with OAuth 1.0a reads spaces with a
-  # copy that authenticates as the app.
+  # copy that authenticates as the app, while the spaces and posts it reads hold the client, so that they act as the
+  # user.
   #
   # @api public
   class Space < Objects::Resource
@@ -78,7 +79,7 @@ module X
       # @example Print the live spaces about Ruby
       #   X::Space.search("ruby", client: client, state: "live").each { |space| puts space.title }
       def search(query, client:, **params)
-        Cursor.new(self, "spaces/search", client: client_for(client), params: {query:, max_results: MAX_RESULTS}.merge(params))
+        Cursor.new(self, "spaces/search", client:, params: {query:, max_results: MAX_RESULTS}.merge(params), app_only: true)
       end
     end
 
@@ -258,7 +259,7 @@ module X
     # @example Print the shared posts
     #   space.posts.each { |post| puts post.text }
     def posts(**params)
-      cursor(Post, "spaces/#{id}/tweets", max_results: MAX_RESULTS, client: self.class.client_for(client!), **params)
+      cursor(Post, "spaces/#{id}/tweets", max_results: MAX_RESULTS, app_only: true, **params)
     end
 
     alias_method :tweets, :posts

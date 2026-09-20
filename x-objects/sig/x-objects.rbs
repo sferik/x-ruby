@@ -142,6 +142,7 @@ module X
       def next_page: (Integer wanted) -> Page[untyped]?
       def cached: (Integer index) -> Page[untyped]?
       def fetch: (Integer index, ?Integer? wanted) -> Page[untyped]?
+      def requester: () -> _Client
       def resources_from: (body body) -> Array[Resource]
       def stubs_from: (Array[Resource] resources) -> Array[Resource]
       def id_only?: () -> bool
@@ -409,7 +410,7 @@ module X
       def look_up: () -> Resource?
       def client!: () -> _Client
       def resolve: (singleton(Resource) klass, untyped id) -> Resource?
-      def cursor: (singleton(Resource) klass, String path, max_results: Integer?, ?min_results: Integer, ?total: Symbol?, ?client: _Client, **untyped params) -> Cursor[untyped]
+      def cursor: (singleton(Resource) klass, String path, max_results: Integer?, ?min_results: Integer, ?total: Symbol?, ?app_only: bool, **untyped params) -> Cursor[untyped]
       def counter: (Symbol? total) -> (^() -> Integer?)?
     end
 
@@ -627,11 +628,13 @@ module X
     attr_reader min_results: Integer
 
     @prefetch: bool
+    @app_only: bool
     @total: (^() -> Integer?)?
     @pages: Objects::Pages
 
-    def initialize: (singleton(Objects::Resource) resource_class, String path, client: Objects::_Client, ?params: Objects::params, ?prefetch: bool, ?token_param: String, ?min_results: Integer, ?total: (^() -> Integer?)?) -> void
+    def initialize: (singleton(Objects::Resource) resource_class, String path, client: Objects::_Client, ?params: Objects::params, ?prefetch: bool, ?token_param: String, ?min_results: Integer, ?app_only: bool, ?total: (^() -> Integer?)?) -> void
     def prefetch?: () -> bool
+    def app_only?: () -> bool
     def each: () { (R) -> void } -> self
             | () -> Enumerator[R, self]
     def each_page: () { (Page[R]) -> void } -> self

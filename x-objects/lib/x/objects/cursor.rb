@@ -19,7 +19,7 @@ module X
     #   user.followers.resource_class # => X::User
     attr_reader :resource_class
 
-    # The client used to fetch pages
+    # The client the resources hold, which also fetches the pages unless app_only?
     # @api public
     # @return [Object] the client
     # @example Get the client
@@ -59,11 +59,15 @@ module X
     # @api public
     # @param resource_class [Class] the class of the resources in the collection
     # @param path [String] the endpoint path
-    # @param client [Object] the client used to fetch pages
+    # @param client [Object] the client the resources hold, which fetches the pages unless the endpoint takes
+    #   app-only authentication
     # @param params [Hash] query parameters merged over the resource class's default parameters
     # @param prefetch [Boolean] whether to fetch the next page in a background thread while the current page is consumed
     # @param token_param [String] the query parameter the token of the next page is sent in
     # @param min_results [Integer] the smallest page the endpoint accepts, which first never asks below
+    # @param app_only [Boolean] internal to the object layer, which may change it within 1.x: whether the pages are
+    #   fetched with the app-only client of the client, for an endpoint that refuses the OAuth 1.0a of a user, while
+    #   the resources hold the client, so that they act as the user
     # @param total [Proc, nil] internal to the object layer, which may change it within 1.x: a block returning the
     #   number of resources the API publishes for the collection
     # @return [Cursor] a new cursor
@@ -71,12 +75,12 @@ module X
     #   X::Cursor.new(X::User, "users/7505382/followers", client: client, params: {max_results: 1000})
     # @example Create a cursor over an endpoint that pages with next_token
     #   X::Cursor.new(X::User, "users/search", client: client, params: {query: "ruby"}, token_param: "next_token")
-    def initialize(resource_class, path, client:, params: {}, prefetch: false, token_param: DEFAULT_TOKEN_PARAM, min_results: 1, total: nil)
+    def initialize(resource_class, path, client:, params: {}, prefetch: false, token_param: DEFAULT_TOKEN_PARAM, min_results: 1, app_only: false, total: nil)
       @resource_class = resource_class
       @client = client
       @path = path
       @params = Objects::Utils.merge_params(resource_class.default_params, params).freeze
-      @prefetch = prefetch
+      @prefetch, @app_only = prefetch, app_only
       @token_param = token_param
       @min_results = min_results
       @total = total
@@ -91,6 +95,17 @@ module X
     # @example Check whether a cursor prefetches
     #   cursor.prefetch? # => false
     def prefetch? = @prefetch
+
+    # Check whether the pages are fetched with the app-only client of the client
+    #
+    # The space endpoints refuse the OAuth 1.0a of a user, so a cursor over one fetches its pages with the app-only
+    # client, while its resources hold the client, so that they act as the user.
+    #
+    # @api public
+    # @return [Boolean] true if pages are fetched as the app
+    # @example Check whether a cursor fetches as the app
+    #   space.posts.app_only? # => true
+    def app_only? = @app_only
 
     # Iterate over every resource, fetching pages as needed
     #
@@ -141,7 +156,7 @@ module X
     # @return [Cursor] a new cursor
     # @example Iterate again with fresh data
     #   followers = user.followers.refresh
-    def refresh = self.class.new(resource_class, path, client:, params: own_params, prefetch: prefetch?, token_param:, min_results:, total: @total)
+    def refresh = self.class.new(resource_class, path, client:, params: own_params, prefetch: prefetch?, token_param:, min_results:, app_only: app_only?, total: @total)
 
     # Return a new cursor over the same collection with prefetching enabled
     #
@@ -149,7 +164,7 @@ module X
     # @return [Cursor] a new cursor
     # @example Fetch every follower while overlapping requests with processing
     #   user.followers.prefetch.each { |follower| process(follower) }
-    def prefetch = self.class.new(resource_class, path, client:, params: own_params, prefetch: true, token_param:, min_results:, total: @total)
+    def prefetch = self.class.new(resource_class, path, client:, params: own_params, prefetch: true, token_param:, min_results:, app_only: app_only?, total: @total)
 
     # Return a new cursor over the same collection that yields stubs
     #
@@ -161,7 +176,7 @@ module X
     # @raise [UnsupportedOperation] if the resource class has no fields parameter
     # @example Check whether a user is among thousands of followers without fetching their fields
     #   user.followers.stubs.any?(other)
-    def stubs = self.class.new(resource_class, path, client:, params: id_only_params, prefetch: prefetch?, token_param:, min_results:, total: @total)
+    def stubs = self.class.new(resource_class, path, client:, params: id_only_params, prefetch: prefetch?, token_param:, min_results:, app_only: app_only?, total: @total)
 
     # The first resource, or the first few, requesting pages no larger than needed
     #

@@ -105,9 +105,14 @@ module X
         return if params.nil?
 
         params = sized(params, wanted) unless wanted.nil?
-        body = @cursor.client.get(Utils.path(@cursor.path, params), **Utils::JSON_CLASSES)
+        body = requester.get(Utils.path(@cursor.path, params), **Utils::JSON_CLASSES)
         Page.new(resources_from(body), body.to_h["meta"].to_h, problems: Problem.all_from(body))
       end
+
+      # The client that fetches the pages, app-only for an endpoint that takes it
+      # @api private
+      # @return [Object] the client
+      def requester = @cursor.app_only? ? Utils.app_client(@cursor.client) : @cursor.client
 
       # Build the resources of a page, as stubs for a cursor of identifiers
       # @api private

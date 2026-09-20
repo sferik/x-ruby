@@ -411,13 +411,13 @@ module X
       # @param max_results [Integer, nil] the maximum number of items per page, or nil for an endpoint without pages
       # @param min_results [Integer] the smallest page the endpoint accepts
       # @param total [Symbol, nil] the attribute holding the number of resources the API publishes
-      # @param client [Object] the client the cursor fetches pages with, which is this resource's client unless the
-      #   endpoint takes another, such as the app-only client a space endpoint takes
+      # @param app_only [Boolean] whether the endpoint takes app-only authentication, as a space endpoint does, so
+      #   the pages are fetched with the app-only client of this resource's client
       # @param params [Hash] query parameters merged over the default parameters
       # @return [Cursor] the cursor
-      def cursor(klass, path, max_results:, min_results: 1, total: nil, client: client!, **params)
+      def cursor(klass, path, max_results:, min_results: 1, total: nil, app_only: false, **params)
         defaults = {max_results:} #: Hash[Symbol, untyped]
-        Cursor.new(klass, path, client:, params: defaults.merge(params), min_results:, total: counter(total))
+        Cursor.new(klass, path, client: client!, params: defaults.merge(params), min_results:, app_only:, total: counter(total))
       end
 
       # A block reading the attribute holding the number the API publishes

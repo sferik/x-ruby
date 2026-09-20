@@ -188,6 +188,7 @@ See [UPGRADING.md](https://github.com/sferik/x-ruby/blob/main/UPGRADING.md) for 
 * Round a fractional `chunk_size_mb` up to a whole number of bytes, rather than read each chunk at a fractional offset, which skipped a byte between some chunks and uploaded a corrupt file
 * Declare the credential setters of `X::Client` as taking nil in the signatures of x-core, as `client.bearer_token = nil` clears a credential, so that code which clears one type-checks
 * Keep the pages that `X::Cursor#first`, `take`, `any?`, `none?`, `one?`, and `empty?` read, and answer them from the pages a cursor already holds, so a `first` before an iteration, or another `first`, requests only what has not been read, where each of them built a cursor of its own and requested its pages again, which the API billed
+* Give the spaces of `X::Space.search` and the posts of `X::Space#posts` the client they were given, as `X::Space.find` does, so `space.creator.follow` and `post.like` act as the user, while the cursors still fetch their pages with the app-only client, which the space endpoints take; the resources held the app-only client, which every action they took was refused with
 
 ## [0.19.0] - 2026-03-01
 * Add streaming support for filtered stream and volume stream endpoints
