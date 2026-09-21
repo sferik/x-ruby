@@ -17,7 +17,7 @@ module X
     end
 
     def test_an_exhausted_limit_without_a_reset_time_is_left_out
-      error = TooManyRequests.new(response: response(FULL.except("x-rate-limit-reset")))
+      error = TooManyRequests.new(http_response: response(FULL.except("x-rate-limit-reset")))
 
       assert_empty error.rate_limits
       assert_nil error.rate_limit

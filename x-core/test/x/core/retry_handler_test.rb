@@ -67,7 +67,7 @@ module X
       @attempts += 1
       raise error_class, "boom" if error_class.equal?(NetworkError)
 
-      raise error_class.new(response: Net::HTTPResponse.new("1.1", status_of(error_class), "Boom"))
+      raise error_class.new(http_response: Net::HTTPResponse.new("1.1", status_of(error_class), "Boom"))
     end
 
     def status_of(error_class)

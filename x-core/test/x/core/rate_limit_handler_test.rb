@@ -70,7 +70,7 @@ module X
       response = Net::HTTPTooManyRequests.new("1.1", "429", "Too Many Requests")
       headers = {"x-rate-limit-limit" => "50", "x-rate-limit-remaining" => "0", "x-rate-limit-reset" => (Time.now.to_i + reset_in).to_s} if reset_in
       headers.each { |name, value| response[name] = value }
-      raise TooManyRequests.new(response:)
+      raise TooManyRequests.new(http_response: response)
     end
   end
 end

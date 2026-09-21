@@ -284,7 +284,7 @@ module X
     end
 
     def unauthorized
-      Unauthorized.new(response: Net::HTTPUnauthorized.new("1.1", "401", "Unauthorized"))
+      Unauthorized.new(http_response: Net::HTTPUnauthorized.new("1.1", "401", "Unauthorized"))
     end
 
     def test_retrying_rejected_token_returns_what_the_request_returns

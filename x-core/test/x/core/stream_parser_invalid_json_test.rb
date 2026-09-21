@@ -19,7 +19,7 @@ module X
         @stream_parser.process(response:, response_parser: @response_parser) { |json| results << json }
       end
 
-      assert_same response, error.response
+      assert_same response, error.http_response
       assert_equal "<html>", error.body
       assert_kind_of JSON::ParserError, error.cause
       assert_equal [{"data" => {"id" => "1"}}], results

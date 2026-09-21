@@ -20,14 +20,14 @@ module X
     end
 
     def test_an_error_without_a_content_type_takes_the_status_message
-      assert_equal "Bad Request", BadRequest.new(response: Net::HTTPBadRequest.new("1.1", "400", "Bad Request")).message
+      assert_equal "Bad Request", BadRequest.new(http_response: Net::HTTPBadRequest.new("1.1", "400", "Bad Request")).message
     end
 
     def test_the_error_holds_its_response_and_status
       stub_json(status: [404, "Not Found"], body: '{"title": "Not Found Error", "detail": "Could not find user"}')
       error = assert_raises(NotFound) { @response_parser.parse(response:) }
 
-      assert_kind_of Net::HTTPNotFound, error.response
+      assert_kind_of Net::HTTPNotFound, error.http_response
       assert_equal [404, "Not Found Error: Could not find user"], [error.status, error.message]
     end
 
@@ -142,7 +142,7 @@ module X
       response["content-type"] = "application/json"
       response.instance_variable_set(:@read, true)
 
-      assert_equal "Service Unavailable", ServiceUnavailable.new(response:).message
+      assert_equal "Service Unavailable", ServiceUnavailable.new(http_response: response).message
     end
   end
 end

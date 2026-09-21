@@ -22,7 +22,7 @@ module X
     # @example Print how many requests remain in each window
     #   error.rate_limits.each { |limit| puts "#{limit.type}: #{limit.remaining}" }
     def rate_limits
-      @rate_limits ||= RateLimit.all_from(response)
+      @rate_limits ||= RateLimit.all_from(http_response)
     end
 
     # The 15-minute rate limit of the endpoint, which nearly every response reports
@@ -91,7 +91,7 @@ module X
     # @api private
     # @return [Integer, nil] the seconds, never negative, or nil without a header that says how long to wait
     def retry_after_header
-      value = response[RETRY_AFTER_HEADER]
+      value = http_response[RETRY_AFTER_HEADER]
       return if value.nil?
 
       value.match?(RETRY_AFTER_SECONDS) ? Integer(value, 10) : seconds_until(value)

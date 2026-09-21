@@ -72,7 +72,7 @@ module X
         begin
           decode(body, array_class:, object_class:, client:)
         rescue JSON::ParserError
-          raise InvalidResponse.new(response:, body:)
+          raise InvalidResponse.new(http_response: response, body:)
         end
       end
 
@@ -105,7 +105,7 @@ module X
       # @param response [Net::HTTPResponse] the HTTP response
       # @return [HTTPError] the error
       def error(response)
-        error_class(response).new(response:)
+        error_class(response).new(http_response: response)
       end
 
       # Get the error class for a response, falling back on its class of status

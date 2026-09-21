@@ -43,7 +43,7 @@ module X
             response_parser.decode(line, array_class:, object_class:, client:)
           end
         rescue JSON::ParserError
-          raise InvalidResponse.new(response:, body: line)
+          raise InvalidResponse.new(http_response: response, body: line)
         end
         read_lines(response:, decode:, &block)
       end

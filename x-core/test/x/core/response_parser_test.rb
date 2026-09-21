@@ -31,7 +31,7 @@ module X
       error = assert_raises(InvalidResponse) { @response_parser.parse(response:) }
 
       assert_equal "The body of the 200 response is not JSON (text/html)", error.message
-      assert_equal ["<html></html>", "<html></html>"], [error.body, error.response.body]
+      assert_equal ["<html></html>", "<html></html>"], [error.body, error.http_response.body]
       assert_kind_of JSON::ParserError, error.cause
     end
 
@@ -64,7 +64,7 @@ module X
       stub_request(:get, @uri.to_s).to_return(status: 400)
       exception = assert_raises(BadRequest) { @response_parser.parse(response:) }
 
-      assert_kind_of Net::HTTPBadRequest, exception.response
+      assert_kind_of Net::HTTPBadRequest, exception.http_response
       assert_equal 400, exception.status
     end
 

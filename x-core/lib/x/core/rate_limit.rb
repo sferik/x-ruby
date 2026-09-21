@@ -24,17 +24,17 @@ module X
     # @api public
     # @return [Net::HTTPResponse] the HTTP response containing rate limit headers
     # @example Read a header of the response
-    #   rate_limit.response["x-rate-limit-limit"]
-    attr_reader :response
+    #   rate_limit.http_response["x-rate-limit-limit"]
+    attr_reader :http_response
 
     # Every rate limit a response reports in full, in the order of TYPES
     #
     # @api public
-    # @param response [Net::HTTPResponse] the HTTP response
+    # @param http_response [Net::HTTPResponse] the HTTP response
     # @return [Array<RateLimit>] the 15-minute limit, and the 24-hour app and user limits, when reported
     # @example Print how many requests remain in each window
     #   X::RateLimit.all_from(response).each { |limit| puts "#{limit.type}: #{limit.remaining}" }
-    def self.all_from(response) = TYPES.filter_map { |type| new(type:, response:) if reported?(type, response) }
+    def self.all_from(http_response) = TYPES.filter_map { |type| new(type:, http_response:) if reported?(type, http_response) }
 
     # Check whether a response has the limit, remaining, and reset of a rate limit
     #
@@ -43,11 +43,11 @@ module X
     #
     # @api private
     # @param type [String] the type of rate limit
-    # @param response [Net::HTTPResponse] the HTTP response
+    # @param http_response [Net::HTTPResponse] the HTTP response
     # @return [Boolean] true if the response has every header of the rate limit
     # @example Check for the 15-minute rate limit
     #   X::RateLimit.reported?("rate-limit", response)
-    def self.reported?(type, response) = %w[limit remaining reset].all? { |field| response.key?("x-#{type}-#{field}") }
+    def self.reported?(type, http_response) = %w[limit remaining reset].all? { |field| http_response.key?("x-#{type}-#{field}") }
 
     # Initialize a new RateLimit
     #
@@ -56,13 +56,13 @@ module X
     #
     # @api private
     # @param type [String] the type of rate limit
-    # @param response [Net::HTTPResponse] the HTTP response containing rate limit headers
+    # @param http_response [Net::HTTPResponse] the HTTP response containing rate limit headers
     # @return [RateLimit] a new instance
     # @example Create a rate limit instance
-    #   rate_limit = X::RateLimit.new(type: "rate-limit", response: response)
-    def initialize(type:, response:)
+    #   rate_limit = X::RateLimit.new(type: "rate-limit", http_response: response)
+    def initialize(type:, http_response:)
       @type = type
-      @response = response
+      @http_response = http_response
     end
 
     # Get the rate limit maximum
@@ -72,7 +72,7 @@ module X
     # @example Get the rate limit
     #   rate_limit.limit
     def limit
-      Integer(response.fetch("x-#{type}-limit"))
+      Integer(http_response.fetch("x-#{type}-limit"))
     end
 
     # Get the remaining requests
@@ -82,7 +82,7 @@ module X
     # @example Get the remaining requests
     #   rate_limit.remaining
     def remaining
-      Integer(response.fetch("x-#{type}-remaining"))
+      Integer(http_response.fetch("x-#{type}-remaining"))
     end
 
     # Check whether the limit has no requests left
@@ -100,7 +100,7 @@ module X
     # @example Get the reset time
     #   rate_limit.reset_at
     def reset_at
-      Time.at(Integer(response.fetch("x-#{type}-reset")))
+      Time.at(Integer(http_response.fetch("x-#{type}-reset")))
     end
 
     # Get the seconds until the rate limit resets

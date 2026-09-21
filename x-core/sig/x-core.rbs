@@ -412,10 +412,10 @@ module X
     JSON_CONTENT_TYPE_REGEXP: Regexp
     PROBLEM_KEYS: Array[String]
 
-    attr_reader response : Net::HTTPResponse
+    attr_reader http_response : Net::HTTPResponse
     attr_reader problem : Hash[String, untyped]?
 
-    def initialize: (response: Net::HTTPResponse) -> void
+    def initialize: (http_response: Net::HTTPResponse) -> void
     def status: () -> Integer
     def body: () -> String?
 
@@ -465,10 +465,10 @@ module X
   end
 
   class InvalidResponse < Error
-    attr_reader response: Net::HTTPResponse
+    attr_reader http_response: Net::HTTPResponse
     attr_reader body: String?
 
-    def initialize: (response: Net::HTTPResponse, ?body: String?) -> void
+    def initialize: (http_response: Net::HTTPResponse, ?body: String?) -> void
   end
 
   class TooManyRequests < ClientError
@@ -565,10 +565,10 @@ module X
     TYPES: Array[String]
 
     attr_reader type: String
-    attr_reader response: Net::HTTPResponse
-    def self.all_from: (Net::HTTPResponse response) -> Array[RateLimit]
-    def self.reported?: (String type, Net::HTTPResponse response) -> bool
-    def initialize: (type: String, response: Net::HTTPResponse) -> void
+    attr_reader http_response: Net::HTTPResponse
+    def self.all_from: (Net::HTTPResponse http_response) -> Array[RateLimit]
+    def self.reported?: (String type, Net::HTTPResponse http_response) -> bool
+    def initialize: (type: String, http_response: Net::HTTPResponse) -> void
     def limit: -> Integer
     def remaining: -> Integer
     def exhausted?: -> bool

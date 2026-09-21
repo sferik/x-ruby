@@ -35,7 +35,7 @@ module X
       response = Net::HTTPBadRequest.new("1.1", "400", "Bad Request")
       response.instance_variable_set(:@read, true)
 
-      assert_nil BadRequest.new(response:).body
+      assert_nil BadRequest.new(http_response: response).body
     end
 
     def test_the_problem_is_the_first_error_the_body_names

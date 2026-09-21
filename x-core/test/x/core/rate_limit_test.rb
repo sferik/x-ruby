@@ -13,7 +13,7 @@ module X
           "x-rate-limit-remaining" => "0",
           "x-rate-limit-reset" => (Time.now.to_i + 60).to_s
         }
-        @rate_limit = RateLimit.new(type: "rate-limit", response:)
+        @rate_limit = RateLimit.new(type: "rate-limit", http_response: response)
       end
     end
 
@@ -27,7 +27,7 @@ module X
 
     def test_exhausted
       assert_predicate @rate_limit, :exhausted?
-      @rate_limit.response["x-rate-limit-remaining"] = "1"
+      @rate_limit.http_response["x-rate-limit-remaining"] = "1"
 
       refute_predicate @rate_limit, :exhausted?
     end
@@ -45,14 +45,14 @@ module X
     end
 
     def test_reset_in_minimum_value
-      @rate_limit.response["x-rate-limit-reset"] = (Time.now.to_i - 60).to_s
+      @rate_limit.http_response["x-rate-limit-reset"] = (Time.now.to_i - 60).to_s
 
       assert_equal 0, @rate_limit.reset_in
     end
 
     def test_reset_in_ceil
       Time.stub :now, Time.utc(1983, 11, 24, 0, 0, 0, 900_000) do
-        @rate_limit.response["x-rate-limit-reset"] = (Time.now + 61).to_i.to_s
+        @rate_limit.http_response["x-rate-limit-reset"] = (Time.now + 61).to_i.to_s
 
         assert_equal 61, @rate_limit.reset_in
       end

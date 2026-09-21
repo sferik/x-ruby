@@ -23,8 +23,8 @@ module X
     # @api public
     # @return [Net::HTTPResponse] the HTTP response
     # @example Get the response
-    #   error.response
-    attr_reader :response
+    #   error.http_response
+    attr_reader :http_response
 
     # The problem the API described in the body of the response
     #
@@ -44,15 +44,15 @@ module X
     # response of a request, so that it can change within 1.x, as that response may.
     #
     # @api private
-    # @param response [Net::HTTPResponse] the HTTP response
+    # @param http_response [Net::HTTPResponse] the HTTP response
     # @return [HTTPError] a new instance
     # @example Create an HTTP error
-    #   error = X::HTTPError.new(response: response)
-    def initialize(response:)
-      @response = response
+    #   error = X::HTTPError.new(http_response: response)
+    def initialize(http_response:)
+      @http_response = http_response
       parsed = parsed_body
       @problem = problem_from(parsed).freeze
-      super(message_from(parsed) || response.message)
+      super(message_from(parsed) || http_response.message)
     end
 
     # The HTTP status code, as an Integer like X::Response#status
@@ -61,7 +61,7 @@ module X
     # @return [Integer] the HTTP status code
     # @example Handle a status the errors do not name
     #   retry if error.status.eql?(408)
-    def status = Integer(response.code)
+    def status = Integer(http_response.code)
 
     # The body of the response, as it arrived
     #
@@ -72,7 +72,7 @@ module X
     # @return [String, nil] the body, or nil for a response without one
     # @example Log what the API sent
     #   logger.error(error.body)
-    def body = response.body
+    def body = http_response.body
 
     private
 
@@ -140,7 +140,7 @@ module X
     # @api private
     # @return [Boolean] true if the response is JSON
     def json?
-      JSON_CONTENT_TYPE_REGEXP === response["content-type"]
+      JSON_CONTENT_TYPE_REGEXP === http_response["content-type"]
     end
   end
 end

@@ -85,14 +85,14 @@ module X
       @runs += 1
       response = Net::HTTPTooManyRequests.new("1.1", "429", "Too Many Requests")
       {"x-rate-limit-limit" => "50", "x-rate-limit-remaining" => "0", "x-rate-limit-reset" => (Time.now.to_i + reset_in).to_s}.each { |name, value| response[name] = value } if reset_in
-      raise TooManyRequests.new(response:)
+      raise TooManyRequests.new(http_response: response)
     end
 
     def fail_with(error_class)
       @runs += 1
       raise error_class.new("dropped") if error_class <= NetworkError
 
-      raise error_class.new(response: Net::HTTPServiceUnavailable.new("1.1", "503", "Service Unavailable"))
+      raise error_class.new(http_response: Net::HTTPServiceUnavailable.new("1.1", "503", "Service Unavailable"))
     end
   end
 end
