@@ -293,6 +293,15 @@ module X
       def encode_body: (body? body, params? form) -> String?
     end
 
+    # What a Response and an HTTPError hold the headers of
+    interface _HTTPResponseHolder
+      def http_response: () -> Net::HTTPResponse
+    end
+
+    module ResponseHeaders : _HTTPResponseHolder
+      def headers: () -> Hash[String, String]
+    end
+
     module CredentialValidator
       INCOMPLETE_CREDENTIALS: String
       INVALID_EXPIRES_AT: String
@@ -444,6 +453,8 @@ module X
   end
 
   class HTTPError < Error
+    include Core::ResponseHeaders
+
     JSON_CONTENT_TYPE_REGEXP: Regexp
     PROBLEM_KEYS: Array[String]
 
@@ -572,6 +583,8 @@ module X
   end
 
   class Response
+    include Core::ResponseHeaders
+
     attr_reader http_method: Symbol
     attr_reader uri: URI::Generic
     attr_reader http_response: Net::HTTPResponse

@@ -5,6 +5,7 @@ require_relative "../../test_helper"
 module X
   class ResponseTest < Minitest::Test
     cover Response
+    cover Core::ResponseHeaders
 
     URI_ME = URI("https://api.x.com/2/users/me")
 
@@ -40,6 +41,25 @@ module X
     def test_no_rate_limits
       assert_empty summarize(Net::HTTPOK).rate_limits
       assert_nil summarize(Net::HTTPOK).rate_limit
+    end
+
+    def test_the_headers_are_read_by_lowercase_name
+      response = summarize(Net::HTTPOK, headers: {"Content-Type" => "application/json", "x-response-time" => "42"})
+
+      assert_equal({"content-type" => "application/json", "x-response-time" => "42"}, response.headers)
+    end
+
+    def test_a_header_sent_more_than_once_is_joined_with_a_comma
+      response = summarize(Net::HTTPOK)
+      response.http_response.add_field("x-label", "one")
+      response.http_response.add_field("x-label", "two")
+
+      assert_equal "one, two", response.headers["x-label"]
+    end
+
+    def test_the_headers_are_frozen_and_a_response_without_any_has_none
+      assert_predicate summarize(Net::HTTPOK).headers, :frozen?
+      assert_empty Response.new(:get, URI_ME, Net::HTTPOK.new("1.1", "200", "")).headers
     end
 
     def test_resource_counts_of_an_object_with_includes

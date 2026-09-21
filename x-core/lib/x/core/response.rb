@@ -3,11 +3,14 @@
 require "json"
 require "net/http"
 require_relative "rate_limit"
+require_relative "response_headers"
 
 module X
   # A summary of one API response, or one object of a stream, which a client passes to its on_response hook
   # @api public
   class Response
+    include Core::ResponseHeaders
+
     # The HTTP method of the request
     # @api public
     # @return [Symbol] the HTTP method
@@ -22,11 +25,16 @@ module X
     #   response.uri.path # => "/2/users/me"
     attr_reader :uri
 
-    # The response itself, with its headers and body
+    # The response itself, as the client received it
+    #
+    # It is an escape hatch, for what a summary does not read: the status is {#status}, the headers are
+    # {#headers}, and the body is {#body}. What it holds is what the client sent the request with, which is
+    # Net::HTTP today, and the class of it is not part of what 1.x promises.
+    #
     # @api public
     # @return [Net::HTTPResponse] the HTTP response
-    # @example Read a header
-    #   response.http_response["x-response-time"]
+    # @example Read the reason phrase of the status line
+    #   response.http_response.message # => "OK"
     attr_reader :http_response
 
     # Summarize a response

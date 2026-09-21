@@ -3,16 +3,19 @@
 require "json"
 require_relative "error"
 require_relative "../problem"
+require_relative "../response_headers"
 
 module X
   # Base class for HTTP errors from the X API
   #
   # The message is what the API said went wrong, read from the body of the response. {#body} holds that body as it
-  # arrived, and {#problem} the JSON object within it that describes the failure, for code that acts on the reason
-  # rather than logging it.
+  # arrived, {#headers} the headers it came with, and {#problem} the JSON object within it that describes the
+  # failure, for code that acts on the reason rather than logging it.
   #
   # @api public
   class HTTPError < Error
+    include Core::ResponseHeaders
+
     # Regular expression to match JSON content types
     JSON_CONTENT_TYPE_REGEXP = %r{application/(problem\+|)json}
     private_constant :JSON_CONTENT_TYPE_REGEXP
@@ -20,11 +23,16 @@ module X
     PROBLEM_KEYS = %w[title detail type error].freeze
     private_constant :PROBLEM_KEYS
 
-    # The HTTP response
+    # The response itself, as the client received it
+    #
+    # It is an escape hatch, for what the error does not read: the status is {#status}, the headers are
+    # {#headers}, and the body is {#body}. What it holds is what the client sent the request with, which is
+    # Net::HTTP today, and the class of it is not part of what 1.x promises.
+    #
     # @api public
     # @return [Net::HTTPResponse] the HTTP response
-    # @example Get the response
-    #   error.http_response
+    # @example Read the reason phrase of the status line
+    #   error.http_response.message # => "Too Many Requests"
     attr_reader :http_response
 
     # The problem the API described in the body of the response
