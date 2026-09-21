@@ -1,14 +1,17 @@
 # frozen_string_literal: true
 
-require_relative "serialization"
-require_relative "utils"
+require "json"
 
 module X
-  # A problem the API reported in a response that otherwise succeeded, such as a referenced post that no longer exists
+  # A problem the API described, in a response that failed or in one that otherwise succeeded
+  #
+  # The API describes what went wrong the same way whether it refused the request, which raises an {HTTPError}
+  # whose {HTTPError#problem} is one of these, or answered it with the resources it could and named the rest as
+  # errors, which the object layer reads as the problems of a resource or a page. Code that acts on the reason
+  # rather than logging it reads the same object either way.
+  #
   # @api public
   class Problem
-    include Objects::Serialization
-
     # The kinds of resource whose identifiers are numbers, as the API names them
     INTEGER_ID_TYPES = %w[user tweet post list dm_event community poll].freeze
     private_constant :INTEGER_ID_TYPES
@@ -27,6 +30,17 @@ module X
     #   @example Convert a problem to a hash
     #     problem.to_h
     alias_method :to_h, :attrs
+
+    # Build a problem from the attributes the API reported, if it reported any
+    #
+    # @api public
+    # @param attrs [Hash, nil] the attributes, or nil for a response that described no problem
+    # @return [Problem, nil] the problem, or nil for no attributes
+    # @example Build a problem from what a body described
+    #   X::Problem.from(body["errors"]&.first)
+    def self.from(attrs)
+      new(attrs) unless attrs.nil?
+    end
 
     # The problems a response body reports
     #
@@ -48,7 +62,7 @@ module X
     # @example Build a problem
     #   X::Problem.new({"title" => "Not Found Error"})
     def initialize(attrs)
-      @attrs = Objects::Utils.deep_freeze(attrs)
+      @attrs = deep_freeze(attrs)
       freeze
     end
 
@@ -114,6 +128,17 @@ module X
     #   problem.value # => 1
     def value = identifier(attrs["value"])
 
+    # The message the API gave for a request it refused
+    #
+    # The errors of a request the API refused carry a message where the problems of a response that succeeded carry
+    # a detail, so a problem read from a failed request reads as one of either.
+    #
+    # @api public
+    # @return [String, nil] the message
+    # @example Get the message
+    #   problem.message # => "Could not authenticate you"
+    def message = attrs["message"]
+
     # Check whether the problem is a resource that was not found
     #
     # @api public
@@ -121,6 +146,26 @@ module X
     # @example Skip the posts that no longer exist
     #   problems.reject(&:not_found?)
     def not_found? = type.to_s.end_with?("/resource-not-found")
+
+    # The attributes, as a JSON encoder and ActiveSupport read them
+    #
+    # ActiveSupport's Object#as_json would otherwise read the instance variables, which is the same Hash under
+    # another name.
+    #
+    # @api public
+    # @return [Hash{String => Object}] the attributes
+    # @example Serialize a problem
+    #   problem.as_json # => {"title" => "Not Found Error"}
+    def as_json(*) = attrs
+
+    # The attributes as JSON
+    #
+    # @api public
+    # @param state [JSON::State, nil] the state a JSON encoder passes, which the attributes are given
+    # @return [String] the attributes as a JSON object
+    # @example Serialize a problem
+    #   problem.to_json # => "{\"title\":\"Not Found Error\"}"
+    def to_json(state = nil) = as_json.to_json(state)
 
     # Summarize the problem for the console
     #
@@ -148,6 +193,19 @@ module X
       return false unless INTEGER_ID_TYPES.include?(resource_type) && String === value
 
       !parameter.to_s.end_with?("username", "usernames") && value.match?(/\A\d+\z/)
+    end
+
+    # Copy the attributes with String keys, and freeze them and what they hold
+    # @api private
+    # @param value [Object] the value
+    # @return [Object] the frozen copy
+    def deep_freeze(value)
+      case value
+      when Hash then value.transform_keys(&:to_s).transform_values { |element| deep_freeze(element) }.freeze
+      when Array then value.map { |element| deep_freeze(element) }.freeze
+      when String then value.dup.freeze
+      else value
+      end
     end
   end
 end

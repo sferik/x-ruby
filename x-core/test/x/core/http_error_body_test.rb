@@ -42,34 +42,34 @@ module X
       body = {title: "Invalid Request", errors: [{parameters: {ids: ["abc"]}, message: "The ids query parameter is invalid"}, {message: "Second"}]}
       problem = error_for(body.to_json).problem
 
-      assert_equal "The ids query parameter is invalid", problem["message"]
-      assert_equal({"ids" => ["abc"]}, problem["parameters"])
+      assert_equal "The ids query parameter is invalid", problem.message
+      assert_equal({"ids" => ["abc"]}, problem.to_h["parameters"])
     end
 
     def test_the_problem_is_the_body_of_a_response_that_describes_the_failure_itself
       body = {type: "https://api.x.com/2/problems/invalid-request", title: "Invalid Request", detail: "One or more parameters are invalid"}
 
-      assert_equal JSON.parse(body.to_json), error_for(body.to_json).problem
+      assert_equal JSON.parse(body.to_json), error_for(body.to_json).problem.to_h
     end
 
     def test_each_key_that_describes_a_failure_makes_the_body_the_problem
-      %w[title detail type error].each { |key| assert_equal({key => "value"}, error_for({key => "value"}.to_json).problem) }
+      %w[title detail type error].each { |key| assert_equal({key => "value"}, error_for({key => "value"}.to_json).problem.to_h) }
     end
 
     def test_an_errors_field_that_is_not_an_array_falls_back_to_the_problem_the_body_describes
       body = '{"errors": {"message": "Some Error"}, "detail": "One or more parameters are invalid"}'
 
-      assert_equal JSON.parse(body), error_for(body).problem
+      assert_equal JSON.parse(body), error_for(body).problem.to_h
     end
 
     def test_an_errors_array_of_anything_but_objects_falls_back_to_the_problem_the_body_describes
       body = '{"errors": ["not an object"], "detail": "One or more parameters are invalid"}'
 
-      assert_equal JSON.parse(body), error_for(body).problem
+      assert_equal JSON.parse(body), error_for(body).problem.to_h
     end
 
     def test_the_problem_is_frozen
-      assert_predicate error_for('{"error": "Some Error"}').problem, :frozen?
+      assert_predicate error_for('{"error": "Some Error"}').problem.to_h, :frozen?
     end
 
     def test_a_body_that_describes_no_problem_has_none

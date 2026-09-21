@@ -23,6 +23,17 @@ module X
       {}
     end
 
+    # The identifier of the user the credentials act for, when they name one
+    #
+    # Only an OAuth 1.0a access token names its user, so every other set of credentials answers nil, and the caller
+    # that wants the user of such a client asks the API for it.
+    #
+    # @api public
+    # @return [Integer, nil] the identifier, or nil for credentials that name no user
+    # @example Read the user a client acts for without a request
+    #   client.authenticator.user_id # => nil
+    def user_id = nil
+
     # Summarize the authenticator for the console without revealing credentials
     #
     # @api public

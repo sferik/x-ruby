@@ -5,7 +5,6 @@ require_relative "../../test_helper"
 module X
   class ProblemTest < Minitest::Test
     cover Problem
-    cover Objects::MissingResource
 
     NOT_FOUND = {"title" => "Not Found Error", "detail" => "Could not find tweet with pinned_tweet_id: [1].", "type" => "https://api.x.com/2/problems/resource-not-found",
                  "resource_type" => "tweet", "resource_id" => "1", "parameter" => "pinned_tweet_id", "value" => "1"}.freeze
@@ -27,7 +26,7 @@ module X
         assert_equal [7505382, 7505382], identifiers({"resource_type" => resource_type, "resource_id" => "7505382", "parameter" => "ids", "value" => "7505382"})
       end
       assert_equal [123, 123], identifiers({"resource_type" => "user", "resource_id" => "0123", "value" => "0123"})
-      assert_equal Post.from_id(1).id, Problem.new(NOT_FOUND).resource_id
+      assert_equal 1, Problem.new(NOT_FOUND).resource_id
     end
 
     def test_a_username_remains_a_string_even_when_it_is_all_digits
@@ -49,6 +48,11 @@ module X
       assert_equal [nil, 1], identifiers({"resource_type" => "user", "value" => 1})
     end
 
+    def test_the_message_of_an_error_the_api_named
+      assert_equal "Could not authenticate you", Problem.new({"message" => "Could not authenticate you", "code" => 32}).message
+      assert_nil Problem.new(NOT_FOUND).message
+    end
+
     def test_not_found
       assert_predicate Problem.new(NOT_FOUND), :not_found?
       refute_predicate Problem.new({"type" => "https://api.x.com/2/problems/not-authorized-for-resource"}), :not_found?
@@ -60,19 +64,19 @@ module X
       assert_equal "#<X::Problem Not Found Error>", Problem.new({"title" => "Not Found Error"}).inspect
     end
 
-    def test_attributes_are_deep_frozen
-      problem = Problem.new({"title" => +"Not Found Error", "value" => [+"1"]})
-
-      assert_predicate problem.attrs, :frozen?
-      assert_predicate problem.title, :frozen?
-      assert_predicate problem.value.first, :frozen?
-    end
-
     def test_missing_attributes_are_nil
       problem = Problem.new({})
 
-      assert_equal [nil] * 7, [problem.title, problem.detail, problem.type, problem.resource_type, problem.resource_id, problem.parameter, problem.value]
+      assert_equal [nil] * 8, [problem.title, problem.detail, problem.type, problem.resource_type, problem.resource_id, problem.parameter, problem.value, problem.message]
       refute_predicate problem, :not_found?
+    end
+
+    def test_from
+      problem = Problem.from(NOT_FOUND)
+
+      assert_instance_of Problem, problem
+      assert_equal NOT_FOUND, problem.to_h
+      assert_nil Problem.from(nil)
     end
 
     def test_all_from
@@ -85,28 +89,19 @@ module X
       assert_empty Problem.all_from(nil)
     end
 
-    def test_resource_not_found_explains_itself_with_the_first_problem
-      error = Objects::MissingResource.new("Could not find X::User nobody", problems: [Problem.new({"title" => "Not Found Error", "detail" => "Could not find user with username: [nobody]."}), Problem.new(NOT_FOUND)])
+    def test_serialization
+      problem = Problem.new({"title" => "Not Found Error"})
 
-      assert_equal "Could not find X::User nobody: Could not find user with username: [nobody].", error.message
-      assert_equal 2, error.problems.size
-      assert_predicate error.problems, :frozen?
+      assert_equal({"title" => "Not Found Error"}, problem.as_json)
+      assert_same problem.attrs, problem.as_json
+      assert_equal '{"title":"Not Found Error"}', problem.to_json
+      assert_equal '{"problem":{"title":"Not Found Error"}}', {problem:}.to_json
     end
 
-    def test_resource_not_found_without_problems_or_detail
-      assert_equal "Could not find X::User nobody", Objects::MissingResource.new("Could not find X::User nobody").message
-      assert_empty Objects::MissingResource.new("Could not find X::User nobody").problems
-      assert_equal "X::Objects::MissingResource", Objects::MissingResource.new.message
-      assert_equal "Not Found Error", Objects::MissingResource.new(problems: [Problem.new({"title" => "Not Found Error"})]).message
-      assert_equal "Could not find X::User nobody: Not Found Error", Objects::MissingResource.new("Could not find X::User nobody", problems: [Problem.new({"title" => "Not Found Error"})]).message
-    end
+    def test_to_json_is_generated_with_the_state_it_is_given
+      problem = Problem.new({"title" => "Not Found Error"})
 
-    def test_resource_not_found_keeps_its_own_copy_of_the_problems
-      problems = [Problem.new(NOT_FOUND)]
-      error = Objects::MissingResource.new("missing", problems:)
-      problems.clear
-
-      assert_equal 1, error.problems.size
+      assert_equal "{\n  \"title\": \"Not Found Error\"\n}", problem.to_json(JSON::State.new(indent: "  ", object_nl: "\n", space: " "))
     end
   end
 end

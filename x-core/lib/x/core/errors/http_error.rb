@@ -2,6 +2,7 @@
 
 require "json"
 require_relative "error"
+require_relative "../problem"
 
 module X
   # Base class for HTTP errors from the X API
@@ -33,9 +34,11 @@ module X
     # errors keeps every one of them there.
     #
     # @api public
-    # @return [Hash{String => Object}, nil] the problem, frozen, or nil for a response that describes none in JSON
+    # @return [Problem, nil] the problem, or nil for a response that describes none in JSON
     # @example Tell a parameter the API refused from one it did not understand
-    #   error.problem&.dig("parameters", "ids")
+    #   error.problem&.parameter # => "ids"
+    # @example Act on the reason rather than the status
+    #   retry_without(error.problem.value) if error.problem&.not_found?
     attr_reader :problem
 
     # Initialize a new HTTPError
@@ -51,7 +54,7 @@ module X
     def initialize(http_response:)
       @http_response = http_response
       parsed = parsed_body
-      @problem = problem_from(parsed).freeze
+      @problem = Problem.from(problem_from(parsed))
       super(message_from(parsed) || http_response.message)
     end
 

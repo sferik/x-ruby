@@ -408,12 +408,40 @@ module X
   class Conflict < ClientError
   end
 
+  class Problem
+    INTEGER_ID_TYPES: Array[String]
+
+    attr_reader attrs: Hash[String, untyped]
+
+    def self.from: (Hash[String, untyped]? attrs) -> Problem?
+    def self.all_from: (Hash[String, untyped]? body) -> Array[Problem]
+    def initialize: (Hash[String, untyped] attrs) -> void
+    def to_h: () -> Hash[String, untyped]
+    def title: () -> String?
+    def detail: () -> String?
+    def type: () -> String?
+    def resource_type: () -> String?
+    def resource_id: () -> (Integer | String)?
+    def parameter: () -> String?
+    def value: () -> untyped
+    def message: () -> String?
+    def not_found?: () -> bool
+    def as_json: (*untyped) -> Hash[String, untyped]
+    def to_json: (?JSON::State? state) -> String
+    def inspect: () -> String
+
+    private
+    def identifier: (untyped value) -> untyped
+    def numeric_identifier?: (untyped value) -> bool
+    def deep_freeze: (untyped value) -> untyped
+  end
+
   class HTTPError < Error
     JSON_CONTENT_TYPE_REGEXP: Regexp
     PROBLEM_KEYS: Array[String]
 
     attr_reader http_response : Net::HTTPResponse
-    attr_reader problem : Hash[String, untyped]?
+    attr_reader problem : Problem?
 
     def initialize: (http_response: Net::HTTPResponse) -> void
     def status: () -> Integer

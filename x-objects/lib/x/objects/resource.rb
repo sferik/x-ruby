@@ -7,7 +7,7 @@ require_relative "finders"
 require_relative "identity"
 require_relative "includes"
 require_relative "memo"
-require_relative "problem"
+require "x/core/problem"
 require_relative "serialization"
 require_relative "utils"
 

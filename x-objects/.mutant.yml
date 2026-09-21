@@ -7,6 +7,9 @@ includes:
 integration:
   name: minitest
 matcher:
+  # X::Problem belongs to x-core, which x-objects requires the file of; its own suite mutates it
+  ignore:
+  - X::Problem*
   subjects:
   - X*
 mutation:

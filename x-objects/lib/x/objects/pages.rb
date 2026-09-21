@@ -4,7 +4,7 @@ require "monitor"
 require_relative "batch"
 require_relative "finders"
 require_relative "page"
-require_relative "problem"
+require "x/core/problem"
 require_relative "utils"
 
 module X

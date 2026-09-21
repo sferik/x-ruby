@@ -2,7 +2,7 @@
 
 require_relative "objects/version"
 require_relative "objects/errors"
-require_relative "objects/problem"
+require "x/core/problem"
 require_relative "objects/api"
 require_relative "objects/relationships"
 require_relative "objects/community"

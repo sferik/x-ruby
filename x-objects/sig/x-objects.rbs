@@ -10,31 +10,6 @@ module X
     end
   end
 
-  class Problem
-    include Objects::Serialization
-
-    INTEGER_ID_TYPES: Array[String]
-
-    attr_reader attrs: Hash[String, untyped]
-
-    def self.all_from: (Hash[String, untyped]? body) -> Array[Problem]
-    def initialize: (Hash[String, untyped] attrs) -> void
-    def to_h: () -> Hash[String, untyped]
-    def title: () -> String?
-    def detail: () -> String?
-    def type: () -> String?
-    def resource_type: () -> String?
-    def resource_id: () -> (Integer | String)?
-    def parameter: () -> String?
-    def value: () -> untyped
-    def not_found?: () -> bool
-    def inspect: () -> String
-
-    private
-    def identifier: (untyped value) -> untyped
-    def numeric_identifier?: (untyped value) -> bool
-  end
-
   class Usage
     include Objects::Serialization
 

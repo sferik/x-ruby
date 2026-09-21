@@ -2,7 +2,7 @@
 
 require_relative "errors"
 require_relative "parallel"
-require_relative "problem"
+require "x/core/problem"
 require_relative "utils"
 
 module X

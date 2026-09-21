@@ -1,6 +1,7 @@
 # The libraries the signatures of x-core refer to, which rbs collection loads for code that depends on it
 dependencies:
   - name: forwardable
+  - name: json
   - name: monitor
   - name: net-http
   - name: openssl
