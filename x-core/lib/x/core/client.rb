@@ -96,10 +96,11 @@ module X
     #   whose limit resets later raises TooManyRequests at once, and a few seconds are added at random to each wait,
     #   so that the requests one reset releases are not sent again in one burst
     # @param max_retries [Integer] the maximum number of times to send a request again after the API failed to answer
-    #   it, with a 5xx status, or after its answer never arrived, waiting up to a second before the first retry and up
-    #   to twice as long before each retry after, a random share of each wait taken off so that the requests one
-    #   failure of the API ended are not sent again together; only a GET, PUT, or DELETE is sent again, since the API
-    #   may have acted on a POST whose answer never arrived
+    #   it, with a 5xx status, or after its answer never arrived, which is twice by default and is 0 for a client
+    #   that raises at once; a retry waits up to a second before the first and up to twice as long before each after,
+    #   a random share of each wait taken off so that the requests one failure of the API ended are not sent again
+    #   together; only a GET, PUT, or DELETE is sent again, since the API may have acted on a POST whose answer never
+    #   arrived
     # @param on_response [#call, nil] a callable passed an X::Response after every request, failed ones included, and
     #   every object a stream delivers
     # @param on_token_refresh [#call, nil] a callable passed the OAuth 2.0 authenticator after each refresh, to store
@@ -121,8 +122,8 @@ module X
     #   client = X::Client.new(api_key: "key", api_key_secret: "secret")
     # @example Create a client that retries a rate-limited request up to three times
     #   client = X::Client.new(bearer_token: "your_bearer_token", max_rate_limit_retries: 3)
-    # @example Create a client that sends a lookup again after the API fails to answer it
-    #   client = X::Client.new(bearer_token: "your_bearer_token", max_retries: 2)
+    # @example Create a client that raises at once rather than send a lookup again the API failed to answer
+    #   client = X::Client.new(bearer_token: "your_bearer_token", max_retries: 0)
     # @example Create a client that names the application in the User-Agent of every request
     #   client = X::Client.new(bearer_token: "your_bearer_token", headers: {"User-Agent" => "my-app/1.0"})
     def initialize(api_key: nil, api_key_secret: nil, access_token: nil, access_token_secret: nil,

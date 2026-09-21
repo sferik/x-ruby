@@ -8,7 +8,9 @@ module X
     cover_client
 
     def setup
-      @client = Client.new
+      # A client that raises at once, since these tests are about the error a failure raises rather than the
+      # retries a client makes before it
+      @client = Client.new(max_retries: 0)
     end
 
     Core::ResponseParser::ERROR_MAP.each do |status, error_class|

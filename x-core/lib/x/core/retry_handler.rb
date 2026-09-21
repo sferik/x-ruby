@@ -11,8 +11,8 @@ module X
     #
     # @api private
     class RetryHandler
-      # Default maximum number of retries, which retries nothing
-      DEFAULT_MAX_RETRIES = 0
+      # Default maximum number of retries, which sends an idempotent request twice more before it raises
+      DEFAULT_MAX_RETRIES = 2
       # Seconds to wait before the first retry, doubled for each retry after
       INITIAL_WAIT = 1
       # The failures a retry may follow, neither of which the request itself is the reason for

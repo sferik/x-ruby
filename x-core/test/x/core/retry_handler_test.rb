@@ -11,16 +11,21 @@ module X
       @attempts = 0
     end
 
-    def test_defaults_to_retrying_nothing
-      assert_equal 0, Core::RetryHandler.new.max_retries
+    def test_defaults_to_sending_a_request_twice_more
+      assert_equal 2, Core::RetryHandler.new.max_retries
     end
 
     def test_returns_what_the_block_returns
       assert_equal :done, handle(Core::RetryHandler.new) { :done }
     end
 
-    def test_retries_nothing_by_default
+    def test_sends_an_idempotent_request_twice_more_by_default
       assert_raises(NetworkError) { handle(Core::RetryHandler.new) { fail_with(NetworkError) } }
+      assert_equal [3, [1, 2]], [@attempts, @sleeps]
+    end
+
+    def test_retries_nothing_once_retries_are_turned_off
+      assert_raises(NetworkError) { handle(Core::RetryHandler.new(max_retries: 0)) { fail_with(NetworkError) } }
       assert_equal [1, []], [@attempts, @sleeps]
     end
 

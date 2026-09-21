@@ -14,14 +14,22 @@ module X
       @responses = []
     end
 
-    def test_a_client_retries_nothing_by_default
-      assert_equal 0, Client.new.max_retries
+    def test_a_client_sends_an_idempotent_request_twice_more_by_default
+      assert_equal 2, Client.new.max_retries
+    end
+
+    def test_a_lookup_the_api_fails_to_answer_is_sent_twice_more_by_default
+      client = Client.new(on_response: ->(response) { @responses << response.status })
+      stub_request(:get, URL).to_return(status: 503)
+
+      assert_raises(ServiceUnavailable) { without_sleeping(client) { client.get("users/me") } }
+      assert_equal [[503, 503, 503], [1, 2]], [@responses, @sleeps]
     end
 
     def test_the_option_is_copied_and_can_be_replaced
-      client = Client.new(max_retries: 2)
+      client = Client.new(max_retries: 4)
 
-      assert_equal [2, 1], [client.with.max_retries, client.with(max_retries: 1).max_retries]
+      assert_equal [4, 1], [client.with.max_retries, client.with(max_retries: 1).max_retries]
     end
 
     def test_a_lookup_is_sent_again_after_the_api_fails_to_answer
