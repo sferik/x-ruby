@@ -93,7 +93,7 @@ module X
       def test_find_all_without_a_block_ignores_the_problems
         @client.stub(:get, "tweets", {"errors" => [USER_MISSING]})
 
-        assert_empty @client.find_posts([5])
+        assert_empty @client.find_all_posts([5])
       end
 
       def test_hydrate_all_and_lookups_pass_the_block_along

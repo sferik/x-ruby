@@ -31,7 +31,7 @@ module X
       end
 
       def test_batch_finders_forward_the_block
-        %i[find_posts find_spaces find_users].each { |finder| @client.public_send(finder, [1]) { |problem| @yielded << problem.title } }
+        %i[find_all_posts find_all_spaces find_all_users].each { |finder| @client.public_send(finder, [1]) { |problem| @yielded << problem.title } }
 
         assert_equal PATHS.last(3), @yielded
       end

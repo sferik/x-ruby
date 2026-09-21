@@ -47,10 +47,10 @@ module X
           # @raise [ArgumentError] if the concurrency is less than one
           # @yieldparam problem [Problem] each problem the API reported, such as a resource that was not found
           # @example Look up many posts
-          #   client.find_posts([1234567890, 1234567891])
+          #   client.find_all_posts([1234567890, 1234567891])
           # @example Look up many posts one batch at a time
-          #   client.find_posts(ids, concurrency: 1)
-          def find_posts(ids, concurrency: Finders::DEFAULT_CONCURRENCY, **params, &)
+          #   client.find_all_posts(ids, concurrency: 1)
+          def find_all_posts(ids, concurrency: Finders::DEFAULT_CONCURRENCY, **params, &)
             Post.find_all(ids, client: self, concurrency:, **params, &)
           end
 
@@ -165,7 +165,7 @@ module X
 
           alias_method :find_tweet, :find_post
           alias_method :find_tweet!, :find_post!
-          alias_method :find_tweets, :find_posts
+          alias_method :find_all_tweets, :find_all_posts
           alias_method :search_tweets, :search_posts
           alias_method :search_all_tweets, :search_all_posts
           alias_method :retweets_of_me, :reposts_of_me

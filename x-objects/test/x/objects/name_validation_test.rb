@@ -56,7 +56,7 @@ module X
     end
 
     def test_find_users_refuses_a_username_that_is_not_one
-      assert_raises(ArgumentError) { @client.find_users(["a?expansions=x"]) }
+      assert_raises(ArgumentError) { @client.find_all_users(["a?expansions=x"]) }
       assert_raises(ArgumentError) { User.find_all_by_username(["bad name"], client: @client) }
       assert_empty @client.requests
     end
@@ -75,7 +75,7 @@ module X
     end
 
     def test_find_spaces_and_from_id_refuse_an_identifier_that_is_not_word_characters
-      assert_raises(ArgumentError) { @client.find_spaces(["a b"]) }
+      assert_raises(ArgumentError) { @client.find_all_spaces(["a b"]) }
       assert_raises(ArgumentError) { Space.from_id("a/b") }
       assert_empty @client.requests
     end

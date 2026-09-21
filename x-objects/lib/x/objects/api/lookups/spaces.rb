@@ -45,8 +45,8 @@ module X
           # @raise [ArgumentError] if the concurrency is less than one
           # @yieldparam problem [Problem] each problem the API reported, such as a resource that was not found
           # @example Look up many spaces
-          #   client.find_spaces(["1DXxyRYNejbKM", "1OwGWzarWnNKQ"]).map(&:title)
-          def find_spaces(ids, concurrency: Finders::DEFAULT_CONCURRENCY, **params, &)
+          #   client.find_all_spaces(["1DXxyRYNejbKM", "1OwGWzarWnNKQ"]).map(&:title)
+          def find_all_spaces(ids, concurrency: Finders::DEFAULT_CONCURRENCY, **params, &)
             Space.find_all(ids, client: self, concurrency:, **params, &)
           end
 

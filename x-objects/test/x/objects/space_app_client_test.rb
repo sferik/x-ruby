@@ -45,7 +45,7 @@ module X
     def test_find_all_uses_the_app_only_client
       @client.app.stub(:get, "spaces", ->(query, _) { {"data" => query.fetch("ids").split(",").map { |id| {"id" => id} }} })
 
-      assert_equal %w[1DXxyRYNejbKM 1YpKkgVgevkxj], @client.find_spaces(%w[1DXxyRYNejbKM 1YpKkgVgevkxj]).map(&:id)
+      assert_equal %w[1DXxyRYNejbKM 1YpKkgVgevkxj], @client.find_all_spaces(%w[1DXxyRYNejbKM 1YpKkgVgevkxj]).map(&:id)
       assert_equal ["spaces"], @client.app.paths
       assert_empty @client.requests
     end

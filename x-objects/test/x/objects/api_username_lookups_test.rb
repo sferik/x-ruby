@@ -15,7 +15,7 @@ module X
         @client.stub(:get, "users/by", {"data" => [{"id" => "1", "username" => "sferik"}, {"id" => "2", "username" => "1234"}],
                                         "errors" => [{"title" => "Not Found Error", "detail" => "Could not find user with usernames: [nobody]."}]})
         problems = []
-        users = @client.find_users_by_username(["@sferik", "1234", "nobody"], "user.fields": "id") { |problem| problems << problem }
+        users = @client.find_all_users_by_username(["@sferik", "1234", "nobody"], "user.fields": "id") { |problem| problems << problem }
 
         assert_equal %w[sferik 1234], users.map(&:username)
         assert_equal "sferik,1234,nobody", @client.queries.first["usernames"]

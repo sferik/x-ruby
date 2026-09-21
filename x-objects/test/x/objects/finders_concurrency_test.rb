@@ -75,61 +75,61 @@ module X
       def test_find_users_takes_a_concurrency
         @client.stub(:get, "users", {"data" => []})
 
-        assert_equal 2, concurrency_of { @client.find_users([1], concurrency: 2) }
+        assert_equal 2, concurrency_of { @client.find_all_users([1], concurrency: 2) }
       end
 
       def test_find_users_defaults_to_four_batches_at_once
         @client.stub(:get, "users", {"data" => []})
 
-        assert_equal 4, concurrency_of { @client.find_users([1]) }
+        assert_equal 4, concurrency_of { @client.find_all_users([1]) }
       end
 
       def test_find_users_by_username_takes_a_concurrency
         @client.stub(:get, "users/by", {"data" => []})
 
-        assert_equal 2, concurrency_of { @client.find_users_by_username(%w[sferik], concurrency: 2) }
+        assert_equal 2, concurrency_of { @client.find_all_users_by_username(%w[sferik], concurrency: 2) }
       end
 
       def test_find_users_by_username_defaults_to_four_batches_at_once
         @client.stub(:get, "users/by", {"data" => []})
 
-        assert_equal 4, concurrency_of { @client.find_users_by_username(%w[sferik]) }
+        assert_equal 4, concurrency_of { @client.find_all_users_by_username(%w[sferik]) }
       end
 
       def test_find_posts_takes_a_concurrency
         @client.stub(:get, "tweets", {"data" => []})
 
-        assert_equal 2, concurrency_of { @client.find_posts([1], concurrency: 2) }
+        assert_equal 2, concurrency_of { @client.find_all_posts([1], concurrency: 2) }
       end
 
       def test_find_posts_defaults_to_four_batches_at_once
         @client.stub(:get, "tweets", {"data" => []})
 
-        assert_equal 4, concurrency_of { @client.find_posts([1]) }
+        assert_equal 4, concurrency_of { @client.find_all_posts([1]) }
       end
 
       def test_find_spaces_takes_a_concurrency
         @client.stub(:get, "spaces", {"data" => []})
 
-        assert_equal 2, concurrency_of { @client.find_spaces(%w[1DXxyRYNejbKM], concurrency: 2) }
+        assert_equal 2, concurrency_of { @client.find_all_spaces(%w[1DXxyRYNejbKM], concurrency: 2) }
       end
 
       def test_find_spaces_defaults_to_four_batches_at_once
         @client.stub(:get, "spaces", {"data" => []})
 
-        assert_equal 4, concurrency_of { @client.find_spaces(%w[1DXxyRYNejbKM]) }
+        assert_equal 4, concurrency_of { @client.find_all_spaces(%w[1DXxyRYNejbKM]) }
       end
 
-      def test_find_media_all_takes_a_concurrency
+      def test_find_all_media_takes_a_concurrency
         @client.stub(:get, "media", {"data" => []})
 
-        assert_equal 2, concurrency_of { Media.find_all(%w[3_1], client: @client, concurrency: 2) }
+        assert_equal 2, concurrency_of { @client.find_all_media(%w[3_1], concurrency: 2) }
       end
 
-      def test_find_media_all_defaults_to_four_batches_at_once
+      def test_find_all_media_defaults_to_four_batches_at_once
         @client.stub(:get, "media", {"data" => []})
 
-        assert_equal 4, concurrency_of { Media.find_all(%w[3_1], client: @client) }
+        assert_equal 4, concurrency_of { @client.find_all_media(%w[3_1]) }
       end
 
       private
