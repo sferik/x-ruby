@@ -20,6 +20,7 @@ client = X::Client.new(bearer_token: "INSERT YOUR BEARER TOKEN HERE")
 client.get("users/by/username/sferik")
 # {"data"=>{"id"=>"7505382", "name"=>"Erik Berlin", "username"=>"sferik"}}
 
+client.streaming.add_stream_rules([{value: "ruby -is:retweet", tag: "ruby"}, "crystal"])
 client.streaming.stream("tweets/search/stream") { |post| puts post["data"]["text"] }
 
 # A stream runs until its block stops it: break to stop it and return a value, throw to unwind further out, or

@@ -614,6 +614,12 @@ module X
     DEFAULT_READ_TIMEOUT: Integer
     DEFAULT_MAX_RECONNECTS: Float
     NO_BLOCK_MESSAGE: String
+    RULES_ENDPOINT: String
+    NOT_A_RULE: String
+    JSON_CLASSES: Hash[Symbol, Class]
+
+    type addable_rule = Hash[untyped, untyped] | String
+    type rule = addable_rule | Integer
 
     @connection: Connection
     @reconnect_handler: Core::ReconnectHandler
@@ -631,8 +637,19 @@ module X
     def proxy_url: () -> (URI::Generic | String)?
     def debug_output: () -> IO?
     def max_reconnects: () -> (Integer | Float)
+    def stream_rules: (**untyped params) -> Array[Hash[String, untyped]]
+    def add_stream_rules: (Array[addable_rule] | addable_rule rules, ?dry_run: bool) -> Array[Hash[String, untyped]]
+    def delete_stream_rules: (Array[rule] | rule rules, ?dry_run: bool) -> Integer
 
     private
+    def deletion: (Array[untyped] ids, Array[untyped] values) -> Hash[Symbol, Array[untyped]]
+    def change_rules: (Hash[Symbol, untyped] body, dry_run: bool) -> Hash[String, untyped]?
+    def each_rule: (untyped rules) -> Array[untyped]
+    def rules_of: (Hash[String, untyped]? body) -> Array[Hash[String, untyped]]
+    def rule_to_add: (addable_rule rule) -> Hash[untyped, untyped]
+    def identifier_of: (rule rule) -> (String | Integer)?
+    def value_of: (rule rule) -> String
+    def app_client: () -> Client
     def request_for: (URI::Generic uri, Hash[String, String] headers) -> Net::HTTPRequest
     def report: (URI::Generic uri, Net::HTTPResponse response, String? body) -> void
   end

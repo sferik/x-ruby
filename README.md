@@ -320,17 +320,21 @@ What each returns: `upload_media`, `upload_media_binary`, `await_media_processin
 
 A stream holds a connection open instead of answering a request, so `X::StreamingClient` handles one, and `streaming` builds it from a client. It shares the client's credentials, base URL, parsing classes, and `on_response` hook, and keeps the settings a long-lived connection needs: `read_timeout`, 30 seconds by default, and `max_reconnects`.
 
-The stream endpoints take app-only authentication, so a client that signs with OAuth 1.0a streams with the bearer token that `app_only` holds. The endpoints that manage stream rules take it too, so send those through `app_only`. A client that authenticates with OAuth 2.0 as a user holds no credentials of the app, so X refuses its streams with 403 Forbidden; stream with a client built from the app's bearer token, or its API key and secret, instead.
+The stream endpoints take app-only authentication, so a client that signs with OAuth 1.0a streams with the bearer token that `app_only` holds. A client that authenticates with OAuth 2.0 as a user holds no credentials of the app, so X refuses its streams with 403 Forbidden; stream with a client built from the app's bearer token, or its API key and secret, instead.
 
 X holds a stream open indefinitely, but drops it for deploys, network trouble, and slow readers. A stream that ends or drops reconnects at once, then waits a quarter second longer each attempt, up to 16 seconds. A server error, a refused connection, or a line that is not JSON waits 5 seconds, doubling each attempt, up to 320 seconds. A rate limit waits until it resets, or from a minute, doubling each attempt. Delivering a post starts the count over. A stream reconnects without limit by default; set `max_reconnects` to give up after that many attempts in a row.
+
+**The rules of the filtered stream.** The filtered stream delivers the posts that match the rules of the app, which belong to the stream and are read and changed through a streaming client: `stream_rules` reads them, `add_stream_rules` adds them, and `delete_stream_rules` deletes them, each authenticating as the app as a stream does. A rule to add is a `value` and the `tag` it is labelled with, or a String, which is the value of a rule with no tag. A rule is deleted by the identifier it was given, so what `stream_rules` returned deletes itself, or by the value it matches, so what `add_stream_rules` was given deletes what it added. `dry_run: true` has the API check the rules and change none of them.
 
 **Stopping a stream.** A stream runs until its block stops it. `break` out of the block to stop the stream and return a value, or `throw` to unwind to a `catch` further out; neither reconnects. An error raised by the block stops the stream too, even one a dropped connection would have reconnected after, and reaches the caller unchanged, as does an error raised by `on_response` or by the class that builds each object. A `StopIteration` is an error like any other here, so a block that exhausts an `Enumerator` of its own hears about it rather than ending the stream in silence.
 
 X sends a newline every 20 seconds to keep an idle stream alive, so a stream reads with a 30-second timeout of its own, which a keep-alive that arrives a little late does not trip. A connection that goes quiet is dropped and reconnected rather than held open until the 60-second `read_timeout` of an ordinary request.
 
 ```ruby
-# Set up rules for filtered stream
-x_client.app_only.post("tweets/search/stream/rules", {add: [{value: "ruby"}]})
+# Set up rules for the filtered stream
+streaming = x_client.streaming
+streaming.add_stream_rules([{value: "ruby -is:retweet", tag: "ruby"}, "crystal"])
+streaming.stream_rules # => [{"id" => "1", "value" => "ruby -is:retweet", "tag" => "ruby"}, ...]
 
 # Stream matching posts in real time, until interrupted
 x_client.streaming.stream("tweets/search/stream") do |post|
@@ -342,6 +346,9 @@ first = x_client.streaming.stream("tweets/search/stream") { |post| break post }
 
 # Give up after five reconnects in a row, and notice a quiet connection sooner
 streaming_client = x_client.streaming(max_reconnects: 5, read_timeout: 10)
+
+# Delete the rules that were read, or the ones that match a value
+streaming.delete_stream_rules(streaming.stream_rules) # => 2
 ```
 
 ### Responses
