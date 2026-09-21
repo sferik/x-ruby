@@ -14,9 +14,61 @@ module X
       authenticator = OAuth2Authenticator.new(**test_oauth2_credentials)
 
       assert_equal TEST_CLIENT_ID, authenticator.client_id
-      assert_equal TEST_CLIENT_SECRET, authenticator.client_secret
       assert_equal TEST_ACCESS_TOKEN, authenticator.access_token
       assert_equal TEST_REFRESH_TOKEN, authenticator.refresh_token
+    end
+
+    def test_same_credentials
+      authenticator = OAuth2Authenticator.new(**test_oauth2_credentials)
+
+      assert_operator authenticator, :same_credentials?, authenticator
+      assert_operator authenticator, :same_credentials?, OAuth2Authenticator.new(**test_oauth2_credentials)
+      refute_operator authenticator, :same_credentials?, OAuth2Authenticator.new(**test_oauth2_credentials, client_id: "OTHER")
+    end
+
+    def test_same_credentials_compares_every_credential
+      authenticator = OAuth2Authenticator.new(**test_oauth2_credentials)
+
+      %i[client_id client_secret access_token refresh_token].each do |credential|
+        other = OAuth2Authenticator.new(**test_oauth2_credentials, credential => "OTHER")
+
+        refute_operator authenticator, :same_credentials?, other, "#{credential} is left out of the comparison"
+        refute_operator other, :same_credentials?, authenticator
+      end
+    end
+
+    def test_same_credentials_ignores_what_is_not_a_credential
+      authenticator = OAuth2Authenticator.new(**test_oauth2_credentials)
+      other = OAuth2Authenticator.new(**test_oauth2_credentials, expires_at: Time.now + 3600, connection: Connection.new(open_timeout: 1))
+
+      assert_operator authenticator, :same_credentials?, other
+    end
+
+    def test_a_public_client_has_the_credentials_of_a_public_client
+      public_client = OAuth2Authenticator.new(**test_oauth2_credentials.except(:client_secret))
+
+      assert_operator public_client, :same_credentials?, OAuth2Authenticator.new(**test_oauth2_credentials.except(:client_secret))
+      refute_operator public_client, :same_credentials?, OAuth2Authenticator.new(**test_oauth2_credentials)
+    end
+
+    def test_no_other_authenticator_holds_the_same_credentials
+      authenticator = OAuth2Authenticator.new(**test_oauth2_credentials)
+
+      [Authenticator.new, BearerTokenAuthenticator.new(bearer_token: TEST_BEARER_TOKEN), OAuth1Authenticator.new(**test_oauth_credentials), nil, "OTHER"].each do |other|
+        refute_operator authenticator, :same_credentials?, other
+      end
+    end
+
+    # A subclass of the authenticator signs with the credentials it holds, so a client that shares one with a client
+    # built from a subclass shares a refresh token X accepts once, as any two clients of the same credentials do.
+    def test_a_subclass_of_the_authenticator_holds_the_same_credentials
+      subclass = Class.new(OAuth2Authenticator)
+
+      assert_operator OAuth2Authenticator.new(**test_oauth2_credentials), :same_credentials?, subclass.new(**test_oauth2_credentials)
+    end
+
+    def test_the_credentials_compared_are_not_handed_out
+      refute_respond_to OAuth2Authenticator.new(**test_oauth2_credentials), :credentials
     end
 
     def test_inspect_hides_the_secrets

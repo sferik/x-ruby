@@ -32,7 +32,8 @@ module X
     # @return [Integer, nil] the identifier, or nil for credentials that name no user
     # @example Read the user a client acts for without a request
     #   client.authenticator.user_id # => nil
-    def user_id = nil
+    def user_id
+    end
 
     # Summarize the authenticator for the console without revealing credentials
     #

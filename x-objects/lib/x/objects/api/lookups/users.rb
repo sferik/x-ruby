@@ -133,7 +133,7 @@ module X
           # @return [Integer] the identifier
           # @example Get the identifier of the authenticated user
           #   client.current_user_id # => 7505382
-          def current_user_id = Utils.oauth1_user_id(self) || current_user.id
+          def current_user_id = Utils.authenticated_user_id(self) || current_user.id
 
           # Search users
           #

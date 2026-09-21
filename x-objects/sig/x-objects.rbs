@@ -85,7 +85,7 @@ module X
       def username!: (untyped value) -> String
       def media_id_of: (String | Integer | _UploadedMedia value) -> String
       def integer: (String | Integer | nil value) -> Integer?
-      def oauth1_user_id: (untyped client) -> Integer?
+      def authenticated_user_id: (untyped client) -> Integer?
       def app_client: (untyped client) -> untyped
       def authenticator_of: (untyped client) -> untyped
       def id?: (untyped value) -> bool

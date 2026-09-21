@@ -19,26 +19,12 @@ module X
     #   authenticator.api_key
     attr_reader :api_key
 
-    # The API key secret (consumer secret)
-    # @api public
-    # @return [String] the API key secret (consumer secret)
-    # @example Get the API key secret
-    #   authenticator.api_key_secret
-    attr_reader :api_key_secret
-
     # The access token
     # @api public
     # @return [String] the access token
     # @example Get the access token
     #   authenticator.access_token
     attr_reader :access_token
-
-    # The access token secret
-    # @api public
-    # @return [String] the access token secret
-    # @example Get the access token secret
-    #   authenticator.access_token_secret
-    attr_reader :access_token_secret
 
     # Initialize a new OAuth1Authenticator
     #
@@ -62,6 +48,20 @@ module X
       @access_token_secret = access_token_secret
     end
 
+    # The identifier of the user the access token acts for
+    #
+    # An OAuth 1.0a access token begins with the identifier of the user who authorized it, so a client that signs
+    # with one knows the user it acts for without asking the API.
+    #
+    # @api public
+    # @return [Integer, nil] the identifier, or nil for a token that begins with none
+    # @example Read the user a client acts for without a request
+    #   client.authenticator.user_id # => 7505382
+    def user_id
+      prefix = access_token.to_s[/\A(\d+)-/, 1]
+      Integer(prefix, 10) if prefix
+    end
+
     # Generate the OAuth authentication header for a request
     #
     # The signature covers the HTTP method, the URL, its query parameters, and a
@@ -82,6 +82,20 @@ module X
     end
 
     private
+
+    # The API key secret (consumer secret), which signs a request
+    # @api private
+    # @return [String] the API key secret (consumer secret)
+    # @example Sign with the API key secret
+    #   api_key_secret
+    attr_reader :api_key_secret
+
+    # The access token secret, which signs a request
+    # @api private
+    # @return [String] the access token secret
+    # @example Sign with the access token secret
+    #   access_token_secret
+    attr_reader :access_token_secret
 
     # The credentials, under the names simple_oauth gives them
     # @api private

@@ -134,21 +134,19 @@ module X
         raise ArgumentError, "#{value.inspect} is not a username: pass one to fifteen letters, digits, or underscores"
       end
 
-      # The identifier of the user an OAuth 1.0a access token begins with
+      # The identifier of the user a client's credentials name, when they name one
       #
-      # It reads the token from the client's authenticator, which is where a client keeps the credentials it signs
-      # with; a client keeps its own private. An authenticator that holds an access token secret is an OAuth 1.0a
-      # one, since no other set of credentials holds one.
+      # The client's authenticator is where a client keeps the credentials it signs with, and it answers the user
+      # they act for; only an OAuth 1.0a access token names one, since it begins with the identifier of the user who
+      # authorized it. The secrets a client signs with are its authenticator's to keep, so this asks for the user
+      # rather than for a credential to read it out of.
       #
       # @api private
-      # @param client [Object] the client, which may hold OAuth 1.0a credentials
-      # @return [Integer, nil] the identifier, or nil if the client holds no OAuth 1.0a access token that names one
-      def oauth1_user_id(client)
+      # @param client [Object] the client, whose credentials may name a user
+      # @return [Integer, nil] the identifier, or nil if the client's credentials name no user
+      def authenticated_user_id(client)
         authenticator = authenticator_of(client)
-        return unless authenticator.respond_to?(:access_token_secret) && authenticator.access_token_secret
-
-        prefix = authenticator.access_token.to_s[/\A(\d+)-/, 1]
-        Integer(prefix, 10) if prefix
+        authenticator.user_id if authenticator.respond_to?(:user_id)
       end
 
       # The authenticator of a client, which is replaced whenever its credentials change

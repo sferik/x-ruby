@@ -6,13 +6,6 @@ module X
   # Authenticator for Bearer token authentication
   # @api public
   class BearerTokenAuthenticator < Authenticator
-    # The bearer token for authentication
-    # @api public
-    # @return [String] the bearer token
-    # @example Get the bearer token
-    #   authenticator.bearer_token
-    attr_reader :bearer_token
-
     # Initialize a new BearerTokenAuthenticator
     #
     # @api public
@@ -37,5 +30,14 @@ module X
     def header(_request)
       {AUTHENTICATION_HEADER => "Bearer #{bearer_token}"}
     end
+
+    private
+
+    # The bearer token, which authenticates a request
+    # @api private
+    # @return [String] the bearer token
+    # @example Authenticate with the bearer token
+    #   bearer_token
+    attr_reader :bearer_token
   end
 end

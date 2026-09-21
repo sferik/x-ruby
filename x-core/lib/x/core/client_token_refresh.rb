@@ -35,10 +35,11 @@ module X
       # @return [void]
       def share_authenticator(other, clients)
         current = oauth2_authenticator_in_use
-        return unless current && other.is_a?(OAuth2Authenticator) && oauth2_credentials_of(current).eql?(oauth2_credentials_of(other))
+        return unless current&.same_credentials?(other)
 
-        other.update_expires_at(expires_at)
-        @authenticator = other
+        shared = other #: OAuth2Authenticator
+        shared.update_expires_at(expires_at)
+        @authenticator = shared
         @token_refresh_clients = clients
         clients[self] = true
       end
@@ -106,18 +107,6 @@ module X
         clients = @token_refresh_clients = ObjectSpace::WeakMap.new.tap { |registry| registry[self] = true }
         OAuth2Authenticator.new(client_id:, client_secret: @client_secret, access_token:, refresh_token:, expires_at: @expires_at,
           connection: @connection, on_refresh: ->(authenticator) { clients.keys.filter_map(&:on_token_refresh).uniq.each { |hook| hook.call(authenticator) } })
-      end
-
-      # The credentials that tell one OAuth 2.0 authenticator from another
-      #
-      # The expiration time is left out: it says when the access token expires, and two authenticators that hold the
-      # same tokens hold the same refresh token, which X accepts once.
-      #
-      # @api private
-      # @param authenticator [OAuth2Authenticator] the authenticator
-      # @return [Array<String, nil>] the client ID and secret, and the tokens
-      def oauth2_credentials_of(authenticator)
-        [authenticator.client_id, authenticator.client_secret, authenticator.access_token, authenticator.refresh_token]
       end
 
       # Run a request, again if a refresh replaces an OAuth 2.0 token the API rejects

@@ -30,12 +30,6 @@ module X
     # @example Get the client ID
     #   authenticator.client_id
     attr_reader :client_id
-    # The OAuth 2.0 client secret
-    # @api public
-    # @return [String, nil] the client secret, or nil for a public client
-    # @example Get the client secret
-    #   authenticator.client_secret
-    attr_reader :client_secret
     # The OAuth 2.0 access token
     # @api public
     # @return [String] the access token
@@ -115,6 +109,20 @@ module X
       refreshed = @mutex.synchronize { refresh if token_expired? }
       report_refresh if refreshed
       {AUTHENTICATION_HEADER => "Bearer #{access_token}"}
+    end
+
+    # Check whether another authenticator holds the same OAuth 2.0 credentials
+    #
+    # Clients built from one set of credentials share an authenticator, so that a refresh by either reaches the
+    # other, and this is what tells one set from another without handing the secret to the client that asks.
+    #
+    # @api public
+    # @param other [Object] the other authenticator
+    # @return [Boolean] true if the other authenticator holds the same credentials
+    # @example Tell whether two clients refresh the same token
+    #   client.authenticator.same_credentials?(other.authenticator)
+    def same_credentials?(other)
+      other.is_a?(OAuth2Authenticator) && credentials.eql?(other.credentials)
     end
 
     # Summarize the authenticator for the console without revealing credentials
@@ -203,6 +211,22 @@ module X
     def update_expires_at(expires_at)
       @mutex.synchronize { @expires_at = expires_at }
     end
+
+    protected
+
+    # The OAuth 2.0 client secret, which authenticates a refresh
+    # @api private
+    # @return [String, nil] the client secret, or nil for a public client
+    # @example Refresh with the client secret
+    #   client_secret
+    attr_reader :client_secret
+
+    # The credentials that tell one authenticator from another
+    # @api private
+    # @return [Array<String, nil>] the client ID and secret, and the access and refresh tokens
+    # @example Compare two authenticators
+    #   credentials.eql?(other.credentials)
+    def credentials = [client_id, client_secret, access_token, refresh_token]
 
     private
 

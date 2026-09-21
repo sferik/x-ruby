@@ -14,9 +14,7 @@ module X
 
       assert_instance_of OAuth1Authenticator, authenticator
       assert_equal TEST_API_KEY, authenticator.api_key
-      assert_equal TEST_API_KEY_SECRET, authenticator.api_key_secret
       assert_equal TEST_ACCESS_TOKEN, authenticator.access_token
-      assert_equal TEST_ACCESS_TOKEN_SECRET, authenticator.access_token_secret
     end
 
     def test_inspect_hides_the_credentials
@@ -48,7 +46,6 @@ module X
 
       assert_instance_of OAuth2Authenticator, authenticator
       assert_equal TEST_CLIENT_ID, authenticator.client_id
-      assert_equal TEST_CLIENT_SECRET, authenticator.client_secret
       assert_equal TEST_ACCESS_TOKEN, authenticator.access_token
       assert_equal TEST_REFRESH_TOKEN, authenticator.refresh_token
     end
@@ -57,7 +54,6 @@ module X
       authenticator = Client.new(**test_oauth2_credentials.except(:client_secret)).authenticator
 
       assert_instance_of OAuth2Authenticator, authenticator
-      assert_nil authenticator.client_secret
       assert_equal TEST_REFRESH_TOKEN, authenticator.refresh_token
     end
 
@@ -173,7 +169,6 @@ module X
 
       assert_instance_of AppOnlyAuthenticator, client.authenticator
       assert_equal TEST_API_KEY, client.authenticator.api_key
-      assert_equal TEST_API_KEY_SECRET, client.authenticator.api_key_secret
     end
 
     def test_inspect_hides_the_credentials

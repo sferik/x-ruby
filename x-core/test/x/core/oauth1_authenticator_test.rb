@@ -22,9 +22,21 @@ module X
 
     def test_initialization
       assert_equal TEST_API_KEY, @authenticator.api_key
-      assert_equal TEST_API_KEY_SECRET, @authenticator.api_key_secret
       assert_equal TEST_ACCESS_TOKEN, @authenticator.access_token
-      assert_equal TEST_ACCESS_TOKEN_SECRET, @authenticator.access_token_secret
+    end
+
+    def test_the_access_token_names_the_user_it_acts_for
+      assert_equal 7505382, OAuth1Authenticator.new(**test_oauth_credentials, access_token: "7505382-abc").user_id
+    end
+
+    def test_a_token_prefix_is_read_as_decimal_digits
+      assert_equal 10, OAuth1Authenticator.new(**test_oauth_credentials, access_token: "010-abc").user_id
+    end
+
+    def test_an_access_token_that_names_no_user_has_no_user_id
+      ["abc", "-7505382", "7505382", "", nil, "7505382abc", " 7505382-abc"].each do |access_token|
+        assert_nil OAuth1Authenticator.new(**test_oauth_credentials, access_token:).user_id
+      end
     end
 
     def test_default_oauth_nonce

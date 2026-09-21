@@ -198,7 +198,6 @@ module X
       def access_token: () -> String?
       def refresh_token: () -> String?
       def new_oauth2_authenticator: (client_id: String, access_token: String, refresh_token: String) -> OAuth2Authenticator
-      def oauth2_credentials_of: (OAuth2Authenticator authenticator) -> [String, String?, String, String]
       def refreshing_rejected_token: [T] () { () -> T } -> T
     end
 
@@ -310,13 +309,16 @@ module X
     AUTHENTICATION_HEADER: String
 
     def header: (Net::HTTPRequest? request) -> Hash[String, String]
+    def user_id: () -> Integer?
     def inspect: () -> String
   end
 
   class BearerTokenAuthenticator < Authenticator
-    attr_reader bearer_token: String
     def initialize: (bearer_token: String) -> void
     def header: (Net::HTTPRequest? request) -> Hash[String, String]
+
+    private
+    attr_reader bearer_token: String
   end
 
   class OAuth2Authorization
@@ -365,13 +367,13 @@ module X
     @mutex: Thread::Mutex
 
     attr_reader api_key: String
-    attr_reader api_key_secret: String
     attr_reader connection: Connection
     def initialize: (api_key: String, api_key_secret: String, ?bearer_token: String?, ?connection: Connection) -> void
     def header: (Net::HTTPRequest? request) -> Hash[String, String]
     def bearer_token: () -> String
 
     private
+    attr_reader api_key_secret: String
     def fetch_bearer_token: () -> String
     def token_request: () -> SimpleOAuth::OAuth2::Request
   end
@@ -380,13 +382,14 @@ module X
     FORM_CONTENT_TYPE: String
 
     attr_reader api_key: String
-    attr_reader api_key_secret: String
     attr_reader access_token: String
-    attr_reader access_token_secret: String
     def initialize: (api_key: String, api_key_secret: String, access_token: String, access_token_secret: String) -> void
+    def user_id: () -> Integer?
     def header: (Net::HTTPRequest request) -> Hash[String, String]
 
     private
+    attr_reader api_key_secret: String
+    attr_reader access_token_secret: String
     def credentials: -> Hash[Symbol, String]
     def form_params: (Net::HTTPRequest request) -> Array[[String, String]]
     def form_body: (Net::HTTPRequest request) -> String
@@ -640,7 +643,6 @@ module X
     DEFAULT_ERROR_MESSAGE: String
 
     attr_reader client_id: String
-    attr_reader client_secret: String?
     attr_reader access_token: String
     attr_reader refresh_token: String
     attr_reader expires_at: Time?
@@ -649,6 +651,7 @@ module X
     @mutex: Thread::Mutex
     def initialize: (client_id: String, access_token: String, refresh_token: String, ?client_secret: String?, ?expires_at: Time?, ?connection: Connection, ?on_refresh: _TokenRefreshHook?) -> void
     def header: (Net::HTTPRequest? request) -> Hash[String, String]
+    def same_credentials?: (untyped other) -> bool
     def inspect: () -> String
     def token_expired?: -> bool
     def refresh_token!: -> Hash[String, untyped]
@@ -656,7 +659,10 @@ module X
     def retrying_rejected_token: [T] () { () -> T } -> T
     def update_expires_at: (Time? expires_at) -> void
 
+    def credentials: -> Array[String?]
+
     private
+    attr_reader client_secret: String?
     def refresh: -> Hash[String, untyped]
     def report_refresh: -> void
     def oauth2_client: -> SimpleOAuth::OAuth2::Client

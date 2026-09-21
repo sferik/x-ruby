@@ -22,12 +22,6 @@ module X
     # @example Get the API key
     #   authenticator.api_key
     attr_reader :api_key
-    # The API key secret
-    # @api public
-    # @return [String] the API key secret
-    # @example Get the API key secret
-    #   authenticator.api_key_secret
-    attr_reader :api_key_secret
     # The connection used to fetch the bearer token
     # @api public
     # @return [Connection] the connection
@@ -80,6 +74,13 @@ module X
     end
 
     private
+
+    # The API key secret, which buys the bearer token
+    # @api private
+    # @return [String] the API key secret
+    # @example Buy a bearer token with the API key secret
+    #   api_key_secret
+    attr_reader :api_key_secret
 
     # Exchange the API key and secret for a bearer token
     # @api private

@@ -10,39 +10,39 @@ module X
     cover Objects::API::Actions::Engagement
     cover Objects::Relationships
 
-    # An authenticator double that holds OAuth 1.0a tokens, as a client's does
-    TokenAuthenticator = Struct.new(:access_token, :access_token_secret)
-    # An authenticator double that holds an access token of no OAuth 1.0a set, as an OAuth 2.0 one does
-    BearerAuthenticator = Struct.new(:access_token)
+    # An authenticator double that names the user its credentials act for, as an OAuth 1.0a one does
+    UserAuthenticator = Struct.new(:user_id)
+    # An authenticator double that names no user, as every other authenticator of x-core does
+    AnonymousAuthenticator = Struct.new(:access_token)
 
-    class TokenClient < FakeClient
+    class UserClient < FakeClient
       attr_reader :authenticator
 
-      def initialize(access_token:, access_token_secret:)
+      def initialize(user_id)
         super()
-        @authenticator = TokenAuthenticator.new(access_token, access_token_secret)
+        @authenticator = UserAuthenticator.new(user_id)
       end
     end
 
-    class BearerClient < FakeClient
+    # A client of another gem, whose authenticator answers no user at all
+    class ForeignClient < FakeClient
       attr_reader :authenticator
 
-      def initialize(access_token)
-        super()
-        @authenticator = BearerAuthenticator.new(access_token)
+      def initialize
+        super
+        @authenticator = AnonymousAuthenticator.new("7505382-abc")
       end
     end
 
-    def test_an_oauth1_token_names_the_user_without_a_request
-      client = TokenClient.new(access_token: "7505382-abc", access_token_secret: "secret")
+    def test_credentials_that_name_a_user_need_no_request
+      client = UserClient.new(7_505_382)
 
       assert_equal 7_505_382, client.current_user_id
       assert_empty client.requests
     end
 
     def test_other_clients_look_the_user_up_once
-      [FakeClient.new, BearerClient.new("7505382-abc"), TokenClient.new(access_token: "7505382-abc", access_token_secret: nil),
-        TokenClient.new(access_token: "abc-7505382", access_token_secret: "secret"), TokenClient.new(access_token: nil, access_token_secret: "secret")].each do |client|
+      [FakeClient.new, ForeignClient.new, UserClient.new(nil)].each do |client|
         client.stub(:get, "users/me", {"data" => {"id" => "9"}})
 
         assert_equal [9, 9], [client.current_user_id, client.current_user_id]
@@ -50,12 +50,8 @@ module X
       end
     end
 
-    def test_a_token_prefix_is_read_as_decimal_digits
-      assert_equal 10, TokenClient.new(access_token: "010-abc", access_token_secret: "secret").current_user_id
-    end
-
-    def test_actions_use_the_identifier_from_the_token
-      client = TokenClient.new(access_token: "7505382-abc", access_token_secret: "secret")
+    def test_actions_use_the_identifier_the_credentials_name
+      client = UserClient.new(7_505_382)
       client.stub(:post, "users/7505382/likes", {"data" => {"liked" => true}})
       client.stub(:post, "users/7505382/following", {"data" => {"following" => true}})
 
@@ -64,8 +60,8 @@ module X
       assert_equal ["users/7505382/likes", "users/7505382/following"], client.paths
     end
 
-    def test_follows_compares_the_identifier_from_the_token
-      client = TokenClient.new(access_token: "7505382-abc", access_token_secret: "secret")
+    def test_follows_compares_the_identifier_the_credentials_name
+      client = UserClient.new(7_505_382)
       client.stub(:get, "users/2", {"data" => {"id" => "2", "connection_status" => %w[following]}})
 
       assert User.from_id(7_505_382, client:).follows?(2)

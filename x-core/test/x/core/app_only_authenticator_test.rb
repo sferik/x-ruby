@@ -14,7 +14,6 @@ module X
 
     def test_initialize
       assert_equal TEST_API_KEY, @authenticator.api_key
-      assert_equal TEST_API_KEY_SECRET, @authenticator.api_key_secret
       assert_instance_of Connection, @authenticator.connection
     end
 

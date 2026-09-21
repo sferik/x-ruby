@@ -66,7 +66,7 @@ module X
         copy = client.copy(credential => "OTHER")
 
         refute_same client.authenticator, copy.authenticator
-        assert_equal "OTHER", copy.authenticator.public_send(credential)
+        refute_operator copy.authenticator, :same_credentials?, client.authenticator
       end
     end
 
