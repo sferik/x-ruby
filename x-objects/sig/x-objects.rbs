@@ -47,11 +47,19 @@ module X
       def fetch: (String key) -> untyped
     end
 
+    # What the object layer asks to make its requests: X::Client, or any other client that answers these four
+    # methods, since x-objects makes no request of its own. The endpoint carries the query, which the object layer
+    # builds, and array_class and object_class say what the response is parsed into, which is plain hashes and
+    # arrays wherever the object layer reads a response itself. A client that also answers app_only, authenticator,
+    # or current_user_id is asked for them where they save a request: without app_only, an endpoint that refuses
+    # the OAuth 1.0a of a user is requested with the client itself; without authenticator, the authenticated user
+    # is looked up rather than read from the access token that names them; and without current_user_id, a check of
+    # whether one user follows another scans rather than reads connection_status.
     interface _Client
-      def get: (String endpoint, **untyped) -> untyped
-      def post: (String endpoint, ?(String | Hash[untyped, untyped])? body, **untyped) -> untyped
-      def delete: (String endpoint, **untyped) -> untyped
-      def put: (String endpoint, ?(String | Hash[untyped, untyped])? body, **untyped) -> untyped
+      def get: (String endpoint, ?array_class: Class, ?object_class: untyped) -> untyped
+      def post: (String endpoint, ?(String | Hash[untyped, untyped])? body, ?array_class: Class, ?object_class: untyped) -> untyped
+      def put: (String endpoint, ?(String | Hash[untyped, untyped])? body, ?array_class: Class, ?object_class: untyped) -> untyped
+      def delete: (String endpoint, ?array_class: Class, ?object_class: untyped) -> untyped
     end
 
     # Serialization of what an API response held, by its attributes alone
