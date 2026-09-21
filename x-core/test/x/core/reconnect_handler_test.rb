@@ -68,12 +68,39 @@ module X
       assert_instance_of NetworkError, error
     end
 
+    # Kernel#loop rescues StopIteration, so unwrapping the consumer's error inside the loop would end the stream
+    # and return, and a consumer that exhausted an Enumerator of its own would never hear of it.
+    def test_a_stop_iteration_from_the_consumer_reaches_the_caller
+      consumer = ->(_) { [].each.next }
+      handler = Core::ReconnectHandler.new
+
+      assert_raises(StopIteration) { handler.handle(consumer) { |deliver| deliver.call(1) } }
+    end
+
+    def test_a_consumer_stops_the_stream_by_breaking_out_of_its_block
+      assert_equal 1, streaming(Core::ReconnectHandler.new) { |object| break object }
+      assert_empty @sleeps
+    end
+
+    def test_a_consumer_stops_the_stream_by_throwing
+      handler = Core::ReconnectHandler.new
+      caught = catch(:done) { handler.handle(->(object) { throw :done, object }) { |deliver| deliver.call(1) } }
+
+      assert_equal 1, caught
+    end
+
     def test_other_errors_raise_at_once
       assert_raises(Unauthorized) { stream_with(Core::ReconnectHandler.new) { fail_with(Unauthorized) } }
       assert_equal [1, []], [@runs, @sleeps]
     end
 
     private
+
+    # The consumer of a stream is the block its caller passed, as StreamingClient#stream is given one, so a break
+    # in it ends the method that was given the block, which a lambda of a test would not show.
+    def streaming(handler, &consumer)
+      handler.handle(consumer) { |deliver| deliver.call(1) }
+    end
 
     def stream_with(handler, &stream)
       Time.stub(:now, Time.utc(1983, 11, 24)) do

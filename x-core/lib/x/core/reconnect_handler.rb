@@ -58,7 +58,9 @@ module X
 
       # Run a stream, running it again whenever it drops
       #
-      # An error raised by the consumer stops the stream, even one that would otherwise reconnect.
+      # An error raised by the consumer stops the stream, even one that would otherwise reconnect, and reaches the
+      # caller. It is unwrapped outside the loop: Kernel#loop rescues StopIteration, which a consumer raises from an
+      # Enumerator of its own that has run out, and unwrapping inside the loop would end the stream without a word.
       #
       # @api private
       # @param consumer [Proc] the block that receives each object
@@ -75,11 +77,11 @@ module X
         loop do
           yield deliver
           return if out_of_reconnects?(nil, state)
-        rescue ConsumerError => e
-          raise cause_of(e)
         rescue *RECONNECTABLE_ERRORS => e
           raise if out_of_reconnects?(e, state)
         end
+      rescue ConsumerError => e
+        raise cause_of(e)
       end
 
       private
