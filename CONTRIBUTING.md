@@ -28,7 +28,7 @@
 
    From the root, `rake test`, `rake mutant`, `rake steep`, and `rake yardstick` run each gem's task inside that gem's directory, with that gem's bundle. Append a gem's name to run one, as in `rake test:x-core`, `rake steep:x-objects`, or `rake yardstick:x`.
 
-   On GitHub, each gem's workflow runs only when that gem, or a gem it depends on, changes. The `x` workflow runs when the meta-gem or the code and signatures of any gem change, and the linter runs when any Ruby file changes.
+   On GitHub, each gem's workflow runs only when that gem, or a gem it depends on, changes. The `x` workflow runs when the meta-gem or the code and signatures of any gem change, and the linter runs when any Ruby file changes. Every workflow runs when `VERSION` changes as well, so the commit that prepares a release runs them all, which the workflow that pushes the gems waits for.
 
 5. To release, write the new version to `VERSION`, run `rake update_versions` to write it into each gem's `version.rb`, record the release in `CHANGELOG.md`, commit, and run `rake release`, which checks that the versions agree, builds every gem, and tags the release.
 

@@ -4,11 +4,13 @@ on:
     paths:
       - "x-core/**"
       - "!x-core/**.md"
+      - "VERSION"
       - ".github/workflows/x-core.yml"
   pull_request:
     paths:
       - "x-core/**"
       - "!x-core/**.md"
+      - "VERSION"
       - ".github/workflows/x-core.yml"
 defaults:
   run:

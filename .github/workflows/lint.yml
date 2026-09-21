@@ -11,6 +11,7 @@ on:
       - "**/sig/manifest.yaml"
       - "bin/**"
       - ".rubocop.yml"
+      - "VERSION"
       - ".github/workflows/lint.yml"
   pull_request:
     paths:
@@ -23,6 +24,7 @@ on:
       - "**/sig/manifest.yaml"
       - "bin/**"
       - ".rubocop.yml"
+      - "VERSION"
       - ".github/workflows/lint.yml"
 jobs:
   build:

@@ -18,6 +18,7 @@ on:
       - "x-objects/lib/**"
       - "x-objects/sig/*.rbs"
       - "x-objects/x-objects.gemspec"
+      - "VERSION"
       - ".github/workflows/x.yml"
   pull_request:
     paths:
@@ -37,6 +38,7 @@ on:
       - "x-objects/lib/**"
       - "x-objects/sig/*.rbs"
       - "x-objects/x-objects.gemspec"
+      - "VERSION"
       - ".github/workflows/x.yml"
 jobs:
   test:
