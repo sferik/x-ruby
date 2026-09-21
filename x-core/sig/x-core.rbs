@@ -410,19 +410,22 @@ module X
 
   class HTTPError < Error
     JSON_CONTENT_TYPE_REGEXP: Regexp
+    PROBLEM_KEYS: Array[String]
 
     attr_reader response : Net::HTTPResponse
-    attr_reader code : String
+    attr_reader problem : Hash[String, untyped]?
 
     def initialize: (response: Net::HTTPResponse) -> void
     def status: () -> Integer
+    def body: () -> String?
 
     private
-    def error_message: (Net::HTTPResponse response) -> String
-    def message_from_json_response: (Net::HTTPResponse response) -> String?
+    def parsed_body: () -> Hash[String, untyped]
+    def problem_from: (Hash[String, untyped] body) -> Hash[String, untyped]?
+    def message_from: (Hash[String, untyped] body) -> String?
     def message_from_errors: (untyped errors) -> String?
     def message_from_problem: (Hash[String, untyped] body) -> String?
-    def json?: (Net::HTTPResponse response) -> bool
+    def json?: () -> bool
   end
 
   class Forbidden < ClientError

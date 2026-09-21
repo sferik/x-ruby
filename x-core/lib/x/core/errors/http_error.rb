@@ -5,11 +5,19 @@ require_relative "error"
 
 module X
   # Base class for HTTP errors from the X API
+  #
+  # The message is what the API said went wrong, read from the body of the response. {#body} holds that body as it
+  # arrived, and {#problem} the JSON object within it that describes the failure, for code that acts on the reason
+  # rather than logging it.
+  #
   # @api public
   class HTTPError < Error
     # Regular expression to match JSON content types
     JSON_CONTENT_TYPE_REGEXP = %r{application/(problem\+|)json}
     private_constant :JSON_CONTENT_TYPE_REGEXP
+    # The keys of a body that describes the failure itself, rather than naming the errors of the request
+    PROBLEM_KEYS = %w[title detail type error].freeze
+    private_constant :PROBLEM_KEYS
 
     # The HTTP response
     # @api public
@@ -17,6 +25,18 @@ module X
     # @example Get the response
     #   error.response
     attr_reader :response
+
+    # The problem the API described in the body of the response
+    #
+    # It is the first error the body names, which is the most specific thing the API said about the request, or
+    # else the problem the body describes itself. The whole body is {#body}, so a response that names several
+    # errors keeps every one of them there.
+    #
+    # @api public
+    # @return [Hash{String => Object}, nil] the problem, frozen, or nil for a response that describes none in JSON
+    # @example Tell a parameter the API refused from one it did not understand
+    #   error.problem&.dig("parameters", "ids")
+    attr_reader :problem
 
     # Initialize a new HTTPError
     #
@@ -29,8 +49,10 @@ module X
     # @example Create an HTTP error
     #   error = X::HTTPError.new(response: response)
     def initialize(response:)
-      super(error_message(response))
       @response = response
+      parsed = parsed_body
+      @problem = problem_from(parsed).freeze
+      super(message_from(parsed) || response.message)
     end
 
     # The HTTP status code, as an Integer like X::Response#status
@@ -41,29 +63,53 @@ module X
     #   retry if error.status.eql?(408)
     def status = Integer(response.code)
 
+    # The body of the response, as it arrived
+    #
+    # A server can send any body with an error, so it is the JSON the API describes a failure with, or whatever
+    # else was sent in its place, such as the page of a proxy.
+    #
+    # @api public
+    # @return [String, nil] the body, or nil for a response without one
+    # @example Log what the API sent
+    #   logger.error(error.body)
+    def body = response.body
+
     private
 
-    # Get the error message from the response
+    # The body of the response, parsed as a JSON object
     #
-    # A server can send any body with an error, so a body that is not the JSON its content type claims, or that
-    # holds no message, falls back on the status message rather than raise while the error is built.
+    # A server can send any body with an error, so a body that is not JSON, or that is not the JSON its content
+    # type claims, parses to an empty object rather than raise while the error is built.
     #
     # @api private
-    # @param response [Net::HTTPResponse] the HTTP response
-    # @return [String] the error message
-    def error_message(response)
-      (message_from_json_response(response) if json?(response)) || response.message
+    # @return [Hash{String => Object}] the parsed body, empty for a body that is not a JSON object
+    def parsed_body
+      return {} unless json?
+
+      Hash.try_convert(JSON.parse(body.to_s)) || {}
+    rescue JSON::ParserError
+      {}
     end
 
-    # Extract error message from a JSON response
+    # The problem a body describes, if it describes one
+    #
     # @api private
-    # @param response [Net::HTTPResponse] the HTTP response
-    # @return [String, nil] the error message, or nil if the body holds none
-    def message_from_json_response(response)
-      body = Hash.try_convert(JSON.parse(response.body.to_s)) || {}
+    # @param body [Hash{String => Object}] the parsed body
+    # @return [Hash{String => Object}, nil] the first error the body names, the body itself if it describes the
+    #   failure, or nil if it describes none
+    def problem_from(body)
+      Hash.try_convert(Array(body["errors"]).first) || (body if PROBLEM_KEYS.any? { |key| body.key?(key) })
+    end
+
+    # The message a body describes the failure with
+    #
+    # A body that holds no message leaves the error with the status message of the response.
+    #
+    # @api private
+    # @param body [Hash{String => Object}] the parsed body
+    # @return [String, nil] the message, or nil if the body holds none
+    def message_from(body)
       message_from_errors(body["errors"]) || message_from_problem(body) || String.try_convert(body["error"])
-    rescue JSON::ParserError
-      nil
     end
 
     # Join the messages of an errors array
@@ -90,11 +136,10 @@ module X
       "#{title}: #{detail}" if title && detail
     end
 
-    # Check if the response contains JSON
+    # Check whether the response carries JSON
     # @api private
-    # @param response [Net::HTTPResponse] the HTTP response
     # @return [Boolean] true if the response is JSON
-    def json?(response)
+    def json?
       JSON_CONTENT_TYPE_REGEXP === response["content-type"]
     end
   end
