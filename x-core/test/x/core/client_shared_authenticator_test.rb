@@ -49,7 +49,7 @@ module X
       authenticator.instance_variable_set(:@access_token, nil)
       authenticator.instance_variable_set(:@refresh_token, nil)
 
-      assert_equal [nil, nil], [client.access_token, client.refresh_token]
+      assert_equal [nil, nil], [client.send(:access_token), client.send(:refresh_token)]
     end
 
     def test_a_copy_with_another_credential_keeps_sharing_the_authenticator

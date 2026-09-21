@@ -25,7 +25,8 @@ module X
     def test_an_app_only_copy_keeps_the_settings_but_not_the_access_token
       copy = Client.new(**test_oauth_credentials, base_url: "https://api.x.com/2/").app_only
 
-      assert_equal [TEST_BEARER_TOKEN, nil, nil, "https://api.x.com/2/"], [copy.bearer_token, copy.access_token, copy.access_token_secret, copy.base_url]
+      assert_equal [TEST_BEARER_TOKEN, nil, nil, "https://api.x.com/2/"],
+        [copy.send(:bearer_token), copy.send(:access_token), copy.send(:access_token_secret), copy.base_url]
     end
 
     def test_an_app_only_copy_holds_the_credentials_of_the_app_alone
@@ -70,7 +71,7 @@ module X
     def test_a_given_bearer_token_is_used_without_a_request
       client = Client.new(**test_oauth_credentials, bearer_token: "GIVEN")
 
-      assert_equal "GIVEN", client.app_only.bearer_token
+      assert_equal "GIVEN", client.app_only.send(:bearer_token)
       assert_not_requested @token_request
     end
 

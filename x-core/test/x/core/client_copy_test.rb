@@ -17,15 +17,15 @@ module X
 
       assert_instance_of OAuth1Authenticator, copy.authenticator
       assert_equal [TEST_API_KEY, TEST_API_KEY_SECRET, TEST_ACCESS_TOKEN, TEST_ACCESS_TOKEN_SECRET],
-        [copy.api_key, copy.api_key_secret, copy.access_token, copy.access_token_secret]
+        [copy.api_key, copy.send(:api_key_secret), copy.send(:access_token), copy.send(:access_token_secret)]
     end
 
     def test_copy_copies_the_other_credentials
       client = Client.new(**test_oauth2_credentials)
       copy = client.copy(base_url: "https://api.x.com/1.1/")
 
-      assert_equal [TEST_CLIENT_ID, TEST_CLIENT_SECRET, TEST_REFRESH_TOKEN], [copy.client_id, copy.client_secret, copy.refresh_token]
-      assert_equal TEST_BEARER_TOKEN, Client.new(bearer_token: TEST_BEARER_TOKEN).copy(max_redirects: 1).bearer_token
+      assert_equal [TEST_CLIENT_ID, TEST_CLIENT_SECRET, TEST_REFRESH_TOKEN], [copy.client_id, copy.send(:client_secret), copy.send(:refresh_token)]
+      assert_equal TEST_BEARER_TOKEN, Client.new(bearer_token: TEST_BEARER_TOKEN).copy(max_redirects: 1).send(:bearer_token)
     end
 
     def test_copy_copies_the_settings
@@ -56,7 +56,7 @@ module X
       copy = @client.copy(access_token: nil, access_token_secret: nil)
 
       assert_instance_of AppOnlyAuthenticator, copy.authenticator
-      assert_nil copy.access_token
+      assert_nil copy.send(:access_token)
       assert_instance_of OAuth1Authenticator, @client.authenticator
     end
 

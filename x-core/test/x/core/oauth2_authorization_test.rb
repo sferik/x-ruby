@@ -152,7 +152,7 @@ module X
       client = authorization.client("state=STATE&code=CODE", base_url: "https://api.x.com/3/")
 
       assert_instance_of OAuth2Authenticator, client.authenticator
-      assert_equal ["ACCESS", "REFRESH", "https://api.x.com/3/"], [client.access_token, client.refresh_token, client.base_url]
+      assert_equal ["ACCESS", "REFRESH", "https://api.x.com/3/"], [client.send(:access_token), client.send(:refresh_token), client.base_url]
     end
 
     def test_a_denied_authorization_raises

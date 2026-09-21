@@ -87,7 +87,7 @@ module X
     def test_a_bearer_token_alone_authenticates_with_it
       client = Client.new(bearer_token: "bearer_token")
 
-      assert_equal "bearer_token", client.bearer_token
+      assert_equal "bearer_token", client.send(:bearer_token)
       assert_instance_of BearerTokenAuthenticator, client.authenticator
     end
   end

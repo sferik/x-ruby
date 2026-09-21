@@ -8,28 +8,6 @@ module X
     # Client
     # @api private
     module ClientTokenRefresh
-      # The access token for OAuth authentication, as last refreshed
-      #
-      # @api public
-      # @return [String, nil] the access token for OAuth authentication
-      # @example Get the access token
-      #   client.access_token
-      def access_token
-        current = oauth2_authenticator_in_use
-        current ? current.access_token : @access_token
-      end
-
-      # The OAuth 2.0 refresh token, as last refreshed
-      #
-      # @api public
-      # @return [String, nil] the OAuth 2.0 refresh token
-      # @example Get the refresh token
-      #   client.refresh_token
-      def refresh_token
-        current = oauth2_authenticator_in_use
-        current ? current.refresh_token : @refresh_token
-      end
-
       # The time the OAuth 2.0 access token expires, as last refreshed
       #
       # A refresh that reports no lifetime leaves it nil, rather than the time the client was given.
@@ -90,6 +68,29 @@ module X
       end
 
       private
+
+      # The access token for OAuth authentication, as last refreshed
+      #
+      # It is private, as {ClientCredentials#api_key_secret} is. A hook given to on_token_refresh is passed the
+      # authenticator, which holds the tokens of the refresh it reports.
+      #
+      # @api private
+      # @return [String, nil] the access token for OAuth authentication
+      def access_token
+        current = oauth2_authenticator_in_use
+        current ? current.access_token : @access_token
+      end
+
+      # The OAuth 2.0 refresh token, as last refreshed
+      #
+      # It is private for the reason {#access_token} is.
+      #
+      # @api private
+      # @return [String, nil] the OAuth 2.0 refresh token
+      def refresh_token
+        current = oauth2_authenticator_in_use
+        current ? current.refresh_token : @refresh_token
+      end
 
       # Build an OAuth 2.0 authenticator whose refreshes reach the clients that share it
       #

@@ -191,14 +191,14 @@ module X
       @refresh_token: String?
       @expires_at: Time?
 
-      def access_token: () -> String?
-      def refresh_token: () -> String?
       def expires_at: () -> Time?
       def share_authenticator: (Authenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator other, _ClientRegistry clients) -> void
       def oauth2_authenticator_in_use: () -> OAuth2Authenticator?
       def oauth2_authenticator: -> OAuth2Authenticator?
 
       private
+      def access_token: () -> String?
+      def refresh_token: () -> String?
       def new_oauth2_authenticator: (client_id: String, access_token: String, refresh_token: String) -> OAuth2Authenticator
       def oauth2_credentials_of: (OAuth2Authenticator authenticator) -> [String, String?, String, String]
       def refreshing_rejected_token: [T] () { () -> T } -> T
@@ -262,16 +262,18 @@ module X
       @authenticator: Authenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator
 
       attr_reader api_key: String?
-      attr_reader api_key_secret: String?
       @access_token: String?
       @refresh_token: String?
       @expires_at: Time?
-      attr_reader access_token_secret: String?
-      attr_reader bearer_token: String?
       attr_reader client_id: String?
-      attr_reader client_secret: String?
 
       private
+      attr_reader api_key_secret: String?
+      attr_reader access_token_secret: String?
+      attr_reader bearer_token: String?
+      attr_reader client_secret: String?
+      def access_token: () -> String?
+      def refresh_token: () -> String?
       def credentials: () -> { api_key: String?, api_key_secret: String?, access_token: String?, access_token_secret: String?, bearer_token: String?, client_id: String?, client_secret: String?, refresh_token: String?, expires_at: Time? }
       def initialize_credentials: (api_key: String?, api_key_secret: String?, access_token: String?, access_token_secret: String?, bearer_token: String?, client_id: String?, client_secret: String?, refresh_token: String?, expires_at: Time?) -> void
       def initialize_authenticator: () -> void
@@ -657,8 +659,6 @@ module X
     def settings: () -> Hash[Symbol, untyped]
     def oauth2_authenticator_in_use: () -> OAuth2Authenticator?
     def oauth2_authenticator: () -> OAuth2Authenticator?
-    def access_token: () -> String?
-    def refresh_token: () -> String?
     def expires_at: () -> Time?
   end
 

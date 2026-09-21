@@ -136,13 +136,18 @@ module X
 
       # The identifier of the user an OAuth 1.0a access token begins with
       #
+      # It reads the token from the client's authenticator, which is where a client keeps the credentials it signs
+      # with; a client keeps its own private. An authenticator that holds an access token secret is an OAuth 1.0a
+      # one, since no other set of credentials holds one.
+      #
       # @api private
       # @param client [Object] the client, which may hold OAuth 1.0a credentials
       # @return [Integer, nil] the identifier, or nil if the client holds no OAuth 1.0a access token that names one
       def oauth1_user_id(client)
-        return unless client.respond_to?(:access_token_secret) && client.access_token_secret
+        authenticator = authenticator_of(client)
+        return unless authenticator.respond_to?(:access_token_secret) && authenticator.access_token_secret
 
-        prefix = client.access_token.to_s[/\A(\d+)-/, 1]
+        prefix = authenticator.access_token.to_s[/\A(\d+)-/, 1]
         Integer(prefix, 10) if prefix
       end
 

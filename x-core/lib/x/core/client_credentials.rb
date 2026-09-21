@@ -17,27 +17,6 @@ module X
       #   client.api_key
       attr_reader :api_key
 
-      # The API key secret for OAuth 1.0a authentication
-      # @api public
-      # @return [String, nil] the API key secret for OAuth 1.0a authentication
-      # @example Get the API key secret
-      #   client.api_key_secret
-      attr_reader :api_key_secret
-
-      # The access token secret for OAuth 1.0a authentication
-      # @api public
-      # @return [String, nil] the access token secret for OAuth 1.0a authentication
-      # @example Get the access token secret
-      #   client.access_token_secret
-      attr_reader :access_token_secret
-
-      # The bearer token for authentication
-      # @api public
-      # @return [String, nil] the bearer token for authentication
-      # @example Get the bearer token
-      #   client.bearer_token
-      attr_reader :bearer_token
-
       # The OAuth 2.0 client ID
       # @api public
       # @return [String, nil] the OAuth 2.0 client ID
@@ -45,14 +24,41 @@ module X
       #   client.client_id
       attr_reader :client_id
 
-      # The OAuth 2.0 client secret
-      # @api public
-      # @return [String, nil] the OAuth 2.0 client secret
-      # @example Get the client secret
-      #   client.client_secret
-      attr_reader :client_secret
-
       private
+
+      # The API key secret for OAuth 1.0a authentication
+      #
+      # It is private, as {Client#inspect} hides it, so that code that reflects over a client never reads a secret
+      # out of it. {Client#copy} carries it to a copy without revealing it, and the authenticator of a client holds
+      # the credentials it signs with.
+      #
+      # @api private
+      # @return [String, nil] the API key secret for OAuth 1.0a authentication
+      attr_reader :api_key_secret
+
+      # The access token secret for OAuth 1.0a authentication
+      #
+      # It is private for the reason {#api_key_secret} is.
+      #
+      # @api private
+      # @return [String, nil] the access token secret for OAuth 1.0a authentication
+      attr_reader :access_token_secret
+
+      # The bearer token for authentication
+      #
+      # It is private for the reason {#api_key_secret} is.
+      #
+      # @api private
+      # @return [String, nil] the bearer token for authentication
+      attr_reader :bearer_token
+
+      # The OAuth 2.0 client secret
+      #
+      # It is private for the reason {#api_key_secret} is.
+      #
+      # @api private
+      # @return [String, nil] the OAuth 2.0 client secret
+      attr_reader :client_secret
 
       # The credentials, as initialize accepts them
       # @api private

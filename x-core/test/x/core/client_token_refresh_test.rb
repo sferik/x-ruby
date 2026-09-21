@@ -94,7 +94,7 @@ module X
       client.instance_variable_set(:@authenticator, Class.new(OAuth2Authenticator).new(**test_oauth2_credentials))
 
       assert_equal({"data" => {"id" => "1"}}, client.get("users/me"))
-      assert_equal "NEW_REFRESH_TOKEN", client.refresh_token
+      assert_equal "NEW_REFRESH_TOKEN", client.send(:refresh_token)
     end
 
     def test_other_clients_do_not_refresh_on_unauthorized
@@ -110,7 +110,7 @@ module X
       client = Client.new(**test_oauth2_credentials)
       client.authenticator.refresh_token!
 
-      assert_equal ["NEW_ACCESS_TOKEN", "NEW_REFRESH_TOKEN"], [client.access_token, client.refresh_token]
+      assert_equal ["NEW_ACCESS_TOKEN", "NEW_REFRESH_TOKEN"], [client.send(:access_token), client.send(:refresh_token)]
       assert_in_delta Time.now + 7200, client.expires_at, 5
     end
 
@@ -153,7 +153,7 @@ module X
       client = Client.new(**test_oauth_credentials, **test_oauth2_credentials)
 
       assert_instance_of OAuth1Authenticator, client.authenticator
-      assert_equal [TEST_REFRESH_TOKEN, TEST_ACCESS_TOKEN], [client.refresh_token, client.access_token]
+      assert_equal [TEST_REFRESH_TOKEN, TEST_ACCESS_TOKEN], [client.send(:refresh_token), client.send(:access_token)]
     end
 
     def test_expires_at_is_kept_without_oauth2
@@ -191,7 +191,7 @@ module X
       copy.authenticator.refresh_token!
 
       assert_same client.authenticator, copy.authenticator
-      assert_equal %w[NEW_REFRESH_TOKEN NEW_REFRESH_TOKEN], [client.refresh_token, copy.refresh_token]
+      assert_equal %w[NEW_REFRESH_TOKEN NEW_REFRESH_TOKEN], [client.send(:refresh_token), copy.send(:refresh_token)]
     end
 
     def test_a_refresh_calls_the_hook_of_each_client_that_shares_the_authenticator_once
