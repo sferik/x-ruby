@@ -92,6 +92,10 @@ module X
     # stream that drops reconnects, backing off as X recommends, up to max_reconnects times in a row. The API bills
     # each object a stream delivers, so the client's on_response receives each one, as well as a failed response.
     #
+    # A stream runs until its block stops it: break out of the block to stop the stream and return a value, throw to
+    # unwind to a catch further out, or raise, which stops the stream even where a drop would have reconnected, and
+    # reaches the caller unchanged, a StopIteration included.
+    #
     # @api public
     # @param endpoint [String] the streaming API endpoint, relative to the base URL with or without a leading slash
     # @param params [Hash, nil] query parameters appended to the endpoint
@@ -101,12 +105,14 @@ module X
     # @param object_class [Class] the class for parsing JSON objects, or one that responds to from_response
     #   and builds objects from each whole object the stream delivers, which it receives with the client
     # @yield [Hash, Array] each parsed JSON object from the stream
-    # @return [nil] once the stream ends with no reconnects left
+    # @return [nil] once the stream ends with no reconnects left, or what the block broke with
     # @raise [ArgumentError] if no block is given
     # @raise [UnsupportedOperation] if the client authenticates with OAuth 2.0 as a user, before the stream is opened
     # @raise [HTTPError] if the response is not successful and the stream may not reconnect
     # @example Stream filtered posts
     #   streaming_client.stream("tweets/search/stream") { |post| puts post }
+    # @example Stop the stream from its block
+    #   first = streaming_client.stream("tweets/search/stream") { |post| break post }
     def stream(endpoint, params: nil, headers: {}, array_class: client.default_array_class,
       object_class: client.default_object_class, &block)
       raise ArgumentError, NO_BLOCK_MESSAGE if block.nil?

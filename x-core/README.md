@@ -21,6 +21,10 @@ client.get("users/by/username/sferik")
 # {"data"=>{"id"=>"7505382", "name"=>"Erik Berlin", "username"=>"sferik"}}
 
 client.streaming.stream("tweets/search/stream") { |post| puts post["data"]["text"] }
+
+# A stream runs until its block stops it: break to stop it and return a value, throw to unwind further out, or
+# raise to stop it with an error the caller sees
+first = client.streaming.stream("tweets/search/stream") { |post| break post }
 ```
 
 See the [`x` README](https://github.com/sferik/x-ruby#readme) for more examples.

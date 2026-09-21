@@ -322,7 +322,9 @@ A stream holds a connection open instead of answering a request, so `X::Streamin
 
 The stream endpoints take app-only authentication, so a client that signs with OAuth 1.0a streams with the bearer token that `app_only` holds. The endpoints that manage stream rules take it too, so send those through `app_only`. A client that authenticates with OAuth 2.0 as a user holds no credentials of the app, so X refuses its streams with 403 Forbidden; stream with a client built from the app's bearer token, or its API key and secret, instead.
 
-X holds a stream open indefinitely, but drops it for deploys, network trouble, and slow readers. A stream that ends or drops reconnects at once, then waits a quarter second longer each attempt, up to 16 seconds. A server error, a refused connection, or a line that is not JSON waits 5 seconds, doubling each attempt, up to 320 seconds. A rate limit waits until it resets, or from a minute, doubling each attempt. Delivering a post starts the count over. A stream reconnects without limit by default; set `max_reconnects` to give up after that many attempts in a row. An error raised by the block always stops the stream.
+X holds a stream open indefinitely, but drops it for deploys, network trouble, and slow readers. A stream that ends or drops reconnects at once, then waits a quarter second longer each attempt, up to 16 seconds. A server error, a refused connection, or a line that is not JSON waits 5 seconds, doubling each attempt, up to 320 seconds. A rate limit waits until it resets, or from a minute, doubling each attempt. Delivering a post starts the count over. A stream reconnects without limit by default; set `max_reconnects` to give up after that many attempts in a row.
+
+**Stopping a stream.** A stream runs until its block stops it. `break` out of the block to stop the stream and return a value, or `throw` to unwind to a `catch` further out; neither reconnects. An error raised by the block stops the stream too, even one a dropped connection would have reconnected after, and reaches the caller unchanged, as does an error raised by `on_response` or by the class that builds each object. A `StopIteration` is an error like any other here, so a block that exhausts an `Enumerator` of its own hears about it rather than ending the stream in silence.
 
 X sends a newline every 20 seconds to keep an idle stream alive, so a stream reads with a 30-second timeout of its own, which a keep-alive that arrives a little late does not trip. A connection that goes quiet is dropped and reconnected rather than held open until the 60-second `read_timeout` of an ordinary request.
 
@@ -334,6 +336,9 @@ x_client.app_only.post("tweets/search/stream/rules", {add: [{value: "ruby"}]})
 x_client.streaming.stream("tweets/search/stream") do |post|
   puts post["data"]["text"]
 end
+
+# Stop the stream from its block, which returns what break was given
+first = x_client.streaming.stream("tweets/search/stream") { |post| break post }
 
 # Give up after five reconnects in a row, and notice a quiet connection sooner
 streaming_client = x_client.streaming(max_reconnects: 5, read_timeout: 10)
