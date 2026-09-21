@@ -131,7 +131,7 @@ module X
       client = Client.new(base_url: "https://api.x.com/2")
 
       assert_equal "https://api.x.com/2/", client.base_url
-      assert_equal "https://api.x.com/1.1/", client.copy(base_url: "https://api.x.com/1.1").base_url
+      assert_equal "https://api.x.com/1.1/", client.with(base_url: "https://api.x.com/1.1").base_url
     end
 
     def test_requests_keep_the_last_segment_of_a_base_url_without_a_slash
@@ -195,7 +195,7 @@ module X
 
     def test_a_copy_given_access_tokens_switches_to_oauth
       client = Client.new(api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET)
-      copy = client.copy(access_token: TEST_ACCESS_TOKEN, access_token_secret: TEST_ACCESS_TOKEN_SECRET)
+      copy = client.with(access_token: TEST_ACCESS_TOKEN, access_token_secret: TEST_ACCESS_TOKEN_SECRET)
 
       assert_instance_of OAuth1Authenticator, copy.authenticator
     end

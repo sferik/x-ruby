@@ -36,7 +36,7 @@ module X
     def test_copying_with_an_expiration_time_that_is_not_a_time_is_refused
       client = Client.new(**test_oauth2_credentials, expires_at: Time.now + 60)
 
-      assert_raises(ArgumentError) { client.copy(expires_at: "2026-09-16T00:00:00Z") }
+      assert_raises(ArgumentError) { client.with(expires_at: "2026-09-16T00:00:00Z") }
       assert_kind_of Time, client.expires_at
     end
 
@@ -100,7 +100,7 @@ module X
     def test_a_copy_with_an_incomplete_set_raises
       client = Client.new(**test_oauth_credentials)
 
-      assert_raises(ArgumentError) { client.copy(access_token_secret: nil) }
+      assert_raises(ArgumentError) { client.with(access_token_secret: nil) }
     end
   end
 end

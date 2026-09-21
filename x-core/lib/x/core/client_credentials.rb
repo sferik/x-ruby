@@ -4,7 +4,7 @@ module X
   module Core
     # The authentication credentials of a client, which it reads but never changes, included into Client
     #
-    # A client is built with the credentials it keeps for as long as it lives. {Client#copy} derives a client whose
+    # A client is built with the credentials it keeps for as long as it lives. {Client#with} derives a client whose
     # credentials differ, rather than replacing the ones a client holds, so that a request never signs with a mix of
     # old and new credentials.
     #
@@ -29,7 +29,7 @@ module X
       # The API key secret for OAuth 1.0a authentication
       #
       # It is private, as {Client#inspect} hides it, so that code that reflects over a client never reads a secret
-      # out of it. {Client#copy} carries it to a copy without revealing it, and the authenticator of a client holds
+      # out of it. {Client#with} carries it to a copy without revealing it, and the authenticator of a client holds
       # the credentials it signs with.
       #
       # @api private

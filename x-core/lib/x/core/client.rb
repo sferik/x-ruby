@@ -174,10 +174,10 @@ module X
     # @param options [Hash] the options to change, as accepted by initialize
     # @return [Client] a new client with the same credentials and settings, apart from the options given
     # @example Derive an API v1.1 client
-    #   v1_client = client.copy(base_url: "https://api.x.com/1.1/")
+    #   v1_client = client.with(base_url: "https://api.x.com/1.1/")
     # @example Derive an app-only client from the API key and secret
-    #   app_client = client.copy(access_token: nil, access_token_secret: nil)
-    def copy(**options)
+    #   app_client = client.with(access_token: nil, access_token_secret: nil)
+    def with(**options)
       self.class.new(**credentials, **settings, **options).tap { |copy| copy.share_authenticator(authenticator, @token_refresh_clients) }
     end
 

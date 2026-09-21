@@ -50,13 +50,13 @@ module X
       client.delete("tweets/1")
 
       assert_nil client.on_response
-      client.copy(on_response: ->(response) { @responses << response }).delete("tweets/1")
+      client.with(on_response: ->(response) { @responses << response }).delete("tweets/1")
 
       assert_equal [:delete], @responses.map(&:http_method)
     end
 
     def test_a_copy_keeps_on_response
-      assert_same @client.on_response, @client.copy(base_url: "https://api.x.com/1.1/").on_response
+      assert_same @client.on_response, @client.with(base_url: "https://api.x.com/1.1/").on_response
     end
   end
 end

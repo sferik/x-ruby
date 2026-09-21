@@ -44,7 +44,7 @@ module X
     end
 
     def test_an_upload_copies_the_client_for_nothing
-      @client.stub(:copy, ->(**) { flunk "the client was copied for an upload" }) do
+      @client.stub(:with, ->(**) { flunk "the client was copied for an upload" }) do
         Uploader::Account.update_profile_image_binary("image", client: @client)
         Uploader::Account.update_profile_banner_binary("banner", client: @client)
       end

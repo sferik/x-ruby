@@ -32,7 +32,7 @@ module X
     end
 
     def test_copying_with_an_empty_credential_is_refused
-      assert_raises(ArgumentError) { Client.new(**test_oauth_credentials).copy(api_key: "") }
+      assert_raises(ArgumentError) { Client.new(**test_oauth_credentials).with(api_key: "") }
     end
   end
 end

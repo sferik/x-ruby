@@ -28,7 +28,7 @@ module X
   # that runs for hours never reads a setting another thread is halfway through changing. {Client#streaming} builds
   # one whose read_timeout or max_reconnects differ, and it takes the rest of its settings from the client it is
   # built from, so a stream that connects differently is opened from a copy of that client:
-  # client.copy(open_timeout: 2).streaming.
+  # client.with(open_timeout: 2).streaming.
   #
   # @api public
   class StreamingClient

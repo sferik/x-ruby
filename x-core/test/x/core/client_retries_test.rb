@@ -21,7 +21,7 @@ module X
     def test_the_option_is_copied_and_can_be_replaced
       client = Client.new(max_retries: 2)
 
-      assert_equal [2, 1], [client.copy.max_retries, client.copy(max_retries: 1).max_retries]
+      assert_equal [2, 1], [client.with.max_retries, client.with(max_retries: 1).max_retries]
     end
 
     def test_a_lookup_is_sent_again_after_the_api_fails_to_answer

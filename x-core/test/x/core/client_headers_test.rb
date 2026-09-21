@@ -54,11 +54,11 @@ module X
     end
 
     def test_a_copy_keeps_the_headers
-      assert_equal({"X-Trace" => "abc"}, Client.new(headers: {"X-Trace" => "abc"}).copy(max_redirects: 1).headers)
+      assert_equal({"X-Trace" => "abc"}, Client.new(headers: {"X-Trace" => "abc"}).with(max_redirects: 1).headers)
     end
 
     def test_a_copy_can_replace_the_headers
-      assert_equal({"X-Trace" => "xyz"}, Client.new(headers: {"X-Trace" => "abc"}).copy(headers: {"X-Trace" => "xyz"}).headers)
+      assert_equal({"X-Trace" => "xyz"}, Client.new(headers: {"X-Trace" => "abc"}).with(headers: {"X-Trace" => "xyz"}).headers)
     end
 
     def test_a_stream_sends_the_headers_of_its_client

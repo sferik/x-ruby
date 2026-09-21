@@ -23,8 +23,8 @@ module X
     def test_options_are_copied
       client = Client.new(max_rate_limit_retries: 3, max_rate_limit_wait: 60)
 
-      assert_equal [3, 60], [client.copy.max_rate_limit_retries, client.copy.max_rate_limit_wait]
-      copy = client.copy(max_rate_limit_retries: 1, max_rate_limit_wait: 10)
+      assert_equal [3, 60], [client.with.max_rate_limit_retries, client.with.max_rate_limit_wait]
+      copy = client.with(max_rate_limit_retries: 1, max_rate_limit_wait: 10)
 
       assert_equal [1, 10], [copy.max_rate_limit_retries, copy.max_rate_limit_wait]
     end

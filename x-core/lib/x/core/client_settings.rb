@@ -11,7 +11,7 @@ module X
     # The settings of a client other than its credentials: its base URL, parsing classes, hook, and the settings of
     # its connection and handlers, included into Client
     #
-    # A client is built with the settings it keeps for as long as it lives. {Client#copy} derives a client whose
+    # A client is built with the settings it keeps for as long as it lives. {Client#with} derives a client whose
     # settings differ, rather than replacing the ones a client holds, so that a request never runs under a setting
     # another thread is halfway through changing.
     #

@@ -702,7 +702,7 @@ module X
 
   interface _CredentialHost
     def authenticator: () -> (Authenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator)
-    def copy: (**untyped options) -> Client
+    def with: (**untyped options) -> Client
     def settings: () -> Hash[Symbol, untyped]
     def oauth2_authenticator_in_use: () -> OAuth2Authenticator?
     def oauth2_authenticator: () -> OAuth2Authenticator?
@@ -749,7 +749,7 @@ module X
     attr_reader authenticator: Authenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator
     def initialize: (?api_key: String?, ?api_key_secret: String?, ?access_token: String?, ?access_token_secret: String?, ?bearer_token: String?, ?client_id: String?, ?client_secret: String?, ?refresh_token: String?, ?expires_at: Time?, ?base_url: String, ?open_timeout: Float | Integer, ?read_timeout: Float | Integer, ?write_timeout: Float | Integer, ?keep_alive_timeout: Float | Integer, ?debug_output: IO?, ?proxy_url: (URI::Generic | String)?, ?default_array_class: Class, ?default_object_class: Class, ?headers: Hash[String, String], ?max_redirects: Integer, ?max_rate_limit_retries: Integer, ?max_rate_limit_wait: Integer, ?max_retries: Integer, ?on_response: _ResponseHook?, ?on_token_refresh: _TokenRefreshHook?) -> void
     def inspect: () -> String
-    def copy: (**untyped options) -> Client
+    def with: (**untyped options) -> Client
     def get: (String endpoint, ?params: params?, ?headers: Hash[String, String], ?array_class: Class, ?object_class: Class) -> untyped
     def post: (String endpoint, ?body? body, ?params: params?, ?form: params?, ?headers: Hash[String, String], ?array_class: Class, ?object_class: Class) -> untyped
     def put: (String endpoint, ?body? body, ?params: params?, ?form: params?, ?headers: Hash[String, String], ?array_class: Class, ?object_class: Class) -> untyped

@@ -53,7 +53,7 @@ module X
       # @api private
       # @return [Client] the copy
       def build_app_only
-        copy(**credentials.to_h { |name, _| [name, nil] }, api_key:, api_key_secret:, bearer_token: app_bearer_token)
+        with(**credentials.to_h { |name, _| [name, nil] }, api_key:, api_key_secret:, bearer_token: app_bearer_token)
       end
 
       # The app-only bearer token, the client's own or one it fetches

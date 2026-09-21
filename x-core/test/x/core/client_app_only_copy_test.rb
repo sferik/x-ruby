@@ -35,7 +35,7 @@ module X
     def test_a_copy_of_a_client_fetches_a_token_of_its_own
       client = Client.new(**test_oauth_credentials)
 
-      refute_same client.app_only, client.copy.app_only
+      refute_same client.app_only, client.with.app_only
       assert_requested @token_request, times: 2
     end
   end

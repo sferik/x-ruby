@@ -21,7 +21,7 @@ module X
       stub_current_user("OTHER", "12")
 
       assert_equal 9, @client.current_user.id
-      assert_equal 12, @client.copy(bearer_token: "OTHER").current_user.id
+      assert_equal 12, @client.with(bearer_token: "OTHER").current_user.id
     end
 
     def test_client_includes_objects_api
