@@ -34,5 +34,8 @@ Gem::Specification.new do |spec|
     "LICENSE.txt"
   ], base: __dir__)
   spec.require_paths = ["lib"]
+  # net-http is a default gem, and the 0.6 that Ruby 3.4 ships cannot request a host named by an IPv6 literal,
+  # such as a base_url of http://[::1]:8080/, so the version that can is asked for here
+  spec.add_dependency("net-http", ">= 0.8")
   spec.add_dependency("simple_oauth", "~> 1.0")
 end
