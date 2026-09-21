@@ -2,11 +2,11 @@
 
 require "tmpdir"
 require_relative "../../test_helper"
-require "x/uploader/media"
+require "x/uploader/media_upload"
 
 module X
   class MediaFractionalChunksTest < Minitest::Test
-    cover Uploader::Media
+    cover Uploader::MediaUpload
 
     BASE_URL = "https://api.x.com/2/media/upload"
     APPEND_URL = "#{BASE_URL}/#{TEST_MEDIA_ID}/append".freeze
@@ -29,7 +29,7 @@ module X
       Dir.mktmpdir do |dir|
         path = File.join(dir, "video.mp4")
         File.binwrite(path, CONTENT)
-        Uploader::Media.chunked_upload(path, client: @client, media_category: "tweet_video", chunk_size_mb: 1000.5 / Uploader::Media::BYTES_PER_MB)
+        Uploader::MediaUpload.chunked_upload(path, client: @client, media_category: "tweet_video", chunk_size_mb: 1000.5 / Uploader::MediaUpload::BYTES_PER_MB)
       end
       chunks = Array.new(@chunks.size) { @chunks.pop }.sort.map(&:last)
 

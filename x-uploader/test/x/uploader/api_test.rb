@@ -13,19 +13,19 @@ module X
     end
 
     def test_upload_media_uploads_a_file_with_the_client_and_its_options
-      Uploader::Media.stub(:upload, @called) do
+      Uploader::MediaUpload.stub(:upload, @called) do
         assert_equal [["cat.jpg"], {client: @client, alt_text: "A cat"}], @client.upload_media("cat.jpg", alt_text: "A cat")
       end
     end
 
     def test_await_media_processing_returns_the_status_of_media_that_failed_as_await_processing_does
-      Uploader::Media.stub(:await_processing, @called) do
+      Uploader::MediaUpload.stub(:await_processing, @called) do
         assert_equal [[7], {client: @client, processing_timeout: 60}], @client.await_media_processing(7, processing_timeout: 60)
       end
     end
 
     def test_await_media_processing_bang_raises_for_media_that_failed_as_await_processing_bang_does
-      Uploader::Media.stub(:await_processing!, @called) do
+      Uploader::MediaUpload.stub(:await_processing!, @called) do
         assert_equal [[7], {client: @client, processing_timeout: 60}], @client.await_media_processing!(7, processing_timeout: 60)
       end
     end

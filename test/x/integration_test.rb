@@ -12,7 +12,7 @@ module X
     end
 
     def test_require_x_loads_the_uploaders
-      assert_respond_to Uploader::Media, :upload
+      assert_respond_to Uploader::MediaUpload, :upload
       assert_respond_to Uploader::Account, :update_profile_image
     end
 
@@ -136,7 +136,7 @@ module X
 
   class ConcurrencyTest < Minitest::Test
     def test_the_batches_of_a_lookup_and_the_chunks_of_an_upload_run_as_wide
-      assert_equal Uploader::Media::DEFAULT_CONCURRENCY, Objects::Finders::DEFAULT_CONCURRENCY
+      assert_equal Uploader::MediaUpload::DEFAULT_CONCURRENCY, Objects::Finders::DEFAULT_CONCURRENCY
     end
   end
 end

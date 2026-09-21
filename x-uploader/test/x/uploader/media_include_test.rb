@@ -5,7 +5,7 @@ require "x/uploader"
 
 module X
   class MediaIncludeTest < Minitest::Test
-    cover Uploader::Media
+    cover Uploader::MediaUpload
     cover Uploader::Account
     cover Uploader::Metadata
 
@@ -14,12 +14,12 @@ module X
 
     # A class of a caller's own that includes the uploader
     class MediaUploader
-      include X::Uploader::Media
+      include X::Uploader::MediaUpload
     end
 
     # A class whose own methods have the names of what the uploaders call internally, none of which takes an argument
     class Attachment
-      include X::Uploader::Media
+      include X::Uploader::MediaUpload
       include X::Uploader::Account
       include X::Uploader::Metadata
 
@@ -79,7 +79,7 @@ module X
     end
 
     def test_a_class_that_includes_an_uploader_gains_its_public_methods_alone
-      [Uploader::Media, Uploader::Account, Uploader::Metadata].each do |uploader|
+      [Uploader::MediaUpload, Uploader::Account, Uploader::Metadata].each do |uploader|
         assert_empty uploader.private_instance_methods(false), "Expected #{uploader} to define no private methods"
         assert_empty uploader.ancestors - [uploader], "Expected #{uploader} to include no other module"
       end

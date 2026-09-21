@@ -10,8 +10,8 @@ module X
   module Uploader
     # Uploads a file in the chunks the X API requires for video and subtitles
     #
-    # Internal to x-uploader: X::Uploader::Media calls it rather than mix its methods into itself, so a class that
-    # includes X::Uploader::Media gains none of them.
+    # Internal to x-uploader: X::Uploader::MediaUpload calls it rather than mix its methods into itself, so a class that
+    # includes X::Uploader::MediaUpload gains none of them.
     #
     # @api private
     module Chunks

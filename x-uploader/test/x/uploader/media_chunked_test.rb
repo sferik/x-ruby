@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
 require_relative "../../test_helper"
-require "x/uploader/media"
+require "x/uploader/media_upload"
 
 module X
   class MediaChunkedTest < Minitest::Test
-    cover Uploader::Media
+    cover Uploader::MediaUpload
     cover Uploader.const_get(:Chunks)
 
     BASE_URL = "https://api.x.com/2/media/upload"
@@ -89,7 +89,7 @@ module X
 
     def init
       Uploader.const_get(:Chunks).init(client: @client, source: video_source, media_type: VIDEO_MIME_TYPE,
-        media_category: Uploader::Media::TWEET_VIDEO)
+        media_category: Uploader::MediaUpload::TWEET_VIDEO)
     end
 
     def video_source = Uploader.const_get(:Source).for(VIDEO_FILE)
@@ -122,9 +122,9 @@ module X
     end
 
     def perform_chunked_upload
-      chunk_size_mb = (@video_size - 1) / Uploader::Media::BYTES_PER_MB.to_f
-      Uploader::Media.chunked_upload(VIDEO_FILE, client: @client,
-        media_category: Uploader::Media::TWEET_VIDEO, chunk_size_mb:)
+      chunk_size_mb = (@video_size - 1) / Uploader::MediaUpload::BYTES_PER_MB.to_f
+      Uploader::MediaUpload.chunked_upload(VIDEO_FILE, client: @client,
+        media_category: Uploader::MediaUpload::TWEET_VIDEO, chunk_size_mb:)
     end
 
     def collect_request_bodies(method, url, expected_count:)

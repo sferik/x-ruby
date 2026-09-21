@@ -2,11 +2,11 @@
 
 require "tmpdir"
 require_relative "../../test_helper"
-require "x/uploader/media"
+require "x/uploader/media_upload"
 
 module X
   class MediaChunkedWorkflowTest < Minitest::Test
-    cover Uploader::Media
+    cover Uploader::MediaUpload
     cover Uploader.const_get(:Chunks)
 
     BASE_URL = "https://api.x.com/2/media/upload"
@@ -21,14 +21,14 @@ module X
 
     def test_default_media_category_and_type_are_inferred_from_the_file
       stub_workflow
-      Uploader::Media.chunked_upload("test/sample_files/sample.png", client: @client)
+      Uploader::MediaUpload.chunked_upload("test/sample_files/sample.png", client: @client)
 
       assert_requested(:post, INIT_URL, body: {media_type: "image/png", media_category: "tweet_image", total_bytes: 68}.to_json)
     end
 
     def test_upload_an_amplify_video_in_chunks_as_mp4
       stub_workflow
-      Uploader::Media.upload("test/sample_files/sample.png", client: @client, media_category: "amplify_video")
+      Uploader::MediaUpload.upload("test/sample_files/sample.png", client: @client, media_category: "amplify_video")
 
       assert_requested(:post, INIT_URL, body: {media_type: "video/mp4", media_category: "amplify_video", total_bytes: 68}.to_json)
       assert_not_requested(:post, BASE_URL)
@@ -36,35 +36,35 @@ module X
 
     def test_missing_file_is_rejected_before_requesting
       error = assert_raises(Errno::ENOENT) do
-        Uploader::Media.chunked_upload("nope.mp4", client: @client, media_category: "tweet_video")
+        Uploader::MediaUpload.chunked_upload("nope.mp4", client: @client, media_category: "tweet_video")
       end
 
       assert_equal "No such file or directory - nope.mp4", error.message
     end
 
     def test_missing_file_of_no_known_type_is_rejected_before_inferring_its_type
-      error = assert_raises(Errno::ENOENT) { Uploader::Media.chunked_upload("nope.xyz", client: @client) }
+      error = assert_raises(Errno::ENOENT) { Uploader::MediaUpload.chunked_upload("nope.xyz", client: @client) }
 
       assert_equal "No such file or directory - nope.xyz", error.message
     end
 
     def test_invalid_category_is_rejected_before_requesting
       assert_raises(ArgumentError) do
-        Uploader::Media.chunked_upload(VIDEO_FILE, client: @client, media_category: "bogus", media_type: "video/mp4")
+        Uploader::MediaUpload.chunked_upload(VIDEO_FILE, client: @client, media_category: "bogus", media_type: "video/mp4")
       end
       assert_not_requested(:post, INIT_URL)
     end
 
     def test_invalid_chunk_options_are_rejected_before_requesting
-      assert_raises(ArgumentError) { Uploader::Media.chunked_upload(VIDEO_FILE, client: @client, concurrency: 0) }
-      assert_raises(ArgumentError) { Uploader::Media.chunked_upload(VIDEO_FILE, client: @client, chunk_size_mb: 0) }
+      assert_raises(ArgumentError) { Uploader::MediaUpload.chunked_upload(VIDEO_FILE, client: @client, concurrency: 0) }
+      assert_raises(ArgumentError) { Uploader::MediaUpload.chunked_upload(VIDEO_FILE, client: @client, chunk_size_mb: 0) }
       assert_not_requested(:post, INIT_URL)
     end
 
     def test_media_without_id
       stub_request(:post, INIT_URL).to_return(headers: JSON_HEADERS, body: {data: {}}.to_json)
       error = without_thread_reports do
-        assert_raises(Uploader::MissingData) { Uploader::Media.chunked_upload(VIDEO_FILE, client: @client, media_category: "tweet_video") }
+        assert_raises(Uploader::MissingData) { Uploader::MediaUpload.chunked_upload(VIDEO_FILE, client: @client, media_category: "tweet_video") }
       end
 
       assert_equal "The response that initializes the upload holds no media to append the chunks to", error.message
@@ -73,7 +73,7 @@ module X
     def test_chunks_are_read_from_the_file_without_temporary_files
       stub_workflow
       Dir.stub(:mktmpdir, ->(*) { flunk "wrote a temporary file" }) do
-        Uploader::Media.chunked_upload(VIDEO_FILE, client: @client, media_category: "tweet_video", chunk_size_mb: 0.0625)
+        Uploader::MediaUpload.chunked_upload(VIDEO_FILE, client: @client, media_category: "tweet_video", chunk_size_mb: 0.0625)
       end
 
       assert_requested(:post, APPEND_URL, times: 2)
@@ -85,7 +85,7 @@ module X
         path = File.join(dir, "empty.mp4")
         File.binwrite(path, "")
 
-        assert_raises(ArgumentError) { Uploader::Media.chunked_upload(path, client: @client, media_category: "tweet_video") }
+        assert_raises(ArgumentError) { Uploader::MediaUpload.chunked_upload(path, client: @client, media_category: "tweet_video") }
       end
       assert_not_requested(:post, INIT_URL)
     end

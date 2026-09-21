@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require_relative "account"
-require_relative "media"
+require_relative "media_upload"
 require_relative "metadata"
 
 module X
@@ -24,7 +24,7 @@ module X
       #
       # @api public
       # @param media [String, Pathname, IO, StringIO] the path to the media to upload, or an IO open on it
-      # @param options [Hash] the options of {Media.upload}, such as media_category, alt_text, and processing_timeout
+      # @param options [Hash] the options of {MediaUpload.upload}, such as media_category, alt_text, and processing_timeout
       # @return [UploadedMedia, nil] the uploaded media, which holds the upload response, or the processing status of
       #   media that X processes
       # @raise [ArgumentError] if the media is neither a path nor an IO
@@ -41,7 +41,7 @@ module X
       # @example Upload media of a category no signature names
       #   client.upload_media(StringIO.new(subtitles), media_category: "subtitles")
       def upload_media(media, **options)
-        Media.upload(media, client: self, **options)
+        MediaUpload.upload(media, client: self, **options)
       end
 
       # Wait until media has been processed, whether its processing succeeded or failed
@@ -51,28 +51,28 @@ module X
       #
       # @api public
       # @param media [UploadedMedia, Hash, String, Integer] the uploaded media, or the media identifier
-      # @param options [Hash] the options of {Media.await_processing}, such as processing_timeout
+      # @param options [Hash] the options of {MediaUpload.await_processing}, such as processing_timeout
       # @return [UploadedMedia, nil] the uploaded media, which holds the processing status, failed or not
       # @raise [MediaProcessingTimeout] if the media is still processing once the processing timeout would pass
       # @example Wait for a video uploaded with chunked_upload
       #   video = client.await_media_processing(video)
       #   warn video.processing_info.dig("error", "message") if video.failed?
       def await_media_processing(media, **options)
-        Media.await_processing(media, client: self, **options)
+        MediaUpload.await_processing(media, client: self, **options)
       end
 
       # Wait until media has been processed, raising if its processing failed
       #
       # @api public
       # @param media [UploadedMedia, Hash, String, Integer] the uploaded media, or the media identifier
-      # @param options [Hash] the options of {Media.await_processing!}, such as processing_timeout
+      # @param options [Hash] the options of {MediaUpload.await_processing!}, such as processing_timeout
       # @return [UploadedMedia, nil] the uploaded media, which holds the processing status
       # @raise [MediaProcessingFailed] if media processing failed, with the status X reported
       # @raise [MediaProcessingTimeout] if the media is still processing once the processing timeout would pass
       # @example Wait for a video uploaded with chunked_upload, raising if X could not process it
       #   client.await_media_processing!(video)
       def await_media_processing!(media, **options)
-        Media.await_processing!(media, client: self, **options)
+        MediaUpload.await_processing!(media, client: self, **options)
       end
 
       # Describe uploaded media with alt text, for people who cannot see it

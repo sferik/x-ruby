@@ -3,11 +3,11 @@
 require "fileutils"
 require "tmpdir"
 require_relative "../../test_helper"
-require "x/uploader/media"
+require "x/uploader/media_upload"
 
 module X
   class MediaRequestTest < Minitest::Test
-    cover Uploader::Media
+    cover Uploader::MediaUpload
     cover Uploader.const_get(:Chunks)
 
     UPLOAD_URL = "https://api.x.com/2/media/upload"
@@ -24,49 +24,49 @@ module X
     end
 
     def test_upload_binary_body_and_headers
-      Uploader::Media.upload_binary(CONTENT, client: @client, media_category: "tweet_image")
+      Uploader::MediaUpload.upload_binary(CONTENT, client: @client, media_category: "tweet_image")
 
       assert_equal upload_body(CONTENT, "tweet_image", request_boundary), @request.body.b
     end
 
     def test_upload_sends_file_content
-      Uploader::Media.upload(GIF_FILE, client: @client, media_category: "tweet_gif")
+      Uploader::MediaUpload.upload(GIF_FILE, client: @client, media_category: "tweet_gif")
 
       assert_equal upload_body(File.binread(GIF_FILE), "tweet_gif", request_boundary), @request.body.b
     end
 
     def test_each_upload_has_a_boundary_of_its_own
-      Uploader::Media.upload_binary(CONTENT, client: @client, media_category: "tweet_image")
+      Uploader::MediaUpload.upload_binary(CONTENT, client: @client, media_category: "tweet_image")
       first = request_boundary
-      Uploader::Media.upload_binary(CONTENT, client: @client, media_category: "tweet_image")
+      Uploader::MediaUpload.upload_binary(CONTENT, client: @client, media_category: "tweet_image")
 
       refute_equal first, request_boundary
     end
 
     def test_upload_binary_rejects_invalid_category_before_requesting
-      assert_raises(ArgumentError) { Uploader::Media.upload_binary(CONTENT, client: @client, media_category: "bogus") }
+      assert_raises(ArgumentError) { Uploader::MediaUpload.upload_binary(CONTENT, client: @client, media_category: "bogus") }
       assert_not_requested(:post, UPLOAD_URL)
     end
 
     def test_upload_binary_sends_the_media_category_in_lowercase
-      Uploader::Media.upload_binary(CONTENT, client: @client, media_category: "TWEET_Image")
+      Uploader::MediaUpload.upload_binary(CONTENT, client: @client, media_category: "TWEET_Image")
 
       assert_equal upload_body(CONTENT, "tweet_image", request_boundary), @request.body.b
     end
 
     def test_upload_rejects_an_unknown_option
-      assert_raises(ArgumentError) { Uploader::Media.upload(GIF_FILE, client: @client, chunk_size: 1) }
+      assert_raises(ArgumentError) { Uploader::MediaUpload.upload(GIF_FILE, client: @client, chunk_size: 1) }
       assert_not_requested(:post, UPLOAD_URL)
     end
 
     def test_upload_rejects_invalid_chunk_options_for_media_it_uploads_whole
-      assert_raises(ArgumentError) { Uploader::Media.upload(GIF_FILE, client: @client, media_category: "tweet_image", chunk_size_mb: 0) }
-      assert_raises(ArgumentError) { Uploader::Media.upload(GIF_FILE, client: @client, media_category: "tweet_image", concurrency: 0) }
+      assert_raises(ArgumentError) { Uploader::MediaUpload.upload(GIF_FILE, client: @client, media_category: "tweet_image", chunk_size_mb: 0) }
+      assert_raises(ArgumentError) { Uploader::MediaUpload.upload(GIF_FILE, client: @client, media_category: "tweet_image", concurrency: 0) }
       assert_not_requested(:post, UPLOAD_URL)
     end
 
     def test_upload_rejects_missing_file_before_reading_it
-      error = assert_raises(Errno::ENOENT) { Uploader::Media.upload("nope.jpg", client: @client, media_category: "tweet_image") }
+      error = assert_raises(Errno::ENOENT) { Uploader::MediaUpload.upload("nope.jpg", client: @client, media_category: "tweet_image") }
 
       assert_equal "No such file or directory - nope.jpg", error.message
     end

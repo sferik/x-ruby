@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
 require_relative "../../test_helper"
-require "x/uploader/media"
+require "x/uploader/media_upload"
 
 module X
   class MediaProcessingTest < Minitest::Test
-    cover Uploader::Media
+    cover Uploader::MediaUpload
 
     def setup
       @client = Client.new
@@ -67,7 +67,7 @@ module X
       stub_video_upload_that_keeps_processing(check_after_secs: 5)
 
       assert_raises(Uploader::MediaProcessingTimeout) do
-        Uploader::Media.upload("test/sample_files/sample.mp4", client: @client, processing_timeout: 4)
+        Uploader::MediaUpload.upload("test/sample_files/sample.mp4", client: @client, processing_timeout: 4)
       end
     end
 
@@ -75,8 +75,8 @@ module X
       stub_video_upload_that_keeps_processing(check_after_secs: 300)
       waits = []
 
-      Uploader::Media.stub(:sleep, ->(seconds) { waits << seconds }) do
-        assert_raises(Uploader::MediaProcessingTimeout) { Uploader::Media.upload("test/sample_files/sample.mp4", client: @client) }
+      Uploader::MediaUpload.stub(:sleep, ->(seconds) { waits << seconds }) do
+        assert_raises(Uploader::MediaProcessingTimeout) { Uploader::MediaUpload.upload("test/sample_files/sample.mp4", client: @client) }
       end
 
       assert_equal [300, 300], waits
@@ -91,7 +91,7 @@ module X
     end
 
     def await(method, **)
-      Uploader::Media.stub(:sleep, nil) { Uploader::Media.public_send(method, media_hash, client: @client, **) }
+      Uploader::MediaUpload.stub(:sleep, nil) { Uploader::MediaUpload.public_send(method, media_hash, client: @client, **) }
     end
 
     def media_hash

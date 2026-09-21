@@ -163,7 +163,7 @@ module X
       def upload_chunk: (client: _Client, media_id: String, upload_body: String, headers: Hash[String, String]) -> untyped
     end
 
-    module Media
+    module MediaUpload
       BYTES_PER_MB: Integer
       AMPLIFY_VIDEO: String
       DM_GIF: String
@@ -202,7 +202,7 @@ module X
       GIF_CATEGORIES: Array[String]
       CATEGORY_MAP: Hash[String, String]
       CATEGORY_MIME_TYPES: Hash[String, Array[String]]
-      extend Media
+      extend MediaUpload
 
       def upload: (uploadable media, client: _Client, ?media_category: (String | Symbol)?, ?alt_text: String?, ?processing_timeout: Integer, ?media_type: String?, ?chunk_size_mb: (Float | Integer)?, ?concurrency: Integer) -> UploadedMedia?
       def chunked_upload?: (uploadable media, String | Symbol media_category) -> bool

@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
 require_relative "../../test_helper"
-require "x/uploader/media"
+require "x/uploader/media_upload"
 
 module X
   class MediaProcessingStatusTest < Minitest::Test
-    cover Uploader::Media
+    cover Uploader::MediaUpload
 
     STATUS_URL = "https://api.x.com/2/media/upload?command=STATUS&media_id=#{TEST_MEDIA_ID}".freeze
 
@@ -78,13 +78,13 @@ module X
         .to_return(headers: {"content-type" => "application/json"}, body: {data: {id: "7"}}.to_json)
 
       [7, "7"].each do |media|
-        assert_equal(Uploader::UploadedMedia.new({"id" => "7"}), Uploader::Media.await_processing(media, client: @client))
-        assert_equal(Uploader::UploadedMedia.new({"id" => "7"}), Uploader::Media.await_processing!(media, client: @client))
+        assert_equal(Uploader::UploadedMedia.new({"id" => "7"}), Uploader::MediaUpload.await_processing(media, client: @client))
+        assert_equal(Uploader::UploadedMedia.new({"id" => "7"}), Uploader::MediaUpload.await_processing!(media, client: @client))
       end
     end
 
     def test_media_without_id
-      error = assert_raises(Uploader::MissingData) { Uploader::Media.await_processing({}, client: @client) }
+      error = assert_raises(Uploader::MissingData) { Uploader::MediaUpload.await_processing({}, client: @client) }
 
       assert_equal "The media given holds no identifier", error.message
     end
@@ -99,8 +99,8 @@ module X
     private
 
     def await(**)
-      Uploader::Media.stub(:sleep, ->(seconds) { @sleeps << seconds }) do
-        Uploader::Media.await_processing({"id" => TEST_MEDIA_ID}, client: @client, **)
+      Uploader::MediaUpload.stub(:sleep, ->(seconds) { @sleeps << seconds }) do
+        Uploader::MediaUpload.await_processing({"id" => TEST_MEDIA_ID}, client: @client, **)
       end
     end
 

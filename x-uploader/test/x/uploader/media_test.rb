@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
 require_relative "../../test_helper"
-require "x/uploader/media"
+require "x/uploader/media_upload"
 
 module X
   class MediaTest < Minitest::Test
-    cover Uploader::Media
+    cover Uploader::MediaUpload
 
     UPLOAD_URL = "https://api.x.com/2/media/upload"
     SAMPLE_BINARY_CONTENT = "\x89PNG\r\n\x1A\n\x00\x00\x00...".b.freeze
@@ -19,7 +19,7 @@ module X
       response = upload_file("test/sample_files/sample.jpg")
 
       assert_requested(:post, UPLOAD_URL) do |request|
-        assert_includes request.body, multipart_field("media_category", Uploader::Media::TWEET_IMAGE)
+        assert_includes request.body, multipart_field("media_category", Uploader::MediaUpload::TWEET_IMAGE)
       end
       assert_equal TEST_MEDIA_ID.to_i, response["id"]
     end
@@ -33,17 +33,17 @@ module X
 
     def test_upload_binary_sends_content_directly
       stub_upload_request
-      response = Uploader::Media.upload_binary(
+      response = Uploader::MediaUpload.upload_binary(
         SAMPLE_BINARY_CONTENT,
         client: @client,
-        media_category: Uploader::Media::TWEET_IMAGE
+        media_category: Uploader::MediaUpload::TWEET_IMAGE
       )
 
       assert_equal TEST_MEDIA_ID.to_i, response["id"]
     end
 
     def test_upload_binary_refuses_amplify_video_before_a_request
-      error = assert_raises(ArgumentError) { Uploader::Media.upload_binary("data", client: @client, media_category: :amplify_video) }
+      error = assert_raises(ArgumentError) { Uploader::MediaUpload.upload_binary("data", client: @client, media_category: :amplify_video) }
 
       assert_equal "amplify_video uploads in chunks alone: pass the file to upload or chunked_upload", error.message
       assert_not_requested :post, "https://api.x.com/2/media/upload"
@@ -52,10 +52,10 @@ module X
     def test_upload_binary_returns_nil_for_empty_response
       stub_request(:post, UPLOAD_URL).to_return(status: 204)
 
-      response = Uploader::Media.upload_binary(
+      response = Uploader::MediaUpload.upload_binary(
         SAMPLE_BINARY_CONTENT,
         client: @client,
-        media_category: Uploader::Media::TWEET_IMAGE
+        media_category: Uploader::MediaUpload::TWEET_IMAGE
       )
 
       assert_nil response
@@ -63,7 +63,7 @@ module X
 
     def test_infer_media_type_returns_correct_mime_type_for_each_category
       mime_type_expectations.each do |(category, expected_mime), file_path|
-        actual = Uploader::Media.infer_media_type(file_path, category)
+        actual = Uploader::MediaUpload.infer_media_type(file_path, category)
 
         assert_equal expected_mime, actual, "Expected #{expected_mime} for #{category} with #{file_path}"
       end
@@ -71,22 +71,22 @@ module X
 
     def test_infer_media_type_raises_for_unknown_extension
       assert_raises(Uploader::InvalidMediaType) do
-        Uploader::Media.infer_media_type("test/sample_files/sample.unknown", Uploader::Media::TWEET_IMAGE)
+        Uploader::MediaUpload.infer_media_type("test/sample_files/sample.unknown", Uploader::MediaUpload::TWEET_IMAGE)
       end
     end
 
     def test_infer_media_type_error_message_includes_file_path
       error = assert_raises(Uploader::InvalidMediaType) do
-        Uploader::Media.infer_media_type("/tmp/tempfile123", Uploader::Media::TWEET_IMAGE)
+        Uploader::MediaUpload.infer_media_type("/tmp/tempfile123", Uploader::MediaUpload::TWEET_IMAGE)
       end
 
       assert_includes error.message, "/tmp/tempfile123"
     end
 
     def test_media_category_constants_are_frozen
-      categories = [Uploader::Media::AMPLIFY_VIDEO, Uploader::Media::DM_GIF, Uploader::Media::DM_IMAGE,
-        Uploader::Media::DM_VIDEO, Uploader::Media::SUBTITLES, Uploader::Media::TWEET_GIF,
-        Uploader::Media::TWEET_IMAGE, Uploader::Media::TWEET_VIDEO]
+      categories = [Uploader::MediaUpload::AMPLIFY_VIDEO, Uploader::MediaUpload::DM_GIF, Uploader::MediaUpload::DM_IMAGE,
+        Uploader::MediaUpload::DM_VIDEO, Uploader::MediaUpload::SUBTITLES, Uploader::MediaUpload::TWEET_GIF,
+        Uploader::MediaUpload::TWEET_IMAGE, Uploader::MediaUpload::TWEET_VIDEO]
 
       assert categories.all?(&:frozen?)
     end
@@ -101,10 +101,10 @@ module X
     end
 
     def upload_file(file_path)
-      Uploader::Media.upload(
+      Uploader::MediaUpload.upload(
         file_path,
         client: @client,
-        media_category: Uploader::Media::TWEET_IMAGE
+        media_category: Uploader::MediaUpload::TWEET_IMAGE
       )
     end
 

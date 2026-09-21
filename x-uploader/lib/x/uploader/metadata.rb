@@ -51,11 +51,11 @@ module X
       # @raise [ArgumentError] if the media category is neither tweet_video nor amplify_video
       # @raise [MissingData] if the video or the subtitles hold no identifier, or the response holds no metadata
       # @example Upload a video and its English subtitles
-      #   video = Uploader::Media.upload("cat.mp4", client: client)
-      #   subtitles = Uploader::Media.upload("cat.srt", client: client)
+      #   video = Uploader::MediaUpload.upload("cat.mp4", client: client)
+      #   subtitles = Uploader::MediaUpload.upload("cat.srt", client: client)
       #   Uploader::Metadata.add_subtitles(video, subtitles, "EN", client: client, display_name: "English")
       # @example Subtitle an Amplify video
-      #   video = Uploader::Media.upload("cat.mp4", client: client, media_category: :amplify_video)
+      #   video = Uploader::MediaUpload.upload("cat.mp4", client: client, media_category: :amplify_video)
       #   Uploader::Metadata.add_subtitles(video, subtitles, "EN", client: client, media_category: :amplify_video)
       def add_subtitles(video, subtitles, language_code, client:, display_name: nil, media_category: SUBTITLED_MEDIA_CATEGORY)
         track = {id: Utils.media_id(subtitles), language_code: language_code.upcase, display_name:}.compact

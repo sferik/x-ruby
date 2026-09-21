@@ -11,7 +11,7 @@ module X
   class ClientParsingClassesTest < Minitest::Test
     cover Uploader::Account
     cover Uploader.const_get(:Chunks)
-    cover Uploader::Media
+    cover Uploader::MediaUpload
     cover Uploader::Metadata
 
     UPLOAD_URL = "https://api.x.com/2/media/upload"
@@ -24,7 +24,7 @@ module X
     def test_upload_an_image
       stub_request(:post, UPLOAD_URL).to_return(JSON_RESPONSE)
 
-      assert_equal(Uploader::UploadedMedia.new({"id" => TEST_MEDIA_ID}), Uploader::Media.upload("test/sample_files/sample.png", client: @client))
+      assert_equal(Uploader::UploadedMedia.new({"id" => TEST_MEDIA_ID}), Uploader::MediaUpload.upload("test/sample_files/sample.png", client: @client))
     end
 
     def test_upload_a_video_in_chunks_and_await_processing
@@ -35,7 +35,7 @@ module X
       stub_request(:get, "#{UPLOAD_URL}?command=STATUS&media_id=#{TEST_MEDIA_ID}")
         .to_return(headers: {"content-type" => "application/json"}, body: {data: {id: TEST_MEDIA_ID, processing_info: {state: "succeeded"}}}.to_json)
 
-      assert_equal "succeeded", Uploader::Media.upload("test/sample_files/sample.mp4", client: @client).dig("processing_info", "state")
+      assert_equal "succeeded", Uploader::MediaUpload.upload("test/sample_files/sample.mp4", client: @client).dig("processing_info", "state")
     end
 
     def test_add_alt_text_and_subtitles

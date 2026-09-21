@@ -11,7 +11,7 @@ module X
     # for an upload is read, and only one whose signature names it on its own, so SubRip subtitles, which begin with
     # nothing a text file could not, are not among them.
     #
-    # Internal to x-uploader: X::Uploader::Media reads a signature with it.
+    # Internal to x-uploader: X::Uploader::MediaUpload reads a signature with it.
     #
     # @api private
     module Signature

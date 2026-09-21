@@ -2,11 +2,11 @@
 
 require "tmpdir"
 require_relative "../../test_helper"
-require "x/uploader/media"
+require "x/uploader/media_upload"
 
 module X
   class MediaSegmentsTest < Minitest::Test
-    cover Uploader::Media
+    cover Uploader::MediaUpload
     cover Uploader.const_get(:Chunks)
 
     BASE_URL = "https://api.x.com/2/media/upload"
@@ -46,23 +46,23 @@ module X
     end
 
     def test_default_chunk_size_is_one_megabyte
-      with_file(Uploader::Media::BYTES_PER_MB + 1) { |path| upload(path) }
+      with_file(Uploader::MediaUpload::BYTES_PER_MB + 1) { |path| upload(path) }
 
       assert_equal 2, append_requests.size
     end
 
     def test_chunk_size_scales_with_megabytes
-      with_file((2 * Uploader::Media::BYTES_PER_MB) + 1) { |path| upload(path, chunk_size_mb: 2) }
+      with_file((2 * Uploader::MediaUpload::BYTES_PER_MB) + 1) { |path| upload(path, chunk_size_mb: 2) }
 
       assert_equal 2, append_requests.size
     end
 
     private
 
-    def chunk_size_mb = CHUNK_BYTES / Uploader::Media::BYTES_PER_MB.to_f
+    def chunk_size_mb = CHUNK_BYTES / Uploader::MediaUpload::BYTES_PER_MB.to_f
 
     def upload(file_path, **)
-      Uploader::Media.chunked_upload(file_path, client: @client, media_category: "tweet_video", **)
+      Uploader::MediaUpload.chunked_upload(file_path, client: @client, media_category: "tweet_video", **)
     end
 
     def with_file(size)

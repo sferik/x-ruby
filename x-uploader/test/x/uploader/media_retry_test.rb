@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
 require_relative "../../test_helper"
-require "x/uploader/media"
+require "x/uploader/media_upload"
 
 module X
   class MediaRetryTest < Minitest::Test
-    cover Uploader::Media
+    cover Uploader::MediaUpload
     cover Uploader.const_get(:Chunks)
 
     BASE_URL = "https://api.x.com/2/media/upload"
@@ -78,7 +78,7 @@ module X
 
     def perform_upload
       Uploader.const_get(:Chunks).stub(:sleep, ->(seconds) { @waits << seconds }) do
-        Uploader::Media.chunked_upload(VIDEO_FILE, client: @client, media_category: Uploader::Media::TWEET_VIDEO)
+        Uploader::MediaUpload.chunked_upload(VIDEO_FILE, client: @client, media_category: Uploader::MediaUpload::TWEET_VIDEO)
       end
     end
 

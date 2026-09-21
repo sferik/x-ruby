@@ -2,16 +2,16 @@
 
 require "tmpdir"
 require_relative "../../test_helper"
-require "x/uploader/media"
+require "x/uploader/media_upload"
 
 module X
   class MediaChunkSizeTest < Minitest::Test
-    cover Uploader::Media
+    cover Uploader::MediaUpload
 
     BASE_URL = "https://api.x.com/2/media/upload"
     JSON_HEADERS = {"content-type" => "application/json"}.freeze
     # A video larger than the 1,000 chunks of a megabyte the API numbers the segments of
-    LARGE_VIDEO_BYTES = 1100 * Uploader::Media::BYTES_PER_MB
+    LARGE_VIDEO_BYTES = 1100 * Uploader::MediaUpload::BYTES_PER_MB
 
     def setup
       @client = Client.new
@@ -27,13 +27,13 @@ module X
     end
 
     def test_a_video_of_a_megabyte_uploads_in_chunks_of_a_megabyte
-      chunk_size = with_video(Uploader::Media::BYTES_PER_MB) { |path| upload(path) }
+      chunk_size = with_video(Uploader::MediaUpload::BYTES_PER_MB) { |path| upload(path) }
 
-      assert_equal Uploader::Media::BYTES_PER_MB, chunk_size
+      assert_equal Uploader::MediaUpload::BYTES_PER_MB, chunk_size
     end
 
     def test_a_chunk_size_given_is_taken_whole_megabytes_or_not
-      assert_equal [2_097_152, 524_288], [2, 0.5].map { |mb| with_video(Uploader::Media::BYTES_PER_MB) { |path| upload(path, chunk_size_mb: mb) } }
+      assert_equal [2_097_152, 524_288], [2, 0.5].map { |mb| with_video(Uploader::MediaUpload::BYTES_PER_MB) { |path| upload(path, chunk_size_mb: mb) } }
     end
 
     def test_a_chunk_size_that_would_need_more_segments_than_the_api_numbers_uploads_nothing
@@ -60,14 +60,14 @@ module X
     private
 
     def chunked_upload(file_path, **)
-      Uploader::Media.chunked_upload(file_path, client: @client, media_category: "tweet_video", **)
+      Uploader::MediaUpload.chunked_upload(file_path, client: @client, media_category: "tweet_video", **)
     end
 
     # The size of the chunks the upload of the block would have appended, which it appends none of
     def upload(file_path, **)
       chunk_size = nil
       Uploader.const_get(:Chunks).stub(:append, ->(**options) { chunk_size = options.fetch(:chunk_size) }) do
-        Uploader::Media.upload(file_path, client: @client, media_category: "tweet_video", media_type: "video/mp4", **)
+        Uploader::MediaUpload.upload(file_path, client: @client, media_category: "tweet_video", media_type: "video/mp4", **)
       end
       chunk_size
     end

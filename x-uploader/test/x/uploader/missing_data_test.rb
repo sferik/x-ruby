@@ -1,12 +1,12 @@
 # frozen_string_literal: true
 
 require_relative "../../test_helper"
-require "x/uploader/media"
+require "x/uploader/media_upload"
 
 module X
   # The responses of an upload that describe no media, which every step of one raises MissingData for
   class MissingDataTest < Minitest::Test
-    cover Uploader::Media
+    cover Uploader::MediaUpload
     cover Uploader.const_get(:Chunks)
     cover Uploader.const_get(:Utils)
     cover Uploader::UploadedMedia
@@ -21,7 +21,7 @@ module X
 
     def test_a_response_of_an_upload_that_holds_no_media_raises
       stub_request(:post, BASE_URL).to_return(headers: JSON_HEADERS, body: "{}")
-      error = assert_raises(Uploader::MissingData) { Uploader::Media.upload("test/sample_files/sample.png", client: @client) }
+      error = assert_raises(Uploader::MissingData) { Uploader::MediaUpload.upload("test/sample_files/sample.png", client: @client) }
 
       assert_equal "The response of the upload holds no media", error.message
     end
@@ -51,6 +51,6 @@ module X
 
     def stub_init(body) = stub_request(:post, "#{BASE_URL}/initialize").to_return(status: 202, headers: JSON_HEADERS, body: body.to_json)
 
-    def chunked_upload = Uploader::Media.chunked_upload(VIDEO_FILE, client: @client, media_category: Uploader::Media::TWEET_VIDEO)
+    def chunked_upload = Uploader::MediaUpload.chunked_upload(VIDEO_FILE, client: @client, media_category: Uploader::MediaUpload::TWEET_VIDEO)
   end
 end

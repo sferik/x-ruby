@@ -2,11 +2,11 @@
 
 require "stringio"
 require_relative "../../test_helper"
-require "x/uploader/media"
+require "x/uploader/media_upload"
 
 module X
   class MediaIOTest < Minitest::Test
-    cover Uploader::Media
+    cover Uploader::MediaUpload
     cover Uploader.const_get(:Source)
 
     BASE_URL = "https://api.x.com/2/media/upload"
@@ -25,16 +25,16 @@ module X
         "sample_animated.gif" => "tweet_gif",
         "sample.mp4" => "tweet_video"
       }.each do |file, category|
-        assert_equal category, Uploader::Media.infer_media_category(StringIO.new(File.binread("test/sample_files/#{file}"))), file
+        assert_equal category, Uploader::MediaUpload.infer_media_category(StringIO.new(File.binread("test/sample_files/#{file}"))), file
       end
     end
 
     def test_the_category_of_subtitles_that_name_no_file_is_read_from_their_signature
-      assert_equal "subtitles", Uploader::Media.infer_media_category(StringIO.new("WEBVTT\n\n00:00:01.000 --> 00:00:02.000\nHello\n"))
+      assert_equal "subtitles", Uploader::MediaUpload.infer_media_category(StringIO.new("WEBVTT\n\n00:00:01.000 --> 00:00:02.000\nHello\n"))
     end
 
     def test_the_category_of_media_no_signature_names_must_be_given
-      error = assert_raises(Uploader::InvalidMediaType) { Uploader::Media.infer_media_category(StringIO.new("not media at all")) }
+      error = assert_raises(Uploader::InvalidMediaType) { Uploader::MediaUpload.infer_media_category(StringIO.new("not media at all")) }
 
       assert_equal "unable to determine the media type of the media given: pass media_category", error.message
     end
@@ -42,18 +42,18 @@ module X
     def test_the_media_type_of_media_that_names_no_file_is_read_from_its_signature
       png = StringIO.new(File.binread("test/sample_files/sample.png"))
 
-      assert_equal "image/png", Uploader::Media.infer_media_type(png, "tweet_image")
-      assert_equal "video/webm", Uploader::Media.infer_media_type(StringIO.new("\x1A\x45\xDF\xA3".b), "tweet_video")
+      assert_equal "image/png", Uploader::MediaUpload.infer_media_type(png, "tweet_image")
+      assert_equal "video/webm", Uploader::MediaUpload.infer_media_type(StringIO.new("\x1A\x45\xDF\xA3".b), "tweet_video")
     end
 
     def test_the_media_type_of_a_category_that_takes_no_type_the_signature_names
       mp4 = StringIO.new(File.binread("test/sample_files/sample.mp4"))
 
-      assert_equal "text/srt", Uploader::Media.infer_media_type(mp4, "subtitles")
+      assert_equal "text/srt", Uploader::MediaUpload.infer_media_type(mp4, "subtitles")
     end
 
     def test_the_media_type_of_media_neither_a_name_nor_a_signature_names
-      error = assert_raises(Uploader::InvalidMediaType) { Uploader::Media.infer_media_type(StringIO.new("not media at all"), "tweet_image") }
+      error = assert_raises(Uploader::InvalidMediaType) { Uploader::MediaUpload.infer_media_type(StringIO.new("not media at all"), "tweet_image") }
 
       assert_equal "unable to determine the MIME type of the media given", error.message
     end
@@ -61,7 +61,7 @@ module X
     def test_an_image_held_in_memory_uploads_in_a_single_request
       stub_request(:post, BASE_URL).to_return(headers: JSON_HEADERS, body: {data: {id: TEST_MEDIA_ID}}.to_json)
       content = File.binread("test/sample_files/sample.png")
-      response = Uploader::Media.upload(StringIO.new(content), client: @client)
+      response = Uploader::MediaUpload.upload(StringIO.new(content), client: @client)
 
       assert_equal TEST_MEDIA_ID.to_i, response["id"]
       assert_requested(:post, BASE_URL) do |request|
@@ -71,7 +71,7 @@ module X
 
     def test_an_io_open_on_a_file_uploads_as_that_file_does
       stub_request(:post, BASE_URL).to_return(headers: JSON_HEADERS, body: {data: {id: TEST_MEDIA_ID}}.to_json)
-      File.open("test/sample_files/sample_animated.gif", "rb") { |file| Uploader::Media.upload(file, client: @client) }
+      File.open("test/sample_files/sample_animated.gif", "rb") { |file| Uploader::MediaUpload.upload(file, client: @client) }
 
       assert_requested(:post, BASE_URL) { |request| request.body.include?("name=\"media_category\"\r\n\r\ntweet_gif") }
     end
@@ -79,7 +79,7 @@ module X
     def test_a_video_held_in_memory_uploads_in_chunks
       stub_chunked_workflow
       content = File.binread("test/sample_files/sample.mp4")
-      response = Uploader::Media.upload(StringIO.new(content), client: @client)
+      response = Uploader::MediaUpload.upload(StringIO.new(content), client: @client)
 
       assert_equal TEST_MEDIA_ID.to_i, response["id"]
       assert_requested :post, "#{BASE_URL}/initialize",
@@ -89,21 +89,21 @@ module X
 
     def test_media_that_names_no_file_uploads_under_the_category_it_is_given
       stub_request(:post, BASE_URL).to_return(headers: JSON_HEADERS, body: {data: {id: TEST_MEDIA_ID}}.to_json)
-      Uploader::Media.upload(StringIO.new("not media at all"), client: @client, media_category: "DM_IMAGE")
+      Uploader::MediaUpload.upload(StringIO.new("not media at all"), client: @client, media_category: "DM_IMAGE")
 
       assert_requested(:post, BASE_URL) { |request| request.body.include?("name=\"media_category\"\r\n\r\ndm_image") }
     end
 
     def test_media_that_names_no_file_and_holds_nothing_is_refused
-      error = assert_raises(ArgumentError) { Uploader::Media.upload(StringIO.new(""), client: @client, media_category: "tweet_image") }
+      error = assert_raises(ArgumentError) { Uploader::MediaUpload.upload(StringIO.new(""), client: @client, media_category: "tweet_image") }
 
       assert_equal "the media given is empty: there is nothing to upload", error.message
     end
 
     def test_a_large_animated_gif_held_in_memory_uploads_in_chunks
-      gif = StringIO.new("GIF89a".b + ("\x00".b * (5 * Uploader::Media::BYTES_PER_MB)))
+      gif = StringIO.new("GIF89a".b + ("\x00".b * (5 * Uploader::MediaUpload::BYTES_PER_MB)))
 
-      assert Uploader::Media.chunked_upload?(gif, "tweet_gif")
+      assert Uploader::MediaUpload.chunked_upload?(gif, "tweet_gif")
     end
 
     private

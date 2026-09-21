@@ -27,7 +27,7 @@ module X
     # under another name can change an upload.
     #
     # @api public
-    module Media
+    module MediaUpload
       extend self
 
       # Number of bytes per megabyte
@@ -124,13 +124,13 @@ module X
       # @raise [MediaProcessingFailed] if the media fails to process
       # @raise [MediaProcessingTimeout] if the media is still processing after processing_timeout seconds
       # @example Upload an image
-      #   Uploader::Media.upload("image.png", client: client)
+      #   Uploader::MediaUpload.upload("image.png", client: client)
       # @example Upload an image with alt text
-      #   Uploader::Media.upload("cat.jpg", client: client, alt_text: "A cat asleep on a keyboard")
+      #   Uploader::MediaUpload.upload("cat.jpg", client: client, alt_text: "A cat asleep on a keyboard")
       # @example Upload a video and wait until it can be attached to a post
-      #   Uploader::Media.upload("video.mp4", client: client)
+      #   Uploader::MediaUpload.upload("video.mp4", client: client)
       # @example Upload an image held in memory, whose category its signature names
-      #   Uploader::Media.upload(StringIO.new(png), client: client)
+      #   Uploader::MediaUpload.upload(StringIO.new(png), client: client)
       def upload(media, client:, media_category: nil, alt_text: nil,
         processing_timeout: DEFAULT_PROCESSING_TIMEOUT, media_type: nil, chunk_size_mb: nil, concurrency: DEFAULT_CONCURRENCY)
         source = Source.for(media)
@@ -157,7 +157,7 @@ module X
       # @return [Boolean] true if the media uploads in chunks
       # @raise [Errno::ENOENT] if a GIF file does not exist
       # @example Check whether a large animated GIF uploads in chunks
-      #   Uploader::Media.chunked_upload?("cat.gif", "tweet_gif") # => true
+      #   Uploader::MediaUpload.chunked_upload?("cat.gif", "tweet_gif") # => true
       def chunked_upload?(media, media_category)
         category = media_category.to_s.downcase
         CHUNKED_CATEGORIES.include?(category) || (GIF_CATEGORIES.include?(category) && Source.for(media).size > MAX_SIMPLE_UPLOAD_BYTES)
@@ -173,9 +173,9 @@ module X
       # @return [String] tweet_gif, tweet_video for MP4, QuickTime, WebM, or MPEG-TS, subtitles for SubRip or WebVTT, or tweet_image
       # @raise [InvalidMediaType] if the media names no file and no signature names its type
       # @example Infer the category of a video
-      #   Uploader::Media.infer_media_category("cat.mp4") # => "tweet_video"
+      #   Uploader::MediaUpload.infer_media_category("cat.mp4") # => "tweet_video"
       # @example Infer the category of an animated GIF held in memory
-      #   Uploader::Media.infer_media_category(StringIO.new(gif)) # => "tweet_gif"
+      #   Uploader::MediaUpload.infer_media_category(StringIO.new(gif)) # => "tweet_gif"
       def infer_media_category(media)
         source = Source.for(media)
         category = source.named? ? CATEGORY_MAP.fetch(source.extension, TWEET_IMAGE) : Signature.media_category!(source)
@@ -195,7 +195,7 @@ module X
       #   alone
       # @raise [MissingData] if the response holds no media
       # @example Upload binary content
-      #   Uploader::Media.upload_binary(data, client: client, media_category: "tweet_image")
+      #   Uploader::MediaUpload.upload_binary(data, client: client, media_category: "tweet_image")
       def upload_binary(content, client:, media_category:)
         media_category = Validator.validate_media_category!(media_category)
         raise ArgumentError, "amplify_video uploads in chunks alone: pass the file to upload or chunked_upload" if media_category.eql?(AMPLIFY_VIDEO)
@@ -226,7 +226,7 @@ module X
       # @raise [MissingData] if the response that initializes the upload holds no media to append the chunks to, or
       #   the response that finalizes it holds no media
       # @example Upload a large video
-      #   Uploader::Media.chunked_upload("video.mp4", client: client)
+      #   Uploader::MediaUpload.chunked_upload("video.mp4", client: client)
       def chunked_upload(media, client:, media_category: nil, media_type: nil, chunk_size_mb: nil, concurrency: DEFAULT_CONCURRENCY)
         source = Source.for(media)
         Validator.validate_source!(source)
@@ -253,11 +253,11 @@ module X
       # @raise [MissingData] if the media given holds no identifier, or a status response holds no media
       # @raise [MediaProcessingTimeout] if the media is still processing once the processing timeout would pass
       # @example Wait for processing
-      #   Uploader::Media.await_processing(media, client: client)
+      #   Uploader::MediaUpload.await_processing(media, client: client)
       # @example Wait for the processing of media known by its identifier
-      #   Uploader::Media.await_processing("1880028106020515840", client: client)
+      #   Uploader::MediaUpload.await_processing("1880028106020515840", client: client)
       # @example Wait up to half an hour for a long video
-      #   Uploader::Media.await_processing(media, client: client, processing_timeout: 1800)
+      #   Uploader::MediaUpload.await_processing(media, client: client, processing_timeout: 1800)
       def await_processing(media, client:, processing_timeout: DEFAULT_PROCESSING_TIMEOUT)
         waited = 0
         media_id = Utils.media_id(media)
@@ -284,7 +284,7 @@ module X
       # @raise [MediaProcessingFailed] if media processing failed, with the status X reported
       # @raise [MediaProcessingTimeout] if the media is still processing once the processing timeout would pass
       # @example Wait for processing with error handling
-      #   Uploader::Media.await_processing!(media, client: client)
+      #   Uploader::MediaUpload.await_processing!(media, client: client)
       def await_processing!(media, client:, processing_timeout: DEFAULT_PROCESSING_TIMEOUT)
         await_processing(media, client:, processing_timeout:).tap { |status| raise MediaProcessingFailed.new(status) if status&.failed? }
       end
@@ -300,8 +300,8 @@ module X
       # @param media_category [String, Symbol] the media category, in any case
       # @return [String] the inferred MIME type
       # @raise [InvalidMediaType] if the MIME type cannot be determined
-      # @example Uploader::Media.infer_media_type("image.png", "tweet_image") #=> "image/png"
-      # @example Uploader::Media.infer_media_type("clip.webm", "tweet_video") #=> "video/webm"
+      # @example Uploader::MediaUpload.infer_media_type("image.png", "tweet_image") #=> "image/png"
+      # @example Uploader::MediaUpload.infer_media_type("clip.webm", "tweet_video") #=> "video/webm"
       def infer_media_type(media, media_category)
         source = Source.for(media)
         from_media = source.named? ? MIME_TYPE_MAP[source.extension] : Signature.media_type(source.sniff)
