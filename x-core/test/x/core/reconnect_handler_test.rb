@@ -22,8 +22,7 @@ module X
     end
 
     def test_a_dropped_connection_backs_off_linearly_up_to_16_seconds_then_raises
-      handler = Core::ReconnectHandler.new(max_reconnects: 1)
-      handler.max_reconnects = 70
+      handler = Core::ReconnectHandler.new(max_reconnects: 70)
 
       assert_raises(NetworkError) { stream_with(handler) { fail_with(NetworkError) } }
       assert_equal [71, [0.0, 0.25, 0.5], [16] * 5], [@runs, @sleeps.first(3), @sleeps.last(5)]

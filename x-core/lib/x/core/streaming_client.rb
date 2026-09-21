@@ -24,6 +24,12 @@ module X
   # client, which says how long a connection is kept open, nor its close, which closes the connections it kept: a
   # streaming client keeps none between streams, and a stream is stopped by raising from the block that reads it.
   #
+  # A streaming client keeps the settings it was built with for as long as it lives, as a client does, so a stream
+  # that runs for hours never reads a setting another thread is halfway through changing. {Client#streaming} builds
+  # one whose read_timeout or max_reconnects differ, and it takes the rest of its settings from the client it is
+  # built from, so a stream that connects differently is opened from a copy of that client:
+  # client.copy(open_timeout: 2).streaming.
+  #
   # @api public
   class StreamingClient
     extend Forwardable
@@ -45,8 +51,7 @@ module X
     attr_reader :client
 
     def_delegators :@connection, :open_timeout, :read_timeout, :write_timeout, :proxy_url, :debug_output
-    def_delegators :@connection, :open_timeout=, :read_timeout=, :write_timeout=, :proxy_url=, :debug_output=
-    def_delegators :@reconnect_handler, :max_reconnects, :max_reconnects=
+    def_delegator :@reconnect_handler, :max_reconnects
 
     # Initialize a client for the streaming endpoints
     #

@@ -191,12 +191,12 @@ module X
       @connection = Connection.new
     end
 
-    def perform = @connection.perform(request: Net::HTTP::Get.new(URI("https://example.com/")))
+    def perform(connection = @connection) = connection.perform(request: Net::HTTP::Get.new(URI("https://example.com/")))
 
-    def opened(&)
+    def opened(connection = @connection, &)
       clients = []
-      original = @connection.method(:build_http_client)
-      @connection.stub(:build_http_client, ->(*args) { original.call(*args).tap { |client| clients << client } }, &)
+      original = connection.method(:build_http_client)
+      connection.stub(:build_http_client, ->(*args) { original.call(*args).tap { |client| clients << client } }, &)
       clients
     end
 
@@ -218,15 +218,11 @@ module X
       assert_equal 1, clients.size
     end
 
-    def test_a_reused_connection_takes_the_current_timeouts
-      clients = opened do
-        perform
-        @connection.read_timeout = 5
-        @connection.open_timeout = 6
-        @connection.write_timeout = 7
-        perform
-      end
+    def test_a_reused_connection_keeps_the_timeouts_it_was_opened_with
+      connection = Connection.new(open_timeout: 6, read_timeout: 5, write_timeout: 7)
+      clients = opened(connection) { 2.times { perform(connection) } }
 
+      assert_equal 1, clients.size
       assert_equal [5, 6, 7], [clients.first.read_timeout, clients.first.open_timeout, clients.first.write_timeout]
     end
 
@@ -243,37 +239,6 @@ module X
       clients = opened { @connection.perform(request: Net::HTTP::Get.new(URI("http://example.com/"))) }
 
       refute_predicate clients.first, :use_ssl?
-    end
-
-    def test_changing_the_debug_output_opens_new_connections_with_it
-      clients = opened do
-        perform
-        @connection.debug_output = StringIO.new
-        perform
-      end
-
-      assert_equal [false, true], clients.map(&:started?)
-      assert_same @connection.debug_output, clients.last.instance_variable_get(:@debug_output)
-    end
-
-    def test_changing_the_keep_alive_timeout_opens_new_connections_with_it
-      clients = opened do
-        perform
-        @connection.keep_alive_timeout = 5
-        perform
-      end
-
-      assert_equal [false, true], clients.map(&:started?)
-      assert_equal [30, 5], clients.map(&:keep_alive_timeout)
-    end
-
-    def test_changing_the_proxy_opens_new_connections
-      clients = opened do
-        perform
-        @connection.proxy_url = "http://proxy.example.com:8080"
-      end
-
-      refute_predicate clients.first, :started?
     end
 
     def test_close_closes_the_connections_kept_open

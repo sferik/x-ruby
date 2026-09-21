@@ -16,6 +16,10 @@ module X
   # Requests keep their connections open for the next request to the same host, which saves opening a TCP and
   # TLS connection each time. A stream opens a connection of its own, which it holds for as long as it reads.
   #
+  # A connection keeps the settings it was built with for as long as it lives, as {Client} does, so a request never
+  # opens a connection under a setting another thread is halfway through changing. Build another connection to
+  # reach the API differently.
+  #
   # @api public
   class Connection
     include Core::ConnectionProxy
@@ -42,23 +46,23 @@ module X
     # The timeout for opening connections in seconds
     # @api public
     # @return [Integer, Float] the timeout for opening connections in seconds
-    # @example Get or set the open timeout
-    #   connection.open_timeout = 30
-    attr_accessor :open_timeout
+    # @example Get the open timeout
+    #   connection.open_timeout # => 10
+    attr_reader :open_timeout
 
     # The timeout for reading responses in seconds
     # @api public
     # @return [Integer, Float] the timeout for reading responses in seconds
-    # @example Get or set the read timeout
-    #   connection.read_timeout = 30
-    attr_accessor :read_timeout
+    # @example Get the read timeout
+    #   connection.read_timeout # => 60
+    attr_reader :read_timeout
 
     # The timeout for writing requests in seconds
     # @api public
     # @return [Integer, Float] the timeout for writing requests in seconds
-    # @example Get or set the write timeout
-    #   connection.write_timeout = 30
-    attr_accessor :write_timeout
+    # @example Get the write timeout
+    #   connection.write_timeout # => 60
+    attr_reader :write_timeout
 
     # The IO object for debug output
     # @api public
@@ -97,7 +101,7 @@ module X
       @keep_alive_timeout = keep_alive_timeout
       @debug_output = debug_output
       @pool = Core::ConnectionPool.new
-      self.proxy_url = proxy_url
+      initialize_proxy(proxy_url)
     end
 
     # Summarize the connection for the console without revealing proxy credentials
@@ -160,33 +164,6 @@ module X
       raise NetworkError, "Network error: #{e}"
     end
 
-    # Set the IO object for debug output, for the connections opened from now on
-    #
-    # @api public
-    # @param debug_output [IO, nil] the IO object for debug output, or nil for none
-    # @return [void]
-    # @example Set the debug output
-    #   connection.debug_output = $stderr
-    def debug_output=(debug_output)
-      @debug_output = debug_output
-      @pool.clear
-    end
-
-    # Set the time to keep a connection open, closing the connections kept open
-    #
-    # A connection that a proxy closed while it was kept open fails the next request with NetworkError, so a client
-    # behind a proxy that closes idle connections sooner than X does keeps them for less time.
-    #
-    # @api public
-    # @param keep_alive_timeout [Integer, Float] the time in seconds
-    # @return [void]
-    # @example Keep a connection open for five seconds
-    #   connection.keep_alive_timeout = 5
-    def keep_alive_timeout=(keep_alive_timeout)
-      @keep_alive_timeout = keep_alive_timeout
-      @pool.clear
-    end
-
     # Close the connections kept open between requests
     #
     # A later request opens a connection again. Connections also close when the connection is garbage collected.
@@ -230,7 +207,10 @@ module X
       configure_http_client(http_client)
     end
 
-    # Configure a new HTTP client with timeout settings and debug output
+    # Configure a new HTTP client with the timeouts and debug output of the connection
+    #
+    # The settings of a connection never change, so they are applied as each client is opened, rather than before
+    # each request one makes.
     #
     # Net::HTTP sends a GET, PUT, or DELETE request again by itself after a timeout or a dropped connection, with the
     # same OAuth 1.0a nonce and signature, which the API may bill twice, so its retries are turned off: a request
@@ -243,22 +223,13 @@ module X
     # @param http_client [Net::HTTP] the HTTP client to configure
     # @return [Net::HTTP] the configured HTTP client
     def configure_http_client(http_client)
-      configure_timeouts(http_client).tap do |c|
-        c.max_retries = 0
-        c.keep_alive_timeout = keep_alive_timeout
-        c.set_debug_output(debug_output)
-      end
-    end
-
-    # Apply the current timeouts to an HTTP client, before each request it makes
-    # @api private
-    # @param http_client [Net::HTTP] the HTTP client to configure
-    # @return [Net::HTTP] the configured HTTP client
-    def configure_timeouts(http_client)
       http_client.tap do |c|
         c.open_timeout = open_timeout
         c.read_timeout = read_timeout
         c.write_timeout = write_timeout
+        c.max_retries = 0
+        c.keep_alive_timeout = keep_alive_timeout
+        c.set_debug_output(debug_output)
       end
     end
   end

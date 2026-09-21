@@ -15,7 +15,14 @@ module X
     #
     # @api private
     module ConnectionProxy
-      # The proxy URL for requests
+      # The proxy URL for requests, as the connection was built with it
+      #
+      # A user and password in the URL may be percent-encoded, and are decoded for the proxy.
+      #
+      # A connection whose proxy URL is nil proxies a request through whatever the environment names for the scheme of
+      # its URI, in https_proxy or http_proxy, and sends a request to a host that no_proxy names without a proxy. Set
+      # no_proxy to reach every host directly from a process whose environment names a proxy.
+      #
       # @api public
       # @return [String, URI::Generic, nil] the proxy URL for requests, as it was given
       # @example Get the proxy URL
@@ -61,31 +68,21 @@ module X
       #   connection.proxy_pass
       def proxy_pass = decode(proxy_uri&.password)
 
-      # Set the proxy URL for requests
+      private
+
+      # Read the proxy URL a connection is built with
       #
-      # A user and password in the URL may be percent-encoded, and are decoded for the proxy. An invalid URL leaves the
-      # proxy as it was, and its message leaves out the user and password.
+      # A connection keeps it for as long as it lives, as it keeps every setting. The message of an invalid URL
+      # leaves out its user and password.
       #
-      # A connection whose proxy URL is nil proxies a request through whatever the environment names for the scheme of
-      # its URI, in https_proxy or http_proxy, and sends a request to a host that no_proxy names without a proxy. Set
-      # no_proxy to reach every host directly from a process whose environment names a proxy.
-      #
-      # @api public
+      # @api private
       # @param proxy_url [String, URI::Generic, nil] the proxy URL, or nil to take the proxy from the environment
       # @return [void]
       # @raise [ArgumentError] if the proxy URL is invalid
-      # @example Set the proxy URL
-      #   connection.proxy_url = "http://proxy.example.com:8080"
-      # @example Take the proxy from the environment
-      #   connection.proxy_url = nil
-      def proxy_url=(proxy_url)
-        proxy_uri = proxy_url&.then { |url| parse_proxy_url(url) }
+      def initialize_proxy(proxy_url)
+        @proxy_uri = proxy_url&.then { |url| parse_proxy_url(url) }
         @proxy_url = proxy_url
-        @proxy_uri = proxy_uri
-        @pool.clear
       end
-
-      private
 
       # The proxy of a request, the one given or the one the environment names
       #

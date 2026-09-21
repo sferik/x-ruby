@@ -14,44 +14,34 @@ module X
     end
 
     def test_proxy
-      @connection.proxy_url = "http://user:pass@example.com:8080"
+      connection = Connection.new(proxy_url: "http://user:pass@example.com:8080")
 
-      assert_equal URI("http://user:pass@example.com:8080"), @connection.proxy_uri
-      assert_equal "example.com", @connection.proxy_host
-      assert_equal "user", @connection.proxy_user
-      assert_equal "pass", @connection.proxy_pass
-      assert_equal 8080, @connection.proxy_port
+      assert_equal URI("http://user:pass@example.com:8080"), connection.proxy_uri
+      assert_equal "example.com", connection.proxy_host
+      assert_equal "user", connection.proxy_user
+      assert_equal "pass", connection.proxy_pass
+      assert_equal 8080, connection.proxy_port
     end
 
     def test_invalid_proxy_url
-      error = assert_raises(ArgumentError) { @connection.proxy_url = "ftp://ftp.twitter.com/" }
+      error = assert_raises(ArgumentError) { Connection.new(proxy_url: "ftp://ftp.twitter.com/") }
 
       assert_equal "Invalid proxy URL: ftp://ftp.twitter.com/", error.message
     end
 
     def test_invalid_proxy_url_message_leaves_out_the_user_and_password
-      error = assert_raises(ArgumentError) { @connection.proxy_url = "ftp://user:secret@ftp.twitter.com/" }
+      error = assert_raises(ArgumentError) { Connection.new(proxy_url: "ftp://user:secret@ftp.twitter.com/") }
 
       assert_equal "Invalid proxy URL: ftp://ftp.twitter.com/", error.message
     end
 
     def test_unparseable_proxy_url_raises_argument_error_without_the_password
-      error = assert_raises(ArgumentError) { @connection.proxy_url = "http://user:se cret@example.com:8080" }
+      error = assert_raises(ArgumentError) { Connection.new(proxy_url: "http://user:se cret@example.com:8080") }
 
       assert_equal "Invalid proxy URL: http://example.com:8080", error.message
     end
 
-    def test_invalid_proxy_url_keeps_the_proxy
-      @connection.proxy_url = "http://example.com:8080"
-      assert_raises(ArgumentError) { @connection.proxy_url = "ftp://ftp.twitter.com/" }
-
-      assert_equal ["http://example.com:8080", URI("http://example.com:8080")], [@connection.proxy_url, @connection.proxy_uri]
-    end
-
-    def test_proxy_url_can_be_removed
-      @connection.proxy_url = "http://user:pass@example.com:8080"
-      @connection.proxy_url = nil
-
+    def test_a_connection_built_without_a_proxy_has_none
       assert_nil @connection.proxy_url
       assert_nil @connection.proxy_uri
       assert_nil @connection.proxy_user
@@ -59,9 +49,7 @@ module X
     end
 
     def test_proxy_host_strips_the_brackets_of_an_ipv6_literal
-      @connection.proxy_url = "http://[::1]:8080"
-
-      assert_equal "::1", @connection.proxy_host
+      assert_equal "::1", Connection.new(proxy_url: "http://[::1]:8080").proxy_host
     end
 
     def test_proxy_host_and_port_without_a_proxy
@@ -69,28 +57,19 @@ module X
       assert_nil @connection.proxy_port
     end
 
-    def test_removing_the_proxy_opens_new_connections
-      @connection.proxy_url = "http://example.com:8080"
-      pool = @connection.instance_variable_get(:@pool)
-      cleared = false
-      pool.stub(:clear, -> { cleared = true }) { @connection.proxy_url = nil }
-
-      assert cleared
-    end
-
     def test_proxy_user_and_password_are_decoded
-      @connection.proxy_url = "http://us%40er:p%40ss%3Aword@example.com:8080"
-      http_client = @connection.send(:build_http_client, URI("https://api.x.com/2/tweets"))
+      connection = Connection.new(proxy_url: "http://us%40er:p%40ss%3Aword@example.com:8080")
+      http_client = connection.send(:build_http_client, URI("https://api.x.com/2/tweets"))
 
-      assert_equal ["us@er", "p@ss:word"], [@connection.proxy_user, @connection.proxy_pass]
+      assert_equal ["us@er", "p@ss:word"], [connection.proxy_user, connection.proxy_pass]
       assert_equal ["us@er", "p@ss:word"], [http_client.proxy_user, http_client.proxy_pass]
     end
 
     def test_proxy_user_without_a_password
-      @connection.proxy_url = "http://user@example.com:8080"
+      connection = Connection.new(proxy_url: "http://user@example.com:8080")
 
-      assert_equal "user", @connection.proxy_user
-      assert_nil @connection.proxy_pass
+      assert_equal "user", connection.proxy_user
+      assert_nil connection.proxy_pass
     end
 
     def test_inspect_without_a_proxy
@@ -104,7 +83,7 @@ module X
     end
 
     def test_invalid_proxy_url_message_leaves_out_an_empty_user
-      error = assert_raises(ArgumentError) { @connection.proxy_url = "ftp://@ftp.twitter.com/" }
+      error = assert_raises(ArgumentError) { Connection.new(proxy_url: "ftp://@ftp.twitter.com/") }
 
       assert_equal "Invalid proxy URL: ftp://ftp.twitter.com/", error.message
     end
@@ -116,8 +95,8 @@ module X
     end
 
     def test_proxy_settings_are_respected_in_http_client
-      @connection.proxy_url = "http://user:pass@example.com:8080"
-      http_client = @connection.send(:build_http_client, URI("https://api.x.com/2/tweets"))
+      connection = Connection.new(proxy_url: "http://user:pass@example.com:8080")
+      http_client = connection.send(:build_http_client, URI("https://api.x.com/2/tweets"))
 
       assert_equal "example.com", http_client.proxy_address
       assert_equal 8080, http_client.proxy_port

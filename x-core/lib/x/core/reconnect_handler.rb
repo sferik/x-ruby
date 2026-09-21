@@ -41,9 +41,9 @@ module X
       # The maximum number of times in a row to reconnect without delivering an object
       # @api private
       # @return [Integer, Float] the maximum number of reconnects, or Float::INFINITY for no limit
-      # @example Get or set the maximum reconnects
-      #   handler.max_reconnects = 5
-      attr_accessor :max_reconnects
+      # @example Read the maximum reconnects
+      #   handler.max_reconnects # => 5
+      attr_reader :max_reconnects
 
       # Initialize a new reconnect handler
       #

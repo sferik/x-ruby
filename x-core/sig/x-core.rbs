@@ -21,7 +21,6 @@ module X
 
     module ConnectionProxy
       @proxy_url: (URI::Generic | String)?
-      @pool: ConnectionPool
 
       attr_reader proxy_url: (URI::Generic | String)?
       attr_reader proxy_uri: URI::Generic?
@@ -30,9 +29,9 @@ module X
 
       def proxy_user: () -> String?
       def proxy_pass: () -> String?
-      def proxy_url=: ((URI::Generic | String)? proxy_url) -> void
 
       private
+      def initialize_proxy: ((URI::Generic | String)? proxy_url) -> void
       def proxy_for: (URI::Generic uri) -> URI::Generic?
       def decode: (String? component) -> String?
       def redacted_proxy_url: () -> String?
@@ -96,7 +95,6 @@ module X
       private
       def send_request: (Net::HTTPRequest request, [bool, String, Integer] key, ^() -> Net::HTTP open) -> Net::HTTPResponse
       def idempotent?: (Net::HTTPRequest request) -> bool
-      def configure_timeouts: (Net::HTTP http_client) -> Net::HTTP
     end
 
     class RetryHandler
@@ -122,7 +120,7 @@ module X
 
       type state = {reconnects: Integer}
 
-      attr_accessor max_reconnects: Integer | Float
+      attr_reader max_reconnects: Integer | Float
       def initialize: (?max_reconnects: Integer | Float) -> void
       def handle: (^(untyped) -> void consumer) { (^(untyped) -> void) -> void } -> nil
 
@@ -506,9 +504,9 @@ module X
     include Core::ConnectionProxy
     include Core::ConnectionRequest
 
-    attr_accessor open_timeout : Float | Integer
-    attr_accessor read_timeout : Float | Integer
-    attr_accessor write_timeout : Float | Integer
+    attr_reader open_timeout : Float | Integer
+    attr_reader read_timeout : Float | Integer
+    attr_reader write_timeout : Float | Integer
     attr_reader keep_alive_timeout : Float | Integer
     attr_reader debug_output : IO?
 
@@ -519,15 +517,12 @@ module X
 
     @pool: Core::ConnectionPool
 
-    def debug_output=: (IO? debug_output) -> void
-    def keep_alive_timeout=: (Float | Integer keep_alive_timeout) -> void
     def close: () -> void
 
     private
     def host_and_port: (URI::Generic uri) -> [String, Integer]
     def build_http_client: (URI::Generic uri) -> Net::HTTP
     def configure_http_client: (Net::HTTP http_client) -> Net::HTTP
-    def configure_timeouts: (Net::HTTP http_client) -> Net::HTTP
   end
 
   interface _BodyHook
@@ -601,13 +596,7 @@ module X
     def write_timeout: () -> (Float | Integer)
     def proxy_url: () -> (URI::Generic | String)?
     def debug_output: () -> IO?
-    def open_timeout=: (Float | Integer timeout) -> (Float | Integer)
-    def read_timeout=: (Float | Integer timeout) -> (Float | Integer)
-    def write_timeout=: (Float | Integer timeout) -> (Float | Integer)
-    def proxy_url=: ((URI::Generic | String)? proxy_url) -> void
-    def debug_output=: (IO? debug_output) -> void
     def max_reconnects: () -> (Integer | Float)
-    def max_reconnects=: (Integer | Float max_reconnects) -> (Integer | Float)
 
     private
     def request_for: (URI::Generic uri, Hash[String, String] headers) -> Net::HTTPRequest

@@ -51,7 +51,7 @@ module X
         begin
           @pool.with(key, open) do |http_client, from_pool|
             pooled << from_pool
-            configure_timeouts(http_client).request(request)
+            http_client.request(request)
           end
         rescue *NETWORK_ERRORS
           raise unless pooled.eql?([true]) && idempotent?(request)
