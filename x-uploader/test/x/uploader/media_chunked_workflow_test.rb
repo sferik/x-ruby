@@ -64,10 +64,10 @@ module X
     def test_media_without_id
       stub_request(:post, INIT_URL).to_return(headers: JSON_HEADERS, body: {data: {}}.to_json)
       error = without_thread_reports do
-        assert_raises(KeyError) { Uploader::Media.chunked_upload(VIDEO_FILE, client: @client, media_category: "tweet_video") }
+        assert_raises(Uploader::MissingData) { Uploader::Media.chunked_upload(VIDEO_FILE, client: @client, media_category: "tweet_video") }
       end
 
-      assert_equal 'key not found: "id"', error.message
+      assert_equal "The response that initializes the upload holds no media to append the chunks to", error.message
     end
 
     def test_chunks_are_read_from_the_file_without_temporary_files

@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require_relative "missing_data"
 require_relative "uploaded_media"
 
 module X
@@ -15,6 +16,11 @@ module X
 
       # The media categories the subtitles endpoint takes, by the category the video was uploaded as
       SUBTITLED_MEDIA_CATEGORIES = {"tweet_video" => "TweetVideo", "amplify_video" => "AmplifyVideo"}.freeze
+      # The message of the error raised for media that holds no identifier
+      NO_MEDIA_ID = "The media given holds no identifier"
+      # The message of the error raised for a response of an upload that holds no media
+      NO_MEDIA = "The response %s holds no media"
+      private_constant :NO_MEDIA_ID, :NO_MEDIA
 
       # The lowercase extension of a file, without its dot
       #
@@ -30,14 +36,32 @@ module X
       # @api private
       # @param media [Hash, String, Integer] the upload response, or the media identifier
       # @return [String] the media identifier
-      # @raise [KeyError] if an upload response has no id
+      # @raise [MissingData] if an upload response holds no identifier
       # @example The identifier of uploaded media
       #   Uploader::Utils.media_id({"id" => "1880028106020515840"}) # => "1880028106020515840"
       def media_id(media)
         case media
-        when Hash, UploadedMedia then media.fetch("id").to_s
+        when Hash, UploadedMedia then media.fetch("id") { raise MissingData, NO_MEDIA_ID }.to_s
         else media.to_s
         end
+      end
+
+      # The media a response of an upload describes
+      #
+      # The API answers an upload with what it acted on, under the data of the response.
+      # A response that succeeded without it describes no media, so it raises rather than leave the upload to fail
+      # later on what is missing. A response that carries no body at all describes none either, and answers nil, as
+      # the uploaders return for one.
+      #
+      # @api private
+      # @param response [Hash, nil] the parsed response body, or nil for a response without one
+      # @param description [String] how the error names the response, for its message
+      # @return [Hash, nil] the media, or nil for a response without a body
+      # @raise [MissingData] if the response holds no media
+      # @example The media an upload returned
+      #   Uploader::Utils.media_data({"data" => {"id" => 7}}, "of the upload") # => {"id" => 7}
+      def media_data(response, description)
+        response&.fetch("data") { raise MissingData, format(NO_MEDIA, description) }
       end
 
       # The media category the subtitles endpoint takes, from one given in any form

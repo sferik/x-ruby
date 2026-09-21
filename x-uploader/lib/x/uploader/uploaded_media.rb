@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "json"
+require_relative "missing_data"
 
 module X
   module Uploader
@@ -18,7 +19,9 @@ module X
     class UploadedMedia
       # The states of processing that has ended
       FINAL_STATES = %w[failed succeeded].freeze
-      private_constant :FINAL_STATES
+      # The message of the error raised for media that holds no identifier
+      NO_MEDIA_ID = "The media holds no identifier"
+      private_constant :FINAL_STATES, :NO_MEDIA_ID
 
       # The response data the media was built from
       # @api public
@@ -57,10 +60,10 @@ module X
       #
       # @api public
       # @return [Integer] the identifier, whether the response held it as a String or an Integer
-      # @raise [KeyError] if the response held no id
+      # @raise [MissingData] if the response held no id
       # @example Get the identifier
       #   media.id # => 1880028106020515840
-      def id = fetch("id")
+      def id = fetch("id") { raise MissingData, NO_MEDIA_ID }
 
       # The media key
       #

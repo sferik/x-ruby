@@ -55,6 +55,7 @@ module X
 
     class UploadedMedia
       FINAL_STATES: Array[String]
+      NO_MEDIA_ID: String
 
       @received_at: Time
 
@@ -111,6 +112,9 @@ module X
     class InvalidMediaType < Error
     end
 
+    class MissingData < Error
+    end
+
     class MediaProcessingTimeout < Error
       attr_reader status: UploadedMedia | Hash[String, untyped]
       def initialize: (UploadedMedia | Hash[String, untyped] status, Integer timeout) -> void
@@ -127,9 +131,12 @@ module X
       extend Utils
 
       SUBTITLED_MEDIA_CATEGORIES: Hash[String, String]
+      NO_MEDIA_ID: String
+      NO_MEDIA: String
 
       def extension: (path file_path) -> String
       def media_id: (media media) -> String
+      def media_data: (Hash[String, untyped]? response, String description) -> Hash[String, untyped]?
       def subtitled_media_category: (String | Symbol media_category) -> String
     end
 
@@ -143,6 +150,7 @@ module X
     module Chunks
       MAX_ATTEMPTS: Integer
       RETRY_BACKOFF: Integer
+      NO_MEDIA: String
       extend Chunks
 
       def init: (client: _Client, source: Source, media_type: String, media_category: String) -> Hash[String, untyped]
@@ -224,6 +232,7 @@ module X
     module Metadata
       SUBTITLED_MEDIA_CATEGORY: String
       AMPLIFY_SUBTITLED_MEDIA_CATEGORY: String
+      NO_METADATA: String
       extend Metadata
 
       def add_alt_text: (media media, String text, client: _Client) -> untyped

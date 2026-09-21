@@ -39,6 +39,20 @@ module X
       assert_requested :post, METADATA_URL, body: {id: "7", metadata: {alt_text: {text: "A cat"}}}.to_json
     end
 
+    def test_add_alt_text_raises_when_the_response_holds_no_metadata
+      stub_request(:post, METADATA_URL).to_return(headers: JSON_HEADERS, body: "{}")
+      error = assert_raises(Uploader::MissingData) { Uploader::Metadata.add_alt_text(7, "A cat", client: @client) }
+
+      assert_equal "The response that adds the metadata holds none", error.message
+    end
+
+    def test_add_subtitles_raises_when_the_response_holds_no_metadata
+      stub_request(:post, SUBTITLES_URL).to_return(headers: JSON_HEADERS, body: "{}")
+      error = assert_raises(Uploader::MissingData) { Uploader::Metadata.add_subtitles(7, 8, "EN", client: @client) }
+
+      assert_equal "The response that adds the metadata holds none", error.message
+    end
+
     def test_add_subtitles
       stub_request(:post, SUBTITLES_URL).to_return(headers: JSON_HEADERS, body: {data: {id: "7", media_category: "TweetVideo"}}.to_json)
       response = Uploader::Metadata.add_subtitles({"id" => "7"}, {"id" => "8"}, "en", client: @client, display_name: "English")

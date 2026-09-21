@@ -120,6 +120,7 @@ module X
       #   less than one
       # @raise [InvalidMediaType] if no media category is given for media that names no file and no signature names
       #   one, or if media uploaded in chunks is given no media type and none can be inferred
+      # @raise [MissingData] if a response of the upload holds no media
       # @raise [MediaProcessingFailed] if the media fails to process
       # @raise [MediaProcessingTimeout] if the media is still processing after processing_timeout seconds
       # @example Upload an image
@@ -188,9 +189,11 @@ module X
       # @param content [String] the binary content to upload
       # @param client [Client] the X API client
       # @param media_category [String, Symbol] the media category, which content cannot be inferred from, in any case
-      # @return [UploadedMedia, nil] the uploaded media, which holds the upload response
+      # @return [UploadedMedia, nil] the uploaded media, which holds the upload response, or nil for a response
+      #   that carries no body at all
       # @raise [ArgumentError] if the media category is invalid, or is amplify_video, which the API takes in chunks
       #   alone
+      # @raise [MissingData] if the response holds no media
       # @example Upload binary content
       #   Uploader::Media.upload_binary(data, client: client, media_category: "tweet_image")
       def upload_binary(content, client:, media_category:)
@@ -199,7 +202,7 @@ module X
 
         boundary = SecureRandom.hex
         upload_body = Multipart.body("media", content, boundary:, media_category:)
-        UploadedMedia.from(client.post("media/upload", upload_body, headers: Multipart.headers(boundary), **JSON_CLASSES)&.fetch("data"))
+        UploadedMedia.from(Utils.media_data(client.post("media/upload", upload_body, headers: Multipart.headers(boundary), **JSON_CLASSES), "of the upload"))
       end
 
       # Perform a chunked upload for large files
@@ -212,14 +215,16 @@ module X
       # @param chunk_size_mb [Float, Integer, nil] the size of each chunk in megabytes, rounded up to a whole byte,
       #   derived from the size of the media when nil: a megabyte, or as much more as the segments the API numbers ask
       # @param concurrency [Integer] the number of chunks uploaded at once
-      # @return [UploadedMedia, nil] the uploaded media, which holds the upload response
+      # @return [UploadedMedia, nil] the uploaded media, which holds the upload response, or nil for a response
+      #   that carries no body at all
       # @raise [ArgumentError] if the media is neither a path nor an IO
       # @raise [Errno::ENOENT] if the file does not exist
       # @raise [ArgumentError] if the media is empty, which holds nothing to upload
       # @raise [ArgumentError] if the media category is invalid, the chunk size is not positive or would need more
       #   segments than the API numbers, or the concurrency is less than one
       # @raise [InvalidMediaType] if no media type is given and none can be inferred
-      # @raise [KeyError] if the response that initializes the upload holds no media to append the chunks to
+      # @raise [MissingData] if the response that initializes the upload holds no media to append the chunks to, or
+      #   the response that finalizes it holds no media
       # @example Upload a large video
       #   Uploader::Media.chunked_upload("video.mp4", client: client)
       def chunked_upload(media, client:, media_category: nil, media_type: nil, chunk_size_mb: nil, concurrency: DEFAULT_CONCURRENCY)
@@ -231,7 +236,7 @@ module X
         media_type ||= infer_media_type(source, media_category)
         uploaded = Chunks.init(client:, source:, media_type:, media_category:)
         Chunks.append(client:, source:, chunk_size:, media: uploaded, boundary: SecureRandom.hex, concurrency:)
-        UploadedMedia.from(client.post("media/upload/#{uploaded.fetch("id")}/finalize", **JSON_CLASSES)&.fetch("data"))
+        UploadedMedia.from(Utils.media_data(client.post("media/upload/#{uploaded.fetch("id")}/finalize", **JSON_CLASSES), "that finalizes the upload"))
       end
 
       # Wait for media processing to complete
@@ -243,8 +248,9 @@ module X
       # @param media [UploadedMedia, Hash, String, Integer] the uploaded media, or the media identifier
       # @param client [Client] the X API client
       # @param processing_timeout [Integer] the seconds to wait between checks, in all, before giving up
-      # @return [UploadedMedia, nil] the uploaded media, which holds the processing status
-      # @raise [KeyError] if an upload response has no id
+      # @return [UploadedMedia, nil] the uploaded media, which holds the processing status, or nil for a response
+      #   that carries no body at all
+      # @raise [MissingData] if the media given holds no identifier, or a status response holds no media
       # @raise [MediaProcessingTimeout] if the media is still processing once the processing timeout would pass
       # @example Wait for processing
       #   Uploader::Media.await_processing(media, client: client)
@@ -256,7 +262,7 @@ module X
         waited = 0
         media_id = Utils.media_id(media)
         loop do
-          status = UploadedMedia.from(client.get("media/upload", params: {command: STATUS_COMMAND, media_id:}, **JSON_CLASSES)&.fetch("data"))
+          status = UploadedMedia.from(Utils.media_data(client.get("media/upload", params: {command: STATUS_COMMAND, media_id:}, **JSON_CLASSES), "of the status check"))
           return status unless status&.processing?
 
           wait = [status.check_after_secs.to_i, MIN_CHECK_AFTER_SECS].max
@@ -272,8 +278,9 @@ module X
       # @param media [UploadedMedia, Hash, String, Integer] the uploaded media, or the media identifier
       # @param client [Client] the X API client
       # @param processing_timeout [Integer] the seconds to wait between checks, in all, before giving up
-      # @return [UploadedMedia, nil] the uploaded media, which holds the processing status
-      # @raise [KeyError] if an upload response has no id
+      # @return [UploadedMedia, nil] the uploaded media, which holds the processing status, or nil for a response
+      #   that carries no body at all
+      # @raise [MissingData] if the media given holds no identifier, or a status response holds no media
       # @raise [MediaProcessingFailed] if media processing failed, with the status X reported
       # @raise [MediaProcessingTimeout] if the media is still processing once the processing timeout would pass
       # @example Wait for processing with error handling

@@ -84,9 +84,16 @@ module X
     end
 
     def test_media_without_id
-      error = assert_raises(KeyError) { Uploader::Media.await_processing({}, client: @client) }
+      error = assert_raises(Uploader::MissingData) { Uploader::Media.await_processing({}, client: @client) }
 
-      assert_equal 'key not found: "id"', error.message
+      assert_equal "The media given holds no identifier", error.message
+    end
+
+    def test_a_status_response_that_holds_no_media_raises
+      stub_request(:get, STATUS_URL).to_return(headers: {"content-type" => "application/json"}, body: "{}")
+      error = assert_raises(Uploader::MissingData) { await }
+
+      assert_equal "The response of the status check holds no media", error.message
     end
 
     private

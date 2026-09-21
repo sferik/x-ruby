@@ -38,7 +38,6 @@ module X
 
     def test_an_identifier_that_is_not_a_decimal_number_raises
       assert_raises(ArgumentError) { Uploader::UploadedMedia.new({"id" => "0x10"}).id }
-      assert_raises(KeyError) { Uploader::UploadedMedia.new({}).id }
     end
 
     def test_expires_at_counts_from_when_the_response_arrived

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative "json_classes"
+require_relative "missing_data"
 require_relative "multipart"
 
 module X
@@ -18,26 +19,31 @@ module X
       MAX_ATTEMPTS = 3
       # Seconds to wait before retrying a chunk, doubled for each retry after
       RETRY_BACKOFF = 1
-      private_constant :MAX_ATTEMPTS, :RETRY_BACKOFF
+      # The message of the error raised for an initialize response that holds no media to append the chunks to
+      NO_MEDIA = "The response that initializes the upload holds no media to append the chunks to"
+      private_constant :MAX_ATTEMPTS, :RETRY_BACKOFF, :NO_MEDIA
 
       # Initialize a chunked upload
       #
       # The chunks that follow are appended to the media this returns, so a response that holds none, whether it has
-      # no body at all or a body without data, raises here rather than leave the upload to fail with a NoMethodError
-      # on the first chunk.
+      # no body at all, a body without data, or data that names no media, raises here rather than leave the upload
+      # to fail on the first chunk, once the media it uploaded had been billed.
       #
       # @api private
       # @param client [Client] the X API client
       # @param source [Source] the media
       # @param media_type [String] the MIME type
       # @param media_category [String] the media category
-      # @return [Hash] the initialization response
-      # @raise [KeyError] if the response holds no data to append the chunks to
+      # @return [Hash] the media the chunks are appended to
+      # @raise [MissingData] if the response holds no media to append the chunks to
       # @example Initialize the upload of a video
       #   Uploader::Chunks.init(client:, source:, media_type: "video/mp4", media_category: "tweet_video")
       def init(client:, source:, media_type:, media_category:)
         body = {media_type:, media_category:, total_bytes: source.size}
-        client.post("media/upload/initialize", body, **JSON_CLASSES).to_h.fetch("data")
+        media = Hash.try_convert(client.post("media/upload/initialize", body, **JSON_CLASSES).to_h["data"])
+        raise MissingData, NO_MEDIA unless media&.key?("id")
+
+        media
       end
 
       # Append the chunks of a file to a chunked upload, a few at a time

@@ -32,6 +32,17 @@ module X
     end
   end
 
+  class UploaderMissingDataTest < Minitest::Test
+    cover Uploader::MissingData
+
+    def test_it_is_the_failure_of_an_upload_and_of_the_api
+      error = Uploader::MissingData.new("The response of the upload holds no media")
+
+      assert_kind_of Uploader::Error, error
+      assert_kind_of Error, error
+    end
+  end
+
   class UploaderInvalidMediaTypeTest < Minitest::Test
     def test_the_old_name_is_gone
       refute X.const_defined?(:InvalidMediaType)
