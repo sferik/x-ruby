@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative "source"
+
 module X
   module Uploader
     # Tells an animated GIF from a still one by reading its blocks, without decoding any image
@@ -17,15 +19,15 @@ module X
       IMAGE_DESCRIPTOR_SIZE = 10
       private_constant :HEADER_SIZE, :EXTENSION_INTRODUCER, :IMAGE_SEPARATOR, :IMAGE_DESCRIPTOR_SIZE
 
-      # Check whether a GIF file holds more than one frame
+      # Check whether a GIF holds more than one frame
       #
       # @api public
-      # @param file_path [String, Pathname] the path to the GIF file
+      # @param media [String, Pathname, IO, StringIO] the path to the GIF, or an IO open on it
       # @return [Boolean] true if the GIF has a second frame
       # @example Check whether a GIF is animated
       #   Uploader::Gif.animated?("cat.gif") # => true
-      def animated?(file_path)
-        data = File.binread(file_path)
+      def animated?(media)
+        data = Source.for(media).content
         position = skip_color_table(HEADER_SIZE, data.getbyte(10).to_i)
         frames = 0
         while (block = data.getbyte(position))

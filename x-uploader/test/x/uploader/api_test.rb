@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "stringio"
 require_relative "../../test_helper"
 
 module X
@@ -14,12 +15,6 @@ module X
     def test_upload_media_uploads_a_file_with_the_client_and_its_options
       Uploader::Media.stub(:upload, @called) do
         assert_equal [["cat.jpg"], {client: @client, alt_text: "A cat"}], @client.upload_media("cat.jpg", alt_text: "A cat")
-      end
-    end
-
-    def test_upload_media_binary_uploads_content_with_the_client_and_the_category
-      Uploader::Media.stub(:upload_binary, @called) do
-        assert_equal [["GIF89a"], {client: @client, media_category: "tweet_gif"}], @client.upload_media_binary("GIF89a", media_category: "tweet_gif")
       end
     end
 
@@ -62,7 +57,7 @@ module X
     def test_a_client_gains_nothing_until_it_includes_the_methods
       refute_includes Client.ancestors, Uploader::API
       assert_equal %i[add_alt_text add_subtitles await_media_processing await_media_processing! update_profile_banner update_profile_image
-        upload_media upload_media_binary], Uploader::API.public_instance_methods.sort
+        upload_media], Uploader::API.public_instance_methods.sort
     end
 
     def test_await_media_processing_reports_a_failure_and_the_bang_raises_it
@@ -77,7 +72,7 @@ module X
     def test_an_upload_reaches_the_api_through_the_client
       stub_request(:post, "https://api.x.com/2/media/upload").to_return(headers: {"content-type" => "application/json"}, body: {data: {id: "7"}}.to_json)
 
-      assert_equal(Uploader::UploadedMedia.new({"id" => "7"}), @client.upload_media_binary("GIF89a", media_category: "tweet_image"))
+      assert_equal(Uploader::UploadedMedia.new({"id" => "7"}), @client.upload_media(StringIO.new("GIF89a"), media_category: "tweet_image"))
     end
   end
 end

@@ -13,37 +13,35 @@ module X
     #
     # @api public
     module API
-      # Upload a file and wait for it to be processed
+      # Upload media and wait for it to be processed
       #
-      # A video or subtitles upload in chunks, and the media category is inferred from the file.
+      # The media is a path, or an IO open on it. Media that names a file, which a String, a Pathname, a File, and a
+      # Tempfile all do, is read from that file a chunk at a time, so media of any size uploads without being held
+      # in memory; media given as any other IO, such as a StringIO, is read to its end and held.
+      #
+      # A video or subtitles upload in chunks. The media category is inferred from the name of the file, or, for
+      # media that names none, from the bytes it begins with, unless media_category says what it is.
       #
       # @api public
-      # @param file_path [String, Pathname] the path to the file to upload
+      # @param media [String, Pathname, IO, StringIO] the path to the media to upload, or an IO open on it
       # @param options [Hash] the options of {Media.upload}, such as media_category, alt_text, and processing_timeout
       # @return [UploadedMedia, nil] the uploaded media, which holds the upload response, or the processing status of
       #   media that X processes
+      # @raise [ArgumentError] if the media is neither a path nor an IO
       # @raise [Errno::ENOENT] if the file does not exist
-      # @raise [ArgumentError] if the file is empty, which holds nothing to upload
+      # @raise [ArgumentError] if the media is empty, which holds nothing to upload
+      # @raise [InvalidMediaType] if no media category is given for media that names no file and no signature names one
       # @raise [MediaProcessingFailed] if media processing failed, with the status X reported
       # @raise [MediaProcessingTimeout] if the media is still processing once the processing timeout would pass
       # @example Upload an image with alt text and post it
       #   media = client.upload_media("cat.jpg", alt_text: "A cat asleep on a keyboard")
       #   client.create_post("Look at this cat", media_ids: [media])
-      def upload_media(file_path, **options)
-        Media.upload(file_path, client: self, **options)
-      end
-
-      # Upload the content of media that is held in memory, in one request
-      #
-      # @api public
-      # @param content [String] the binary content to upload
-      # @param media_category [String] the media category
-      # @return [UploadedMedia, nil] the uploaded media, which holds the upload response
-      # @raise [ArgumentError] if the media category is invalid
-      # @example Upload an image held in memory
-      #   client.upload_media_binary(File.binread("cat.png"), media_category: "tweet_image")
-      def upload_media_binary(content, media_category:)
-        Media.upload_binary(content, client: self, media_category:)
+      # @example Upload an image held in memory, whose category its signature names
+      #   client.upload_media(StringIO.new(File.binread("cat.png")))
+      # @example Upload media of a category no signature names
+      #   client.upload_media(StringIO.new(subtitles), media_category: "subtitles")
+      def upload_media(media, **options)
+        Media.upload(media, client: self, **options)
       end
 
       # Wait until media has been processed, whether its processing succeeded or failed

@@ -28,40 +28,40 @@ module X
       #
       # @api private
       # @param client [Client] the X API client
-      # @param file_path [String, Pathname] the file path
+      # @param source [Source] the media
       # @param media_type [String] the MIME type
       # @param media_category [String] the media category
       # @return [Hash] the initialization response
       # @raise [KeyError] if the response holds no data to append the chunks to
       # @example Initialize the upload of a video
-      #   Uploader::Chunks.init(client:, file_path: "cat.mp4", media_type: "video/mp4", media_category: "tweet_video")
-      def init(client:, file_path:, media_type:, media_category:)
-        body = {media_type:, media_category:, total_bytes: File.size(file_path)}
+      #   Uploader::Chunks.init(client:, source:, media_type: "video/mp4", media_category: "tweet_video")
+      def init(client:, source:, media_type:, media_category:)
+        body = {media_type:, media_category:, total_bytes: source.size}
         client.post("media/upload/initialize", body, **JSON_CLASSES).to_h.fetch("data")
       end
 
       # Append the chunks of a file to a chunked upload, a few at a time
       #
-      # Each worker reads its chunk from the file as it uploads it, so no more than concurrency chunks are held
+      # Each worker reads its chunk from the media as it uploads it, so no more than concurrency chunks are held
       # in memory at once. A chunk that fails stops the chunks not yet begun, and once the chunks already begun
       # have finished, the first error is raised. An exception raised in the caller while it waits, such as a
       # timeout or an interrupt, stops every chunk, so that no thread goes on uploading once the caller has gone.
       #
       # @api private
       # @param client [Client] the X API client
-      # @param file_path [String, Pathname] the file path
+      # @param source [Source] the media
       # @param chunk_size [Integer] the chunk size in bytes
       # @param media [Hash] the media object
       # @param boundary [String] the multipart boundary
       # @param concurrency [Integer] the number of chunks uploaded at once
       # @return [void]
       # @example Append the chunks of a video
-      #   Uploader::Chunks.append(client:, file_path: "cat.mp4", chunk_size: 1_048_576, media:, boundary:, concurrency: 4)
-      def append(client:, file_path:, chunk_size:, media:, boundary:, concurrency:)
-        queue = chunk_queue(file_path, chunk_size)
+      #   Uploader::Chunks.append(client:, source:, chunk_size: 1_048_576, media:, boundary:, concurrency: 4)
+      def append(client:, source:, chunk_size:, media:, boundary:, concurrency:)
+        queue = chunk_queue(source, chunk_size)
         errors = Queue.new
         media_id = media.fetch("id")
-        await Array.new([concurrency, queue.size].min) { append_worker(queue, errors, client:, file_path:, chunk_size:, media_id:, boundary:) }
+        await Array.new([concurrency, queue.size].min) { append_worker(queue, errors, client:, source:, chunk_size:, media_id:, boundary:) }
         raise errors.deq unless errors.empty?
       end
 
@@ -82,14 +82,14 @@ module X
         workers.each(&:kill).each(&:join)
       end
 
-      # A closed queue of the index and byte offset of each chunk of a file, in order
+      # A closed queue of the index and byte offset of each chunk of the media, in order
       # @api private
-      # @param file_path [String, Pathname] the file path
+      # @param source [Source] the media
       # @param chunk_size [Integer] the chunk size in bytes
       # @return [Thread::Queue] the queue
-      def chunk_queue(file_path, chunk_size)
+      def chunk_queue(source, chunk_size)
         queue = Queue.new
-        (0...File.size(file_path)).step(chunk_size).each_with_index { |offset, index| queue << [index, offset] }
+        (0...source.size).step(chunk_size).each_with_index { |offset, index| queue << [index, offset] }
         queue.close
       end
 
@@ -98,15 +98,15 @@ module X
       # @param queue [Thread::Queue] the index and offset of each chunk not yet begun
       # @param errors [Thread::Queue] the errors of failed chunks, in the order they failed
       # @param client [Client] the X API client
-      # @param file_path [String, Pathname] the file path
+      # @param source [Source] the media
       # @param chunk_size [Integer] the chunk size in bytes
       # @param media_id [String] the media ID
       # @param boundary [String] the multipart boundary
       # @return [Thread] the thread
-      def append_worker(queue, errors, client:, file_path:, chunk_size:, media_id:, boundary:)
+      def append_worker(queue, errors, client:, source:, chunk_size:, media_id:, boundary:)
         Thread.new do
           while (index, offset = queue.deq)
-            upload_body = Multipart.body("media", File.binread(file_path, chunk_size, offset), boundary:, segment_index: index)
+            upload_body = Multipart.body("media", source.read(chunk_size, offset), boundary:, segment_index: index)
             upload_chunk(client:, media_id:, upload_body:, headers: Multipart.headers(boundary))
           end
         rescue => e

@@ -11,6 +11,8 @@ require_relative "media_processing_failed"
 require_relative "media_processing_timeout"
 require_relative "metadata"
 require_relative "multipart"
+require_relative "signature"
+require_relative "source"
 require_relative "uploaded_media"
 require_relative "utils"
 require_relative "validator"
@@ -87,32 +89,37 @@ module X
         :SUBTITLES_MIME_TYPES, :MIN_CHECK_AFTER_SECS, :STATUS_COMMAND, :VIDEO_CATEGORIES, :CHUNKED_CATEGORIES, :GIF_CATEGORIES,
         :CATEGORY_MAP, :CATEGORY_MIME_TYPES
 
-      # Upload a file, in chunks when the API needs them, awaiting any processing
+      # Upload media, in chunks when the API needs them, awaiting any processing
+      #
+      # The media is a path, or an IO open on it, which {Source} says how each of is read.
       #
       # A video and subtitles upload in chunks, as does an animated GIF that a single request cannot take. Every
       # argument is validated before the first request, so that no media is uploaded, and billed, for an upload
       # that cannot finish.
       #
       # @api public
-      # @param file_path [String, Pathname] the path to the file to upload
+      # @param media [String, Pathname, IO, StringIO] the path to the media to upload, or an IO open on it
       # @param client [Client] the X API client
-      # @param media_category [String, Symbol] the media category, in any case, inferred from the file by default
+      # @param media_category [String, Symbol, nil] the media category, in any case, inferred when nil from the name
+      #   of the file, or from the bytes media that names none begins with
       # @param alt_text [String, nil] alt text describing the media, for people who cannot see it, of 1 to 1,000 characters
       # @param processing_timeout [Integer] the seconds to wait for media, such as a video or an animated GIF, to process
-      # @param media_type [String, nil] the MIME type of media uploaded in chunks, inferred from the file and category
-      #   when nil; an upload in a single request sends no type, since the API types the media itself, so one given
-      #   for an image is not sent
+      # @param media_type [String, nil] the MIME type of media uploaded in chunks, inferred from the media and
+      #   category when nil; an upload in a single request sends no type, since the API types the media itself, so
+      #   one given for an image is not sent
       # @param chunk_size_mb [Float, Integer, nil] the size of each chunk of media uploaded in chunks, in megabytes,
-      #   derived from the size of the file when nil, so that an upload of any size fits the segments the API numbers
+      #   derived from the size of the media when nil, so that an upload of any size fits the segments the API numbers
       # @param concurrency [Integer] the number of chunks uploaded at once
       # @return [UploadedMedia, nil] the uploaded media, which holds the upload response, or the processing status of
       #   media that X processes
+      # @raise [ArgumentError] if the media is neither a path nor an IO
       # @raise [Errno::ENOENT] if the file does not exist
-      # @raise [ArgumentError] if the file is empty, which holds nothing to upload
+      # @raise [ArgumentError] if the media is empty, which holds nothing to upload
       # @raise [ArgumentError] if the media category is invalid, the alt text is empty or longer than the API takes,
       #   the chunk size is not positive or would need more segments than the API numbers, or the concurrency is
       #   less than one
-      # @raise [InvalidMediaType] if media uploaded in chunks is given no media type and none can be inferred
+      # @raise [InvalidMediaType] if no media category is given for media that names no file and no signature names
+      #   one, or if media uploaded in chunks is given no media type and none can be inferred
       # @raise [MediaProcessingFailed] if the media fails to process
       # @raise [MediaProcessingTimeout] if the media is still processing after processing_timeout seconds
       # @example Upload an image
@@ -121,17 +128,20 @@ module X
       #   Uploader::Media.upload("cat.jpg", client: client, alt_text: "A cat asleep on a keyboard")
       # @example Upload a video and wait until it can be attached to a post
       #   Uploader::Media.upload("video.mp4", client: client)
-      def upload(file_path, client:, media_category: infer_media_category(file_path), alt_text: nil,
+      # @example Upload an image held in memory, whose category its signature names
+      #   Uploader::Media.upload(StringIO.new(png), client: client)
+      def upload(media, client:, media_category: nil, alt_text: nil,
         processing_timeout: DEFAULT_PROCESSING_TIMEOUT, media_type: nil, chunk_size_mb: nil, concurrency: DEFAULT_CONCURRENCY)
-        media_category = Validator.validate_upload!(file_path, media_category, alt_text:, chunk_size_mb:, concurrency:)
-        media = if chunked_upload?(file_path, media_category)
-          chunked_upload(file_path, client:, media_category:, media_type:, chunk_size_mb:, concurrency:)
+        source = Source.for(media)
+        media_category = Validator.validate_upload!(source, media_category || infer_media_category(source), alt_text:, chunk_size_mb:, concurrency:)
+        uploaded = if chunked_upload?(source, media_category)
+          chunked_upload(source, client:, media_category:, media_type:, chunk_size_mb:, concurrency:)
         else
-          upload_binary(File.binread(file_path), client:, media_category:)
+          upload_binary(source.content, client:, media_category:)
         end
-        media = await_processing!(media, client:, processing_timeout:) if media&.key?("processing_info")
-        Metadata.add_alt_text(media, alt_text, client:) unless media.nil? || alt_text.nil?
-        media
+        uploaded = await_processing!(uploaded, client:, processing_timeout:) if uploaded&.key?("processing_info")
+        Metadata.add_alt_text(uploaded, alt_text, client:) unless uploaded.nil? || alt_text.nil?
+        uploaded
       end
 
       # Check whether a file uploads in chunks rather than in a single request
@@ -141,30 +151,35 @@ module X
       # no more of; the API takes a GIF of up to 15 MB in chunks. An image uploads in a single request.
       #
       # @api public
-      # @param file_path [String, Pathname] the path to the file to upload
+      # @param media [String, Pathname, IO, StringIO] the path to the media to upload, or an IO open on it
       # @param media_category [String, Symbol] the media category, in any case
-      # @return [Boolean] true if the file uploads in chunks
+      # @return [Boolean] true if the media uploads in chunks
       # @raise [Errno::ENOENT] if a GIF file does not exist
       # @example Check whether a large animated GIF uploads in chunks
       #   Uploader::Media.chunked_upload?("cat.gif", "tweet_gif") # => true
-      def chunked_upload?(file_path, media_category)
+      def chunked_upload?(media, media_category)
         category = media_category.to_s.downcase
-        CHUNKED_CATEGORIES.include?(category) || (GIF_CATEGORIES.include?(category) && File.size(file_path) > MAX_SIMPLE_UPLOAD_BYTES)
+        CHUNKED_CATEGORIES.include?(category) || (GIF_CATEGORIES.include?(category) && Source.for(media).size > MAX_SIMPLE_UPLOAD_BYTES)
       end
 
-      # Infer the media category of a post attachment from a file
+      # Infer the media category of a post attachment from the media
       #
-      # A GIF with a single frame is an image, since X processes only animated GIFs as GIFs.
+      # Media that names a file is categorized by the extension of the name, and media that names none by the bytes
+      # it begins with. A GIF with a single frame is an image, since X processes only animated GIFs as GIFs.
       #
       # @api public
-      # @param file_path [String, Pathname] the path to the file
+      # @param media [String, Pathname, IO, StringIO] the path to the media, or an IO open on it
       # @return [String] tweet_gif, tweet_video for MP4, QuickTime, WebM, or MPEG-TS, subtitles for SubRip or WebVTT, or tweet_image
+      # @raise [InvalidMediaType] if the media names no file and no signature names its type
       # @example Infer the category of a video
       #   Uploader::Media.infer_media_category("cat.mp4") # => "tweet_video"
-      def infer_media_category(file_path)
-        category = CATEGORY_MAP.fetch(Utils.extension(file_path), TWEET_IMAGE)
-        still = category.eql?(TWEET_GIF) && File.file?(file_path) && !Gif.animated?(file_path)
-        still ? TWEET_IMAGE : category
+      # @example Infer the category of an animated GIF held in memory
+      #   Uploader::Media.infer_media_category(StringIO.new(gif)) # => "tweet_gif"
+      def infer_media_category(media)
+        source = Source.for(media)
+        category = source.named? ? CATEGORY_MAP.fetch(source.extension, TWEET_IMAGE) : Signature.media_category!(source)
+        # A GIF of a single frame is an image, which its category is read again as
+        (category.eql?(TWEET_GIF) && source.readable? && !Gif.animated?(source)) ? TWEET_IMAGE : category
       end
 
       # Upload binary content to the X API
@@ -190,32 +205,33 @@ module X
       # Perform a chunked upload for large files
       #
       # @api public
-      # @param file_path [String, Pathname] the path to the file to upload
+      # @param media [String, Pathname, IO, StringIO] the path to the media to upload, or an IO open on it
       # @param client [Client] the X API client
-      # @param media_category [String, Symbol] the media category, in any case, inferred from the file extension by default
-      # @param media_type [String, nil] the MIME type of the media, inferred from the file and category when nil
+      # @param media_category [String, Symbol, nil] the media category, in any case, inferred from the media when nil
+      # @param media_type [String, nil] the MIME type of the media, inferred from the media and category when nil
       # @param chunk_size_mb [Float, Integer, nil] the size of each chunk in megabytes, rounded up to a whole byte,
-      #   derived from the size of the file when nil: a megabyte, or as much more as the segments the API numbers ask
+      #   derived from the size of the media when nil: a megabyte, or as much more as the segments the API numbers ask
       # @param concurrency [Integer] the number of chunks uploaded at once
       # @return [UploadedMedia, nil] the uploaded media, which holds the upload response
+      # @raise [ArgumentError] if the media is neither a path nor an IO
       # @raise [Errno::ENOENT] if the file does not exist
-      # @raise [ArgumentError] if the file is empty, which holds nothing to upload
+      # @raise [ArgumentError] if the media is empty, which holds nothing to upload
       # @raise [ArgumentError] if the media category is invalid, the chunk size is not positive or would need more
       #   segments than the API numbers, or the concurrency is less than one
       # @raise [InvalidMediaType] if no media type is given and none can be inferred
       # @raise [KeyError] if the response that initializes the upload holds no media to append the chunks to
       # @example Upload a large video
       #   Uploader::Media.chunked_upload("video.mp4", client: client)
-      def chunked_upload(file_path, client:, media_category: infer_media_category(file_path),
-        media_type: nil, chunk_size_mb: nil, concurrency: DEFAULT_CONCURRENCY)
-        Validator.validate_file_path!(file_path)
-        media_category = Validator.validate_media_category!(media_category)
+      def chunked_upload(media, client:, media_category: nil, media_type: nil, chunk_size_mb: nil, concurrency: DEFAULT_CONCURRENCY)
+        source = Source.for(media)
+        Validator.validate_source!(source)
+        media_category = Validator.validate_media_category!(media_category || infer_media_category(source))
         Validator.validate_chunks!(chunk_size_mb:, concurrency:)
-        chunk_size = Validator.validate_segments!(file_path, chunk_size_mb)
-        media_type ||= infer_media_type(file_path, media_category)
-        media = Chunks.init(client:, file_path:, media_type:, media_category:)
-        Chunks.append(client:, file_path:, chunk_size:, media:, boundary: SecureRandom.hex, concurrency:)
-        UploadedMedia.from(client.post("media/upload/#{media.fetch("id")}/finalize", **JSON_CLASSES)&.fetch("data"))
+        chunk_size = Validator.validate_segments!(source, chunk_size_mb)
+        media_type ||= infer_media_type(source, media_category)
+        uploaded = Chunks.init(client:, source:, media_type:, media_category:)
+        Chunks.append(client:, source:, chunk_size:, media: uploaded, boundary: SecureRandom.hex, concurrency:)
+        UploadedMedia.from(client.post("media/upload/#{uploaded.fetch("id")}/finalize", **JSON_CLASSES)&.fetch("data"))
       end
 
       # Wait for media processing to complete
@@ -273,17 +289,18 @@ module X
       # named. Any other category, an image, is typed by its extension alone.
       #
       # @api public
-      # @param file_path [String, Pathname] the file path
+      # @param media [String, Pathname, IO, StringIO] the path to the media, or an IO open on it
       # @param media_category [String, Symbol] the media category, in any case
       # @return [String] the inferred MIME type
       # @raise [InvalidMediaType] if the MIME type cannot be determined
       # @example Uploader::Media.infer_media_type("image.png", "tweet_image") #=> "image/png"
       # @example Uploader::Media.infer_media_type("clip.webm", "tweet_video") #=> "video/webm"
-      def infer_media_type(file_path, media_category)
-        from_extension = MIME_TYPE_MAP[Utils.extension(file_path)]
-        taken = CATEGORY_MIME_TYPES.fetch(media_category.to_s.downcase, [from_extension])
-        (taken.include?(from_extension) ? from_extension : taken.first) ||
-          raise(InvalidMediaType, "unable to determine MIME type from file extension: #{File.path(file_path).inspect}")
+      def infer_media_type(media, media_category)
+        source = Source.for(media)
+        from_media = source.named? ? MIME_TYPE_MAP[source.extension] : Signature.media_type(source.sniff)
+        taken = CATEGORY_MIME_TYPES.fetch(media_category.to_s.downcase, [from_media])
+        (taken.include?(from_media) ? from_media : taken.first) ||
+          raise(InvalidMediaType, "unable to determine the MIME type of #{source.description}")
       end
     end
   end

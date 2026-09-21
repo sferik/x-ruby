@@ -35,7 +35,7 @@ module X
       @path = File.join(@dir, "video.mp4")
       File.binwrite(@path, "\x01".b * (6 * CHUNK_BYTES))
       @client = StalledClient.new
-      @uploader = Thread.new { Uploader.const_get(:Chunks).append(client: @client, file_path: @path, chunk_size: CHUNK_BYTES, media: {"id" => "1"}, boundary: "b", concurrency: 2) }
+      @uploader = Thread.new { append(Uploader.const_get(:Source).for(@path)) }
       @uploader.report_on_exception = false
       @workers = Array.new(2) { @client.started.pop(timeout: 1) }
     end
@@ -63,6 +63,11 @@ module X
     end
 
     private
+
+    # Upload the chunks of the media, which never finishes, since the client never answers
+    def append(source)
+      Uploader.const_get(:Chunks).append(client: @client, source:, chunk_size: CHUNK_BYTES, media: {"id" => "1"}, boundary: "b", concurrency: 2)
+    end
 
     # Interrupt the upload as a timeout would, and return the exception once the upload has ended
     def interrupt

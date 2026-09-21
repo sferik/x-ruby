@@ -6,6 +6,53 @@ module X
     # Media to act on: what an upload returned, or the identifier of media
     type media = UploadedMedia | Hash[String, untyped] | String | Integer
 
+    # Media to upload: a path to it, an IO open on it, or the source it has been resolved to
+    type uploadable = path | _Reader | Source
+
+    class Source
+      SNIFF_BYTES: Integer
+
+      def self.for: (uploadable media) -> Source
+      def self.named_or_read: (untyped media) -> Source
+      def self.named: (untyped media) -> Path
+
+      attr_reader name: String?
+      def named?: () -> bool
+      def description: () -> String
+      def extension: () -> String
+      def sniff: () -> String
+      def exist?: () -> bool
+      def readable?: () -> bool
+      def size: () -> Integer
+      def content: () -> String
+      def read: (Integer length, Integer offset) -> String
+
+      class Path < Source
+        def initialize: (path path) -> void
+        def name: () -> String
+      end
+
+      class Buffer < Source
+        @content: String
+
+        def initialize: (String content) -> void
+      end
+    end
+
+    module Signature
+      SIGNATURES: Hash[Hash[Integer, String], String]
+      CATEGORIES: Hash[String, String]
+      DEFAULT_CATEGORY: String
+      extend Signature
+
+      def media_type: (String bytes) -> String?
+      def media_type!: (Source source) -> String
+      def media_category!: (Source source) -> String
+
+      private
+      def matches?: (String bytes, Hash[Integer, String] magic) -> bool
+    end
+
     class UploadedMedia
       FINAL_STATES: Array[String]
 
@@ -49,8 +96,7 @@ module X
     end
 
     module API : _Client
-      def upload_media: (path file_path, **untyped options) -> UploadedMedia?
-      def upload_media_binary: (String content, media_category: String | Symbol) -> UploadedMedia?
+      def upload_media: (uploadable media, **untyped options) -> UploadedMedia?
       def await_media_processing: (media media, **untyped options) -> UploadedMedia?
       def await_media_processing!: (media media, **untyped options) -> UploadedMedia?
       def add_alt_text: (media media, String text) -> untyped
@@ -99,13 +145,13 @@ module X
       RETRY_BACKOFF: Integer
       extend Chunks
 
-      def init: (client: _Client, file_path: path, media_type: String, media_category: String) -> Hash[String, untyped]
-      def append: (client: _Client, file_path: path, chunk_size: Integer, media: untyped, boundary: String, concurrency: Integer) -> void
+      def init: (client: _Client, source: Source, media_type: String, media_category: String) -> Hash[String, untyped]
+      def append: (client: _Client, source: Source, chunk_size: Integer, media: untyped, boundary: String, concurrency: Integer) -> void
 
       private
       def await: (Array[Thread] workers) -> void
-      def chunk_queue: (path file_path, Integer chunk_size) -> Thread::Queue
-      def append_worker: (Thread::Queue queue, Thread::Queue errors, client: _Client, file_path: path, chunk_size: Integer, media_id: String, boundary: String) -> Thread
+      def chunk_queue: (Source source, Integer chunk_size) -> Thread::Queue
+      def append_worker: (Thread::Queue queue, Thread::Queue errors, client: _Client, source: Source, chunk_size: Integer, media_id: String, boundary: String) -> Thread
       def upload_chunk: (client: _Client, media_id: String, upload_body: String, headers: Hash[String, String]) -> untyped
     end
 
@@ -150,14 +196,14 @@ module X
       CATEGORY_MIME_TYPES: Hash[String, Array[String]]
       extend Media
 
-      def upload: (path file_path, client: _Client, ?media_category: String | Symbol, ?alt_text: String?, ?processing_timeout: Integer, ?media_type: String?, ?chunk_size_mb: (Float | Integer)?, ?concurrency: Integer) -> UploadedMedia?
-      def chunked_upload?: (path file_path, String | Symbol media_category) -> bool
-      def infer_media_category: (path file_path) -> String
+      def upload: (uploadable media, client: _Client, ?media_category: (String | Symbol)?, ?alt_text: String?, ?processing_timeout: Integer, ?media_type: String?, ?chunk_size_mb: (Float | Integer)?, ?concurrency: Integer) -> UploadedMedia?
+      def chunked_upload?: (uploadable media, String | Symbol media_category) -> bool
+      def infer_media_category: (uploadable media) -> String
       def upload_binary: (String content, client: _Client, media_category: String | Symbol) -> UploadedMedia?
-      def chunked_upload: (path file_path, client: _Client, ?media_category: String | Symbol, ?media_type: String?, ?chunk_size_mb: (Float | Integer)?, ?concurrency: Integer) -> UploadedMedia?
+      def chunked_upload: (uploadable media, client: _Client, ?media_category: (String | Symbol)?, ?media_type: String?, ?chunk_size_mb: (Float | Integer)?, ?concurrency: Integer) -> UploadedMedia?
       def await_processing: (media media, client: _Client, ?processing_timeout: Integer) -> UploadedMedia?
       def await_processing!: (media media, client: _Client, ?processing_timeout: Integer) -> UploadedMedia?
-      def infer_media_type: (path file_path, String | Symbol media_category) -> String
+      def infer_media_type: (uploadable media, String | Symbol media_category) -> String
     end
 
     module Gif
@@ -167,7 +213,7 @@ module X
       IMAGE_DESCRIPTOR_SIZE: Integer
       extend Gif
 
-      def animated?: (path file_path) -> bool
+      def animated?: (uploadable media) -> bool
 
       private
       def after_block: (String data, Integer position, Integer block) -> Integer
@@ -191,13 +237,14 @@ module X
       MEDIA_CATEGORIES: Array[String]
       extend Validator
 
-      def validate_upload!: (path file_path, String | Symbol media_category, alt_text: String?, chunk_size_mb: (Float | Integer)?, concurrency: Integer) -> String
+      def validate_upload!: (Source source, String | Symbol media_category, alt_text: String?, chunk_size_mb: (Float | Integer)?, concurrency: Integer) -> String
+      def validate_source!: (Source source) -> nil
       def validate_file_path!: (path file_path) -> nil
       def validate_extension!: (path file_path, Array[String] extensions) -> nil
       def validate_alt_text!: (String? alt_text) -> nil
       def validate_media_category!: (String | Symbol media_category) -> String
       def validate_chunks!: (chunk_size_mb: (Float | Integer)?, concurrency: Integer) -> nil
-      def validate_segments!: (path file_path, (Float | Integer)? chunk_size_mb) -> Integer
+      def validate_segments!: (Source source, (Float | Integer)? chunk_size_mb) -> Integer
     end
 
     module Account

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative "invalid_media_type"
+require_relative "source"
 require_relative "utils"
 
 module X
@@ -29,7 +30,7 @@ module X
       # and billed, for an upload that cannot finish.
       #
       # @api private
-      # @param file_path [String, Pathname] the path to the file to upload
+      # @param source [Source] the media to upload
       # @param media_category [String, Symbol] the media category, in any case
       # @param alt_text [String, nil] the alt text of the media, or nil for media described with none
       # @param chunk_size_mb [Float, Integer, nil] the size of each chunk in megabytes, or nil to derive one
@@ -39,18 +40,32 @@ module X
       # @raise [ArgumentError] if the media category is invalid, the alt text is empty or too long, the chunk size is
       #   not positive, or the concurrency is less than one
       # @example Validate the arguments of an upload
-      #   Uploader::Validator.validate_upload!("cat.jpg", :TWEET_IMAGE, alt_text: nil, chunk_size_mb: nil, concurrency: 4) # => "tweet_image"
-      def validate_upload!(file_path, media_category, alt_text:, chunk_size_mb:, concurrency:)
-        validate_file_path!(file_path)
+      #   Uploader::Validator.validate_upload!(source, :TWEET_IMAGE, alt_text: nil, chunk_size_mb: nil, concurrency: 4) # => "tweet_image"
+      def validate_upload!(source, media_category, alt_text:, chunk_size_mb:, concurrency:)
+        validate_source!(source)
         validate_alt_text!(alt_text)
         validate_chunks!(chunk_size_mb:, concurrency:)
         validate_media_category!(media_category)
       end
 
-      # Validate that a file path exists, and that the file holds something to upload
+      # Validate that the media exists, and that it holds something to upload
       #
-      # An empty file would initialize an upload in chunks and finalize it without a chunk, or send a single request
+      # Empty media would initialize an upload in chunks and finalize it without a chunk, or send a single request
       # without media, for the API to refuse either.
+      #
+      # @api private
+      # @param source [Source] the media to validate
+      # @return [void]
+      # @raise [Errno::ENOENT] if the file does not exist
+      # @raise [ArgumentError] if the media is empty
+      # @example Validate the media of an upload
+      #   Uploader::Validator.validate_source!(source)
+      def validate_source!(source)
+        raise Errno::ENOENT, source.description unless source.exist?
+        raise ArgumentError, "#{source.description} is empty: there is nothing to upload" if source.size.zero?
+      end
+
+      # Validate that a file path exists, and that the file holds something to upload
       #
       # @api private
       # @param file_path [String, Pathname] the file path to validate
@@ -59,10 +74,7 @@ module X
       # @raise [ArgumentError] if the file is empty
       # @example Validate a file path
       #   Uploader::Validator.validate_file_path!("image.png")
-      def validate_file_path!(file_path)
-        raise Errno::ENOENT, File.path(file_path) unless File.exist?(file_path)
-        raise ArgumentError, "#{file_path} is empty: there is nothing to upload" if File.zero?(file_path)
-      end
+      def validate_file_path!(file_path) = validate_source!(Source::Path.new(file_path))
 
       # Validate that a file has one of the extensions an upload supports
       #
@@ -113,19 +125,19 @@ module X
       #
       # The API numbers no more than MAX_SEGMENTS segments, which an upload in more chunks would fail partway of.
       #
-      # A chunk size of nil is derived from the size of the file: a megabyte, as every upload in chunks used, or the
-      # size that uploads the file in MAX_SEGMENTS chunks, whichever is larger, so that a file of any size uploads.
+      # A chunk size of nil is derived from the size of the media: a megabyte, as every upload in chunks used, or the
+      # size that uploads the media in MAX_SEGMENTS chunks, whichever is larger, so that media of any size uploads.
       #
       # @api private
-      # @param file_path [String, Pathname] the path to the file to upload
+      # @param source [Source] the media to upload
       # @param chunk_size_mb [Float, Integer, nil] the size of each chunk in megabytes, or nil to derive one
       # @return [Integer] the size of each chunk in bytes, rounded up to a whole byte
       # @raise [Errno::ENOENT] if the file does not exist
       # @raise [ArgumentError] if chunks of the size given would be more than the API numbers
       # @example Derive the chunk size of a video
-      #   Uploader::Validator.validate_segments!("video.mp4", nil) # => 1048576
-      def validate_segments!(file_path, chunk_size_mb)
-        file_size = File.size(file_path)
+      #   Uploader::Validator.validate_segments!(source, nil) # => 1048576
+      def validate_segments!(source, chunk_size_mb)
+        file_size = source.size
         return [BYTES_PER_MB, (file_size.to_f / MAX_SEGMENTS).ceil].max if chunk_size_mb.nil?
 
         chunk_size = (chunk_size_mb * BYTES_PER_MB).ceil

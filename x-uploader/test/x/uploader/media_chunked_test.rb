@@ -84,13 +84,15 @@ module X
     private
 
     def append(chunk_size:)
-      Uploader.const_get(:Chunks).append(client: @client, file_path: VIDEO_FILE, chunk_size:, media: media_hash, boundary: TEST_BOUNDARY, concurrency: 4)
+      Uploader.const_get(:Chunks).append(client: @client, source: video_source, chunk_size:, media: media_hash, boundary: TEST_BOUNDARY, concurrency: 4)
     end
 
     def init
-      Uploader.const_get(:Chunks).init(client: @client, file_path: VIDEO_FILE, media_type: VIDEO_MIME_TYPE,
+      Uploader.const_get(:Chunks).init(client: @client, source: video_source, media_type: VIDEO_MIME_TYPE,
         media_category: Uploader::Media::TWEET_VIDEO)
     end
+
+    def video_source = Uploader.const_get(:Source).for(VIDEO_FILE)
 
     def media_hash = {"id" => TEST_MEDIA_ID}
     def json_headers = {"content-type" => "application/json"}

@@ -138,13 +138,13 @@ module X
 
     def test_a_chunk_size_of_a_megabyte_is_derived_for_a_file_the_api_numbers_the_segments_of
       with_file(BYTES_PER_MB + 1) do |path|
-        assert_equal BYTES_PER_MB, Uploader.const_get(:Validator).validate_segments!(path, nil)
+        assert_equal BYTES_PER_MB, Uploader.const_get(:Validator).validate_segments!(source(path), nil)
       end
     end
 
     def test_the_chunk_size_derived_for_a_large_file_uploads_it_in_the_segments_the_api_numbers
       with_file(LARGE_FILE_BYTES) do |path|
-        chunk_size = Uploader.const_get(:Validator).validate_segments!(path, nil)
+        chunk_size = Uploader.const_get(:Validator).validate_segments!(source(path), nil)
 
         assert_equal 1_153_434, chunk_size
         assert_operator (LARGE_FILE_BYTES.to_f / chunk_size).ceil, :<=, 1000
@@ -153,19 +153,19 @@ module X
 
     def test_a_chunk_size_given_is_taken_in_megabytes_and_rounded_up_to_a_whole_byte
       with_file(4000) do |path|
-        assert_equal [2_097_152, 1001], [Uploader.const_get(:Validator).validate_segments!(path, 2), Uploader.const_get(:Validator).validate_segments!(path, 1000.5 / BYTES_PER_MB)]
+        assert_equal [2_097_152, 1001], [Uploader.const_get(:Validator).validate_segments!(source(path), 2), Uploader.const_get(:Validator).validate_segments!(source(path), 1000.5 / BYTES_PER_MB)]
       end
     end
 
     def test_a_chunk_size_that_uploads_a_file_in_the_segments_the_api_numbers_exactly
       with_file(1000) do |path|
-        assert_equal 1, Uploader.const_get(:Validator).validate_segments!(path, 1.0 / BYTES_PER_MB)
+        assert_equal 1, Uploader.const_get(:Validator).validate_segments!(source(path), 1.0 / BYTES_PER_MB)
       end
     end
 
     def test_a_chunk_size_that_would_upload_a_file_in_more_segments_than_the_api_numbers
       with_file(1001) do |path|
-        error = assert_raises(ArgumentError) { Uploader.const_get(:Validator).validate_segments!(path, 1.0 / BYTES_PER_MB) }
+        error = assert_raises(ArgumentError) { Uploader.const_get(:Validator).validate_segments!(source(path), 1.0 / BYTES_PER_MB) }
 
         assert_includes error.message, "uploads 1001 bytes in more than the 1000 segments the API numbers"
       end
@@ -173,14 +173,14 @@ module X
 
     def test_a_chunk_size_of_a_megabyte_would_upload_a_large_file_in_more_segments_than_the_api_numbers
       with_file(LARGE_FILE_BYTES) do |path|
-        error = assert_raises(ArgumentError) { Uploader.const_get(:Validator).validate_segments!(path, 1) }
+        error = assert_raises(ArgumentError) { Uploader.const_get(:Validator).validate_segments!(source(path), 1) }
 
         assert_equal "chunk_size_mb of 1 uploads #{LARGE_FILE_BYTES} bytes in more than the 1000 segments the API numbers", error.message
       end
     end
 
     def test_validate_upload_gives_the_media_category_in_the_case_the_api_takes
-      assert_equal "tweet_image", Uploader.const_get(:Validator).validate_upload!("test/sample_files/sample.png", :TWEET_IMAGE,
+      assert_equal "tweet_image", Uploader.const_get(:Validator).validate_upload!(source("test/sample_files/sample.png"), :TWEET_IMAGE,
         alt_text: "A pixel", chunk_size_mb: nil, concurrency: 4)
     end
 
@@ -195,8 +195,11 @@ module X
     private
 
     def validate_upload(file_path, media_category: "tweet_image", alt_text: nil, chunk_size_mb: nil, concurrency: 4)
-      Uploader.const_get(:Validator).validate_upload!(file_path, media_category, alt_text:, chunk_size_mb:, concurrency:)
+      Uploader.const_get(:Validator).validate_upload!(source(file_path), media_category, alt_text:, chunk_size_mb:, concurrency:)
     end
+
+    # The media an upload reads, which the validator takes in place of a path
+    def source(file_path) = Uploader.const_get(:Source).for(file_path)
 
     # A sparse file of a size, which costs no disk of its own
     def with_file(size)
