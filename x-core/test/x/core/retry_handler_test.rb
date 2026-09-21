@@ -41,6 +41,16 @@ module X
       assert_equal [4, [1, 2, 4]], [@attempts, @sleeps]
     end
 
+    def test_takes_up_to_half_of_each_wait_off_at_random
+      assert_raises(NetworkError) { handle(Core::RetryHandler.new(max_retries: 3), random: 1.0) { fail_with(NetworkError) } }
+      assert_equal [4, [0.5, 1, 2]], [@attempts, @sleeps]
+    end
+
+    def test_takes_a_share_of_each_wait_off_in_proportion_to_the_random_number
+      assert_raises(NetworkError) { handle(Core::RetryHandler.new(max_retries: 2), random: 0.5) { fail_with(NetworkError) } }
+      assert_equal [3, [0.75, 1.5]], [@attempts, @sleeps]
+    end
+
     def test_raises_the_error_once_the_retries_run_out
       assert_raises(InternalServerError) { handle(Core::RetryHandler.new(max_retries: 2)) { fail_with(InternalServerError) } }
       assert_equal [3, [1, 2]], [@attempts, @sleeps]
@@ -58,8 +68,11 @@ module X
 
     private
 
-    def handle(handler, idempotent: true, &)
-      handler.stub(:sleep, ->(seconds) { @sleeps << seconds }) { handler.handle(idempotent:, &) }
+    # Run the block, collecting the waits, with the random share of each one fixed
+    def handle(handler, idempotent: true, random: 0.0, &)
+      handler.stub(:rand, random) do
+        handler.stub(:sleep, ->(seconds) { @sleeps << seconds }) { handler.handle(idempotent:, &) }
+      end
     end
 
     # Raise the given error, counting the attempt it ends

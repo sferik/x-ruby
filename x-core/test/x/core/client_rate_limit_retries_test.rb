@@ -61,8 +61,10 @@ module X
       {status: 429, headers: {"x-rate-limit-limit" => "50", "x-rate-limit-remaining" => "0", "x-rate-limit-reset" => Time.now.to_i.to_s}}
     end
 
+    # Collect the waits instead of taking them, with the random share of each one fixed at none
     def without_sleeping(client, &)
-      client.instance_variable_get(:@rate_limit_handler).stub(:sleep, ->(seconds) { @sleeps << seconds }, &)
+      handler = client.instance_variable_get(:@rate_limit_handler)
+      handler.stub(:rand, 0.0) { handler.stub(:sleep, ->(seconds) { @sleeps << seconds }, &) }
     end
   end
 end

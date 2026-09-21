@@ -57,11 +57,27 @@ module X
       assert_equal [4, [60, 120, 240]], [@attempts, @sleeps]
     end
 
+    def test_adds_a_random_share_of_five_seconds_to_each_wait
+      result = handle(Core::RateLimitHandler.new(max_rate_limit_retries: 2), random: 0.5) { (@attempts < 2) ? refuse(reset_in: 30) : @attempts += 1 }
+
+      assert_equal [3, [32.5, 32.5]], [result, @sleeps]
+    end
+
+    def test_measures_the_maximum_wait_against_the_reset_rather_than_the_random_share
+      handler = Core::RateLimitHandler.new(max_rate_limit_retries: 1, max_rate_limit_wait: 10)
+
+      assert_raises(TooManyRequests) { handle(handler, random: 1.0) { refuse(reset_in: 10) } }
+      assert_equal [2, [15]], [@attempts, @sleeps]
+    end
+
     private
 
-    def handle(handler, &)
+    # Run the block, collecting the waits, with the random share added to each one fixed
+    def handle(handler, random: 0.0, &)
       Time.stub(:now, Time.utc(1983, 11, 24)) do
-        handler.stub(:sleep, ->(seconds) { @sleeps << seconds }) { handler.handle(&) }
+        handler.stub(:rand, random) do
+          handler.stub(:sleep, ->(seconds) { @sleeps << seconds }) { handler.handle(&) }
+        end
       end
     end
 

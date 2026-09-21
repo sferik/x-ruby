@@ -93,11 +93,13 @@ module X
     # @param max_rate_limit_retries [Integer] the maximum number of times to retry a request refused for a rate limit,
     #   after waiting for the limit to reset
     # @param max_rate_limit_wait [Integer] the maximum number of seconds to wait for a rate limit to reset; a request
-    #   whose limit resets later raises TooManyRequests at once
+    #   whose limit resets later raises TooManyRequests at once, and a few seconds are added at random to each wait,
+    #   so that the requests one reset releases are not sent again in one burst
     # @param max_retries [Integer] the maximum number of times to send a request again after the API failed to answer
-    #   it, with a 5xx status, or after its answer never arrived, waiting a second before the first retry and twice as
-    #   long before each retry after; only a GET, PUT, or DELETE is sent again, since the API may have acted on a POST
-    #   whose answer never arrived
+    #   it, with a 5xx status, or after its answer never arrived, waiting up to a second before the first retry and up
+    #   to twice as long before each retry after, a random share of each wait taken off so that the requests one
+    #   failure of the API ended are not sent again together; only a GET, PUT, or DELETE is sent again, since the API
+    #   may have acted on a POST whose answer never arrived
     # @param on_response [#call, nil] a callable passed an X::Response after every request, failed ones included, and
     #   every object a stream delivers
     # @param on_token_refresh [#call, nil] a callable passed the OAuth 2.0 authenticator after each refresh, to store

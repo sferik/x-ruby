@@ -38,10 +38,10 @@ module X
 
       # Run a request, running it again after a failure of the API or of the network
       #
-      # A request is sent again while retries remain, after waiting a second before the first retry and twice as
-      # long before each retry after. Only an idempotent request is retried: the API may have acted on a POST whose
-      # answer never arrived, so sending that again could post twice. The block must build its request anew each
-      # time, so that each attempt is signed afresh.
+      # A request is sent again while retries remain, after waiting up to a second before the first retry and up to
+      # twice as long before each retry after. Only an idempotent request is retried: the API may have acted on a
+      # POST whose answer never arrived, so sending that again could post twice. The block must build its request
+      # anew each time, so that each attempt is signed afresh.
       #
       # @api private
       # @param idempotent [Boolean] whether sending the request again has the same effect as sending it once
@@ -59,9 +59,25 @@ module X
           retries += 1
           raise unless idempotent && retries <= max_retries
 
-          sleep(INITIAL_WAIT << (retries - 1))
+          sleep(wait_before_retry(retries))
           retry
         end
+      end
+
+      private
+
+      # The seconds to wait before a retry
+      #
+      # The wait doubles with each retry, and a random share of up to half of it is taken off. The share is what
+      # keeps the requests apart: a failure of the API fails every request in flight at once, and requests that
+      # waited the same time would be sent again together, to fail together once more.
+      #
+      # @api private
+      # @param retries [Integer] the number of the retry, counting from one
+      # @return [Float] the seconds to wait
+      def wait_before_retry(retries)
+        wait = INITIAL_WAIT << (retries - 1)
+        wait - (rand * wait / 2)
       end
     end
   end

@@ -17,6 +17,8 @@ module X
       # Seconds to wait before the first retry of a request refused without a Retry-After header or a reset time,
       # doubled for each retry after
       UNREPORTED_RESET_WAIT = 60
+      # The most seconds added at random to a wait, which keep apart the requests one reset releases
+      RESET_JITTER = 5
 
       # The maximum number of times to retry a request refused for a rate limit
       # @api private
@@ -52,6 +54,9 @@ module X
       # before the first retry, doubling the wait for each retry after, as X recommends. The block must build its
       # request anew each time, so that each attempt is signed afresh.
       #
+      # Every request of an app shares the app's limits, and so the time they reset, so a few seconds are added at
+      # random to each wait, to keep the requests one reset releases from being sent again in one burst.
+      #
       # @api private
       # @yield runs the request
       # @return [Object] what the block returns
@@ -72,10 +77,15 @@ module X
       private
 
       # The seconds to wait before a retry, raising the error if it may not retry
+      #
+      # The random share is added to the wait rather than taken off it, since a request sent before the limit
+      # resets is refused again, and so it is not counted against the maximum wait, which is the longest reset a
+      # request waits for.
+      #
       # @api private
       # @param error [TooManyRequests] the error the request raised
       # @param retries [Integer] the number of the retry, counting from one
-      # @return [Integer] the seconds the response asks the request to wait
+      # @return [Float] the seconds the response asks the request to wait, and a random share of RESET_JITTER
       # @raise [TooManyRequests] the error being rescued, if no retries remain or the wait is too long
       def wait_before_retry(error, retries)
         raise if retries > max_rate_limit_retries
@@ -83,7 +93,7 @@ module X
         wait = error.retry_after || UNREPORTED_RESET_WAIT << (retries - 1)
         raise if wait > max_rate_limit_wait
 
-        wait
+        wait + (rand * RESET_JITTER)
       end
     end
   end
