@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "x/core/errors/network_error"
+require "x/core/errors/server_error"
 require_relative "json_classes"
 require_relative "missing_data"
 require_relative "multipart"
