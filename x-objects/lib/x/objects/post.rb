@@ -13,7 +13,7 @@ require_relative "resource"
 module X
   # A post, also known as a tweet
   # @api public
-  class Post < Objects::Resource
+  class Post < Resource
     # Every public post field; the identifiers of referenced resources come with their expansions
     FIELDS = %w[attachments community_id context_annotations conversation_id created_at edit_controls entities geo id
       lang note_post possibly_sensitive public_metrics reply_settings source text withheld].freeze

@@ -7,7 +7,7 @@ require_relative "resource"
 module X
   # A community of users who post to one another
   # @api public
-  class Community < Objects::Resource
+  class Community < Resource
     # Every public community field
     FIELDS = %w[access created_at description id join_policy member_count name].freeze
     # Maximum number of communities per page of a search

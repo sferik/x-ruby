@@ -7,7 +7,7 @@ require_relative "resource"
 module X
   # A curated list of users
   # @api public
-  class List < Objects::Resource
+  class List < Resource
     # Every public list field
     FIELDS = %w[created_at description follower_count id member_count name private].freeze
     # Every expansion available on list endpoints

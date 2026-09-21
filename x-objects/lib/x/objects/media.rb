@@ -5,7 +5,7 @@ require_relative "resource"
 module X
   # A photo, video, or animated GIF attached to a post, which its media key identifies
   # @api public
-  class Media < Objects::Resource
+  class Media < Resource
     # Every public media field
     FIELDS = %w[alt_text duration_ms height media_key preview_image_url public_metrics type url variants width].freeze
 

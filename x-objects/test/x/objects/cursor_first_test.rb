@@ -11,7 +11,7 @@ module X
     cover Objects::PostCollections
     cover User
     cover X::Objects::UserFinders
-    cover Objects::Resource
+    cover Resource
     cover Objects::Finders
 
     def setup

@@ -12,7 +12,7 @@ module X
 
     # The resources on this page
     # @api public
-    # @return [Array<Objects::Resource>] the resources
+    # @return [Array<Resource>] the resources
     # @example Get the resources on a page
     #   page.items
     attr_reader :items
@@ -34,7 +34,7 @@ module X
     # Initialize a new page
     #
     # @api public
-    # @param items [Array<Objects::Resource>] the resources on the page
+    # @param items [Array<Resource>] the resources on the page
     # @param meta [Hash] the pagination metadata
     # @param problems [Array<Problem>] the problems the page's response reported
     # @return [Page] a new page
@@ -50,8 +50,8 @@ module X
     # @!method each
     #   Iterate over the resources on this page
     #   @api public
-    #   @yield [Objects::Resource] each resource
-    #   @return [Enumerator, Array<Objects::Resource>] an enumerator without a block, otherwise the resources
+    #   @yield [Resource] each resource
+    #   @return [Enumerator, Array<Resource>] an enumerator without a block, otherwise the resources
     #   @example Iterate over a page
     #     page.each { |user| puts user.username }
     def_delegator :items, :each
@@ -79,7 +79,7 @@ module X
     # The resources of this page, as a JSON encoder and ActiveSupport read them
     #
     # @api public
-    # @return [Array<Objects::Resource>] the resources
+    # @return [Array<Resource>] the resources
     # @example Serialize a page
     #   page.as_json
     def as_json(*) = items

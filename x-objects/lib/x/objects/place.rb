@@ -5,7 +5,7 @@ require_relative "resource"
 module X
   # A place tagged in a post
   # @api public
-  class Place < Objects::Resource
+  class Place < Resource
     # Every public place field
     FIELDS = %w[contained_within country country_code full_name geo id name place_type].freeze
 

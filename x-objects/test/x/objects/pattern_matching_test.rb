@@ -6,7 +6,7 @@ module X
   class PatternMatchingTest < Minitest::Test
     cover Objects::Identity
     cover Objects::Attributes
-    cover Objects::Resource
+    cover Resource
     cover Post
     cover User
 
@@ -85,7 +85,7 @@ module X
     end
 
     def test_a_resource_without_aliases_declares_none
-      assert_empty Objects::Resource.attribute_aliases
+      assert_empty Resource.attribute_aliases
       assert_empty Class.new { extend Objects::Attributes }.attribute_aliases
       assert_empty List.attribute_aliases
     end
@@ -99,7 +99,7 @@ module X
     end
 
     def test_every_resource_declares_its_identifier_and_its_own_attributes
-      assert_equal [:id], Objects::Resource.attribute_names
+      assert_equal [:id], Resource.attribute_names
       assert_equal :id, User.attribute_names.first
       assert_includes User.attribute_names, :username
       refute_includes Post.attribute_names, :username

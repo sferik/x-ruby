@@ -7,7 +7,7 @@ module X
     cover Cursor
     cover Objects::Pages
     cover Objects::Batch
-    cover Objects::Resource
+    cover Resource
     cover User
     cover List
     cover Community

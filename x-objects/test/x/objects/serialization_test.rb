@@ -4,7 +4,8 @@ require_relative "../../test_helper"
 
 module X
   class SerializationTest < Minitest::Test
-    cover Objects::Resource
+    cover Resource
+    cover Objects::Serialization
     cover Problem
     cover Usage
     cover Page

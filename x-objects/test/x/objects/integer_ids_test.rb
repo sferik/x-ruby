@@ -6,7 +6,7 @@ module X
   class IntegerIdsTest < Minitest::Test
     cover Objects::Attributes
     cover Objects::Utils
-    cover Objects::Resource
+    cover Resource
     cover Objects::Finders
     cover Place
     cover Space

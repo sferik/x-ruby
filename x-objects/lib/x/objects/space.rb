@@ -11,7 +11,7 @@ module X
   # user.
   #
   # @api public
-  class Space < Objects::Resource
+  class Space < Resource
     # Every public space field
     FIELDS = %w[created_at ended_at id is_ticketed lang participant_count scheduled_start started_at state
       subscriber_count title updated_at].freeze

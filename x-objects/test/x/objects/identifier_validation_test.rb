@@ -5,7 +5,7 @@ require_relative "../../test_helper"
 module X
   class IdentifierValidationTest < Minitest::Test
     cover Objects::Utils
-    cover Objects::Resource
+    cover Resource
     cover Objects::Finders
     cover Objects::Relationships
     cover Objects::API::Actions::Relationships

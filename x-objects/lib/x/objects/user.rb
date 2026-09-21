@@ -9,7 +9,7 @@ require_relative "user_finders"
 module X
   # A user account
   # @api public
-  class User < Objects::Resource
+  class User < Resource
     include Objects::Relationships
     extend Objects::UserFinders
 

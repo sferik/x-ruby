@@ -7,7 +7,7 @@ require_relative "resource"
 module X
   # A direct message event
   # @api public
-  class DirectMessage < Objects::Resource
+  class DirectMessage < Resource
     extend Objects::DirectMessageConversations
 
     # The direct message event fields the object layer requests; the sender, the participants, and the posts a

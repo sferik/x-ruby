@@ -112,7 +112,7 @@ module X
     # Iterate over every resource, fetching pages as needed
     #
     # @api public
-    # @yield [Objects::Resource] each resource
+    # @yield [Resource] each resource
     # @return [Enumerator, Cursor] an enumerator without a block, otherwise self
     # @example Print every follower
     #   user.followers.each { |follower| puts follower.username }
@@ -192,7 +192,7 @@ module X
     #
     # @api public
     # @param count [Integer, nil] the number of resources, or nil for the first resource alone
-    # @return [Objects::Resource, Array<Objects::Resource>, nil] the first resource, or the first resources
+    # @return [Resource, Array<Resource>, nil] the first resource, or the first resources
     # @raise [ArgumentError] if the count is negative
     # @example Read ten followers in one request for ten users
     #   user.followers.first(10)
@@ -208,7 +208,7 @@ module X
     #
     # @api public
     # @param count [Integer] the number of resources
-    # @return [Array<Objects::Resource>] the first resources
+    # @return [Array<Resource>] the first resources
     # @raise [TypeError] if the count is not a number
     # @example Read three followers in one request for three users
     #   user.followers.take(3)
@@ -220,7 +220,7 @@ module X
     #
     # @api public
     # @param pattern [Object] a pattern each resource is matched against
-    # @yield [Objects::Resource] each resource
+    # @yield [Resource] each resource
     # @return [Boolean] true if any resource matches
     # @example Check whether a user has any followers
     #   user.followers.any?
@@ -236,7 +236,7 @@ module X
     #
     # @api public
     # @param pattern [Object] a pattern each resource is matched against
-    # @yield [Objects::Resource] each resource
+    # @yield [Resource] each resource
     # @return [Boolean] true if no resource matches
     # @example Check whether a user follows nobody
     #   user.following.none?
@@ -262,7 +262,7 @@ module X
     #
     # @api public
     # @param pattern [Object] a pattern each resource is matched against
-    # @yield [Objects::Resource] each resource
+    # @yield [Resource] each resource
     # @return [Boolean] true if exactly one resource matches
     # @example Check whether a list has a single member
     #   list.members.one?
@@ -302,7 +302,7 @@ module X
     # it returns, so serialize what first or take read instead when the whole collection is not wanted.
     #
     # @api public
-    # @return [Array<Objects::Resource>] the resources
+    # @return [Array<Resource>] the resources
     # @example Serialize the first ten followers rather than every one of them
     #   user.followers.first(10).as_json
     def as_json(*) = to_a

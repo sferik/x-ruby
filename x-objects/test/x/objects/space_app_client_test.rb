@@ -8,7 +8,7 @@ module X
     cover Cursor
     cover Objects::Finders
     cover Objects::Pages
-    cover Objects::Resource
+    cover Resource
 
     # A client with an app-only client, as an X::Client that signs with OAuth 1.0a has
     class UserClient < FakeClient

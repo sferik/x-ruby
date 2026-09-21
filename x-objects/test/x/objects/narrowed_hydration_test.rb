@@ -5,7 +5,7 @@ require_relative "../../test_helper"
 module X
   class NarrowedHydrationTest < Minitest::Test
     cover Objects::Finders
-    cover Objects::Resource
+    cover Resource
 
     def setup
       @client = FakeClient.new

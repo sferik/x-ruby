@@ -5,7 +5,7 @@ require_relative "resource"
 module X
   # A poll attached to a post
   # @api public
-  class Poll < Objects::Resource
+  class Poll < Resource
     # Every public poll field
     FIELDS = %w[duration_minutes end_datetime id options voting_status].freeze
 

@@ -6,7 +6,7 @@ module X
   class CursorCountTest < Minitest::Test
     cover Cursor
     cover Objects::Pages
-    cover Objects::Resource
+    cover Resource
     cover List
     cover Post
     cover User

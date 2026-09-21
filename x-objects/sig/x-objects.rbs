@@ -362,62 +362,6 @@ module X
       def periods: (Array[Hash[String, untyped]] bodies) -> Hash[Time, Integer]
     end
 
-    class Resource
-      extend Attributes
-      extend Finders
-      include Identity
-      include Serialization
-
-      MAX_BATCH_SIZE: Integer
-      DEFAULT_CONCURRENCY: Integer
-
-      attr_reader attrs: attrs
-      attr_reader client: _Client?
-      private attr_reader includes: Includes
-
-      @hydrated: bool
-      @batch: Batch?
-      @memo: Memo
-
-      def self.endpoint: () -> String?
-      def self.id_key: () -> String
-      def self.id_type: () -> Symbol
-      def self.includes_key: () -> String?
-      def self.fields_key: () -> String?
-      def self.fully_requested_by?: (Hash[String, untyped] query) -> bool
-      def self.default_params: () -> Hash[String, Array[String]]
-      def self.hydratable?: () -> bool
-      def self.batchable?: () -> bool
-      def self.batch_key: () -> Symbol
-      def self.endpoint!: () -> String
-      def self.from_id: (id id, ?client: _Client?, ?batch: Batch?) -> Resource
-      def self.from_response: (body body, client: _Client?, ?hydrated: bool) -> (Resource | Array[Resource])?
-      def self.resource_from_response: (body body, client: _Client?, ?hydrated: bool) -> Resource?
-      def self.collection_from_response: (body body, client: _Client?, ?hydrated: bool) -> Array[Resource]
-
-      def initialize: (Hash[untyped, untyped] attrs, ?client: _Client?, ?includes: Includes, ?hydrated: bool, ?batch: Batch?) -> void
-      def id: () -> (Integer | String)
-      def to_h: () -> attrs
-      def problems: () -> Array[Problem]
-      def hydrated?: () -> bool
-      def stub?: () -> bool
-      def hydrate: () -> Resource?
-      def refresh: () -> Resource?
-      def hydrated_with: (Resource? resource) -> Resource?
-      def marshal_dump: () -> attrs
-      def marshal_load: (attrs attrs) -> void
-      def inspect: () -> String
-
-      private
-      def identify: () -> String
-      def fetch: () -> Resource?
-      def look_up: () -> Resource?
-      def client!: () -> _Client
-      def resolve: (singleton(Resource) klass, untyped id) -> Resource?
-      def cursor: (singleton(Resource) klass, String path, max_results: Integer?, ?min_results: Integer, ?total: Symbol?, ?app_only: bool, **untyped params) -> Cursor[untyped]
-      def counter: (Symbol? total) -> (^() -> Integer?)?
-    end
-
     module PostCollections : Resource
       def liked_by: (**untyped params) -> Cursor[User]
       def reposted_by: (**untyped params) -> Cursor[User]
@@ -606,7 +550,63 @@ module X
     end
   end
 
-  class Page[R < Objects::Resource = Objects::Resource]
+  class Resource
+    extend Objects::Attributes
+    extend Objects::Finders
+    include Objects::Identity
+    include Objects::Serialization
+
+    MAX_BATCH_SIZE: Integer
+    DEFAULT_CONCURRENCY: Integer
+
+    attr_reader attrs: Objects::attrs
+    attr_reader client: Objects::_Client?
+    private attr_reader includes: Objects::Includes
+
+    @hydrated: bool
+    @batch: Objects::Batch?
+    @memo: Objects::Memo
+
+    def self.endpoint: () -> String?
+    def self.id_key: () -> String
+    def self.id_type: () -> Symbol
+    def self.includes_key: () -> String?
+    def self.fields_key: () -> String?
+    def self.fully_requested_by?: (Hash[String, untyped] query) -> bool
+    def self.default_params: () -> Hash[String, Array[String]]
+    def self.hydratable?: () -> bool
+    def self.batchable?: () -> bool
+    def self.batch_key: () -> Symbol
+    def self.endpoint!: () -> String
+    def self.from_id: (Objects::id id, ?client: Objects::_Client?, ?batch: Objects::Batch?) -> Resource
+    def self.from_response: (Objects::body body, client: Objects::_Client?, ?hydrated: bool) -> (Resource | Array[Resource])?
+    def self.resource_from_response: (Objects::body body, client: Objects::_Client?, ?hydrated: bool) -> Resource?
+    def self.collection_from_response: (Objects::body body, client: Objects::_Client?, ?hydrated: bool) -> Array[Resource]
+
+    def initialize: (Hash[untyped, untyped] attrs, ?client: Objects::_Client?, ?includes: Objects::Includes, ?hydrated: bool, ?batch: Objects::Batch?) -> void
+    def id: () -> (Integer | String)
+    def to_h: () -> Objects::attrs
+    def problems: () -> Array[Problem]
+    def hydrated?: () -> bool
+    def stub?: () -> bool
+    def hydrate: () -> Resource?
+    def refresh: () -> Resource?
+    def hydrated_with: (Resource? resource) -> Resource?
+    def marshal_dump: () -> Objects::attrs
+    def marshal_load: (Objects::attrs attrs) -> void
+    def inspect: () -> String
+
+    private
+    def identify: () -> String
+    def fetch: () -> Resource?
+    def look_up: () -> Resource?
+    def client!: () -> Objects::_Client
+    def resolve: (singleton(Resource) klass, untyped id) -> Resource?
+    def cursor: (singleton(Resource) klass, String path, max_results: Integer?, ?min_results: Integer, ?total: Symbol?, ?app_only: bool, **untyped params) -> Cursor[untyped]
+    def counter: (Symbol? total) -> (^() -> Integer?)?
+  end
+
+  class Page[R < Resource = Resource]
     extend Forwardable
     include Enumerable[R]
 
@@ -623,12 +623,12 @@ module X
     def to_json: (?JSON::State? state) -> String
   end
 
-  class Cursor[R < Objects::Resource = Objects::Resource]
+  class Cursor[R < Resource = Resource]
     include Enumerable[R]
 
     DEFAULT_TOKEN_PARAM: String
 
-    attr_reader resource_class: singleton(Objects::Resource)
+    attr_reader resource_class: singleton(Resource)
     attr_reader client: Objects::_Client
     attr_reader path: String
     attr_reader params: Objects::query
@@ -640,7 +640,7 @@ module X
     @total: (^() -> Integer?)?
     @pages: Objects::Pages
 
-    def initialize: (singleton(Objects::Resource) resource_class, String path, client: Objects::_Client, ?params: Objects::params, ?prefetch: bool, ?token_param: String, ?min_results: Integer, ?app_only: bool, ?total: (^() -> Integer?)?) -> void
+    def initialize: (singleton(Resource) resource_class, String path, client: Objects::_Client, ?params: Objects::params, ?prefetch: bool, ?token_param: String, ?min_results: Integer, ?app_only: bool, ?total: (^() -> Integer?)?) -> void
     def prefetch?: () -> bool
     def app_only?: () -> bool
     def each: () { (R) -> void } -> self
@@ -669,7 +669,7 @@ module X
     def id_only_params: () -> Objects::params
   end
 
-  class Media < Objects::Resource
+  class Media < Resource
     extend Objects::_Lookup[Media]
     include Objects::_Hydration[Media]
     FIELDS: Array[String]
@@ -701,7 +701,7 @@ module X
     def view_count: () -> Integer?
   end
 
-  class Poll < Objects::Resource
+  class Poll < Resource
     extend Objects::_Lookup[Poll]
     include Objects::_Hydration[Poll]
     FIELDS: Array[String]
@@ -715,7 +715,7 @@ module X
     def voting_status: () -> String?
   end
 
-  class Place < Objects::Resource
+  class Place < Resource
     extend Objects::_Lookup[Place]
     include Objects::_Hydration[Place]
     FIELDS: Array[String]
@@ -733,7 +733,7 @@ module X
     def geo: () -> Hash[String, untyped]?
   end
 
-  class User < Objects::Resource
+  class User < Resource
     extend Objects::_Lookup[User]
     include Objects::_Hydration[User]
     include Objects::Relationships
@@ -810,7 +810,7 @@ module X
     def pinned_lists: (**untyped params) -> Cursor[List]
   end
 
-  class Post < Objects::Resource
+  class Post < Resource
     extend Objects::_Lookup[Post]
     extend Objects::PostCounts
     extend Objects::PostWrites
@@ -886,7 +886,7 @@ module X
 
   class Tweet = Post
 
-  class Community < Objects::Resource
+  class Community < Resource
     extend Objects::_Lookup[Community]
     include Objects::_Hydration[Community]
     FIELDS: Array[String]
@@ -909,7 +909,7 @@ module X
     def uri: () -> URI::Generic
   end
 
-  class List < Objects::Resource
+  class List < Resource
     extend Objects::_Lookup[List]
     include Objects::_Hydration[List]
     FIELDS: Array[String]
@@ -951,7 +951,7 @@ module X
     def listed_count_of: (Objects::id user) -> Integer?
   end
 
-  class DirectMessage < Objects::Resource
+  class DirectMessage < Resource
     extend Objects::DirectMessageConversations
     extend Objects::_Lookup[DirectMessage]
     include Objects::_Hydration[DirectMessage]
@@ -990,7 +990,7 @@ module X
     def delete: () -> bool
   end
 
-  class Space < Objects::Resource
+  class Space < Resource
     extend Objects::_Lookup[Space]
     include Objects::_Hydration[Space]
     FIELDS: Array[String]
