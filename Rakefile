@@ -169,4 +169,60 @@ task yardstick: SUBGEMS.map { |name| "yardstick:#{name}" } + ["yardstick:x"]
 desc "Run linters"
 task lint: %i[rubocop standard]
 
-task default: %i[test lint mutant steep yardstick]
+require "yaml"
+
+# The directory each gem keeps its signatures in, by the name of the gem
+SIGNATURE_DIRS = GEMS.to_h { |name, dir| [name, File.expand_path("#{dir}/sig", __dir__)] }.freeze
+
+# The signature files a gem ships, as its gemspec globs them
+def shipped_signatures(name)
+  Dir.glob("#{SIGNATURE_DIRS.fetch(name)}/*.rbs").sort
+end
+
+# The libraries a gem's manifest declares, which rbs collection loads with its signatures
+def manifest_dependencies(name)
+  YAML.load_file(File.join(SIGNATURE_DIRS.fetch(name), "manifest.yaml")).fetch("dependencies").map { |dependency| dependency.fetch("name") }
+end
+
+# The signatures to load for a gem, and the libraries to load them with
+#
+# A gem of this repository contributes the signatures it ships, and the libraries its own manifest declares, as
+# rbs collection reads the manifest of each gem it installs.
+#
+# @return [Array(Array<String>, Array<String>)] the signature files and the library names
+def signature_sources(name, seen = [])
+  return [[], []] if seen.include?(name)
+
+  seen << name
+  manifest_dependencies(name).each_with_object([shipped_signatures(name), []]) do |dependency, (files, libraries)|
+    next libraries << dependency unless SIGNATURE_DIRS.key?(dependency)
+
+    dependency_files, dependency_libraries = signature_sources(dependency, seen)
+    files.concat(dependency_files)
+    libraries.concat(dependency_libraries)
+  end
+end
+
+# Check that the signatures a gem ships refer to nothing the libraries its manifest declares leave undefined
+#
+# Code that depends on the gem loads them through rbs collection, which reads the manifest for the libraries to load
+# them with, so a library the manifest leaves out is one the signatures do not resolve without. An error that names
+# the file of another library is that library's to fix, and is left to it.
+#
+# @return [Boolean] true if every type the signatures refer to resolves
+def signatures_resolve?(name)
+  files, libraries = signature_sources(name)
+  arguments = files.flat_map { |file| ["-I", file] } + libraries.flat_map { |library| ["-r", library] }
+  output = IO.popen(["rbs", *arguments, "validate"], err: %i[child out], &:read)
+  errors = output.lines.grep(/#{Regexp.escape(SIGNATURE_DIRS.fetch(name))}/)
+  errors.each { |error| warn error }
+  errors.empty?
+end
+
+desc "Check that the signatures each gem ships resolve against the libraries its manifest declares"
+task :signatures do
+  unresolved = GEMS.each_key.reject { |name| signatures_resolve?(name) }
+  abort "Declare what the signatures of #{unresolved.join(", ")} refer to in sig/manifest.yaml" unless unresolved.empty?
+end
+
+task default: %i[test lint mutant steep yardstick signatures]

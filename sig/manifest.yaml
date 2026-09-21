@@ -1,0 +1,5 @@
+# The libraries the signatures of x refer to, which rbs collection loads for code that depends on it
+dependencies:
+  - name: x-core
+  - name: x-objects
+  - name: x-uploader

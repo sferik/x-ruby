@@ -3,20 +3,24 @@ on:
   push:
     paths:
       - "**.rb"
+      - "**.rbs"
       - "**/Gemfile"
       - "**/Rakefile"
       - "**/Steepfile"
       - "**.gemspec"
+      - "**/sig/manifest.yaml"
       - "bin/**"
       - ".rubocop.yml"
       - ".github/workflows/lint.yml"
   pull_request:
     paths:
       - "**.rb"
+      - "**.rbs"
       - "**/Gemfile"
       - "**/Rakefile"
       - "**/Steepfile"
       - "**.gemspec"
+      - "**/sig/manifest.yaml"
       - "bin/**"
       - ".rubocop.yml"
       - ".github/workflows/lint.yml"
@@ -30,3 +34,12 @@ jobs:
         ruby-version: "3.4"
         bundler-cache: true
     - run: bundle exec rake lint
+  signatures:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v7
+    - uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: "3.4"
+        bundler-cache: true
+    - run: bundle exec rake signatures

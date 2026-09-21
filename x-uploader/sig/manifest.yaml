@@ -1,3 +1,4 @@
-# The standard libraries the signatures of x-uploader refer to, which rbs collection loads for code that depends on it
+# The libraries the signatures of x-uploader refer to, which rbs collection loads for code that depends on it
 dependencies:
   - name: json
+  - name: x-core
