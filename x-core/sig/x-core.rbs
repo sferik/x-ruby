@@ -159,14 +159,14 @@ module X
 
     class ResponseParser
       STATUS_CLASS_ERRORS: Hash[Integer, singleton(ClientError) | singleton(ServerError)]
-      ERROR_MAP: Hash[Integer, singleton(BadGateway) | singleton(BadRequest) | singleton(Conflict) | singleton(Forbidden) | singleton(GatewayTimeout) | singleton(Gone) | singleton(InternalServerError) | singleton(NotAcceptable) | singleton(NotFound) | singleton(PayloadTooLarge) | singleton(ServiceUnavailable) | singleton(TooManyRequests) | singleton(Unauthorized) | singleton(UnprocessableEntity)]
+      ERROR_MAP: Hash[Integer, singleton(BadGateway) | singleton(BadRequest) | singleton(Conflict) | singleton(Forbidden) | singleton(GatewayTimeout) | singleton(Gone) | singleton(InternalServerError) | singleton(MethodNotAllowed) | singleton(NotAcceptable) | singleton(NotFound) | singleton(PayloadTooLarge) | singleton(RequestTimeout) | singleton(ServiceUnavailable) | singleton(TooManyRequests) | singleton(Unauthorized) | singleton(UnavailableForLegalReasons) | singleton(UnprocessableEntity) | singleton(UnsupportedMediaType)]
 
       def parse: (response: Net::HTTPResponse, ?array_class: Class?, ?object_class: untyped, ?client: Client?) -> untyped
       def decode: (String json, ?array_class: Class?, ?object_class: untyped, ?client: Client?) -> untyped
 
       private
       def error: (Net::HTTPResponse response) -> HTTPError
-      def error_class: (Net::HTTPResponse response) -> (singleton(HTTPError) | singleton(BadGateway) | singleton(BadRequest) | singleton(Conflict) | singleton(Forbidden) | singleton(GatewayTimeout) | singleton(Gone) | singleton(InternalServerError) | singleton(NotAcceptable) | singleton(NotFound) | singleton(PayloadTooLarge) | singleton(ServiceUnavailable) | singleton(TooManyRequests) | singleton(Unauthorized) | singleton(UnprocessableEntity))
+      def error_class: (Net::HTTPResponse response) -> (singleton(HTTPError) | singleton(BadGateway) | singleton(BadRequest) | singleton(Conflict) | singleton(Forbidden) | singleton(GatewayTimeout) | singleton(Gone) | singleton(InternalServerError) | singleton(MethodNotAllowed) | singleton(NotAcceptable) | singleton(NotFound) | singleton(PayloadTooLarge) | singleton(RequestTimeout) | singleton(ServiceUnavailable) | singleton(TooManyRequests) | singleton(Unauthorized) | singleton(UnavailableForLegalReasons) | singleton(UnprocessableEntity) | singleton(UnsupportedMediaType))
     end
 
     class StreamParser
@@ -486,6 +486,9 @@ module X
   class InternalServerError < ServerError
   end
 
+  class MethodNotAllowed < ClientError
+  end
+
   class NetworkError < Error
   end
 
@@ -498,6 +501,9 @@ module X
   class PayloadTooLarge < ClientError
   end
 
+  class RequestTimeout < ClientError
+  end
+
   class ServerError < HTTPError
   end
 
@@ -505,6 +511,12 @@ module X
   end
 
   class TooManyRedirects < Error
+  end
+
+  class UnavailableForLegalReasons < ClientError
+  end
+
+  class UnsupportedMediaType < ClientError
   end
 
   class UnsupportedOperation < Error

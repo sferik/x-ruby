@@ -11,13 +11,17 @@ require_relative "errors/forbidden"
 require_relative "errors/gateway_timeout"
 require_relative "errors/gone"
 require_relative "errors/internal_server_error"
+require_relative "errors/method_not_allowed"
 require_relative "errors/not_acceptable"
 require_relative "errors/not_found"
 require_relative "errors/payload_too_large"
+require_relative "errors/request_timeout"
 require_relative "errors/service_unavailable"
 require_relative "errors/too_many_requests"
 require_relative "errors/unauthorized"
+require_relative "errors/unavailable_for_legal_reasons"
 require_relative "errors/unprocessable_entity"
+require_relative "errors/unsupported_media_type"
 
 module X
   module Core
@@ -33,12 +37,16 @@ module X
         401 => Unauthorized,
         403 => Forbidden,
         404 => NotFound,
+        405 => MethodNotAllowed,
         406 => NotAcceptable,
+        408 => RequestTimeout,
         409 => Conflict,
         410 => Gone,
         413 => PayloadTooLarge,
+        415 => UnsupportedMediaType,
         422 => UnprocessableEntity,
         429 => TooManyRequests,
+        451 => UnavailableForLegalReasons,
         500 => InternalServerError,
         502 => BadGateway,
         503 => ServiceUnavailable,
