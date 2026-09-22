@@ -166,7 +166,9 @@ module X
 
     # Close the connections kept open between requests
     #
-    # A later request opens a connection again. Connections also close when the connection is garbage collected.
+    # A later request opens a connection again. Nothing else closes them: the sockets of a connection that is
+    # dropped rather than closed are shut as the garbage collector reclaims them, at a time the process does not
+    # choose and without the shutdown this performs.
     #
     # @api public
     # @return [void]
