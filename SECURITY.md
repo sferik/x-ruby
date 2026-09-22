@@ -31,7 +31,7 @@ than here.
 ## Handling credentials
 
 The gems hold API keys, access tokens, and bearer tokens for as long as a client lives, and send them in the
-`Authorization` header of every request. Two things are worth knowing:
+`Authorization` header of every request. Three things are worth knowing:
 
 * `X::Client#inspect` prints the base URL and the class of the authenticator, and no token or secret, so a client
   is safe to log or to show in a backtrace. An OAuth 2.0 authenticator adds its client ID and expiration time, which
@@ -39,6 +39,12 @@ The gems hold API keys, access tokens, and bearer tokens for as long as a client
 * `debug_output` is not. It writes every request and response to the IO it is given, headers included, so it writes
   the `Authorization` header of each request, and the tokens in the body of an OAuth 2.0 token refresh. Send it to a
   file you control, never to a log that is shipped elsewhere, and leave it unset in production.
+* A request that leaves the origin of the `base_url`, and a redirect that leads off it, is sent without the
+  `Authorization` header the authenticator signs and without any `Authorization`, `Cookie`, or
+  `Proxy-Authorization` header of the client or the request. Those three names are the whole of what is dropped. A
+  credential carried in a header of another name, such as one a gateway of your own reads, is sent wherever the
+  request goes, so pass it to the request that needs it rather than to `X::Client.new`, which sends the headers it
+  is given with every request the client makes.
 
 An OAuth 2.0 refresh token is accepted once: a refresh returns a new one, and `on_token_refresh` is passed the
 authenticator after each refresh so that the new tokens can be stored. Dropping them leaves the stored refresh token
