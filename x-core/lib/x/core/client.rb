@@ -99,8 +99,9 @@ module X
     #   it, with a 5xx status, or after its answer never arrived, which is twice by default and is 0 for a client
     #   that raises at once; a retry waits up to a second before the first and up to twice as long before each after,
     #   a random share of each wait taken off so that the requests one failure of the API ended are not sent again
-    #   together; only a GET, PUT, or DELETE is sent again, since the API may have acted on a POST whose answer never
-    #   arrived
+    #   together, or for as long as the response asks when it carries a Retry-After header, whichever is longer, and
+    #   a response that asks for longer than a minute raises at once; only a GET, PUT, or DELETE is sent again, since
+    #   the API may have acted on a POST whose answer never arrived
     # @param on_response [#call, nil] a callable passed an X::Response after every request, failed ones included, and
     #   every object a stream delivers
     # @param on_token_refresh [#call, nil] a callable passed the OAuth 2.0 authenticator after each refresh, to store

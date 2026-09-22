@@ -71,6 +71,38 @@ module X
       assert_equal [1, []], [@attempts, @sleeps]
     end
 
+    def test_waits_as_long_as_the_response_asks
+      assert_raises(ServiceUnavailable) { handle(Core::RetryHandler.new(max_retries: 2)) { fail_with(ServiceUnavailable, retry_after: "30") } }
+      assert_equal [3, [30, 30]], [@attempts, @sleeps]
+    end
+
+    def test_waits_out_the_backoff_when_it_is_longer_than_the_wait_the_response_asks_for
+      assert_raises(ServiceUnavailable) { handle(Core::RetryHandler.new(max_retries: 3)) { fail_with(ServiceUnavailable, retry_after: "3") } }
+      assert_equal [4, [3, 3, 4]], [@attempts, @sleeps]
+    end
+
+    def test_waits_until_the_time_the_response_names
+      Time.stub(:now, Time.utc(1983, 11, 24)) do
+        assert_raises(ServiceUnavailable) { handle(Core::RetryHandler.new(max_retries: 1)) { fail_with(ServiceUnavailable, retry_after: (Time.now + 45).httpdate) } }
+      end
+      assert_equal [2, [45]], [@attempts, @sleeps]
+    end
+
+    def test_raises_at_once_for_a_response_that_asks_for_a_longer_wait_than_a_request_waits_out
+      assert_raises(ServiceUnavailable) { handle(Core::RetryHandler.new(max_retries: 2)) { fail_with(ServiceUnavailable, retry_after: "61") } }
+      assert_equal [1, []], [@attempts, @sleeps]
+    end
+
+    def test_waits_out_the_longest_wait_a_response_may_ask_for
+      assert_raises(ServiceUnavailable) { handle(Core::RetryHandler.new(max_retries: 1)) { fail_with(ServiceUnavailable, retry_after: "60") } }
+      assert_equal [2, [60]], [@attempts, @sleeps]
+    end
+
+    def test_backs_off_after_a_response_that_asks_for_no_wait
+      assert_raises(ServiceUnavailable) { handle(Core::RetryHandler.new(max_retries: 1)) { fail_with(ServiceUnavailable, retry_after: "whenever you like") } }
+      assert_equal [2, [1]], [@attempts, @sleeps]
+    end
+
     private
 
     # Run the block, collecting the waits, with the random share of each one fixed
@@ -81,11 +113,13 @@ module X
     end
 
     # Raise the given error, counting the attempt it ends
-    def fail_with(error_class)
+    def fail_with(error_class, retry_after: nil)
       @attempts += 1
       raise error_class, "boom" if error_class.equal?(NetworkError)
 
-      raise error_class.new(http_response: Net::HTTPResponse.new("1.1", status_of(error_class), "Boom"))
+      response = Net::HTTPResponse.new("1.1", status_of(error_class), "Boom")
+      response["retry-after"] = retry_after unless retry_after.nil?
+      raise error_class.new(http_response: response)
     end
 
     def status_of(error_class)

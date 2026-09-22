@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "json"
+require "time"
 require_relative "error"
 require_relative "../problem"
 require_relative "../response_headers"
@@ -22,6 +23,12 @@ module X
     # The keys of a body that describes the failure itself, rather than naming the errors of the request
     PROBLEM_KEYS = %w[title detail type error].freeze
     private_constant :PROBLEM_KEYS
+    # The header that says how long to wait before sending the request again
+    RETRY_AFTER_HEADER = "retry-after"
+    private_constant :RETRY_AFTER_HEADER
+    # The value of a Retry-After header that counts seconds, rather than naming the time to wait until
+    RETRY_AFTER_SECONDS = /\A\d+\z/
+    private_constant :RETRY_AFTER_SECONDS
 
     # The response itself, as the client received it
     #
@@ -85,7 +92,35 @@ module X
     #   logger.error(error.body)
     def body = http_response.body
 
+    # The seconds the response asks a request to wait before it is sent again
+    #
+    # The API sends a Retry-After header with a request it refused for a rate limit, and with some of the responses
+    # of a failure of its own, such as a 503 that names the time its endpoint is expected back. The header counts
+    # the seconds from when the response was sent, or names the time to wait until. A client waits it out before it
+    # sends an idempotent request again, up to a minute; see {Client#initialize}.
+    #
+    # @api public
+    # @return [Integer, nil] the seconds, never negative, or nil for a response that does not say
+    # @example Wait as long as the API asks before sending a request again
+    #   sleep(error.retry_after || 1)
+    def retry_after
+      value = http_response[RETRY_AFTER_HEADER]
+      return if value.nil?
+
+      value.match?(RETRY_AFTER_SECONDS) ? Integer(value, 10) : seconds_until(value)
+    end
+
     private
+
+    # The seconds until the time an HTTP date names
+    # @api private
+    # @param value [String] the value of the header
+    # @return [Integer, nil] the seconds, never negative, or nil if the value names no time
+    def seconds_until(value)
+      [(Time.httpdate(value) - Time.now).ceil, 0].max
+    rescue ArgumentError
+      nil
+    end
 
     # The body of the response, parsed as a JSON object
     #

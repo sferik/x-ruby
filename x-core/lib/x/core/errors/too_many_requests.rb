@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require "time"
 require_relative "client_error"
 require_relative "../rate_limit"
 
@@ -8,13 +7,6 @@ module X
   # Error raised when rate limit is exceeded (HTTP 429)
   # @api public
   class TooManyRequests < ClientError
-    # The header that says how long to wait, which X sends beside the headers of the limits it reports
-    RETRY_AFTER_HEADER = "retry-after"
-    private_constant :RETRY_AFTER_HEADER
-    # The value of a Retry-After header that counts seconds, rather than naming the time to wait until
-    RETRY_AFTER_SECONDS = /\A\d+\z/
-    private_constant :RETRY_AFTER_SECONDS
-
     # The rate limits the response reports in its headers, as X::Response reports them
     #
     # @api public
@@ -80,31 +72,6 @@ module X
     # @return [Integer, nil] the seconds to wait before retrying, or nil if the response does not say
     # @example Wait before retrying
     #   sleep(error.retry_after || 60)
-    def retry_after = retry_after_header || reset_in
-
-    private
-
-    # The seconds the Retry-After header asks for
-    #
-    # The header counts them, or names the time to wait until in the form of an HTTP date.
-    #
-    # @api private
-    # @return [Integer, nil] the seconds, never negative, or nil without a header that says how long to wait
-    def retry_after_header
-      value = http_response[RETRY_AFTER_HEADER]
-      return if value.nil?
-
-      value.match?(RETRY_AFTER_SECONDS) ? Integer(value, 10) : seconds_until(value)
-    end
-
-    # The seconds until the time an HTTP date names
-    # @api private
-    # @param value [String] the value of the header
-    # @return [Integer, nil] the seconds, never negative, or nil if the value names no time
-    def seconds_until(value)
-      [(Time.httpdate(value) - Time.now).ceil, 0].max
-    rescue ArgumentError
-      nil
-    end
+    def retry_after = super || reset_in
   end
 end
