@@ -15,6 +15,13 @@ module X
       @client = Client.new(**test_oauth_credentials)
     end
 
+    def test_the_endpoints_and_extensions_of_the_account_are_private
+      assert_raises(NameError) { Uploader::Account::V1_BASE_URL }
+      assert_raises(NameError) { Uploader::Account::PROFILE_IMAGE_URL }
+      assert_raises(NameError) { Uploader::Account::PROFILE_BANNER_URL }
+      assert_raises(NameError) { Uploader::Account::SUPPORTED_EXTENSIONS }
+    end
+
     def test_update_profile_image_sends_multipart_request
       stub_profile_image_request
       response = update_profile_image("test/sample_files/sample.png")

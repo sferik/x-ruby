@@ -27,6 +27,7 @@ module X
       PROFILE_BANNER_URL = "#{V1_BASE_URL}account/update_profile_banner.json".freeze
       # Supported image extensions for profile uploads
       SUPPORTED_EXTENSIONS = %w[gif jpg jpeg png].freeze
+      private_constant :V1_BASE_URL, :PROFILE_IMAGE_URL, :PROFILE_BANNER_URL, :SUPPORTED_EXTENSIONS
 
       # Update the authenticating user's profile image
       #

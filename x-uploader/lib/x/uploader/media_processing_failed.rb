@@ -8,6 +8,7 @@ module X
   class MediaProcessingFailed < Uploader::Error
     # The message of a failure X gives no reason for
     DEFAULT_MESSAGE = "Media processing failed"
+    private_constant :DEFAULT_MESSAGE
 
     # The processing status X reported, whose processing_info holds the error
     # @api public
@@ -18,7 +19,7 @@ module X
 
     # Initialize the error with the reason X gives for the failure
     #
-    # The message is the one given, or else the reason the status holds, or else DEFAULT_MESSAGE.
+    # The message is the one given, or else the reason the status holds, or else "Media processing failed".
     #
     # @api public
     # @param message [String, nil] the message, or nil for the reason the status holds

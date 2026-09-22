@@ -19,6 +19,10 @@ module X
         [MediaProcessingFailed.new(status: {"processing_info" => {"state" => "failed"}}), MediaProcessingFailed.new(status: {}), MediaProcessingFailed.new].map(&:message)
     end
 
+    def test_the_default_message_is_private
+      assert_raises(NameError) { MediaProcessingFailed::DEFAULT_MESSAGE }
+    end
+
     def test_a_message_given_is_the_message_whatever_the_status
       status = {"processing_info" => {"error" => {"message" => "Unsupported video format"}}}
 
