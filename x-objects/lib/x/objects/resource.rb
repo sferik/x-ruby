@@ -321,15 +321,6 @@ module X
       @memo.store(look_up)
     end
 
-    # Store the full resource a lookup of many found, so hydrate reads it
-    #
-    # @api private
-    # @param resource [Resource, nil] the full resource, or nil if it no longer exists
-    # @return [Resource, nil] the resource that was stored
-    # @example Store what a batch lookup found
-    #   stub.hydrated_with(found)
-    def hydrated_with(resource) = @memo.store(resource)
-
     # The state Marshal writes: the attributes alone, without the client
     #
     # @api public
@@ -359,6 +350,16 @@ module X
     def inspect = "#<#{self.class} #{attrs.map { |key, value| "#{key}=#{value.inspect}" }.join(" ")}>"
 
     private
+
+    # Store the full resource a lookup of many found, so hydrate reads it
+    #
+    # Internal to the object layer: hydrate_all calls it with __send__, since a caller that stored another
+    # resource would change what a frozen resource hydrates to.
+    #
+    # @api private
+    # @param resource [Resource, nil] the full resource, or nil if it no longer exists
+    # @return [Resource, nil] the resource that was stored
+    def hydrated_with(resource) = @memo.store(resource)
 
     # Read the identifier once, at the point the resource is made
     #

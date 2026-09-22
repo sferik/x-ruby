@@ -77,7 +77,7 @@ module X
         return resources.dup if partial.empty?
 
         found = find_all(partial, client:, concurrency:, **params, &).to_h { |resource| [resource.id, resource] }
-        resources.filter_map { |resource| resource.hydrated? ? resource : resource.hydrated_with(found[resource.id]) }
+        resources.filter_map { |resource| resource.hydrated? ? resource : resource.__send__(:hydrated_with, found[resource.id]) }
       end
 
       # Look up many resources by identifier, in parallel batches, once each

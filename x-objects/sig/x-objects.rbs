@@ -578,12 +578,12 @@ module X
     def stub?: () -> bool
     def hydrate: () -> Resource?
     def refresh: () -> Resource?
-    def hydrated_with: (Resource? resource) -> Resource?
     def marshal_dump: () -> Objects::attrs
     def marshal_load: (Objects::attrs attrs) -> void
     def inspect: () -> String
 
     private
+    def hydrated_with: (Resource? resource) -> Resource?
     def identify: () -> String
     def fetch: () -> Resource?
     def look_up: () -> Resource?

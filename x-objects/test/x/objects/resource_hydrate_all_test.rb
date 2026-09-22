@@ -22,6 +22,10 @@ module X
         assert_equal ["2,3"], @client.queries.map { |query| query["ids"] }
       end
 
+      def test_a_resource_cannot_be_told_what_it_hydrates_to
+        refute_respond_to User.from_id(2), :hydrated_with
+      end
+
       def test_hydrate_all_looks_up_each_stub_once
         users = User.hydrate_all([User.from_id(2), User.from_id(2), User.from_id(2)], client: @client)
 
