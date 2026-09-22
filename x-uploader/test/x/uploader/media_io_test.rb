@@ -8,6 +8,7 @@ module X
   class MediaIOTest < Minitest::Test
     cover Uploader::MediaUpload
     cover Uploader.const_get(:Source)
+    cover Uploader.const_get(:Signature)
 
     BASE_URL = "https://api.x.com/2/media/upload"
     JSON_HEADERS = {"content-type" => "application/json"}.freeze

@@ -82,6 +82,23 @@ module X
       #   Uploader::Signature.media_category!(source) # => "tweet_image"
       def media_category!(source) = CATEGORIES.fetch(media_type!(source), DEFAULT_CATEGORY)
 
+      # The media category of posts that the signature of media gives it
+      #
+      # Media that names no file must have a signature that names its type. A file whose extension names no type, such
+      # as a Tempfile, is an image when no signature names one, or when it cannot be read, since its name says nothing
+      # either way.
+      #
+      # @api private
+      # @param source [Source] the media
+      # @return [String] the media category
+      # @raise [InvalidMediaType] if the media names no file and no signature names its type
+      # @example Read the media category of a video in a file named without an extension
+      #   Uploader::Signature.media_category(source) # => "tweet_video"
+      def media_category(source)
+        type = source.named? ? (media_type(source.sniff) if source.readable?) : media_type!(source)
+        CATEGORIES.fetch(type, DEFAULT_CATEGORY)
+      end
+
       private
 
       # Whether media begins with the bytes of a signature

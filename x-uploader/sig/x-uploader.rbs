@@ -50,6 +50,7 @@ module X
       def media_type: (String bytes) -> String?
       def media_type!: (Source source) -> String
       def media_category!: (Source source) -> String
+      def media_category: (Source source) -> String
 
       private
       def matches?: (String bytes, Hash[Integer, String] magic) -> bool

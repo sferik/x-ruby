@@ -165,8 +165,9 @@ module X
 
       # Infer the media category of a post attachment from the media
       #
-      # Media that names a file is categorized by the extension of the name, and media that names none by the bytes
-      # it begins with. A GIF with a single frame is an image, since X processes only animated GIFs as GIFs.
+      # Media that names a file is categorized by the extension of the name, and media that names none, or a file
+      # whose extension names no type, such as a Tempfile, by the bytes it begins with. A GIF with a single frame is
+      # an image, since X processes only animated GIFs as GIFs.
       #
       # @api public
       # @param media [String, Pathname, IO, StringIO] the path to the media, or an IO open on it
@@ -178,7 +179,7 @@ module X
       #   Uploader::MediaUpload.infer_media_category(StringIO.new(gif)) # => "tweet_gif"
       def infer_media_category(media)
         source = Source.for(media)
-        category = source.named? ? CATEGORY_MAP.fetch(source.extension, TWEET_IMAGE) : Signature.media_category!(source)
+        category = CATEGORY_MAP.fetch(source.extension) { MIME_TYPE_MAP.key?(source.extension) ? TWEET_IMAGE : Signature.media_category(source) }
         # A GIF of a single frame is an image, which its category is read again as
         (category.eql?(TWEET_GIF) && source.readable? && !Gif.animated?(source)) ? TWEET_IMAGE : category
       end
@@ -291,7 +292,8 @@ module X
 
       # Infer the media type from file path and category
       #
-      # A file whose extension names a type the category takes is uploaded as that type. A GIF category takes only
+      # A file whose extension names a type the category takes is uploaded as that type, and media whose name names no
+      # type, such as a StringIO or a Tempfile, as the type its signature names. A GIF category takes only
       # GIFs, and a video or subtitles category otherwise takes its first type, MP4 or SubRip, whatever the file is
       # named. Any other category, an image, is typed by its extension alone.
       #
@@ -304,7 +306,7 @@ module X
       # @example Uploader::MediaUpload.infer_media_type("clip.webm", "tweet_video") #=> "video/webm"
       def infer_media_type(media, media_category)
         source = Source.for(media)
-        from_media = source.named? ? MIME_TYPE_MAP[source.extension] : Signature.media_type(source.sniff)
+        from_media = MIME_TYPE_MAP.fetch(source.extension) { Signature.media_type(source.sniff) if source.readable? }
         taken = CATEGORY_MIME_TYPES.fetch(media_category.to_s.downcase, [from_media])
         (taken.include?(from_media) ? from_media : taken.first) ||
           raise(InvalidMediaType, "unable to determine the MIME type of #{source.description}")
