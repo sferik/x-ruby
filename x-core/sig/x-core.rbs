@@ -2,7 +2,9 @@
 # since Steep resolves every constant a method body names through these signatures.
 module X
   module Core
-    VERSION: Gem::Version
+    VERSION: String
+
+    def self.gem_version: () -> Gem::Version
 
     module TokenEndpoint
       extend TokenEndpoint

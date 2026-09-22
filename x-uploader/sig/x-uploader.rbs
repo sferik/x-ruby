@@ -1,7 +1,9 @@
 module X
   module Uploader
-    VERSION: Gem::Version
+    VERSION: String
     JSON_CLASSES: Hash[Symbol, singleton(Array) | singleton(Hash)]
+
+    def self.gem_version: () -> Gem::Version
 
     # Media to act on: what an upload returned, or the identifier of media
     type media = UploadedMedia | Hash[String, untyped] | String | Integer

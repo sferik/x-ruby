@@ -19,13 +19,13 @@ end
 
 # The version a version.rb file holds
 def version_in(file)
-  File.read(file)[/Gem::Version\.create\("([^"]+)"\)/, 1]
+  File.read(file)[/VERSION = "([^"]+)"/, 1]
 end
 
 desc "Write the version in VERSION into each gem's version.rb"
 task :update_versions do
   VERSION_CONSTANT_FILES.each do |file|
-    File.write(file, File.read(file).sub(/Gem::Version\.create\("[^"]+"\)/, %(Gem::Version.create("#{version}"))))
+    File.write(file, File.read(file).sub(/VERSION = "[^"]+"/, %(VERSION = "#{version}")))
   end
 end
 

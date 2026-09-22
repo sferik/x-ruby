@@ -1,5 +1,7 @@
 module X
-  VERSION: Gem::Version
+  VERSION: String
+
+  def self.gem_version: () -> Gem::Version
 
   class Client
     include Objects::API

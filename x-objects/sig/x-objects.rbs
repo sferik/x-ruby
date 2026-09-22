@@ -33,7 +33,9 @@ module X
   end
 
   module Objects
-    VERSION: Gem::Version
+    VERSION: String
+
+    def self.gem_version: () -> Gem::Version
 
     type attrs = Hash[String, untyped]
     type params = Hash[String | Symbol, untyped]
