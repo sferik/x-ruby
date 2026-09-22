@@ -167,6 +167,21 @@ module X
         client.respond_to?(:app_only) ? client.app_only : client
       end
 
+      # The client for an endpoint that refuses OAuth 1.0a, as a space endpoint does
+      #
+      # The endpoint takes app-only or OAuth 2.0 user authentication.
+      # A client that signs with OAuth 1.0a requests as the app, with a copy that reuses its bearer token. One signed
+      # in with OAuth 2.0 as a user, which has no app-only client, requests as the user.
+      #
+      # @api private
+      # @param client [Object] the client
+      # @return [Object] the client's app-only client, or the client itself
+      def space_client(client)
+        app_client(client)
+      rescue UnsupportedOperation
+        client
+      end
+
       # Read a numeric identifier as an Integer
       #
       # @api private

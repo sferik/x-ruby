@@ -117,6 +117,25 @@ module X
       assert_equal ["spaces/1DXxyRYNejbKM"], client.paths
     end
 
+    # A client signed in with OAuth 2.0 as a user, which has no app-only client
+    class OAuth2UserClient < FakeClient
+      def app_only = raise(UnsupportedOperation, "no app credentials")
+    end
+
+    def test_a_client_with_no_app_only_client_looks_spaces_up_as_the_user
+      client = OAuth2UserClient.new.stub(:get, "spaces/1DXxyRYNejbKM", {"data" => {"id" => "1DXxyRYNejbKM", "title" => "Ruby"}})
+
+      assert_equal "Ruby", client.find_space("1DXxyRYNejbKM").title
+      assert_equal ["spaces/1DXxyRYNejbKM"], client.paths
+    end
+
+    def test_a_client_with_no_app_only_client_searches_spaces_as_the_user
+      client = OAuth2UserClient.new.stub(:get, "spaces/search", {"data" => [{"id" => "1DXxyRYNejbKM", "title" => "Ruby"}], "meta" => {"result_count" => 1}})
+
+      assert_equal ["Ruby"], client.search_spaces("ruby").map(&:title)
+      assert_equal ["spaces/search"], client.paths
+    end
+
     def test_other_resources_keep_the_client_they_are_given
       @client.stub(:get, "users/7505382", {"data" => {"id" => "7505382", "username" => "sferik"}})
 

@@ -39,17 +39,17 @@ module X
       #   X::Space.id_type # => :raw
       def id_type = :raw
 
-      # The client a space lookup requests with, which authenticates as the app
+      # The client a space lookup requests with
       #
       # The space endpoints refuse OAuth 1.0a, so a client that signs with it looks spaces up with a copy that
-      # reuses its bearer token.
+      # reuses its bearer token. A client signed in with OAuth 2.0 as a user looks them up as it is.
       #
       # @api private
       # @param client [Object] the client the lookup was given
-      # @return [Object] the client's app-only client, which reuses its bearer token, or the client itself
+      # @return [Object] the client's app-only client, or the client itself
       # @example Get the client a space lookup requests with
       #   X::Space.client_for(client)
-      def client_for(client) = Objects::Utils.app_client(client)
+      def client_for(client) = Objects::Utils.space_client(client)
 
       # The query parameter that selects space fields
       #

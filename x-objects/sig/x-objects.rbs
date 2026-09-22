@@ -97,6 +97,7 @@ module X
       def integer: (String | Integer | nil value) -> Integer?
       def authenticated_user_id: (untyped client) -> Integer?
       def app_client: (untyped client) -> untyped
+      def space_client: (untyped client) -> untyped
       def authenticator_of: (untyped client) -> untyped
       def id?: (untyped value) -> bool
       def time: (String? value) -> Time?
