@@ -66,13 +66,13 @@ module X
         .to_return(headers: {"content-type" => "application/json"}, body: failed.to_json)
 
       assert_predicate @client.await_media_processing(7), :failed?
-      assert_raises(Uploader::MediaProcessingFailed) { @client.await_media_processing!(7) }
+      assert_raises(MediaProcessingFailed) { @client.await_media_processing!(7) }
     end
 
     def test_an_upload_reaches_the_api_through_the_client
       stub_request(:post, "https://api.x.com/2/media/upload").to_return(headers: {"content-type" => "application/json"}, body: {data: {id: "7"}}.to_json)
 
-      assert_equal(Uploader::UploadedMedia.new({"id" => "7"}), @client.upload_media(StringIO.new("GIF89a"), media_category: "tweet_image"))
+      assert_equal(UploadedMedia.new({"id" => "7"}), @client.upload_media(StringIO.new("GIF89a"), media_category: "tweet_image"))
     end
   end
 end

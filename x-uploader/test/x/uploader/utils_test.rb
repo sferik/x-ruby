@@ -28,7 +28,7 @@ module X
     end
 
     def test_media_data_of_a_response_that_describes_no_media
-      error = assert_raises(Uploader::MissingData) { Uploader.const_get(:Utils).media_data({}, "of the upload") }
+      error = assert_raises(MissingData) { Uploader.const_get(:Utils).media_data({}, "of the upload") }
 
       assert_equal "The response of the upload holds no media", error.message
     end
@@ -45,12 +45,12 @@ module X
     end
 
     def test_media_id_of_uploaded_media
-      assert_equal "7", Uploader.const_get(:Utils).media_id(Uploader::UploadedMedia.new({"id" => "7"}))
-      assert_equal "7", Uploader.const_get(:Utils).media_id(Class.new(Uploader::UploadedMedia).new({"id" => "7"}))
+      assert_equal "7", Uploader.const_get(:Utils).media_id(UploadedMedia.new({"id" => "7"}))
+      assert_equal "7", Uploader.const_get(:Utils).media_id(Class.new(UploadedMedia).new({"id" => "7"}))
     end
 
     def test_media_id_of_uploaded_media_without_an_id
-      assert_raises(Uploader::MissingData) { Uploader.const_get(:Utils).media_id(Uploader::UploadedMedia.new({"media_key" => "3_7"})) }
+      assert_raises(MissingData) { Uploader.const_get(:Utils).media_id(UploadedMedia.new({"media_key" => "3_7"})) }
     end
 
     def test_media_id_of_an_identifier
@@ -59,7 +59,7 @@ module X
     end
 
     def test_media_id_of_an_upload_response_without_an_id
-      error = assert_raises(Uploader::MissingData) { Uploader.const_get(:Utils).media_id({"media_key" => "3_7"}) }
+      error = assert_raises(MissingData) { Uploader.const_get(:Utils).media_id({"media_key" => "3_7"}) }
 
       assert_equal "The media given holds no identifier", error.message
     end

@@ -31,6 +31,14 @@ module X
         refute_operator UnsupportedOperation, :<, Objects::Error
       end
 
+      # Every class a caller names is under X, as the classes of x-core are, and X::Objects::Error alone is left
+      # under the gem's module, for the rescue that means the failure of the object layer alone.
+      def test_the_error_of_a_missing_resource_is_named_under_x
+        assert X.const_defined?(:MissingResource, false)
+        refute Objects.const_defined?(:MissingResource, false)
+        assert Objects.const_defined?(:Error, false)
+      end
+
       def test_unsupported_operation_is_an_x_error
         assert_operator UnsupportedOperation, :<, X::Error
       end

@@ -34,7 +34,7 @@ module X
     end
 
     def test_the_category_of_media_no_signature_names_must_be_given
-      error = assert_raises(Uploader::InvalidMediaType) { Uploader::MediaUpload.infer_media_category(StringIO.new("not media at all")) }
+      error = assert_raises(InvalidMediaType) { Uploader::MediaUpload.infer_media_category(StringIO.new("not media at all")) }
 
       assert_equal "unable to determine the media type of the media given: pass media_category", error.message
     end
@@ -53,7 +53,7 @@ module X
     end
 
     def test_the_media_type_of_media_neither_a_name_nor_a_signature_names
-      error = assert_raises(Uploader::InvalidMediaType) { Uploader::MediaUpload.infer_media_type(StringIO.new("not media at all"), "tweet_image") }
+      error = assert_raises(InvalidMediaType) { Uploader::MediaUpload.infer_media_type(StringIO.new("not media at all"), "tweet_image") }
 
       assert_equal "unable to determine the MIME type of the media given", error.message
     end

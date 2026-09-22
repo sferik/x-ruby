@@ -41,14 +41,14 @@ module X
 
     def test_add_alt_text_raises_when_the_response_holds_no_metadata
       stub_request(:post, METADATA_URL).to_return(headers: JSON_HEADERS, body: "{}")
-      error = assert_raises(Uploader::MissingData) { Uploader::Metadata.add_alt_text(7, "A cat", client: @client) }
+      error = assert_raises(MissingData) { Uploader::Metadata.add_alt_text(7, "A cat", client: @client) }
 
       assert_equal "The response that adds the metadata holds none", error.message
     end
 
     def test_add_subtitles_raises_when_the_response_holds_no_metadata
       stub_request(:post, SUBTITLES_URL).to_return(headers: JSON_HEADERS, body: "{}")
-      error = assert_raises(Uploader::MissingData) { Uploader::Metadata.add_subtitles(7, 8, "EN", client: @client) }
+      error = assert_raises(MissingData) { Uploader::Metadata.add_subtitles(7, 8, "EN", client: @client) }
 
       assert_equal "The response that adds the metadata holds none", error.message
     end

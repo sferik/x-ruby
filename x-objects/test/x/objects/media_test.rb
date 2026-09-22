@@ -37,7 +37,7 @@ module X
       client = FakeClient.new
       client.stub(:get, "media/3_9", {"errors" => [{"title" => "Not Found Error", "detail" => "Could not find media with media_key: [3_9]."}]})
 
-      assert_raises(Objects::MissingResource) { Media.find!("3_9", client:) }
+      assert_raises(MissingResource) { Media.find!("3_9", client:) }
     end
 
     def test_find_all_looks_media_up_by_media_keys

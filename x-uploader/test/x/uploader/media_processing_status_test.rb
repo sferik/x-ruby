@@ -17,14 +17,14 @@ module X
     def test_status_without_processing_info_is_final
       stub_statuses({"id" => TEST_MEDIA_ID})
 
-      assert_equal(Uploader::UploadedMedia.new({"id" => TEST_MEDIA_ID}), await)
+      assert_equal(UploadedMedia.new({"id" => TEST_MEDIA_ID}), await)
       assert_requested(:get, STATUS_URL, times: 1)
     end
 
     def test_status_with_null_processing_info_is_final
       stub_statuses({"processing_info" => nil})
 
-      assert_equal(Uploader::UploadedMedia.new({"processing_info" => nil}), await)
+      assert_equal(UploadedMedia.new({"processing_info" => nil}), await)
     end
 
     def test_status_without_state_keeps_polling
@@ -54,9 +54,9 @@ module X
     def test_gives_up_once_the_waits_would_pass_the_timeout
       pending = {"processing_info" => {"state" => "in_progress", "check_after_secs" => 5, "progress_percent" => 42}}
       stub_statuses(pending)
-      error = assert_raises(Uploader::MediaProcessingTimeout) { await(processing_timeout: 12) }
+      error = assert_raises(MediaProcessingTimeout) { await(processing_timeout: 12) }
 
-      assert_equal [[5, 5], Uploader::UploadedMedia.new(pending), "Media processing did not finish within 12 seconds"], [@sleeps, error.status, error.message]
+      assert_equal [[5, 5], UploadedMedia.new(pending), "Media processing did not finish within 12 seconds"], [@sleeps, error.status, error.message]
       assert_requested(:get, STATUS_URL, times: 3)
     end
 
@@ -69,7 +69,7 @@ module X
     def test_waits_ten_minutes_by_default
       stub_statuses({"processing_info" => {"state" => "pending", "check_after_secs" => 60}})
 
-      assert_raises(Uploader::MediaProcessingTimeout) { await }
+      assert_raises(MediaProcessingTimeout) { await }
       assert_equal [60] * 10, @sleeps
     end
 
@@ -78,20 +78,20 @@ module X
         .to_return(headers: {"content-type" => "application/json"}, body: {data: {id: "7"}}.to_json)
 
       [7, "7"].each do |media|
-        assert_equal(Uploader::UploadedMedia.new({"id" => "7"}), Uploader::MediaUpload.await_processing(media, client: @client))
-        assert_equal(Uploader::UploadedMedia.new({"id" => "7"}), Uploader::MediaUpload.await_processing!(media, client: @client))
+        assert_equal(UploadedMedia.new({"id" => "7"}), Uploader::MediaUpload.await_processing(media, client: @client))
+        assert_equal(UploadedMedia.new({"id" => "7"}), Uploader::MediaUpload.await_processing!(media, client: @client))
       end
     end
 
     def test_media_without_id
-      error = assert_raises(Uploader::MissingData) { Uploader::MediaUpload.await_processing({}, client: @client) }
+      error = assert_raises(MissingData) { Uploader::MediaUpload.await_processing({}, client: @client) }
 
       assert_equal "The media given holds no identifier", error.message
     end
 
     def test_a_status_response_that_holds_no_media_raises
       stub_request(:get, STATUS_URL).to_return(headers: {"content-type" => "application/json"}, body: "{}")
-      error = assert_raises(Uploader::MissingData) { await }
+      error = assert_raises(MissingData) { await }
 
       assert_equal "The response of the status check holds no media", error.message
     end

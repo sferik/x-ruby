@@ -46,7 +46,7 @@ module X
     end
 
     def test_validate_extension_raises_for_an_unsupported_extension
-      error = assert_raises(Uploader::InvalidMediaType) { Uploader.const_get(:Validator).validate_extension!("clip.MP4", %w[jpg png]) }
+      error = assert_raises(InvalidMediaType) { Uploader.const_get(:Validator).validate_extension!("clip.MP4", %w[jpg png]) }
 
       assert_equal "Unsupported file type: mp4. Supported types: jpg, png", error.message
     end

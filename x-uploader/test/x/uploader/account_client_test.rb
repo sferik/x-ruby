@@ -67,7 +67,7 @@ module X
     end
 
     def test_unsupported_file_type_message
-      error = assert_raises(Uploader::InvalidMediaType) do
+      error = assert_raises(InvalidMediaType) do
         Uploader::Account.update_profile_banner("test/sample_files/sample.mp4", client: @client)
       end
 

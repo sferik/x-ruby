@@ -55,43 +55,6 @@ module X
       def matches?: (String bytes, Hash[Integer, String] magic) -> bool
     end
 
-    class UploadedMedia
-      FINAL_STATES: Array[String]
-      NO_MEDIA_ID: String
-
-      @received_at: Time
-
-      attr_reader attrs: Hash[String, untyped]
-      alias to_h attrs
-
-      def self.from: (Hash[String, untyped]? attrs) -> UploadedMedia?
-      def initialize: (Hash[String, untyped] attrs) -> void
-      def id: () -> Integer
-      def media_key: () -> String?
-      def bytesize: () -> Integer?
-      def expires_at: () -> Time?
-      def processing_info: () -> Hash[String, untyped]?
-      def state: () -> String?
-      def check_after_secs: () -> Integer?
-      def processing?: () -> bool
-      def failed?: () -> bool
-      def ready?: () -> bool
-      def []: (String key) -> untyped
-      def fetch: (String key, *untyped default) ?{ (String key) -> untyped } -> untyped
-      def dig: (*String | Integer keys) -> untyped
-      def key?: (String key) -> bool
-      def as_json: (*untyped) -> Hash[String, untyped]
-      def to_json: (?::JSON::State? state) -> String
-      def ==: (untyped other) -> bool
-      alias eql? ==
-      def hash: () -> Integer
-      def inspect: () -> String
-
-      private
-      def with_integer_id: (Hash[String, untyped] attrs) -> Hash[String, untyped]
-      def deep_freeze: (untyped value) -> untyped
-    end
-
     # What the uploaders ask of a client, which X::Client provides
     interface _Client
       def get: (String endpoint, **untyped) -> untyped
@@ -109,24 +72,6 @@ module X
     end
 
     class Error < ::X::Error
-    end
-
-    class InvalidMediaType < Error
-    end
-
-    class MissingData < Error
-    end
-
-    class MediaProcessingTimeout < Error
-      attr_reader status: UploadedMedia | Hash[String, untyped]
-      def initialize: (UploadedMedia | Hash[String, untyped] status, Integer timeout) -> void
-    end
-
-    class MediaProcessingFailed < Error
-      DEFAULT_MESSAGE: String
-
-      attr_reader status: UploadedMedia | Hash[String, untyped]
-      def initialize: (UploadedMedia | Hash[String, untyped] status) -> void
     end
 
     module Utils
@@ -270,5 +215,60 @@ module X
       def update_profile_banner: (path file_path, client: _Client, ?width: Integer?, ?height: Integer?, ?offset_left: Integer?, ?offset_top: Integer?) -> untyped
       def update_profile_banner_binary: (String content, client: _Client, ?width: Integer?, ?height: Integer?, ?offset_left: Integer?, ?offset_top: Integer?) -> untyped
     end
+  end
+
+  class UploadedMedia
+    FINAL_STATES: Array[String]
+    NO_MEDIA_ID: String
+
+    @received_at: Time
+
+    attr_reader attrs: Hash[String, untyped]
+    alias to_h attrs
+
+    def self.from: (Hash[String, untyped]? attrs) -> UploadedMedia?
+    def initialize: (Hash[String, untyped] attrs) -> void
+    def id: () -> Integer
+    def media_key: () -> String?
+    def bytesize: () -> Integer?
+    def expires_at: () -> Time?
+    def processing_info: () -> Hash[String, untyped]?
+    def state: () -> String?
+    def check_after_secs: () -> Integer?
+    def processing?: () -> bool
+    def failed?: () -> bool
+    def ready?: () -> bool
+    def []: (String key) -> untyped
+    def fetch: (String key, *untyped default) ?{ (String key) -> untyped } -> untyped
+    def dig: (*String | Integer keys) -> untyped
+    def key?: (String key) -> bool
+    def as_json: (*untyped) -> Hash[String, untyped]
+    def to_json: (?::JSON::State? state) -> String
+    def ==: (untyped other) -> bool
+    alias eql? ==
+    def hash: () -> Integer
+    def inspect: () -> String
+
+    private
+    def with_integer_id: (Hash[String, untyped] attrs) -> Hash[String, untyped]
+    def deep_freeze: (untyped value) -> untyped
+  end
+
+  class InvalidMediaType < Uploader::Error
+  end
+
+  class MissingData < Uploader::Error
+  end
+
+  class MediaProcessingTimeout < Uploader::Error
+    attr_reader status: UploadedMedia | Hash[String, untyped]
+    def initialize: (UploadedMedia | Hash[String, untyped] status, Integer timeout) -> void
+  end
+
+  class MediaProcessingFailed < Uploader::Error
+    DEFAULT_MESSAGE: String
+
+    attr_reader status: UploadedMedia | Hash[String, untyped]
+    def initialize: (UploadedMedia | Hash[String, untyped] status) -> void
   end
 end

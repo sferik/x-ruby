@@ -29,14 +29,14 @@ module X
       stub_pending_upload
       stub_status(state: "failed")
 
-      assert_raises(Uploader::MediaProcessingFailed) { Uploader::MediaUpload.upload(ANIMATED_GIF, client: @client) }
+      assert_raises(MediaProcessingFailed) { Uploader::MediaUpload.upload(ANIMATED_GIF, client: @client) }
     end
 
     def test_upload_waits_the_processing_timeout_for_an_animated_gif
       stub_pending_upload
       stub_status(state: "in_progress", check_after_secs: 5)
       error = Uploader::MediaUpload.stub(:sleep, nil) do
-        assert_raises(Uploader::MediaProcessingTimeout) { Uploader::MediaUpload.upload(ANIMATED_GIF, client: @client, processing_timeout: 4) }
+        assert_raises(MediaProcessingTimeout) { Uploader::MediaUpload.upload(ANIMATED_GIF, client: @client, processing_timeout: 4) }
       end
 
       assert_equal "Media processing did not finish within 4 seconds", error.message
@@ -45,7 +45,7 @@ module X
     def test_upload_an_image_that_needs_no_processing
       stub_request(:post, BASE_URL).to_return(headers: JSON_HEADERS, body: {data: {id: TEST_MEDIA_ID}}.to_json)
 
-      assert_equal(Uploader::UploadedMedia.new({"id" => TEST_MEDIA_ID}), Uploader::MediaUpload.upload("test/sample_files/sample.png", client: @client))
+      assert_equal(UploadedMedia.new({"id" => TEST_MEDIA_ID}), Uploader::MediaUpload.upload("test/sample_files/sample.png", client: @client))
       assert_not_requested :get, STATUS_URL
     end
 

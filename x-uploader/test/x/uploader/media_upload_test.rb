@@ -63,7 +63,7 @@ module X
     def test_upload_raises_when_video_processing_fails
       stub_chunked_workflow(state: "failed")
 
-      assert_raises(Uploader::MediaProcessingFailed) { Uploader::MediaUpload.upload("test/sample_files/sample.mp4", client: @client) }
+      assert_raises(MediaProcessingFailed) { Uploader::MediaUpload.upload("test/sample_files/sample.mp4", client: @client) }
     end
 
     def test_upload_a_still_gif_as_an_image
@@ -77,7 +77,7 @@ module X
       stub_chunked_workflow(processing: false)
       response = Uploader::MediaUpload.upload("test/sample_files/sample.srt", client: @client)
 
-      assert_equal(Uploader::UploadedMedia.new({"id" => TEST_MEDIA_ID}), response)
+      assert_equal(UploadedMedia.new({"id" => TEST_MEDIA_ID}), response)
       assert_requested :post, "#{BASE_URL}/initialize", body: {media_type: "text/srt", media_category: "subtitles", total_bytes: File.size("test/sample_files/sample.srt")}.to_json
       assert_not_requested :get, "#{BASE_URL}?command=STATUS&media_id=#{TEST_MEDIA_ID}"
     end
@@ -95,7 +95,7 @@ module X
       stub_request(:post, "https://api.x.com/2/media/metadata").to_return(headers: JSON_HEADERS, body: {data: {id: TEST_MEDIA_ID}}.to_json)
       response = Uploader::MediaUpload.upload("test/sample_files/sample.png", client: @client, alt_text: "A pixel")
 
-      assert_equal(Uploader::UploadedMedia.new({"id" => TEST_MEDIA_ID}), response)
+      assert_equal(UploadedMedia.new({"id" => TEST_MEDIA_ID}), response)
       assert_requested :post, "https://api.x.com/2/media/metadata", body: {id: TEST_MEDIA_ID, metadata: {alt_text: {text: "A pixel"}}}.to_json
     end
 

@@ -25,7 +25,7 @@ module X
       def test_resource_not_found_without_problems_or_detail
         assert_equal "Could not find X::User nobody", MissingResource.new("Could not find X::User nobody").message
         assert_empty MissingResource.new("Could not find X::User nobody").problems
-        assert_equal "X::Objects::MissingResource", MissingResource.new.message
+        assert_equal "X::MissingResource", MissingResource.new.message
         assert_equal "Not Found Error", MissingResource.new(problems: [Problem.new({"title" => "Not Found Error"})]).message
         assert_equal "Could not find X::User nobody: Not Found Error", MissingResource.new("Could not find X::User nobody", problems: [Problem.new({"title" => "Not Found Error"})]).message
       end

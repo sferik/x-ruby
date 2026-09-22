@@ -2,12 +2,12 @@ module X
   module Objects
     class Error < ::X::Error
     end
+  end
 
-    class MissingResource < Objects::Error
-      attr_reader problems: Array[Problem]
+  class MissingResource < Objects::Error
+    attr_reader problems: Array[Problem]
 
-      def initialize: (?String? message, ?problems: Array[Problem]) -> void
-    end
+    def initialize: (?String? message, ?problems: Array[Problem]) -> void
   end
 
   class Usage

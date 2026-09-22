@@ -40,7 +40,7 @@ module X
     def test_await_processing_bang_raises_on_failure
       stub_processing_status_sequence("pending", "failed")
 
-      error = assert_raises(Uploader::MediaProcessingFailed) do
+      error = assert_raises(MediaProcessingFailed) do
         await(:await_processing!)
       end
 
@@ -59,14 +59,14 @@ module X
     def test_await_processing_bang_gives_up_after_its_timeout
       stub_request(:get, status_url).to_return(headers: json_headers, body: {data: {processing_info: {state: "pending", check_after_secs: 5}}}.to_json)
 
-      assert_raises(Uploader::MediaProcessingTimeout) { await(:await_processing!, processing_timeout: 4) }
+      assert_raises(MediaProcessingTimeout) { await(:await_processing!, processing_timeout: 4) }
       assert_requested(:get, status_url, times: 1)
     end
 
     def test_upload_gives_up_on_processing_after_the_processing_timeout
       stub_video_upload_that_keeps_processing(check_after_secs: 5)
 
-      assert_raises(Uploader::MediaProcessingTimeout) do
+      assert_raises(MediaProcessingTimeout) do
         Uploader::MediaUpload.upload("test/sample_files/sample.mp4", client: @client, processing_timeout: 4)
       end
     end
@@ -76,7 +76,7 @@ module X
       waits = []
 
       Uploader::MediaUpload.stub(:sleep, ->(seconds) { waits << seconds }) do
-        assert_raises(Uploader::MediaProcessingTimeout) { Uploader::MediaUpload.upload("test/sample_files/sample.mp4", client: @client) }
+        assert_raises(MediaProcessingTimeout) { Uploader::MediaUpload.upload("test/sample_files/sample.mp4", client: @client) }
       end
 
       assert_equal [300, 300], waits

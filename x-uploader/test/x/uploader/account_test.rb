@@ -45,7 +45,7 @@ module X
     end
 
     def test_update_profile_image_raises_for_unsupported_file_type
-      error = assert_raises(Uploader::InvalidMediaType) { update_profile_image("test/sample_files/sample.mp4") }
+      error = assert_raises(InvalidMediaType) { update_profile_image("test/sample_files/sample.mp4") }
 
       assert_includes error.message, "Unsupported file type"
     end
@@ -122,7 +122,7 @@ module X
     end
 
     def test_update_profile_banner_raises_for_unsupported_file_type
-      error = assert_raises(Uploader::InvalidMediaType) { update_profile_banner("test/sample_files/sample.mp4") }
+      error = assert_raises(InvalidMediaType) { update_profile_banner("test/sample_files/sample.mp4") }
 
       assert_includes error.message, "Unsupported file type"
     end

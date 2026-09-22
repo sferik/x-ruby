@@ -9,7 +9,7 @@ module X
     cover Uploader::MediaUpload
     cover Uploader.const_get(:Chunks)
     cover Uploader.const_get(:Utils)
-    cover Uploader::UploadedMedia
+    cover UploadedMedia
 
     BASE_URL = "https://api.x.com/2/media/upload"
     VIDEO_FILE = "test/sample_files/sample.mp4"
@@ -21,7 +21,7 @@ module X
 
     def test_a_response_of_an_upload_that_holds_no_media_raises
       stub_request(:post, BASE_URL).to_return(headers: JSON_HEADERS, body: "{}")
-      error = assert_raises(Uploader::MissingData) { Uploader::MediaUpload.upload("test/sample_files/sample.png", client: @client) }
+      error = assert_raises(MissingData) { Uploader::MediaUpload.upload("test/sample_files/sample.png", client: @client) }
 
       assert_equal "The response of the upload holds no media", error.message
     end
@@ -29,20 +29,20 @@ module X
     def test_data_that_is_not_media_raises_when_the_upload_is_initialized
       stub_init({data: []})
 
-      assert_raises(Uploader::MissingData) { chunked_upload }
+      assert_raises(MissingData) { chunked_upload }
     end
 
     def test_a_response_that_finalizes_an_upload_without_media_raises
       stub_init({data: {"id" => TEST_MEDIA_ID}})
       stub_request(:post, "#{BASE_URL}/#{TEST_MEDIA_ID}/append").to_return(status: 204)
       stub_request(:post, "#{BASE_URL}/#{TEST_MEDIA_ID}/finalize").to_return(headers: JSON_HEADERS, body: "{}")
-      error = assert_raises(Uploader::MissingData) { chunked_upload }
+      error = assert_raises(MissingData) { chunked_upload }
 
       assert_equal "The response that finalizes the upload holds no media", error.message
     end
 
     def test_media_that_holds_no_identifier_raises
-      error = assert_raises(Uploader::MissingData) { Uploader::UploadedMedia.new({}).id }
+      error = assert_raises(MissingData) { UploadedMedia.new({}).id }
 
       assert_equal "The media holds no identifier", error.message
     end

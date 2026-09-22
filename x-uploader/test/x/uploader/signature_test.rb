@@ -71,7 +71,7 @@ module X
 
     def test_media_type_raises_for_media_no_signature_names
       source = Uploader.const_get(:Source).for(StringIO.new("not media at all"))
-      error = assert_raises(Uploader::InvalidMediaType) { Uploader.const_get(:Signature).media_type!(source) }
+      error = assert_raises(InvalidMediaType) { Uploader.const_get(:Signature).media_type!(source) }
 
       assert_equal "unable to determine the media type of the media given: pass media_category", error.message
     end
