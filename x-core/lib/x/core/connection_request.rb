@@ -29,16 +29,25 @@ module X
         Zlib::Error
       ].freeze
 
+      # Errors that say a connection kept open had been closed by the time a request was sent on it
+      #
+      # EOFError is read from a socket the peer closed, and a write to one it closed or reset is refused with EPIPE,
+      # ECONNRESET, or ECONNABORTED. A timeout is not among them: a request that timed out waiting for its response
+      # may have reached the API, which may have acted on it.
+      STALE_CONNECTION_ERRORS = [EOFError, Errno::ECONNABORTED, Errno::ECONNRESET, Errno::EPIPE].freeze
+
       private
 
       # Send a request, once more on a new connection when a kept one had gone stale
       #
       # X, or a proxy between, can close a connection that is being kept open for the next request, and the request
-      # that takes it then fails as it is written or read. That request never reached the API, so an idempotent one is
-      # sent again, on a connection opened for it rather than taken from the pool, which the failure has discarded. A
-      # request that failed on a connection opened for it is not sent again: nothing about it says the API did not act
-      # on it. Net::HTTP would send a request again of its own, with the OAuth 1.0a nonce and signature of the attempt
-      # that failed, which is why its retries are turned off and the request the caller built is sent again here.
+      # that takes it then fails as it is written or its response is first read, as one of STALE_CONNECTION_ERRORS.
+      # That request never reached the API, so an idempotent one is sent again, on a connection opened for it rather
+      # than taken from the pool, where another connection may have gone stale too. A request that failed any other
+      # way, such as by timing out, or on a connection opened for it, is not sent again: nothing about it says the API
+      # did not act on it. Net::HTTP would send a request again of its own, after a timeout as well, with the OAuth
+      # 1.0a nonce and signature of the attempt that failed, which is why its retries are turned off and the request
+      # the caller built is sent again here.
       #
       # @api private
       # @param request [Net::HTTPRequest] the HTTP request to send
@@ -47,16 +56,16 @@ module X
       # @return [Net::HTTPResponse] the HTTP response
       # @raise [StandardError] whatever the request raised, once it may not be sent again
       def send_request(request, key, open)
-        pooled = [] #: Array[bool]
+        pooled = false
         begin
           @pool.with(key, open) do |http_client, from_pool|
-            pooled << from_pool
+            pooled = from_pool
             http_client.request(request)
           end
-        rescue *NETWORK_ERRORS
-          raise unless pooled.eql?([true]) && idempotent?(request)
+        rescue *STALE_CONNECTION_ERRORS
+          raise unless pooled && idempotent?(request)
 
-          retry
+          @pool.with(key, open, fresh: true) { |http_client, _| http_client.request(request) }
         end
       end
 

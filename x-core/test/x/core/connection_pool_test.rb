@@ -33,6 +33,18 @@ module X
       assert_equal [true, false], @pool.with(KEY, open) { |_, pooled| [pooled, @pool.with(KEY, open) { |_, nested| nested }] }
     end
 
+    def test_with_opens_a_fresh_connection_though_one_is_idle
+      @pool.with(KEY, open) { nil }
+
+      assert_equal [false, 2], [@pool.with(KEY, open, fresh: true) { |_, pooled| pooled }, @opened.size]
+    end
+
+    def test_with_keeps_a_fresh_connection_for_the_next_request
+      @pool.with(KEY, open, fresh: true) { nil }
+
+      assert_same @opened.first, @pool.with(KEY, open) { |http| http }
+    end
+
     def test_reuses_the_connection_given_back_last
       nest(2)
 

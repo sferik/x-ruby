@@ -49,11 +49,11 @@ module X
       @pid: Integer?
 
       def initialize: () -> void
-      def with: [T] ([bool, String, Integer] key, ^() -> Net::HTTP open) { (Net::HTTP, bool) -> T } -> T
+      def with: [T] ([bool, String, Integer] key, ^() -> Net::HTTP open, ?fresh: bool) { (Net::HTTP, bool) -> T } -> T
       def clear: () -> void
 
       private
-      def checkout: ([bool, String, Integer] key, ^() -> Net::HTTP open) -> [Hash[[bool, String, Integer], Array[Net::HTTP]], Net::HTTP, bool]
+      def checkout: ([bool, String, Integer] key, ^() -> Net::HTTP open, bool fresh) -> [Hash[[bool, String, Integer], Array[Net::HTTP]], Net::HTTP, bool]
       def checkin: ([bool, String, Integer] key, Net::HTTP http_client, Hash[[bool, String, Integer], Array[Net::HTTP]] pool) -> Array[Net::HTTP]?
       def forget_after_fork: () -> void
       def close: (Net::HTTP http_client) -> void
@@ -107,6 +107,7 @@ module X
 
     module ConnectionRequest
       NETWORK_ERRORS: Array[singleton(IOError) | singleton(Net::HTTPBadResponse) | singleton(Net::ProtocolError) | singleton(OpenSSL::SSL::SSLError) | singleton(SocketError) | singleton(SystemCallError) | singleton(Timeout::Error) | singleton(Zlib::Error)]
+      STALE_CONNECTION_ERRORS: Array[singleton(EOFError) | singleton(Errno::ECONNABORTED) | singleton(Errno::ECONNRESET) | singleton(Errno::EPIPE)]
 
       @pool: ConnectionPool
 

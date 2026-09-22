@@ -8,7 +8,7 @@ module X
     #
     # A connection is used by one request at a time: a request takes an idle connection, or opens one, and gives
     # it back once it has read the response. A request that fails closes its connection instead, and so does one
-    # that finishes after clear, which settings that apply when a connection opens call. A forked process opens
+    # that finishes after clear. A forked process opens
     # connections of its own rather than share its parent's.
     #
     # @api private
@@ -32,10 +32,11 @@ module X
       # @api private
       # @param key [Array] the scheme, host, and port the connection is to
       # @param open [Proc] builds a connection to the host, when none is idle
+      # @param fresh [Boolean] whether to open a connection even when one is idle
       # @yield [Net::HTTP, Boolean] the started connection, and whether it came from the pool
       # @return [Object] what the block returns
-      def with(key, open)
-        pool, http_client, pooled = checkout(key, open)
+      def with(key, open, fresh: false)
+        pool, http_client, pooled = checkout(key, open, fresh)
         kept = nil
         begin
           result = yield http_client, pooled
@@ -67,12 +68,13 @@ module X
       # @api private
       # @param key [Array] the scheme, host, and port
       # @param open [Proc] builds a connection to the host
+      # @param fresh [Boolean] whether to open a connection even when one is idle
       # @return [Array(Hash, Net::HTTP, bool)] the idle connections the connection returns to, the started
       #   connection, and whether it was idle rather than opened for this request
-      def checkout(key, open)
+      def checkout(key, open, fresh)
         pool, idle = @lock.synchronize do
           forget_after_fork
-          [@idle, @idle[key]&.pop]
+          [@idle, (@idle[key]&.pop unless fresh)]
         end
         http_client = idle || open.call
         http_client.start unless http_client.started?
