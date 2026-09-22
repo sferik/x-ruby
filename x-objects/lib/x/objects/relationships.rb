@@ -15,7 +15,7 @@ module X
       # @param user [Resource, String, Integer] the user to follow or their identifier
       # @return [Boolean] true if this user now follows the user, or has asked to follow a protected user
       # @example Follow a user
-      #   client.current_user.follow(client.find_user("sferik"))
+      #   client.current_user!.follow(client.find_user("sferik"))
       def follow(user)
         relate("following", "target_user_id", user, "following", "pending_follow")
       end
@@ -26,7 +26,7 @@ module X
       # @param user [Resource, String, Integer] the user to unfollow or their identifier
       # @return [Boolean] true if this user no longer follows the user
       # @example Unfollow a user
-      #   client.current_user.unfollow(client.find_user("sferik"))
+      #   client.current_user!.unfollow(client.find_user("sferik"))
       def unfollow(user)
         unrelate("following", user, "following")
       end
@@ -37,7 +37,7 @@ module X
       # @param user [Resource, String, Integer] the user to block or their identifier
       # @return [Boolean] true if this user now blocks the user
       # @example Block a user
-      #   client.current_user.block(user)
+      #   client.current_user!.block(user)
       def block(user)
         relate("blocking", "target_user_id", user, "blocking")
       end
@@ -48,7 +48,7 @@ module X
       # @param user [Resource, String, Integer] the user to unblock or their identifier
       # @return [Boolean] true if this user no longer blocks the user
       # @example Unblock a user
-      #   client.current_user.unblock(user)
+      #   client.current_user!.unblock(user)
       def unblock(user)
         unrelate("blocking", user, "blocking")
       end
@@ -59,7 +59,7 @@ module X
       # @param user [Resource, String, Integer] the user to mute or their identifier
       # @return [Boolean] true if this user now mutes the user
       # @example Mute a user
-      #   client.current_user.mute(user)
+      #   client.current_user!.mute(user)
       def mute(user)
         relate("muting", "target_user_id", user, "muting")
       end
@@ -70,7 +70,7 @@ module X
       # @param user [Resource, String, Integer] the user to unmute or their identifier
       # @return [Boolean] true if this user no longer mutes the user
       # @example Unmute a user
-      #   client.current_user.unmute(user)
+      #   client.current_user!.unmute(user)
       def unmute(user)
         unrelate("muting", user, "muting")
       end
@@ -81,7 +81,7 @@ module X
       # @param post [Resource, String, Integer] the post or its identifier
       # @return [Boolean] true if this user now likes the post
       # @example Like a post
-      #   client.current_user.like(post)
+      #   client.current_user!.like(post)
       def like(post)
         relate("likes", "tweet_id", post, "liked")
       end
@@ -92,7 +92,7 @@ module X
       # @param post [Resource, String, Integer] the post or its identifier
       # @return [Boolean] true if this user no longer likes the post
       # @example Unlike a post
-      #   client.current_user.unlike(post)
+      #   client.current_user!.unlike(post)
       def unlike(post)
         unrelate("likes", post, "liked")
       end
@@ -103,7 +103,7 @@ module X
       # @param post [Resource, String, Integer] the post or its identifier
       # @return [Boolean] true if this user has reposted the post
       # @example Repost a post
-      #   client.current_user.repost(post)
+      #   client.current_user!.repost(post)
       def repost(post)
         relate("retweets", "tweet_id", post, "retweeted")
       end
@@ -114,7 +114,7 @@ module X
       # @param post [Resource, String, Integer] the post or its identifier
       # @return [Boolean] true if this user no longer reposts the post
       # @example Undo a repost
-      #   client.current_user.unrepost(post)
+      #   client.current_user!.unrepost(post)
       def unrepost(post)
         unrelate("retweets", post, "retweeted")
       end
@@ -128,7 +128,7 @@ module X
       # @param post [Resource, String, Integer] the post or its identifier
       # @return [Boolean] true if this user has bookmarked the post
       # @example Bookmark a post
-      #   client.current_user.bookmark(post)
+      #   client.current_user!.bookmark(post)
       def bookmark(post)
         relate("bookmarks", "tweet_id", post, "bookmarked")
       end
@@ -142,7 +142,7 @@ module X
       # @param post [Resource, String, Integer] the post or its identifier
       # @return [Boolean] true if this user no longer has the post bookmarked
       # @example Remove a bookmark
-      #   client.current_user.unbookmark(post)
+      #   client.current_user!.unbookmark(post)
       def unbookmark(post)
         unrelate("bookmarks", post, "bookmarked")
       end
@@ -153,7 +153,7 @@ module X
       # @param list [Resource, String, Integer] the list or its identifier
       # @return [Boolean] true if this user now follows the list
       # @example Follow a list
-      #   client.current_user.follow_list(list)
+      #   client.current_user!.follow_list(list)
       def follow_list(list)
         relate("followed_lists", "list_id", list, "following")
       end
@@ -164,7 +164,7 @@ module X
       # @param list [Resource, String, Integer] the list or its identifier
       # @return [Boolean] true if this user no longer follows the list
       # @example Unfollow a list
-      #   client.current_user.unfollow_list(list)
+      #   client.current_user!.unfollow_list(list)
       def unfollow_list(list)
         unrelate("followed_lists", list, "following")
       end
@@ -175,7 +175,7 @@ module X
       # @param list [Resource, String, Integer] the list or its identifier
       # @return [Boolean] true if this user has pinned the list
       # @example Pin a list
-      #   client.current_user.pin_list(list)
+      #   client.current_user!.pin_list(list)
       def pin_list(list)
         relate("pinned_lists", "list_id", list, "pinned")
       end
@@ -186,7 +186,7 @@ module X
       # @param list [Resource, String, Integer] the list or its identifier
       # @return [Boolean] true if this user no longer has the list pinned
       # @example Unpin a list
-      #   client.current_user.unpin_list(list)
+      #   client.current_user!.unpin_list(list)
       def unpin_list(list)
         unrelate("pinned_lists", list, "pinned")
       end
@@ -202,7 +202,7 @@ module X
       # @param user [User, String, Integer] the user or their identifier
       # @return [Boolean] true if this user follows the user
       # @example Check whether the authenticated user follows someone, in one lookup
-      #   client.current_user.follows?(other)
+      #   client.current_user!.follows?(other)
       def follows?(user)
         target = User.from_id(user)
         case authenticated_user_id

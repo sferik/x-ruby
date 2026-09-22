@@ -14,33 +14,37 @@ module X
       end
 
       def test_current_user
-        assert_equal "sferik", @client.current_user.username
-        assert_same @client.current_user, @client.current_user
+        assert_equal "sferik", @client.current_user!.username
+        assert_same @client.current_user!, @client.current_user!
         assert_equal ["users/me"], @client.paths
+      end
+
+      def test_the_current_user_is_read_with_a_bang_since_it_raises
+        refute_respond_to @client, :current_user
       end
 
       def test_current_user_is_kept_while_the_authenticator_is
         client = client_with_authenticator
-        first = client.current_user
+        first = client.current_user!
         client.stub(:get, "users/me", {"data" => {"id" => "12", "username" => "jack"}})
 
-        assert_same first, client.current_user
+        assert_same first, client.current_user!
         assert_equal ["users/me"], client.paths
       end
 
       def test_current_user_is_fetched_again_for_a_new_authenticator
         client = client_with_authenticator
-        client.current_user
+        client.current_user!
         client.stub(:get, "users/me", {"data" => {"id" => "12", "username" => "jack"}})
         client.authenticator = Object.new
 
-        assert_equal %w[jack jack], [client.current_user.username, client.current_user.username]
+        assert_equal %w[jack jack], [client.current_user!.username, client.current_user!.username]
         assert_equal ["users/me"] * 2, client.paths
       end
 
       def test_current_user_missing
         @client.stub(:get, "users/me", {"errors" => []})
-        error = assert_raises(MissingResource) { @client.current_user }
+        error = assert_raises(MissingResource) { @client.current_user! }
 
         assert_equal "users/me returned no user", error.message
       end

@@ -281,7 +281,7 @@ module X
     # @api public
     # @return [Array<Problem>] the problems, such as expansions whose resources no longer exist
     # @example Check whether a user's pinned post still exists
-    #   client.current_user.problems.select(&:not_found?)
+    #   client.current_user!.problems.select(&:not_found?)
     def problems = includes.problems
 
     # Check whether the resource holds nothing but its identifier

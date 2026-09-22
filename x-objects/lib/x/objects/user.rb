@@ -396,7 +396,7 @@ module X
     # @param params [Hash] query parameters merged over the default parameters
     # @return [Cursor] a cursor over the blocked users
     # @example Print every blocked user
-    #   client.current_user.blocking.each { |user| puts user.username }
+    #   client.current_user!.blocking.each { |user| puts user.username }
     def blocking(**params)
       cursor(User, "users/#{id}/blocking", max_results: MAX_FOLLOW_RESULTS, **params)
     end
@@ -407,7 +407,7 @@ module X
     # @param params [Hash] query parameters merged over the default parameters
     # @return [Cursor] a cursor over the muted users
     # @example Print every muted user
-    #   client.current_user.muting.each { |user| puts user.username }
+    #   client.current_user!.muting.each { |user| puts user.username }
     def muting(**params)
       cursor(User, "users/#{id}/muting", max_results: MAX_FOLLOW_RESULTS, **params)
     end
@@ -429,7 +429,7 @@ module X
     # @param params [Hash] query parameters merged over the default parameters
     # @return [Cursor] a cursor over the posts by the users this user follows, newest first
     # @example Print the home timeline
-    #   client.current_user.home_timeline.first(10).each { |post| puts post.text }
+    #   client.current_user!.home_timeline.first(10).each { |post| puts post.text }
     def home_timeline(**params)
       cursor(Post, "users/#{id}/timelines/reverse_chronological", max_results: MAX_RESULTS, **params)
     end
@@ -465,7 +465,7 @@ module X
     # @param params [Hash] query parameters merged over the default parameters
     # @return [Cursor] a cursor over the bookmarked posts
     # @example Print the bookmarked posts
-    #   client.current_user.bookmarks.each { |post| puts post.text }
+    #   client.current_user!.bookmarks.each { |post| puts post.text }
     def bookmarks(**params) = cursor(Post, "users/#{id}/bookmarks", max_results: MAX_RESULTS, **params)
 
     # The lists owned by this user
@@ -509,7 +509,7 @@ module X
     # @param params [Hash] query parameters merged over the default parameters
     # @return [Cursor] a cursor over the pinned lists
     # @example Print the pinned lists
-    #   client.current_user.pinned_lists.each { |list| puts list.name }
+    #   client.current_user!.pinned_lists.each { |list| puts list.name }
     def pinned_lists(**params)
       cursor(List, "users/#{id}/pinned_lists", max_results: nil, **params)
     end

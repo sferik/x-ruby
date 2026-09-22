@@ -119,7 +119,7 @@ module X
 
       def test_current_user_missing_raises_not_found
         @client.stub(:get, "users/me", {"errors" => []})
-        error = assert_raises(MissingResource) { @client.current_user }
+        error = assert_raises(MissingResource) { @client.current_user! }
 
         assert_equal "users/me returned no user", error.message
       end

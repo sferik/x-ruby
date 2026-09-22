@@ -113,8 +113,8 @@ module X
           # @return [User] the authenticated user
           # @raise [MissingResource] if the API returns no user
           # @example Print the home timeline of the authenticated user
-          #   client.current_user.home_timeline.each { |post| puts post.text }
-          def current_user
+          #   client.current_user!.home_timeline.each { |post| puts post.text }
+          def current_user!
             authenticator = Utils.authenticator_of(self)
             owner, user = @current_user
             return user if user && owner.equal?(authenticator)
@@ -127,13 +127,13 @@ module X
           # The identifier of the authenticated user, from an OAuth 1.0a token if possible
           #
           # An OAuth 1.0a access token begins with the identifier of its user, so a client that holds one needs no
-          # lookup. Any other client looks the user up once, as current_user does.
+          # lookup. Any other client looks the user up once, as current_user! does.
           #
           # @api public
           # @return [Integer] the identifier
           # @example Get the identifier of the authenticated user
           #   client.current_user_id # => 7505382
-          def current_user_id = Utils.authenticated_user_id(self) || current_user.id
+          def current_user_id = Utils.authenticated_user_id(self) || current_user!.id
 
           # Search users
           #

@@ -26,7 +26,7 @@ module X
 
       def test_a_resource_reports_the_problems_of_its_response
         @client.stub(:get, "users/me", {"data" => {"id" => "1", "pinned_post_id" => "9"}, "errors" => [PINNED_MISSING]})
-        user = @client.current_user
+        user = @client.current_user!
 
         assert_equal [PINNED_MISSING], user.problems.map(&:to_h)
         assert_same user.problems, user.pinned_post.problems
@@ -119,7 +119,7 @@ module X
 
       def test_current_user_missing_explains_itself
         @client.stub(:get, "users/me", {"errors" => [{"title" => "Unauthorized", "detail" => "The token was revoked."}]})
-        error = assert_raises(MissingResource) { @client.current_user }
+        error = assert_raises(MissingResource) { @client.current_user! }
 
         assert_equal "users/me returned no user: The token was revoked.", error.message
       end
