@@ -149,13 +149,17 @@ module X
 
     # Refresh the access token using the refresh token
     #
+    # The authenticator holds the new tokens once it returns, and has passed itself to on_token_refresh.
+    #
     # @api public
-    # @return [Hash{String => Object}] the token response
+    # @return [OAuth2Authenticator] the authenticator, which holds the new tokens
     # @raise [AuthorizationError] if X refuses to refresh the token
-    # @example Refresh the token
-    #   authenticator.refresh_token!
-    def refresh_token!
-      @mutex.synchronize { refresh }.tap { report_refresh }
+    # @example Refresh the tokens and store them
+    #   store(authenticator.refresh!.refresh_token)
+    def refresh!
+      @mutex.synchronize { refresh }
+      report_refresh
+      self
     end
 
     protected
@@ -230,12 +234,11 @@ module X
 
     # Refresh the access token, holding the lock
     # @api private
-    # @return [Hash{String => Object}] the token response
+    # @return [true] true, once the authenticator holds the new tokens
     # @raise [AuthorizationError] if X refuses to refresh the token
     def refresh
-      token = Core::TokenEndpoint.fetch(oauth2_client.refresh_token_request(refresh_token:), connection:)
-      update_tokens(token)
-      token.params
+      update_tokens(Core::TokenEndpoint.fetch(oauth2_client.refresh_token_request(refresh_token:), connection:))
+      true
     rescue SimpleOAuth::OAuth2::Error => e
       raise AuthorizationError.from(e, DEFAULT_ERROR_MESSAGE)
     end

@@ -176,7 +176,7 @@ module X
         .with(headers: {"Content-Type" => "application/x-www-form-urlencoded"})
         .to_return(status: 200, body: {access_token: "new"}.to_json)
 
-      authenticator.refresh_token!
+      authenticator.refresh!
     end
 
     def test_refresh_token_sends_basic_auth_header
@@ -186,7 +186,7 @@ module X
         .with(headers: {"Authorization" => expected_auth})
         .to_return(status: 200, body: {access_token: "new"}.to_json)
 
-      authenticator.refresh_token!
+      authenticator.refresh!
     end
 
     def test_refresh_token_of_a_public_client_sends_its_client_id_without_basic_auth
@@ -194,7 +194,7 @@ module X
       refresh = stub_request(:post, TOKEN_URL)
         .with(body: "grant_type=refresh_token&refresh_token=#{TEST_REFRESH_TOKEN}&client_id=#{TEST_CLIENT_ID}") { |request| !request.headers.key?("Authorization") }
         .to_return(status: 200, body: {access_token: "new"}.to_json)
-      authenticator.refresh_token!
+      authenticator.refresh!
 
       assert_requested refresh
       assert_equal "new", authenticator.access_token
@@ -207,7 +207,7 @@ module X
         .with(body: expected_body)
         .to_return(status: 200, body: {access_token: "new"}.to_json)
 
-      authenticator.refresh_token!
+      authenticator.refresh!
     end
 
     def test_refresh_token_updates_access_token
@@ -215,7 +215,7 @@ module X
       stub_request(:post, TOKEN_URL)
         .to_return(status: 200, body: {access_token: "NEW_ACCESS_TOKEN"}.to_json)
 
-      authenticator.refresh_token!
+      authenticator.refresh!
 
       assert_equal "NEW_ACCESS_TOKEN", authenticator.access_token
     end
@@ -225,19 +225,24 @@ module X
       stub_request(:post, TOKEN_URL)
         .to_return(status: 200, body: {access_token: "new", refresh_token: "NEW_REFRESH"}.to_json)
 
-      authenticator.refresh_token!
+      authenticator.refresh!
 
       assert_equal "NEW_REFRESH", authenticator.refresh_token
     end
 
-    def test_refresh_token_returns_response_body
+    def test_refresh_returns_the_authenticator_holding_the_new_tokens
       authenticator = OAuth2Authenticator.new(**test_oauth2_credentials)
       stub_request(:post, TOKEN_URL)
         .to_return(status: 200, body: {access_token: "new"}.to_json)
 
-      result = authenticator.refresh_token!
+      result = authenticator.refresh!
 
-      assert_equal "new", result["access_token"]
+      assert_same authenticator, result
+      assert_equal "new", result.access_token
+    end
+
+    def test_refresh_token_names_the_token_alone
+      refute_respond_to OAuth2Authenticator.new(**test_oauth2_credentials), :refresh_token!
     end
 
     def test_refresh_token_updates_expires_at
@@ -246,7 +251,7 @@ module X
         .to_return(status: 200, body: {access_token: "new", expires_in: 7200}.to_json)
 
       before_refresh = Time.now
-      authenticator.refresh_token!
+      authenticator.refresh!
 
       assert_operator authenticator.expires_at, :>=, before_refresh + 7200
     end
@@ -255,7 +260,7 @@ module X
       authenticator = OAuth2Authenticator.new(**test_oauth2_credentials, expires_at: Time.now + 3600)
       stub_request(:post, TOKEN_URL).to_return(status: 200, body: {access_token: "new"}.to_json)
 
-      authenticator.refresh_token!
+      authenticator.refresh!
 
       assert_nil authenticator.expires_at
     end
@@ -265,7 +270,7 @@ module X
       stub_request(:post, TOKEN_URL)
         .to_return(status: 200, body: {access_token: "new"}.to_json)
 
-      authenticator.refresh_token!
+      authenticator.refresh!
 
       assert_equal TEST_REFRESH_TOKEN, authenticator.refresh_token
     end
@@ -304,7 +309,7 @@ module X
     def test_on_token_refresh_receives_the_authenticator_after_its_tokens_change
       tokens = []
       authenticator = OAuth2Authenticator.new(**test_oauth2_credentials, on_token_refresh: ->(auth) { tokens << [auth, auth.refresh_token] })
-      authenticator.refresh_token!
+      authenticator.refresh!
 
       assert_equal [[authenticator, "NEW_REFRESH_TOKEN"]], tokens
     end
@@ -440,7 +445,7 @@ module X
     def test_a_header_waits_for_a_refresh_in_progress
       stub_slow_refresh
       authenticator = OAuth2Authenticator.new(**test_oauth2_credentials, expires_at: Time.now - 1)
-      refreshing = Thread.new { authenticator.refresh_token! }
+      refreshing = Thread.new { authenticator.refresh! }
       sleep 0.01
 
       assert_equal({"Authorization" => "Bearer NEW_ACCESS_TOKEN"}, authenticator.header(nil))
@@ -460,7 +465,7 @@ module X
       stub_request(:post, TOKEN_URL)
         .to_return(status: 400, body: {error: "invalid_grant", error_description: "Token expired"}.to_json)
 
-      error = assert_raises(AuthorizationError) { authenticator.refresh_token! }
+      error = assert_raises(AuthorizationError) { authenticator.refresh! }
       assert_equal ["Token expired", "invalid_grant", 400], [error.message, error.error_code, error.status]
     end
 
@@ -470,7 +475,7 @@ module X
       stub_request(:post, TOKEN_URL)
         .to_return(status: 400, body: {error: "invalid_grant"}.to_json)
 
-      error = assert_raises(AuthorizationError) { authenticator.refresh_token! }
+      error = assert_raises(AuthorizationError) { authenticator.refresh! }
       assert_equal "invalid_grant", error.message
     end
 
@@ -480,7 +485,7 @@ module X
       stub_request(:post, TOKEN_URL)
         .to_return(status: 500, body: {}.to_json)
 
-      error = assert_raises(AuthorizationError) { authenticator.refresh_token! }
+      error = assert_raises(AuthorizationError) { authenticator.refresh! }
       assert_equal ["Token refresh failed", nil, 500], [error.message, error.error_code, error.status]
     end
 
@@ -490,7 +495,7 @@ module X
       stub_request(:post, TOKEN_URL)
         .to_return(status: 500, body: "Internal Server Error")
 
-      error = assert_raises(AuthorizationError) { authenticator.refresh_token! }
+      error = assert_raises(AuthorizationError) { authenticator.refresh! }
       assert_equal "Token refresh failed", error.message
     end
   end

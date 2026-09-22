@@ -26,7 +26,7 @@ module X
     def test_a_refresh_that_reports_no_lifetime_clears_the_expiration_time_of_the_client
       stub_token_refresh_without_a_lifetime
       client = Client.new(**test_oauth2_credentials, expires_at: Time.now - 1)
-      client.authenticator.refresh_token!
+      client.authenticator.refresh!
 
       assert_nil client.expires_at
     end
@@ -35,7 +35,7 @@ module X
       refresh = stub_token_refresh_without_a_lifetime
       stub_users_me("NEW_ACCESS_TOKEN")
       client = Client.new(**test_oauth2_credentials, expires_at: Time.now - 1)
-      client.authenticator.refresh_token!
+      client.authenticator.refresh!
       copy = client.with
       copy.get("users/me")
 
@@ -75,7 +75,7 @@ module X
       client = Client.new(**test_oauth2_credentials, on_token_refresh: ->(authenticator) { refreshed << [:client, authenticator.refresh_token] })
       client.with(access_token: "OTHER_ACCESS_TOKEN", refresh_token: "OTHER_REFRESH_TOKEN",
         on_token_refresh: ->(authenticator) { refreshed << [:copy, authenticator.refresh_token] })
-      client.authenticator.refresh_token!
+      client.authenticator.refresh!
 
       assert_equal [[:client, "NEW_REFRESH_TOKEN"]], refreshed
     end
@@ -84,7 +84,7 @@ module X
       refreshed = []
       client = Client.new(**test_oauth2_credentials, on_token_refresh: ->(_) { refreshed << :client })
       copy = client.with(access_token: "OTHER_ACCESS_TOKEN", refresh_token: "OTHER_REFRESH_TOKEN", on_token_refresh: ->(_) { refreshed << :copy })
-      copy.authenticator.refresh_token!
+      copy.authenticator.refresh!
 
       assert_equal [:copy], refreshed
     end
@@ -94,7 +94,7 @@ module X
       client = Client.new(**test_oauth2_credentials)
       client.with(client_id: nil, client_secret: nil, access_token: nil, refresh_token: nil,
         bearer_token: TEST_BEARER_TOKEN, on_token_refresh: ->(_) { refreshed << :copy })
-      client.authenticator.refresh_token!
+      client.authenticator.refresh!
 
       assert_empty refreshed
     end

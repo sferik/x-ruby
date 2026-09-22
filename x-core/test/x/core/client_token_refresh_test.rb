@@ -108,7 +108,7 @@ module X
 
     def test_the_client_reads_the_tokens_of_the_last_refresh
       client = Client.new(**test_oauth2_credentials)
-      client.authenticator.refresh_token!
+      client.authenticator.refresh!
 
       assert_equal ["NEW_ACCESS_TOKEN", "NEW_REFRESH_TOKEN"], [client.send(:access_token), client.send(:refresh_token)]
       assert_in_delta Time.now + 7200, client.expires_at, 5
@@ -117,18 +117,18 @@ module X
     def test_on_token_refresh_receives_the_authenticator
       refreshed = []
       client = Client.new(**test_oauth2_credentials, on_token_refresh: ->(authenticator) { refreshed << authenticator })
-      client.authenticator.refresh_token!
+      client.authenticator.refresh!
 
       assert_equal [client.authenticator], refreshed
     end
 
     def test_on_token_refresh_is_optional_and_a_copy_can_add_one
       client = Client.new(**test_oauth2_credentials)
-      client.authenticator.refresh_token!
+      client.authenticator.refresh!
       refreshed = []
       copy = client.with(on_token_refresh: ->(authenticator) { refreshed << authenticator.refresh_token })
       stub_token_refresh("NEWER_ACCESS_TOKEN", "NEWER_REFRESH_TOKEN")
-      copy.authenticator.refresh_token!
+      copy.authenticator.refresh!
 
       assert_equal ["NEWER_REFRESH_TOKEN"], refreshed
     end
@@ -164,7 +164,7 @@ module X
 
     def test_a_copy_with_another_credential_keeps_the_refreshed_tokens
       client = Client.new(**test_oauth2_credentials)
-      client.authenticator.refresh_token!
+      client.authenticator.refresh!
       copy = client.with(client_secret: "NEW_CLIENT_SECRET")
 
       assert_equal ["NEW_ACCESS_TOKEN", "NEW_REFRESH_TOKEN"], [copy.authenticator.access_token, copy.authenticator.refresh_token]
@@ -173,7 +173,7 @@ module X
 
     def test_a_copy_given_a_token_replaces_the_refreshed_one
       client = Client.new(**test_oauth2_credentials)
-      client.authenticator.refresh_token!
+      client.authenticator.refresh!
       copy = client.with(access_token: "GIVEN_ACCESS_TOKEN")
 
       assert_equal ["GIVEN_ACCESS_TOKEN", "NEW_REFRESH_TOKEN"], [copy.authenticator.access_token, copy.authenticator.refresh_token]
@@ -188,7 +188,7 @@ module X
     def test_a_copy_shares_the_authenticator_so_a_refresh_reaches_both
       client = Client.new(**test_oauth2_credentials, expires_at: Time.now + 3600)
       copy = client.with(base_url: "https://api.x.com/1.1/")
-      copy.authenticator.refresh_token!
+      copy.authenticator.refresh!
 
       assert_same client.authenticator, copy.authenticator
       assert_equal %w[NEW_REFRESH_TOKEN NEW_REFRESH_TOKEN], [client.send(:refresh_token), copy.send(:refresh_token)]
@@ -199,7 +199,7 @@ module X
       hook = ->(authenticator) { refreshed << [:client, authenticator.refresh_token] }
       client = Client.new(**test_oauth2_credentials, on_token_refresh: hook)
       copies = [client.with(on_token_refresh: ->(authenticator) { refreshed << [:copy, authenticator.refresh_token] }), client.with]
-      copies.first.authenticator.refresh_token!
+      copies.first.authenticator.refresh!
 
       assert_equal [[:client, "NEW_REFRESH_TOKEN"], [:copy, "NEW_REFRESH_TOKEN"]], refreshed.sort
     end
@@ -223,7 +223,7 @@ module X
 
     def test_a_copy_of_a_refreshed_client_shares_its_authenticator
       client = Client.new(**test_oauth2_credentials)
-      client.authenticator.refresh_token!
+      client.authenticator.refresh!
 
       assert_same client.authenticator, client.with.authenticator
     end

@@ -731,7 +731,7 @@ module X
     def same_credentials?: (untyped other) -> bool
     def inspect: () -> String
     def token_expired?: -> bool
-    def refresh_token!: -> Hash[String, untyped]
+    def refresh!: -> OAuth2Authenticator
 
     def credentials: -> Array[String?]
 
@@ -740,7 +740,7 @@ module X
     def retrying_rejected_token: [T] () { () -> T } -> T
     def update_expires_at: (Time? expires_at) -> void
     attr_reader client_secret: String?
-    def refresh: -> Hash[String, untyped]
+    def refresh: -> true
     def report_refresh: -> void
     def oauth2_client: -> SimpleOAuth::OAuth2::Client
     def update_tokens: (SimpleOAuth::OAuth2::Token token) -> void

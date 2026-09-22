@@ -16,9 +16,8 @@ module X
       OAuth2Authenticator.new(**test_oauth2_credentials, on_token_refresh: ->(auth) { @refreshed << auth.access_token }, **options)
     end
 
-    def test_refresh_token_returns_the_token_response_after_on_token_refresh
-      assert_equal({"access_token" => "NEW_ACCESS_TOKEN", "refresh_token" => "NEW_REFRESH_TOKEN"}, authenticator.refresh_token!)
-      assert_equal ["NEW_ACCESS_TOKEN"], @refreshed
+    def test_refresh_returns_the_authenticator_after_on_token_refresh
+      assert_equal ["NEW_REFRESH_TOKEN", ["NEW_ACCESS_TOKEN"]], [authenticator.refresh!.refresh_token, @refreshed]
     end
 
     def test_header_passes_a_refresh_to_on_token_refresh
