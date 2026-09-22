@@ -262,14 +262,15 @@ module X
   end
 
   class MediaProcessingTimeout < Uploader::Error
-    attr_reader status: UploadedMedia | Hash[String, untyped]
-    def initialize: (UploadedMedia | Hash[String, untyped] status, Integer timeout) -> void
+    attr_reader status: UploadedMedia | Hash[String, untyped] | nil
+    attr_reader timeout: Integer?
+    def initialize: (?String? message, ?status: UploadedMedia | Hash[String, untyped] | nil, ?timeout: Integer?) -> void
   end
 
   class MediaProcessingFailed < Uploader::Error
     DEFAULT_MESSAGE: String
 
-    attr_reader status: UploadedMedia | Hash[String, untyped]
-    def initialize: (UploadedMedia | Hash[String, untyped] status) -> void
+    attr_reader status: UploadedMedia | Hash[String, untyped] | nil
+    def initialize: (?String? message, ?status: UploadedMedia | Hash[String, untyped] | nil) -> void
   end
 end

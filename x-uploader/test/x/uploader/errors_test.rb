@@ -8,15 +8,27 @@ module X
 
     def test_the_message_is_the_reason_x_gives
       status = {"processing_info" => {"state" => "failed", "error" => {"code" => 1, "name" => "InvalidMedia", "message" => "Unsupported video format"}}}
-      error = MediaProcessingFailed.new(status)
+      error = MediaProcessingFailed.new(status:)
 
       assert_equal ["Unsupported video format", status], [error.message, error.status]
       assert_kind_of Error, error
     end
 
     def test_the_message_without_a_reason
-      assert_equal ["Media processing failed"] * 2,
-        [MediaProcessingFailed.new({"processing_info" => {"state" => "failed"}}), MediaProcessingFailed.new({})].map(&:message)
+      assert_equal ["Media processing failed"] * 3,
+        [MediaProcessingFailed.new(status: {"processing_info" => {"state" => "failed"}}), MediaProcessingFailed.new(status: {}), MediaProcessingFailed.new].map(&:message)
+    end
+
+    def test_a_message_given_is_the_message_whatever_the_status
+      status = {"processing_info" => {"error" => {"message" => "Unsupported video format"}}}
+
+      assert_equal ["Stubbed", status], MediaProcessingFailed.new("Stubbed", status:).then { |error| [error.message, error.status] }
+    end
+
+    def test_it_is_raised_with_a_message_alone
+      error = assert_raises(MediaProcessingFailed) { raise MediaProcessingFailed, "Stubbed" }
+
+      assert_equal ["Stubbed", nil], [error.message, error.status]
     end
   end
 
@@ -25,10 +37,24 @@ module X
 
     def test_holds_the_last_status_and_names_the_timeout
       status = {"processing_info" => {"state" => "in_progress"}}
-      error = MediaProcessingTimeout.new(status, 600)
+      error = MediaProcessingTimeout.new(status:, timeout: 600)
 
-      assert_equal [status, "Media processing did not finish within 600 seconds"], [error.status, error.message]
+      assert_equal [status, 600, "Media processing did not finish within 600 seconds"], [error.status, error.timeout, error.message]
       assert_kind_of Error, error
+    end
+
+    def test_a_message_given_is_the_message_whatever_the_timeout
+      assert_equal "Stubbed", MediaProcessingTimeout.new("Stubbed", timeout: 600).message
+    end
+
+    def test_it_is_raised_with_a_message_alone
+      error = assert_raises(MediaProcessingTimeout) { raise MediaProcessingTimeout, "Stubbed" }
+
+      assert_equal ["Stubbed", nil, nil], [error.message, error.status, error.timeout]
+    end
+
+    def test_the_message_without_a_timeout
+      assert_equal "Media processing did not finish", MediaProcessingTimeout.new.message
     end
   end
 
@@ -65,7 +91,7 @@ module X
     cover Uploader::Error
 
     def test_every_error_of_an_upload_is_an_uploader_error
-      errors = [InvalidMediaType.new, MediaProcessingFailed.new({}), MediaProcessingTimeout.new({}, 600)]
+      errors = [InvalidMediaType.new, MediaProcessingFailed.new, MediaProcessingTimeout.new]
 
       assert(errors.all? { |error| error.is_a?(Uploader::Error) })
       assert(errors.all? { |error| error.is_a?(Error) })

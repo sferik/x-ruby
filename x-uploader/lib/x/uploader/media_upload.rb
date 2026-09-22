@@ -267,7 +267,7 @@ module X
           return status unless status&.processing?
 
           wait = [status.check_after_secs.to_i, MIN_CHECK_AFTER_SECS].max
-          raise MediaProcessingTimeout.new(status, processing_timeout) if (waited += wait) > processing_timeout
+          raise MediaProcessingTimeout.new(status:, timeout: processing_timeout) if (waited += wait) > processing_timeout
 
           sleep wait
         end
@@ -287,7 +287,7 @@ module X
       # @example Wait for processing with error handling
       #   Uploader::MediaUpload.await_processing!(media, client: client)
       def await_processing!(media, client:, processing_timeout: DEFAULT_PROCESSING_TIMEOUT)
-        await_processing(media, client:, processing_timeout:).tap { |status| raise MediaProcessingFailed.new(status) if status&.failed? }
+        await_processing(media, client:, processing_timeout:).tap { |status| raise MediaProcessingFailed.new(status:) if status&.failed? }
       end
 
       # Infer the media type from file path and category
