@@ -36,7 +36,7 @@ module X
         @connection.perform_stream(request:) { |_response| flunk "unexpected yield" }
       end
 
-      assert_equal "Network error: #{Errno::ECONNREFUSED.new("Exception from WebMock").message}", error.message
+      assert_equal "GET /: Network error: #{Errno::ECONNREFUSED.new("Exception from WebMock").message}", error.message
     end
 
     def test_perform_stream_reports_a_connection_that_drops_while_reading_as_a_network_error

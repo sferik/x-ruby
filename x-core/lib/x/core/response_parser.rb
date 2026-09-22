@@ -66,13 +66,14 @@ module X
       # @param object_class [Class, nil] the class for parsing JSON objects, or a class that builds objects from
       #   the whole body (see {#decode})
       # @param client [Client, nil] the client that made the request
+      # @param request [Net::HTTPRequest, nil] the request the response answers, which its error names
       # @return [Object, nil] the parsed response body
       # @raise [HTTPError] if the response is not successful
       # @raise [InvalidResponse] if the body of a successful response is not JSON
       # @example Parse a response
-      #   parser.parse(response: response)
-      def parse(response:, array_class: nil, object_class: nil, client: nil)
-        raise error(response) unless response.is_a?(Net::HTTPSuccess)
+      #   parser.parse(response: response, request: request)
+      def parse(response:, array_class: nil, object_class: nil, client: nil, request: nil)
+        raise error(response, request) unless response.is_a?(Net::HTTPSuccess)
 
         body = response.body.to_s
         return unless body.match?(/\S/)
@@ -80,7 +81,7 @@ module X
         begin
           decode(body, array_class:, object_class:, client:)
         rescue JSON::ParserError
-          raise InvalidResponse.new(http_response: response, body:)
+          raise InvalidResponse.new(http_response: response, body:, request:)
         end
       end
 
@@ -111,9 +112,10 @@ module X
       # Create an error from a response
       # @api private
       # @param response [Net::HTTPResponse] the HTTP response
+      # @param request [Net::HTTPRequest, nil] the request the response answers, which the error names
       # @return [HTTPError] the error
-      def error(response)
-        error_class(response).new(http_response: response)
+      def error(response, request)
+        error_class(response).new(http_response: response, request:)
       end
 
       # Get the error class for a response, falling back on its class of status

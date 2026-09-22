@@ -62,7 +62,7 @@ module X
       begin
         @client.get("tweets")
       rescue BadRequest => e
-        assert_equal "problem", e.message
+        assert_equal "GET /2/tweets: problem", e.message
       end
     end
   end

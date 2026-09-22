@@ -27,6 +27,7 @@ module X
       # @param client [Client, nil] the client that made the request
       # @param on_body [#call, nil] a callable called before a failed response raises, and passed each line of JSON
       #   before it is decoded
+      # @param request [Net::HTTPRequest, nil] the request the stream answers, which its errors name
       # @yield [Object] each decoded JSON document from the stream
       # @return [void]
       # @raise [HTTPError] if the response is not successful
@@ -35,15 +36,15 @@ module X
       #   connection raises that error rather than take it for a network error and reconnect
       # @example Process a streaming response
       #   handler.process(response: response, response_parser: parser) { |json| puts json }
-      def process(response:, response_parser:, array_class: nil, object_class: nil, client: nil, on_body: nil, &block)
-        raise_unless_successful(response:, response_parser:, on_body:)
+      def process(response:, response_parser:, array_class: nil, object_class: nil, client: nil, on_body: nil, request: nil, &block)
+        raise_unless_successful(response:, response_parser:, on_body:, request:)
         decode = lambda do |line|
           tagging_callback_errors do
             on_body&.call(line)
             response_parser.decode(line, array_class:, object_class:, client:)
           end
         rescue JSON::ParserError
-          raise InvalidResponse.new(http_response: response, body: line)
+          raise InvalidResponse.new(http_response: response, body: line, request:)
         end
         read_lines(response:, decode:, &block)
       end
@@ -55,14 +56,15 @@ module X
       # @param response [Net::HTTPResponse] the HTTP response
       # @param response_parser [ResponseParser] the response parser that raises the error
       # @param on_body [#call, nil] a callable called before the error is raised
+      # @param request [Net::HTTPRequest, nil] the request the response answers, which the error names
       # @return [void]
       # @raise [HTTPError] if the response is not successful
       # @raise [StreamCallbackError] if on_body raises
-      def raise_unless_successful(response:, response_parser:, on_body:)
+      def raise_unless_successful(response:, response_parser:, on_body:, request:)
         return if response.is_a?(Net::HTTPSuccess)
 
         tagging_callback_errors { on_body&.call }
-        response_parser.parse(response:)
+        response_parser.parse(response:, request:)
       end
 
       # Run the callbacks of a line, tagging the error one of them raises

@@ -57,6 +57,21 @@ module X
       def close: (Net::HTTP http_client) -> void
     end
 
+    module RequestContext
+      QUERY: Regexp
+
+      @http_method: Symbol?
+      @uri: URI::Generic?
+      @request_line: String?
+
+      attr_reader http_method: Symbol?
+      attr_reader uri: URI::Generic?
+
+      private
+      def name_request: (Net::HTTPRequest? request) -> void
+      def message_naming_request: (String message) -> String
+    end
+
     class RequestBuilder
       HTTP_METHODS: Hash[Symbol, (singleton(Net::HTTP::Get) | singleton(Net::HTTP::Post) | singleton(Net::HTTP::Put) | singleton(Net::HTTP::Delete))]
       DEFAULT_HEADERS: Hash[String, String]
@@ -163,21 +178,21 @@ module X
       STATUS_CLASS_ERRORS: Hash[Integer, singleton(ClientError) | singleton(ServerError)]
       ERROR_MAP: Hash[Integer, singleton(BadGateway) | singleton(BadRequest) | singleton(Conflict) | singleton(Forbidden) | singleton(GatewayTimeout) | singleton(Gone) | singleton(InternalServerError) | singleton(MethodNotAllowed) | singleton(NotAcceptable) | singleton(NotFound) | singleton(PayloadTooLarge) | singleton(RequestTimeout) | singleton(ServiceUnavailable) | singleton(TooManyRequests) | singleton(Unauthorized) | singleton(UnavailableForLegalReasons) | singleton(UnprocessableEntity) | singleton(UnsupportedMediaType)]
 
-      def parse: (response: Net::HTTPResponse, ?array_class: Class?, ?object_class: untyped, ?client: Client?) -> untyped
+      def parse: (response: Net::HTTPResponse, ?array_class: Class?, ?object_class: untyped, ?client: Client?, ?request: Net::HTTPRequest?) -> untyped
       def decode: (String json, ?array_class: Class?, ?object_class: untyped, ?client: Client?) -> untyped
 
       private
-      def error: (Net::HTTPResponse response) -> HTTPError
+      def error: (Net::HTTPResponse response, Net::HTTPRequest? request) -> HTTPError
       def error_class: (Net::HTTPResponse response) -> (singleton(HTTPError) | singleton(BadGateway) | singleton(BadRequest) | singleton(Conflict) | singleton(Forbidden) | singleton(GatewayTimeout) | singleton(Gone) | singleton(InternalServerError) | singleton(MethodNotAllowed) | singleton(NotAcceptable) | singleton(NotFound) | singleton(PayloadTooLarge) | singleton(RequestTimeout) | singleton(ServiceUnavailable) | singleton(TooManyRequests) | singleton(Unauthorized) | singleton(UnavailableForLegalReasons) | singleton(UnprocessableEntity) | singleton(UnsupportedMediaType))
     end
 
     class StreamParser
       LINE_DELIMITER: String
 
-      def process: (response: Net::HTTPResponse, response_parser: ResponseParser, ?array_class: Class?, ?object_class: untyped, ?client: Client?, ?on_body: _BodyHook?) { (untyped) -> void } -> void
+      def process: (response: Net::HTTPResponse, response_parser: ResponseParser, ?array_class: Class?, ?object_class: untyped, ?client: Client?, ?on_body: _BodyHook?, ?request: Net::HTTPRequest?) { (untyped) -> void } -> void
 
       private
-      def raise_unless_successful: (response: Net::HTTPResponse, response_parser: ResponseParser, on_body: _BodyHook?) -> void
+      def raise_unless_successful: (response: Net::HTTPResponse, response_parser: ResponseParser, on_body: _BodyHook?, request: Net::HTTPRequest?) -> void
       def tagging_callback_errors: [T] () { () -> T } -> T
       def read_lines: (response: Net::HTTPResponse, decode: ^(String) -> untyped) { (untyped) -> void } -> void
       def process_buffer: (buffer: String, decode: ^(String) -> untyped) { (untyped) -> void } -> void
@@ -455,6 +470,7 @@ module X
   end
 
   class HTTPError < Error
+    include Core::RequestContext
     include Core::ResponseHeaders
 
     JSON_CONTENT_TYPE_REGEXP: Regexp
@@ -465,7 +481,7 @@ module X
     attr_reader http_response : Net::HTTPResponse
     attr_reader problem : Problem?
 
-    def initialize: (http_response: Net::HTTPResponse) -> void
+    def initialize: (http_response: Net::HTTPResponse, ?request: Net::HTTPRequest?) -> void
     def status: () -> Integer
     def body: () -> String?
     def retry_after: () -> Integer?
@@ -496,6 +512,9 @@ module X
   end
 
   class NetworkError < Error
+    include Core::RequestContext
+
+    def initialize: (String message, ?request: Net::HTTPRequest?) -> void
   end
 
   class NotAcceptable < ClientError
@@ -529,10 +548,12 @@ module X
   end
 
   class InvalidResponse < Error
+    include Core::RequestContext
+
     attr_reader http_response: Net::HTTPResponse
     attr_reader body: String?
 
-    def initialize: (http_response: Net::HTTPResponse, ?body: String?) -> void
+    def initialize: (http_response: Net::HTTPResponse, ?body: String?, ?request: Net::HTTPRequest?) -> void
   end
 
   class TooManyRequests < ClientError

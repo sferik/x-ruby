@@ -128,9 +128,10 @@ module X
 
       uri = URI.join(client.base_url, endpoint_with(endpoint, params))
       @reconnect_handler.handle(block) do |deliver|
-        @connection.perform_stream(request: request_for(uri, headers)) do |response|
+        request = request_for(uri, headers)
+        @connection.perform_stream(request:) do |response|
           @stream_parser.process(response:, response_parser: @response_parser, array_class:, object_class:, client:,
-            on_body: ->(body = nil) { report(uri, response, body) }, &deliver)
+            on_body: ->(body = nil) { report(uri, response, body) }, request:, &deliver)
         end
       end
     end

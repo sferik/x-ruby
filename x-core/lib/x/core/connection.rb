@@ -133,7 +133,7 @@ module X
       open = -> { build_http_client(uri).tap { |http_client| http_client.use_ssl = use_ssl } }
       send_request(request, [use_ssl, hostname, port], open)
     rescue *NETWORK_ERRORS => e
-      raise NetworkError, "Network error: #{e}"
+      raise NetworkError.new("Network error: #{e}", request:)
     end
 
     # Perform a streaming HTTP request
@@ -161,7 +161,7 @@ module X
     rescue Core::StreamCallbackError => e
       raise e.error
     rescue *NETWORK_ERRORS => e
-      raise NetworkError, "Network error: #{e}"
+      raise NetworkError.new("Network error: #{e}", request:)
     end
 
     # Close the connections kept open between requests

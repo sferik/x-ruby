@@ -309,7 +309,7 @@ module X
       request = @request_builder.build(http_method:, uri:, body:, headers:, authenticator:)
       response = @redirect_handler.handle(response: @connection.perform(request:), request:, headers:, authenticator:)
       report(http_method, uri, response)
-      @response_parser.parse(response:, array_class:, object_class:, client: self)
+      @response_parser.parse(response:, array_class:, object_class:, client: self, request:)
     end
   end
 end

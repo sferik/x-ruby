@@ -4,17 +4,20 @@ require "json"
 require "time"
 require_relative "error"
 require_relative "../problem"
+require_relative "../request_context"
 require_relative "../response_headers"
 
 module X
   # Base class for HTTP errors from the X API
   #
-  # The message is what the API said went wrong, read from the body of the response. {#body} holds that body as it
-  # arrived, {#headers} the headers it came with, and {#problem} the JSON object within it that describes the
-  # failure, for code that acts on the reason rather than logging it.
+  # The message is what the API said went wrong, read from the body of the response, behind the method and path of
+  # the request it answered. {#body} holds that body as it arrived, {#headers} the headers it came with, and
+  # {#problem} the JSON object within it that describes the failure, for code that acts on the reason rather than
+  # logging it. {#http_method} and {#uri} are the request the API refused.
   #
   # @api public
   class HTTPError < Error
+    include Core::RequestContext
     include Core::ResponseHeaders
 
     # Regular expression to match JSON content types
@@ -59,18 +62,20 @@ module X
     # Initialize a new HTTPError
     #
     # Internal to x-core: ResponseParser raises the errors of the responses it parses, and it takes the Net::HTTP
-    # response of a request, so that it can change within 1.x, as that response may.
+    # request and response of a request, so that either can change within 1.x, as they may.
     #
     # @api private
     # @param http_response [Net::HTTPResponse] the HTTP response
+    # @param request [Net::HTTPRequest, nil] the request the response answers, which the error names
     # @return [HTTPError] a new instance
     # @example Create an HTTP error
-    #   error = X::HTTPError.new(http_response: response)
-    def initialize(http_response:)
+    #   error = X::HTTPError.new(http_response: response, request: request)
+    def initialize(http_response:, request: nil)
       @http_response = http_response
+      name_request(request)
       parsed = parsed_body
       @problem = Problem.from(problem_from(parsed))
-      super(message_from(parsed) || http_response.message)
+      super(message_naming_request(message_from(parsed) || http_response.message))
     end
 
     # The HTTP status code, as an Integer like X::Response#status
