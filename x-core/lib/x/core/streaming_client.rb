@@ -3,6 +3,7 @@
 require "forwardable"
 require "uri"
 require_relative "connection"
+require_relative "origin"
 require_relative "reconnect_handler"
 require_relative "request_builder"
 require_relative "request_encoding"
@@ -23,6 +24,9 @@ module X
   # that follows, as a client does between requests. So a streaming client has neither the keep_alive_timeout of a
   # client, which says how long a connection is kept open, nor its close, which closes the connections it kept: a
   # streaming client keeps none between streams, and a stream is stopped by raising from the block that reads it.
+  #
+  # A stream of another origin than the base URL of the client carries none of its credentials, as a request to
+  # one carries none of them; see {Core::Origin}.
   #
   # A streaming client keeps the settings it was built with for as long as it lives, as a client does, so a stream
   # that runs for hours never reads a setting another thread is halfway through changing. {Client#streaming} builds
@@ -269,14 +273,17 @@ module X
     # Build a request that authenticates as the app
     #
     # The client's headers are sent with a stream as they are with a request, and a header of the same name passed
-    # to the stream is sent in place of one of them.
+    # to the stream is sent in place of one of them. A stream of another origin than the base URL carries none of
+    # the client's credentials, as a request to one carries none of them.
     #
     # @api private
     # @param uri [URI::Generic] the URI of the stream
     # @param headers [Hash] additional headers for the request
     # @return [Net::HTTPRequest] the request
     def request_for(uri, headers)
-      @request_builder.build(http_method: :get, uri:, headers: client.headers.merge(headers), authenticator: client.app_only.authenticator)
+      authenticator, headers = Core::Origin.credentials_for(from: URI(client.base_url), to: uri,
+        authenticator: app_client.authenticator, headers: client.headers.merge(headers))
+      @request_builder.build(http_method: :get, uri:, headers:, authenticator:)
     end
 
     # Pass a response, or one object of a stream, to the client's on_response

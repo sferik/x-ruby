@@ -155,9 +155,21 @@ module X
       def rate_limit_backoff: (TooManyRequests error, Integer reconnects) -> Integer
     end
 
+    module Origin
+      extend Origin
+
+      CREDENTIAL_HEADERS: Array[String]
+
+      def credentials_for: [K < _ToS] (from: URI::Generic, to: URI::Generic, authenticator: Authenticator, headers: Hash[K, String]) -> [Authenticator, Hash[K, String]]
+      def same?: (URI::Generic uri, URI::Generic other) -> bool
+
+      private
+      def of: (URI::Generic uri) -> [String?, String?, Integer?]
+      def without_credentials: [K < _ToS] (Hash[K, String] headers) -> Hash[K, String]
+    end
+
     class RedirectHandler
       DEFAULT_MAX_REDIRECTS: Integer
-      CREDENTIAL_HEADERS: Array[String]
 
       attr_reader connection: Connection
       attr_reader request_builder: RequestBuilder
@@ -167,10 +179,6 @@ module X
 
       private
       def build_new_uri: (Net::HTTPResponse response, URI::Generic uri) -> URI::Generic?
-      def credentials_for: (URI::Generic from, URI::Generic to, Authenticator authenticator, Hash[String, String] headers) -> [Authenticator, Hash[String, String]]
-      def same_origin?: (URI::Generic uri, URI::Generic other) -> bool
-      def origin: (URI::Generic uri) -> [String?, String?, Integer?]
-      def without_credentials: (Hash[String, String] headers) -> Hash[String, String]
       def build_request: (Net::HTTPRequest request, URI::Generic new_uri, Integer response_code, Hash[String, String] headers, Authenticator authenticator) -> Net::HTTPRequest
     end
 

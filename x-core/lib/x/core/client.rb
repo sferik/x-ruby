@@ -13,6 +13,7 @@ require_relative "connection"
 require_relative "credential_validator"
 require_relative "oauth1_authenticator"
 require_relative "oauth2_authenticator"
+require_relative "origin"
 require_relative "rate_limit_handler"
 require_relative "redirect_handler"
 require_relative "request_builder"
@@ -24,6 +25,12 @@ require_relative "streaming_client"
 
 module X
   # A client for interacting with the X API
+  #
+  # An endpoint is resolved against the base URL, and a request carries the client's credentials to the origin of
+  # that base URL alone: the scheme, host, and port it names. An endpoint that names a whole URL of another origin
+  # is sent there without them, as a redirect that leads to one is, so that the credentials of the API never reach
+  # a host they were not meant for; see {Core::Origin}.
+  #
   # @api public
   class Client
     include Core::ClientAppOnly
@@ -303,9 +310,14 @@ module X
     end
 
     # Perform a request once, following redirects and parsing the response
+    #
+    # A request to another origin than the base URL carries none of the client's credentials, as a redirect to one
+    # carries none of them.
+    #
     # @api private
     # @return [Object, nil] the parsed response body, or what an object_class that responds to from_response builds
     def perform(http_method, uri, body:, headers:, array_class:, object_class:)
+      authenticator, headers = Core::Origin.credentials_for(from: URI(base_url), to: uri, authenticator: self.authenticator, headers:)
       request = @request_builder.build(http_method:, uri:, body:, headers:, authenticator:)
       response = @redirect_handler.handle(response: @connection.perform(request:), request:, headers:, authenticator:)
       report(http_method, uri, response)

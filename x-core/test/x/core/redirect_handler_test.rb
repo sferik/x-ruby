@@ -127,6 +127,7 @@ module X
 
   class RedirectHandlerCredentialsTest < Minitest::Test
     cover Core::RedirectHandler
+    cover Core::Origin
 
     AUTHORIZATION = "Bearer #{TEST_BEARER_TOKEN}".freeze
 

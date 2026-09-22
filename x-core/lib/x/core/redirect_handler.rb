@@ -5,6 +5,7 @@ require "uri"
 require_relative "authenticator"
 require_relative "connection"
 require_relative "errors/too_many_redirects"
+require_relative "origin"
 require_relative "request_builder"
 
 module X
@@ -17,9 +18,6 @@ module X
     class RedirectHandler
       # Default maximum number of redirects to follow
       DEFAULT_MAX_REDIRECTS = 10
-      # The headers that carry credentials, which a redirect to another origin drops
-      CREDENTIAL_HEADERS = [Authenticator::AUTHENTICATION_HEADER, "Cookie", "Proxy-Authorization"].freeze
-      private_constant :CREDENTIAL_HEADERS
 
       # The maximum number of redirects to follow
       # @api private
@@ -61,9 +59,9 @@ module X
       # Handle redirects for an HTTP response
       #
       # A redirect to another scheme, host, or port drops the credentials, the authenticator's and any Authorization,
-      # Cookie, or Proxy-Authorization header among the headers, so that they never reach a host they were not meant
-      # for. A 307 or 308 keeps the method and the body of the request, so a request whose body holds something
-      # private replays it to the host it is redirected to, whatever its origin.
+      # Cookie, or Proxy-Authorization header among the headers, as Origin decides; see {Origin}. A 307 or 308 keeps
+      # the method and the body of the request, so a request whose body holds something private replays it to the
+      # host it is redirected to, whatever its origin.
       #
       # A redirect that cannot be followed, such as 304 Not Modified or one whose location is missing, is not a
       # valid URL, or is not an HTTP or HTTPS URL, is returned as it is, so that the client raises an HTTPError for it.
@@ -86,7 +84,7 @@ module X
         new_uri = build_new_uri(response, uri)
         return response if new_uri.nil?
 
-        authenticator, headers = credentials_for(uri, new_uri, authenticator, headers)
+        authenticator, headers = Origin.credentials_for(from: uri, to: new_uri, authenticator:, headers:)
         new_request = build_request(request, new_uri, Integer(response.code), headers, authenticator)
         handle(response: connection.perform(request: new_request), request: new_request, headers:, authenticator:,
           redirect_count: redirect_count + 1)
@@ -109,47 +107,6 @@ module X
         new_uri if new_uri.is_a?(URI::HTTP)
       rescue URI::InvalidURIError
         nil
-      end
-
-      # The authenticator and headers of a redirect, dropping credentials off origin
-      # @api private
-      # @param from [URI::Generic] the URI of the request that was redirected
-      # @param to [URI::Generic] the URI it was redirected to
-      # @param authenticator [Authenticator] the authenticator of the request
-      # @param headers [Hash{String => String}] the headers of the request
-      # @return [Array(Authenticator, Hash{String => String})] the authenticator and headers
-      def credentials_for(from, to, authenticator, headers)
-        return [authenticator, headers] if same_origin?(from, to)
-
-        [Authenticator.new, without_credentials(headers)]
-      end
-
-      # Check whether two URIs share a scheme, host, and port
-      # @api private
-      # @param uri [URI::Generic] the URI of the request that was redirected
-      # @param other [URI::Generic] the URI it was redirected to
-      # @return [Boolean] true if both have the same origin
-      def same_origin?(uri, other) = origin(uri).eql?(origin(other))
-
-      # The scheme, host, and port of a URI, in lowercase
-      # @api private
-      # @param uri [URI::Generic] the URI
-      # @return [Array(String, String, Integer)] the origin
-      def origin(uri)
-        normalized = uri.normalize
-        [normalized.scheme, normalized.host, normalized.port]
-      end
-
-      # Headers without the ones that carry credentials
-      #
-      # Authorization, Cookie, and Proxy-Authorization are dropped, whatever their case, whether a String or a Symbol
-      # names them.
-      #
-      # @api private
-      # @param headers [Hash{String, Symbol => String}] the headers
-      # @return [Hash{String, Symbol => String}] the headers that carry no credentials
-      def without_credentials(headers)
-        headers.reject { |name, _| CREDENTIAL_HEADERS.any? { |header| name.to_s.casecmp?(header) } }
       end
 
       # Build a new request for the redirect
