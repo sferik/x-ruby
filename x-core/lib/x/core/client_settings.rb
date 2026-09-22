@@ -41,6 +41,10 @@ module X
       attr_reader :default_object_class
 
       # A callable passed an X::Response after each request and streamed object
+      #
+      # It is the hook of every request a client makes. A block passed to a single request receives the same
+      # summary, after this, for code that reads the response of that one request rather than of all of them.
+      #
       # @api public
       # @return [#call, nil] the callable, or nil for none
       # @example Read the hook a client reports to
@@ -114,14 +118,24 @@ module X
       # @return [Hash{String => String}] the headers to send
       def headers_for(request_headers) = headers.merge(request_headers)
 
-      # Pass a response to on_response, if there is one
+      # Pass a response to on_response and to the block of the request
+      #
+      # Both receive the one summary, the client's hook first, so that a hook which counts every request and a block
+      # which reads the response of one see the same object. Neither is built a summary when there is nothing to
+      # pass it to.
+      #
       # @api private
       # @param http_method [Symbol] the HTTP method of the request
       # @param uri [URI::Generic] the URI of the request
       # @param response [Net::HTTPResponse] the HTTP response
+      # @yieldparam response [Response] the summary of the response
       # @return [void]
-      def report(http_method, uri, response)
-        on_response&.call(Response.new(http_method, uri, response))
+      def report(http_method, uri, response, &block)
+        return unless on_response || block
+
+        summary = Response.new(http_method, uri, response)
+        on_response&.call(summary)
+        block&.call(summary)
       end
     end
   end

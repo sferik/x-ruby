@@ -110,7 +110,7 @@ module X
     #   a response that asks for longer than a minute raises at once; only a GET, PUT, or DELETE is sent again, since
     #   the API may have acted on a POST whose answer never arrived
     # @param on_response [#call, nil] a callable passed an X::Response after every request, failed ones included, and
-    #   every object a stream delivers
+    #   every object a stream delivers; a block passed to a single request receives the same summary, after this
     # @param on_token_refresh [#call, nil] a callable passed the OAuth 2.0 authenticator after each refresh, to store
     #   its new tokens
     # @return [Client] a new client instance
@@ -200,12 +200,15 @@ module X
     # @param array_class [Class] the class for parsing JSON arrays
     # @param object_class [Class] the class for parsing JSON objects, or one that responds to from_response
     # @return [Object, nil] the parsed response body, or what an object_class that responds to from_response builds
+    # @yieldparam response [Response] the summary of each response the request got, as {#on_response} receives it
     # @example Get a user by username
     #   client.get("users/by/username/sferik")
     # @example Get users by identifier, requesting only some fields
     #   client.get("users", params: {ids: [1, 2], "user.fields": %w[id username]})
-    def get(endpoint, params: nil, headers: {}, array_class: default_array_class, object_class: default_object_class)
-      execute_request(:get, endpoint, params:, headers:, array_class:, object_class:)
+    # @example Read what a response reported of the rate limit it spent
+    #   user = client.get("users/me") { |response| limit = response.rate_limit }
+    def get(endpoint, params: nil, headers: {}, array_class: default_array_class, object_class: default_object_class, &)
+      execute_request(:get, endpoint, params:, headers:, array_class:, object_class:, &)
     end
 
     # Perform a POST request to the X API
@@ -222,12 +225,13 @@ module X
     # @param object_class [Class] the class for parsing JSON objects, or one that responds to from_response
     # @return [Object, nil] the parsed response body, or what an object_class that responds to from_response builds
     # @raise [ArgumentError] if both a body and form fields are given
+    # @yieldparam response [Response] the summary of each response the request got, as {#on_response} receives it
     # @example Create a post
     #   client.post("tweets", {text: "Hello, World!"})
     # @example Post a form to the v1.1 API
     #   v1_client.post("account/settings.json", form: {lang: "en"})
-    def post(endpoint, body = nil, params: nil, form: nil, headers: {}, array_class: default_array_class, object_class: default_object_class)
-      execute_request(:post, endpoint, body:, params:, form:, headers:, array_class:, object_class:)
+    def post(endpoint, body = nil, params: nil, form: nil, headers: {}, array_class: default_array_class, object_class: default_object_class, &)
+      execute_request(:post, endpoint, body:, params:, form:, headers:, array_class:, object_class:, &)
     end
 
     # Perform a PUT request to the X API
@@ -244,10 +248,11 @@ module X
     # @param object_class [Class] the class for parsing JSON objects, or one that responds to from_response
     # @return [Object, nil] the parsed response body, or what an object_class that responds to from_response builds
     # @raise [ArgumentError] if both a body and form fields are given
+    # @yieldparam response [Response] the summary of each response the request got, as {#on_response} receives it
     # @example Update a resource
     #   client.put("some/endpoint", {key: "value"})
-    def put(endpoint, body = nil, params: nil, form: nil, headers: {}, array_class: default_array_class, object_class: default_object_class)
-      execute_request(:put, endpoint, body:, params:, form:, headers:, array_class:, object_class:)
+    def put(endpoint, body = nil, params: nil, form: nil, headers: {}, array_class: default_array_class, object_class: default_object_class, &)
+      execute_request(:put, endpoint, body:, params:, form:, headers:, array_class:, object_class:, &)
     end
 
     # Perform a DELETE request to the X API
@@ -260,10 +265,11 @@ module X
     # @param array_class [Class] the class for parsing JSON arrays
     # @param object_class [Class] the class for parsing JSON objects, or one that responds to from_response
     # @return [Object, nil] the parsed response body, or what an object_class that responds to from_response builds
+    # @yieldparam response [Response] the summary of each response the request got, as {#on_response} receives it
     # @example Delete a post
     #   client.delete("tweets/1234567890")
-    def delete(endpoint, params: nil, headers: {}, array_class: default_array_class, object_class: default_object_class)
-      execute_request(:delete, endpoint, params:, headers:, array_class:, object_class:)
+    def delete(endpoint, params: nil, headers: {}, array_class: default_array_class, object_class: default_object_class, &)
+      execute_request(:delete, endpoint, params:, headers:, array_class:, object_class:, &)
     end
 
     # A client for the streaming endpoints, which reads and reconnects differently
@@ -296,14 +302,14 @@ module X
     # Execute an HTTP request to the X API
     # @api private
     # @return [Object, nil] the parsed response body, or what an object_class that responds to from_response builds
-    def execute_request(http_method, endpoint, body: nil, params: nil, form: nil, headers: {}, array_class: default_array_class, object_class: default_object_class)
+    def execute_request(http_method, endpoint, body: nil, params: nil, form: nil, headers: {}, array_class: default_array_class, object_class: default_object_class, &block)
       uri = URI.join(base_url, endpoint_with(endpoint, params))
       headers = {"Content-Type" => FORM_CONTENT_TYPE}.merge(headers) unless form.nil?
       headers = headers_for(headers)
       @retry_handler.handle(idempotent: Core::RequestBuilder.idempotent?(http_method)) do
         @rate_limit_handler.handle do
           refreshing_rejected_token do
-            perform(http_method, uri, body: encode_body(body, form), headers:, array_class:, object_class:)
+            perform(http_method, uri, body: encode_body(body, form), headers:, array_class:, object_class:, &block)
           end
         end
       end
@@ -316,11 +322,11 @@ module X
     #
     # @api private
     # @return [Object, nil] the parsed response body, or what an object_class that responds to from_response builds
-    def perform(http_method, uri, body:, headers:, array_class:, object_class:)
+    def perform(http_method, uri, body:, headers:, array_class:, object_class:, &)
       authenticator, headers = Core::Origin.credentials_for(from: URI(base_url), to: uri, authenticator: self.authenticator, headers:)
       request = @request_builder.build(http_method:, uri:, body:, headers:, authenticator:)
       response = @redirect_handler.handle(response: @connection.perform(request:), request:, headers:, authenticator:)
-      report(http_method, uri, response)
+      report(http_method, uri, response, &)
       @response_parser.parse(response:, array_class:, object_class:, client: self, request:)
     end
   end
