@@ -172,14 +172,14 @@ post.expanded_text                     # the text with every t.co link replaced 
 ```ruby
 user = x_client.find_user("sferik")
 user.problems                          # => [#<X::Problem Not Found Error: Could not find post with pinned_tweet_id: [1234567890].>]
-x_client.find_users(ids) { |problem| warn problem.detail if problem.not_found? }
+x_client.find_all_users(ids) { |problem| warn problem.detail if problem.not_found? }
 x_client.find_user!("nobody")          # raises X::ResourceNotFound: Could not find X::User nobody: Could not find user with username: [nobody].
 ```
 
 **Parallel requests.** Batch lookups split the IDs into groups of 100, the API maximum, and request the groups in parallel. Paginated endpoints return a token for the next page with each page, so their pages must be fetched in order. `prefetch` fetches the next page in a background thread while you process the current one. It is opt-in because it spends one extra request when you stop iterating early.
 
 ```ruby
-x_client.find_users(follower_ids)                       # parallel batches of 100, in the order asked for
+x_client.find_all_users(follower_ids)                       # parallel batches of 100, in the order asked for
 user.followers.prefetch.each { |follower| process(follower) }
 ```
 
