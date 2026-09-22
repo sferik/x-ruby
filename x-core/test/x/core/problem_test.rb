@@ -64,6 +64,15 @@ module X
       assert_equal "#<X::Problem Not Found Error>", Problem.new({"title" => "Not Found Error"}).inspect
     end
 
+    def test_inspect_reads_the_message_of_a_problem_that_has_no_detail
+      assert_equal "#<X::Problem Could not authenticate you>", Problem.new({"message" => "Could not authenticate you", "code" => 32}).inspect
+      assert_equal "#<X::Problem Unauthorized: Could not authenticate you>", Problem.new({"title" => "Unauthorized", "message" => "Could not authenticate you"}).inspect
+    end
+
+    def test_inspect_reads_the_detail_of_a_problem_that_has_both
+      assert_equal "#<X::Problem Not Found Error: Could not find user>", Problem.new({"title" => "Not Found Error", "detail" => "Could not find user", "message" => "Could not find user with id: [1]."}).inspect
+    end
+
     def test_missing_attributes_are_nil
       problem = Problem.new({})
 

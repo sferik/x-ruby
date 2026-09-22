@@ -169,11 +169,16 @@ module X
 
     # Summarize the problem for the console
     #
+    # A problem the API described in a response that succeeded carries a detail, and one it named among the errors
+    # of a request it refused carries a message in its place, so the summary reads whichever of the two it holds.
+    #
     # @api public
-    # @return [String] the class name, title, and detail
-    # @example Inspect a problem
+    # @return [String] the class name, title, and detail, or message
+    # @example Inspect a problem of a response that succeeded
     #   problem.inspect # => #<X::Problem Not Found Error: Could not find tweet with pinned_tweet_id: [1].>
-    def inspect = "#<#{self.class} #{[title, detail].compact.join(": ")}>"
+    # @example Inspect a problem of a request the API refused
+    #   problem.inspect # => #<X::Problem Could not authenticate you>
+    def inspect = "#<#{self.class} #{[title, detail || message].compact.join(": ")}>"
 
     private
 
