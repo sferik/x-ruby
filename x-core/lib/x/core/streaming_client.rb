@@ -155,7 +155,9 @@ module X
     # @raise [HTTPError] if the API refuses the request
     # @example Print the rules of the app
     #   streaming_client.stream_rules.each { |rule| puts "#{rule["tag"]}: #{rule["value"]}" }
-    def stream_rules(**params)
+    # @example Read two rules by identifier
+    #   streaming_client.stream_rules(params: {ids: "1,2"})
+    def stream_rules(params: nil)
       rules_of(app_client.get(RULES_ENDPOINT, params:, **JSON_CLASSES))
     end
 

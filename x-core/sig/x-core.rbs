@@ -697,7 +697,7 @@ module X
     def write_timeout: () -> (Float | Integer)
     def debug_output: () -> IO?
     def max_reconnects: () -> (Integer | Float)
-    def stream_rules: (**untyped params) -> Array[Hash[String, untyped]]
+    def stream_rules: (?params: params?) -> Array[Hash[String, untyped]]
     def add_stream_rules: (Array[addable_rule] | addable_rule rules, ?dry_run: bool) -> Array[Hash[String, untyped]]
     def delete_stream_rules: (Array[rule] | rule rules, ?dry_run: bool) -> Integer
 

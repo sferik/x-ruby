@@ -43,7 +43,7 @@ module X
     def test_the_rules_take_query_parameters
       stub_rules({"data" => [RUBY_RULE]}, url: "#{RULES_URL}?ids=1")
 
-      assert_equal [RUBY_RULE], @streaming_client.stream_rules(ids: 1)
+      assert_equal [RUBY_RULE], @streaming_client.stream_rules(params: {ids: 1})
     end
 
     def test_the_rules_are_hashes_whatever_the_client_parses_into
