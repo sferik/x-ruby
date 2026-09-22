@@ -38,7 +38,7 @@ module X
         return unless current&.same_credentials?(other)
 
         shared = other #: OAuth2Authenticator
-        shared.update_expires_at(expires_at)
+        shared.__send__(:update_expires_at, expires_at)
         @authenticator = shared
         @token_refresh_clients = clients
         clients[self] = true
@@ -115,7 +115,7 @@ module X
       # @return [Object] what the block returns
       def refreshing_rejected_token(&)
         current = oauth2_authenticator_in_use
-        current.nil? ? yield : current.retrying_rejected_token(&)
+        current.nil? ? yield : current.__send__(:retrying_rejected_token, &)
       end
     end
   end

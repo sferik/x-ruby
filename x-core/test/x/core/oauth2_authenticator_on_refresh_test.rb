@@ -34,12 +34,12 @@ module X
     end
 
     def test_refresh_rejected_token_passes_a_refresh_to_on_refresh
-      assert authenticator.refresh_rejected_token!(TEST_ACCESS_TOKEN)
+      assert authenticator.send(:refresh_rejected_token!, TEST_ACCESS_TOKEN)
       assert_equal ["NEW_ACCESS_TOKEN"], @refreshed
     end
 
     def test_refresh_rejected_token_without_a_refresh_leaves_on_refresh_alone
-      assert authenticator.refresh_rejected_token!("OLDER_ACCESS_TOKEN")
+      assert authenticator.send(:refresh_rejected_token!, "OLDER_ACCESS_TOKEN")
       assert_empty @refreshed
     end
 
@@ -57,9 +57,9 @@ module X
     def test_on_refresh_can_refresh_a_rejected_token
       replaced = []
       authenticator = OAuth2Authenticator.new(**test_oauth2_credentials,
-        on_refresh: ->(auth) { replaced << auth.refresh_rejected_token!(TEST_ACCESS_TOKEN) })
+        on_refresh: ->(auth) { replaced << auth.send(:refresh_rejected_token!, TEST_ACCESS_TOKEN) })
 
-      assert authenticator.refresh_rejected_token!(TEST_ACCESS_TOKEN)
+      assert authenticator.send(:refresh_rejected_token!, TEST_ACCESS_TOKEN)
       assert_equal [true], replaced
       assert_requested @refresh, times: 1
     end

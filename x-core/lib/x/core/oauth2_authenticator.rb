@@ -158,18 +158,32 @@ module X
       @mutex.synchronize { refresh }.tap { report_refresh }
     end
 
+    protected
+
+    # The OAuth 2.0 client secret, which authenticates a refresh
+    # @api private
+    # @return [String, nil] the client secret, or nil for a public client
+    # @example Refresh with the client secret
+    #   client_secret
+    attr_reader :client_secret
+
+    # The credentials that tell one authenticator from another
+    # @api private
+    # @return [Array<String, nil>] the client ID and secret, and the access and refresh tokens
+    # @example Compare two authenticators
+    #   credentials.eql?(other.credentials)
+    def credentials = [client_id, client_secret, access_token, refresh_token]
+
+    private
+
     # Refresh an access token the API rejected, unless it was already replaced
     #
     # Requests that were sent with the same token, and rejected together, refresh it once between them.
-    #
-    # Internal to x-core: Client refreshes a rejected token with it, through retrying_rejected_token.
     #
     # @api private
     # @param rejected_token [String] the access token the API rejected
     # @return [Boolean] true if the access token is no longer the one rejected
     # @raise [AuthorizationError] if X refuses to refresh the token
-    # @example Refresh a token the API rejected, and retry
-    #   retry if authenticator.refresh_rejected_token!(token)
     def refresh_rejected_token!(rejected_token)
       refreshed, replaced = @mutex.synchronize do
         [(refresh if access_token.eql?(rejected_token)), !access_token.eql?(rejected_token)]
@@ -182,6 +196,9 @@ module X
     #
     # X rejects an expired access token with 401 Unauthorized, which an authenticator that does not know when
     # its token expires learns only from the rejection.
+    #
+    # Internal to x-core: Client runs each request it sends with an OAuth 2.0 authenticator through it, and calls it
+    # with __send__, since it is private.
     #
     # @api private
     # @yield runs the request
@@ -201,34 +218,15 @@ module X
     # Set the expiration time of the access token, holding the lock
     #
     # Internal to x-core: Client sets the expiration time it is given on the authenticator that it and its copies
-    # share, rather than build an authenticator of its own with the same refresh token.
+    # share, rather than build an authenticator of its own with the same refresh token, and calls it with __send__,
+    # since it is private: a caller that set it would change the expiration every copy of the client reads.
     #
     # @api private
     # @param expires_at [Time, nil] the expiration time, or nil if it is not known
     # @return [void]
-    # @example Set the expiration time
-    #   authenticator.update_expires_at(Time.now + 7200)
     def update_expires_at(expires_at)
       @mutex.synchronize { @expires_at = expires_at }
     end
-
-    protected
-
-    # The OAuth 2.0 client secret, which authenticates a refresh
-    # @api private
-    # @return [String, nil] the client secret, or nil for a public client
-    # @example Refresh with the client secret
-    #   client_secret
-    attr_reader :client_secret
-
-    # The credentials that tell one authenticator from another
-    # @api private
-    # @return [Array<String, nil>] the client ID and secret, and the access and refresh tokens
-    # @example Compare two authenticators
-    #   credentials.eql?(other.credentials)
-    def credentials = [client_id, client_secret, access_token, refresh_token]
-
-    private
 
     # Refresh the access token, holding the lock
     # @api private

@@ -20,6 +20,11 @@ module X
       assert_nil @connection.send(:proxy_url)
     end
 
+    def test_the_errors_a_connection_reads_as_network_errors_are_private
+      assert_raises(NameError) { Connection::NETWORK_ERRORS }
+      assert_raises(NameError) { Connection::STALE_CONNECTION_ERRORS }
+    end
+
     def test_custom_initialization
       connection = Connection.new(open_timeout: 10, read_timeout: 20, write_timeout: 30, debug_output: $stderr,
         proxy_url: "http://example.com:8080")

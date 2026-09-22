@@ -35,6 +35,7 @@ module X
       # ECONNRESET, or ECONNABORTED. A timeout is not among them: a request that timed out waiting for its response
       # may have reached the API, which may have acted on it.
       STALE_CONNECTION_ERRORS = [EOFError, Errno::ECONNABORTED, Errno::ECONNRESET, Errno::EPIPE].freeze
+      private_constant :NETWORK_ERRORS, :STALE_CONNECTION_ERRORS
 
       private
 

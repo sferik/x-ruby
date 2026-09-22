@@ -732,13 +732,13 @@ module X
     def inspect: () -> String
     def token_expired?: -> bool
     def refresh_token!: -> Hash[String, untyped]
-    def refresh_rejected_token!: (String rejected_token) -> bool
-    def retrying_rejected_token: [T] () { () -> T } -> T
-    def update_expires_at: (Time? expires_at) -> void
 
     def credentials: -> Array[String?]
 
     private
+    def refresh_rejected_token!: (String rejected_token) -> bool
+    def retrying_rejected_token: [T] () { () -> T } -> T
+    def update_expires_at: (Time? expires_at) -> void
     attr_reader client_secret: String?
     def refresh: -> Hash[String, untyped]
     def report_refresh: -> void
