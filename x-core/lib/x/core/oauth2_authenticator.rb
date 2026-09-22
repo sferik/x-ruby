@@ -11,7 +11,7 @@ module X
   # Handles OAuth 2.0 authentication, refreshing the access token when it expires
   #
   # X issues a new refresh token with each access token and accepts a refresh token once, so an authenticator
-  # refreshes under a lock, and calls on_refresh with itself so that the new tokens can be stored.
+  # refreshes under a lock, and calls on_token_refresh with itself so that the new tokens can be stored.
   #
   # @api public
   class OAuth2Authenticator < Authenticator
@@ -60,8 +60,8 @@ module X
     # @api public
     # @return [#call, nil] the callable, or nil for none
     # @example Get the callable
-    #   authenticator.on_refresh
-    attr_reader :on_refresh
+    #   authenticator.on_token_refresh
+    attr_reader :on_token_refresh
 
     # Initialize a new OAuth 2.0 authenticator
     #
@@ -73,7 +73,7 @@ module X
     # @param refresh_token [String] the OAuth 2.0 refresh token
     # @param expires_at [Time, nil] the expiration time of the access token
     # @param connection [Connection] the connection for making token requests
-    # @param on_refresh [#call, nil] a callable passed the authenticator after each refresh
+    # @param on_token_refresh [#call, nil] a callable passed the authenticator after each refresh
     # @return [OAuth2Authenticator] a new authenticator instance
     # @example Create an authenticator
     #   authenticator = X::OAuth2Authenticator.new(
@@ -83,14 +83,14 @@ module X
     #     refresh_token: "refresh"
     #   )
     def initialize(client_id:, access_token:, refresh_token:, client_secret: nil, expires_at: nil,
-      connection: Connection.new, on_refresh: nil)
+      connection: Connection.new, on_token_refresh: nil)
       @client_id = client_id
       @client_secret = client_secret
       @access_token = access_token
       @refresh_token = refresh_token
       @expires_at = expires_at
       @connection = connection
-      @on_refresh = on_refresh
+      @on_token_refresh = on_token_refresh
       @mutex = Mutex.new
     end
 
@@ -240,7 +240,7 @@ module X
       raise AuthorizationError.from(e, DEFAULT_ERROR_MESSAGE)
     end
 
-    # Pass the authenticator to on_refresh, once the lock is released
+    # Pass the authenticator to on_token_refresh, once the lock is released
     #
     # The callable can make a request of its own, such as looking up the user whose tokens it stores, which
     # asks this authenticator for a header and so takes the lock again.
@@ -248,7 +248,7 @@ module X
     # @api private
     # @return [void]
     def report_refresh
-      on_refresh&.call(self)
+      on_token_refresh&.call(self)
     end
 
     # The client for the token endpoint

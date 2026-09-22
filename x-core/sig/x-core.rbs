@@ -724,9 +724,9 @@ module X
     attr_reader refresh_token: String
     attr_reader expires_at: Time?
     attr_reader connection: Connection
-    attr_reader on_refresh: _TokenRefreshHook?
+    attr_reader on_token_refresh: _TokenRefreshHook?
     @mutex: Thread::Mutex
-    def initialize: (client_id: String, access_token: String, refresh_token: String, ?client_secret: String?, ?expires_at: Time?, ?connection: Connection, ?on_refresh: _TokenRefreshHook?) -> void
+    def initialize: (client_id: String, access_token: String, refresh_token: String, ?client_secret: String?, ?expires_at: Time?, ?connection: Connection, ?on_token_refresh: _TokenRefreshHook?) -> void
     def header: (Net::HTTPRequest? request) -> Hash[String, String]
     def same_credentials?: (untyped other) -> bool
     def inspect: () -> String

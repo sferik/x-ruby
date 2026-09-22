@@ -301,16 +301,16 @@ module X
       assert_not_requested @refresh
     end
 
-    def test_on_refresh_receives_the_authenticator_after_its_tokens_change
+    def test_on_token_refresh_receives_the_authenticator_after_its_tokens_change
       tokens = []
-      authenticator = OAuth2Authenticator.new(**test_oauth2_credentials, on_refresh: ->(auth) { tokens << [auth, auth.refresh_token] })
+      authenticator = OAuth2Authenticator.new(**test_oauth2_credentials, on_token_refresh: ->(auth) { tokens << [auth, auth.refresh_token] })
       authenticator.refresh_token!
 
       assert_equal [[authenticator, "NEW_REFRESH_TOKEN"]], tokens
     end
 
-    def test_on_refresh_defaults_to_nil
-      assert_nil OAuth2Authenticator.new(**test_oauth2_credentials).on_refresh
+    def test_on_token_refresh_defaults_to_nil
+      assert_nil OAuth2Authenticator.new(**test_oauth2_credentials).on_token_refresh
     end
 
     def test_refresh_rejected_token_refreshes_the_token_that_was_rejected
