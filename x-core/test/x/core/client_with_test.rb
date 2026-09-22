@@ -32,7 +32,7 @@ module X
       copy = @client.with(read_timeout: 60)
 
       assert_equal ["https://example.com/2/", 5, 60, 7, $stdout, "http://proxy.example.com:8080", Set, OpenStruct, 3],
-        [copy.base_url, copy.open_timeout, copy.read_timeout, copy.write_timeout, copy.debug_output, copy.proxy_url,
+        [copy.base_url, copy.open_timeout, copy.read_timeout, copy.write_timeout, copy.debug_output, copy.send(:proxy_url),
           copy.default_array_class, copy.default_object_class, copy.max_redirects]
     end
 
@@ -65,7 +65,7 @@ module X
 
       assert_equal @client.inspect, copy.inspect
       assert_equal [5, 6, 7, $stdout, "http://proxy.example.com:8080", Set, OpenStruct, 3],
-        [copy.open_timeout, copy.read_timeout, copy.write_timeout, copy.debug_output, copy.proxy_url,
+        [copy.open_timeout, copy.read_timeout, copy.write_timeout, copy.debug_output, copy.send(:proxy_url),
           copy.default_array_class, copy.default_object_class, copy.max_redirects]
     end
   end

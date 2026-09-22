@@ -15,12 +15,27 @@ module X
 
     def test_proxy
       connection = Connection.new(proxy_url: "http://user:pass@example.com:8080")
+      http_client = connection.send(:build_http_client, URI("https://api.x.com/2/tweets"))
 
-      assert_equal URI("http://user:pass@example.com:8080"), connection.proxy_uri
-      assert_equal "example.com", connection.proxy_host
-      assert_equal "user", connection.proxy_user
-      assert_equal "pass", connection.proxy_pass
-      assert_equal 8080, connection.proxy_port
+      assert_equal ["http://user:pass@example.com:8080", URI("http://user:pass@example.com:8080")],
+        [connection.send(:proxy_url), connection.send(:proxy_uri)]
+      assert_equal ["example.com", 8080, "user", "pass"],
+        [http_client.proxy_address, http_client.proxy_port, http_client.proxy_user, http_client.proxy_pass]
+    end
+
+    def test_a_connection_reveals_nothing_of_its_proxy
+      connection = Connection.new(proxy_url: "http://user:pass@example.com:8080")
+
+      %i[proxy_url proxy_uri proxy_host proxy_port proxy_user proxy_pass].each do |name|
+        refute_respond_to connection, name
+      end
+    end
+
+    def test_neither_a_client_nor_a_streaming_client_reveals_its_proxy
+      client = Client.new(proxy_url: "http://user:pass@example.com:8080")
+
+      refute_respond_to client, :proxy_url
+      refute_respond_to client.streaming, :proxy_url
     end
 
     def test_invalid_proxy_url
@@ -42,34 +57,27 @@ module X
     end
 
     def test_a_connection_built_without_a_proxy_has_none
-      assert_nil @connection.proxy_url
-      assert_nil @connection.proxy_uri
-      assert_nil @connection.proxy_user
-      assert_nil @connection.proxy_pass
+      assert_equal [nil, nil], [@connection.send(:proxy_url), @connection.send(:proxy_uri)]
     end
 
-    def test_proxy_host_strips_the_brackets_of_an_ipv6_literal
-      assert_equal "::1", Connection.new(proxy_url: "http://[::1]:8080").proxy_host
-    end
+    def test_the_proxy_host_is_given_without_the_brackets_of_an_ipv6_literal
+      http_client = Connection.new(proxy_url: "http://[::1]:8080").send(:build_http_client, URI("https://api.x.com/2/tweets"))
 
-    def test_proxy_host_and_port_without_a_proxy
-      assert_nil @connection.proxy_host
-      assert_nil @connection.proxy_port
+      assert_equal "::1", http_client.proxy_address
     end
 
     def test_proxy_user_and_password_are_decoded
       connection = Connection.new(proxy_url: "http://us%40er:p%40ss%3Aword@example.com:8080")
       http_client = connection.send(:build_http_client, URI("https://api.x.com/2/tweets"))
 
-      assert_equal ["us@er", "p@ss:word"], [connection.proxy_user, connection.proxy_pass]
       assert_equal ["us@er", "p@ss:word"], [http_client.proxy_user, http_client.proxy_pass]
     end
 
     def test_proxy_user_without_a_password
       connection = Connection.new(proxy_url: "http://user@example.com:8080")
+      http_client = connection.send(:build_http_client, URI("https://api.x.com/2/tweets"))
 
-      assert_equal "user", connection.proxy_user
-      assert_nil connection.proxy_pass
+      assert_equal ["user", nil], [http_client.proxy_user, http_client.proxy_pass]
     end
 
     def test_inspect_without_a_proxy

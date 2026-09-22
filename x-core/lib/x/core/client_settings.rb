@@ -64,7 +64,7 @@ module X
       #   client.headers # => {"User-Agent" => "my-app/1.0"}
       attr_reader :headers
 
-      def_delegators :@connection, :open_timeout, :read_timeout, :write_timeout, :keep_alive_timeout, :proxy_url, :debug_output
+      def_delegators :@connection, :open_timeout, :read_timeout, :write_timeout, :keep_alive_timeout, :debug_output
       def_delegators :@redirect_handler, :max_redirects
       def_delegators :@rate_limit_handler, :max_rate_limit_retries, :max_rate_limit_wait
       def_delegators :@retry_handler, :max_retries

@@ -4,71 +4,28 @@ require "uri"
 
 module X
   module Core
-    # The proxy of a connection: its URL, and the host, port, user, and password parsed from it, included into
-    # Connection
+    # The proxy of a connection, parsed from its URL, included into Connection
     #
-    # A connection given no proxy URL takes the proxy the environment names for each request, as most HTTP clients
-    # do. Net::HTTP reads http_proxy alone, whatever the scheme of the request, which would leave the HTTPS requests
+    # A proxy URL can hold the user and password of the proxy, so a connection reveals neither its URL nor anything
+    # parsed from it, and its inspect leaves out the user and password; see {ProxySetting}.
+    #
+    # A connection given no proxy URL takes the proxy the environment names for each request, and sends a request to
+    # a host that no_proxy names without a proxy. Set no_proxy to reach every host directly from a process whose
+    # environment names a proxy.
+    #
+    # Most HTTP clients take the proxy the environment names, and Net::HTTP reads http_proxy alone, whatever the scheme of the request, which would leave the HTTPS requests
     # these gems make unproxied for anyone who sets https_proxy, and proxied through whatever http_proxy names for
     # anyone who sets that instead. So the proxy of a request is resolved here, from the scheme of its own URI, and
     # passed to Net::HTTP, which is given no proxy of its own to resolve.
     #
     # @api private
     module ConnectionProxy
-      # The proxy URL for requests, as the connection was built with it
-      #
-      # A user and password in the URL may be percent-encoded, and are decoded for the proxy.
-      #
-      # A connection whose proxy URL is nil proxies a request through whatever the environment names for the scheme of
-      # its URI, in https_proxy or http_proxy, and sends a request to a host that no_proxy names without a proxy. Set
-      # no_proxy to reach every host directly from a process whose environment names a proxy.
-      #
-      # @api public
-      # @return [String, URI::Generic, nil] the proxy URL for requests, as it was given
-      # @example Get the proxy URL
-      #   connection.proxy_url
-      attr_reader :proxy_url
+      private
 
       # The parsed proxy URI
-      # @api public
-      # @return [URI, nil] the parsed proxy URI
-      # @example Get the proxy URI
-      #   connection.proxy_uri
+      # @api private
+      # @return [URI::Generic, nil] the parsed proxy URI, or nil to take the proxy the environment names
       attr_reader :proxy_uri
-
-      # The host of the proxy, without the brackets of an IPv6 literal
-      #
-      # @api public
-      # @return [String, nil] the proxy host, or nil without a proxy
-      # @example Get the proxy host
-      #   connection.proxy_host
-      def proxy_host = proxy_uri&.hostname
-
-      # The port of the proxy
-      #
-      # @api public
-      # @return [Integer, nil] the proxy port, or nil without a proxy
-      # @example Get the proxy port
-      #   connection.proxy_port
-      def proxy_port = proxy_uri&.port
-
-      # The user of the proxy, decoded from the proxy URL
-      #
-      # @api public
-      # @return [String, nil] the proxy user
-      # @example Get the proxy user
-      #   connection.proxy_user
-      def proxy_user = decode(proxy_uri&.user)
-
-      # The password of the proxy, decoded from the proxy URL
-      #
-      # @api public
-      # @return [String, nil] the proxy password
-      # @example Get the proxy password
-      #   connection.proxy_pass
-      def proxy_pass = decode(proxy_uri&.password)
-
-      private
 
       # Read the proxy URL a connection is built with
       #

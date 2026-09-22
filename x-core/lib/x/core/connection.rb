@@ -7,6 +7,7 @@ require "zlib"
 require_relative "connection_pool"
 require_relative "connection_proxy"
 require_relative "connection_request"
+require_relative "proxy_setting"
 require_relative "errors/network_error"
 require_relative "errors/stream_callback_error"
 
@@ -24,6 +25,7 @@ module X
   class Connection
     include Core::ConnectionProxy
     include Core::ConnectionRequest
+    include Core::ProxySetting
 
     # Default host for the X API
     DEFAULT_HOST = "api.x.com"

@@ -17,7 +17,7 @@ module X
       assert_equal Connection::DEFAULT_READ_TIMEOUT, @connection.read_timeout
       assert_equal Connection::DEFAULT_WRITE_TIMEOUT, @connection.write_timeout
       assert_nil @connection.debug_output
-      assert_nil @connection.proxy_url
+      assert_nil @connection.send(:proxy_url)
     end
 
     def test_custom_initialization
@@ -28,7 +28,7 @@ module X
       assert_equal 20, connection.read_timeout
       assert_equal 30, connection.write_timeout
       assert_equal $stderr, connection.debug_output
-      assert_equal "http://example.com:8080", connection.proxy_url
+      assert_equal "http://example.com:8080", connection.send(:proxy_url)
     end
 
     def test_http_client_defaults

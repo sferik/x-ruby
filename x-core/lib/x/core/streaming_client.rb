@@ -4,6 +4,7 @@ require "forwardable"
 require "uri"
 require_relative "connection"
 require_relative "origin"
+require_relative "proxy_setting"
 require_relative "reconnect_handler"
 require_relative "request_builder"
 require_relative "request_encoding"
@@ -37,6 +38,7 @@ module X
   # @api public
   class StreamingClient
     extend Forwardable
+    include Core::ProxySetting
     include Core::RequestEncoding
 
     # Default timeout for reading from a stream in seconds, half again the 20-second interval of the keep-alive X sends
@@ -63,7 +65,7 @@ module X
     #   streaming_client.client.base_url
     attr_reader :client
 
-    def_delegators :@connection, :open_timeout, :read_timeout, :write_timeout, :proxy_url, :debug_output
+    def_delegators :@connection, :open_timeout, :read_timeout, :write_timeout, :debug_output
     def_delegator :@reconnect_handler, :max_reconnects
 
     # Initialize a client for the streaming endpoints
@@ -78,8 +80,9 @@ module X
     #   streaming_client = X::StreamingClient.new(client, max_reconnects: 5)
     def initialize(client, read_timeout: DEFAULT_READ_TIMEOUT, max_reconnects: DEFAULT_MAX_RECONNECTS)
       @client = client
+      @proxy_url = client.proxy_url
       @connection = Connection.new(open_timeout: client.open_timeout, read_timeout:, write_timeout: client.write_timeout,
-        debug_output: client.debug_output, proxy_url: client.proxy_url)
+        debug_output: client.debug_output, proxy_url:)
       @reconnect_handler = Core::ReconnectHandler.new(max_reconnects:)
       @request_builder = Core::RequestBuilder.new
       @response_parser = Core::ResponseParser.new

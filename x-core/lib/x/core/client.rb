@@ -14,6 +14,7 @@ require_relative "credential_validator"
 require_relative "oauth1_authenticator"
 require_relative "oauth2_authenticator"
 require_relative "origin"
+require_relative "proxy_setting"
 require_relative "rate_limit_handler"
 require_relative "redirect_handler"
 require_relative "request_builder"
@@ -37,6 +38,7 @@ module X
     include Core::ClientCredentials
     include Core::ClientSettings
     include Core::ClientTokenRefresh
+    include Core::ProxySetting
     include Core::RequestEncoding
 
     # Default base URL for the X API
@@ -152,6 +154,7 @@ module X
       max_retries: DEFAULT_MAX_RETRIES,
       on_response: nil,
       on_token_refresh: nil)
+      @proxy_url = proxy_url
       @connection = Connection.new(open_timeout:, read_timeout:, write_timeout:, keep_alive_timeout:, debug_output:, proxy_url:)
       @app_only_monitor = Monitor.new
       @request_builder = Core::RequestBuilder.new

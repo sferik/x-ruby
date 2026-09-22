@@ -21,18 +21,18 @@ module X
       def initialize: (StandardError error) -> void
     end
 
-    module ConnectionProxy
+    module ProxySetting
       @proxy_url: (URI::Generic | String)?
 
-      attr_reader proxy_url: (URI::Generic | String)?
-      attr_reader proxy_uri: URI::Generic?
-      def proxy_host: () -> String?
-      def proxy_port: () -> Integer?
+      def proxy_url: () -> (URI::Generic | String)?
+    end
 
-      def proxy_user: () -> String?
-      def proxy_pass: () -> String?
+    module ConnectionProxy : ProxySetting
+      @proxy_url: (URI::Generic | String)?
+      @proxy_uri: URI::Generic?
 
       private
+      attr_reader proxy_uri: URI::Generic?
       def initialize_proxy: ((URI::Generic | String)? proxy_url) -> void
       def proxy_for: (URI::Generic uri) -> URI::Generic?
       def decode: (String? component) -> String?
@@ -250,7 +250,6 @@ module X
       def read_timeout: () -> (Float | Integer)
       def write_timeout: () -> (Float | Integer)
       def keep_alive_timeout: () -> (Float | Integer)
-      def proxy_url: () -> (URI::Generic | String)?
       def debug_output: () -> IO?
       def max_redirects: () -> Integer
       def max_rate_limit_retries: () -> Integer
@@ -595,6 +594,7 @@ module X
 
     include Core::ConnectionProxy
     include Core::ConnectionRequest
+    include Core::ProxySetting
 
     attr_reader open_timeout : Float | Integer
     attr_reader read_timeout : Float | Integer
@@ -668,6 +668,7 @@ module X
   end
 
   class StreamingClient
+    include Core::ProxySetting
     include Core::RequestEncoding
     extend Forwardable
 
@@ -694,7 +695,6 @@ module X
     def open_timeout: () -> (Float | Integer)
     def read_timeout: () -> (Float | Integer)
     def write_timeout: () -> (Float | Integer)
-    def proxy_url: () -> (URI::Generic | String)?
     def debug_output: () -> IO?
     def max_reconnects: () -> (Integer | Float)
     def stream_rules: (**untyped params) -> Array[Hash[String, untyped]]
@@ -767,6 +767,7 @@ module X
 
   interface _SettingsHost
     def on_token_refresh: () -> _TokenRefreshHook?
+    def proxy_url: () -> (URI::Generic | String)?
   end
 
   type params = Hash[String | Symbol, untyped]
@@ -777,6 +778,7 @@ module X
     include Core::ClientCredentials
     include Core::ClientSettings
     include Core::ClientTokenRefresh
+    include Core::ProxySetting
     include Core::RequestEncoding
 
     DEFAULT_BASE_URL: String

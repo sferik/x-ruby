@@ -65,7 +65,7 @@ module X
     def test_the_client_connection_settings_reach_the_token_request
       client = Client.new(api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET, proxy_url: "http://proxy.example.com:8080")
 
-      assert_equal "http://proxy.example.com:8080", client.authenticator.connection.proxy_url
+      assert_equal "http://proxy.example.com:8080", client.authenticator.connection.send(:proxy_url)
     end
 
     def test_a_given_bearer_token_is_used_without_a_request
