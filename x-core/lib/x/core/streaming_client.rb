@@ -52,7 +52,7 @@ module X
     RULES_ENDPOINT = "tweets/search/stream/rules"
     private_constant :RULES_ENDPOINT
     # The message of the error raised for something that is neither a rule nor the identifier of one
-    NOT_A_RULE = "a rule is a Hash holding an id or a value, or the identifier of one, not %s"
+    NOT_A_RULE = "a rule is a Hash holding an id or a value, the value it matches, or its identifier, not %s"
     private_constant :NOT_A_RULE
     # The classes the rules endpoints parse into, whatever parsing classes the client defaults to
     JSON_CLASSES = {array_class: Array, object_class: Hash}.freeze
@@ -164,12 +164,12 @@ module X
     # Add rules for the filtered stream to match posts against
     #
     # A rule is a Hash of the value it matches and the tag it is labelled with, or a String, which is the value of a
-    # rule without a tag.
+    # rule without a tag. No rules add none, and send no request.
     #
     # @api public
     # @param rules [Array<Hash, String>, Hash, String] the rules to add
     # @param dry_run [Boolean] true to have the API check the rules and add none of them
-    # @return [Array<Hash>] the rules that were added, each holding the id the API gave it
+    # @return [Array<Hash>] the rules that were added, each holding the id the API gave it, empty if none were given
     # @raise [UnsupportedOperation] if the client authenticates with OAuth 2.0 as a user
     # @raise [HTTPError] if the API refuses a rule, which adds none of them
     # @example Add a rule with a tag
@@ -177,28 +177,38 @@ module X
     # @example Check rules without adding them
     #   streaming_client.add_stream_rules(["ruby", "crystal"], dry_run: true)
     def add_stream_rules(rules, dry_run: false)
-      rules_of(change_rules({add: each_rule(rules).map { |rule| rule_to_add(rule) }}, dry_run:))
+      rules = each_rule(rules)
+      return [] if rules.empty?
+
+      rules_of(change_rules({add: rules.map { |rule| rule_to_add(rule) }}, dry_run:))
     end
 
     # Delete rules of the filtered stream
     #
-    # A rule is deleted by its identifier, or by the value it matches: a rule the API returned, or the identifier of
-    # one, is deleted by identifier, and a Hash that holds a value and no identifier is deleted by value, so what
-    # add_stream_rules was given deletes what it added.
+    # A rule is deleted by its identifier, or by the value it matches: a rule the API returned, a Hash that holds an
+    # id, or an Integer is deleted by identifier, and a Hash that holds a value and no identifier, or a String, is
+    # deleted by value, so what add_stream_rules was given deletes what it added. No rules delete none, and send no
+    # request, since the API refuses a deletion that names no rule.
     #
     # @api public
-    # @param rules [Array<Hash, String, Integer>, Hash, String, Integer] the rules to delete, or their identifiers
+    # @param rules [Array<Hash, String, Integer>, Hash, String, Integer] the rules to delete, the values they match,
+    #   or their identifiers
     # @param dry_run [Boolean] true to have the API check the rules and delete none of them
-    # @return [Integer] the number of rules deleted, or that a dry run would delete
+    # @return [Integer] the number of rules deleted, or that a dry run would delete, 0 if none were given
     # @raise [ArgumentError] if something is neither a rule nor the identifier of one
     # @raise [UnsupportedOperation] if the client authenticates with OAuth 2.0 as a user
     # @raise [HTTPError] if the API refuses the request
     # @example Delete every rule
     #   streaming_client.delete_stream_rules(streaming_client.stream_rules)
     # @example Delete the rules that match two values
-    #   streaming_client.delete_stream_rules([{value: "ruby"}, {value: "crystal"}])
+    #   streaming_client.delete_stream_rules(["ruby", "crystal"])
+    # @example Delete a rule by the identifier the API gave it
+    #   streaming_client.delete_stream_rules({id: "1165037377523306498"})
     def delete_stream_rules(rules, dry_run: false)
-      ids, values = each_rule(rules).partition { |rule| identifier_of(rule) }
+      rules = each_rule(rules)
+      return 0 if rules.empty?
+
+      ids, values = rules.partition { |rule| identifier_of(rule) }
       change_rules({delete: deletion(ids, values)}, dry_run:).to_h.dig("meta", "summary", "deleted").to_i
     end
 
@@ -250,24 +260,31 @@ module X
     def rule_to_add(rule) = Hash.try_convert(rule) || {value: rule}
 
     # The identifier of a rule, if it is one or holds one
+    #
+    # A String is the value a rule matches, as add_stream_rules reads it, so an identifier is an Integer or held by a
+    # Hash.
+    #
     # @api private
-    # @param rule [Hash, String, Integer] the rule, or its identifier
+    # @param rule [Hash, String, Integer] the rule, the value it matches, or its identifier
     # @return [String, Integer, nil] the identifier, or nil for a rule that holds none
     def identifier_of(rule)
       hash = Hash.try_convert(rule)
       return hash["id"] || hash[:id] if hash
 
-      rule #: String | Integer
+      rule if rule.instance_of?(Integer)
     end
 
     # The value a rule matches, which deletes a rule holding no identifier
     # @api private
-    # @param rule [Hash] the rule
+    # @param rule [Hash, String] the rule, or the value it matches
     # @return [String] the value
-    # @raise [ArgumentError] if the rule holds neither an identifier nor a value
+    # @raise [ArgumentError] if the rule is neither a String nor a Hash that holds an identifier or a value
     def value_of(rule)
-      hash = rule #: Hash[untyped, untyped]
-      hash["value"] || hash[:value] || raise(ArgumentError, format(NOT_A_RULE, rule))
+      value = String.try_convert(rule)
+      return value if value
+
+      hash = Hash.try_convert(rule) || {} #: Hash[untyped, untyped]
+      hash["value"] || hash[:value] || raise(ArgumentError, format(NOT_A_RULE, rule.inspect))
     end
 
     # The client the rules are read and changed with, which authenticates as the app

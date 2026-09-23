@@ -31,8 +31,27 @@ module X
     def test_deleting_rules_by_identifier
       stub_rules({"meta" => {"summary" => {"deleted" => 2}}}, method: :post)
 
-      assert_equal 2, @streaming_client.delete_stream_rules([1, "2"])
+      assert_equal 2, @streaming_client.delete_stream_rules([1, {id: "2"}])
       assert_requested(:post, RULES_URL, body: {delete: {ids: [1, "2"]}}.to_json)
+    end
+
+    def test_deleting_rules_by_the_values_given_as_strings
+      stub_rules({"meta" => {"summary" => {"deleted" => 2}}}, method: :post)
+
+      assert_equal 2, @streaming_client.delete_stream_rules(["ruby", "2024"])
+      assert_requested(:post, RULES_URL, body: {delete: {values: %w[ruby 2024]}}.to_json)
+    end
+
+    def test_deleting_what_add_stream_rules_was_given_deletes_what_it_added
+      stub_rules({"meta" => {"summary" => {"deleted" => 2}}}, method: :post)
+      @streaming_client.delete_stream_rules([{value: "ruby -is:retweet", tag: "ruby"}, "crystal"])
+
+      assert_requested(:post, RULES_URL, body: {delete: {values: ["ruby -is:retweet", "crystal"]}}.to_json)
+    end
+
+    def test_deleting_no_rules_sends_no_request
+      assert_equal [0, 0], [@streaming_client.delete_stream_rules([]), @streaming_client.delete_stream_rules([], dry_run: true)]
+      assert_not_requested(:post, RULES_URL)
     end
 
     def test_deleting_rules_by_the_value_they_match
@@ -94,7 +113,16 @@ module X
     def test_deleting_something_that_is_neither_a_rule_nor_an_identifier
       error = assert_raises(ArgumentError) { @streaming_client.delete_stream_rules({"tag" => "ruby"}) }
 
-      assert_equal 'a rule is a Hash holding an id or a value, or the identifier of one, not {"tag" => "ruby"}', error.message
+      assert_equal 'a rule is a Hash holding an id or a value, the value it matches, or its identifier, not {"tag" => "ruby"}', error.message
+    end
+
+    def test_deleting_something_that_is_neither_a_hash_a_string_nor_an_integer
+      [:ruby, nil, 1.0].each do |rule|
+        error = assert_raises(ArgumentError) { @streaming_client.delete_stream_rules([rule]) }
+
+        assert_equal "a rule is a Hash holding an id or a value, the value it matches, or its identifier, not #{rule.inspect}", error.message
+      end
+      assert_not_requested(:post, RULES_URL)
     end
 
     def test_a_client_that_cannot_authenticate_as_the_app_deletes_none

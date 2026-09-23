@@ -79,6 +79,11 @@ module X
       assert_empty @streaming_client.add_stream_rules("ruby")
     end
 
+    def test_adding_no_rules_sends_no_request
+      assert_equal [[], []], [@streaming_client.add_stream_rules([]), @streaming_client.add_stream_rules([], dry_run: true)]
+      assert_not_requested(:post, RULES_URL)
+    end
+
     def test_the_rules_of_a_client_that_cannot_authenticate_as_the_app
       streaming_client = Client.new(**test_oauth2_credentials).streaming
 
