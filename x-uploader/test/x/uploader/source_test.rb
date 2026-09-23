@@ -26,6 +26,16 @@ module X
       end
     end
 
+    def test_a_pathname_is_read_from_the_file_it_names
+      source = Uploader.const_get(:Source).for(Pathname(PNG))
+
+      assert_equal [File.binread(PNG), File.binread(PNG, 4, 1)], [source.content, source.read(4, 1)]
+    end
+
+    def test_the_size_of_a_file_named_by_a_path
+      assert_equal [File.size(PNG)] * 2, [PNG, Pathname(PNG)].map { |path| Uploader.const_get(:Source).for(path).size }
+    end
+
     def test_an_io_open_on_a_file_is_read_from_that_file
       File.open(PNG, "rb") do |file|
         source = Uploader.const_get(:Source).for(file)

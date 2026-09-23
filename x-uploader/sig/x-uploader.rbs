@@ -16,7 +16,6 @@ module X
 
       def self.for: (uploadable media) -> Source
       def self.named_or_read: (untyped media) -> Source
-      def self.named: (untyped media) -> Path
 
       attr_reader name: String?
       def named?: () -> bool
@@ -32,6 +31,13 @@ module X
       class Path < Source
         def initialize: (path path) -> void
         def name: () -> String
+      end
+
+      class Handle < Source
+        @io: untyped
+        @mutex: Thread::Mutex
+
+        def initialize: (untyped io) -> void
       end
 
       class Buffer < Source

@@ -61,6 +61,16 @@ module X
       assert_requested :post, "#{BASE_URL}/initialize", body: hash_including("media_category" => "tweet_video", "media_type" => "video/mp4")
     end
 
+    def test_an_unlinked_tempfile_uploads
+      stub_chunked_workflow
+      in_tempfile("sample.mp4") do |tempfile|
+        File.unlink(tempfile.path)
+        Uploader::MediaUpload.upload(tempfile, client: @client)
+      end
+
+      assert_requested :post, "#{BASE_URL}/#{TEST_MEDIA_ID}/append", times: 1
+    end
+
     private
 
     # Copy a sample file into a Tempfile, whose name has no extension, and yield it

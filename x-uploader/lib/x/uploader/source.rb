@@ -6,10 +6,11 @@ module X
   module Uploader
     # The media an upload reads, given as a file path or as an IO
     #
-    # Media given as a String, a Pathname, or any other object that names a file, such as a File or a Tempfile, is
-    # read from that file, a chunk at a time, so that media of any size uploads without being held in memory. Media
-    # given as any other IO, such as a StringIO, is read to its end once, and held, since an IO that names no file
-    # cannot be read again by position.
+    # Media given as a String, a Pathname, or any other path to a file is read from that file, and media given as an
+    # IO open on a file, such as a File or a Tempfile, is read through that IO, whether or not its name still leads
+    # to the file, as it no longer does once a Tempfile is unlinked: either is read a chunk at a time, so that media of
+    # any size uploads without being held in memory. Media given as any other IO, such as a StringIO, is read to its
+    # end once, and held, since an IO that is not open on a file cannot be read again by position.
     #
     # Internal to x-uploader: the uploaders resolve what they were given to one of these, rather than read a path
     # themselves, so that a path and an IO upload the same way.
@@ -40,34 +41,25 @@ module X
         end
       end
 
-      # The source of media given as an IO
+      # The source of media given as a path that is not a String, or as an IO
       #
-      # It is read from the file the IO names, when it names one.
+      # A path, such as a Pathname, is read from the file it names, an IO open on a file, which can seek, through that
+      # IO, and any other IO is read to its end.
       #
       # @api private
-      # @param media [IO, StringIO, Object] the IO
+      # @param media [Pathname, IO, StringIO, Object] the path or the IO
       # @return [Source] the source
       # @raise [ArgumentError] if the media is neither a path nor an IO
       def self.named_or_read(media)
-        return named(media) if media.respond_to?(:to_path)
-        raise ArgumentError, "media must be a path or an IO that reads one, not #{media.class}" unless media.respond_to?(:read)
-
-        Buffer.new(media.read.to_s.b)
+        if media.respond_to?(:to_path)
+          media.respond_to?(:seek) ? Handle.new(media) : Path.new(media)
+        elsif media.respond_to?(:read)
+          Buffer.new(media.read.to_s.b)
+        else
+          raise ArgumentError, "media must be a path or an IO that reads one, not #{media.class}"
+        end
       end
       private_class_method :named_or_read
-
-      # The source of media given as an IO open on a file
-      #
-      # The IO is flushed, so that what it has written reaches the file the upload reads.
-      #
-      # @api private
-      # @param media [IO] the IO
-      # @return [Path] the source
-      def self.named(media)
-        media.flush if media.respond_to?(:flush)
-        Path.new(media)
-      end
-      private_class_method :named
 
       # The name of the file the media was given as
       #
@@ -163,7 +155,69 @@ module X
         def read(length, offset) = File.binread(name, length, offset)
       end
 
-      # Media read from an IO that names no file, and held until the upload has finished
+      # Media read through an IO open on a file, a chunk at a time
+      #
+      # The IO is read by position, from the start of the file, whatever position it holds, and is left at that
+      # position. Seeking flushes what the IO has written, as reading its size does, so that is read with the rest. The file need not be named by the path the IO holds: an unlinked Tempfile is read, as is one
+      # created anonymous, whose path is its directory, and which so names no file.
+      #
+      # @api private
+      class Handle < Source
+        # Initialize the source of media read through an IO open on a file
+        # @api private
+        # @param io [IO] the IO, which answers to_path
+        # @return [Handle] the source
+        # @example The source of a File
+        #   Uploader::Source::Handle.new(File.open("cat.jpg", "rb"))
+        def initialize(io)
+          @io = io
+          path = File.path(io)
+          @name = path unless File.directory?(path)
+          @mutex = Mutex.new
+        end
+
+        # Whether the media exists, which media open on a file always does
+        # @api private
+        # @return [Boolean] true
+        def exist? = true
+
+        # Whether the media can be read, which an IO open on a directory cannot
+        # @api private
+        # @return [Boolean] true if the IO is open on a file
+        def readable? = @io.stat.file?
+
+        # The size of the media in bytes
+        # @api private
+        # @return [Integer] the size in bytes
+        def size = @io.size
+
+        # The whole of the media
+        # @api private
+        # @return [String] the bytes of the media
+        def content = read(size, 0)
+
+        # A run of the media, which the chunks of an upload are read with, from any thread
+        #
+        # The chunks read through one IO, so they read it in turn, and each gives the IO back at the position it held.
+        #
+        # @api private
+        # @param length [Integer] the number of bytes to read
+        # @param offset [Integer] the byte to read from, which is within the media
+        # @return [String] the bytes
+        def read(length, offset)
+          @mutex.synchronize do
+            position = @io.pos
+            begin
+              @io.seek(offset)
+              @io.read(length) #: String
+            ensure
+              @io.seek(position)
+            end
+          end
+        end
+      end
+
+      # Media read from an IO that is not open on a file, and held until the upload has finished
       # @api private
       class Buffer < Source
         # Initialize the source of media read from an IO

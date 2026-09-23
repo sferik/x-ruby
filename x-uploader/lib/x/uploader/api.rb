@@ -15,9 +15,9 @@ module X
     module API
       # Upload media and wait for it to be processed
       #
-      # The media is a path, or an IO open on it. Media that names a file, which a String, a Pathname, a File, and a
-      # Tempfile all do, is read from that file a chunk at a time, so media of any size uploads without being held
-      # in memory; media given as any other IO, such as a StringIO, is read to its end and held.
+      # The media is a path, or an IO open on it. Media given as a String or a Pathname is read from the file it names,
+      # and media given as a File or a Tempfile through that IO, a chunk at a time, so media of any size uploads
+      # without being held in memory; media given as any other IO, such as a StringIO, is read to its end and held.
       #
       # A video or subtitles upload in chunks. The media category is inferred from the name of the file, or, for
       # media that names none, from the bytes it begins with, unless media_category says what it is.
