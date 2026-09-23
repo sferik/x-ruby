@@ -12,18 +12,21 @@ module X
     # Uploads profile images and banners to the X API v1.1
     #
     # Its methods can be called on the module, or on an instance of a class that includes it, which gains its public
-    # methods alone. They post to the absolute URL of the API v1.1 endpoint with the client they are given, which
-    # keeps the connection it holds to the host open for the requests that follow, rather than with a copy of it.
+    # methods alone. They post to the API v1.1 endpoint with the client they are given, which keeps the connection it
+    # holds to the host open for the requests that follow, rather than with a copy of it. The endpoint is resolved
+    # against the base URL of the client, in place of the version it names, so it is reached at the host the client
+    # sends its other requests to, which its credentials are sent to, whether that is api.x.com, api.twitter.com,
+    # or a proxy of the API.
     #
     # @api public
     module Account
       extend self
 
-      # Base URL for X API v1.1 account endpoints
-      V1_BASE_URL = "https://api.x.com/1.1/"
-      # URL of the endpoint that updates the profile image of the authenticating user
+      # The API v1.1, relative to the base URL of a client, which names the version of the API it requests
+      V1_BASE_URL = "../1.1/"
+      # The endpoint that updates the profile image of the authenticating user, relative to the base URL of a client
       PROFILE_IMAGE_URL = "#{V1_BASE_URL}account/update_profile_image.json".freeze
-      # URL of the endpoint that updates the profile banner of the authenticating user
+      # The endpoint that updates the profile banner of the authenticating user, relative to the base URL of a client
       PROFILE_BANNER_URL = "#{V1_BASE_URL}account/update_profile_banner.json".freeze
       # Supported image extensions for profile uploads
       SUPPORTED_EXTENSIONS = %w[gif jpg jpeg png].freeze
