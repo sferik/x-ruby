@@ -50,6 +50,59 @@ module X
         in_order(found + find_all_by_username(usernames, client:, concurrency:, **params, &), ids_or_usernames)
       end
 
+      # Look up many users by identifier, in parallel batches, once each
+      #
+      # A String of digits is an identifier, as it is read from a response or an environment variable, so this looks
+      # the accounts those numbers identify up, where find_all would take them for usernames.
+      #
+      # @api public
+      # @param ids [Array<String, Integer, User>] the identifiers, or users
+      # @param client [Object] the client used to make the requests
+      # @param concurrency [Integer] the number of batches looked up at once, which must be at least one
+      # @param params [Hash] query parameters merged over the default parameters
+      # @return [Array<User>] the users that were found
+      # @raise [ArgumentError] if a value is not an identifier, or if the concurrency is less than one
+      # @yieldparam problem [Problem] each problem the API reported, such as an identifier that was not found
+      # @example Look up many users by identifier, read as Strings
+      #   X::User.find_all_by_id(ENV.fetch("USER_IDS").split(","), client: client)
+      def find_all_by_id(ids, client:, concurrency: Finders::DEFAULT_CONCURRENCY, **params, &)
+        lookup_in_batches(endpoint!, batch_key, ids.map { |id| Utils.id_of(id) }, client:, concurrency:, **params, &) #: Array[User]
+      end
+
+      # Look up a user by identifier
+      #
+      # A String of digits is an identifier, as it is read from a response or an environment variable, so this looks
+      # the account that number identifies up, where find would take it for a username.
+      #
+      # @api public
+      # @param id [String, Integer, User] the identifier, or a user
+      # @param client [Object] the client used to make the request
+      # @param params [Hash] query parameters merged over the default parameters
+      # @return [User, nil] the user or nil if the user was not found
+      # @raise [ArgumentError] if the value is not an identifier
+      # @yieldparam problem [Problem] each problem the API reported, such as a user that was not found
+      # @example Look up a user by an identifier read as a String
+      #   X::User.find_by_id(ENV.fetch("USER_ID"), client: client)
+      def find_by_id(id, client:, **params, &)
+        lookup("#{endpoint!}/#{Utils.id_of(id)}", client:, **params, &) #: User?
+      end
+
+      # Look up a user by identifier, which must exist
+      #
+      # @api public
+      # @param id [String, Integer, User] the identifier, or a user
+      # @param client [Object] the client used to make the request
+      # @param params [Hash] query parameters merged over the default parameters
+      # @return [User] the user
+      # @raise [ArgumentError] if the value is not an identifier
+      # @raise [MissingResource] if the user was not found
+      # @example Look up a user by an identifier read as a String
+      #   X::User.find_by_id!("7505382", client: client)
+      def find_by_id!(id, client:, **params)
+        problems = [] #: Array[Problem]
+        find_by_id(id, client:, **params) { |problem| problems << problem } || raise(MissingResource.new("Could not find #{self} #{Utils.id_of(id)}", problems:))
+      end
+
       # Look up many users by username, in parallel batches, once each
       #
       # @api public

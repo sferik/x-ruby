@@ -68,6 +68,37 @@ module X
             User.find_by_username!(username, client: self, **params)
           end
 
+          # Look up a user by identifier
+          #
+          # A String of digits is an identifier, as it is read from a response or an environment variable, so this
+          # looks the account that number identifies up, where find_user would take it for a username.
+          #
+          # @api public
+          # @param id [String, Integer, User] the identifier, or a user
+          # @param params [Hash] query parameters merged over the default parameters
+          # @return [User, nil] the user or nil if the user was not found
+          # @raise [ArgumentError] if the value is not an identifier
+          # @yieldparam problem [Problem] each problem the API reported, such as a resource that was not found
+          # @example Look up a user by an identifier read as a String
+          #   client.find_user_by_id(ENV.fetch("USER_ID"))
+          def find_user_by_id(id, **params, &)
+            User.find_by_id(id, client: self, **params, &)
+          end
+
+          # Look up a user by identifier, which must exist
+          #
+          # @api public
+          # @param id [String, Integer, User] the identifier, or a user
+          # @param params [Hash] query parameters merged over the default parameters
+          # @return [User] the user
+          # @raise [ArgumentError] if the value is not an identifier
+          # @raise [MissingResource] if the user was not found
+          # @example Look up a user by an identifier read as a String
+          #   client.find_user_by_id!("7505382")
+          def find_user_by_id!(id, **params)
+            User.find_by_id!(id, client: self, **params)
+          end
+
           # Look up many users by identifier or username, in parallel batches
           #
           # @api public
@@ -102,6 +133,24 @@ module X
           #   client.find_all_users_by_username(["sferik", "1234567890"])
           def find_all_users_by_username(usernames, concurrency: Finders::DEFAULT_CONCURRENCY, **params, &)
             User.find_all_by_username(usernames, client: self, concurrency:, **params, &)
+          end
+
+          # Look up many users by identifier, in parallel batches
+          #
+          # A String of digits is an identifier, as it is read from a response or an environment variable, so this
+          # looks the accounts those numbers identify up, where find_all_users would take them for usernames.
+          #
+          # @api public
+          # @param ids [Array<String, Integer, User>] the identifiers, or users
+          # @param concurrency [Integer] the number of batches looked up at once, which must be at least one
+          # @param params [Hash] query parameters merged over the default parameters
+          # @return [Array<User>] the users that were found
+          # @raise [ArgumentError] if a value is not an identifier, or if the concurrency is less than one
+          # @yieldparam problem [Problem] each problem the API reported, such as an identifier that was not found
+          # @example Look up many users by identifier, read as Strings
+          #   client.find_all_users_by_id(ENV.fetch("USER_IDS").split(","))
+          def find_all_users_by_id(ids, concurrency: Finders::DEFAULT_CONCURRENCY, **params, &)
+            User.find_all_by_id(ids, client: self, concurrency:, **params, &)
           end
 
           # The authenticated user, fetched once per client and credentials

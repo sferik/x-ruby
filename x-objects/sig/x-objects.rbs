@@ -273,6 +273,9 @@ module X
     module UserFinders : Finders
       def find: (id id_or_username, client: _Client, **untyped params) ?{ (Problem problem) -> void } -> Resource?
       def find_all: (Array[id] ids_or_usernames, client: _Client, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[User]
+      def find_all_by_id: (Array[id] ids, client: _Client, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[User]
+      def find_by_id: (id id, client: _Client, **untyped params) ?{ (Problem problem) -> void } -> User?
+      def find_by_id!: (id id, client: _Client, **untyped params) -> User
       def find_all_by_username: (Array[id] usernames, client: _Client, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[User]
       def find_by_username: (untyped username, client: _Client, **untyped params) ?{ (Problem problem) -> void } -> User?
       def find_by_username!: (untyped username, client: _Client, **untyped params) -> User
@@ -411,6 +414,9 @@ module X
           def find_user_by_username!: (String username, **untyped params) -> User
           def find_all_users: (Array[id | String] ids_or_usernames, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[User]
           def find_all_users_by_username: (Array[String] usernames, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[User]
+          def find_user_by_id: (id id, **untyped params) ?{ (Problem problem) -> void } -> User?
+          def find_user_by_id!: (id id, **untyped params) -> User
+          def find_all_users_by_id: (Array[id] ids, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[User]
           def current_user!: () -> User
           def current_user_id: () -> Integer
           def search_users: (String query, **untyped params) -> Cursor[User]
