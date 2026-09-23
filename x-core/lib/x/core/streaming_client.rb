@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require "forwardable"
 require "uri"
 require_relative "connection"
 require_relative "origin"
@@ -37,7 +36,6 @@ module X
   #
   # @api public
   class StreamingClient
-    extend Forwardable
     include Core::ProxySetting
     include Core::RequestEncoding
 
@@ -65,9 +63,6 @@ module X
     #   streaming_client.client.base_url
     attr_reader :client
 
-    def_delegators :@connection, :open_timeout, :read_timeout, :write_timeout, :debug_output
-    def_delegator :@reconnect_handler, :max_reconnects
-
     # Initialize a client for the streaming endpoints
     #
     # @api public
@@ -88,6 +83,44 @@ module X
       @response_parser = Core::ResponseParser.new
       @stream_parser = Core::StreamParser.new
     end
+
+    # The timeout for opening a stream's connection, in seconds, which is the client's
+    # @api public
+    # @return [Integer, Float] the timeout
+    # @example Get the open timeout
+    #   streaming_client.open_timeout # => 10
+    def open_timeout = @connection.open_timeout
+
+    # The timeout for reading from a stream, in seconds
+    # @api public
+    # @return [Integer, Float] the timeout
+    # @example Get the read timeout
+    #   streaming_client.read_timeout # => 30
+    def read_timeout = @connection.read_timeout
+
+    # The timeout for writing a stream's request, in seconds, which is the client's
+    # @api public
+    # @return [Integer, Float] the timeout
+    # @example Get the write timeout
+    #   streaming_client.write_timeout # => 60
+    def write_timeout = @connection.write_timeout
+
+    # The IO debug output is written to, which is the client's
+    # @api public
+    # @return [IO, nil] the IO, or nil for none
+    # @example Get the debug output
+    #   streaming_client.debug_output
+    def debug_output = @connection.debug_output
+
+    # The maximum number of times in a row to reconnect a stream
+    #
+    # A stream is reconnected when it drops without delivering an object.
+    #
+    # @api public
+    # @return [Integer, Float] the maximum, or Float::INFINITY for no limit
+    # @example Get the maximum number of reconnects
+    #   streaming_client.max_reconnects
+    def max_reconnects = @reconnect_handler.max_reconnects
 
     # Summarize the streaming client for the console without revealing credentials
     #

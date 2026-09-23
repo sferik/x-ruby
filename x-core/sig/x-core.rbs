@@ -670,7 +670,6 @@ module X
   class StreamingClient
     include Core::ProxySetting
     include Core::RequestEncoding
-    extend Forwardable
 
     DEFAULT_READ_TIMEOUT: Integer
     DEFAULT_MAX_RECONNECTS: Float
