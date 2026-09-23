@@ -65,6 +65,17 @@ module X
     end
 
     # Serialization of what an API response held, by its attributes alone
+    # What a resource that publishes the number of a collection answers, which Resource does
+    interface _Counted
+      def refresh: () -> Resource?
+      def hydrate: () -> Resource?
+    end
+
+    module PublishedCount : _Counted
+      private
+      def counter: (Symbol? total) -> (^(?fresh: bool) -> Integer?)?
+    end
+
     module Serialization : _Attributed
       def as_json: (*untyped) -> Hash[String, untyped]
       def to_json: (?JSON::State? state) -> String
@@ -550,6 +561,7 @@ module X
   class Resource
     extend Objects::Attributes
     extend Objects::Finders
+    include Objects::PublishedCount
     include Objects::Identity
     include Objects::Serialization
 
@@ -600,7 +612,6 @@ module X
     def client!: () -> Objects::_Client
     def resolve: (singleton(Resource) klass, untyped id) -> Resource?
     def cursor: (singleton(Resource) klass, String path, max_results: Integer?, ?min_results: Integer, ?total: Symbol?, ?app_only: bool, **untyped params) -> Cursor[untyped]
-    def counter: (Symbol? total) -> (^() -> Integer?)?
   end
 
   class Page[R < Resource = Resource]
@@ -634,10 +645,10 @@ module X
 
     @prefetch: bool
     @app_only: bool
-    @total: (^() -> Integer?)?
+    @total: (^(?fresh: bool) -> Integer?)?
     @pages: Objects::Pages
 
-    def initialize: (singleton(Resource) resource_class, String path, client: Objects::_Client, ?params: Objects::params, ?prefetch: bool, ?token_param: String, ?min_results: Integer, ?app_only: bool, ?total: (^() -> Integer?)?) -> void
+    def initialize: (singleton(Resource) resource_class, String path, client: Objects::_Client, ?params: Objects::params, ?prefetch: bool, ?token_param: String, ?min_results: Integer, ?app_only: bool, ?total: (^(?fresh: bool) -> Integer?)?) -> void
     def prefetch?: () -> bool
     def app_only?: () -> bool
     def each: () { (R) -> void } -> self
@@ -662,6 +673,7 @@ module X
     def inspect: () -> String
 
     private
+    def fresh_total: () -> (^(?fresh: bool) -> Integer?)?
     def own_params: () -> Objects::params
     def id_only_params: () -> Objects::params
   end

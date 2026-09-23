@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "json"
+require_relative "memo"
 require_relative "page"
 require_relative "pages"
 require_relative "utils"
@@ -71,7 +72,7 @@ module X
     #   fetched with the app-only client of the client, for an endpoint that refuses the OAuth 1.0a of a user, while
     #   the resources hold the client, so that they act as the user
     # @param total [Proc, nil] internal to the object layer, which may change it within 1.x: a block returning the
-    #   number of resources the API publishes for the collection
+    #   number of resources the API publishes for the collection, which reads it again when given fresh: true
     # @return [Cursor] a new cursor
     # @example Create a cursor over a user's followers
     #   X::Cursor.new(X::User, "users/7505382/followers", client: client, params: {max_results: 1000})
@@ -154,11 +155,14 @@ module X
 
     # Return a new cursor over the same collection with an empty page cache
     #
+    # The number the API publishes for the collection is read again too, once, the first time published_count asks
+    # for it, since the collection it counts may have changed.
+    #
     # @api public
     # @return [Cursor] a new cursor
     # @example Iterate again with fresh data
     #   followers = user.followers.refresh
-    def refresh = self.class.new(resource_class, path, client:, params: own_params, prefetch: prefetch?, token_param:, min_results:, app_only: app_only?, total: @total)
+    def refresh = self.class.new(resource_class, path, client:, params: own_params, prefetch: prefetch?, token_param:, min_results:, app_only: app_only?, total: fresh_total)
 
     # Return a new cursor over the same collection with prefetching enabled
     #
@@ -327,6 +331,18 @@ module X
     end
 
     private
+
+    # The block of a refreshed cursor, which reads the published number again once
+    # @api private
+    # @return [Proc, nil] the block, or nil for a collection the API publishes no number for
+    def fresh_total
+      total = @total or return
+      count = Objects::Memo.new
+      lambda do |fresh: false|
+        # @type var fresh: bool
+        fresh ? total.call(fresh: true) : count.fetch { total.call(fresh: true) }
+      end
+    end
 
     # The parameters of this cursor, keeping dropped defaults dropped
     # @api private

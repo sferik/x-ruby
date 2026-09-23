@@ -2,6 +2,7 @@
 
 require "json"
 require_relative "attributes"
+require_relative "published_count"
 require_relative "errors"
 require_relative "finders"
 require_relative "identity"
@@ -17,6 +18,7 @@ module X
   class Resource
     extend Objects::Attributes
     extend Objects::Finders
+    include Objects::PublishedCount
     include Objects::Identity
     include Objects::Serialization
 
@@ -423,18 +425,6 @@ module X
     def cursor(klass, path, max_results:, min_results: 1, total: nil, app_only: false, **params)
       defaults = {max_results:} #: Hash[Symbol, untyped]
       Cursor.new(klass, path, client: client!, params: defaults.merge(params), min_results:, app_only:, total: counter(total))
-    end
-
-    # A block reading the attribute holding the number the API publishes
-    #
-    # A resource without the attribute, such as a stub, is hydrated to read it, which costs one lookup rather than
-    # paging through the collection.
-    #
-    # @api private
-    # @param total [Symbol, nil] the attribute name, or nil if the API publishes no number
-    # @return [Proc, nil] the block, or nil if the API publishes no number
-    def counter(total)
-      -> { public_send(total) || hydrate&.public_send(total) } unless total.nil?
     end
   end
 end
