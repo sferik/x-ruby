@@ -65,9 +65,15 @@ task "install:local" => :build do
   GEMS.each_key { |name| Bundler.with_original_env { sh "gem", "install", gem_path(name), "--local" } }
 end
 
+desc "Check that the current branch is main, which alone is released"
+task "release:guard_main" do
+  branch = `git rev-parse --abbrev-ref HEAD`.strip
+  abort "Release from main, not #{branch}: the workflow that pushes the gems refuses a tag that names another commit" unless branch.eql?("main")
+end
+
 Rake::Task["release"].clear
 desc "Build gems and create tag (gem push handled by CI)"
-task release: %w[check_versions build release:guard_clean release:source_control_push]
+task release: %w[check_versions release:guard_main build release:guard_clean release:source_control_push]
 
 require "rake/testtask"
 

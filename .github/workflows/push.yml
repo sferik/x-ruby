@@ -36,6 +36,19 @@ jobs:
             exit 1
           fi
           bundle exec rake check_versions
+      - name: Check that the tagged commit is on main
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # main is identical to the commit, or ahead of it, once the commit is on main
+          status=$(gh api "repos/$GITHUB_REPOSITORY/compare/$GITHUB_SHA...main" --jq .status)
+          case "$status" in
+            identical | ahead) echo "$GITHUB_SHA is on main" ;;
+            *)
+              echo "::error::$GITHUB_REF_NAME names $GITHUB_SHA, which is not on main"
+              exit 1
+              ;;
+          esac
       - name: Check that CI passed on the tagged commit
         env:
           GH_TOKEN: ${{ github.token }}
