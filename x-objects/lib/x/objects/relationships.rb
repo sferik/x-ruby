@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "x/core/errors/forbidden"
+require "x/core/errors/unauthorized"
 require_relative "utils"
 
 module X
@@ -196,7 +198,8 @@ module X
       # When either user is the authenticated user, one lookup of the other's connection_status answers.
       # Otherwise the users this user follows are scanned until one matches, up to 1,000 a page, and the
       # API bills every user returned, so checking an account that follows thousands can cost dollars. A client
-      # that authenticates as the app alone has no authenticated user, so it scans.
+      # that authenticates as the app alone has no authenticated user, which the API refuses to look up, so it scans.
+      # Any other failure to look the authenticated user up raises, rather than scan every user this one follows.
       #
       # @api public
       # @param user [User, String, Integer] the user or their identifier
@@ -220,14 +223,17 @@ module X
       # The identifier of the authenticated user, when the client knows it
       #
       # A client that authenticates as the app alone has no authenticated user, and asks the API for one in vain,
-      # so an error leaves the identifier unknown rather than end the check.
+      # so the refusal of the credentials of the client leaves the identifier unknown rather than end the check. Any
+      # other error, such as a rate limit, a failure of the API, or of the network, ends it, since a scan in its place
+      # would page through every user this one follows, which the API bills.
       #
       # @api private
       # @return [Integer, nil] the identifier, or nil if the client has no current_user_id or cannot read one
+      # @raise [X::Error] if the API fails to answer for another reason than the credentials of the client
       def authenticated_user_id
         current = client! #: untyped
         current.current_user_id if current.respond_to?(:current_user_id)
-      rescue X::Error
+      rescue X::Forbidden, X::Unauthorized
         nil
       end
 

@@ -7,9 +7,15 @@ includes:
 integration:
   name: minitest
 matcher:
-  # X::Problem belongs to x-core, which x-objects requires the file of; its own suite mutates it
+  # X::Problem and the errors follows? rescues belong to x-core, which x-objects requires the files of; its own
+  # suite mutates them
   ignore:
   - X::Problem*
+  - X::Core*
+  - X::HTTPError*
+  - X::ClientError*
+  - X::Forbidden*
+  - X::Unauthorized*
   subjects:
   - X*
 mutation:

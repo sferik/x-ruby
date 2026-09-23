@@ -1,6 +1,10 @@
 # frozen_string_literal: true
 
+require "net/http"
 require_relative "../../test_helper"
+require "x/core/errors/network_error"
+require "x/core/errors/service_unavailable"
+require "x/core/errors/too_many_requests"
 
 module X
   class FollowsConnectionStatusTest < Minitest::Test
@@ -44,11 +48,24 @@ module X
     end
 
     def test_an_app_only_client_that_cannot_read_the_authenticated_user_scans
-      @client.stub(:get, "users/me", ->(*) { raise Error, "403 Forbidden" })
       @client.stub(:get, "users/5/following", {"data" => [{"id" => "6"}]})
+      [[Forbidden, Net::HTTPForbidden, "403"], [Unauthorized, Net::HTTPUnauthorized, "401"]].each do |error, response, code|
+        @client.stub(:get, "users/me", ->(*) { raise error.new(http_response: response.new("1.1", code, "")) })
 
-      assert User.new({"id" => "5"}, client: @client).follows?(6)
-      assert_equal ["users/me", "users/5/following"], @client.paths
+        assert User.new({"id" => "5"}, client: @client).follows?(6), "scans after #{error}"
+      end
+      assert_equal ["users/me", "users/5/following"] * 2, @client.paths
+    end
+
+    def test_any_other_failure_to_read_the_authenticated_user_ends_the_check_rather_than_scan
+      [ServiceUnavailable.new(http_response: Net::HTTPServiceUnavailable.new("1.1", "503", "")),
+        TooManyRequests.new(http_response: Net::HTTPTooManyRequests.new("1.1", "429", "")),
+        NetworkError.new("Network error: connection reset"), MissingResource.new("Could not find the user")].each do |failure|
+        @client.stub(:get, "users/me", ->(*) { raise failure })
+
+        assert_raises(failure.class) { User.new({"id" => "5"}, client: @client).follows?(6) }
+      end
+      refute_includes @client.paths, "users/5/following"
     end
 
     def test_an_error_that_is_no_x_error_ends_the_check
