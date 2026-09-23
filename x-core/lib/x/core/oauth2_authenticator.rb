@@ -5,6 +5,7 @@ require_relative "authenticator"
 require_relative "connection"
 require_relative "errors/authorization_error"
 require_relative "errors/unauthorized"
+require_relative "origin"
 require_relative "token_endpoint"
 
 module X
@@ -199,24 +200,41 @@ module X
     # Run a request, again if the API rejects a token that a refresh replaces
     #
     # X rejects an expired access token with 401 Unauthorized, which an authenticator that does not know when
-    # its token expires learns only from the rejection.
+    # its token expires learns only from the rejection. A 401 from another origin than the one the token is sent to
+    # answers a request that carried no token, whether it named that origin or was redirected there, so it refreshes
+    # nothing: X accepts a refresh token once, and a refresh would replace the tokens for a rejection of no token.
     #
     # Internal to x-core: Client runs each request it sends with an OAuth 2.0 authenticator through it, and calls it
     # with __send__, since it is private.
     #
     # @api private
+    # @param origin [URI::Generic] a URI of the origin the token is sent to, such as the base URL of a client
     # @yield runs the request
     # @return [Object] what the block returns
-    # @raise [Unauthorized] if the request is rejected again, or a refresh does not replace the access token
-    def retrying_rejected_token
+    # @raise [Unauthorized] if the request is rejected again, or by another origin, or a refresh does not replace
+    #   the access token
+    def retrying_rejected_token(origin)
       token = access_token
       begin
         yield
-      rescue Unauthorized
-        raise unless refresh_rejected_token!(token)
+      rescue Unauthorized => e
+        raise unless carried_token?(e, origin) && refresh_rejected_token!(token)
 
         yield
       end
+    end
+
+    # Check whether a rejection came from the origin the token is sent to
+    #
+    # A request answered by that origin carried the token, and one answered by another carried none.
+    #
+    # @api private
+    # @param error [Unauthorized] the rejection
+    # @param origin [URI::Generic] a URI of the origin the token is sent to
+    # @return [Boolean] true if the response that rejected the request came from that origin
+    def carried_token?(error, origin)
+      uri = error.http_response.uri
+      !uri.nil? && Core::Origin.same?(origin, uri)
     end
 
     # Set the expiration time of the access token, holding the lock

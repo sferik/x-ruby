@@ -110,12 +110,15 @@ module X
       end
 
       # Run a request, again if a refresh replaces an OAuth 2.0 token the API rejects
+      #
+      # Only a rejection by the origin of the base URL, which the token is sent to, refreshes it; see {Origin}.
+      #
       # @api private
       # @yield runs the request
       # @return [Object] what the block returns
       def refreshing_rejected_token(&)
         current = oauth2_authenticator_in_use
-        current.nil? ? yield : current.__send__(:retrying_rejected_token, &)
+        current.nil? ? yield : current.__send__(:retrying_rejected_token, URI(base_url), &)
       end
     end
   end

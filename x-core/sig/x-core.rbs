@@ -211,7 +211,7 @@ module X
       def yield_json: (line: String, decode: ^(String) -> untyped) { (untyped) -> void } -> void
     end
 
-    module ClientTokenRefresh
+    module ClientTokenRefresh : _TokenRefreshHost
       @authenticator: Authenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator
       @connection: Connection
       @token_refresh_clients: _ClientRegistry
@@ -737,7 +737,8 @@ module X
 
     private
     def refresh_rejected_token!: (String rejected_token) -> bool
-    def retrying_rejected_token: [T] () { () -> T } -> T
+    def retrying_rejected_token: [T] (URI::Generic origin) { () -> T } -> T
+    def carried_token?: (Unauthorized error, URI::Generic origin) -> bool
     def update_expires_at: (Time? expires_at) -> void
     attr_reader client_secret: String?
     def refresh: -> true
@@ -763,6 +764,10 @@ module X
     def oauth2_authenticator_in_use: () -> OAuth2Authenticator?
     def oauth2_authenticator: () -> OAuth2Authenticator?
     def expires_at: () -> Time?
+  end
+
+  interface _TokenRefreshHost
+    def base_url: () -> String
   end
 
   interface _SettingsHost

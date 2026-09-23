@@ -12,7 +12,7 @@ module X
     end
 
     def test_the_expiration_time_and_the_refresh_of_a_rejected_token_are_private
-      %i[update_expires_at refresh_rejected_token! retrying_rejected_token].each do |name|
+      %i[update_expires_at refresh_rejected_token! retrying_rejected_token carried_token?].each do |name|
         refute_respond_to @authenticator, name
       end
     end
