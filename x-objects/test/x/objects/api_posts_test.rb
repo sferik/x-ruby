@@ -28,6 +28,14 @@ module X
         assert_equal({media: {media_ids: ["3"]}}.to_json, @client.requests.first[:body])
       end
 
+      def test_create_post_with_the_media_of_another_post
+        @client.stub(:post, "tweets", {"data" => {"id" => "1"}})
+        media = Media.new({"media_key" => "3_1880028106020515840", "type" => "photo"})
+        @client.create_post("Again", media_ids: [media])
+
+        assert_equal({text: "Again", media: {media_ids: ["1880028106020515840"]}}.to_json, @client.requests.first[:body])
+      end
+
       def test_delete_post
         @client.stub(:delete, "tweets/1", {"data" => {"deleted" => true}})
 

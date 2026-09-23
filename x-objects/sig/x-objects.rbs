@@ -82,6 +82,8 @@ module X
       NUMERIC_ID: Regexp
       RAW_ID: Regexp
       USERNAME: Regexp
+      MEDIA_KEY: Regexp
+      NOT_MEDIA: String
 
       def deep_freeze: (untyped value) -> untyped
       def path: (String base, params params) -> String
@@ -93,7 +95,8 @@ module X
       def media_ids_of: (untyped media_ids) -> Array[String]
       def username: (untyped value) -> String
       def username!: (untyped value) -> String
-      def media_id_of: (String | Integer | _UploadedMedia value) -> String
+      def media_id_of: (untyped value) -> String
+      def media_key_id: (untyped media) -> String
       def integer: (String | Integer | nil value) -> Integer?
       def authenticated_user_id: (untyped client) -> Integer?
       def app_client: (untyped client) -> untyped

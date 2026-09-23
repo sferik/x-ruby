@@ -17,8 +17,8 @@ module X
       # @param users [Array<User, String, Integer>] the other participants or their identifiers
       # @param text [String, nil] the text of the first message, or nil for a message of attachments alone
       # @param client [Object] the client used to make the request
-      # @param media_ids [Array<String, Integer, #fetch>, String, Integer, #fetch, nil] the identifiers of uploaded
-      #   media to attach, or what the uploads returned, one or many
+      # @param media_ids [Array<String, Integer, #fetch, Media>, String, Integer, #fetch, Media, nil] the identifiers of
+      #   uploaded media to attach, what the uploads returned, or media, such as that of a post, one or many
       # @param params [Hash] additional fields of the message, such as attachments
       # @return [DirectMessage, nil] the sent message, holding only its identifiers, among them the new conversation's
       # @raise [ArgumentError] if the message has neither text nor any other field, or has both media_ids and
@@ -38,8 +38,8 @@ module X
       # @param conversation [DirectMessage, String, Integer] a message of the conversation, or the conversation's identifier
       # @param text [String, nil] the text of the message, or nil for a message of attachments alone
       # @param client [Object] the client used to make the request
-      # @param media_ids [Array<String, Integer, #fetch>, String, Integer, #fetch, nil] the identifiers of uploaded
-      #   media to attach, or what the uploads returned, one or many
+      # @param media_ids [Array<String, Integer, #fetch, Media>, String, Integer, #fetch, Media, nil] the identifiers of
+      #   uploaded media to attach, what the uploads returned, or media, such as that of a post, one or many
       # @param params [Hash] additional request body fields, such as attachments
       # @return [DirectMessage, nil] the sent message, holding only its identifiers
       # @raise [ArgumentError] if the conversation identifier is not one, the message has neither text nor any other
@@ -93,8 +93,8 @@ module X
       # @api private
       # @param text [String, nil] the text of the message
       # @param params [Hash] additional fields of the message, such as attachments
-      # @param media_ids [Array, #fetch, String, Integer, nil] the identifiers of uploaded media to attach, or what
-      #   the uploads returned, one or many; an empty list attaches nothing, as nil does
+      # @param media_ids [Array, #fetch, Media, String, Integer, nil] the identifiers of uploaded media to attach, what
+      #   the uploads returned, or media, one or many; an empty list attaches nothing, as nil does
       # @return [Hash{Symbol => Object}] the fields, without the text when there is none
       # @raise [ArgumentError] if the message has neither text nor any other field, or has both media_ids and
       #   attachments

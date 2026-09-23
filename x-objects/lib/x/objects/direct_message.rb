@@ -90,8 +90,8 @@ module X
       # @param user [User, String, Integer] the recipient or their identifier
       # @param text [String, nil] the text of the message, or nil for a message of attachments alone
       # @param client [Object] the client used to make the request
-      # @param media_ids [Array<String, Integer, #fetch>, String, Integer, #fetch, nil] the identifiers of uploaded
-      #   media to attach, or what the uploads returned, one or many
+      # @param media_ids [Array<String, Integer, #fetch, Media>, String, Integer, #fetch, Media, nil] the identifiers of
+      #   uploaded media to attach, what the uploads returned, or media, such as that of a post, one or many
       # @param params [Hash] additional request body fields, such as attachments
       # @return [DirectMessage, nil] the sent message, holding only its identifiers
       # @raise [ArgumentError] if the message has neither text nor any other field, or has both media_ids and

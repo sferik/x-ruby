@@ -29,6 +29,19 @@ module X
         assert_raises(KeyError) { Utils.media_id_of(uploaded.new({"media_key" => "3_3"})) }
       end
 
+      def test_media_id_of_media
+        assert_equal "1880028106020515840", Utils.media_id_of(Media.new({"media_key" => "3_1880028106020515840", "type" => "photo"}))
+        assert_equal "7", Utils.media_id_of(Struct.new(:media_key).new("13_7"))
+      end
+
+      def test_media_id_of_something_that_is_not_media
+        [Object.new, Struct.new(:media_key).new(nil), Struct.new(:media_key).new("3_"), Struct.new(:media_key).new("x3_7"), :media].each do |value|
+          error = assert_raises(ArgumentError, value.inspect) { Utils.media_id_of(value) }
+
+          assert_equal "media is what an upload returned, media such as X::Media, or a media identifier, not #{value.inspect}", error.message
+        end
+      end
+
       def test_media_ids_of_many
         assert_equal %w[3 4 5], Utils.media_ids_of([{"id" => 3}, "4", 5])
         assert_empty Utils.media_ids_of([])
