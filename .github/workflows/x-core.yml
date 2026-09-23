@@ -1,6 +1,9 @@
 name: x-core
 on:
   push:
+    # A tag names a commit whose push ran this workflow already, and a push of a tag skips the paths filter
+    branches:
+      - "**"
     paths:
       - "x-core/**"
       - "!x-core/**.md"

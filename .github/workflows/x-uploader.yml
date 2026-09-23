@@ -1,6 +1,9 @@
 name: x-uploader
 on:
   push:
+    # A tag names a commit whose push ran this workflow already, and a push of a tag skips the paths filter
+    branches:
+      - "**"
     paths:
       - "x-uploader/**"
       - "!x-uploader/**.md"
