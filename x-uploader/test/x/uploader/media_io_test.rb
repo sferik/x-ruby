@@ -34,6 +34,12 @@ module X
       assert_equal "subtitles", Uploader::MediaUpload.infer_media_category(StringIO.new("WEBVTT\n\n00:00:01.000 --> 00:00:02.000\nHello\n"))
     end
 
+    def test_a_heif_image_is_not_taken_for_a_video
+      heic = StringIO.new("\x00\x00\x00\x18ftypheic\x00\x00\x00\x00mif1heic".b)
+
+      assert_raises(InvalidMediaType) { Uploader::MediaUpload.infer_media_category(heic) }
+    end
+
     def test_the_category_of_media_no_signature_names_must_be_given
       error = assert_raises(InvalidMediaType) { Uploader::MediaUpload.infer_media_category(StringIO.new("not media at all")) }
 

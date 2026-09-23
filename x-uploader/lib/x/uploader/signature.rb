@@ -17,9 +17,14 @@ module X
     module Signature
       extend self
 
+      # The brands an MP4 video names after the box type it begins with, which files of other types share with it: a
+      # HEIF or AVIF image, and M4A audio, begin with that box type too, and name a brand of their own
+      MP4_BRANDS = ["isom", "iso2", "iso3", "iso4", "iso5", "iso6", "mp41", "mp42", "avc1", "M4V ", "M4VH", "M4VP", "dash",
+        "MSNV"].freeze
+
       # The media type each signature names, by the bytes that must appear at each offset, most specific first,
-      # since the first signature that matches names the type: the brand of a QuickTime file follows the box type an
-      # MP4 file shares with it, and a WebP file is a RIFF file whose form is named eight bytes in. A signature of
+      # since the first signature that matches names the type: the brand of a QuickTime file or an MP4 video follows
+      # the box type the two share, and a WebP file is a RIFF file whose form is named eight bytes in. A signature of
       # bytes above ASCII is packed from them, since a String literal of those bytes is not the UTF-8 this file is.
       SIGNATURES = {
         {0 => "GIF87a".b} => "image/gif",
@@ -32,7 +37,7 @@ module X
         {0 => "RIFF".b, 8 => "WEBP".b} => "image/webp",
         {0 => [0x1A, 0x45, 0xDF, 0xA3].pack("C*")} => "video/webm", # the EBML header of Matroska
         {4 => "ftypqt  ".b} => "video/quicktime",
-        {4 => "ftyp".b} => "video/mp4",
+        **MP4_BRANDS.to_h { |brand| [{4 => "ftyp#{brand}".b}, "video/mp4"] },
         {0 => "glTF".b} => "model/gltf-binary",
         {0 => [0xEF, 0xBB, 0xBF].pack("C*") + "WEBVTT"} => "text/vtt", # a byte order mark before the header
         {0 => "WEBVTT".b} => "text/vtt"
@@ -46,7 +51,7 @@ module X
       }.freeze
       # The media category of media whose type belongs to none of its own
       DEFAULT_CATEGORY = "tweet_image"
-      private_constant :SIGNATURES, :DEFAULT_CATEGORY
+      private_constant :MP4_BRANDS, :SIGNATURES, :DEFAULT_CATEGORY
 
       # The media type the signature of media names
       #

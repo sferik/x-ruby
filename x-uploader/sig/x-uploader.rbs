@@ -50,6 +50,7 @@ module X
     end
 
     module Signature
+      MP4_BRANDS: Array[String]
       SIGNATURES: Hash[Hash[Integer, String], String]
       CATEGORIES: Hash[String, String]
       DEFAULT_CATEGORY: String
