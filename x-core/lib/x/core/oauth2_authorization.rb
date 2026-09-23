@@ -41,13 +41,6 @@ module X
     #   authorization.client_id
     attr_reader :client_id
 
-    # The OAuth 2.0 client secret of a confidential app
-    # @api public
-    # @return [String, nil] the client secret, or nil for a public client
-    # @example Get the client secret
-    #   authorization.client_secret
-    attr_reader :client_secret
-
     # The URL X redirects the user back to, as registered for the app
     # @api public
     # @return [String] the redirect URI
@@ -170,6 +163,15 @@ module X
     end
 
     private
+
+    # The OAuth 2.0 client secret of a confidential app
+    #
+    # It is private, as the secrets of a client and its authenticators are, and inspect leaves it out. The credentials
+    # of an authorization hold it, since a client is built from them.
+    #
+    # @api private
+    # @return [String, nil] the client secret, or nil for a public client
+    attr_reader :client_secret
 
     # The client for the authorization page and token endpoint
     # @api private

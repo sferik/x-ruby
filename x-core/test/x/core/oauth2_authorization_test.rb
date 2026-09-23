@@ -53,15 +53,22 @@ module X
       authorization = authorization(client_secret: TEST_CLIENT_SECRET, scopes: %w[users.read], state: "STATE",
         code_verifier: CODE_VERIFIER, connection:)
 
-      assert_equal [TEST_CLIENT_ID, TEST_CLIENT_SECRET, REDIRECT_URI, %w[users.read], "STATE", CODE_VERIFIER],
-        [authorization.client_id, authorization.client_secret, authorization.redirect_uri, authorization.scopes, authorization.state, authorization.code_verifier]
+      assert_equal [TEST_CLIENT_ID, REDIRECT_URI, %w[users.read], "STATE", CODE_VERIFIER],
+        [authorization.client_id, authorization.redirect_uri, authorization.scopes, authorization.state, authorization.code_verifier]
       assert_same connection, authorization.connection
+    end
+
+    def test_the_client_secret_is_kept_private
+      authorization = authorization(client_secret: TEST_CLIENT_SECRET)
+
+      refute_respond_to authorization, :client_secret
+      assert_equal TEST_CLIENT_SECRET, authorization.send(:client_secret)
     end
 
     def test_defaults
       authorization = authorization()
 
-      assert_nil authorization.client_secret
+      assert_nil authorization.send(:client_secret)
       assert_equal OAuth2Authorization::DEFAULT_SCOPES, authorization.scopes
       assert_instance_of Connection, authorization.connection
     end

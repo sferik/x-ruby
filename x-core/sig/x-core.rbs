@@ -372,7 +372,6 @@ module X
     @pkce: SimpleOAuth::OAuth2::PKCE
 
     attr_reader client_id: String
-    attr_reader client_secret: String?
     attr_reader redirect_uri: String
     attr_reader scopes: Array[String]
     attr_reader state: String
@@ -386,6 +385,7 @@ module X
     def client: (String | Hash[String | Symbol, String] callback, **untyped options) -> Client
 
     private
+    attr_reader client_secret: String?
     def oauth2_client: () -> SimpleOAuth::OAuth2::Client
     def query_of: (String | Hash[String | Symbol, String] callback) -> (String | Hash[String | Symbol, String])
     def credentials_from: (SimpleOAuth::OAuth2::Token token) -> Hash[Symbol, String | Time | nil]
