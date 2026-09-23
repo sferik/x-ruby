@@ -56,15 +56,16 @@ module X
       # Replace the resources that are not hydrated with the full resources
       #
       # A resource that hydrate would look up is looked up, which is a stub and also a resource a response included
-      # without every field, so what comes back is hydrated throughout. A resource that was not found is dropped, and
-      # a hydrated resource is kept as it is. Resources that are all hydrated need no lookup, so they are returned
+      # without every field, so what comes back is hydrated throughout. A resource that was not found is dropped, as
+      # is nil, which a reference to no resource reads as, such as the author of a post whose response named none,
+      # and a hydrated resource is kept as it is. Resources that are all hydrated need no lookup, so they are returned
       # even for a resource that cannot be looked up in batches. What was found is stored in each original, so
       # hydrating one of them afterwards costs no request, unless params override a default field or expansion
       # parameter: what such a lookup found is not the full resource, so it is returned without being stored, and
       # hydrating an original fetches the full resource.
       #
       # @api public
-      # @param resources [Array<Resource>] the resources, some of which may not be hydrated
+      # @param resources [Array<Resource, nil>] the resources, some of which may not be hydrated, and some nil
       # @param client [Object] the client used to make the requests
       # @param concurrency [Integer] the number of batch lookups made at once, which must be at least one
       # @param params [Hash] query parameters merged over the default parameters; one that overrides a default field
@@ -75,8 +76,9 @@ module X
       # @example Expand the authors a search did not include
       #   X::User.hydrate_all(posts.map(&:author), client: client)
       def hydrate_all(resources, client:, concurrency: DEFAULT_CONCURRENCY, **params, &)
+        resources = resources.compact
         partial = resources.reject(&:hydrated?)
-        return resources.dup if partial.empty?
+        return resources if partial.empty?
 
         replace = replacer(find_all(partial, client:, concurrency:, **params, &), full: fully_requested_by?(Utils.merge_params(default_params, params)))
         resources.filter_map { |resource| resource.hydrated? ? resource : replace.call(resource) }

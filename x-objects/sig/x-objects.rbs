@@ -290,7 +290,7 @@ module X
 
       def find: (id id, client: _Client, **untyped params) ?{ (Problem problem) -> void } -> Resource?
       def find!: (id id, client: _Client, **untyped params) -> Resource
-      def hydrate_all: (Array[Resource] resources, client: _Client, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[Resource]
+      def hydrate_all: (Array[Resource?] resources, client: _Client, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[Resource]
       def find_all: (Array[id] ids, client: _Client, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[Resource]
       def lookup: (String path, client: _Client, **untyped params) ?{ (Problem problem) -> void } -> Resource?
       def lookup_all: (String path, client: _Client, **untyped params) ?{ (Problem problem) -> void } -> Array[Resource]

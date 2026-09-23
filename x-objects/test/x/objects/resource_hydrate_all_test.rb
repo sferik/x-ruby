@@ -39,6 +39,15 @@ module X
         assert_equal %w[user3], User.hydrate_all([User.from_id(2), User.from_id(3)], client: @client).map(&:username)
       end
 
+      def test_hydrate_all_drops_nil
+        post = Post.new({"id" => "9"}, client: @client)
+        users = User.hydrate_all([post.author, User.from_id(2), nil], client: @client)
+
+        assert_equal %w[user2], users.map(&:username)
+        assert_equal [@expanded], User.hydrate_all([nil, @expanded, nil], client: @client)
+        assert_equal ["2"], @client.queries.map { |query| query["ids"] }
+      end
+
       def test_hydrate_all_without_stubs
         assert_equal [@expanded], User.hydrate_all([@expanded], client: @client)
         assert_empty @client.requests
