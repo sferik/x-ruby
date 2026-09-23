@@ -187,8 +187,8 @@ module X
     #
     # @api public
     # @return [Hash{String => Object}] the frozen attributes
-    # @example Build the JSON of a post that attaches the media
-    #   {media: {media_ids: [media.as_json]}}
+    # @example Store the response of an upload beside a record of it
+    #   record.update(upload: media.as_json)
     def as_json(*) = attrs
 
     # The attributes of the response as JSON
@@ -225,7 +225,7 @@ module X
     # @api public
     # @return [String] the class name, identifier, media key, and state
     # @example Inspect media
-    #   media.inspect # => #<X::UploadedMedia id="1880028106020515840" media_key="3_1880028106020515840" state=nil>
+    #   media.inspect # => #<X::UploadedMedia id=1880028106020515840 media_key="3_1880028106020515840" state=nil>
     def inspect = "#<#{self.class} id=#{self["id"].inspect} media_key=#{media_key.inspect} state=#{state.inspect}>"
 
     private
