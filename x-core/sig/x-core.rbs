@@ -585,8 +585,6 @@ module X
   end
 
   class Connection
-    DEFAULT_HOST: String
-    DEFAULT_PORT: Integer
     DEFAULT_OPEN_TIMEOUT: Integer
     DEFAULT_READ_TIMEOUT: Integer
     DEFAULT_WRITE_TIMEOUT: Integer

@@ -27,12 +27,6 @@ module X
     include Core::ConnectionRequest
     include Core::ProxySetting
 
-    # Default host for the X API
-    DEFAULT_HOST = "api.x.com"
-    private_constant :DEFAULT_HOST
-    # Default port for HTTPS connections
-    DEFAULT_PORT = 443
-    private_constant :DEFAULT_PORT
     # Default timeout for opening connections in seconds; opening a connection is a TCP handshake and a TLS one,
     # which a reachable host finishes in well under a second, so a host that takes longer is one a request waits
     # on rather than reaches, and it is given less time than reading a response, which an endpoint may be slow to
@@ -184,12 +178,16 @@ module X
 
     # The host and port to connect to for a URI
     #
-    # A URI that names neither, such as a relative one, is reached at the host and port of the API.
+    # The URI of a request is an HTTP or HTTPS URL, since Net::HTTP builds a request from no other, so it names both.
     #
     # @api private
     # @param uri [URI::Generic] the URI of the request
     # @return [Array(String, Integer)] the host and the port to connect to
-    def host_and_port(uri) = [uri.hostname || DEFAULT_HOST, uri.port || DEFAULT_PORT]
+    def host_and_port(uri)
+      hostname = uri.hostname #: String
+      port = uri.port #: Integer
+      [hostname, port]
+    end
 
     # Build an HTTP client for the host of a URI
     #

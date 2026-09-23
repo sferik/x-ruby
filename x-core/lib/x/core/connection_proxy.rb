@@ -44,13 +44,12 @@ module X
       # The proxy of a request, the one given or the one the environment names
       #
       # The proxy the connection was given stands for every request. Otherwise the URI of the request is asked for
-      # the proxy of its own scheme, and a relative URI, which names no host for no_proxy to be matched against,
-      # takes none.
+      # the proxy of its own scheme.
       #
       # @api private
       # @param uri [URI::Generic] the URI of the request
       # @return [URI::Generic, nil] the proxy of the request, or nil to reach the host directly
-      def proxy_for(uri) = proxy_uri || (uri.find_proxy if uri.absolute?)
+      def proxy_for(uri) = proxy_uri || uri.find_proxy
 
       # A percent-encoded component of a proxy URL, decoded
       #

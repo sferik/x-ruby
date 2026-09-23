@@ -87,14 +87,6 @@ module X
 
       assert_requested :get, "http://example.com:80"
     end
-
-    def test_no_host_or_port
-      stub_request(:get, "http://api.x.com:443/2/tweets")
-      request = Net::HTTP::Get.new(URI("http://api.x.com:443/2/tweets"))
-      request.stub(:uri, URI("/2/tweets")) { @connection.perform(request:) }
-
-      assert_requested :get, "http://api.x.com:443/2/tweets"
-    end
   end
 
   class ConnectionIPv6Test < Minitest::Test

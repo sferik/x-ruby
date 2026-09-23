@@ -153,12 +153,6 @@ module X
       end
     end
 
-    def test_a_relative_uri_takes_no_proxy_from_the_environment
-      with_proxy_env(https_proxy: "http://example.com:8080") do
-        refute_predicate Connection.new.send(:build_http_client, URI("/2/tweets")), :proxy?
-      end
-    end
-
     private
 
     # Run a block with the proxy variables of the environment set to the values given, and the rest of them cleared
