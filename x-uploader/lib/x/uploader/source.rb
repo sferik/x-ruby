@@ -10,7 +10,8 @@ module X
     # IO open on a file, such as a File or a Tempfile, is read through that IO, whether or not its name still leads
     # to the file, as it no longer does once a Tempfile is unlinked: either is read a chunk at a time, so that media of
     # any size uploads without being held in memory. Media given as any other IO, such as a StringIO, is read to its
-    # end once, and held, since an IO that is not open on a file cannot be read again by position.
+    # end once, and held, since an IO that is not open on a file cannot be read again by position; it is given back
+    # at the position it held when it can seek, so that the media can be checked and then uploaded.
     #
     # Internal to x-uploader: the uploaders resolve what they were given to one of these, rather than read a path
     # themselves, so that a path and an IO upload the same way.
@@ -43,23 +44,53 @@ module X
 
       # The source of media given as a path that is not a String, or as an IO
       #
-      # A path, such as a Pathname, is read from the file it names, an IO open on a file, which can seek, through that
-      # IO, and any other IO is read to its end.
+      # A path, such as a Pathname, which cannot seek, is read from the file it names, and an IO open on a file, which
+      # can, through that IO. Any other IO is read to its end, such as a StringIO, or a pipe, whose path is nil.
       #
       # @api private
       # @param media [Pathname, IO, StringIO, Object] the path or the IO
       # @return [Source] the source
       # @raise [ArgumentError] if the media is neither a path nor an IO
       def self.named_or_read(media)
-        if media.respond_to?(:to_path)
-          media.respond_to?(:seek) ? Handle.new(media) : Path.new(media)
+        named = media.respond_to?(:to_path)
+        if named && !media.respond_to?(:seek)
+          Path.new(media)
+        elsif named && media.to_path
+          Handle.new(media)
         elsif media.respond_to?(:read)
-          Buffer.new(media.read.to_s.b)
+          buffered(media)
         else
           raise ArgumentError, "media must be a path or an IO that reads one, not #{media.class}"
         end
       end
       private_class_method :named_or_read
+
+      # The source of media given as an IO that is not open on a file
+      #
+      # The IO is read from its position to its end, and given back at that position when it can seek, as a StringIO
+      # can and a pipe cannot, so that what infers the type of the media leaves it to be uploaded.
+      #
+      # @api private
+      # @param media [StringIO, IO, Object] the IO
+      # @return [Buffer] the source
+      def self.buffered(media)
+        position = position_of(media)
+        content = media.read.to_s.b
+        media.seek(position) if position
+        Buffer.new(content)
+      end
+      private_class_method :buffered
+
+      # The position of an IO that can seek
+      # @api private
+      # @param media [StringIO, IO, Object] the IO
+      # @return [Integer, nil] the position, or nil for an IO that cannot seek
+      def self.position_of(media)
+        media.pos if media.respond_to?(:seek)
+      rescue SystemCallError
+        nil
+      end
+      private_class_method :position_of
 
       # The name of the file the media was given as
       #

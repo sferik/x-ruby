@@ -16,6 +16,8 @@ module X
 
       def self.for: (uploadable media) -> Source
       def self.named_or_read: (untyped media) -> Source
+      def self.buffered: (untyped media) -> Buffer
+      def self.position_of: (untyped media) -> Integer?
 
       attr_reader name: String?
       def named?: () -> bool
