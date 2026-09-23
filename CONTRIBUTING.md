@@ -30,7 +30,7 @@
 
    On GitHub, each gem's workflow runs only when that gem, or a gem it depends on, changes. The `x` workflow runs when the meta-gem or the code and signatures of any gem change, and the linter runs when any Ruby file changes. Every workflow runs when `VERSION` changes as well, so the commit that prepares a release runs them all, which the workflow that pushes the gems waits for.
 
-5. To release, write the new version to `VERSION`, run `rake update_versions` to write it into each gem's `version.rb`, record the release in `CHANGELOG.md`, commit, and run `rake release`, which checks that the versions agree, builds every gem, and tags the release.
+5. To release, write the new version to `VERSION`, run `rake update_versions` to write it into each gem's `version.rb`, record the release in each of the four changelogs, `CHANGELOG.md`, `x-core/CHANGELOG.md`, `x-uploader/CHANGELOG.md`, and `x-objects/CHANGELOG.md`, with the link to its changes at the foot of each, commit on `main`, and run `rake release`, which checks that the versions agree and that the branch is `main`, builds every gem, and tags the release.
 
 6. Create a new branch for your feature or bug fix:
 
