@@ -297,6 +297,7 @@ module X
       def client_for: (_Client client) -> _Client
 
       private
+      def replacer: (Array[Resource] found, full: bool) -> ^(Resource) -> Resource?
       def get: (String path, client: _Client, query: Hash[String, untyped]) -> body
       def lookup_in_batches: (String path, Symbol key, Array[String] values, client: _Client, concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[Resource]
       def reporting: (body body) ?{ (Problem problem) -> void } -> body

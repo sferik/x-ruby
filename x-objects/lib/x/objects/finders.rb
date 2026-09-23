@@ -59,7 +59,9 @@ module X
       # without every field, so what comes back is hydrated throughout. A resource that was not found is dropped, and
       # a hydrated resource is kept as it is. Resources that are all hydrated need no lookup, so they are returned
       # even for a resource that cannot be looked up in batches. What was found is stored in each original, so
-      # hydrating one of them afterwards costs no request.
+      # hydrating one of them afterwards costs no request, unless params override a default field or expansion
+      # parameter: what such a lookup found is not the full resource, so it is returned without being stored, and
+      # hydrating an original fetches the full resource.
       #
       # @api public
       # @param resources [Array<Resource>] the resources, some of which may not be hydrated
@@ -76,8 +78,8 @@ module X
         partial = resources.reject(&:hydrated?)
         return resources.dup if partial.empty?
 
-        found = find_all(partial, client:, concurrency:, **params, &).to_h { |resource| [resource.id, resource] }
-        resources.filter_map { |resource| resource.hydrated? ? resource : resource.__send__(:hydrated_with, found[resource.id]) }
+        replace = replacer(find_all(partial, client:, concurrency:, **params, &), full: fully_requested_by?(Utils.merge_params(default_params, params)))
+        resources.filter_map { |resource| resource.hydrated? ? resource : replace.call(resource) }
       end
 
       # Look up many resources by identifier, in parallel batches, once each
@@ -149,6 +151,22 @@ module X
       def client_for(client) = client
 
       private
+
+      # What replaces each resource that is not hydrated, from what a lookup found
+      #
+      # A lookup of every field found the full resource, which is stored in the original, as is a resource it did not
+      # find. A lookup of some fields found what is returned in its place, and nothing is stored.
+      #
+      # @api private
+      # @param found [Array<Resource>] the resources the lookup found
+      # @param full [Boolean] whether the lookup asked for every field and expansion by default
+      # @return [Proc] a callable passed a resource that is not hydrated, which returns what replaces it, or nil
+      def replacer(found, full:)
+        by_id = found.to_h { |resource| [resource.id, resource] }
+        return ->(resource) { by_id[resource.id] } unless full
+
+        ->(resource) { resource.__send__(:hydrated_with, by_id[resource.id]) }
+      end
 
       # Request an endpoint
       # @api private

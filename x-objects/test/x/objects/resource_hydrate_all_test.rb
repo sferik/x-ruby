@@ -85,6 +85,19 @@ module X
         assert_equal requests, @client.requests.size
       end
 
+      def test_hydrate_all_stores_nothing_a_lookup_of_some_fields_found
+        stub = User.from_id(2, client: @client)
+        missing = User.from_id(4, client: @client)
+        @client.stub(:get, "users", {"data" => [{"id" => "2", "username" => "user2"}]})
+        users = User.hydrate_all([stub, missing], client: @client, "user.fields": "username")
+        @client.stub(:get, "users/2", {"data" => {"id" => "2", "username" => "user2", "name" => "Two"}})
+        @client.stub(:get, "users/4", {"data" => {"id" => "4", "username" => "user4"}})
+
+        refute_predicate users.first, :hydrated?
+        assert_equal ["Two", "user4"], [stub.hydrate.name, missing.hydrate.username]
+        assert_equal ["users", "users/2", "users/4"], @client.paths
+      end
+
       def test_hydrate_all_stores_that_a_resource_was_not_found
         @client.stub(:get, "users", {"data" => []})
         stub = User.from_id(2, client: @client)
