@@ -42,7 +42,8 @@ module X
       # The client a space lookup requests with
       #
       # The space endpoints refuse OAuth 1.0a, so a client that signs with it looks spaces up with a copy that
-      # reuses its bearer token. A client signed in with OAuth 2.0 as a user looks them up as it is.
+      # reuses its bearer token, as a client signed in with OAuth 2.0 as a user that holds the app's credentials does.
+      # One that holds none looks them up as it is.
       #
       # @api private
       # @param client [Object] the client the lookup was given

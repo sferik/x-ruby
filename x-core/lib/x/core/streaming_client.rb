@@ -101,10 +101,10 @@ module X
 
     # Stream data from the X API
     #
-    # The stream endpoints take app-only authentication, so a client that signs with OAuth 1.0a streams with the
-    # bearer token its app_only client holds. A client that authenticates with OAuth 2.0 as a user holds no app-only
-    # credentials, so it raises UnsupportedOperation before it connects, rather than open a stream X would refuse with 403
-    # Forbidden; stream with a client built from the app's bearer token, or its API key and secret, instead. A
+    # The stream endpoints take app-only authentication, so a client that authenticates as a user streams with the
+    # bearer token its app_only client holds. A client that authenticates with OAuth 2.0 as a user and holds neither
+    # the app's bearer token nor its API key and secret raises UnsupportedOperation before it connects, rather than
+    # open a stream X would refuse with 403 Forbidden. A
     # stream that drops reconnects, backing off as X recommends, up to max_reconnects times in a row. The API bills
     # each object a stream delivers, so the client's on_response receives each one, as well as a failed response.
     #
@@ -123,7 +123,8 @@ module X
     # @yield [Hash, Array] each parsed JSON object from the stream
     # @return [nil] once the stream ends with no reconnects left, or what the block broke with
     # @raise [ArgumentError] if no block is given
-    # @raise [UnsupportedOperation] if the client authenticates with OAuth 2.0 as a user, before the stream is opened
+    # @raise [UnsupportedOperation] if the client authenticates with OAuth 2.0 as a user and holds no credentials of
+    #   the app, before the stream is opened
     # @raise [HTTPError] if the response is not successful and the stream may not reconnect
     # @example Stream filtered posts
     #   streaming_client.stream("tweets/search/stream") { |post| puts post }
@@ -151,7 +152,8 @@ module X
     # @api public
     # @param params [Hash, nil] query parameters appended to the endpoint
     # @return [Array<Hash>] the rules, each holding its id, value, and tag, empty if the app has none
-    # @raise [UnsupportedOperation] if the client authenticates with OAuth 2.0 as a user
+    # @raise [UnsupportedOperation] if the client authenticates with OAuth 2.0 as a user and holds no credentials of
+    #   the app
     # @raise [HTTPError] if the API refuses the request
     # @example Print the rules of the app
     #   streaming_client.stream_rules.each { |rule| puts "#{rule["tag"]}: #{rule["value"]}" }
@@ -170,7 +172,8 @@ module X
     # @param rules [Array<Hash, String>, Hash, String] the rules to add
     # @param dry_run [Boolean] true to have the API check the rules and add none of them
     # @return [Array<Hash>] the rules that were added, each holding the id the API gave it, empty if none were given
-    # @raise [UnsupportedOperation] if the client authenticates with OAuth 2.0 as a user
+    # @raise [UnsupportedOperation] if the client authenticates with OAuth 2.0 as a user and holds no credentials of
+    #   the app
     # @raise [HTTPError] if the API refuses a rule, which adds none of them
     # @example Add a rule with a tag
     #   streaming_client.add_stream_rules({value: "ruby -is:retweet", tag: "ruby"})
@@ -196,7 +199,8 @@ module X
     # @param dry_run [Boolean] true to have the API check the rules and delete none of them
     # @return [Integer] the number of rules deleted, or that a dry run would delete, 0 if none were given
     # @raise [ArgumentError] if something is neither a rule nor the identifier of one
-    # @raise [UnsupportedOperation] if the client authenticates with OAuth 2.0 as a user
+    # @raise [UnsupportedOperation] if the client authenticates with OAuth 2.0 as a user and holds no credentials of
+    #   the app
     # @raise [HTTPError] if the API refuses the request
     # @example Delete every rule
     #   streaming_client.delete_stream_rules(streaming_client.stream_rules)

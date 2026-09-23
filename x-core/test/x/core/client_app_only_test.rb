@@ -86,9 +86,8 @@ module X
       client = Client.new(**test_oauth2_credentials)
       error = assert_raises(UnsupportedOperation) { client.app_only }
 
-      assert_equal "A client that authenticates with OAuth 2.0 as a user holds no credentials of the app, so it " \
-        "cannot authenticate as the app. Build a client from the app's bearer token, or its API key and secret, " \
-        "instead", error.message
+      assert_equal "A client that authenticates with OAuth 2.0 as a user, and holds neither the app's bearer token " \
+        "nor its API key and secret, cannot authenticate as the app. Pass the client one of them", error.message
       assert_not_requested @token_request
     end
 
