@@ -15,7 +15,7 @@ module X
 
     # The seconds await_processing was allowed to wait
     # @api public
-    # @return [Integer, nil] the seconds, or nil if none were given
+    # @return [Integer, Float, nil] the seconds, or nil if none were given
     # @example Read how long processing was awaited
     #   error.timeout # => 600
     attr_reader :timeout
@@ -27,7 +27,7 @@ module X
     # @api public
     # @param message [String, nil] the message, or nil for one that names the time allowed
     # @param status [UploadedMedia, Hash{String => Object}, nil] the last processing status X reported
-    # @param timeout [Integer, nil] the seconds await_processing was allowed to wait
+    # @param timeout [Integer, Float, nil] the seconds await_processing was allowed to wait
     # @return [MediaProcessingTimeout] a new error
     # @example Raise the error after ten minutes
     #   raise X::MediaProcessingTimeout.new(status: status, timeout: 600)

@@ -103,7 +103,8 @@ module X
       # @param media_category [String, Symbol, nil] the media category, in any case, inferred when nil from the name
       #   of the file, or from the bytes media that names none begins with
       # @param alt_text [String, nil] alt text describing the media, for people who cannot see it, of 1 to 1,000 characters
-      # @param processing_timeout [Integer] the seconds to wait for media, such as a video or an animated GIF, to process
+      # @param processing_timeout [Integer, Float] the seconds to wait for media, such as a video or an animated GIF, to
+      #   process, of at least 0, or Float::INFINITY to wait for as long as processing takes
       # @param media_type [String, nil] the MIME type of media uploaded in chunks, inferred from the media and
       #   category when nil; an upload in a single request sends no type, since the API types the media itself, so
       #   one given for an image is not sent
@@ -116,8 +117,8 @@ module X
       # @raise [Errno::ENOENT] if the file does not exist
       # @raise [ArgumentError] if the media is empty, which holds nothing to upload
       # @raise [ArgumentError] if the media category is invalid, the alt text is empty or longer than the API takes,
-      #   the chunk size is not positive or would need more segments than the API numbers, or the concurrency is
-      #   less than one
+      #   the chunk size is not positive or would need more segments than the API numbers, the concurrency is less
+      #   than one, or the processing timeout is not a number of seconds of at least 0
       # @raise [InvalidMediaType] if no media category is given for media that names no file and no signature names
       #   one, or if media uploaded in chunks is given no media type and none can be inferred
       # @raise [MissingData] if a response of the upload holds no media
@@ -134,7 +135,7 @@ module X
       def upload(media, client:, media_category: nil, alt_text: nil,
         processing_timeout: DEFAULT_PROCESSING_TIMEOUT, media_type: nil, chunk_size_mb: nil, concurrency: DEFAULT_CONCURRENCY)
         source = Source.for(media)
-        media_category = Validator.validate_upload!(source, media_category || infer_media_category(source), alt_text:, chunk_size_mb:, concurrency:)
+        media_category = Validator.validate_upload!(source, media_category || infer_media_category(source), alt_text:, chunk_size_mb:, concurrency:, processing_timeout:)
         uploaded = if chunked_upload?(source, media_category)
           chunked_upload(source, client:, media_category:, media_type:, chunk_size_mb:, concurrency:)
         else
@@ -248,9 +249,11 @@ module X
       # @api public
       # @param media [UploadedMedia, Hash, String, Integer] the uploaded media, or the media identifier
       # @param client [Client] the X API client
-      # @param processing_timeout [Integer] the seconds to wait between checks, in all, before giving up
+      # @param processing_timeout [Integer, Float] the seconds to wait between checks, in all, before giving up, or
+      #   Float::INFINITY to wait for as long as processing takes
       # @return [UploadedMedia, nil] the uploaded media, which holds the processing status, or nil for a response
       #   that carries no body at all
+      # @raise [ArgumentError] if the processing timeout is not a number of seconds of at least 0
       # @raise [MissingData] if the media given holds no identifier, or a status response holds no media
       # @raise [MediaProcessingTimeout] if the media is still processing once the processing timeout would pass
       # @example Wait for processing
@@ -260,8 +263,8 @@ module X
       # @example Wait up to half an hour for a long video
       #   Uploader::MediaUpload.await_processing(media, client: client, processing_timeout: 1800)
       def await_processing(media, client:, processing_timeout: DEFAULT_PROCESSING_TIMEOUT)
-        waited = 0
-        media_id = Utils.media_id(media)
+        Validator.validate_processing_timeout!(processing_timeout)
+        waited, media_id = 0, Utils.media_id(media)
         loop do
           status = UploadedMedia.from(Utils.media_data(client.get("media/upload", params: {command: STATUS_COMMAND, media_id:}, **JSON_CLASSES), "of the status check"))
           return status unless status&.processing?
@@ -278,9 +281,11 @@ module X
       # @api public
       # @param media [UploadedMedia, Hash, String, Integer] the uploaded media, or the media identifier
       # @param client [Client] the X API client
-      # @param processing_timeout [Integer] the seconds to wait between checks, in all, before giving up
+      # @param processing_timeout [Integer, Float] the seconds to wait between checks, in all, before giving up, or
+      #   Float::INFINITY to wait for as long as processing takes
       # @return [UploadedMedia, nil] the uploaded media, which holds the processing status, or nil for a response
       #   that carries no body at all
+      # @raise [ArgumentError] if the processing timeout is not a number of seconds of at least 0
       # @raise [MissingData] if the media given holds no identifier, or a status response holds no media
       # @raise [MediaProcessingFailed] if media processing failed, with the status X reported
       # @raise [MediaProcessingTimeout] if the media is still processing once the processing timeout would pass

@@ -35,16 +35,19 @@ module X
       # @param alt_text [String, nil] the alt text of the media, or nil for media described with none
       # @param chunk_size_mb [Float, Integer, nil] the size of each chunk in megabytes, or nil to derive one
       # @param concurrency [Integer] the number of chunks uploaded at once, which must be at least one
+      # @param processing_timeout [Integer, Float] the seconds to wait for the media to process
       # @return [String] the media category in lowercase
       # @raise [Errno::ENOENT] if the file does not exist
       # @raise [ArgumentError] if the media category is invalid, the alt text is empty or too long, the chunk size is
-      #   not positive, or the concurrency is less than one
+      #   not positive, the concurrency is less than one, or the processing timeout is not a number of seconds
       # @example Validate the arguments of an upload
-      #   Uploader::Validator.validate_upload!(source, :TWEET_IMAGE, alt_text: nil, chunk_size_mb: nil, concurrency: 4) # => "tweet_image"
-      def validate_upload!(source, media_category, alt_text:, chunk_size_mb:, concurrency:)
+      #   Uploader::Validator.validate_upload!(source, :TWEET_IMAGE, alt_text: nil, chunk_size_mb: nil, concurrency: 4,
+      #     processing_timeout: 300) # => "tweet_image"
+      def validate_upload!(source, media_category, alt_text:, chunk_size_mb:, concurrency:, processing_timeout:)
         validate_source!(source)
         validate_alt_text!(alt_text)
         validate_chunks!(chunk_size_mb:, concurrency:)
+        validate_processing_timeout!(processing_timeout)
         validate_media_category!(media_category)
       end
 
@@ -119,6 +122,24 @@ module X
       def validate_chunks!(chunk_size_mb:, concurrency:)
         raise ArgumentError, "chunk_size_mb must be positive, not #{chunk_size_mb}" unless chunk_size_mb.nil? || chunk_size_mb.positive?
         raise ArgumentError, "concurrency must be an Integer of at least 1, not #{concurrency}" unless concurrency.integer? && concurrency.positive?
+      end
+
+      # Validate the seconds to wait for media to process
+      #
+      # A processing timeout is a number of seconds, of at least 0, which Float::INFINITY is, for an upload that waits
+      # for as long as processing takes. Nil is not one, so that no upload waits forever by accident.
+      #
+      # @api private
+      # @param processing_timeout [Integer, Float] the seconds to wait
+      # @return [void]
+      # @raise [ArgumentError] if the processing timeout is not a number of seconds of at least 0
+      # @example Validate a processing timeout
+      #   Uploader::Validator.validate_processing_timeout!(1800)
+      def validate_processing_timeout!(processing_timeout)
+        return if processing_timeout.is_a?(Numeric) && processing_timeout.real? && processing_timeout >= 0
+
+        raise ArgumentError, "processing_timeout must be a number of seconds of at least 0, or Float::INFINITY to wait " \
+          "for as long as processing takes, not #{processing_timeout.inspect}"
       end
 
       # The size in bytes of the chunks a file uploads in

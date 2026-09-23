@@ -181,7 +181,7 @@ module X
 
     def test_validate_upload_gives_the_media_category_in_the_case_the_api_takes
       assert_equal "tweet_image", Uploader.const_get(:Validator).validate_upload!(source("test/sample_files/sample.png"), :TWEET_IMAGE,
-        alt_text: "A pixel", chunk_size_mb: nil, concurrency: 4)
+        alt_text: "A pixel", chunk_size_mb: nil, concurrency: 4, processing_timeout: 300)
     end
 
     def test_validate_upload_validates_the_file_the_alt_text_and_the_chunk_options
@@ -192,10 +192,14 @@ module X
       assert_raises(ArgumentError) { validate_upload("test/sample_files/sample.png", media_category: "bogus") }
     end
 
+    def test_validate_upload_validates_the_processing_timeout
+      assert_raises(ArgumentError) { validate_upload("test/sample_files/sample.png", processing_timeout: nil) }
+    end
+
     private
 
-    def validate_upload(file_path, media_category: "tweet_image", alt_text: nil, chunk_size_mb: nil, concurrency: 4)
-      Uploader.const_get(:Validator).validate_upload!(source(file_path), media_category, alt_text:, chunk_size_mb:, concurrency:)
+    def validate_upload(file_path, media_category: "tweet_image", alt_text: nil, chunk_size_mb: nil, concurrency: 4, processing_timeout: 300)
+      Uploader.const_get(:Validator).validate_upload!(source(file_path), media_category, alt_text:, chunk_size_mb:, concurrency:, processing_timeout:)
     end
 
     # The media an upload reads, which the validator takes in place of a path

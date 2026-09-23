@@ -161,13 +161,13 @@ module X
       CATEGORY_MIME_TYPES: Hash[String, Array[String]]
       extend MediaUpload
 
-      def upload: (uploadable media, client: _Client, ?media_category: (String | Symbol)?, ?alt_text: String?, ?processing_timeout: Integer, ?media_type: String?, ?chunk_size_mb: (Float | Integer)?, ?concurrency: Integer) -> UploadedMedia?
+      def upload: (uploadable media, client: _Client, ?media_category: (String | Symbol)?, ?alt_text: String?, ?processing_timeout: Float | Integer, ?media_type: String?, ?chunk_size_mb: (Float | Integer)?, ?concurrency: Integer) -> UploadedMedia?
       def chunked_upload?: (uploadable media, String | Symbol media_category) -> bool
       def infer_media_category: (uploadable media) -> String
       def upload_binary: (String content, client: _Client, media_category: String | Symbol) -> UploadedMedia?
       def chunked_upload: (uploadable media, client: _Client, ?media_category: (String | Symbol)?, ?media_type: String?, ?chunk_size_mb: (Float | Integer)?, ?concurrency: Integer) -> UploadedMedia?
-      def await_processing: (media media, client: _Client, ?processing_timeout: Integer) -> UploadedMedia?
-      def await_processing!: (media media, client: _Client, ?processing_timeout: Integer) -> UploadedMedia?
+      def await_processing: (media media, client: _Client, ?processing_timeout: Float | Integer) -> UploadedMedia?
+      def await_processing!: (media media, client: _Client, ?processing_timeout: Float | Integer) -> UploadedMedia?
       def infer_media_type: (uploadable media, String | Symbol media_category) -> String
     end
 
@@ -203,13 +203,14 @@ module X
       MEDIA_CATEGORIES: Array[String]
       extend Validator
 
-      def validate_upload!: (Source source, String | Symbol media_category, alt_text: String?, chunk_size_mb: (Float | Integer)?, concurrency: Integer) -> String
+      def validate_upload!: (Source source, String | Symbol media_category, alt_text: String?, chunk_size_mb: (Float | Integer)?, concurrency: Integer, processing_timeout: Float | Integer) -> String
       def validate_source!: (Source source) -> nil
       def validate_file_path!: (path file_path) -> nil
       def validate_extension!: (path file_path, Array[String] extensions) -> nil
       def validate_alt_text!: (String? alt_text) -> nil
       def validate_media_category!: (String | Symbol media_category) -> String
       def validate_chunks!: (chunk_size_mb: (Float | Integer)?, concurrency: Integer) -> nil
+      def validate_processing_timeout!: (untyped processing_timeout) -> nil
       def validate_segments!: (Source source, (Float | Integer)? chunk_size_mb) -> Integer
     end
 
@@ -272,8 +273,8 @@ module X
 
   class MediaProcessingTimeout < Uploader::Error
     attr_reader status: UploadedMedia | Hash[String, untyped] | nil
-    attr_reader timeout: Integer?
-    def initialize: (?String? message, ?status: UploadedMedia | Hash[String, untyped] | nil, ?timeout: Integer?) -> void
+    attr_reader timeout: (Float | Integer)?
+    def initialize: (?String? message, ?status: UploadedMedia | Hash[String, untyped] | nil, ?timeout: (Float | Integer)?) -> void
   end
 
   class MediaProcessingFailed < Uploader::Error
