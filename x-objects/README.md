@@ -73,7 +73,7 @@ An object built this way is not hydrated, because the request may have asked for
 
 ## Development
 
-This gem has its own `Gemfile`, `Steepfile`, signatures, test suite, and mutation config, and does not load the other gems in this repository:
+This gem has its own `Gemfile`, `Steepfile`, signatures, test suite, and mutation config. It uses the `x-core` in this repository, whose errors and problems it raises and reports, and does not load `x-uploader`:
 
     bundle install
     bundle exec rake test
