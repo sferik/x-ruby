@@ -23,23 +23,26 @@ module X
 
       protected
 
-      # Share an OAuth 2.0 authenticator that holds the same credentials
+      # Share the OAuth 2.0 authenticator of the client this one was copied from
       #
       # A refresh by either client then reaches both. X accepts a refresh token once, so a copy that refreshed with
-      # an authenticator of its own would leave the original client with a refresh token that no longer works. The
-      # expiration time is a fact about the access token the two hold, so a copy given another sets it for both.
+      # an authenticator of its own would leave the original client with a refresh token that no longer works.
+      #
+      # Whether the two share it is decided by the options the copy was given, not by the tokens it was built with:
+      # a refresh on another thread may replace them while it is built, and a copy that held on to the ones replaced
+      # could never refresh again. The expiration time is a fact about the access token the two hold, so a copy given
+      # another sets it for both.
       #
       # @api private
       # @param other [Authenticator] the authenticator of the client this one was copied from
       # @param clients [ObjectSpace::WeakMap] the clients that share it, held weakly, which this client joins
+      # @param options [Hash] the options the copy was given in place of the client's
       # @return [void]
-      def share_authenticator(other, clients)
-        current = oauth2_authenticator_in_use
-        return unless current&.same_credentials?(other)
+      def share_authenticator(other, clients, options)
+        return unless oauth2_authenticator_in_use && other.is_a?(OAuth2Authenticator) && other.__send__(:holds?, options)
 
-        shared = other #: OAuth2Authenticator
-        shared.__send__(:update_expires_at, expires_at)
-        @authenticator = shared
+        other.__send__(:update_expires_at, options.fetch(:expires_at)) if options.key?(:expires_at)
+        @authenticator = other
         @token_refresh_clients = clients
         clients[self] = true
       end

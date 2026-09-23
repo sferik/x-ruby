@@ -237,6 +237,21 @@ module X
       !uri.nil? && Core::Origin.same?(origin, uri)
     end
 
+    # Check whether the authenticator holds the credentials among some options
+    #
+    # The options are those of a client, and the credentials among them its OAuth 2.0 ones.
+    #
+    # Internal to x-core: a copy of a client shares the authenticator unless it was given a credential this does not
+    # hold, and calls it with __send__, since it is private.
+    #
+    # @api private
+    # @param options [Hash{Symbol => Object}] the options of a client, of which the others are ignored
+    # @return [Boolean] true if each client ID, client secret, access token, or refresh token among them is the one
+    #   this holds
+    def holds?(options)
+      options.slice(:client_id, :client_secret, :access_token, :refresh_token) <= {client_id:, client_secret:, access_token:, refresh_token:}
+    end
+
     # Set the expiration time of the access token, holding the lock
     #
     # Internal to x-core: Client sets the expiration time it is given on the authenticator that it and its copies

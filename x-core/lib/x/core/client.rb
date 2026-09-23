@@ -178,9 +178,11 @@ module X
 
     # Copy the client with some of its options changed
     #
-    # A copy with the same OAuth 2.0 credentials shares the client's authenticator, so that a refresh by either
-    # client reaches the other, since X accepts a refresh token once. A refresh then passes the authenticator to the
-    # on_token_refresh of each client that shares it, once for each distinct callable.
+    # A copy that authenticates with OAuth 2.0 shares the client's authenticator, so that a refresh by either
+    # client reaches the other, since X accepts a refresh token once, unless it is given a client ID, client secret,
+    # access token, or refresh token that the authenticator does not hold. It shares it whatever the tokens are when
+    # it is built, so a refresh on another thread while it is built reaches it too. A refresh then passes the
+    # authenticator to the on_token_refresh of each client that shares it, once for each distinct callable.
     #
     # @api public
     # @param options [Hash] the options to change, as accepted by initialize
@@ -190,7 +192,7 @@ module X
     # @example Derive an app-only client from the API key and secret
     #   app_client = client.with(access_token: nil, access_token_secret: nil)
     def with(**options)
-      self.class.new(**credentials, **settings, **options).tap { |copy| copy.share_authenticator(authenticator, @token_refresh_clients) }
+      self.class.new(**credentials, **settings, **options).tap { |copy| copy.share_authenticator(authenticator, @token_refresh_clients, options) }
     end
 
     # Perform a GET request to the X API

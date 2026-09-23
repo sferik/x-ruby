@@ -533,4 +533,30 @@ module X
       assert_equal "Token refresh failed", error.message
     end
   end
+
+  class OAuth2AuthenticatorHoldsTest < Minitest::Test
+    cover OAuth2Authenticator
+
+    def setup
+      @authenticator = OAuth2Authenticator.new(**test_oauth2_credentials)
+    end
+
+    def test_holds_the_credentials_it_was_given_and_ignores_other_options
+      assert @authenticator.send(:holds?, {**test_oauth2_credentials, api_key: TEST_API_KEY, base_url: "https://example.com/"})
+    end
+
+    def test_holds_when_no_credential_is_given
+      assert @authenticator.send(:holds?, {})
+    end
+
+    def test_does_not_hold_another_value_of_any_credential
+      %i[client_id client_secret access_token refresh_token].each do |name|
+        refute @authenticator.send(:holds?, {name => "OTHER"}), name
+      end
+    end
+
+    def test_does_not_hold_a_credential_given_as_nil
+      refute @authenticator.send(:holds?, {access_token: nil})
+    end
+  end
 end
