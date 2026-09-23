@@ -60,7 +60,7 @@ module X
 
       assert_equal File.binread(PNG), source.content
       assert_equal File.binread(PNG, 4, 1), source.read(4, 1)
-      assert_equal File.binread(PNG, 64), source.sniff
+      assert_equal File.binread(PNG, 512), source.sniff
     end
 
     def test_a_file_that_is_there_exists_and_can_be_read
@@ -99,6 +99,10 @@ module X
 
     def test_the_signature_of_media_shorter_than_the_bytes_it_is_read_from
       assert_equal "GIF89a", Uploader.const_get(:Source).for(StringIO.new("GIF89a")).sniff
+    end
+
+    def test_the_signature_is_read_from_enough_bytes_to_find_the_packets_of_a_transport_stream
+      assert_equal File.binread("test/sample_files/sample.mp4", 512), Uploader.const_get(:Source).for("test/sample_files/sample.mp4").sniff
     end
 
     def test_the_signature_of_empty_media_is_empty

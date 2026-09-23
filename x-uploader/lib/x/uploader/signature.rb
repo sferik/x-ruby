@@ -24,7 +24,10 @@ module X
 
       # The media type each signature names, by the bytes that must appear at each offset, most specific first,
       # since the first signature that matches names the type: the brand of a QuickTime file or an MP4 video follows
-      # the box type the two share, and a WebP file is a RIFF file whose form is named eight bytes in. A signature of
+      # the box type the two share, a WebP file is a RIFF file whose form is named eight bytes in, and an MPEG transport
+      # stream, which begins with no header, is one whose first packets each begin with its sync byte, which a
+      # transport stream of 188-byte packets begins with and one of the 192-byte packets of an M2TS file holds four
+      # bytes in, after a timestamp. A signature of
       # bytes above ASCII is packed from them, since a String literal of those bytes is not the UTF-8 this file is.
       SIGNATURES = {
         {0 => "GIF87a".b} => "image/gif",
@@ -40,7 +43,9 @@ module X
         **MP4_BRANDS.to_h { |brand| [{4 => "ftyp#{brand}".b}, "video/mp4"] },
         {0 => "glTF".b} => "model/gltf-binary",
         {0 => [0xEF, 0xBB, 0xBF].pack("C*") + "WEBVTT"} => "text/vtt", # a byte order mark before the header
-        {0 => "WEBVTT".b} => "text/vtt"
+        {0 => "WEBVTT".b} => "text/vtt",
+        {0 => "G".b, 188 => "G".b, 376 => "G".b} => "video/mp2t",
+        {4 => "G".b, 196 => "G".b, 388 => "G".b} => "video/mp2t"
       }.freeze
 
       # The media category of posts each media type a signature names belongs to; any other type a signature names,

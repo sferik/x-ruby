@@ -22,7 +22,8 @@ module X
       "video/mp4" => ["isom", "iso2", "iso3", "iso4", "iso5", "iso6", "mp41", "mp42", "avc1", "M4V ", "M4VH", "M4VP", "dash", "MSNV"]
         .map { |brand| "\x00\x00\x00\x18ftyp#{brand}" },
       "model/gltf-binary" => ["glTF\x02\x00\x00\x00"],
-      "text/vtt" => ["WEBVTT\n\n", "\xEF\xBB\xBFWEBVTT\n"]
+      "text/vtt" => ["WEBVTT\n\n", "\xEF\xBB\xBFWEBVTT\n"],
+      "video/mp2t" => [("G" + ("\xFF" * 187)) * 3, ("\x00\x00\x00\x00G" + ("\xFF" * 187)) * 3]
     }.freeze
 
     def test_every_signature_names_the_media_type_of_media_that_begins_with_it
@@ -42,6 +43,12 @@ module X
     def test_images_and_audio_that_share_the_box_type_of_an_mp4_video_are_not_one
       ["heic", "heix", "mif1", "msf1", "avif", "avis", "M4A ", "M4B "].each do |brand|
         assert_nil Uploader.const_get(:Signature).media_type("\x00\x00\x00\x18ftyp#{brand}".b), brand
+      end
+    end
+
+    def test_media_with_the_sync_byte_of_a_transport_stream_in_too_few_packets_is_not_one
+      [("G" + ("\xFF" * 187)) * 2, "G" + ("\xFF" * 400), ("\x00\x00\x00\x00G" + ("\xFF" * 187)) * 2].each do |bytes|
+        assert_nil Uploader.const_get(:Signature).media_type(bytes.b)
       end
     end
 
@@ -74,6 +81,12 @@ module X
 
         assert_equal category, Uploader.const_get(:Signature).media_category!(source), bytes.inspect
       end
+    end
+
+    def test_a_transport_stream_is_a_video
+      source = Uploader.const_get(:Source).for(StringIO.new((("G" + ("\xFF" * 187)) * 3).b))
+
+      assert_equal "tweet_video", Uploader.const_get(:Signature).media_category!(source)
     end
 
     def test_media_type_raises_for_media_no_signature_names

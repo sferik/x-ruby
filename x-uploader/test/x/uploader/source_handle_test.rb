@@ -40,7 +40,7 @@ module X
         file.seek(10)
         source = source_for(file)
 
-        assert_equal [File.binread(PNG, 4, 1), File.binread(PNG, 64)], [source.read(4, 1), source.sniff]
+        assert_equal [File.binread(PNG, 4, 1), File.binread(PNG, 512)], [source.read(4, 1), source.sniff]
         assert_equal 10, file.pos
       end
     end

@@ -19,7 +19,7 @@ module X
     # @api private
     class Source
       # Bytes read from the start of media that names no file, enough for every signature {Signature} reads
-      SNIFF_BYTES = 64
+      SNIFF_BYTES = 512
       private_constant :SNIFF_BYTES
 
       # The source of media given as a path or as an IO
