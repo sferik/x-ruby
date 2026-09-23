@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative "../../test_helper"
+require "x/uploader/media_upload"
 require "x/uploader/utils"
 
 module X
@@ -62,6 +63,19 @@ module X
       error = assert_raises(MissingData) { Uploader.const_get(:Utils).media_id({"media_key" => "3_7"}) }
 
       assert_equal "The media given holds no identifier", error.message
+    end
+
+    def test_media_id_of_nothing
+      [nil, "", {"id" => nil}, {"id" => ""}].each do |media|
+        error = assert_raises(MissingData, media.inspect) { Uploader.const_get(:Utils).media_id(media) }
+
+        assert_equal "The media given holds no identifier", error.message
+      end
+    end
+
+    def test_awaiting_the_processing_of_nothing_sends_no_request
+      assert_raises(MissingData) { Uploader::MediaUpload.await_processing(nil, client: Client.new) }
+      assert_not_requested :any, /api\.x\.com/
     end
   end
 end

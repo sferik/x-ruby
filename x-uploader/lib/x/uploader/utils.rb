@@ -33,17 +33,20 @@ module X
 
       # The media identifier of an upload response or of an identifier
       #
+      # Nil, or an empty identifier, names no media, and would reach the API as an identifier that is not there.
+      #
       # @api private
       # @param media [Hash, String, Integer] the upload response, or the media identifier
       # @return [String] the media identifier
-      # @raise [MissingData] if an upload response holds no identifier
+      # @raise [MissingData] if the media is nil or empty, or an upload response holds no identifier
       # @example The identifier of uploaded media
       #   Uploader::Utils.media_id({"id" => "1880028106020515840"}) # => "1880028106020515840"
       def media_id(media)
-        case media
-        when Hash, UploadedMedia then media.fetch("id") { raise MissingData, NO_MEDIA_ID }.to_s
-        else media.to_s
+        id = case media
+        when Hash, UploadedMedia then media.fetch("id", nil)
+        else media
         end
+        id.to_s.then { |text| text.empty? ? raise(MissingData, NO_MEDIA_ID) : text }
       end
 
       # The media a response of an upload describes
