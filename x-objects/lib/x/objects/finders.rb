@@ -39,6 +39,8 @@ module X
 
       # Look up a resource by identifier, which must exist
       #
+      # The error it raises names the identifier looked up, whether the identifier or a resource was given.
+      #
       # @api public
       # @param id [String, Integer, Resource] the identifier
       # @param client [Object] the client used to make the request
@@ -50,7 +52,7 @@ module X
       #   X::Post.find!(1234567890, client: client)
       def find!(id, client:, **params)
         problems = [] #: Array[Problem]
-        find(id, client:, **params) { |problem| problems << problem } || raise(MissingResource.new("Could not find #{self} #{id}", problems:))
+        find(id, client:, **params) { |problem| problems << problem } || raise(MissingResource.new("Could not find #{self} #{Utils.id_from(id)}", problems:))
       end
 
       # Replace the resources that are not hydrated with the full resources

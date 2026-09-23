@@ -56,6 +56,14 @@ module X
         assert_equal 1, User.find!("sferik", client: @client).id
       end
 
+      def test_find_bang_names_the_identifier_of_a_resource_it_was_given
+        @client.stub(:get, "tweets/1", {"errors" => []})
+        @client.stub(:get, "media/3_7", {"errors" => []})
+
+        assert_equal "Could not find X::Post 1", assert_raises(MissingResource) { Post.find!(Post.from_id(1), client: @client) }.message
+        assert_equal "Could not find X::Media 3_7", assert_raises(MissingResource) { Media.find!(Media.new({"media_key" => "3_7"}), client: @client) }.message
+      end
+
       def test_find_bang_not_found
         @client.stub(:get, "tweets/1", {"errors" => []})
         error = assert_raises(MissingResource) { Post.find!(1, client: @client) }
