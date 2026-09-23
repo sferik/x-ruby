@@ -46,18 +46,24 @@ jobs:
         run: |
           deadline=$((SECONDS + 1800))
           while :; do
-            runs=$(gh run list --commit "$GITHUB_SHA" --limit 100 --json name,status,conclusion)
-            failed=$(jq -r --arg self "$GITHUB_WORKFLOW" \
-              '[.[] | select(.name != $self and .conclusion != null and .conclusion != "success" and .conclusion != "skipped") | .name] | unique | join(", ")' <<<"$runs")
-            if [ -n "$failed" ]; then
-              echo "::error::CI did not pass on $GITHUB_SHA: $failed"
-              exit 1
-            fi
+            runs=$(gh run list --commit "$GITHUB_SHA" --limit 100 --json name,conclusion,createdAt)
+            failed=""
             waiting=""
             for workflow in $REQUIRED_WORKFLOWS; do
-              passed=$(jq --arg workflow "$workflow" '[.[] | select(.name == $workflow and .conclusion == "success")] | length' <<<"$runs")
-              [ "$passed" -gt 0 ] || waiting="$waiting $workflow"
+              # The latest run of the workflow decides, since a run that failed or was cancelled may have been run
+              # again; a run of any other workflow on the commit, such as the deploy of the Pages, decides nothing
+              conclusion=$(jq -r --arg workflow "$workflow" \
+                '[.[] | select(.name == $workflow)] | sort_by(.createdAt) | last | if . == null then "missing" else .conclusion // "" end' <<<"$runs")
+              case "$conclusion" in
+                success) ;;
+                missing | "") waiting="$waiting $workflow" ;;
+                *) failed="$failed $workflow ($conclusion)" ;;
+              esac
             done
+            if [ -n "$failed" ]; then
+              echo "::error::CI did not pass on $GITHUB_SHA:$failed"
+              exit 1
+            fi
             [ -n "$waiting" ] || break
             if [ "$SECONDS" -ge "$deadline" ]; then
               echo "::error::Timed out waiting for CI on $GITHUB_SHA:$waiting"
