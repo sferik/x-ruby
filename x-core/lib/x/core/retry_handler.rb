@@ -8,7 +8,8 @@ module X
   module Core
     # Sends a request again after the API failed to answer it, or after its answer never arrived
     #
-    # Internal to x-core: Client retries with it, and takes max_retries.
+    # Internal to the gems of this repository: Client retries with it, and takes max_retries, and x-uploader sends
+    # the chunks of an upload again with it, which a client sends no more than once, as it does any POST.
     #
     # @api private
     class RetryHandler

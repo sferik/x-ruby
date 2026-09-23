@@ -105,8 +105,6 @@ module X
     end
 
     module Chunks
-      MAX_ATTEMPTS: Integer
-      RETRY_BACKOFF: Integer
       NO_MEDIA: String
       extend Chunks
 
@@ -118,6 +116,7 @@ module X
       def chunk_queue: (Source source, Integer chunk_size) -> Thread::Queue
       def append_worker: (Thread::Queue queue, Thread::Queue errors, client: _Client, source: Source, chunk_size: Integer, media_id: String, boundary: String) -> Thread
       def upload_chunk: (client: _Client, media_id: String, upload_body: String, headers: Hash[String, String]) -> untyped
+      def max_retries_of: (_Client client) -> Integer
     end
 
     module MediaUpload

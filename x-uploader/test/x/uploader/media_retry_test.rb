@@ -48,6 +48,38 @@ module X
       assert_equal [1, 2], @waits
     end
 
+    def test_a_chunk_is_sent_again_as_often_as_the_client_sends_a_request_again
+      @client = Client.new(max_retries: 0)
+      stub_init_request
+      stub_request(:post, append_url).to_return(status: 500)
+
+      with_thread_exceptions_suppressed do
+        assert_raises(InternalServerError) { perform_upload }
+      end
+
+      assert_requested(:post, append_url, times: 1)
+    end
+
+    def test_a_chunk_waits_as_long_as_a_failed_response_asks
+      stub_init_request
+      stub_request(:post, append_url).to_return(status: 503, headers: {"Retry-After" => "7"}).to_return(status: 204)
+      stub_finalize_request
+
+      assert perform_upload
+      assert_equal [7], @waits
+    end
+
+    def test_a_chunk_that_is_asked_to_wait_longer_than_a_minute_raises
+      stub_init_request
+      stub_request(:post, append_url).to_return(status: 503, headers: {"Retry-After" => "120"})
+
+      with_thread_exceptions_suppressed do
+        assert_raises(ServiceUnavailable) { perform_upload }
+      end
+
+      assert_requested(:post, append_url, times: 1)
+    end
+
     def test_a_client_error_is_not_retried
       stub_init_request
       stub_request(:post, append_url).to_return(status: 400)
@@ -77,8 +109,20 @@ module X
     end
 
     def perform_upload
-      Uploader.const_get(:Chunks).stub(:sleep, ->(seconds) { @waits << seconds }) do
+      Core::RetryHandler.stub(:new, retry_handler_recording_waits) do
         Uploader::MediaUpload.chunked_upload(VIDEO_FILE, client: @client, media_category: Uploader::MediaUpload::TWEET_VIDEO)
+      end
+    end
+
+    # Build the retry handlers of the chunks with a backoff cut short by nothing, and record their waits
+    def retry_handler_recording_waits
+      waits = @waits
+      build = Core::RetryHandler.method(:new)
+      lambda do |**options|
+        build.call(**options).tap do |retry_handler|
+          retry_handler.define_singleton_method(:rand) { 0.0 }
+          retry_handler.define_singleton_method(:sleep) { |seconds| waits << seconds }
+        end
       end
     end
 

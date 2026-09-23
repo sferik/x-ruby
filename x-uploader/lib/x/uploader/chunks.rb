@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
-require "x/core/errors/network_error"
-require "x/core/errors/server_error"
+require "x/core/retry_handler"
 require_relative "json_classes"
 require_relative "missing_data"
 require_relative "multipart"
@@ -17,13 +16,9 @@ module X
     module Chunks
       extend self
 
-      # Maximum number of attempts to upload a chunk, counting the first, so a chunk is retried twice
-      MAX_ATTEMPTS = 3
-      # Seconds to wait before retrying a chunk, doubled for each retry after
-      RETRY_BACKOFF = 1
       # The message of the error raised for an initialize response that holds no media to append the chunks to
       NO_MEDIA = "The response that initializes the upload holds no media to append the chunks to"
-      private_constant :MAX_ATTEMPTS, :RETRY_BACKOFF, :NO_MEDIA
+      private_constant :NO_MEDIA
 
       # Initialize a chunked upload
       #
@@ -123,7 +118,14 @@ module X
         end
       end
 
-      # Upload a single chunk, retrying a server or network error after a growing wait
+      # Upload a single chunk, sending it again after a server or network error
+      #
+      # A client sends no POST again, since the API may have acted on one whose answer never arrived, but a chunk
+      # names the segment it is appended at, so one sent twice is appended once. It is sent again as a client sends
+      # an idempotent request again: up to the max_retries of the client, after the wait a failed response asks for,
+      # or a backoff that grows with each retry and is cut short at random, so that the chunks one failure ended are
+      # not sent again together.
+      #
       # @api private
       # @param client [Client] the X API client
       # @param media_id [String] the media ID
@@ -131,15 +133,21 @@ module X
       # @param headers [Hash] the request headers
       # @return [void]
       def upload_chunk(client:, media_id:, upload_body:, headers:)
-        retries = 0
-        begin
+        Core::RetryHandler.new(max_retries: max_retries_of(client)).handle(idempotent: true) do
           client.post("media/upload/#{media_id}/append", upload_body, headers:, **JSON_CLASSES)
-        rescue NetworkError, ServerError
-          raise unless (retries += 1) < MAX_ATTEMPTS
-
-          sleep RETRY_BACKOFF << (retries - 1)
-          retry
         end
+      end
+
+      # The number of times a chunk is sent again
+      #
+      # It is the max_retries of a client that has one, as X::Client does, and the default of a client otherwise.
+      #
+      # @api private
+      # @param client [Client] the X API client
+      # @return [Integer] the maximum number of retries
+      def max_retries_of(client)
+        retrying = client #: untyped
+        retrying.respond_to?(:max_retries) ? retrying.max_retries : Core::RetryHandler::DEFAULT_MAX_RETRIES
       end
     end
     private_constant :Chunks
