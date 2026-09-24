@@ -28,6 +28,26 @@ module X
         find_by_username(id_or_username, client:, **params, &)
       end
 
+      # Look up a user by identifier or username, which must exist
+      #
+      # An Integer or a user is looked up by identifier, and a String by username, as find looks them up, so the error
+      # it raises names a username as find_by_username! names one, with the at sign of a handle.
+      #
+      # @api public
+      # @param id_or_username [Integer, User, String] an identifier or a user, or a username
+      # @param client [Object] the client used to make the request
+      # @param params [Hash] query parameters merged over the default parameters
+      # @return [User] the user
+      # @raise [ArgumentError] if the value is neither an identifier nor a username
+      # @raise [MissingResource] if the user was not found
+      # @example Look up a user by username
+      #   X::User.find!("sferik", client: client)
+      def find!(id_or_username, client:, **params)
+        return super if Utils.id?(id_or_username)
+
+        find_by_username!(id_or_username, client:, **params)
+      end
+
       # Look up many users by identifier or username, in parallel batches
       #
       # Integers and users are looked up by identifier, and Strings by username. The users come back in the

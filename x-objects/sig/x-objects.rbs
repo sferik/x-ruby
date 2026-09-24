@@ -283,6 +283,7 @@ module X
 
     module UserFinders : Finders
       def find: (id id_or_username, client: _Client, **untyped params) ?{ (Problem problem) -> void } -> Resource?
+      def find!: (id id_or_username, client: _Client, **untyped params) -> Resource
       def find_all: (Array[id] ids_or_usernames, client: _Client, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[User]
       def find_all_by_id: (Array[id] ids, client: _Client, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[User]
       def find_by_id: (id id, client: _Client, **untyped params) ?{ (Problem problem) -> void } -> User?

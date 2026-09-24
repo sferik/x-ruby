@@ -23,6 +23,22 @@ module X
       assert_equal ["users/7505382"] * 3, @client.paths
     end
 
+    def test_find_bang_looks_a_user_up_by_identifier_or_username
+      @client.stub(:get, "users/by/username/sferik", {"data" => {"id" => "7505382", "username" => "sferik"}})
+
+      assert_equal [7_505_382, 7_505_382], [User.find!(7_505_382, client: @client).id, User.find!("sferik", client: @client, "user.fields": "id").id]
+      assert_equal ["users/7505382", "users/by/username/sferik"], @client.paths
+      assert_equal "id", @client.queries.last["user.fields"]
+    end
+
+    def test_find_bang_names_a_username_as_find_by_username_bang_does
+      @client.stub(:get, "users/by/username/nobody", {"errors" => []})
+
+      assert_equal ["Could not find X::User @nobody"] * 2,
+        ["nobody", "@nobody"].map { |username| assert_raises(MissingResource) { User.find!(username, client: @client) }.message }
+      assert_equal "Could not find X::User 1: Could not find user with id: [1].", assert_raises(MissingResource) { User.find!(1, client: @client) }.message
+    end
+
     def test_a_lookup_by_identifier_takes_params_and_reports_problems
       problems = []
 
