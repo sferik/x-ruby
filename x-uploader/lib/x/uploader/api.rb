@@ -79,8 +79,9 @@ module X
       #
       # @api public
       # @param media [UploadedMedia, Hash, String, Integer] the uploaded media, or the media identifier
-      # @param text [String] the alt text, up to 1,000 characters
+      # @param text [String] the alt text, of 1 to 1,000 characters
       # @return [Hash, nil] the media identifier and the metadata now associated with it
+      # @raise [ArgumentError] if the alt text is empty or longer than the API takes, before a request
       # @example Describe an image
       #   client.add_alt_text(media, "A cat asleep on a keyboard")
       def add_alt_text(media, text)

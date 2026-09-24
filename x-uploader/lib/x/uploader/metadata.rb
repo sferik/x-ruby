@@ -4,6 +4,7 @@ require "x/core"
 require_relative "json_classes"
 require_relative "missing_data"
 require_relative "utils"
+require_relative "validator"
 
 module X
   module Uploader
@@ -22,14 +23,16 @@ module X
       #
       # @api public
       # @param media [UploadedMedia, Hash, String, Integer] the uploaded media, or the media identifier
-      # @param text [String] the alt text, up to 1,000 characters
+      # @param text [String] the alt text, of 1 to 1,000 characters
       # @param client [Client] the X API client
       # @return [Hash, nil] the media identifier and the metadata now associated with it, or nil for a response
       #   that carries no body at all
+      # @raise [ArgumentError] if the alt text is empty or longer than the API takes, before a request
       # @raise [MissingData] if the media given holds no identifier, or the response holds no metadata
       # @example Describe an uploaded image
       #   Uploader::Metadata.add_alt_text(media, "A cat asleep on a keyboard", client: client)
       def add_alt_text(media, text, client:)
+        Validator.validate_alt_text!(text)
         body = {id: Utils.media_id(media), metadata: {alt_text: {text:}}}
         client.post("media/metadata", body, **JSON_CLASSES)&.fetch("data") { raise MissingData, NO_METADATA }
       end

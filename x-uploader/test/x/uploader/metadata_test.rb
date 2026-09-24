@@ -39,6 +39,14 @@ module X
       assert_requested :post, METADATA_URL, body: {id: "7", metadata: {alt_text: {text: "A cat"}}}.to_json
     end
 
+    def test_add_alt_text_rejects_alt_text_the_api_would_refuse_before_a_request
+      error = assert_raises(ArgumentError) { Uploader::Metadata.add_alt_text(7, "A" * 1001, client: @client) }
+
+      assert_equal "alt_text must be 1 to 1000 characters, not 1001", error.message
+      assert_raises(ArgumentError) { Uploader::Metadata.add_alt_text(7, "", client: @client) }
+      assert_not_requested :post, METADATA_URL
+    end
+
     def test_add_alt_text_raises_when_the_response_holds_no_metadata
       stub_request(:post, METADATA_URL).to_return(headers: JSON_HEADERS, body: "{}")
       error = assert_raises(MissingData) { Uploader::Metadata.add_alt_text(7, "A cat", client: @client) }
