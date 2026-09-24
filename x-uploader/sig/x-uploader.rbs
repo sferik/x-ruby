@@ -75,10 +75,10 @@ module X
       def upload_media: (uploadable media, **untyped options) -> UploadedMedia?
       def await_media_processing: (media media, **untyped options) -> UploadedMedia?
       def await_media_processing!: (media media, **untyped options) -> UploadedMedia?
-      def add_alt_text: (media media, String text) -> untyped
-      def add_subtitles: (media video, media subtitles, String language_code, **untyped options) -> untyped
-      def update_profile_image: (path file_path) -> untyped
-      def update_profile_banner: (path file_path, **untyped options) -> untyped
+      def add_alt_text: (media media, String text) -> Hash[String, untyped]?
+      def add_subtitles: (media video, media subtitles, String language_code, **untyped options) -> Hash[String, untyped]?
+      def update_profile_image: (path file_path) -> Hash[String, untyped]?
+      def update_profile_banner: (path file_path, **untyped options) -> Hash[String, untyped]?
     end
 
     class Error < ::X::Error
@@ -190,8 +190,8 @@ module X
       NO_METADATA: String
       extend Metadata
 
-      def add_alt_text: (media media, String text, client: _Client) -> untyped
-      def add_subtitles: (media video, media subtitles, String language_code, client: _Client, ?display_name: String?, ?media_category: String | Symbol) -> untyped
+      def add_alt_text: (media media, String text, client: _Client) -> Hash[String, untyped]?
+      def add_subtitles: (media video, media subtitles, String language_code, client: _Client, ?display_name: String?, ?media_category: String | Symbol) -> Hash[String, untyped]?
     end
 
     module Validator
@@ -219,10 +219,10 @@ module X
       SUPPORTED_EXTENSIONS: Array[String]
       extend Account
 
-      def update_profile_image: (path file_path, client: _Client) -> untyped
-      def update_profile_image_binary: (String content, client: _Client) -> untyped
-      def update_profile_banner: (path file_path, client: _Client, ?width: Integer?, ?height: Integer?, ?offset_left: Integer?, ?offset_top: Integer?) -> untyped
-      def update_profile_banner_binary: (String content, client: _Client, ?width: Integer?, ?height: Integer?, ?offset_left: Integer?, ?offset_top: Integer?) -> untyped
+      def update_profile_image: (path file_path, client: _Client) -> Hash[String, untyped]?
+      def update_profile_image_binary: (String content, client: _Client) -> Hash[String, untyped]?
+      def update_profile_banner: (path file_path, client: _Client, ?width: Integer?, ?height: Integer?, ?offset_left: Integer?, ?offset_top: Integer?) -> Hash[String, untyped]?
+      def update_profile_banner_binary: (String content, client: _Client, ?width: Integer?, ?height: Integer?, ?offset_left: Integer?, ?offset_top: Integer?) -> Hash[String, untyped]?
     end
   end
 
