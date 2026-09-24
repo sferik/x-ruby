@@ -19,6 +19,7 @@ module X
       [Authenticator.new,
         OAuth1Authenticator.new(**test_oauth_credentials),
         OAuth2Authenticator.new(**test_oauth2_credentials),
+        AppOnlyAuthenticator.new(api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET, bearer_token: TEST_BEARER_TOKEN),
         BearerTokenAuthenticator.new(bearer_token: TEST_BEARER_TOKEN)]
     end
 
@@ -34,15 +35,6 @@ module X
 
         SECRETS.each { |secret| refute_respond_to client.authenticator, secret }
       end
-    end
-
-    # The app-only authenticator answers the bearer token it buys, which is the point of it, and keeps the secret
-    # it buys the token with.
-    def test_the_app_only_authenticator_keeps_the_secret_it_buys_a_token_with
-      authenticator = AppOnlyAuthenticator.new(api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET)
-
-      refute_respond_to authenticator, :api_key_secret
-      assert_respond_to authenticator, :bearer_token
     end
 
     # The signature is the only way left to tell that a client passed each credential on to its authenticator, now

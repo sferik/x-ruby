@@ -35,7 +35,7 @@ module X
 
     def test_token_request_uses_basic_authentication_and_the_client_credentials_grant
       stub_token_request
-      @authenticator.bearer_token
+      @authenticator.send(:bearer_token)
 
       assert_requested :post, AppOnlyAuthenticator::TOKEN_URL, body: "grant_type=client_credentials",
         headers: {"Authorization" => "Basic #{Base64.strict_encode64("#{TEST_API_KEY}:#{TEST_API_KEY_SECRET}")}",
@@ -49,7 +49,7 @@ module X
       connection.expect(:perform, Net::HTTP.post(URI(AppOnlyAuthenticator::TOKEN_URL), "")) { |request:| requests << request }
       authenticator = AppOnlyAuthenticator.new(api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET, connection:)
 
-      assert_equal TEST_BEARER_TOKEN, authenticator.bearer_token
+      assert_equal TEST_BEARER_TOKEN, authenticator.send(:bearer_token)
       assert_instance_of Net::HTTP::Post, requests.first
       assert_equal "grant_type=client_credentials", requests.first.body
     end
@@ -58,7 +58,7 @@ module X
       stub_token_request
       3.times { @authenticator.header(nil) }
 
-      assert_equal TEST_BEARER_TOKEN, @authenticator.bearer_token
+      assert_equal TEST_BEARER_TOKEN, @authenticator.send(:bearer_token)
       assert_requested :post, AppOnlyAuthenticator::TOKEN_URL, times: 1
     end
 
@@ -67,10 +67,17 @@ module X
         sleep 0.05
         {status: 200, body: {access_token: TEST_BEARER_TOKEN}.to_json}
       end
-      tokens = Array.new(4) { Thread.new { @authenticator.bearer_token } }.map(&:value)
+      tokens = Array.new(4) { Thread.new { @authenticator.send(:bearer_token) } }.map(&:value)
 
       assert_equal [TEST_BEARER_TOKEN] * 4, tokens
       assert_requested :post, AppOnlyAuthenticator::TOKEN_URL, times: 1
+    end
+
+    def test_the_bearer_token_is_kept_private
+      authenticator = AppOnlyAuthenticator.new(api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET, bearer_token: "given")
+
+      refute_respond_to authenticator, :bearer_token
+      assert_equal "given", authenticator.send(:bearer_token)
     end
 
     def test_a_given_bearer_token_is_not_fetched
@@ -83,21 +90,21 @@ module X
     def test_raises_with_the_error_description
       stub_request(:post, AppOnlyAuthenticator::TOKEN_URL)
         .to_return(status: 403, body: {error: "invalid_client", error_description: "Unable to verify your credentials"}.to_json)
-      error = assert_raises(AuthorizationError) { @authenticator.bearer_token }
+      error = assert_raises(AuthorizationError) { @authenticator.send(:bearer_token) }
 
       assert_equal ["Unable to verify your credentials", "invalid_client", 403], [error.message, error.error_code, error.status]
     end
 
     def test_raises_with_the_error_code_without_a_description
       stub_request(:post, AppOnlyAuthenticator::TOKEN_URL).to_return(status: 403, body: {error: "invalid_client"}.to_json)
-      error = assert_raises(AuthorizationError) { @authenticator.bearer_token }
+      error = assert_raises(AuthorizationError) { @authenticator.send(:bearer_token) }
 
       assert_equal "invalid_client", error.message
     end
 
     def test_raises_with_the_default_message
       stub_request(:post, AppOnlyAuthenticator::TOKEN_URL).to_return(status: 500, body: "Internal Server Error")
-      error = assert_raises(AuthorizationError) { @authenticator.bearer_token }
+      error = assert_raises(AuthorizationError) { @authenticator.send(:bearer_token) }
 
       assert_equal "Bearer token request failed", error.message
     end
@@ -105,9 +112,9 @@ module X
     def test_a_failed_fetch_is_retried
       stub_request(:post, AppOnlyAuthenticator::TOKEN_URL).to_return(status: 500, body: "").then
         .to_return(status: 200, body: {access_token: TEST_BEARER_TOKEN}.to_json)
-      assert_raises(AuthorizationError) { @authenticator.bearer_token }
+      assert_raises(AuthorizationError) { @authenticator.send(:bearer_token) }
 
-      assert_equal TEST_BEARER_TOKEN, @authenticator.bearer_token
+      assert_equal TEST_BEARER_TOKEN, @authenticator.send(:bearer_token)
     end
 
     private

@@ -410,9 +410,9 @@ module X
     attr_reader connection: Connection
     def initialize: (api_key: String, api_key_secret: String, ?bearer_token: String?, ?connection: Connection) -> void
     def header: (Net::HTTPRequest? request) -> Hash[String, String]
-    def bearer_token: () -> String
 
     private
+    def bearer_token: () -> String
     attr_reader api_key_secret: String
     def fetch_bearer_token: () -> String
     def token_request: () -> SimpleOAuth::OAuth2::Request

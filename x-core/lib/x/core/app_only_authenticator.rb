@@ -62,18 +62,21 @@ module X
       {AUTHENTICATION_HEADER => "Bearer #{bearer_token}"}
     end
 
+    private
+
     # The bearer token, fetched once with the API key and secret
     #
-    # @api public
+    # It is a secret, so it is private, as the bearer token of a BearerTokenAuthenticator is. Internal to x-core:
+    # a client that authenticates as the app fetches its token through it, and calls it with __send__.
+    #
+    # @api private
     # @return [String] the bearer token
     # @raise [AuthorizationError] if X refuses to issue the bearer token
     # @example Get the bearer token
-    #   authenticator.bearer_token
+    #   bearer_token
     def bearer_token
       @mutex.synchronize { @bearer_token ||= fetch_bearer_token }
     end
-
-    private
 
     # The API key secret, which buys the bearer token
     # @api private
