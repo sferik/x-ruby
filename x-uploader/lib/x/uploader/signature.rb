@@ -18,9 +18,11 @@ module X
       extend self
 
       # The brands an MP4 video names after the box type it begins with, which files of other types share with it: a
-      # HEIF or AVIF image, and M4A audio, begin with that box type too, and name a brand of their own
-      MP4_BRANDS = ["isom", "iso2", "iso3", "iso4", "iso5", "iso6", "mp41", "mp42", "avc1", "M4V ", "M4VH", "M4VP", "dash",
-        "MSNV"].freeze
+      # HEIF or AVIF image, and M4A audio, begin with that box type too, and name a brand of their own. The 3GPP and
+      # 3GPP2 videos of phones, and the F4V, XAVC, and mobile MP4 videos of cameras and encoders, are MP4 files that
+      # name a brand of their own too.
+      MP4_BRANDS = ["isom", "iso2", "iso3", "iso4", "iso5", "iso6", "iso7", "iso8", "iso9", "mp41", "mp42", "avc1", "M4V ",
+        "M4VH", "M4VP", "dash", "MSNV", "3gp4", "3gp5", "3gp6", "3g2a", "f4v ", "XAVC", "mmp4"].freeze
 
       # The media type each signature names, by the bytes that must appear at each offset, most specific first,
       # since the first signature that matches names the type: the brand of a QuickTime file or an MP4 video follows
