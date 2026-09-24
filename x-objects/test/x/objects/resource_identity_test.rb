@@ -28,9 +28,15 @@ module X
         assert_equal "X::Poll cannot be fetched by id", error.message
       end
 
+      # A resource the API offers no lookup of is not one to look up one at a time either
       def test_find_without_endpoint
         assert_raises(UnsupportedOperation) { Poll.find(1, client: FakeClient.new) }
-        assert_raises(UnsupportedOperation) { Poll.find_all([1], client: FakeClient.new) }
+        [Poll, Place].each do |resource|
+          error = assert_raises(UnsupportedOperation) { resource.find_all([1, 2], client: FakeClient.new) }
+
+          assert_equal "#{resource} cannot be fetched by id", error.message
+          assert_raises(UnsupportedOperation) { resource.hydrate_all([resource.from_id(1)], client: FakeClient.new) }
+        end
       end
 
       def test_hydratable

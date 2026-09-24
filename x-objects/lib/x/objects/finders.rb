@@ -98,16 +98,18 @@ module X
       # @return [Array<Resource>] the resources that were found
       # @raise [ArgumentError] if the concurrency is less than one
       # @raise [UnsupportedOperation] if the API offers no batch lookup of the resource, as it offers none for
-      #   communities, lists, or direct message events, which are looked up one at a time
+      #   communities, lists, or direct message events, which are looked up one at a time, or no lookup at all, as it
+      #   offers none for polls or places
       # @yieldparam problem [Problem] each problem the API reported, such as an identifier that was not found
       # @example Look up many posts by identifier, reporting the ones that were not found
       #   X::Post.find_all([1234567890, 1234567891], client: client) { |problem| warn problem.detail }
       # @example Look up many posts one batch at a time, to spend a rate limit more slowly
       #   X::Post.find_all(ids, client: client, concurrency: 1)
       def find_all(ids, client:, concurrency: DEFAULT_CONCURRENCY, **params, &)
+        path = endpoint!
         raise UnsupportedOperation, format(NO_BATCH_LOOKUP, self, ids.size) unless batchable?
 
-        lookup_in_batches(endpoint!, batch_key, ids.map { |id| Utils.id_of(id, raw: id_type.eql?(:raw)) }, client:, concurrency:, **params, &)
+        lookup_in_batches(path, batch_key, ids.map { |id| Utils.id_of(id, raw: id_type.eql?(:raw)) }, client:, concurrency:, **params, &)
       end
 
       # Fetch a single resource from an endpoint
