@@ -149,7 +149,7 @@ module X
           # @example Check how much of the monthly cap remains
           #   usage = client.usage
           #   usage.project_cap - usage.project_usage
-          def usage(**params) = Usage.find(client: self, **params)
+          def usage(**params) = Usage.current(client: self, **params)
 
           # Search recent posts, the short form of search_posts
           #

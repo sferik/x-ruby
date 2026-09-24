@@ -18,7 +18,7 @@ module X
 
     attr_reader attrs: Hash[String, untyped]
 
-    def self.find: (client: Objects::_Client, **untyped params) -> Usage
+    def self.current: (client: Objects::_Client, **untyped params) -> Usage
     def initialize: (Hash[String, untyped] attrs) -> void
     def to_h: () -> Hash[String, untyped]
     def project_id: () -> Integer?

@@ -33,9 +33,10 @@ module X
     #     usage.to_h
     alias_method :to_h, :attrs
 
-    # Look up the post usage of the project the client's app belongs to
+    # Look up the current post usage of the project the client's app belongs to
     #
-    # The usage endpoint takes app-only authentication, so a client that signs its requests with OAuth 1.0a
+    # A project has one usage, so it is looked up by no identifier, as X::User.current looks up the one user a
+    # client signs in as. The usage endpoint takes app-only authentication, so a client that signs its requests with OAuth 1.0a
     # looks the usage up with a copy that authenticates as the app.
     #
     # @api public
@@ -43,8 +44,8 @@ module X
     # @param params [Hash] query parameters, such as days, the number of days to report, which is 7 by default
     # @return [Usage] the usage
     # @example Look up the usage of the last 30 days
-    #   X::Usage.find(client: client, days: 30).project_usage
-    def self.find(client:, **params)
+    #   X::Usage.current(client: client, days: 30).project_usage
+    def self.current(client:, **params)
       body = Objects::Utils.app_client(client).get(Objects::Utils.path(ENDPOINT, {"usage.fields" => FIELDS}.merge(params)), **Objects::Utils::JSON_CLASSES)
       new(body.to_h["data"].to_h)
     end

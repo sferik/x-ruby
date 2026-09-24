@@ -19,9 +19,10 @@ module X
       @client.stub(:get, "usage/tweets", {"data" => DATA})
     end
 
-    def test_find_requests_every_field
-      usage = Usage.find(client: @client, days: 30)
+    def test_current_requests_every_field
+      usage = Usage.current(client: @client, days: 30)
 
+      refute_respond_to Usage, :find
       assert_equal DATA, usage.to_h
       assert_equal [{"usage.fields" => Usage::FIELDS.join(","), "days" => "30"}], @client.queries
     end
@@ -62,7 +63,7 @@ module X
       usage = Usage.new({})
 
       assert_equal [nil, nil, nil, nil, {}, {}], [usage.project_id, usage.project_usage, usage.project_cap, usage.cap_reset_day, usage.daily, usage.daily_by_app]
-      assert_empty Usage.find(client: FakeClient.new.stub(:get, "usage/tweets", nil)).to_h
+      assert_empty Usage.current(client: FakeClient.new.stub(:get, "usage/tweets", nil)).to_h
     end
   end
 end
