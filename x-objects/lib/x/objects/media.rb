@@ -97,7 +97,7 @@ module X
     # @yieldparam problem [Problem] each problem the API reported
     # @example Look up what the uploads returned
     #   X::Media.find_all(uploads, client: client)
-    def self.find_all(media, client:, concurrency: DEFAULT_CONCURRENCY, **params) = super(media.map { |value| key_of(value) }, client:, concurrency:, **params)
+    def self.find_all(media, client:, concurrency: Objects::Finders::DEFAULT_CONCURRENCY, **params) = super(media.map { |value| key_of(value) }, client:, concurrency:, **params)
 
     # The key under which media appear in the includes of a response
     #

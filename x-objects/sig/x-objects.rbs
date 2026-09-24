@@ -565,9 +565,6 @@ module X
     include Objects::Identity
     include Objects::Serialization
 
-    MAX_BATCH_SIZE: Integer
-    DEFAULT_CONCURRENCY: Integer
-
     attr_reader attrs: Objects::attrs
     attr_reader client: Objects::_Client?
     private attr_reader includes: Objects::Includes

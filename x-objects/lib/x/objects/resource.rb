@@ -22,12 +22,6 @@ module X
     include Objects::Identity
     include Objects::Serialization
 
-    # Maximum number of identifiers accepted by a batch lookup endpoint
-    MAX_BATCH_SIZE = Objects::Finders::MAX_BATCH_SIZE
-
-    # Default number of batch lookups a request makes at once
-    DEFAULT_CONCURRENCY = Objects::Finders::DEFAULT_CONCURRENCY
-
     # The frozen attributes returned by the API
     # @api public
     # @return [Hash{String => Object}] the attributes

@@ -26,9 +26,9 @@ module X
         assert_equal 4, concurrency_of { User.find_all([1, 2], client: @client) }
       end
 
-      def test_the_default_concurrency_is_four
-        assert_equal 4, Finders::DEFAULT_CONCURRENCY
-        assert_equal Finders::DEFAULT_CONCURRENCY, Resource::DEFAULT_CONCURRENCY
+      def test_the_default_concurrency_is_four_and_named_by_the_finders_alone
+        assert_equal [4, 100], [Finders::DEFAULT_CONCURRENCY, Finders::MAX_BATCH_SIZE]
+        refute Resource.const_defined?(:DEFAULT_CONCURRENCY) || Resource.const_defined?(:MAX_BATCH_SIZE)
       end
 
       def test_find_all_refuses_a_concurrency_below_one
