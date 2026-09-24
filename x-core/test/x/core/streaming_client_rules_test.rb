@@ -79,6 +79,28 @@ module X
       assert_empty @streaming_client.add_stream_rules("ruby")
     end
 
+    def test_adding_something_that_is_not_a_rule
+      error = assert_raises(ArgumentError) { @streaming_client.add_stream_rules({"tag" => "ruby"}) }
+
+      assert_equal 'a rule to add is a Hash holding a value, or the value it matches, not {"tag" => "ruby"}', error.message
+    end
+
+    def test_adding_something_that_is_neither_a_hash_nor_a_string
+      [42, :ruby, nil, {id: "1"}, {value: nil}, {"value" => nil}].each do |rule|
+        error = assert_raises(ArgumentError) { @streaming_client.add_stream_rules(["ruby", rule]) }
+
+        assert_equal "a rule to add is a Hash holding a value, or the value it matches, not #{rule.inspect}", error.message
+      end
+      assert_not_requested(:post, RULES_URL)
+    end
+
+    def test_adding_a_rule_with_its_value_under_a_string_key
+      stub_rules({"data" => []}, method: :post)
+      @streaming_client.add_stream_rules({"value" => "ruby"})
+
+      assert_requested(:post, RULES_URL, body: {add: [{value: "ruby"}]}.to_json)
+    end
+
     def test_adding_no_rules_sends_no_request
       assert_equal [[], []], [@streaming_client.add_stream_rules([]), @streaming_client.add_stream_rules([], dry_run: true)]
       assert_not_requested(:post, RULES_URL)

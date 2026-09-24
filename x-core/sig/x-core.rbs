@@ -674,6 +674,7 @@ module X
     NO_BLOCK_MESSAGE: String
     RULES_ENDPOINT: String
     NOT_A_RULE: String
+    NOT_A_RULE_TO_ADD: String
     JSON_CLASSES: Hash[Symbol, Class]
 
     type addable_rule = Hash[untyped, untyped] | String

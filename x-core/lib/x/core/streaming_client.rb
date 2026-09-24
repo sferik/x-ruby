@@ -52,6 +52,9 @@ module X
     # The message of the error raised for something that is neither a rule nor the identifier of one
     NOT_A_RULE = "a rule is a Hash holding an id or a value, the value it matches, or its identifier, not %s"
     private_constant :NOT_A_RULE
+    # The message of the error raised for something that is neither a rule to add nor the value one matches
+    NOT_A_RULE_TO_ADD = "a rule to add is a Hash holding a value, or the value it matches, not %s"
+    private_constant :NOT_A_RULE_TO_ADD
     # The classes the rules endpoints parse into, whatever parsing classes the client defaults to
     JSON_CLASSES = {array_class: Array, object_class: Hash}.freeze
     private_constant :JSON_CLASSES
@@ -199,12 +202,14 @@ module X
     # Add rules for the filtered stream to match posts against
     #
     # A rule is a Hash of the value it matches and the tag it is labelled with, or a String, which is the value of a
-    # rule without a tag. No rules add none, and send no request.
+    # rule without a tag. No rules add none, and send no request. Anything else raises before a request, as it does
+    # for delete_stream_rules.
     #
     # @api public
     # @param rules [Array<Hash, String>, Hash, String] the rules to add
     # @param dry_run [Boolean] true to have the API check the rules and add none of them
     # @return [Array<Hash>] the rules that were added, each holding the id the API gave it, empty if none were given
+    # @raise [ArgumentError] if something is neither a Hash that holds a value nor a String
     # @raise [UnsupportedOperation] if the client authenticates with OAuth 2.0 as a user and holds no credentials of
     #   the app
     # @raise [HTTPError] if the API refuses a rule, which adds none of them
@@ -294,7 +299,16 @@ module X
     # @api private
     # @param rule [Hash, String] the rule, or the value it matches
     # @return [Hash] the rule
-    def rule_to_add(rule) = Hash.try_convert(rule) || {value: rule}
+    # @raise [ArgumentError] if the rule is neither a String nor a Hash that holds a value
+    def rule_to_add(rule)
+      value = String.try_convert(rule)
+      return {value:} if value
+
+      hash = Hash.try_convert(rule)
+      return hash if hash && (hash["value"] || hash[:value])
+
+      raise ArgumentError, format(NOT_A_RULE_TO_ADD, rule.inspect)
+    end
 
     # The identifier of a rule, if it is one or holds one
     #
