@@ -69,9 +69,14 @@ module X
       assert_requested :post, SUBTITLES_URL, body: {id: "7", media_category: "TweetVideo", subtitles: {id: "8", language_code: "FR"}}.to_json
     end
 
+    def test_the_media_categories_of_the_subtitles_are_private
+      assert_raises(NameError) { Uploader::Metadata::SUBTITLED_MEDIA_CATEGORY }
+      refute Uploader::Metadata.const_defined?(:AMPLIFY_SUBTITLED_MEDIA_CATEGORY)
+    end
+
     def test_add_subtitles_to_an_amplify_video
       stub_request(:post, SUBTITLES_URL).to_return(status: 204)
-      Uploader::Metadata.add_subtitles(7, 8, "EN", client: @client, media_category: Uploader::Metadata::AMPLIFY_SUBTITLED_MEDIA_CATEGORY)
+      Uploader::Metadata.add_subtitles(7, 8, "EN", client: @client, media_category: :amplify_video)
 
       assert_requested :post, SUBTITLES_URL, body: {id: "7", media_category: "AmplifyVideo", subtitles: {id: "8", language_code: "EN"}}.to_json
     end

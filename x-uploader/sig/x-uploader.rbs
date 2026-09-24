@@ -187,7 +187,6 @@ module X
 
     module Metadata
       SUBTITLED_MEDIA_CATEGORY: String
-      AMPLIFY_SUBTITLED_MEDIA_CATEGORY: String
       NO_METADATA: String
       extend Metadata
 

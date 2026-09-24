@@ -12,13 +12,11 @@ module X
     module Metadata
       extend self
 
-      # The media category the subtitles endpoint takes for a video attached to a post
+      # The media category the subtitles endpoint takes for a video attached to a post, which subtitles default to
       SUBTITLED_MEDIA_CATEGORY = "TweetVideo"
-      # The media category the subtitles endpoint takes for a video uploaded as amplify_video
-      AMPLIFY_SUBTITLED_MEDIA_CATEGORY = "AmplifyVideo"
       # The message of the error raised for a metadata response that holds no metadata
       NO_METADATA = "The response that adds the metadata holds none"
-      private_constant :NO_METADATA
+      private_constant :SUBTITLED_MEDIA_CATEGORY, :NO_METADATA
 
       # Describe uploaded media with alt text, for people who cannot see it
       #
