@@ -13,11 +13,19 @@ module X
 
     def source_for(media) = Uploader.const_get(:Source).for(media)
 
-    def test_an_unlinked_tempfile_is_read_through_the_io
+    # Copy the sample PNG into a Tempfile named for it, unlink the path of the Tempfile, and yield it
+    def in_unlinked_png
       Tempfile.create(%w[source .png]) do |file|
         file.binmode
         file.write(File.binread(PNG))
         File.unlink(file.path)
+        yield file
+      end
+    end
+
+    def test_an_unlinked_tempfile_is_read_through_the_io
+      skip "a file that is open cannot be unlinked on Windows" if Gem.win_platform?
+      in_unlinked_png do |file|
         source = source_for(file)
 
         assert_equal [true, true, File.size(PNG), "png"], [source.exist?, source.readable?, source.size, source.extension]

@@ -62,6 +62,7 @@ module X
     end
 
     def test_an_unlinked_tempfile_uploads
+      skip "a file that is open cannot be unlinked on Windows" if Gem.win_platform?
       stub_chunked_workflow
       in_tempfile("sample.mp4") do |tempfile|
         File.unlink(tempfile.path)
