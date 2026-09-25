@@ -49,6 +49,15 @@ module X
       assert_not_requested :post, "https://api.x.com/2/media/upload"
     end
 
+    def test_upload_binary_refuses_every_category_the_api_takes_in_chunks_alone_before_a_request
+      messages = %w[TWEET_VIDEO dm_video subtitles].map do |media_category|
+        assert_raises(ArgumentError) { Uploader::MediaUpload.upload_binary("data", client: @client, media_category:) }.message
+      end
+
+      assert_equal %w[tweet_video dm_video subtitles].map { |category| "#{category} uploads in chunks alone: pass the file to upload or chunked_upload" }, messages
+      assert_not_requested :post, "https://api.x.com/2/media/upload"
+    end
+
     def test_upload_binary_returns_nil_for_empty_response
       stub_request(:post, UPLOAD_URL).to_return(status: 204)
 
