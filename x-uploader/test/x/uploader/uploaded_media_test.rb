@@ -7,7 +7,6 @@ module X
     cover UploadedMedia
 
     ATTRS = {"id" => "1880028106020515840", "media_key" => "3_1880028106020515840", "size" => 1024, "expires_after_secs" => 86_400}.freeze
-    READ_ATTRS = ATTRS.merge("id" => 1_880_028_106_020_515_840).freeze
 
     def setup
       @media = UploadedMedia.new(ATTRS)
@@ -83,9 +82,9 @@ module X
     def test_reads_as_the_hash_it_was_built_from
       media = media_in("succeeded")
 
-      assert_equal [1_880_028_106_020_515_840, nil, "succeeded"], [media["id"], media["missing"], media.dig("processing_info", "state")]
+      assert_equal ["1880028106020515840", nil, "succeeded"], [media["id"], media["missing"], media.dig("processing_info", "state")]
       assert_equal [true, false], [media.key?("processing_info"), media.key?("missing")]
-      assert_equal READ_ATTRS, @media.to_h
+      assert_equal ATTRS, @media.to_h
       assert_same @media.attrs, @media.to_h
     end
 
@@ -141,15 +140,14 @@ module X
     cover UploadedMedia
 
     ATTRS = UploadedMediaTest::ATTRS
-    READ_ATTRS = UploadedMediaTest::READ_ATTRS
 
     def setup
       @media = UploadedMedia.new(ATTRS)
     end
 
     def test_fetch_raises_or_falls_back_as_a_hash_does
-      assert_equal 1_880_028_106_020_515_840, @media.fetch("id")
-      assert_equal 1_880_028_106_020_515_840, @media.fetch("id") { flunk "unexpected yield" }
+      assert_equal "1880028106020515840", @media.fetch("id")
+      assert_equal "1880028106020515840", @media.fetch("id") { flunk "unexpected yield" }
       assert_equal "missing!", @media.fetch("missing") { |key| "#{key}!" }
       assert_raises(KeyError) { @media.fetch("missing") }
     end
@@ -165,13 +163,17 @@ module X
     end
 
     def test_media_is_written_into_json_as_the_attributes_it_reads_as
-      assert_equal READ_ATTRS, @media.as_json
-      assert_equal READ_ATTRS.to_json, @media.to_json
-      assert_equal({"media_ids" => [READ_ATTRS]}, JSON.parse(JSON.generate({media_ids: [@media]})))
+      assert_equal ATTRS, @media.as_json
+      assert_equal ATTRS.to_json, @media.to_json
+      assert_equal({"media_ids" => [ATTRS]}, JSON.parse(JSON.generate({media_ids: [@media]})))
+    end
+
+    def test_media_writes_its_identifier_into_json_as_the_string_it_arrived_as
+      assert_includes @media.to_json, '"id":"1880028106020515840"'
     end
 
     def test_media_is_written_with_the_state_of_the_json_generated_around_it
-      assert_equal JSON.pretty_generate({"media" => READ_ATTRS}), JSON.pretty_generate({"media" => @media})
+      assert_equal JSON.pretty_generate({"media" => ATTRS}), JSON.pretty_generate({"media" => @media})
     end
   end
 end

@@ -39,7 +39,7 @@ module X
       stub_request(:post, BASE_URL).to_return(headers: JSON_HEADERS, body: {data: {id: TEST_MEDIA_ID}}.to_json)
       response = Uploader::MediaUpload.upload("test/sample_files/sample_animated.gif", client: @client)
 
-      assert_equal TEST_MEDIA_ID.to_i, response["id"]
+      assert_equal TEST_MEDIA_ID, response["id"]
       assert_requested(:post, BASE_URL) { |request| request.body.include?("name=\"media_category\"\r\n\r\ntweet_gif") }
     end
 
@@ -47,7 +47,7 @@ module X
       stub_chunked_workflow
       response = Uploader::MediaUpload.upload("test/sample_files/sample.mp4", client: @client)
 
-      assert_equal TEST_MEDIA_ID.to_i, response["id"]
+      assert_equal TEST_MEDIA_ID, response["id"]
       assert_equal "succeeded", response.dig("processing_info", "state")
       assert_requested :post, "#{BASE_URL}/initialize", body: {media_type: "video/mp4", media_category: "tweet_video", total_bytes: File.size("test/sample_files/sample.mp4")}.to_json
       assert_not_requested :post, BASE_URL

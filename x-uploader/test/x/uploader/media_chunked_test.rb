@@ -22,7 +22,7 @@ module X
       stub_chunked_upload_workflow
       response = perform_chunked_upload
 
-      assert_equal TEST_MEDIA_ID.to_i, response["id"]
+      assert_equal TEST_MEDIA_ID, response["id"]
     end
 
     def test_chunked_upload_returns_nil_when_finalize_returns_empty_response

@@ -70,7 +70,7 @@ module X
       content = File.binread("test/sample_files/sample.png")
       response = Uploader::MediaUpload.upload(StringIO.new(content), client: @client)
 
-      assert_equal TEST_MEDIA_ID.to_i, response["id"]
+      assert_equal TEST_MEDIA_ID, response["id"]
       assert_requested(:post, BASE_URL) do |request|
         request.body.include?("name=\"media_category\"\r\n\r\ntweet_image") && request.body.include?(content)
       end
@@ -88,7 +88,7 @@ module X
       content = File.binread("test/sample_files/sample.mp4")
       response = Uploader::MediaUpload.upload(StringIO.new(content), client: @client)
 
-      assert_equal TEST_MEDIA_ID.to_i, response["id"]
+      assert_equal TEST_MEDIA_ID, response["id"]
       assert_requested :post, "#{BASE_URL}/initialize",
         body: {media_type: "video/mp4", media_category: "tweet_video", total_bytes: content.bytesize}.to_json
       assert_requested(:post, "#{BASE_URL}/#{TEST_MEDIA_ID}/append") { |request| request.body.include?(content) }

@@ -21,14 +21,14 @@ module X
       assert_requested(:post, UPLOAD_URL) do |request|
         assert_includes request.body, multipart_field("media_category", Uploader::MediaUpload::TWEET_IMAGE)
       end
-      assert_equal TEST_MEDIA_ID.to_i, response["id"]
+      assert_equal TEST_MEDIA_ID, response["id"]
     end
 
     def test_upload_handles_non_ascii_filename
       stub_upload_request
       response = upload_file("test/sample_files/sample_éè.png")
 
-      assert_equal TEST_MEDIA_ID.to_i, response["id"]
+      assert_equal TEST_MEDIA_ID, response["id"]
     end
 
     def test_upload_binary_sends_content_directly
@@ -39,7 +39,7 @@ module X
         media_category: Uploader::MediaUpload::TWEET_IMAGE
       )
 
-      assert_equal TEST_MEDIA_ID.to_i, response["id"]
+      assert_equal TEST_MEDIA_ID, response["id"]
     end
 
     def test_upload_binary_refuses_amplify_video_before_a_request

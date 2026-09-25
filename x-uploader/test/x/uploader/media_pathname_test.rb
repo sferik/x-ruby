@@ -19,7 +19,7 @@ module X
     def test_upload_of_an_image_at_a_pathname
       stub_request(:post, UPLOAD_URL).to_return(JSON)
 
-      assert_equal TEST_MEDIA_ID.to_i, Uploader::MediaUpload.upload(Pathname("test/sample_files/sample.png"), client: @client)["id"]
+      assert_equal TEST_MEDIA_ID, Uploader::MediaUpload.upload(Pathname("test/sample_files/sample.png"), client: @client)["id"]
     end
 
     def test_upload_of_a_video_at_a_pathname
@@ -27,7 +27,7 @@ module X
       stub_request(:post, "#{UPLOAD_URL}/#{TEST_MEDIA_ID}/append").to_return(status: 204)
       path = Pathname("test/sample_files/sample.mp4")
 
-      assert_equal TEST_MEDIA_ID.to_i, Uploader::MediaUpload.upload(path, client: @client)["id"]
+      assert_equal TEST_MEDIA_ID, Uploader::MediaUpload.upload(path, client: @client)["id"]
       assert_requested(:post, "#{UPLOAD_URL}/initialize", body: {media_type: "video/mp4", media_category: "tweet_video", total_bytes: path.size}.to_json)
     end
 
