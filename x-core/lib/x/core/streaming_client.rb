@@ -77,7 +77,7 @@ module X
     #   streaming_client = X::StreamingClient.new(client, max_reconnects: 5)
     def initialize(client, read_timeout: DEFAULT_READ_TIMEOUT, max_reconnects: DEFAULT_MAX_RECONNECTS)
       @client = client
-      @proxy_url = client.proxy_url
+      @proxy_url = client.__send__(:proxy_url)
       @connection = Connection.new(open_timeout: client.open_timeout, read_timeout:, write_timeout: client.write_timeout,
         debug_output: client.debug_output, proxy_url:)
       @reconnect_handler = Core::ReconnectHandler.new(max_reconnects:)

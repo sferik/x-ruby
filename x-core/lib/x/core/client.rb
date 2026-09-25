@@ -192,7 +192,7 @@ module X
     # @example Derive an app-only client from the API key and secret
     #   app_client = client.with(access_token: nil, access_token_secret: nil)
     def with(**options)
-      self.class.new(**credentials, **settings, **options).tap { |copy| copy.share_authenticator(authenticator, @token_refresh_clients, options) }
+      self.class.new(**credentials, **settings, **options).tap { |copy| copy.__send__(:share_authenticator, authenticator, @token_refresh_clients, options) }
     end
 
     # Perform a GET request to the X API

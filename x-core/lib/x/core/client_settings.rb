@@ -69,7 +69,7 @@ module X
       def_delegators :@rate_limit_handler, :max_rate_limit_retries, :max_rate_limit_wait
       def_delegators :@retry_handler, :max_retries
 
-      protected
+      private
 
       # The settings, as initialize accepts them
       # @api private
@@ -79,8 +79,6 @@ module X
          default_array_class:, default_object_class:, headers:, max_redirects:, max_rate_limit_retries:,
          max_rate_limit_wait:, max_retries:, on_response:, on_token_refresh:}
       end
-
-      private
 
       # Initialize the settings, and the handlers of redirects, rate limits, and retries
       #

@@ -21,7 +21,7 @@ module X
         current ? current.expires_at : @expires_at
       end
 
-      protected
+      private
 
       # Share the OAuth 2.0 authenticator of the client this one was copied from
       #
@@ -70,8 +70,6 @@ module X
 
         new_oauth2_authenticator(client_id:, access_token:, refresh_token:)
       end
-
-      private
 
       # The access token for OAuth authentication, as last refreshed
       #

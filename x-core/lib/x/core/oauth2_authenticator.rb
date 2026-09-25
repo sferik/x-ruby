@@ -124,7 +124,7 @@ module X
     # @example Tell whether two clients refresh the same token
     #   client.authenticator.same_credentials?(other.authenticator)
     def same_credentials?(other)
-      other.is_a?(OAuth2Authenticator) && credentials.eql?(other.credentials)
+      other.is_a?(OAuth2Authenticator) && credentials.eql?(other.__send__(:credentials))
     end
 
     # Summarize the authenticator for the console without revealing credentials
@@ -165,7 +165,7 @@ module X
       self
     end
 
-    protected
+    private
 
     # The OAuth 2.0 client secret, which authenticates a refresh
     # @api private
@@ -180,8 +180,6 @@ module X
     # @example Compare two authenticators
     #   credentials.eql?(other.credentials)
     def credentials = [client_id, client_secret, access_token, refresh_token]
-
-    private
 
     # Refresh an access token the API rejected, unless it was already replaced
     #

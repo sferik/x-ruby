@@ -27,6 +27,7 @@ module X
     module ProxySetting
       @proxy_url: (URI::Generic | String)?
 
+      private
       def proxy_url: () -> (URI::Generic | String)?
     end
 
@@ -225,11 +226,11 @@ module X
       @expires_at: Time?
 
       def expires_at: () -> Time?
+
+      private
       def share_authenticator: (Authenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator other, _ClientRegistry clients, Hash[Symbol, untyped] options) -> void
       def oauth2_authenticator_in_use: () -> OAuth2Authenticator?
       def oauth2_authenticator: -> OAuth2Authenticator?
-
-      private
       def access_token: () -> String?
       def refresh_token: () -> String?
       def new_oauth2_authenticator: (client_id: String, access_token: String, refresh_token: String) -> OAuth2Authenticator
@@ -259,9 +260,9 @@ module X
       def max_rate_limit_wait: () -> Integer
       def max_retries: () -> Integer
 
-      def settings: () -> Hash[Symbol, untyped]
-
       private
+      def settings: () -> Hash[Symbol, untyped]
+      def proxy_url: () -> (URI::Generic | String)?
       def initialize_settings: (base_url: String, default_array_class: Class, default_object_class: Class, headers: headers, on_response: _ResponseHook?, max_redirects: Integer, max_rate_limit_retries: Integer, max_rate_limit_wait: Integer, max_retries: Integer) -> void
       def headers_for: (headers request_headers) -> headers
       def report: (Symbol http_method, URI::Generic uri, Net::HTTPResponse response) ?{ (Response) -> void } -> void
@@ -299,6 +300,7 @@ module X
       attr_reader client_id: String?
 
       private
+      def oauth2_authenticator: () -> OAuth2Authenticator?
       attr_reader api_key_secret: String?
       attr_reader access_token_secret: String?
       attr_reader bearer_token: String?
@@ -734,9 +736,8 @@ module X
     def token_expired?: -> bool
     def refresh!: -> OAuth2Authenticator
 
-    def credentials: -> Array[String?]
-
     private
+    def credentials: -> Array[String?]
     def refresh_rejected_token!: (String rejected_token) -> bool
     def holds?: (Hash[Symbol, untyped] options) -> bool
     def retrying_rejected_token: [T] (URI::Generic origin) { () -> T } -> T
@@ -762,9 +763,6 @@ module X
   interface _CredentialHost
     def authenticator: () -> (Authenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator)
     def with: (**untyped options) -> Client
-    def settings: () -> Hash[Symbol, untyped]
-    def oauth2_authenticator_in_use: () -> OAuth2Authenticator?
-    def oauth2_authenticator: () -> OAuth2Authenticator?
     def expires_at: () -> Time?
   end
 
@@ -774,7 +772,6 @@ module X
 
   interface _SettingsHost
     def on_token_refresh: () -> _TokenRefreshHook?
-    def proxy_url: () -> (URI::Generic | String)?
   end
 
   type params = Hash[String | Symbol, untyped]
