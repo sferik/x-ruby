@@ -62,7 +62,8 @@ module X
 
     # The IO object for debug output
     # @api public
-    # @return [IO, nil] the IO object for debug output, or nil for none
+    # @return [IO, #<<, nil] the IO object for debug output, or anything else that takes a String with <<, such as
+    #   a Logger, or nil for none
     # @example Get the debug output
     #   connection.debug_output
     attr_reader :debug_output
@@ -82,7 +83,8 @@ module X
     # @param write_timeout [Integer, Float] the timeout for writing requests in seconds
     # @param keep_alive_timeout [Integer, Float] the time to keep a connection open for the next request to the same
     #   host, in seconds, which a proxy that closes idle connections sooner than X does may need lowered
-    # @param debug_output [IO, nil] the IO object for debug output
+    # @param debug_output [IO, #<<, nil] the IO object for debug output, or anything else that takes a String with <<,
+    #   such as a StringIO or a Logger
     # @param proxy_url [String, URI::Generic, nil] the proxy URL for requests
     # @return [Connection] a new connection instance
     # @example Create a connection with default settings

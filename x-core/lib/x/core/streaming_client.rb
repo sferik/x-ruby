@@ -109,7 +109,7 @@ module X
 
     # The IO debug output is written to, which is the client's
     # @api public
-    # @return [IO, nil] the IO, or nil for none
+    # @return [IO, #<<, nil] the IO, or anything else that takes a String with <<, or nil for none
     # @example Get the debug output
     #   streaming_client.debug_output
     def debug_output = @connection.debug_output

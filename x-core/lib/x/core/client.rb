@@ -91,7 +91,8 @@ module X
     # @param write_timeout [Integer, Float] the timeout for writing requests in seconds
     # @param keep_alive_timeout [Integer, Float] the time to keep a connection open for the next request to the same
     #   host, in seconds, which a proxy that closes idle connections sooner than X does may need lowered
-    # @param debug_output [IO, nil] the IO object for debug output
+    # @param debug_output [IO, #<<, nil] the IO object for debug output, or anything else that takes a String with <<,
+    #   such as a StringIO or a Logger
     # @param proxy_url [String, URI::Generic, nil] the proxy URL for requests
     # @param default_array_class [Class] the default class for parsing JSON arrays
     # @param default_object_class [Class] the default class for parsing JSON objects

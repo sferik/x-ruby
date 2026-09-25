@@ -255,7 +255,7 @@ module X
       def read_timeout: () -> (Float | Integer)
       def write_timeout: () -> (Float | Integer)
       def keep_alive_timeout: () -> (Float | Integer)
-      def debug_output: () -> IO?
+      def debug_output: () -> _DebugOutput?
       def max_redirects: () -> Integer
       def max_rate_limit_retries: () -> Integer
       def max_rate_limit_wait: () -> Integer
@@ -620,9 +620,9 @@ module X
     attr_reader read_timeout : Float | Integer
     attr_reader write_timeout : Float | Integer
     attr_reader keep_alive_timeout : Float | Integer
-    attr_reader debug_output : IO?
+    attr_reader debug_output : _DebugOutput?
 
-    def initialize: (?open_timeout: Float | Integer, ?read_timeout: Float | Integer, ?write_timeout: Float | Integer, ?keep_alive_timeout: Float | Integer, ?proxy_url: (URI::Generic | String)?, ?debug_output: IO?) -> void
+    def initialize: (?open_timeout: Float | Integer, ?read_timeout: Float | Integer, ?write_timeout: Float | Integer, ?keep_alive_timeout: Float | Integer, ?proxy_url: (URI::Generic | String)?, ?debug_output: _DebugOutput?) -> void
     def inspect: () -> String
     def perform: (request: Net::HTTPRequest) -> Net::HTTPResponse
     def perform_stream: (request: Net::HTTPRequest) { (Net::HTTPResponse) -> void } -> void
@@ -635,6 +635,12 @@ module X
     def host_and_port: (URI::Generic uri) -> [String, Integer]
     def build_http_client: (URI::Generic uri) -> Net::HTTP
     def configure_http_client: (Net::HTTP http_client) -> Net::HTTP
+  end
+
+  # Where the requests and responses of a connection are written for debugging, as Net::HTTP writes them: an IO,
+  # a StringIO, a Logger, or anything else that takes a String with <<
+  interface _DebugOutput
+    def <<: (String data) -> untyped
   end
 
   interface _BodyHook
@@ -715,7 +721,7 @@ module X
     def open_timeout: () -> (Float | Integer)
     def read_timeout: () -> (Float | Integer)
     def write_timeout: () -> (Float | Integer)
-    def debug_output: () -> IO?
+    def debug_output: () -> _DebugOutput?
     def max_reconnects: () -> (Integer | Float)
     def stream_rules: (?params: params?) -> Array[Hash[String, untyped]]
     def add_stream_rules: (Array[addable_rule] | addable_rule rules, ?dry_run: bool) ?{ (Problem problem) -> void } -> Array[Hash[String, untyped]]
@@ -833,7 +839,7 @@ module X
 
     attr_reader on_token_refresh: _TokenRefreshHook?
     attr_reader authenticator: Authenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator
-    def initialize: (?api_key: String?, ?api_key_secret: String?, ?access_token: String?, ?access_token_secret: String?, ?bearer_token: String?, ?client_id: String?, ?client_secret: String?, ?refresh_token: String?, ?expires_at: Time?, ?base_url: String, ?open_timeout: Float | Integer, ?read_timeout: Float | Integer, ?write_timeout: Float | Integer, ?keep_alive_timeout: Float | Integer, ?debug_output: IO?, ?proxy_url: (URI::Generic | String)?, ?default_array_class: Class, ?default_object_class: Class, ?headers: headers, ?max_redirects: Integer, ?max_rate_limit_retries: Integer, ?max_rate_limit_wait: Integer, ?max_retries: Integer, ?on_response: _ResponseHook?, ?on_token_refresh: _TokenRefreshHook?) -> void
+    def initialize: (?api_key: String?, ?api_key_secret: String?, ?access_token: String?, ?access_token_secret: String?, ?bearer_token: String?, ?client_id: String?, ?client_secret: String?, ?refresh_token: String?, ?expires_at: Time?, ?base_url: String, ?open_timeout: Float | Integer, ?read_timeout: Float | Integer, ?write_timeout: Float | Integer, ?keep_alive_timeout: Float | Integer, ?debug_output: _DebugOutput?, ?proxy_url: (URI::Generic | String)?, ?default_array_class: Class, ?default_object_class: Class, ?headers: headers, ?max_redirects: Integer, ?max_rate_limit_retries: Integer, ?max_rate_limit_wait: Integer, ?max_retries: Integer, ?on_response: _ResponseHook?, ?on_token_refresh: _TokenRefreshHook?) -> void
     def inspect: () -> String
     def with: (**untyped options) -> Client
     def get: (String endpoint, ?params: params?, ?headers: headers, ?array_class: Class, ?object_class: Class) ?{ (Response) -> void } -> untyped
