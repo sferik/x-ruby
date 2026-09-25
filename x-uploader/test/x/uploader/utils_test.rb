@@ -65,6 +65,14 @@ module X
       assert_equal "The media given holds no identifier", error.message
     end
 
+    def test_media_id_of_what_is_not_media
+      [Object.new, 1.5e18, :media].each do |media|
+        error = assert_raises(ArgumentError, media.inspect) { Uploader.const_get(:Utils).media_id(media) }
+
+        assert_equal "#{media.inspect} is not media: pass uploaded media, the Hash of an upload response, or a media identifier", error.message
+      end
+    end
+
     def test_media_id_of_nothing
       [nil, "", {"id" => nil}, {"id" => ""}].each do |media|
         error = assert_raises(MissingData, media.inspect) { Uploader.const_get(:Utils).media_id(media) }

@@ -90,6 +90,7 @@ module X
       SUBTITLED_MEDIA_CATEGORIES: Hash[String, String]
       NO_MEDIA_ID: String
       NO_MEDIA: String
+      NOT_MEDIA: String
 
       def extension: (path file_path) -> String
       def media_id: (media media) -> String

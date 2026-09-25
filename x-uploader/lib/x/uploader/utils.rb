@@ -21,7 +21,9 @@ module X
       NO_MEDIA_ID = "The media given holds no identifier"
       # The message of the error raised for a response of an upload that holds no media
       NO_MEDIA = "The response %s holds no media"
-      private_constant :NO_MEDIA_ID, :NO_MEDIA
+      # The message of the error raised for something that is neither media nor the identifier of media
+      NOT_MEDIA = "%s is not media: pass uploaded media, the Hash of an upload response, or a media identifier"
+      private_constant :NO_MEDIA_ID, :NO_MEDIA, :NOT_MEDIA
 
       # The lowercase extension of a file, without its dot
       #
@@ -35,17 +37,22 @@ module X
       # The media identifier of an upload response or of an identifier
       #
       # Nil, or an empty identifier, names no media, and would reach the API as an identifier that is not there.
+      # Anything else raises rather than reach the API as whatever its to_s reads, such as the inspection of an
+      # object.
       #
       # @api private
-      # @param media [Hash, String, Integer] the upload response, or the media identifier
+      # @param media [UploadedMedia, Hash, String, Integer] the uploaded media, the upload response, or the media
+      #   identifier
       # @return [String] the media identifier
+      # @raise [ArgumentError] if the media is neither media nor a media identifier
       # @raise [MissingData] if the media is nil or empty, or an upload response holds no identifier
       # @example The identifier of uploaded media
       #   Uploader::Utils.media_id({"id" => "1880028106020515840"}) # => "1880028106020515840"
       def media_id(media)
         id = case media
         when Hash, UploadedMedia then media.fetch("id", nil)
-        else media
+        when String, Integer, nil then media
+        else raise ArgumentError, format(NOT_MEDIA, media.inspect)
         end
         id.to_s.then { |text| text.empty? ? raise(MissingData, NO_MEDIA_ID) : text }
       end

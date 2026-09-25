@@ -256,6 +256,7 @@ module X
       # @return [UploadedMedia, nil] the uploaded media, which holds the processing status, or nil for a response
       #   that carries no body at all
       # @raise [ArgumentError] if the processing timeout is not a number of seconds of at least 0
+      # @raise [ArgumentError] if the media given is neither media nor a media identifier
       # @raise [MissingData] if the media given holds no identifier, or a status response holds no media
       # @raise [MediaProcessingTimeout] if the media is still processing once the processing timeout would pass
       # @example Wait for processing
@@ -288,6 +289,7 @@ module X
       # @return [UploadedMedia, nil] the uploaded media, which holds the processing status, or nil for a response
       #   that carries no body at all
       # @raise [ArgumentError] if the processing timeout is not a number of seconds of at least 0
+      # @raise [ArgumentError] if the media given is neither media nor a media identifier
       # @raise [MissingData] if the media given holds no identifier, or a status response holds no media
       # @raise [MediaProcessingFailed] if media processing failed, with the status X reported
       # @raise [MediaProcessingTimeout] if the media is still processing once the processing timeout would pass

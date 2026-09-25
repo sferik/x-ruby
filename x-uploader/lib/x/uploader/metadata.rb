@@ -31,6 +31,7 @@ module X
       # @return [Hash, nil] the media identifier and the metadata now associated with it, or nil for a response
       #   that carries no body at all
       # @raise [ArgumentError] if the alt text is empty or longer than the API takes, before a request
+      # @raise [ArgumentError] if the media given is neither media nor a media identifier
       # @raise [MissingData] if the media given holds no identifier, or the response holds no metadata
       # @example Describe an uploaded image
       #   Uploader::Metadata.add_alt_text(media, "A cat asleep on a keyboard", client: client)
@@ -53,6 +54,7 @@ module X
       # @return [Hash, nil] the video identifier and the subtitles now associated with it, or nil for a response
       #   that carries no body at all
       # @raise [ArgumentError] if the media category is neither tweet_video nor amplify_video
+      # @raise [ArgumentError] if the video or the subtitles are neither media nor a media identifier
       # @raise [MissingData] if the video or the subtitles hold no identifier, or the response holds no metadata
       # @example Upload a video and its English subtitles
       #   video = Uploader::MediaUpload.upload("cat.mp4", client: client)
