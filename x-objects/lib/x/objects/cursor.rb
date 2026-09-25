@@ -125,6 +125,9 @@ module X
 
     # Iterate over every page, fetching pages as needed
     #
+    # The pages are those {#page} reads, as they were fetched, so a page need not hold as many resources as the
+    # largest page the endpoint allows.
+    #
     # @api public
     # @yield [Page] each page
     # @return [Enumerator, Cursor] an enumerator without a block, otherwise self
@@ -143,7 +146,12 @@ module X
 
     # Fetch a page by index, using the cache when possible
     #
-    # The pages before the one asked for are read first, since the token of each asks for the next.
+    # The pages before the one asked for are read first, since the token of each asks for the next. A page is the
+    # page as it was fetched and kept, whatever fetched it: iterating fetches the largest page the endpoint allows,
+    # but first, take, any?, and empty? fetch pages no larger than they need, which the cursor keeps too, so that
+    # an iteration after them does not pay again for what they read. After user.followers.first, the first page
+    # holds one follower, and the pages an iteration fetches after it as many as the largest page does. The API may
+    # serve a page with fewer resources than it was asked for, or none, so no page has a size to rely on.
     #
     # @api public
     # @param index [Integer] the zero-based page index

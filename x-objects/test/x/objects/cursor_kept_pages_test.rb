@@ -34,6 +34,14 @@ module X
       assert_equal [{"max_results" => "1"}, {"max_results" => "1000", "pagination_token" => "p2"}], @client.queries.map { |query| query.slice("max_results", "pagination_token") }
     end
 
+    def test_the_pages_of_a_cursor_are_the_pages_as_first_and_an_iteration_fetched_them
+      followers = @user.followers
+      followers.first
+
+      assert_equal [1, 1000], followers.each_page.map(&:count)
+      assert_equal [1, 1000], [followers.page(0).count, followers.page(1).count]
+    end
+
     def test_a_larger_first_after_a_smaller_one_requests_only_the_difference
       followers = @user.followers
 
