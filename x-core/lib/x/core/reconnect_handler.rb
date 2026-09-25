@@ -10,10 +10,10 @@ module X
   module Core
     # Reconnects a stream that drops, backing off as X recommends
     #
-    # A stream that ends or loses its connection reconnects at once, then after a delay that grows by a quarter
-    # second each attempt, up to 16 seconds. A server error, a refused connection, or a line that is not JSON backs
-    # off from 5 seconds, doubling each attempt, up to 320 seconds. A rate limit waits until it resets, or from a minute, doubling
-    # each attempt. Delivering an object starts the count over.
+    # A stream that ends, loses its connection, or cannot open one, as when the connection is refused, reconnects at
+    # once, then after a delay that grows by a quarter second each attempt, up to 16 seconds. A server error, a 409
+    # Conflict, or a line that is not JSON backs off from 5 seconds, doubling each attempt, up to 320 seconds. A rate
+    # limit waits until it resets, or from a minute, doubling each attempt. Delivering an object starts the count over.
     #
     # Internal to x-core: StreamingClient reconnects with it, and max_reconnects is set on the streaming client.
     #
