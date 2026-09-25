@@ -35,11 +35,14 @@ module X
 
     # Every rate limit a response reports in full, in the order of TYPES
     #
-    # @api public
+    # Internal to x-core: it takes the Net::HTTP response of a request, so that it can change within 1.x, as that
+    # response may. X::Response#rate_limits and X::TooManyRequests#rate_limits read the same limits.
+    #
+    # @api private
     # @param http_response [Net::HTTPResponse] the HTTP response
     # @return [Array<RateLimit>] the 15-minute limit, and the 24-hour app and user limits, when reported
-    # @example Print how many requests remain in each window
-    #   X::RateLimit.all_from(response).each { |limit| puts "#{limit.type}: #{limit.remaining}" }
+    # @example Read every limit a response reports
+    #   X::RateLimit.all_from(http_response)
     def self.all_from(http_response) = TYPES.filter_map { |type| new(type:, http_response:) if reported?(type, http_response) }
 
     # Check whether a response has the limit, remaining, and reset of a rate limit
