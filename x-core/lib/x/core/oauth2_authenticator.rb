@@ -66,6 +66,11 @@ module X
     attr_reader :connection
 
     # A callable passed the authenticator after each refresh, to store its new tokens
+    #
+    # It is the callable the authenticator was built with. An authenticator a client builds is built with none: the
+    # on_token_refresh of the client, and of each copy of it that shares the authenticator, is passed each refresh,
+    # and is read from the client.
+    #
     # @api public
     # @return [#call, nil] the callable, or nil for none
     # @example Get the callable
@@ -140,9 +145,7 @@ module X
     # @return [String] the class name, client ID, and expiration time
     # @example Inspect an authenticator
     #   authenticator.inspect # => #<X::OAuth2Authenticator client_id="id" expires_at=nil>
-    def inspect
-      "#<#{self.class} client_id=#{client_id.inspect} expires_at=#{expires_at.inspect}>"
-    end
+    def inspect = "#<#{self.class} client_id=#{client_id.inspect} expires_at=#{expires_at.inspect}>"
 
     # Check if the access token has expired or will expire soon
     #
@@ -295,6 +298,17 @@ module X
       @mutex.synchronize { @expires_at = expires_at }
     end
 
+    # Pass each refresh to a callable besides on_token_refresh
+    #
+    # Internal to x-core: Client passes the refreshes of the authenticator it builds to the on_token_refresh of each
+    # client that shares it, and calls it with __send__, since it is private: the callable that does so is not one a
+    # caller gave, so on_token_refresh does not read it.
+    #
+    # @api private
+    # @param listener [#call] the callable passed the authenticator after each refresh
+    # @return [#call] the callable
+    def report_refreshes_to(listener) = (@refresh_listener = listener)
+
     # Refresh the access token, holding the lock
     # @api private
     # @param connection [Connection] the connection to send the refresh over
@@ -317,14 +331,13 @@ module X
     # @return [void]
     def report_refresh
       on_token_refresh&.call(self)
+      @refresh_listener&.call(self)
     end
 
     # The client for the token endpoint
     # @api private
     # @return [SimpleOAuth::OAuth2::Client] the OAuth 2.0 client
-    def oauth2_client
-      SimpleOAuth::OAuth2::Client.new(client_id:, client_secret:, token_endpoint: TOKEN_URL)
-    end
+    def oauth2_client = SimpleOAuth::OAuth2::Client.new(client_id:, client_secret:, token_endpoint: TOKEN_URL)
 
     # Update tokens from the response
     # @api private

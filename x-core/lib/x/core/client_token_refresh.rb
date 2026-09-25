@@ -106,8 +106,9 @@ module X
       # @return [OAuth2Authenticator] the OAuth 2.0 authenticator
       def new_oauth2_authenticator(client_id:, access_token:, refresh_token:)
         clients = @token_refresh_clients = ObjectSpace::WeakMap.new.tap { |registry| registry[self] = true }
-        OAuth2Authenticator.new(client_id:, client_secret: @client_secret, access_token:, refresh_token:, expires_at: @expires_at,
-          connection: @connection, on_token_refresh: ->(authenticator) { clients.keys.filter_map(&:on_token_refresh).uniq.each { |hook| hook.call(authenticator) } })
+        OAuth2Authenticator.new(client_id:, client_secret: @client_secret, access_token:, refresh_token:, expires_at: @expires_at, connection: @connection).tap do |authenticator|
+          authenticator.__send__(:report_refreshes_to, ->(refreshed) { clients.keys.filter_map(&:on_token_refresh).uniq.each { |hook| hook.call(refreshed) } })
+        end
       end
 
       # Run a request, again if a refresh replaces an OAuth 2.0 token the API rejects

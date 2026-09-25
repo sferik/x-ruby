@@ -746,6 +746,7 @@ module X
     attr_reader expires_at: Time?
     attr_reader connection: Connection
     attr_reader on_token_refresh: _TokenRefreshHook?
+    @refresh_listener: _TokenRefreshHook?
     @mutex: Thread::Mutex
     @refreshed_at: Float?
     def initialize: (client_id: String, access_token: String, refresh_token: String, ?client_secret: String?, ?expires_at: Time?, ?connection: Connection, ?on_token_refresh: _TokenRefreshHook?) -> void
@@ -763,6 +764,7 @@ module X
     def retrying_rejected_token: [T] (URI::Generic origin, Connection connection) { () -> T } -> T
     def carried_token?: (Unauthorized error, URI::Generic origin) -> bool
     def update_expires_at: (Time? expires_at) -> void
+    def report_refreshes_to: (_TokenRefreshHook listener) -> _TokenRefreshHook
     attr_reader client_secret: String?
     def refresh: (Connection connection) -> true
     def report_refresh: -> void
