@@ -305,6 +305,7 @@ module X
       MAX_BATCH_SIZE: Integer
       DEFAULT_CONCURRENCY: Integer
       INVALID_CONCURRENCY: String
+      FOREIGN_RESOURCE: String
       NO_BATCH_LOOKUP: String
 
       def find: (id id, client: _Client, **untyped params) ?{ (Problem problem) -> void } -> Resource?
@@ -322,6 +323,7 @@ module X
       def in_order_of: (Array[Resource] resources, Array[String] ids) -> Array[Resource]
       def settled?: (Resource resource) -> bool
       def validate_concurrency!: (Integer concurrency) -> void
+      def validate_class!: (Array[Resource] resources) -> void
       def reporting: (body body) ?{ (Problem problem) -> void } -> body
     end
 

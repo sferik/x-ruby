@@ -50,6 +50,17 @@ module X
         assert_equal ["2"], @client.queries.map { |query| query["ids"] }
       end
 
+      def test_hydrate_all_refuses_a_resource_of_another_class_before_a_request
+        user = User.from_id(2, client: @client)
+        error = assert_raises(ArgumentError) { Post.hydrate_all([Post.from_id(1), nil, user, List.from_id(3)], client: @client) }
+
+        assert_equal "X::Post.hydrate_all hydrates X::Post resources, not X::User", error.message
+        assert_empty @client.requests
+        @client.stub(:get, "users/2", {"data" => {"id" => "2", "username" => "user2"}})
+
+        assert_equal "user2", user.hydrate.username
+      end
+
       def test_hydrate_all_without_stubs
         assert_equal [@expanded], User.hydrate_all([@expanded], client: @client)
         assert_empty @client.requests

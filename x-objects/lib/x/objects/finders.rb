@@ -20,6 +20,10 @@ module X
       INVALID_CONCURRENCY = "concurrency must be an Integer of at least 1, not %s"
       private_constant :INVALID_CONCURRENCY
 
+      # The message of the error raised for resources to hydrate that are not of the class hydrating them
+      FOREIGN_RESOURCE = "%s.hydrate_all hydrates %s resources, not %s"
+      private_constant :FOREIGN_RESOURCE
+
       # The message of the error raised for a batch lookup of a resource the API offers none for
       NO_BATCH_LOOKUP = "%s cannot be fetched in batches; look %d of them up one at a time"
       private_constant :NO_BATCH_LOOKUP
@@ -76,11 +80,14 @@ module X
       #   or expansion parameter builds resources that are not hydrated, so hydrate fetches the rest
       # @return [Array<Resource>] the resources, in order, with the ones that were not hydrated replaced, frozen
       # @raise [ArgumentError] if the concurrency is less than one
+      # @raise [ArgumentError] if a resource is not of this class, which a lookup of its identifier would find
+      #   another resource for, before a request
       # @yieldparam problem [Problem] each problem the API reported, such as a resource that was not found
       # @example Expand the authors a search did not include
       #   X::User.hydrate_all(posts.map(&:author), client: client)
       def hydrate_all(resources, client:, concurrency: DEFAULT_CONCURRENCY, **params, &)
         resources = resources.compact
+        validate_class!(resources)
         partial = resources.reject { |resource| settled?(resource) }
         return resources.filter_map(&:hydrate).freeze if partial.empty?
 
@@ -241,6 +248,16 @@ module X
       # @raise [ArgumentError] if the concurrency is not an Integer, or is less than one
       def validate_concurrency!(concurrency)
         raise ArgumentError, format(INVALID_CONCURRENCY, concurrency.inspect) unless concurrency.instance_of?(Integer) && concurrency.positive?
+      end
+
+      # Check that resources to hydrate are of this class, whose endpoint looks them up
+      # @api private
+      # @param resources [Array<Resource>] the resources
+      # @return [void]
+      # @raise [ArgumentError] if a resource is not of this class
+      def validate_class!(resources)
+        foreign = resources.grep_v(self).first
+        raise ArgumentError, format(FOREIGN_RESOURCE, self, self, foreign.class) unless foreign.nil?
       end
 
       # Pass the problems a response body reports to a block, if there is one
