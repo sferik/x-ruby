@@ -43,6 +43,9 @@ module X
 
       # Attach uploaded subtitles to an uploaded video
       #
+      # Subtitles attached twice are attached once, as the track of their language, so they are sent again after a
+      # server or network error, as alt text is, up to the max_retries of the client.
+      #
       # @api public
       # @param video [UploadedMedia, Hash, String, Integer] the uploaded video, or its media identifier
       # @param subtitles [UploadedMedia, Hash, String, Integer] the uploaded .srt file, or its media identifier
@@ -66,7 +69,7 @@ module X
       def add_subtitles(video, subtitles, language_code, client:, display_name: nil, media_category: SUBTITLED_MEDIA_CATEGORY)
         track = {id: Utils.media_id(subtitles), language_code: language_code.upcase, display_name:}.compact
         body = {id: Utils.media_id(video), media_category: Utils.subtitled_media_category(media_category), subtitles: track}
-        client.post("media/subtitles", body, **JSON_CLASSES)&.fetch("data") { raise MissingData, NO_METADATA }
+        Utils.sending_again(client) { client.post("media/subtitles", body, **JSON_CLASSES) }&.fetch("data") { raise MissingData, NO_METADATA }
       end
     end
   end
