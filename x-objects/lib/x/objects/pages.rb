@@ -166,7 +166,9 @@ module X
 
       # The query parameters of a page, asking for no more than the resources wanted
       #
-      # A cursor over an endpoint without a page size asks for the page as it is.
+      # A cursor over an endpoint without a page size asks for the page as it is. The page size is raised to the
+      # smallest the endpoint accepts, but never past the max_results the cursor was given, so a max_results below
+      # that smallest page is sent as it was given, for the API to refuse, as an iteration sends it.
       #
       # @api private
       # @param params [Hash{String => Object}] the query parameters of the page
@@ -176,7 +178,7 @@ module X
         maximum = params["max_results"]
         return params if maximum.nil?
 
-        params.merge("max_results" => wanted.clamp(@cursor.min_results, Integer(maximum)))
+        params.merge("max_results" => [wanted, @cursor.min_results].max.clamp(..Integer(maximum)))
       end
 
       # Fetch a page in a background thread; errors resurface when the page is requested

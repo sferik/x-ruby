@@ -48,6 +48,14 @@ module X
       assert_equal 5, @user.posts.min_results
     end
 
+    def test_first_rises_no_higher_than_the_max_results_the_cursor_was_given
+      @client.stub(:get, "users/1/tweets", {"data" => (1..3).map { |id| {"id" => id.to_s} }})
+      posts = @user.posts(max_results: 3)
+
+      assert_equal [[1], 1, true], [posts.first(1).map(&:id), posts.take(1).size, posts.any?]
+      assert_equal ["3"], @client.queries.map { |query| query["max_results"] }.uniq
+    end
+
     def test_the_minimum_page_size_of_searches
       searches = [Post.search("ruby", client: @client), Post.search_all("ruby", client: @client), Community.search("ruby", client: @client)]
 
