@@ -87,6 +87,32 @@ module X
     #   X::Media.find(uploaded, client: client)
     def self.find(media, client:, **params) = super(key_of(media), client:, **params)
 
+    # Look up media by media key, which must exist
+    #
+    # The error it raises names the media key looked up, whether a media key, what an upload returned, or media was
+    # given.
+    #
+    # @api public
+    # @param media [#media_key, String, Media] the media key, what an upload returned, or media
+    # @param client [Object] the client used to make the request
+    # @param params [Hash] query parameters merged over the default parameters
+    # @return [Media] the media
+    # @raise [MissingResource] if the media was not found
+    # @example Look up what an upload returned
+    #   X::Media.find!(uploaded, client: client)
+    def self.find!(media, client:, **params) = super(key_of(media), client:, **params)
+
+    # Refer to media by media key without a request
+    #
+    # @api public
+    # @param media [#media_key, String, Media] the media key, what an upload returned, or media
+    # @param client [Object, nil] the client used to fetch the media
+    # @param batch [Batch, nil] the batch the stub hydrates with, in one lookup for every stub of the batch
+    # @return [Media] a stub that hydrates to the full media
+    # @example Refer to what an upload returned
+    #   X::Media.from_id(uploaded, client: client).hydrate.url
+    def self.from_id(media, client: nil, batch: nil) = super(key_of(media), client:, batch:)
+
     # Look up many media by media key, in parallel batches
     #
     # @api public
