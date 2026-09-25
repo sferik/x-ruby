@@ -98,7 +98,8 @@ module X
     # @param headers [Hash{String => String}] headers sent with every request the client makes, as defaults: a
     #   header of the same name passed to a request is sent in place of one of these, and each of these is sent in
     #   place of a default of the gem, such as its User-Agent
-    # @param max_redirects [Integer] the maximum number of redirects to follow
+    # @param max_redirects [Integer] the maximum number of redirects to follow, beyond which a redirect raises
+    #   TooManyRedirects; 0 follows none, and raises for each redirect that could be followed
     # @param max_rate_limit_retries [Integer] the maximum number of times to retry a request refused for a rate limit,
     #   after waiting for the limit to reset
     # @param max_rate_limit_wait [Integer] the maximum number of seconds to wait for a rate limit to reset; a request

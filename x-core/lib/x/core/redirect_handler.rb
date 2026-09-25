@@ -64,7 +64,9 @@ module X
       # host it is redirected to, whatever its origin.
       #
       # A redirect that cannot be followed, such as 304 Not Modified or one whose location is missing, is not a
-      # valid URL, or is not an HTTP or HTTPS URL, is returned as it is, so that the client raises an HTTPError for it.
+      # valid URL, or is not an HTTP or HTTPS URL, is returned as it is, so that the client raises an HTTPError for it,
+      # however many redirects were followed before it. A redirect that can be followed once max_redirects have been
+      # raises TooManyRedirects, so a max_redirects of 0 follows none, and raises for every one that could be.
       #
       # @api private
       # @param response [Net::HTTPResponse] the HTTP response to handle
@@ -78,11 +80,11 @@ module X
       #   response = handler.handle(response: resp, request: req)
       def handle(response:, request:, headers: {}, authenticator: Authenticator.new, redirect_count: 0)
         return response unless response.is_a?(Net::HTTPRedirection)
-        raise TooManyRedirects, "Too many redirects" if redirect_count >= max_redirects
 
         uri = request.uri #: URI::Generic
         new_uri = build_new_uri(response, uri)
         return response if new_uri.nil?
+        raise TooManyRedirects, "Too many redirects" if redirect_count >= max_redirects
 
         authenticator, headers = Origin.credentials_for(from: uri, to: new_uri, authenticator:, headers:)
         new_request = build_request(request, new_uri, Integer(response.code), headers, authenticator)

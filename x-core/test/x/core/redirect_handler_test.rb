@@ -112,6 +112,20 @@ module X
       assert_requested :get, "http://example.com/some_path", times: Core::RedirectHandler::DEFAULT_MAX_REDIRECTS
     end
 
+    def test_a_max_redirects_of_zero_follows_no_redirect
+      handler = Core::RedirectHandler.new(max_redirects: 0)
+
+      assert_raises(TooManyRedirects) { handler.handle(response: redirect_to("http://example.com/2"), request: Net::HTTP::Get.new(URI("http://example.com/"))) }
+      assert_not_requested :get, "http://example.com/2"
+    end
+
+    def test_a_redirect_that_cannot_be_followed_is_returned_however_many_were_followed
+      not_modified = Net::HTTPNotModified.new("1.1", "304", "Not Modified")
+      handler = Core::RedirectHandler.new(max_redirects: 0)
+
+      assert_same not_modified, handler.handle(response: not_modified, request: Net::HTTP::Get.new(URI("http://example.com/")))
+    end
+
     def test_handle_beyond_max_redirects
       request = Net::HTTP::Get.new(URI("http://example.com/some_path"))
       response = Net::HTTPFound.new("1.1", "302", "Found")
