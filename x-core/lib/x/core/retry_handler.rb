@@ -3,6 +3,7 @@
 require_relative "errors/http_error"
 require_relative "errors/network_error"
 require_relative "errors/server_error"
+require_relative "setting_validator"
 
 module X
   module Core
@@ -35,10 +36,11 @@ module X
       # @api private
       # @param max_retries [Integer] the maximum number of times to send an idempotent request again
       # @return [RetryHandler] a new instance
+      # @raise [ArgumentError] if the maximum number of retries is not an Integer of at least 0
       # @example Create a handler that sends a failed request twice more
       #   handler = X::Core::RetryHandler.new(max_retries: 2)
       def initialize(max_retries: DEFAULT_MAX_RETRIES)
-        @max_retries = max_retries
+        @max_retries = SettingValidator.count!(:max_retries, max_retries)
       end
 
       # Run a request, running it again after a failure of the API or of the network

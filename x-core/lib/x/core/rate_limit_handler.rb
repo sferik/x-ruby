@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative "errors/too_many_requests"
+require_relative "setting_validator"
 
 module X
   module Core
@@ -40,11 +41,13 @@ module X
       # @param max_rate_limit_retries [Integer] the maximum number of times to retry a request refused for a rate limit
       # @param max_rate_limit_wait [Integer] the maximum number of seconds to wait for a rate limit to reset
       # @return [RateLimitHandler] a new instance
+      # @raise [ArgumentError] if the maximum number of retries is not an Integer of at least 0, or the maximum wait
+      #   is not a number of seconds of at least 0
       # @example Create a rate limit handler
       #   handler = X::Core::RateLimitHandler.new(max_rate_limit_retries: 3)
       def initialize(max_rate_limit_retries: DEFAULT_MAX_RETRIES, max_rate_limit_wait: DEFAULT_MAX_WAIT)
-        @max_rate_limit_retries = max_rate_limit_retries
-        @max_rate_limit_wait = max_rate_limit_wait
+        @max_rate_limit_retries = SettingValidator.count!(:max_rate_limit_retries, max_rate_limit_retries)
+        @max_rate_limit_wait = SettingValidator.seconds!(:max_rate_limit_wait, max_rate_limit_wait)
       end
 
       # Run a request, running it again after a rate limit resets

@@ -335,6 +335,20 @@ module X
       def headers: () -> Hash[String, String]
     end
 
+    module SettingValidator
+      INVALID_COUNT: String
+      INVALID_COUNT_OR_INFINITY: String
+      INVALID_SECONDS: String
+      extend SettingValidator
+
+      def count!: (Symbol name, untyped value) -> untyped
+      def count_or_infinity!: (Symbol name, untyped value) -> untyped
+      def seconds!: (Symbol name, untyped value) -> untyped
+
+      private
+      def count?: (untyped value) -> bool
+    end
+
     module CredentialValidator
       INCOMPLETE_CREDENTIALS: String
       INVALID_EXPIRES_AT: String

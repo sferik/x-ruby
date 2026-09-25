@@ -5,6 +5,7 @@ require_relative "errors/invalid_response"
 require_relative "errors/network_error"
 require_relative "errors/server_error"
 require_relative "errors/too_many_requests"
+require_relative "setting_validator"
 
 module X
   module Core
@@ -50,10 +51,12 @@ module X
       # @api private
       # @param max_reconnects [Integer, Float] the maximum number of reconnects in a row, or Float::INFINITY
       # @return [ReconnectHandler] a new instance
+      # @raise [ArgumentError] if the maximum number of reconnects is neither an Integer of at least 0 nor
+      #   Float::INFINITY
       # @example Create a reconnect handler
       #   handler = X::Core::ReconnectHandler.new(max_reconnects: 5)
       def initialize(max_reconnects: DEFAULT_MAX_RECONNECTS)
-        @max_reconnects = max_reconnects
+        @max_reconnects = SettingValidator.count_or_infinity!(:max_reconnects, max_reconnects)
       end
 
       # Run a stream, running it again whenever it drops

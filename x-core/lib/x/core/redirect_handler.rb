@@ -7,6 +7,7 @@ require_relative "connection"
 require_relative "errors/too_many_redirects"
 require_relative "origin"
 require_relative "request_builder"
+require_relative "setting_validator"
 
 module X
   module Core
@@ -47,13 +48,14 @@ module X
       # @param request_builder [RequestBuilder] the request builder for creating requests
       # @param max_redirects [Integer] the maximum number of redirects to follow
       # @return [RedirectHandler] a new instance
+      # @raise [ArgumentError] if the maximum number of redirects is not an Integer of at least 0
       # @example Create a redirect handler
       #   handler = X::Core::RedirectHandler.new(connection: conn, request_builder: builder)
       def initialize(connection: Connection.new, request_builder: RequestBuilder.new,
         max_redirects: DEFAULT_MAX_REDIRECTS)
         @connection = connection
         @request_builder = request_builder
-        @max_redirects = max_redirects
+        @max_redirects = SettingValidator.count!(:max_redirects, max_redirects)
       end
 
       # Handle redirects for an HTTP response
