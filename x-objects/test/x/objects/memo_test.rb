@@ -11,6 +11,15 @@ module X
         @memo = Memo.new
       end
 
+      def test_a_value_is_stored_once_fetched_or_stored_even_nil
+        refute_predicate @memo, :stored?
+        @memo.fetch { nil }
+
+        assert_predicate @memo, :stored?
+        assert_predicate Memo.new.tap { |memo| memo.store(nil) }, :stored?
+        assert_predicate Memo.new.tap { |memo| memo.store("value") }, :stored?
+      end
+
       def test_fetch_computes_once
         calls = 0
         2.times { @memo.fetch { calls += 1 } }

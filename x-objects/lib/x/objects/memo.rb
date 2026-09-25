@@ -31,6 +31,14 @@ module X
         end
       end
 
+      # Check whether a value is stored, whether computed or stored
+      #
+      # It reads the slot without the lock, since a value, once stored, is only ever replaced by another.
+      #
+      # @api private
+      # @return [Boolean] true if the memo holds a value, which may be nil
+      def stored? = !@value.equal?(UNSET)
+
       # Store a value, replacing any memoized value
       #
       # @api private

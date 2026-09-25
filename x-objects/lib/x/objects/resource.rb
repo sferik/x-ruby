@@ -357,6 +357,15 @@ module X
     # @return [Resource, nil] the resource that was stored
     def hydrated_with(resource) = @memo.store(resource)
 
+    # Check whether hydrate would return what it stored, at the cost of no request
+    #
+    # Internal to the object layer: hydrate_all calls it with __send__, so that it looks up no resource that a
+    # lookup of many, or hydrate, already found.
+    #
+    # @api private
+    # @return [Boolean] true if hydrate or a lookup of many stored the full resource, or that it no longer exists
+    def hydration_stored? = @memo.stored?
+
     # Read the identifier once, at the point the resource is made
     #
     # Attributes that hold no identifier, or hold one the API could not have given, would otherwise raise from a

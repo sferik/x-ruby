@@ -169,6 +169,7 @@ module X
 
       def initialize: () -> void
       def fetch: () { () -> untyped } -> untyped
+      def stored?: () -> bool
       def store: (untyped value) -> untyped
     end
 
@@ -315,10 +316,11 @@ module X
       def client_for: (_Client client) -> _Client
 
       private
-      def replacer: (Array[Resource] found, full: bool) -> ^(Resource) -> Resource?
+      def replacer: (Array[Resource] found, Hash[Symbol, untyped] params) -> ^(Resource) -> Resource?
       def get: (String path, client: _Client, query: Hash[String, untyped]) -> body
       def lookup_in_batches: (String path, Symbol key, Array[String] values, client: _Client, concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[Resource]
       def in_order_of: (Array[Resource] resources, Array[String] ids) -> Array[Resource]
+      def settled?: (Resource resource) -> bool
       def validate_concurrency!: (Integer concurrency) -> void
       def reporting: (body body) ?{ (Problem problem) -> void } -> body
     end
@@ -605,6 +607,7 @@ module X
 
     private
     def hydrated_with: (Resource? resource) -> Resource?
+    def hydration_stored?: () -> bool
     def identify: () -> String
     def fetch: () -> Resource?
     def look_up: () -> Resource?

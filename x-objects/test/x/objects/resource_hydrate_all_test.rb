@@ -36,7 +36,9 @@ module X
       def test_hydrate_all_drops_stubs_that_are_not_found
         @client.stub(:get, "users", {"data" => [{"id" => "3", "username" => "user3"}]})
 
-        assert_equal %w[user3], User.hydrate_all([User.from_id(2), User.from_id(3)], client: @client).map(&:username)
+        stubs = [User.from_id(2), User.from_id(3)]
+
+        assert_equal [%w[user3]] * 2, Array.new(2) { User.hydrate_all(stubs, client: @client).map(&:username) }
       end
 
       def test_hydrate_all_drops_nil

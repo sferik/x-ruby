@@ -64,7 +64,9 @@ module X
       # even for a resource that cannot be looked up in batches. What was found is stored in each original, so
       # hydrating one of them afterwards costs no request, unless params override a default field or expansion
       # parameter: what such a lookup found is not the full resource, so it is returned without being stored, and
-      # hydrating an original fetches the full resource.
+      # hydrating an original fetches the full resource. A resource that holds what hydrate returns, because hydrate
+      # or an earlier hydrate_all stored it, is replaced with that, and looked up again by no request, since the API
+      # bills each resource a lookup returns.
       #
       # @api public
       # @param resources [Array<Resource, nil>] the resources, some of which may not be hydrated, and some nil
@@ -78,12 +80,12 @@ module X
       # @example Expand the authors a search did not include
       #   X::User.hydrate_all(posts.map(&:author), client: client)
       def hydrate_all(resources, client:, concurrency: DEFAULT_CONCURRENCY, **params, &)
-        resources = resources.compact.freeze
-        partial = resources.reject(&:hydrated?)
-        return resources if partial.empty?
+        resources = resources.compact
+        partial = resources.reject { |resource| settled?(resource) }
+        return resources.filter_map(&:hydrate).freeze if partial.empty?
 
-        replace = replacer(find_all(partial, client:, concurrency:, **params, &), full: fully_requested_by?(Utils.merge_params(default_params, params)))
-        resources.filter_map { |resource| resource.hydrated? ? resource : replace.call(resource) }.freeze
+        replace = replacer(find_all(partial, client:, concurrency:, **params, &), params)
+        resources.filter_map { |resource| settled?(resource) ? resource.hydrate : replace.call(resource) }.freeze
       end
 
       # Look up many resources by identifier, in parallel batches, once each
@@ -169,11 +171,11 @@ module X
       #
       # @api private
       # @param found [Array<Resource>] the resources the lookup found
-      # @param full [Boolean] whether the lookup asked for every field and expansion by default
+      # @param params [Hash] the query parameters the lookup was given, merged over the default parameters
       # @return [Proc] a callable passed a resource that is not hydrated, which returns what replaces it, or nil
-      def replacer(found, full:)
+      def replacer(found, params)
         by_id = found.to_h { |resource| [resource.id, resource] }
-        return ->(resource) { by_id[resource.id] } unless full
+        return ->(resource) { by_id[resource.id] } unless fully_requested_by?(Utils.merge_params(default_params, params))
 
         ->(resource) { resource.__send__(:hydrated_with, by_id[resource.id]) }
       end
@@ -221,6 +223,12 @@ module X
         by_id = resources.to_h { |resource| [resource.id, resource] }
         ids.filter_map { |id| by_id[convert.call(id)] }.uniq.freeze
       end
+
+      # Check whether hydrating a resource costs no request
+      # @api private
+      # @param resource [Resource] the resource
+      # @return [Boolean] true if the resource is hydrated, or holds what hydrate returns
+      def settled?(resource) = resource.hydrated? || resource.__send__(:hydration_stored?)
 
       # Check that a number of batches to look up at once is at least one
       # @api private
