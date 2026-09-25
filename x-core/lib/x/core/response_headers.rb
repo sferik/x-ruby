@@ -2,7 +2,7 @@
 
 module X
   module Core
-    # The headers of a response, read from the response it holds, included into Response and HTTPError
+    # The headers of a response, read from the response it holds, included into Response, HTTPError, and InvalidResponse
     #
     # Internal to x-core: it gives a summary of a response, and the error of a failed one, the same headers.
     #

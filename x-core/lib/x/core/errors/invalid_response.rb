@@ -2,18 +2,28 @@
 
 require_relative "error"
 require_relative "../request_context"
+require_relative "../response_headers"
 
 module X
   # Error raised for a successful response whose body is not JSON, such as the page of a proxy or captive portal
+  #
+  # It reads the response as X::HTTPError reads one: the status is {#status}, the headers are {#headers}, and the
+  # body is {#body}.
+  #
   # @api public
   class InvalidResponse < Error
     include Core::RequestContext
+    include Core::ResponseHeaders
 
-    # The HTTP response
+    # The response itself, as the client received it
+    #
+    # It is an escape hatch, for what the error does not read: the status is {#status}, the headers are
+    # {#headers}, and the body is {#body}. It is the Net::HTTP response the client sent the request with.
+    #
     # @api public
     # @return [Net::HTTPResponse] the HTTP response
-    # @example Read the status of the response
-    #   error.http_response.code
+    # @example Read the reason phrase of the status line
+    #   error.http_response.message # => "OK"
     attr_reader :http_response
 
     # The body that is not JSON: the whole body of a response, or the line of a stream
@@ -46,5 +56,13 @@ module X
       @http_response = http_response
       @body = body
     end
+
+    # The HTTP status code, as an Integer like X::Response#status
+    #
+    # @api public
+    # @return [Integer] the HTTP status code
+    # @example Tell the page of a proxy from a response of the API
+    #   error.status # => 200
+    def status = Integer(http_response.code)
   end
 end

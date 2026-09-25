@@ -565,11 +565,13 @@ module X
 
   class InvalidResponse < Error
     include Core::RequestContext
+    include Core::ResponseHeaders
 
     attr_reader http_response: Net::HTTPResponse
     attr_reader body: String?
 
     def initialize: (http_response: Net::HTTPResponse, ?body: String?, ?request: Net::HTTPRequest?) -> void
+    def status: () -> Integer
   end
 
   class TooManyRequests < ClientError
