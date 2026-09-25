@@ -3,6 +3,7 @@
 require "uri"
 require_relative "connection"
 require_relative "origin"
+require_relative "problem"
 require_relative "proxy_setting"
 require_relative "reconnect_handler"
 require_relative "request_builder"
@@ -48,13 +49,11 @@ module X
     private_constant :NO_BLOCK_MESSAGE
     # The endpoint that reads and changes the rules the filtered stream matches posts against
     RULES_ENDPOINT = "tweets/search/stream/rules"
-    private_constant :RULES_ENDPOINT
     # The message of the error raised for something that is neither a rule nor the identifier of one
     NOT_A_RULE = "a rule is a Hash holding an id or a value, the value it matches, or its identifier, not %s"
-    private_constant :NOT_A_RULE
     # The message of the error raised for something that is neither a rule to add nor the value one matches
     NOT_A_RULE_TO_ADD = "a rule to add is a Hash holding a value, or the value it matches, not %s"
-    private_constant :NOT_A_RULE_TO_ADD
+    private_constant :RULES_ENDPOINT, :NOT_A_RULE, :NOT_A_RULE_TO_ADD
     # The classes the rules endpoints parse into, whatever parsing classes the client defaults to
     JSON_CLASSES = {array_class: Array, object_class: Hash}.freeze
     private_constant :JSON_CLASSES
@@ -183,10 +182,11 @@ module X
     # The rules the filtered stream matches posts against
     #
     # The rules of an app are read, added, and deleted through a streaming client because they belong to the stream:
-    # they are what the filtered stream delivers, and they take the app-only authentication a stream takes.
+    # they are what the filtered stream delivers, and they take the app-only authentication a stream takes. The API
+    # returns the rules a page at a time, and every page is read, so the rules are all of them.
     #
     # @api public
-    # @param params [Hash, nil] query parameters appended to the endpoint
+    # @param params [Hash, nil] query parameters appended to the endpoint of each page
     # @return [Array<Hash>] the rules, each holding its id, value, and tag, empty if the app has none
     # @raise [UnsupportedOperation] if the client authenticates with OAuth 2.0 as a user and holds no credentials of
     #   the app
@@ -196,7 +196,9 @@ module X
     # @example Read two rules by identifier
     #   streaming_client.stream_rules(params: {ids: "1,2"})
     def stream_rules(params: nil)
-      rules_of(app_client.get(RULES_ENDPOINT, params:, **JSON_CLASSES))
+      body = app_client.get(RULES_ENDPOINT, params:, **JSON_CLASSES)
+      token = body.to_h.dig("meta", "next_token")
+      rules_of(body) + (token ? stream_rules(params: params.to_h.merge(pagination_token: token)) : [])
     end
 
     # Add rules for the filtered stream to match posts against
@@ -205,23 +207,32 @@ module X
     # rule without a tag. No rules add none, and send no request. Anything else raises before a request, as it does
     # for delete_stream_rules.
     #
+    # The API adds the rules it can and reports the rest, such as a rule the app already has, as errors of a
+    # response that otherwise succeeds. The rules that were added are returned, and each rule that was not is
+    # yielded as the Problem the API reported, as a finder of x-objects yields the problems of a lookup.
+    #
     # @api public
     # @param rules [Array<Hash, String>, Hash, String] the rules to add
     # @param dry_run [Boolean] true to have the API check the rules and add none of them
+    # @yieldparam problem [Problem] each rule the API did not add, and why, such as a DuplicateRule
     # @return [Array<Hash>] the rules that were added, each holding the id the API gave it, empty if none were given
     # @raise [ArgumentError] if something is neither a Hash that holds a value nor a String
     # @raise [UnsupportedOperation] if the client authenticates with OAuth 2.0 as a user and holds no credentials of
     #   the app
-    # @raise [HTTPError] if the API refuses a rule, which adds none of them
+    # @raise [HTTPError] if the API refuses the request, which adds none of the rules
     # @example Add a rule with a tag
     #   streaming_client.add_stream_rules({value: "ruby -is:retweet", tag: "ruby"})
     # @example Check rules without adding them
     #   streaming_client.add_stream_rules(["ruby", "crystal"], dry_run: true)
+    # @example Report the rules that were not added
+    #   streaming_client.add_stream_rules(%w[ruby crystal]) { |problem| warn "#{problem.value}: #{problem.title}" }
     def add_stream_rules(rules, dry_run: false)
       rules = each_rule(rules)
       return [] if rules.empty?
 
-      rules_of(change_rules({add: rules.map { |rule| rule_to_add(rule) }}, dry_run:))
+      body = change_rules({add: rules.map { |rule| rule_to_add(rule) }}, dry_run:)
+      Problem.all_from(body).each { |problem| yield problem } if block_given?
+      rules_of(body)
     end
 
     # Delete rules of the filtered stream

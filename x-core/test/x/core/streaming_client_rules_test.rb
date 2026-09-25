@@ -46,6 +46,21 @@ module X
       assert_equal [RUBY_RULE], @streaming_client.stream_rules(params: {ids: 1})
     end
 
+    def test_every_page_of_the_rules_is_read
+      crystal = {"id" => "2", "value" => "crystal"}
+      stub_rules({"data" => [RUBY_RULE], "meta" => {"next_token" => "PAGE2"}}, url: "#{RULES_URL}?ids=1,2&max_results=1")
+      stub_rules({"data" => [crystal], "meta" => {"result_count" => 1}}, url: "#{RULES_URL}?ids=1,2&max_results=1&pagination_token=PAGE2")
+
+      assert_equal [RUBY_RULE, crystal], @streaming_client.stream_rules(params: {ids: "1,2", max_results: 1})
+    end
+
+    def test_every_page_of_the_rules_is_read_without_query_parameters
+      stub_rules({"data" => [RUBY_RULE], "meta" => {"next_token" => "PAGE2"}})
+      stub_rules({"meta" => {"result_count" => 0}}, url: "#{RULES_URL}?pagination_token=PAGE2")
+
+      assert_equal [RUBY_RULE], @streaming_client.stream_rules
+    end
+
     def test_the_rules_are_hashes_whatever_the_client_parses_into
       stub_rules({"data" => [RUBY_RULE]})
       streaming_client = Client.new(bearer_token: TEST_BEARER_TOKEN, default_object_class: OpenStruct).streaming
@@ -71,6 +86,16 @@ module X
       stub_rules({"data" => [RUBY_RULE]}, method: :post, url: "#{RULES_URL}?dry_run=true")
 
       assert_equal [RUBY_RULE], @streaming_client.add_stream_rules("ruby", dry_run: true)
+    end
+
+    def test_adding_rules_some_of_which_the_api_does_not_add
+      duplicate = {"value" => "crystal", "id" => "2", "title" => "DuplicateRule", "type" => "https://api.x.com/2/problems/duplicate-rules"}
+      stub_rules({"data" => [RUBY_RULE], "errors" => [duplicate], "meta" => {"summary" => {"created" => 1, "not_created" => 1}}}, method: :post)
+      problems = []
+
+      assert_equal [RUBY_RULE], @streaming_client.add_stream_rules(%w[ruby crystal]) { |problem| problems << problem }
+      assert_equal [["crystal", "DuplicateRule"]], problems.map { |problem| [problem.value, problem.title] }
+      assert_equal [RUBY_RULE], @streaming_client.add_stream_rules(%w[ruby crystal])
     end
 
     def test_adding_rules_the_api_reports_nothing_for
