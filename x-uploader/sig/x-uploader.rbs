@@ -212,6 +212,7 @@ module X
       def validate_alt_text!: (String? alt_text) -> nil
       def validate_media_category!: (String | Symbol media_category) -> String
       def validate_chunks!: (chunk_size_mb: (Float | Integer)?, concurrency: Integer) -> nil
+      def positive_number?: (untyped value) -> bool
       def validate_processing_timeout!: (untyped processing_timeout) -> nil
       def validate_segments!: (Source source, (Float | Integer)? chunk_size_mb) -> Integer
     end

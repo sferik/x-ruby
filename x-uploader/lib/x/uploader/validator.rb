@@ -111,18 +111,28 @@ module X
 
       # Validate the chunk size and concurrency of a chunked upload
       #
+      # Anything that is not a number, such as a String read from an environment variable, raises ArgumentError too,
+      # rather than NoMethodError from the check.
+      #
       # @api private
       # @param chunk_size_mb [Float, Integer, nil] the size of each chunk in megabytes, which must be positive, or
       #   nil for a chunk size derived from the file
       # @param concurrency [Integer] the number of chunks uploaded at once, which must be at least one
       # @return [void]
-      # @raise [ArgumentError] if the chunk size is not positive or the concurrency is less than one
+      # @raise [ArgumentError] if the chunk size is not a positive number, or the concurrency is not an Integer of at
+      #   least one
       # @example Validate the options of a chunked upload
       #   Uploader::Validator.validate_chunks!(chunk_size_mb: 4, concurrency: 2)
       def validate_chunks!(chunk_size_mb:, concurrency:)
-        raise ArgumentError, "chunk_size_mb must be positive, not #{chunk_size_mb}" unless chunk_size_mb.nil? || chunk_size_mb.positive?
-        raise ArgumentError, "concurrency must be an Integer of at least 1, not #{concurrency}" unless concurrency.integer? && concurrency.positive?
+        raise ArgumentError, "chunk_size_mb must be a positive number, not #{chunk_size_mb.inspect}" unless chunk_size_mb.nil? || positive_number?(chunk_size_mb)
+        raise ArgumentError, "concurrency must be an Integer of at least 1, not #{concurrency.inspect}" unless concurrency.instance_of?(Integer) && concurrency.positive?
       end
+
+      # Check whether a value is a real number above zero
+      # @api private
+      # @param value [Object] the value
+      # @return [Boolean] true if the value is a positive real number
+      def positive_number?(value) = value.is_a?(Numeric) && value.real? && value.positive?
 
       # Validate the seconds to wait for media to process
       #
