@@ -16,6 +16,7 @@ module X
 
       def self.for: (uploadable media) -> Source
       def self.named_or_read: (untyped media) -> Source
+      def self.path_alone?: (untyped media) -> bool
       def self.on_file?: (untyped media) -> bool
       def self.buffered: (untyped media) -> Buffer
       def self.position_of: (untyped media) -> Integer?

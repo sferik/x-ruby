@@ -44,10 +44,11 @@ module X
 
       # The source of media given as a path that is not a String, or as an IO
       #
-      # A path, such as a Pathname, which cannot seek, is read from the file it names, and an IO open on a file, which
-      # can, through that IO. Any other IO is read to its end, such as a StringIO, or a pipe, whose path is nil, or
-      # $stdin, whose path is "<STDIN>" whether it reads a pipe, a terminal, or a file: an IO whose path names
-      # something that is not a file or a directory, such as a pipe, cannot be read by position, as a file is.
+      # A path, such as a Pathname, which cannot seek, is read from the file it names, as is a File or a Tempfile that
+      # was closed, which can no longer be read through, and an IO open on a file, which can, through that IO. Any
+      # other IO is read to its end, such as a StringIO, or a pipe, whose path is nil, or $stdin, whose path is
+      # "<STDIN>" whether it reads a pipe, a terminal, or a file: an IO whose path names something that is not a file
+      # or a directory, such as a pipe, cannot be read by position, as a file is.
       #
       # @api private
       # @param media [Pathname, IO, StringIO, Object] the path or the IO
@@ -55,7 +56,7 @@ module X
       # @raise [ArgumentError] if the media is neither a path nor an IO
       def self.named_or_read(media)
         named = media.respond_to?(:to_path)
-        if named && !media.respond_to?(:seek)
+        if named && path_alone?(media)
           Path.new(media)
         elsif named && media.to_path && on_file?(media)
           Handle.new(media)
@@ -66,6 +67,13 @@ module X
         end
       end
       private_class_method :named_or_read
+
+      # Check whether media that names a file can be read from that name alone
+      # @api private
+      # @param media [Pathname, IO] the path, or the IO, which has a path
+      # @return [Boolean] true if the media cannot seek, as a path cannot, or is an IO that was closed
+      def self.path_alone?(media) = !media.respond_to?(:seek) || (media.respond_to?(:closed?) && media.closed?)
+      private_class_method :path_alone?
 
       # Check whether an IO is open on a file or a directory, which a Handle reads
       # @api private
