@@ -54,6 +54,14 @@ module X
       assert_same copy_connection(copy), connections_of_refreshes { copy.get("users/me") }.first
     end
 
+    def test_requests_an_endpoint_always_rejects_spend_one_refresh_between_them
+      stub_request(:get, "https://api.x.com/2/users/me").to_return(status: 401)
+      client = Client.new(**test_oauth2_credentials)
+
+      3.times { assert_raises(Unauthorized) { client.with.get("users/me") } }
+      assert_requested :post, "https://api.x.com/2/oauth2/token", times: 1
+    end
+
     def test_a_copy_given_the_credentials_the_authenticator_holds_shares_it
       client = Client.new(**test_oauth2_credentials)
       copy = client.with(client_id: TEST_CLIENT_ID, access_token: TEST_ACCESS_TOKEN)

@@ -722,6 +722,7 @@ module X
     TOKEN_URL: String
     EXPIRATION_BUFFER: Integer
     DEFAULT_ERROR_MESSAGE: String
+    FRESH_TOKEN_SECONDS: Integer
 
     attr_reader client_id: String
     attr_reader access_token: String
@@ -730,6 +731,7 @@ module X
     attr_reader connection: Connection
     attr_reader on_token_refresh: _TokenRefreshHook?
     @mutex: Thread::Mutex
+    @refreshed_at: Float?
     def initialize: (client_id: String, access_token: String, refresh_token: String, ?client_secret: String?, ?expires_at: Time?, ?connection: Connection, ?on_token_refresh: _TokenRefreshHook?) -> void
     def header: (Net::HTTPRequest? request) -> Hash[String, String]
     def same_credentials?: (untyped other) -> bool
@@ -750,6 +752,7 @@ module X
     def report_refresh: -> void
     def oauth2_client: -> SimpleOAuth::OAuth2::Client
     def update_tokens: (SimpleOAuth::OAuth2::Token token) -> void
+    def fresh?: () -> bool
   end
 
   interface _ClientRegistry

@@ -333,6 +333,25 @@ module X
       assert_not_requested @refresh
     end
 
+    def test_refresh_rejected_token_skips_a_token_a_refresh_just_issued
+      authenticator = OAuth2Authenticator.new(**test_oauth2_credentials)
+      authenticator.send(:refresh_rejected_token!, TEST_ACCESS_TOKEN, authenticator.connection)
+
+      refute authenticator.send(:refresh_rejected_token!, "NEW_ACCESS_TOKEN", authenticator.connection)
+      assert_requested @refresh, times: 1
+    end
+
+    def test_refresh_rejected_token_refreshes_a_token_a_refresh_issued_a_minute_ago
+      authenticator = OAuth2Authenticator.new(**test_oauth2_credentials)
+      now = 1_000.0 # a clock that reads exact seconds, so a minute after it is exactly 60 seconds on
+      Process.stub(:clock_gettime, now) { authenticator.send(:refresh_rejected_token!, TEST_ACCESS_TOKEN, authenticator.connection) }
+
+      refute Process.stub(:clock_gettime, now + 59.9) { authenticator.send(:refresh_rejected_token!, "NEW_ACCESS_TOKEN", authenticator.connection) }
+      Process.stub(:clock_gettime, now + 60) { authenticator.send(:refresh_rejected_token!, "NEW_ACCESS_TOKEN", authenticator.connection) }
+
+      assert_requested @refresh, times: 2
+    end
+
     def test_refresh_rejected_token_reports_a_refresh_that_returned_the_same_token
       stub_request(:post, TOKEN_URL).to_return(status: 200, body: {access_token: TEST_ACCESS_TOKEN}.to_json)
       authenticator = OAuth2Authenticator.new(**test_oauth2_credentials)

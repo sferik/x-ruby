@@ -24,6 +24,9 @@ module X
     # The message raised when the token endpoint describes no reason for the failure
     DEFAULT_ERROR_MESSAGE = "Token refresh failed"
     private_constant :DEFAULT_ERROR_MESSAGE
+    # Seconds after a refresh in which a rejection of the access token it issued refreshes nothing
+    FRESH_TOKEN_SECONDS = 60
+    private_constant :FRESH_TOKEN_SECONDS
 
     # The OAuth 2.0 client ID
     # @api public
@@ -196,9 +199,12 @@ module X
       report_refresh if refreshed
     end
 
-    # Refresh an access token the API rejected, unless it was already replaced
+    # Refresh a rejected access token, unless it was already replaced or just issued
     #
-    # Requests that were sent with the same token, and rejected together, refresh it once between them.
+    # Requests that were sent with the same token, and rejected together, refresh it once between them. A token
+    # issued by a refresh less than FRESH_TOKEN_SECONDS ago has not expired, so the API rejects it for another
+    # reason, which a refresh would not change: it is not refreshed, and the rejection is raised, rather than spend
+    # a refresh token on each request an endpoint that always rejects the token answers.
     #
     # @api private
     # @param rejected_token [String] the access token the API rejected
@@ -208,7 +214,7 @@ module X
     # @raise [TooManyRequests, ServerError] if the token endpoint limits the rate of the request or fails to answer
     def refresh_rejected_token!(rejected_token, connection)
       refreshed, replaced = @mutex.synchronize do
-        [(refresh(connection) if access_token.eql?(rejected_token)), !access_token.eql?(rejected_token)]
+        [(refresh(connection) if access_token.eql?(rejected_token) && !fresh?), !access_token.eql?(rejected_token)]
       end
       report_refresh if refreshed
       replaced
@@ -325,9 +331,21 @@ module X
     # @param token [SimpleOAuth::OAuth2::Token] the token the endpoint returned
     # @return [void]
     def update_tokens(token)
+      @refreshed_at = Process.clock_gettime(Process::CLOCK_MONOTONIC)
       @access_token = token.access_token
       @refresh_token = token.refresh_token if token.refresh_token
       @expires_at = token.expires_at
+    end
+
+    # Check whether a refresh issued the access token within FRESH_TOKEN_SECONDS
+    #
+    # A token the authenticator was given, rather than refreshed, may be of any age, so it is not fresh.
+    #
+    # @api private
+    # @return [Boolean] true if a refresh issued the token less than FRESH_TOKEN_SECONDS ago
+    def fresh?
+      refreshed_at = @refreshed_at
+      !refreshed_at.nil? && Process.clock_gettime(Process::CLOCK_MONOTONIC) - refreshed_at < FRESH_TOKEN_SECONDS
     end
   end
 end
