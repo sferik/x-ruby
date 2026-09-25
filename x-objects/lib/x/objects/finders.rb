@@ -72,18 +72,18 @@ module X
       # @param concurrency [Integer] the number of batch lookups made at once, which must be at least one
       # @param params [Hash] query parameters merged over the default parameters; one that overrides a default field
       #   or expansion parameter builds resources that are not hydrated, so hydrate fetches the rest
-      # @return [Array<Resource>] the resources, in order, with the ones that were not hydrated replaced
+      # @return [Array<Resource>] the resources, in order, with the ones that were not hydrated replaced, frozen
       # @raise [ArgumentError] if the concurrency is less than one
       # @yieldparam problem [Problem] each problem the API reported, such as a resource that was not found
       # @example Expand the authors a search did not include
       #   X::User.hydrate_all(posts.map(&:author), client: client)
       def hydrate_all(resources, client:, concurrency: DEFAULT_CONCURRENCY, **params, &)
-        resources = resources.compact
+        resources = resources.compact.freeze
         partial = resources.reject(&:hydrated?)
         return resources if partial.empty?
 
         replace = replacer(find_all(partial, client:, concurrency:, **params, &), full: fully_requested_by?(Utils.merge_params(default_params, params)))
-        resources.filter_map { |resource| resource.hydrated? ? resource : replace.call(resource) }
+        resources.filter_map { |resource| resource.hydrated? ? resource : replace.call(resource) }.freeze
       end
 
       # Look up many resources by identifier, in parallel batches, once each
@@ -95,7 +95,7 @@ module X
       #   request of up to MAX_BATCH_SIZE identifiers, so a lower number spends a rate limit more slowly
       # @param params [Hash] query parameters merged over the default parameters; one that overrides a default field
       #   or expansion parameter builds resources that are not hydrated, so hydrate fetches the rest
-      # @return [Array<Resource>] the resources that were found
+      # @return [Array<Resource>] the resources that were found, frozen
       # @raise [ArgumentError] if the concurrency is less than one
       # @raise [UnsupportedOperation] if the API offers no batch lookup of the resource, as it offers none for
       #   communities, lists, or direct message events, which are looked up one at a time, or no lookup at all, as it
@@ -193,15 +193,23 @@ module X
       # @param concurrency [Integer] the number of batches looked up at once
       # @param params [Hash] query parameters merged over the default parameters; one that overrides a default field
       #   or expansion parameter builds resources that are not hydrated, so hydrate fetches the rest
-      # @return [Array<Resource>] the resources that were found
+      # @return [Array<Resource>] the resources that were found, frozen
       # @raise [ArgumentError] if the concurrency is less than one
       # @yieldparam problem [Problem] each problem the responses reported
       def lookup_in_batches(path, key, values, client:, concurrency:, **params, &)
-        raise ArgumentError, format(INVALID_CONCURRENCY, concurrency) unless concurrency.integer? && concurrency.positive?
-
+        validate_concurrency!(concurrency)
         query = Utils.merge_params(default_params, params)
         bodies = Parallel.map(values.uniq.each_slice(MAX_BATCH_SIZE), concurrency:) { |batch| get(path, client:, query: query.merge(Utils.query(key => batch))) }
-        bodies.flat_map { |body| collection_from_response(reporting(body, &), client:, hydrated: fully_requested_by?(query)) }
+        bodies.flat_map { |body| collection_from_response(reporting(body, &), client:, hydrated: fully_requested_by?(query)) }.freeze
+      end
+
+      # Check that a number of batches to look up at once is at least one
+      # @api private
+      # @param concurrency [Integer] the number of batches looked up at once
+      # @return [void]
+      # @raise [ArgumentError] if the concurrency is less than one
+      def validate_concurrency!(concurrency)
+        raise ArgumentError, format(INVALID_CONCURRENCY, concurrency) unless concurrency.integer? && concurrency.positive?
       end
 
       # Pass the problems a response body reports to a block, if there is one

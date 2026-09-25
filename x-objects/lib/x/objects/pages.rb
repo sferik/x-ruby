@@ -55,7 +55,7 @@ module X
           while resources.size < count && (page = next_page(count - resources.size))
             resources.concat(page.to_a)
           end
-          resources.first(count)
+          resources.first(count).freeze
         end
       end
 

@@ -196,7 +196,7 @@ module X
     #
     # @api public
     # @param count [Integer, nil] the number of resources, or nil for the first resource alone
-    # @return [Resource, Array<Resource>, nil] the first resource, or the first resources
+    # @return [Resource, Array<Resource>, nil] the first resource, or the first resources, frozen
     # @raise [ArgumentError] if the count is negative
     # @example Read ten followers in one request for ten users
     #   user.followers.first(10)
@@ -212,7 +212,7 @@ module X
     #
     # @api public
     # @param count [Integer] the number of resources
-    # @return [Array<Resource>] the first resources
+    # @return [Array<Resource>] the first resources, frozen
     # @raise [TypeError] if the count is not a number
     # @example Read three followers in one request for three users
     #   user.followers.take(3)
@@ -294,11 +294,12 @@ module X
     # The identifiers of every resource, requesting nothing but identifiers
     #
     # @api public
-    # @return [Array<Integer, String>] the identifiers, Integers unless the resource's identifiers are not numbers
+    # @return [Array<Integer, String>] the identifiers, Integers unless the resource's identifiers are not numbers,
+    #   frozen
     # @raise [UnsupportedOperation] if the resource class has no fields parameter
     # @example Get the identifiers of every follower
     #   user.followers.ids
-    def ids = stubs.map(&:id)
+    def ids = stubs.map(&:id).freeze
 
     # Every resource of the collection, as a JSON encoder and ActiveSupport read them
     #

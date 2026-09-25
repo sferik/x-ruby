@@ -59,7 +59,7 @@ module X
       # @param concurrency [Integer] the number of batches looked up at once, which must be at least one; the
       #   identifiers and the usernames are looked up one kind after the other, each kind that many batches at a time
       # @param params [Hash] query parameters merged over the default parameters
-      # @return [Array<User>] the users that were found
+      # @return [Array<User>] the users that were found, frozen
       # @raise [ArgumentError] if the concurrency is less than one
       # @yieldparam problem [Problem] each problem the API reported, such as a user that was not found
       # @example Look up many users by username
@@ -80,7 +80,7 @@ module X
       # @param client [Object] the client used to make the requests
       # @param concurrency [Integer] the number of batches looked up at once, which must be at least one
       # @param params [Hash] query parameters merged over the default parameters
-      # @return [Array<User>] the users that were found
+      # @return [Array<User>] the users that were found, frozen
       # @raise [ArgumentError] if a value is not an identifier, or if the concurrency is less than one
       # @yieldparam problem [Problem] each problem the API reported, such as an identifier that was not found
       # @example Look up many users by identifier, read as Strings
@@ -130,7 +130,7 @@ module X
       # @param client [Object] the client used to make the requests
       # @param concurrency [Integer] the number of batches looked up at once, which must be at least one
       # @param params [Hash] query parameters merged over the default parameters
-      # @return [Array<User>] the users that were found
+      # @return [Array<User>] the users that were found, frozen
       # @raise [ArgumentError] if a value is not a username, or if the concurrency is less than one
       # @yieldparam problem [Problem] each problem the API reported, such as a username that was not found
       # @example Look up many users by username
@@ -206,10 +206,10 @@ module X
       # @api private
       # @param users [Array<User>] the users found
       # @param ids_or_usernames [Array<Integer, User, String>] the identifiers, users, and usernames asked for
-      # @return [Array<User>] the users, in the order of the first value that matches each
+      # @return [Array<User>] the users, in the order of the first value that matches each, frozen
       def in_order(users, ids_or_usernames)
         by_key = users.to_h { |user| [key_of(user), user] }.merge(users.to_h { |user| [key_of(user.username), user] })
-        ids_or_usernames.filter_map { |value| by_key[key_of(value)] }.uniq
+        ids_or_usernames.filter_map { |value| by_key[key_of(value)] }.uniq.freeze
       end
 
       # The key that matches a user to the identifier or username it was asked for by
