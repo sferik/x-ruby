@@ -107,16 +107,21 @@ module X
         object_class.from_response(JSON.parse(json), client:)
       end
 
-      private
-
-      # Create an error from a response
+      # Create the error of a response that is not successful
+      #
+      # Internal to x-core: TokenEndpoint raises it for a token request the endpoint failed to answer.
+      #
       # @api private
       # @param response [Net::HTTPResponse] the HTTP response
       # @param request [Net::HTTPRequest, nil] the request the response answers, which the error names
       # @return [HTTPError] the error
+      # @example Raise the error of a response
+      #   raise parser.error(response, request)
       def error(response, request)
         error_class(response).new(http_response: response, request:)
       end
+
+      private
 
       # Get the error class for a response, falling back on its class of status
       # @api private

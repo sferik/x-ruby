@@ -517,20 +517,37 @@ module X
       authenticator = OAuth2Authenticator.new(**test_oauth2_credentials)
 
       stub_request(:post, TOKEN_URL)
-        .to_return(status: 500, body: {}.to_json)
+        .to_return(status: 400, body: {}.to_json)
 
       error = assert_raises(AuthorizationError) { authenticator.refresh! }
-      assert_equal ["Token refresh failed", nil, 500], [error.message, error.error_code, error.status]
+      assert_equal ["Token refresh failed", nil, 400], [error.message, error.error_code, error.status]
     end
 
     def test_refresh_token_raises_on_invalid_json_response
       authenticator = OAuth2Authenticator.new(**test_oauth2_credentials)
 
       stub_request(:post, TOKEN_URL)
-        .to_return(status: 500, body: "Internal Server Error")
+        .to_return(status: 401, body: "Unauthorized")
 
       error = assert_raises(AuthorizationError) { authenticator.refresh! }
       assert_equal "Token refresh failed", error.message
+    end
+
+    def test_a_token_endpoint_that_fails_to_answer_raises_the_error_of_its_status
+      authenticator = OAuth2Authenticator.new(**test_oauth2_credentials)
+      stub_request(:post, TOKEN_URL).to_return({status: 503, body: "Service Unavailable"}, {status: 500, body: {}.to_json})
+      unavailable = assert_raises(ServiceUnavailable) { authenticator.refresh! }
+
+      assert_raises(InternalServerError) { authenticator.refresh! }
+      assert_equal [503, :post, URI(TOKEN_URL)], [unavailable.status, unavailable.http_method, unavailable.uri]
+    end
+
+    def test_a_token_endpoint_that_limits_a_refresh_raises_too_many_requests
+      authenticator = OAuth2Authenticator.new(**test_oauth2_credentials)
+      stub_request(:post, TOKEN_URL).to_return(status: 429, headers: {"Retry-After" => "7"})
+
+      assert_equal 7, assert_raises(TooManyRequests) { authenticator.refresh! }.retry_after
+      assert_equal TEST_REFRESH_TOKEN, authenticator.refresh_token
     end
   end
 

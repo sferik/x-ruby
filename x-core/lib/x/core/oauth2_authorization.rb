@@ -138,6 +138,7 @@ module X
     #   without offline.access
     # @raise [AuthorizationError] if the user denied the app, the state does not match, X refuses the code, or the
     #   redirect is not a valid URL
+    # @raise [TooManyRequests, ServerError] if the token endpoint limits the rate of the request or fails to answer
     # @example Store the credentials of the user
     #   store.save(authorization.credentials(request.url))
     def credentials(callback)
@@ -156,6 +157,7 @@ module X
     # @return [Client] a client with the user's credentials
     # @raise [AuthorizationError] if the user denied the app, the state does not match, X refuses the code, or the
     #   redirect is not a valid URL
+    # @raise [TooManyRequests, ServerError] if the token endpoint limits the rate of the request or fails to answer
     # @example Act for the user who authorized the app
     #   client = authorization.client(request.url, on_token_refresh: ->(auth) { store.save(auth.refresh_token) })
     def client(callback, **options)

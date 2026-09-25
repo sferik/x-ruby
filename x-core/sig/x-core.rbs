@@ -9,9 +9,12 @@ module X
     module TokenEndpoint
       extend TokenEndpoint
 
+      FAILURES: Array[singleton(Net::HTTPTooManyRequests) | singleton(Net::HTTPServerError)]
+
       def fetch: (SimpleOAuth::OAuth2::Request token_request, connection: Connection) -> SimpleOAuth::OAuth2::Token
 
       private
+      def failure?: (Net::HTTPResponse response) -> bool
       def post: (SimpleOAuth::OAuth2::Request token_request) -> Net::HTTP::Post
     end
 
@@ -191,9 +194,9 @@ module X
 
       def parse: (response: Net::HTTPResponse, ?array_class: Class?, ?object_class: untyped, ?client: Client?, ?request: Net::HTTPRequest?) -> untyped
       def decode: (String json, ?array_class: Class?, ?object_class: untyped, ?client: Client?) -> untyped
+      def error: (Net::HTTPResponse response, Net::HTTPRequest? request) -> HTTPError
 
       private
-      def error: (Net::HTTPResponse response, Net::HTTPRequest? request) -> HTTPError
       def error_class: (Net::HTTPResponse response) -> (singleton(HTTPError) | singleton(BadGateway) | singleton(BadRequest) | singleton(Conflict) | singleton(Forbidden) | singleton(GatewayTimeout) | singleton(Gone) | singleton(InternalServerError) | singleton(MethodNotAllowed) | singleton(NotAcceptable) | singleton(NotFound) | singleton(PayloadTooLarge) | singleton(RequestTimeout) | singleton(ServiceUnavailable) | singleton(TooManyRequests) | singleton(Unauthorized) | singleton(UnavailableForLegalReasons) | singleton(UnprocessableEntity) | singleton(UnsupportedMediaType))
     end
 

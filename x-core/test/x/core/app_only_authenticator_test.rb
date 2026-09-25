@@ -103,16 +103,23 @@ module X
     end
 
     def test_raises_with_the_default_message
-      stub_request(:post, AppOnlyAuthenticator::TOKEN_URL).to_return(status: 500, body: "Internal Server Error")
+      stub_request(:post, AppOnlyAuthenticator::TOKEN_URL).to_return(status: 401, body: "Unauthorized")
       error = assert_raises(AuthorizationError) { @authenticator.send(:bearer_token) }
 
       assert_equal "Bearer token request failed", error.message
     end
 
+    def test_a_token_endpoint_that_fails_to_answer_raises_the_error_of_its_status
+      stub_request(:post, AppOnlyAuthenticator::TOKEN_URL).to_return({status: 503}, {status: 429})
+
+      assert_raises(ServiceUnavailable) { @authenticator.send(:bearer_token) }
+      assert_raises(TooManyRequests) { @authenticator.send(:bearer_token) }
+    end
+
     def test_a_failed_fetch_is_retried
       stub_request(:post, AppOnlyAuthenticator::TOKEN_URL).to_return(status: 500, body: "").then
         .to_return(status: 200, body: {access_token: TEST_BEARER_TOKEN}.to_json)
-      assert_raises(AuthorizationError) { @authenticator.send(:bearer_token) }
+      assert_raises(InternalServerError) { @authenticator.send(:bearer_token) }
 
       assert_equal TEST_BEARER_TOKEN, @authenticator.send(:bearer_token)
     end

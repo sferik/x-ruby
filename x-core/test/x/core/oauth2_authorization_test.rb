@@ -197,11 +197,17 @@ module X
     end
 
     def test_a_failure_without_a_reason_raises_the_default_message
-      stub_request(:post, "https://api.x.com/2/oauth2/token").to_return(status: 500, body: "")
+      stub_request(:post, "https://api.x.com/2/oauth2/token").to_return(status: 400, body: "")
       error = assert_raises(AuthorizationError) { authorization.credentials("state=STATE&code=CODE") }
 
       assert_equal ["Authorization failed", nil], [error.message, error.error_code]
       assert_kind_of Error, error
+    end
+
+    def test_a_token_endpoint_that_fails_to_answer_raises_the_error_of_its_status
+      stub_request(:post, "https://api.x.com/2/oauth2/token").to_return(status: 502, body: "")
+
+      assert_raises(BadGateway) { authorization.credentials("state=STATE&code=CODE") }
     end
   end
 end

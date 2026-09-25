@@ -56,6 +56,7 @@ module X
     # @param _request [Net::HTTPRequest, nil] the request, which app-only authentication does not sign
     # @return [Hash{String => String}] the authorization header
     # @raise [AuthorizationError] if X refuses to issue the bearer token
+    # @raise [TooManyRequests, ServerError] if the token endpoint limits the rate of the request or fails to answer
     # @example Generate the header
     #   authenticator.header(request) # => {"Authorization" => "Bearer ..."}
     def header(_request)
@@ -72,6 +73,7 @@ module X
     # @api private
     # @return [String] the bearer token
     # @raise [AuthorizationError] if X refuses to issue the bearer token
+    # @raise [TooManyRequests, ServerError] if the token endpoint limits the rate of the request or fails to answer
     # @example Get the bearer token
     #   bearer_token
     def bearer_token
@@ -89,6 +91,7 @@ module X
     # @api private
     # @return [String] the bearer token
     # @raise [AuthorizationError] if the token endpoint rejects the request
+    # @raise [TooManyRequests, ServerError] if the token endpoint limits the rate of the request or fails to answer
     def fetch_bearer_token
       Core::TokenEndpoint.fetch(token_request, connection:).access_token
     rescue SimpleOAuth::OAuth2::Error => e

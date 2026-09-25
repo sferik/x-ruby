@@ -57,6 +57,16 @@ module X
       assert_equal 2, nonces.uniq.size
     end
 
+    def test_a_lookup_is_sent_again_after_the_token_endpoint_fails_to_answer_a_refresh
+      client = retrying_client(**test_oauth2_credentials, expires_at: Time.now - 60)
+      stub_request(:post, "https://api.x.com/2/oauth2/token")
+        .to_return({status: 503}, {status: 200, body: {access_token: "NEW_ACCESS_TOKEN", expires_in: 7200}.to_json})
+      stub_request(:get, URL).with(headers: {"Authorization" => "Bearer NEW_ACCESS_TOKEN"}).to_return(SUCCESS)
+
+      assert_equal({"data" => {"id" => "1"}}, without_sleeping(client) { client.get("users/me") })
+      assert_equal [[200], [1]], [@responses, @sleeps]
+    end
+
     def test_a_post_is_not_sent_again
       client = retrying_client
       stub_request(:post, "https://api.x.com/2/tweets").to_return(status: 503)

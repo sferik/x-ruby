@@ -104,6 +104,7 @@ module X
     # @param _request [Net::HTTPRequest, nil] the HTTP request (unused)
     # @return [Hash{String => String}] the authentication header
     # @raise [AuthorizationError] if the token has expired and X refuses to refresh it
+    # @raise [TooManyRequests, ServerError] if the token endpoint limits the rate of the request or fails to answer
     # @example Get the header
     #   authenticator.header(request)
     def header(_request)
@@ -155,6 +156,7 @@ module X
     # @api public
     # @return [OAuth2Authenticator] the authenticator, which holds the new tokens
     # @raise [AuthorizationError] if X refuses to refresh the token
+    # @raise [TooManyRequests, ServerError] if the token endpoint limits the rate of the request or fails to answer
     # @example Refresh the tokens and store them
     #   store(authenticator.refresh!.refresh_token)
     def refresh!
@@ -189,6 +191,7 @@ module X
     # @param rejected_token [String] the access token the API rejected
     # @return [Boolean] true if the access token is no longer the one rejected
     # @raise [AuthorizationError] if X refuses to refresh the token
+    # @raise [TooManyRequests, ServerError] if the token endpoint limits the rate of the request or fails to answer
     def refresh_rejected_token!(rejected_token)
       refreshed, replaced = @mutex.synchronize do
         [(refresh if access_token.eql?(rejected_token)), !access_token.eql?(rejected_token)]
@@ -269,6 +272,7 @@ module X
     # @api private
     # @return [true] true, once the authenticator holds the new tokens
     # @raise [AuthorizationError] if X refuses to refresh the token
+    # @raise [TooManyRequests, ServerError] if the token endpoint limits the rate of the request or fails to answer
     def refresh
       update_tokens(Core::TokenEndpoint.fetch(oauth2_client.refresh_token_request(refresh_token:), connection:))
       true
