@@ -45,7 +45,9 @@ module X
       # The source of media given as a path that is not a String, or as an IO
       #
       # A path, such as a Pathname, which cannot seek, is read from the file it names, and an IO open on a file, which
-      # can, through that IO. Any other IO is read to its end, such as a StringIO, or a pipe, whose path is nil.
+      # can, through that IO. Any other IO is read to its end, such as a StringIO, or a pipe, whose path is nil, or
+      # $stdin, whose path is "<STDIN>" whether it reads a pipe, a terminal, or a file: an IO whose path names
+      # something that is not a file or a directory, such as a pipe, cannot be read by position, as a file is.
       #
       # @api private
       # @param media [Pathname, IO, StringIO, Object] the path or the IO
@@ -55,7 +57,7 @@ module X
         named = media.respond_to?(:to_path)
         if named && !media.respond_to?(:seek)
           Path.new(media)
-        elsif named && media.to_path
+        elsif named && media.to_path && on_file?(media)
           Handle.new(media)
         elsif media.respond_to?(:read)
           buffered(media)
@@ -65,16 +67,29 @@ module X
       end
       private_class_method :named_or_read
 
+      # Check whether an IO is open on a file or a directory, which a Handle reads
+      # @api private
+      # @param media [IO] the IO, which has a path
+      # @return [Boolean] true if the IO is open on a file or a directory, rather than a pipe, a device, or a socket
+      def self.on_file?(media)
+        stat = media.stat
+        stat.file? || stat.directory?
+      end
+      private_class_method :on_file?
+
       # The source of media given as an IO that is not open on a file
       #
       # The IO is read from its position to its end, and given back at that position when it can seek, as a StringIO
-      # can and a pipe cannot, so that what infers the type of the media leaves it to be uploaded.
+      # can and a pipe cannot, so that what infers the type of the media leaves it to be uploaded. An IO is put in
+      # binary mode first, since media is bytes, and a pipe or $stdin reads in text mode on Windows, which would turn
+      # each CRLF of the media, such as the one in the signature of a PNG, into a line feed.
       #
       # @api private
       # @param media [StringIO, IO, Object] the IO
       # @return [Buffer] the source
       def self.buffered(media)
         position = position_of(media)
+        media.binmode if media.is_a?(IO)
         content = media.read.to_s.b
         media.seek(position) if position
         Buffer.new(content)

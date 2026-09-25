@@ -94,6 +94,19 @@ module X
       assert_requested(:post, "#{BASE_URL}/#{TEST_MEDIA_ID}/append") { |request| request.body.include?(content) }
     end
 
+    def test_an_image_piped_to_stdin_uploads_as_the_image_its_signature_names
+      stub_request(:post, BASE_URL).to_return(headers: JSON_HEADERS, body: {data: {id: TEST_MEDIA_ID}}.to_json)
+      reader, writer = IO.pipe
+      writer.write(File.binread("test/sample_files/sample.png"))
+      writer.close
+      reader.define_singleton_method(:to_path) { "<STDIN>" }
+
+      assert_equal TEST_MEDIA_ID.to_i, Uploader::MediaUpload.upload(reader, client: @client).id
+      assert_requested(:post, BASE_URL) { |request| request.body.include?("name=\"media_category\"\r\n\r\ntweet_image") }
+    ensure
+      reader&.close
+    end
+
     def test_media_that_names_no_file_uploads_under_the_category_it_is_given
       stub_request(:post, BASE_URL).to_return(headers: JSON_HEADERS, body: {data: {id: TEST_MEDIA_ID}}.to_json)
       Uploader::MediaUpload.upload(StringIO.new("not media at all"), client: @client, media_category: "DM_IMAGE")

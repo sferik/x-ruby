@@ -91,10 +91,11 @@ module X
     end
 
     def test_media_held_in_memory_is_read_as_bytes
-      source = Uploader.const_get(:Source).for(StringIO.new("héllo"))
+      held = StringIO.new("héllo")
+      source = Uploader.const_get(:Source).for(held)
 
       assert_equal Encoding::BINARY, source.content.encoding
-      assert_equal 6, source.size
+      assert_equal [6, Encoding::UTF_8], [source.size, held.string.encoding]
     end
 
     def test_the_signature_of_media_shorter_than_the_bytes_it_is_read_from
