@@ -230,13 +230,17 @@ module X
       # @return [Boolean] true if the resource is hydrated, or holds what hydrate returns
       def settled?(resource) = resource.hydrated? || resource.__send__(:hydration_stored?)
 
-      # Check that a number of batches to look up at once is at least one
+      # Check that a number of batches to look up at once is an Integer of at least one
+      #
+      # Anything that is not an Integer, such as a String read from an environment variable, raises ArgumentError too,
+      # rather than NoMethodError from the check.
+      #
       # @api private
       # @param concurrency [Integer] the number of batches looked up at once
       # @return [void]
-      # @raise [ArgumentError] if the concurrency is less than one
+      # @raise [ArgumentError] if the concurrency is not an Integer, or is less than one
       def validate_concurrency!(concurrency)
-        raise ArgumentError, format(INVALID_CONCURRENCY, concurrency) unless concurrency.integer? && concurrency.positive?
+        raise ArgumentError, format(INVALID_CONCURRENCY, concurrency.inspect) unless concurrency.instance_of?(Integer) && concurrency.positive?
       end
 
       # Pass the problems a response body reports to a block, if there is one

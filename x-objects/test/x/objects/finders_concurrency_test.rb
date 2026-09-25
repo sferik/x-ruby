@@ -38,9 +38,9 @@ module X
       end
 
       def test_find_all_refuses_a_concurrency_that_is_not_an_integer
-        error = assert_raises(ArgumentError) { User.find_all([1], client: @client, concurrency: 1.5) }
+        messages = [1.5, "2", nil].map { |concurrency| assert_raises(ArgumentError) { User.find_all([1], client: @client, concurrency:) }.message }
 
-        assert_equal "concurrency must be an Integer of at least 1, not 1.5", error.message
+        assert_equal ["1.5", '"2"', "nil"].map { |value| "concurrency must be an Integer of at least 1, not #{value}" }, messages
       end
 
       def test_find_all_does_not_send_the_concurrency_as_a_query_parameter
