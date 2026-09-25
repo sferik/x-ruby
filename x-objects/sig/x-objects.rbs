@@ -318,6 +318,7 @@ module X
       def replacer: (Array[Resource] found, full: bool) -> ^(Resource) -> Resource?
       def get: (String path, client: _Client, query: Hash[String, untyped]) -> body
       def lookup_in_batches: (String path, Symbol key, Array[String] values, client: _Client, concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[Resource]
+      def in_order_of: (Array[Resource] resources, Array[String] ids) -> Array[Resource]
       def validate_concurrency!: (Integer concurrency) -> void
       def reporting: (body body) ?{ (Problem problem) -> void } -> body
     end

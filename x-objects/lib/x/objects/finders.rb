@@ -88,6 +88,9 @@ module X
 
       # Look up many resources by identifier, in parallel batches, once each
       #
+      # The resources come back in the order of the identifiers they were asked for by, each once, whatever order
+      # the batches were answered in.
+      #
       # @api public
       # @param ids [Array<String, Integer, Resource>] the identifiers
       # @param client [Object] the client used to make the requests
@@ -109,7 +112,8 @@ module X
         path = endpoint!
         raise UnsupportedOperation, format(NO_BATCH_LOOKUP, self, ids.size) unless batchable?
 
-        lookup_in_batches(path, batch_key, ids.map { |id| Utils.id_of(id, raw: id_type.eql?(:raw)) }, client:, concurrency:, **params, &)
+        ids = ids.map { |id| Utils.id_of(id, raw: id_type.eql?(:raw)) }
+        in_order_of(lookup_in_batches(path, batch_key, ids, client:, concurrency:, **params, &), ids)
       end
 
       # Fetch a single resource from an endpoint
@@ -193,14 +197,29 @@ module X
       # @param concurrency [Integer] the number of batches looked up at once
       # @param params [Hash] query parameters merged over the default parameters; one that overrides a default field
       #   or expansion parameter builds resources that are not hydrated, so hydrate fetches the rest
-      # @return [Array<Resource>] the resources that were found, frozen
+      # @return [Array<Resource>] the resources that were found, in the order the batches were answered in
       # @raise [ArgumentError] if the concurrency is less than one
       # @yieldparam problem [Problem] each problem the responses reported
       def lookup_in_batches(path, key, values, client:, concurrency:, **params, &)
         validate_concurrency!(concurrency)
         query = Utils.merge_params(default_params, params)
         bodies = Parallel.map(values.uniq.each_slice(MAX_BATCH_SIZE), concurrency:) { |batch| get(path, client:, query: query.merge(Utils.query(key => batch))) }
-        bodies.flat_map { |body| collection_from_response(reporting(body, &), client:, hydrated: fully_requested_by?(query)) }.freeze
+        bodies.flat_map { |body| collection_from_response(reporting(body, &), client:, hydrated: fully_requested_by?(query)) }
+      end
+
+      # Order resources as the identifiers they were asked for by, each once
+      #
+      # An identifier is read as the resource reads its own, so that one asked for as a String of digits matches the
+      # Integer of the resource.
+      #
+      # @api private
+      # @param resources [Array<Resource>] the resources found
+      # @param ids [Array<String>] the identifiers asked for
+      # @return [Array<Resource>] the resources, in the order of the first identifier that matches each, frozen
+      def in_order_of(resources, ids)
+        convert = Attributes::CONVERTERS.fetch(id_type)
+        by_id = resources.to_h { |resource| [resource.id, resource] }
+        ids.filter_map { |id| by_id[convert.call(id)] }.uniq.freeze
       end
 
       # Check that a number of batches to look up at once is at least one

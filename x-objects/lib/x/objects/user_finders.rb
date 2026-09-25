@@ -73,7 +73,8 @@ module X
       # Look up many users by identifier, in parallel batches, once each
       #
       # A String of digits is an identifier, as it is read from a response or an environment variable, so this looks
-      # the accounts those numbers identify up, where find_all would take them for usernames.
+      # the accounts those numbers identify up, where find_all would take them for usernames. The users come back in
+      # the order they were asked for, each once.
       #
       # @api public
       # @param ids [Array<String, Integer, User>] the identifiers, or users
@@ -86,7 +87,8 @@ module X
       # @example Look up many users by identifier, read as Strings
       #   X::User.find_all_by_id(ENV.fetch("USER_IDS").split(","), client: client)
       def find_all_by_id(ids, client:, concurrency: Finders::DEFAULT_CONCURRENCY, **params, &)
-        lookup_in_batches(endpoint!, batch_key, ids.map { |id| Utils.id_of(id) }, client:, concurrency:, **params, &) #: Array[User]
+        ids = ids.map { |id| Utils.id_of(id) }
+        in_order_of(lookup_in_batches(endpoint!, batch_key, ids, client:, concurrency:, **params, &), ids) #: Array[User]
       end
 
       # Look up a user by identifier
@@ -125,6 +127,8 @@ module X
 
       # Look up many users by username, in parallel batches, once each
       #
+      # The users come back in the order they were asked for, each once, whatever the case of each username.
+      #
       # @api public
       # @param usernames [Array<String>] the usernames, with or without leading at signs
       # @param client [Object] the client used to make the requests
@@ -136,7 +140,9 @@ module X
       # @example Look up many users by username
       #   X::User.find_all_by_username(["sferik", "gem"], client: client)
       def find_all_by_username(usernames, client:, concurrency: Finders::DEFAULT_CONCURRENCY, **params, &)
-        lookup_in_batches("users/by", :usernames, usernames.map { |username| normalize(Utils.username!(username)) }, client:, concurrency:, **params, &) #: Array[User]
+        usernames = usernames.map { |username| normalize(Utils.username!(username)) }
+        found = lookup_in_batches("users/by", :usernames, usernames, client:, concurrency:, **params, &) #: Array[User]
+        in_order(found, usernames)
       end
 
       # Look up a user by username
