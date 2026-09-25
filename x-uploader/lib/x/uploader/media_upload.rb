@@ -238,7 +238,7 @@ module X
         media_type ||= infer_media_type(source, media_category)
         uploaded = Chunks.init(client:, source:, media_type:, media_category:)
         Chunks.append(client:, source:, chunk_size:, media: uploaded, boundary: SecureRandom.hex, concurrency:)
-        UploadedMedia.from(Utils.media_data(client.post("media/upload/#{uploaded.fetch("id")}/finalize", **JSON_CLASSES), "that finalizes the upload"))
+        UploadedMedia.from(Utils.media_data(Chunks.finalize(client:, media: uploaded), "that finalizes the upload"))
       end
 
       # Wait for media processing to complete

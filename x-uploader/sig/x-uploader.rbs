@@ -95,6 +95,8 @@ module X
       def media_id: (media media) -> String
       def media_data: (Hash[String, untyped]? response, String description) -> Hash[String, untyped]?
       def subtitled_media_category: (String | Symbol media_category) -> String
+      def sending_again: [T] (_Client client) { () -> T } -> T
+      def max_retries_of: (_Client client) -> Integer
     end
 
     module Multipart
@@ -110,13 +112,13 @@ module X
 
       def init: (client: _Client, source: Source, media_type: String, media_category: String) -> Hash[String, untyped]
       def append: (client: _Client, source: Source, chunk_size: Integer, media: untyped, boundary: String, concurrency: Integer) -> void
+      def finalize: (client: _Client, media: Hash[String, untyped]) -> Hash[String, untyped]?
 
       private
       def await: (Array[Thread] workers) -> void
       def chunk_queue: (Source source, Integer chunk_size) -> Thread::Queue
       def append_worker: (Thread::Queue queue, Thread::Queue errors, client: _Client, source: Source, chunk_size: Integer, media_id: String, boundary: String) -> Thread
       def upload_chunk: (client: _Client, media_id: String, upload_body: String, headers: Hash[String, String]) -> untyped
-      def max_retries_of: (_Client client) -> Integer
     end
 
     module MediaUpload

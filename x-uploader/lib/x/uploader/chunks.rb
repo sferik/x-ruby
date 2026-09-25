@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
-require "x/core/retry_handler"
 require_relative "json_classes"
 require_relative "missing_data"
 require_relative "multipart"
+require_relative "utils"
 
 module X
   module Uploader
@@ -68,6 +68,23 @@ module X
         raise errors.deq unless errors.empty?
       end
 
+      # Finalize a chunked upload, once its chunks are appended
+      #
+      # It is sent again after a server or network error, as a chunk is, rather than lose an upload whose every
+      # chunk was appended to a failure that may pass: the media can be finalized only by the upload that
+      # initialized it, which knows its identifier. A finalize the API acted on, but whose answer never arrived, may
+      # be refused when it is sent again, which raises as the failure it follows would have.
+      #
+      # @api private
+      # @param client [Client] the X API client
+      # @param media [Hash] the media the chunks were appended to
+      # @return [Hash, nil] the parsed response, or nil for a response that carries no body at all
+      # @example Finalize the upload of a video
+      #   Uploader::Chunks.finalize(client:, media: {"id" => "1880028106020515840"})
+      def finalize(client:, media:)
+        Utils.sending_again(client) { client.post("media/upload/#{media.fetch("id")}/finalize", **JSON_CLASSES) }
+      end
+
       private
 
       # Wait for the workers to finish, stopping them if the wait is cut short
@@ -120,11 +137,8 @@ module X
 
       # Upload a single chunk, sending it again after a server or network error
       #
-      # A client sends no POST again, since the API may have acted on one whose answer never arrived, but a chunk
-      # names the segment it is appended at, so one sent twice is appended once. It is sent again as a client sends
-      # an idempotent request again: up to the max_retries of the client, after the wait a failed response asks for,
-      # or a backoff that grows with each retry and is cut short at random, so that the chunks one failure ended are
-      # not sent again together.
+      # A chunk names the segment it is appended at, so one sent twice is appended once, and it is sent again as
+      # {Utils.sending_again} sends a request again.
       #
       # @api private
       # @param client [Client] the X API client
@@ -133,21 +147,7 @@ module X
       # @param headers [Hash] the request headers
       # @return [void]
       def upload_chunk(client:, media_id:, upload_body:, headers:)
-        Core::RetryHandler.new(max_retries: max_retries_of(client)).handle(idempotent: true) do
-          client.post("media/upload/#{media_id}/append", upload_body, headers:, **JSON_CLASSES)
-        end
-      end
-
-      # The number of times a chunk is sent again
-      #
-      # It is the max_retries of a client that has one, as X::Client does, and the default of a client otherwise.
-      #
-      # @api private
-      # @param client [Client] the X API client
-      # @return [Integer] the maximum number of retries
-      def max_retries_of(client)
-        retrying = client #: untyped
-        retrying.respond_to?(:max_retries) ? retrying.max_retries : Core::RetryHandler::DEFAULT_MAX_RETRIES
+        Utils.sending_again(client) { client.post("media/upload/#{media_id}/append", upload_body, headers:, **JSON_CLASSES) }
       end
     end
     private_constant :Chunks

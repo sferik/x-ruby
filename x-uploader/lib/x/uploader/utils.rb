@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "x/core/retry_handler"
 require_relative "missing_data"
 require_relative "uploaded_media"
 
@@ -65,6 +66,38 @@ module X
       #   Uploader::Utils.media_data({"data" => {"id" => 7}}, "of the upload") # => {"id" => 7}
       def media_data(response, description)
         response&.fetch("data") { raise MissingData, format(NO_MEDIA, description) }
+      end
+
+      # Send a request again after a server or network error, as an idempotent one is
+      #
+      # A client sends no POST again, since the API may have acted on one whose answer never arrived, but some of
+      # the POSTs of an upload have the same effect sent twice as sent once, such as a chunk, which names the segment
+      # it is appended at. Those are sent again up to the max_retries of the client, after the wait a failed response
+      # asks for, or a backoff that grows with each retry and is cut short at random, so that the requests one
+      # failure ended are not sent again together.
+      #
+      # @api private
+      # @param client [Client] the X API client
+      # @yield sends the request
+      # @return [Object] what the block returns
+      # @example Append a chunk, again after a failure
+      #   Uploader::Utils.sending_again(client) { client.post("media/upload/1/append", body, headers:) }
+      def sending_again(client, &)
+        Core::RetryHandler.new(max_retries: max_retries_of(client)).handle(idempotent: true, &)
+      end
+
+      # The number of times a request of an upload is sent again
+      #
+      # It is the max_retries of a client that has one, as X::Client does, and the default of a client otherwise.
+      #
+      # @api private
+      # @param client [Client] the X API client
+      # @return [Integer] the maximum number of retries
+      # @example The retries of a client
+      #   Uploader::Utils.max_retries_of(X::Client.new(max_retries: 5)) # => 5
+      def max_retries_of(client)
+        retrying = client #: untyped
+        retrying.respond_to?(:max_retries) ? retrying.max_retries : Core::RetryHandler::DEFAULT_MAX_RETRIES
       end
 
       # The media category the subtitles endpoint takes, from one given in any form
