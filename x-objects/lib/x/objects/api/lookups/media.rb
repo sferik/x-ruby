@@ -16,7 +16,8 @@ module X
           # video, or animated GIF that was uploaded, with its URL and variants.
           #
           # @api public
-          # @param media_key [String, X::Media] the media key, such as 3_1880028106020515840
+          # @param media_key [String, X::Media, #media_key] the media key, such as 3_1880028106020515840, media, or what
+          #   an upload returned
           # @param params [Hash] query parameters merged over the default parameters; one that overrides a default field
           #   parameter builds media that is not hydrated, so hydrate fetches the rest
           # @return [X::Media, nil] the media, or nil if it was not found
@@ -24,7 +25,7 @@ module X
           # @example Look up media by media key
           #   client.find_media("3_1880028106020515840")
           # @example Look up media that was uploaded
-          #   client.find_media(uploaded.media_key)
+          #   client.find_media(uploaded)
           def find_media(media_key, **params, &)
             X::Media.find(media_key, client: self, **params, &)
           end
@@ -32,7 +33,8 @@ module X
           # Look up media by media key, in parallel batches
           #
           # @api public
-          # @param media [Array<String, X::Media>] the media keys, or the media whose keys are taken
+          # @param media [Array<String, X::Media, #media_key>] the media keys, or the media, or what the uploads
+          #   returned, whose keys are taken
           # @param concurrency [Integer] the number of batches looked up at once, which must be at least one; each is
           #   a request of up to 100 media keys, so a lower number spends a rate limit more slowly
           # @param params [Hash] query parameters merged over the default parameters; one that overrides a default
@@ -51,7 +53,7 @@ module X
           # Look up media by media key, raising if it is not found
           #
           # @api public
-          # @param media_key [String, X::Media] the media key
+          # @param media_key [String, X::Media, #media_key] the media key, media, or what an upload returned
           # @param params [Hash] query parameters merged over the default parameters
           # @return [X::Media] the media
           # @raise [MissingResource] if the media was not found

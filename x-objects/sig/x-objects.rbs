@@ -49,6 +49,11 @@ module X
       def fetch: (String key) -> untyped
     end
 
+    # Media that holds a media key, such as the uploaded media of x-uploader, which media is looked up by
+    interface _MediaKeyHolder
+      def media_key: () -> String?
+    end
+
     # What the object layer asks to make its requests: X::Client, or any other client that answers these four
     # methods, since x-objects makes no request of its own. The endpoint carries the query, which the object layer
     # builds, and array_class and object_class say what the response is parsed into, which is plain hashes and
@@ -477,9 +482,9 @@ module X
         end
 
         module Media : _Client
-          def find_media: (id media_key, **untyped params) ?{ (Problem problem) -> void } -> X::Media?
-          def find_all_media: (Array[id] media, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[X::Media]
-          def find_media!: (id media_key, **untyped params) -> X::Media
+          def find_media: (id | _MediaKeyHolder media_key, **untyped params) ?{ (Problem problem) -> void } -> X::Media?
+          def find_all_media: (Array[id | _MediaKeyHolder] media, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[X::Media]
+          def find_media!: (id | _MediaKeyHolder media_key, **untyped params) -> X::Media
         end
 
         module Communities : _Client
