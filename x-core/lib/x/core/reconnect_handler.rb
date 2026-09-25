@@ -59,8 +59,10 @@ module X
       # Run a stream, running it again whenever it drops
       #
       # An error raised by the consumer stops the stream, even one that would otherwise reconnect, and reaches the
-      # caller. It is unwrapped outside the loop: Kernel#loop rescues StopIteration, which a consumer raises from an
-      # Enumerator of its own that has run out, and unwrapping inside the loop would end the stream without a word.
+      # caller, as does any error that is not one a stream reconnects after, such as one raised by the on_response
+      # of the client or by the class an object is parsed into. The stream is run again with while rather than
+      # Kernel#loop, which rescues StopIteration, so that a StopIteration raised from an Enumerator that has run
+      # out, wherever it is raised, reaches the caller too, rather than end the stream without a word.
       #
       # @api private
       # @param consumer [Proc] the block that receives each object
@@ -71,20 +73,32 @@ module X
       #   reconnects left
       # @example Reconnect a stream
       #   handler.handle(->(post) { puts post }) { |deliver| read_stream(&deliver) }
-      def handle(consumer)
+      def handle(consumer, &stream)
         state = {reconnects: 0} #: state
         deliver = delivery_to(consumer, state)
-        loop do
-          yield deliver
-          return if out_of_reconnects?(nil, state)
-        rescue *RECONNECTABLE_ERRORS => e
-          raise if out_of_reconnects?(e, state)
-        end
+        while run_once(stream, deliver, state); end
       rescue ConsumerError => e
         raise cause_of(e)
       end
 
       private
+
+      # Run a stream once, waiting for the next reconnect when it drops or ends
+      # @api private
+      # @param stream [Proc] runs the stream once
+      # @param deliver [Proc] the block to pass each object to
+      # @param state [Hash] the count of reconnects, for one call to handle
+      # @return [Boolean] true to run the stream again, or false once it ends with no reconnects left
+      # @raise [NetworkError, ServerError, Conflict, TooManyRequests, InvalidResponse] if the stream fails with no
+      #   reconnects left
+      def run_once(stream, deliver, state)
+        stream.call(deliver)
+        !out_of_reconnects?(nil, state)
+      rescue *RECONNECTABLE_ERRORS => e
+        raise if out_of_reconnects?(e, state)
+
+        true
+      end
 
       # The error a consumer raised, which a consumer error stands in for
       # @api private

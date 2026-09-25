@@ -154,6 +154,7 @@ module X
 
       private
       def cause_of: (StandardError error) -> StandardError
+      def run_once: (^(^(untyped) -> void) -> void stream, ^(untyped) -> void deliver, state state) -> bool
       def out_of_reconnects?: (StandardError? error, state state) -> bool
       def delivery_to: (^(untyped) -> void consumer, state state) -> ^(untyped) -> void
       def backoff: (StandardError error, Integer reconnects) -> (Float | Integer)

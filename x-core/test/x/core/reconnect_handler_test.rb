@@ -68,13 +68,17 @@ module X
       assert_instance_of NetworkError, error
     end
 
-    # Kernel#loop rescues StopIteration, so unwrapping the consumer's error inside the loop would end the stream
-    # and return, and a consumer that exhausted an Enumerator of its own would never hear of it.
+    # Kernel#loop rescues StopIteration, so a stream run again in one would end and return, and a consumer that
+    # exhausted an Enumerator of its own would never hear of it.
     def test_a_stop_iteration_from_the_consumer_reaches_the_caller
       consumer = ->(_) { [].each.next }
       handler = Core::ReconnectHandler.new
 
       assert_raises(StopIteration) { handler.handle(consumer) { |deliver| deliver.call(1) } }
+    end
+
+    def test_a_stop_iteration_from_the_stream_itself_reaches_the_caller
+      assert_raises(StopIteration) { Core::ReconnectHandler.new.handle(->(_) {}) { |_deliver| [].each.next } }
     end
 
     def test_a_consumer_stops_the_stream_by_breaking_out_of_its_block
