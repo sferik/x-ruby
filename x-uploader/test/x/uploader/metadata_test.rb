@@ -39,6 +39,17 @@ module X
       assert_requested :post, METADATA_URL, body: {id: "7", metadata: {alt_text: {text: "A cat"}}}.to_json
     end
 
+    def test_add_alt_text_is_sent_again_after_the_api_fails_to_answer_it
+      @client = Client.new(max_retries: 1)
+      stub_request(:post, METADATA_URL).to_return({status: 503}, {headers: JSON_HEADERS, body: {data: {id: "7"}}.to_json})
+
+      build = Core::RetryHandler.method(:new)
+      without_sleeping = ->(**options) { build.call(**options).tap { |handler| handler.define_singleton_method(:sleep) { |_seconds| nil } } }
+
+      assert_equal({"id" => "7"}, Core::RetryHandler.stub(:new, without_sleeping) { Uploader::Metadata.add_alt_text(7, "A cat", client: @client) })
+      assert_requested :post, METADATA_URL, times: 2
+    end
+
     def test_add_alt_text_rejects_alt_text_the_api_would_refuse_before_a_request
       error = assert_raises(ArgumentError) { Uploader::Metadata.add_alt_text(7, "A" * 1001, client: @client) }
 

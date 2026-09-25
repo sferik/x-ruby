@@ -21,6 +21,9 @@ module X
 
       # Describe uploaded media with alt text, for people who cannot see it
       #
+      # Alt text added twice is added once, so it is sent again after a server or network error, as a client sends
+      # an idempotent request again, up to the max_retries of the client.
+      #
       # @api public
       # @param media [UploadedMedia, Hash, String, Integer] the uploaded media, or the media identifier
       # @param text [String] the alt text, of 1 to 1,000 characters
@@ -34,7 +37,7 @@ module X
       def add_alt_text(media, text, client:)
         Validator.validate_alt_text!(text)
         body = {id: Utils.media_id(media), metadata: {alt_text: {text:}}}
-        client.post("media/metadata", body, **JSON_CLASSES)&.fetch("data") { raise MissingData, NO_METADATA }
+        Utils.sending_again(client) { client.post("media/metadata", body, **JSON_CLASSES) }&.fetch("data") { raise MissingData, NO_METADATA }
       end
 
       # Attach uploaded subtitles to an uploaded video

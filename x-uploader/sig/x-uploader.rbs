@@ -277,6 +277,14 @@ module X
     def initialize: (?String? message, ?status: UploadedMedia | Hash[String, untyped] | nil, ?timeout: (Float | Integer)?) -> void
   end
 
+  class AltTextFailed < Uploader::Error
+    def self.keeping: [T] (UploadedMedia media) { () -> T } -> T
+
+    attr_reader media: UploadedMedia
+    def initialize: (UploadedMedia media) -> void
+    def to_s: () -> String
+  end
+
   class MediaProcessingFailed < Uploader::Error
     DEFAULT_MESSAGE: String
 

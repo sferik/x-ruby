@@ -33,6 +33,7 @@ module X
       # @raise [InvalidMediaType] if no media category is given for media that names no file and no signature names one
       # @raise [MediaProcessingFailed] if media processing failed, with the status X reported
       # @raise [MediaProcessingTimeout] if the media is still processing once the processing timeout would pass
+      # @raise [AltTextFailed] if the media is uploaded, but its alt text cannot be added, with the media it uploaded
       # @example Upload an image with alt text and post it
       #   media = client.upload_media("cat.jpg", alt_text: "A cat asleep on a keyboard")
       #   client.create_post("Look at this cat", media_ids: [media])

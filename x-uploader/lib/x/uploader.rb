@@ -2,6 +2,7 @@
 
 require_relative "uploader/version"
 require_relative "uploader/account"
+require_relative "uploader/alt_text_failed"
 require_relative "uploader/api"
 require_relative "uploader/error"
 require_relative "uploader/gif"

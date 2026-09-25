@@ -36,6 +36,7 @@ module X
   #   ├── X::Objects::Error            the failures of the object layer, from x-objects
   #   │   └── X::MissingResource               a resource that was asked for does not exist
   #   └── X::Uploader::Error           the failures of an upload, from x-uploader
+  #       ├── X::AltTextFailed                 the media was uploaded, but its alt text could not be added
   #       ├── X::InvalidMediaType              the media is of a type the API does not take
   #       ├── X::MediaProcessingFailed         X could not process the media that was uploaded
   #       ├── X::MediaProcessingTimeout        the media was still processing when the wait ran out
