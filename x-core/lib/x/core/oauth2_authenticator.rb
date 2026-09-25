@@ -51,6 +51,11 @@ module X
     attr_reader :expires_at
 
     # The connection for making token requests
+    #
+    # refresh! sends its request over it, as does a request signed with the authenticator alone. A client refreshes
+    # over its own connection instead, so that the copies of a client that share its authenticator, but were given
+    # another proxy, other timeouts, or other debug output, refresh with those.
+    #
     # @api public
     # @return [Connection] the connection instance
     # @example Get the connection
@@ -108,8 +113,7 @@ module X
     # @example Get the header
     #   authenticator.header(request)
     def header(_request)
-      refreshed = @mutex.synchronize { refresh if token_expired? }
-      report_refresh if refreshed
+      refresh_expired_token(connection)
       {AUTHENTICATION_HEADER => "Bearer #{access_token}"}
     end
 
@@ -160,7 +164,7 @@ module X
     # @example Refresh the tokens and store them
     #   store(authenticator.refresh!.refresh_token)
     def refresh!
-      @mutex.synchronize { refresh }
+      @mutex.synchronize { refresh(connection) }
       report_refresh
       self
     end
@@ -181,18 +185,30 @@ module X
     #   credentials.eql?(other.credentials)
     def credentials = [client_id, client_secret, access_token, refresh_token]
 
+    # Refresh the access token if it has expired, over a connection
+    # @api private
+    # @param connection [Connection] the connection to send the refresh over
+    # @return [void]
+    # @raise [AuthorizationError] if X refuses to refresh the token
+    # @raise [TooManyRequests, ServerError] if the token endpoint limits the rate of the request or fails to answer
+    def refresh_expired_token(connection)
+      refreshed = @mutex.synchronize { refresh(connection) if token_expired? }
+      report_refresh if refreshed
+    end
+
     # Refresh an access token the API rejected, unless it was already replaced
     #
     # Requests that were sent with the same token, and rejected together, refresh it once between them.
     #
     # @api private
     # @param rejected_token [String] the access token the API rejected
+    # @param connection [Connection] the connection to send the refresh over
     # @return [Boolean] true if the access token is no longer the one rejected
     # @raise [AuthorizationError] if X refuses to refresh the token
     # @raise [TooManyRequests, ServerError] if the token endpoint limits the rate of the request or fails to answer
-    def refresh_rejected_token!(rejected_token)
+    def refresh_rejected_token!(rejected_token, connection)
       refreshed, replaced = @mutex.synchronize do
-        [(refresh if access_token.eql?(rejected_token)), !access_token.eql?(rejected_token)]
+        [(refresh(connection) if access_token.eql?(rejected_token)), !access_token.eql?(rejected_token)]
       end
       report_refresh if refreshed
       replaced
@@ -205,21 +221,28 @@ module X
     # answers a request that carried no token, whether it named that origin or was redirected there, so it refreshes
     # nothing: X accepts a refresh token once, and a refresh would replace the tokens for a rejection of no token.
     #
+    # A token that has expired is refreshed before the request, and one the API rejects after it, over the
+    # connection given, which is the one of the client that sends the request: the copies of a client share its
+    # authenticator, and a copy given another proxy, other timeouts, or other debug output refreshes the tokens it
+    # shares with them, as it sends its requests with them.
+    #
     # Internal to x-core: Client runs each request it sends with an OAuth 2.0 authenticator through it, and calls it
     # with __send__, since it is private.
     #
     # @api private
     # @param origin [URI::Generic] a URI of the origin the token is sent to, such as the base URL of a client
+    # @param connection [Connection] the connection to send a refresh over
     # @yield runs the request
     # @return [Object] what the block returns
     # @raise [Unauthorized] if the request is rejected again, or by another origin, or a refresh does not replace
     #   the access token
-    def retrying_rejected_token(origin)
+    def retrying_rejected_token(origin, connection)
+      refresh_expired_token(connection)
       token = access_token
       begin
         yield
       rescue Unauthorized => e
-        raise unless carried_token?(e, origin) && refresh_rejected_token!(token)
+        raise unless carried_token?(e, origin) && refresh_rejected_token!(token, connection)
 
         yield
       end
@@ -268,10 +291,11 @@ module X
 
     # Refresh the access token, holding the lock
     # @api private
+    # @param connection [Connection] the connection to send the refresh over
     # @return [true] true, once the authenticator holds the new tokens
     # @raise [AuthorizationError] if X refuses to refresh the token
     # @raise [TooManyRequests, ServerError] if the token endpoint limits the rate of the request or fails to answer
-    def refresh
+    def refresh(connection)
       update_tokens(Core::TokenEndpoint.fetch(oauth2_client.refresh_token_request(refresh_token:), connection:))
       true
     rescue SimpleOAuth::OAuth2::Error => e

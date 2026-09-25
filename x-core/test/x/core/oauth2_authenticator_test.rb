@@ -321,7 +321,7 @@ module X
     def test_refresh_rejected_token_refreshes_the_token_that_was_rejected
       authenticator = OAuth2Authenticator.new(**test_oauth2_credentials)
 
-      assert authenticator.send(:refresh_rejected_token!, TEST_ACCESS_TOKEN)
+      assert authenticator.send(:refresh_rejected_token!, TEST_ACCESS_TOKEN, authenticator.connection)
       assert_equal "NEW_ACCESS_TOKEN", authenticator.access_token
       assert_requested @refresh, times: 1
     end
@@ -329,7 +329,7 @@ module X
     def test_refresh_rejected_token_skips_a_token_already_replaced
       authenticator = OAuth2Authenticator.new(**test_oauth2_credentials)
 
-      assert authenticator.send(:refresh_rejected_token!, "OLDER_ACCESS_TOKEN")
+      assert authenticator.send(:refresh_rejected_token!, "OLDER_ACCESS_TOKEN", authenticator.connection)
       assert_not_requested @refresh
     end
 
@@ -337,7 +337,7 @@ module X
       stub_request(:post, TOKEN_URL).to_return(status: 200, body: {access_token: TEST_ACCESS_TOKEN}.to_json)
       authenticator = OAuth2Authenticator.new(**test_oauth2_credentials)
 
-      refute authenticator.send(:refresh_rejected_token!, TEST_ACCESS_TOKEN)
+      refute authenticator.send(:refresh_rejected_token!, TEST_ACCESS_TOKEN, authenticator.connection)
     end
   end
 
@@ -357,17 +357,25 @@ module X
       Unauthorized.new(http_response:)
     end
 
+    # The connections the refreshes a block makes are sent over
+    def refreshes_over
+      connections = []
+      fetch = Core::TokenEndpoint.method(:fetch)
+      Core::TokenEndpoint.stub(:fetch, ->(request, connection:) { fetch.call(request, connection: connections.push(connection).last) }) { yield }
+      connections
+    end
+
     def test_retrying_rejected_token_returns_what_the_request_returns
       authenticator = OAuth2Authenticator.new(**test_oauth2_credentials)
 
-      assert_equal :ok, authenticator.send(:retrying_rejected_token, API) { :ok }
+      assert_equal :ok, authenticator.send(:retrying_rejected_token, API, authenticator.connection) { :ok }
       assert_not_requested @refresh
     end
 
     def test_retrying_rejected_token_refreshes_and_runs_the_request_again
       authenticator = OAuth2Authenticator.new(**test_oauth2_credentials)
       tokens = []
-      result = authenticator.send(:retrying_rejected_token, API) do
+      result = authenticator.send(:retrying_rejected_token, API, authenticator.connection) do
         tokens << authenticator.access_token
         raise unauthorized if tokens.one?
 
@@ -377,10 +385,27 @@ module X
       assert_equal [:ok, [TEST_ACCESS_TOKEN, "NEW_ACCESS_TOKEN"]], [result, tokens]
     end
 
+    def test_retrying_rejected_token_refreshes_an_expired_token_before_the_request_over_the_connection_given
+      authenticator = OAuth2Authenticator.new(**test_oauth2_credentials, expires_at: Time.now - 60)
+      connection = Connection.new
+      sent = []
+
+      assert_equal [connection], refreshes_over { authenticator.send(:retrying_rejected_token, API, connection) { sent << authenticator.access_token } }
+      assert_equal ["NEW_ACCESS_TOKEN"], sent
+    end
+
+    def test_retrying_rejected_token_refreshes_a_rejected_token_over_the_connection_given
+      authenticator = OAuth2Authenticator.new(**test_oauth2_credentials)
+      connection = Connection.new
+      attempts = 0
+
+      assert_equal [connection], refreshes_over { authenticator.send(:retrying_rejected_token, API, connection) { (attempts += 1).eql?(1) ? raise(unauthorized) : :ok } }
+    end
+
     def test_retrying_rejected_token_refreshes_the_token_the_request_was_sent_with
       authenticator = OAuth2Authenticator.new(**test_oauth2_credentials)
       attempts = 0
-      result = authenticator.send(:retrying_rejected_token, API) do
+      result = authenticator.send(:retrying_rejected_token, API, authenticator.connection) do
         attempts += 1
         authenticator.instance_variable_set(:@access_token, "REPLACED") if attempts.eql?(1)
         raise unauthorized if attempts.eql?(1)
@@ -397,7 +422,7 @@ module X
       attempts = 0
 
       assert_raises(Unauthorized) do
-        authenticator.send(:retrying_rejected_token, API) do
+        authenticator.send(:retrying_rejected_token, API, authenticator.connection) do
           attempts += 1
           raise unauthorized
         end
@@ -411,7 +436,7 @@ module X
       attempts = 0
 
       assert_raises(Unauthorized) do
-        authenticator.send(:retrying_rejected_token, API) do
+        authenticator.send(:retrying_rejected_token, API, authenticator.connection) do
           attempts += 1
           raise unauthorized
         end
@@ -424,7 +449,7 @@ module X
       attempts = 0
 
       assert_raises(Unauthorized) do
-        authenticator.send(:retrying_rejected_token, API) do
+        authenticator.send(:retrying_rejected_token, API, authenticator.connection) do
           attempts += 1
           raise unauthorized(URI("https://other.example.com/2/users/me"))
         end
@@ -436,7 +461,7 @@ module X
     def test_retrying_rejected_token_raises_a_rejection_of_no_known_origin_without_refreshing
       authenticator = OAuth2Authenticator.new(**test_oauth2_credentials)
 
-      assert_raises(Unauthorized) { authenticator.send(:retrying_rejected_token, API) { raise unauthorized(nil) } }
+      assert_raises(Unauthorized) { authenticator.send(:retrying_rejected_token, API, authenticator.connection) { raise unauthorized(nil) } }
       assert_not_requested @refresh
     end
   end
@@ -463,7 +488,7 @@ module X
     def test_concurrent_refreshes_of_a_rejected_token_refresh_once
       stub_slow_refresh
       authenticator = OAuth2Authenticator.new(**test_oauth2_credentials)
-      concurrently { authenticator.send(:refresh_rejected_token!, TEST_ACCESS_TOKEN) }
+      concurrently { authenticator.send(:refresh_rejected_token!, TEST_ACCESS_TOKEN, authenticator.connection) }
 
       assert_requested :post, TOKEN_URL, times: 1
     end

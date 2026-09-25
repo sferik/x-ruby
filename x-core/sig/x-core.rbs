@@ -739,13 +739,14 @@ module X
 
     private
     def credentials: -> Array[String?]
-    def refresh_rejected_token!: (String rejected_token) -> bool
+    def refresh_expired_token: (Connection connection) -> void
+    def refresh_rejected_token!: (String rejected_token, Connection connection) -> bool
     def holds?: (Hash[Symbol, untyped] options) -> bool
-    def retrying_rejected_token: [T] (URI::Generic origin) { () -> T } -> T
+    def retrying_rejected_token: [T] (URI::Generic origin, Connection connection) { () -> T } -> T
     def carried_token?: (Unauthorized error, URI::Generic origin) -> bool
     def update_expires_at: (Time? expires_at) -> void
     attr_reader client_secret: String?
-    def refresh: -> true
+    def refresh: (Connection connection) -> true
     def report_refresh: -> void
     def oauth2_client: -> SimpleOAuth::OAuth2::Client
     def update_tokens: (SimpleOAuth::OAuth2::Token token) -> void

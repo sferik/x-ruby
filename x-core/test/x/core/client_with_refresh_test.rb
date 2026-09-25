@@ -38,6 +38,22 @@ module X
       assert_equal expires_at, client.expires_at
     end
 
+    def test_a_copy_refreshes_an_expired_token_over_its_own_connection
+      client = Client.new(**test_oauth2_credentials, expires_at: Time.now - 60)
+      copy = client.with(proxy_url: "http://proxy.example.com:8080", read_timeout: 5)
+      stub_request(:get, "https://api.x.com/2/users/me").to_return(status: 200, body: "{}")
+
+      assert_same copy_connection(copy), connections_of_refreshes { copy.get("users/me") }.first
+      assert_same client.authenticator, copy.authenticator
+    end
+
+    def test_a_copy_refreshes_a_rejected_token_over_its_own_connection
+      copy = Client.new(**test_oauth2_credentials).with(debug_output: StringIO.new)
+      stub_request(:get, "https://api.x.com/2/users/me").to_return({status: 401}, {status: 200, body: "{}"})
+
+      assert_same copy_connection(copy), connections_of_refreshes { copy.get("users/me") }.first
+    end
+
     def test_a_copy_given_the_credentials_the_authenticator_holds_shares_it
       client = Client.new(**test_oauth2_credentials)
       copy = client.with(client_id: TEST_CLIENT_ID, access_token: TEST_ACCESS_TOKEN)
@@ -72,6 +88,18 @@ module X
       copy = client.with(api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET, access_token_secret: TEST_ACCESS_TOKEN_SECRET)
 
       assert_instance_of OAuth1Authenticator, copy.authenticator
+    end
+
+    private
+
+    def copy_connection(copy) = copy.instance_variable_get(:@connection)
+
+    # The connections the token requests a block sends are sent over
+    def connections_of_refreshes
+      connections = []
+      fetch = Core::TokenEndpoint.method(:fetch)
+      Core::TokenEndpoint.stub(:fetch, ->(request, connection:) { fetch.call(request, connection: connections.push(connection).last) }) { yield }
+      connections
     end
   end
 end

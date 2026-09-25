@@ -119,7 +119,7 @@ module X
       # @return [Object] what the block returns
       def refreshing_rejected_token(&)
         current = oauth2_authenticator_in_use
-        current.nil? ? yield : current.__send__(:retrying_rejected_token, URI(base_url), &)
+        current.nil? ? yield : current.__send__(:retrying_rejected_token, URI(base_url), @connection, &)
       end
     end
   end
