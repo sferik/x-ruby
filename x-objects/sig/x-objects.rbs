@@ -444,7 +444,6 @@ module X
           def find_all_posts: (Array[id] ids, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[Post]
           def find_all_tweets: (Array[id] ids, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[Post]
           def search_posts: (String query, **untyped params) -> Cursor[Post]
-          def search: (String query, **untyped params) -> Cursor[Post]
           def search_tweets: (String query, **untyped params) -> Cursor[Post]
           def search_all_posts: (String query, **untyped params) -> Cursor[Post]
           def reposts_of_me: (**untyped params) -> Cursor[Post]

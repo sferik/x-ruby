@@ -63,13 +63,8 @@ module X
         assert_same @client, cursor.client
       end
 
-      def test_search_is_search_posts
-        cursor = @client.search("ruby", max_results: 10)
-
-        assert_equal "tweets/search/recent", cursor.path
-        assert_equal "ruby", cursor.params["query"]
-        assert_equal 10, cursor.params["max_results"]
-        assert_same @client, cursor.client
+      def test_a_search_names_what_it_searches
+        refute_respond_to @client, :search
       end
 
       def test_search_all_posts

@@ -151,18 +151,6 @@ module X
           #   usage.project_cap - usage.project_usage
           def usage(**params) = Usage.current(client: self, **params)
 
-          # Search recent posts, the short form of search_posts
-          #
-          # @api public
-          # @param query [String] the search query
-          # @param params [Hash] query parameters merged over the default parameters
-          # @return [Cursor] a cursor over the matching posts
-          # @example Print posts about Ruby
-          #   client.search("ruby -is:retweet").each { |post| puts post.text }
-          def search(query, **params)
-            search_posts(query, **params)
-          end
-
           alias_method :find_tweet, :find_post
           alias_method :find_tweet!, :find_post!
           alias_method :find_all_tweets, :find_all_posts
