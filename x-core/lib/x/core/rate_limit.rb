@@ -23,9 +23,8 @@ module X
     # The response the limit was read from, as the client received it
     #
     # It is an escape hatch, for what the limit does not read: {#limit}, {#remaining}, and {#reset_at} are the
-    # headers it reports, and X::Response#headers and X::HTTPError#headers are all of them. What it holds is what
-    # the client sent the request with, which is Net::HTTP today, and the class of it is not part of what 1.x
-    # promises.
+    # headers it reports, and X::Response#headers and X::HTTPError#headers are all of them. It is the Net::HTTP
+    # response the client sent the request with.
     #
     # @api public
     # @return [Net::HTTPResponse] the HTTP response the rate limit headers came with

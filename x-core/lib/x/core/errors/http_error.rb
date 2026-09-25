@@ -36,8 +36,7 @@ module X
     # The response itself, as the client received it
     #
     # It is an escape hatch, for what the error does not read: the status is {#status}, the headers are
-    # {#headers}, and the body is {#body}. What it holds is what the client sent the request with, which is
-    # Net::HTTP today, and the class of it is not part of what 1.x promises.
+    # {#headers}, and the body is {#body}. It is the Net::HTTP response the client sent the request with.
     #
     # @api public
     # @return [Net::HTTPResponse] the HTTP response

@@ -99,8 +99,7 @@ module X
       # @api public
       # @param id [String, Integer, Resource] the identifier, or a resource whose identifier is taken
       # @param client [Object, nil] the client used to fetch the resource and its references
-      # @param batch [Batch, nil] internal to the object layer, which may change it within 1.x: the batch the stub
-      #   hydrates with
+      # @param batch [Batch, nil] the batch the stub hydrates with, in one lookup for every stub of the batch
       # @return [Resource] a stub that hydrates to the full resource
       # @raise [ArgumentError] if the identifier is not a number, for a resource whose identifiers are numbers
       # @example Page through the followers of a user without looking the user up
@@ -227,12 +226,9 @@ module X
     # @api public
     # @param attrs [Hash] the attributes, which must include the identifier
     # @param client [Object, nil] the client used to fetch references
-    # @param includes [Objects::Includes] internal to the object layer, which may change it within 1.x: the identity map of
-    #   the response the resource came from
-    # @param hydrated [Boolean] internal to the object layer, which may change it within 1.x: whether the resource
-    #   holds every requested field
-    # @param batch [Batch, nil] internal to the object layer, which may change it within 1.x: the batch this stub
-    #   hydrates with, in one lookup for every stub of the batch
+    # @param includes [Objects::Includes] the identity map of the response the resource came from
+    # @param hydrated [Boolean] whether the resource holds every requested field
+    # @param batch [Batch, nil] the batch this stub hydrates with, in one lookup for every stub of the batch
     # @return [Resource] a new resource
     # @raise [ArgumentError] if the attributes do not include the identifier, or the identifier is not one
     # @example Create a user from attributes

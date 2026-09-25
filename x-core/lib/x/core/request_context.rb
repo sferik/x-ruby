@@ -6,8 +6,7 @@ module X
     #
     # An error says what went wrong, and code that makes many requests needs to know which request it went wrong
     # for. The errors a request raises are built with it, so each of them reads the method and URI of that request,
-    # and names it in its message, as "GET /2/users/1: Could not find user" does. Neither is dug out of the
-    # Net::HTTP response an error holds, which is not part of what 1.x promises.
+    # and names it in its message, as "GET /2/users/1: Could not find user" does.
     #
     # A request that names another host is not followed there with the credentials of the API, so the URI is the
     # one the request was sent to, whole, rather than a path read against a base URL.
