@@ -52,7 +52,7 @@ module X
 
     def test_upload_describes_media_with_the_longest_alt_text_the_api_takes
       stub_upload_request
-      stub_request(:post, METADATA_URL).to_return(status: 204)
+      stub_request(:post, METADATA_URL).to_return(headers: JSON_HEADERS, body: {data: {id: TEST_MEDIA_ID}}.to_json)
       Uploader::MediaUpload.upload("test/sample_files/sample.png", client: @client, alt_text: "A" * 1000)
 
       assert_requested :post, METADATA_URL, body: {id: TEST_MEDIA_ID, metadata: {alt_text: {text: "A" * 1000}}}.to_json

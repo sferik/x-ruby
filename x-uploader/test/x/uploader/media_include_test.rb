@@ -46,7 +46,7 @@ module X
 
     def test_a_class_with_methods_of_its_own_uploads_an_image_and_describes_it
       stub_request(:post, BASE_URL).to_return(JSON)
-      stub_request(:post, "https://api.x.com/2/media/metadata").to_return(status: 204)
+      stub_request(:post, "https://api.x.com/2/media/metadata").to_return(JSON)
       media = Attachment.new.upload("test/sample_files/sample.gif", client: Client.new, alt_text: "A cat")
 
       assert_equal TEST_MEDIA_ID, media["id"]
@@ -72,7 +72,7 @@ module X
     end
 
     def test_a_class_with_methods_of_its_own_adds_subtitles
-      stub_request(:post, "https://api.x.com/2/media/subtitles").to_return(status: 204)
+      stub_request(:post, "https://api.x.com/2/media/subtitles").to_return(JSON)
       Attachment.new.add_subtitles(7, {"id" => 8}, "en", client: Client.new)
 
       assert_requested(:post, "https://api.x.com/2/media/subtitles", body: {id: "7", media_category: "TweetVideo", subtitles: {id: "8", language_code: "EN"}}.to_json)

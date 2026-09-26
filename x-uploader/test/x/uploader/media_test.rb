@@ -58,16 +58,12 @@ module X
       assert_not_requested :post, "https://api.x.com/2/media/upload"
     end
 
-    def test_upload_binary_returns_nil_for_empty_response
+    def test_upload_binary_raises_for_an_empty_response
       stub_request(:post, UPLOAD_URL).to_return(status: 204)
 
-      response = Uploader::MediaUpload.upload_binary(
-        SAMPLE_BINARY_CONTENT,
-        client: @client,
-        media_category: Uploader::MediaUpload::TWEET_IMAGE
-      )
-
-      assert_nil response
+      assert_raises(MissingData) do
+        Uploader::MediaUpload.upload_binary(SAMPLE_BINARY_CONTENT, client: @client, media_category: Uploader::MediaUpload::TWEET_IMAGE)
+      end
     end
 
     def test_infer_media_type_returns_correct_mime_type_for_each_category

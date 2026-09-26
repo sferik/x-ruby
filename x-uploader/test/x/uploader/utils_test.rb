@@ -25,7 +25,13 @@ module X
     end
 
     def test_media_data_of_a_response_that_carries_no_body
-      assert_nil Uploader.const_get(:Utils).media_data(nil, "of the upload")
+      error = assert_raises(MissingData) { Uploader.const_get(:Utils).media_data(nil, "of the upload") }
+
+      assert_equal "The response of the upload holds no media", error.message
+    end
+
+    def test_media_data_of_a_response_whose_data_is_not_media
+      assert_raises(MissingData) { Uploader.const_get(:Utils).media_data({"data" => []}, "of the upload") }
     end
 
     def test_media_data_of_a_response_that_describes_no_media

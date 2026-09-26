@@ -25,10 +25,10 @@ module X
       assert_equal TEST_MEDIA_ID, response["id"]
     end
 
-    def test_chunked_upload_returns_nil_when_finalize_returns_empty_response
+    def test_chunked_upload_raises_when_finalize_returns_empty_response
       stub_chunked_upload_workflow(finalize_status: 204, finalize_body: nil)
 
-      assert_nil perform_chunked_upload
+      assert_raises(MissingData) { perform_chunked_upload }
     end
 
     def test_init_raises_when_server_returns_empty_response

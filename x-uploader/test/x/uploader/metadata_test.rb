@@ -24,14 +24,14 @@ module X
     end
 
     def test_add_alt_text_to_a_media_identifier
-      stub_request(:post, METADATA_URL).to_return(status: 204)
+      stub_request(:post, METADATA_URL).to_return(headers: JSON_HEADERS, body: {data: {id: "7"}}.to_json)
 
-      assert_nil Uploader::Metadata.add_alt_text(7, "A cat", client: @client)
+      assert_equal({"id" => "7"}, Uploader::Metadata.add_alt_text(7, "A cat", client: @client))
       assert_requested :post, METADATA_URL, body: {id: "7", metadata: {alt_text: {text: "A cat"}}}.to_json
     end
 
     def test_add_alt_text_to_a_response_parsed_into_a_hash_subclass
-      stub_request(:post, METADATA_URL).to_return(status: 204)
+      stub_request(:post, METADATA_URL).to_return(headers: JSON_HEADERS, body: {data: {id: "7"}}.to_json)
       response = Class.new(Hash).new
       response["id"] = 7
       Uploader::Metadata.add_alt_text(response, "A cat", client: @client)
@@ -93,9 +93,9 @@ module X
     end
 
     def test_add_subtitles_without_a_display_name
-      stub_request(:post, SUBTITLES_URL).to_return(status: 204)
+      stub_request(:post, SUBTITLES_URL).to_return(headers: JSON_HEADERS, body: {data: {id: "7"}}.to_json)
 
-      assert_nil Uploader::Metadata.add_subtitles(7, 8, "FR", client: @client)
+      assert_equal({"id" => "7"}, Uploader::Metadata.add_subtitles(7, 8, "FR", client: @client))
       assert_requested :post, SUBTITLES_URL, body: {id: "7", media_category: "TweetVideo", subtitles: {id: "8", language_code: "FR"}}.to_json
     end
 
@@ -105,14 +105,14 @@ module X
     end
 
     def test_add_subtitles_to_an_amplify_video
-      stub_request(:post, SUBTITLES_URL).to_return(status: 204)
+      stub_request(:post, SUBTITLES_URL).to_return(headers: JSON_HEADERS, body: {data: {id: "7"}}.to_json)
       Uploader::Metadata.add_subtitles(7, 8, "EN", client: @client, media_category: :amplify_video)
 
       assert_requested :post, SUBTITLES_URL, body: {id: "7", media_category: "AmplifyVideo", subtitles: {id: "8", language_code: "EN"}}.to_json
     end
 
     def test_add_subtitles_takes_the_category_the_video_was_uploaded_as_in_any_case
-      stub_request(:post, SUBTITLES_URL).to_return(status: 204)
+      stub_request(:post, SUBTITLES_URL).to_return(headers: JSON_HEADERS, body: {data: {id: "7"}}.to_json)
       {"TweetVideo" => [:tweet_video, "TWEET_VIDEO", "tweetVideo"], "AmplifyVideo" => [:amplify_video, "Amplify_Video", "AmplifyVideo"]}.each do |sent, given|
         given.each do |media_category|
           WebMock.reset_executed_requests!

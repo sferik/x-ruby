@@ -25,12 +25,13 @@ module X
       # @api public
       # @param media [String, Pathname, IO, StringIO] the path to the media to upload, or an IO open on it
       # @param options [Hash] the options of {MediaUpload.upload}, such as media_category, alt_text, and processing_timeout
-      # @return [UploadedMedia, nil] the uploaded media, which holds the upload response, or the processing status of
+      # @return [UploadedMedia] the uploaded media, which holds the upload response, or the processing status of
       #   media that X processes
       # @raise [ArgumentError] if the media is neither a path nor an IO
       # @raise [Errno::ENOENT] if the file does not exist
       # @raise [ArgumentError] if the media is empty, which holds nothing to upload
       # @raise [InvalidMediaType] if no media category is given for media that names no file and no signature names one
+      # @raise [MissingData] if a response of the upload holds no media, or carries no body at all
       # @raise [MediaProcessingFailed] if media processing failed, with the status X reported
       # @raise [MediaProcessingTimeout] if the media is still processing once the processing timeout would pass
       # @raise [AltTextFailed] if the media is uploaded, but its alt text cannot be added, with the media it uploaded
@@ -53,7 +54,7 @@ module X
       # @api public
       # @param media [UploadedMedia, Hash, String, Integer] the uploaded media, or the media identifier
       # @param options [Hash] the options of {MediaUpload.await_processing}, such as processing_timeout
-      # @return [UploadedMedia, nil] the uploaded media, which holds the processing status, failed or not
+      # @return [UploadedMedia] the uploaded media, which holds the processing status, failed or not
       # @raise [MediaProcessingTimeout] if the media is still processing once the processing timeout would pass
       # @example Wait for a video uploaded with chunked_upload
       #   video = client.await_media_processing(video)
@@ -67,7 +68,7 @@ module X
       # @api public
       # @param media [UploadedMedia, Hash, String, Integer] the uploaded media, or the media identifier
       # @param options [Hash] the options of {MediaUpload.await_processing!}, such as processing_timeout
-      # @return [UploadedMedia, nil] the uploaded media, which holds the processing status
+      # @return [UploadedMedia] the uploaded media, which holds the processing status
       # @raise [MediaProcessingFailed] if media processing failed, with the status X reported
       # @raise [MediaProcessingTimeout] if the media is still processing once the processing timeout would pass
       # @example Wait for a video uploaded with chunked_upload, raising if X could not process it
@@ -81,7 +82,7 @@ module X
       # @api public
       # @param media [UploadedMedia, Hash, String, Integer] the uploaded media, or the media identifier
       # @param text [String] the alt text, of 1 to 1,000 characters
-      # @return [Hash, nil] the media identifier and the metadata now associated with it
+      # @return [Hash] the media identifier and the metadata now associated with it
       # @raise [ArgumentError] if the alt text is empty or longer than the API takes, before a request
       # @example Describe an image
       #   client.add_alt_text(media, "A cat asleep on a keyboard")
@@ -96,7 +97,7 @@ module X
       # @param subtitles [UploadedMedia, Hash, String, Integer] the uploaded subtitles, or their media identifier
       # @param language_code [String] the language of the subtitles, such as EN
       # @param options [Hash] the options of {Metadata.add_subtitles}: display_name and media_category
-      # @return [Hash, nil] the response data
+      # @return [Hash] the video identifier and the subtitles now associated with it
       # @example Subtitle a video in English
       #   client.add_subtitles(video, subtitles, "EN", display_name: "English")
       def add_subtitles(video, subtitles, language_code, **options)

@@ -2,6 +2,7 @@
 
 require_relative "../../test_helper"
 require "x/uploader/media_upload"
+require "x/uploader/metadata"
 
 module X
   # The responses of an upload that describe no media, which every step of one raises MissingData for
@@ -10,6 +11,7 @@ module X
     cover Uploader.const_get(:Chunks)
     cover Uploader.const_get(:Utils)
     cover UploadedMedia
+    cover Uploader::Metadata
 
     BASE_URL = "https://api.x.com/2/media/upload"
     VIDEO_FILE = "test/sample_files/sample.mp4"
@@ -39,6 +41,26 @@ module X
       error = assert_raises(MissingData) { chunked_upload }
 
       assert_equal "The response that finalizes the upload holds no media", error.message
+    end
+
+    def test_alt_text_whose_response_carries_no_body_raises
+      stub_request(:post, "https://api.x.com/2/media/metadata").to_return(status: 204)
+      error = assert_raises(MissingData) { Uploader::Metadata.add_alt_text(7, "A cat", client: @client) }
+
+      assert_equal "The response that adds the metadata holds none", error.message
+    end
+
+    def test_subtitles_whose_response_carries_no_body_raise
+      stub_request(:post, "https://api.x.com/2/media/subtitles").to_return(status: 204)
+
+      assert_raises(MissingData) { Uploader::Metadata.add_subtitles(7, 8, "EN", client: @client) }
+    end
+
+    def test_metadata_responses_whose_data_is_not_metadata_raise
+      stub_request(:post, %r{\Ahttps://api\.x\.com/2/media/(metadata|subtitles)\z}).to_return(headers: JSON_HEADERS, body: {data: []}.to_json)
+
+      assert_raises(MissingData) { Uploader::Metadata.add_alt_text(7, "A cat", client: @client) }
+      assert_raises(MissingData) { Uploader::Metadata.add_subtitles(7, 8, "EN", client: @client) }
     end
 
     def test_media_that_holds_no_identifier_raises

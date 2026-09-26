@@ -21,12 +21,11 @@ module X
       end
     end
 
-    def test_await_processing_returns_nil_for_empty_response
+    def test_await_processing_raises_for_an_empty_response
       stub_request(:get, status_url).to_return(status: 204)
+      error = assert_raises(MissingData) { await(:await_processing) }
 
-      response = await(:await_processing)
-
-      assert_nil response
+      assert_equal "The response of the status check holds no media", error.message
     end
 
     def test_await_processing_bang_returns_status_on_success
@@ -48,12 +47,10 @@ module X
       assert_requested(:get, status_url, times: 2)
     end
 
-    def test_await_processing_bang_returns_nil_for_empty_response
+    def test_await_processing_bang_raises_for_an_empty_response
       stub_request(:get, status_url).to_return(status: 204)
 
-      result = await(:await_processing!)
-
-      assert_nil result
+      assert_raises(MissingData) { await(:await_processing!) }
     end
 
     def test_await_processing_bang_gives_up_after_its_timeout
