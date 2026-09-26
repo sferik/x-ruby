@@ -154,7 +154,10 @@ module X
       # animated GIF uploads in chunks once it is larger than MAX_SIMPLE_UPLOAD_BYTES, which a single request takes
       # no more of; the API takes a GIF of up to 15 MB in chunks. An image uploads in a single request.
       #
-      # @api public
+      # Internal to x-uploader: upload decides with it how to send media, by rules that follow what the API takes, so
+      # that they can change within 1.x as the API does.
+      #
+      # @api private
       # @param media [String, Pathname, IO, StringIO] the path to the media to upload, or an IO open on it
       # @param media_category [String, Symbol] the media category, in any case
       # @return [Boolean] true if the media uploads in chunks
@@ -172,7 +175,10 @@ module X
       # whose extension names no type, such as a Tempfile, by the bytes it begins with. A GIF with a single frame is
       # an image, since X processes only animated GIFs as GIFs.
       #
-      # @api public
+      # Internal to x-uploader: upload infers the category of media it is given none for with it, by rules that
+      # follow what X processes, so that they can change within 1.x as X does.
+      #
+      # @api private
       # @param media [String, Pathname, IO, StringIO] the path to the media, or an IO open on it
       # @return [String] tweet_gif, tweet_video for MP4, QuickTime, WebM, or MPEG-TS, subtitles for SubRip or WebVTT, or tweet_image
       # @raise [InvalidMediaType] if the media names no file and no signature names its type
@@ -302,7 +308,10 @@ module X
       # GIFs, and a video or subtitles category otherwise takes its first type, MP4 or SubRip, whatever the file is
       # named. Any other category, an image, is typed by its extension alone.
       #
-      # @api public
+      # Internal to x-uploader: a chunked upload infers the type of media it is given none for with it, by rules that
+      # follow the types the API documents, so that they can change within 1.x as the API does.
+      #
+      # @api private
       # @param media [String, Pathname, IO, StringIO] the path to the media, or an IO open on it
       # @param media_category [String, Symbol] the media category, in any case
       # @return [String] the inferred MIME type

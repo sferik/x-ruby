@@ -5,7 +5,11 @@ require_relative "source"
 module X
   module Uploader
     # Tells an animated GIF from a still one by reading its blocks, without decoding any image
-    # @api public
+    #
+    # Internal to x-uploader: an upload tells with it whether a GIF is processed as a GIF or as an image, which X
+    # decides, so that it can change within 1.x as X does.
+    #
+    # @api private
     module Gif
       extend self
 
@@ -21,7 +25,7 @@ module X
 
       # Check whether a GIF holds more than one frame
       #
-      # @api public
+      # @api private
       # @param media [String, Pathname, IO, StringIO] the path to the GIF, or an IO open on it
       # @return [Boolean] true if the GIF has a second frame
       # @example Check whether a GIF is animated

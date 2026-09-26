@@ -127,7 +127,10 @@ module X
 
       # Fetch a single resource from an endpoint
       #
-      # @api public
+      # Internal to x-objects: the finders and hydrate call it with the path of an endpoint, which names the API's
+      # own resources and can change within 1.x as the API does.
+      #
+      # @api private
       # @param path [String] the endpoint path
       # @param client [Object] the client used to make the request
       # @param params [Hash] query parameters merged over the default parameters; one that overrides a default field
@@ -143,7 +146,10 @@ module X
 
       # Fetch a list of resources from an endpoint without paginating
       #
-      # @api public
+      # Internal to x-objects: the batch lookups call it with the path of an endpoint, which names the API's own
+      # resources and can change within 1.x as the API does.
+      #
+      # @api private
       # @param path [String] the endpoint path
       # @param client [Object] the client used to make the request
       # @param params [Hash] query parameters merged over the default parameters; one that overrides a default field
