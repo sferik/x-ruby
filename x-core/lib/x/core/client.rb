@@ -103,7 +103,7 @@ module X
     #   TooManyRedirects; 0 follows none, and raises for each redirect that could be followed
     # @param max_rate_limit_retries [Integer] the maximum number of times to retry a request refused for a rate limit,
     #   after waiting for the limit to reset
-    # @param max_rate_limit_wait [Integer] the maximum number of seconds to wait for a rate limit to reset; a request
+    # @param max_rate_limit_wait [Integer, Float] the maximum number of seconds to wait for a rate limit to reset; a request
     #   whose limit resets later raises TooManyRequests at once, and a few seconds are added at random to each wait,
     #   so that the requests one reset releases are not sent again in one burst
     # @param max_retries [Integer] the maximum number of times to send a request again after the API failed to answer

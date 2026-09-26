@@ -30,7 +30,7 @@ module X
 
       # The maximum number of seconds to wait for a rate limit to reset before retrying
       # @api private
-      # @return [Integer] the maximum wait in seconds
+      # @return [Integer, Float] the maximum wait in seconds
       # @example Get or set the maximum wait
       #   handler.max_rate_limit_wait = 60
       attr_reader :max_rate_limit_wait
@@ -39,7 +39,7 @@ module X
       #
       # @api private
       # @param max_rate_limit_retries [Integer] the maximum number of times to retry a request refused for a rate limit
-      # @param max_rate_limit_wait [Integer] the maximum number of seconds to wait for a rate limit to reset
+      # @param max_rate_limit_wait [Integer, Float] the maximum number of seconds to wait for a rate limit to reset
       # @return [RateLimitHandler] a new instance
       # @raise [ArgumentError] if the maximum number of retries is not an Integer of at least 0, or the maximum wait
       #   is not a number of seconds of at least 0

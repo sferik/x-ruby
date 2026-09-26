@@ -94,7 +94,7 @@ module X
       # @param on_response [#call, nil] the callable passed an X::Response after every request and streamed object
       # @param max_redirects [Integer] the maximum number of redirects to follow
       # @param max_rate_limit_retries [Integer] the maximum number of times to retry a request refused for a rate limit
-      # @param max_rate_limit_wait [Integer] the maximum number of seconds to wait for a rate limit to reset
+      # @param max_rate_limit_wait [Integer, Float] the maximum number of seconds to wait for a rate limit to reset
       # @param max_retries [Integer] the maximum number of times to send an idempotent request again after a failure
       # @return [void]
       def initialize_settings(base_url:, default_array_class:, default_object_class:, headers:, on_response:,
