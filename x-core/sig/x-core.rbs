@@ -757,13 +757,11 @@ module X
     @refreshed_at: Float?
     def initialize: (client_id: String, access_token: String, refresh_token: String, ?client_secret: String?, ?expires_at: Time?, ?connection: Connection, ?on_token_refresh: _TokenRefreshHook?) -> void
     def header: (Net::HTTPRequest? request) -> Hash[String, String]
-    def same_credentials?: (untyped other) -> bool
     def inspect: () -> String
     def token_expired?: -> bool
     def refresh!: -> OAuth2Authenticator
 
     private
-    def credentials: -> Array[String?]
     def refresh_expired_token: (Connection connection) -> void
     def refresh_rejected_token!: (String rejected_token, Connection connection) -> bool
     def holds?: (Hash[Symbol, untyped] options) -> bool

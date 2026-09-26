@@ -17,7 +17,6 @@ module X
         assert_includes Client.private_instance_methods, name
       end
       assert_includes StreamingClient.private_instance_methods, :proxy_url
-      assert_includes OAuth2Authenticator.private_instance_methods, :credentials
     end
   end
 end

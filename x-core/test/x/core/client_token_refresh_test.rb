@@ -168,7 +168,7 @@ module X
       copy = client.with(client_secret: "NEW_CLIENT_SECRET")
 
       assert_equal ["NEW_ACCESS_TOKEN", "NEW_REFRESH_TOKEN"], [copy.authenticator.access_token, copy.authenticator.refresh_token]
-      refute_operator copy.authenticator, :same_credentials?, client.authenticator
+      refute_same client.authenticator, copy.authenticator
     end
 
     def test_a_copy_given_a_token_replaces_the_refreshed_one
