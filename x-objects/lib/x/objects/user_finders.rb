@@ -147,8 +147,8 @@ module X
 
       # Look up a user by username
       #
-      # A String of digits is a username, so this looks the account whose handle is that number up, where find would
-      # take it for an identifier.
+      # It looks every value up as a username, a String of digits as the account whose handle is that number, as find
+      # looks up any String, so code that reads a value from elsewhere says which it means, as find_by_id does.
       #
       # @api public
       # @param username [String] the username, with or without a leading at sign

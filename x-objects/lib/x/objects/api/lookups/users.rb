@@ -39,8 +39,9 @@ module X
 
           # Look up a user by username
           #
-          # A String of digits is a username, so this looks the account whose handle is that number up, where
-          # find_user would take it for an identifier.
+          # It looks every value up as a username, a String of digits as the account whose handle is that number, as
+          # find_user looks up any String, so code that reads a value from elsewhere says which it means, as
+          # find_user_by_id does.
           #
           # @api public
           # @param username [String] the username, with or without a leading at sign
@@ -119,8 +120,9 @@ module X
 
           # Look up many users by username, in parallel batches
           #
-          # A String of digits is a username, so this looks the accounts whose handles are those numbers up, where
-          # find_all_users would take them for identifiers.
+          # It looks every value up as a username, Strings of digits as the accounts whose handles are those numbers,
+          # as find_all_users looks up any String, so code that reads values from elsewhere says which it means, as
+          # find_all_users_by_id does.
           #
           # @api public
           # @param usernames [Array<String>] the usernames, with or without leading at signs
