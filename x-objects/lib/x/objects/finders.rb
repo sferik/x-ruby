@@ -83,8 +83,10 @@ module X
       # @raise [ArgumentError] if a resource is not of this class, which a lookup of its identifier would find
       #   another resource for, before a request
       # @yieldparam problem [Problem] each problem the API reported, such as a resource that was not found
-      # @example Expand the authors a search did not include
+      # @example Look up every field of the authors of posts, the ones a search included among them
       #   X::User.hydrate_all(posts.map(&:author), client: client)
+      # @example Expand only the authors a search did not include, which the API bills for alone
+      #   X::User.hydrate_all(posts.filter_map(&:author).select(&:stub?), client: client)
       def hydrate_all(resources, client:, concurrency: DEFAULT_CONCURRENCY, **params, &)
         resources = resources.compact
         validate_class!(resources)
