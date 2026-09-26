@@ -114,12 +114,12 @@ module X
       assert_in_delta Time.now + 7200, client.expires_at, 5
     end
 
-    def test_on_token_refresh_receives_the_authenticator
+    def test_on_token_refresh_receives_the_tokens
       refreshed = []
-      client = Client.new(**test_oauth2_credentials, on_token_refresh: ->(authenticator) { refreshed << authenticator })
+      client = Client.new(**test_oauth2_credentials, on_token_refresh: ->(tokens) { refreshed << tokens })
       client.authenticator.refresh!
 
-      assert_equal [client.authenticator], refreshed
+      assert_equal [OAuth2Tokens.new(access_token: "NEW_ACCESS_TOKEN", refresh_token: "NEW_REFRESH_TOKEN", expires_at: client.expires_at)], refreshed
     end
 
     def test_on_token_refresh_is_optional_and_a_copy_can_add_one

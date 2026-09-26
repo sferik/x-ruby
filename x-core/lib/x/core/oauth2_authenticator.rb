@@ -5,14 +5,17 @@ require_relative "authenticator"
 require_relative "connection"
 require_relative "errors/authorization_error"
 require_relative "errors/unauthorized"
+require_relative "oauth2_tokens"
 require_relative "origin"
+require_relative "refresh_reporter"
 require_relative "token_endpoint"
 
 module X
   # Handles OAuth 2.0 authentication, refreshing the access token when it expires
   #
   # X issues a new refresh token with each access token and accepts a refresh token once, so an authenticator
-  # refreshes under a lock, and calls on_token_refresh with itself so that the new tokens can be stored.
+  # refreshes under a lock, and passes on_token_refresh the tokens each refresh issued, as OAuth2Tokens, so that
+  # they can be stored.
   #
   # @api public
   class OAuth2Authenticator < Authenticator
@@ -65,7 +68,7 @@ module X
     #   authenticator.connection
     attr_reader :connection
 
-    # A callable passed the authenticator after each refresh, to store its new tokens
+    # A callable passed the OAuth2Tokens of each refresh, to store them
     #
     # It is the callable the authenticator was built with. An authenticator a client builds is built with none: the
     # on_token_refresh of the client, and of each copy of it that shares the authenticator, is passed each refresh,
@@ -87,7 +90,7 @@ module X
     # @param refresh_token [String] the OAuth 2.0 refresh token
     # @param expires_at [Time, nil] the expiration time of the access token
     # @param connection [Connection] the connection for making token requests
-    # @param on_token_refresh [#call, nil] a callable passed the authenticator after each refresh
+    # @param on_token_refresh [#call, nil] a callable passed the OAuth2Tokens of each refresh
     # @return [OAuth2Authenticator] a new authenticator instance
     # @example Create an authenticator
     #   authenticator = X::OAuth2Authenticator.new(
@@ -106,6 +109,7 @@ module X
       @connection = connection
       @on_token_refresh = on_token_refresh
       @mutex = Mutex.new
+      @reporter = Core::RefreshReporter.new
     end
 
     # Generate the authentication header, refreshing an expired token first
@@ -161,7 +165,7 @@ module X
 
     # Refresh the access token using the refresh token
     #
-    # The authenticator holds the new tokens once it returns, and has passed itself to on_token_refresh.
+    # The authenticator holds the new tokens once it returns, and has passed them to on_token_refresh.
     #
     # @api public
     # @return [OAuth2Authenticator] the authenticator, which holds the new tokens
@@ -170,8 +174,7 @@ module X
     # @example Refresh the tokens and store them
     #   store(authenticator.refresh!.refresh_token)
     def refresh!
-      @mutex.synchronize { refresh(connection) }
-      report_refresh
+      report_refresh(@mutex.synchronize { refresh(connection) })
       self
     end
 
@@ -198,8 +201,8 @@ module X
     # @raise [AuthorizationError] if X refuses to refresh the token
     # @raise [TooManyRequests, ServerError] if the token endpoint limits the rate of the request or fails to answer
     def refresh_expired_token(connection)
-      refreshed = @mutex.synchronize { refresh(connection) if token_expired? }
-      report_refresh if refreshed
+      tokens = @mutex.synchronize { refresh(connection) if token_expired? }
+      report_refresh(tokens) if tokens
     end
 
     # Refresh a rejected access token, unless it was already replaced or just issued
@@ -216,10 +219,10 @@ module X
     # @raise [AuthorizationError] if X refuses to refresh the token
     # @raise [TooManyRequests, ServerError] if the token endpoint limits the rate of the request or fails to answer
     def refresh_rejected_token!(rejected_token, connection)
-      refreshed, replaced = @mutex.synchronize do
+      tokens, replaced = @mutex.synchronize do
         [(refresh(connection) if access_token.eql?(rejected_token) && !fresh?), !access_token.eql?(rejected_token)]
       end
-      report_refresh if refreshed
+      report_refresh(tokens) if tokens
       replaced
     end
 
@@ -298,41 +301,40 @@ module X
       @mutex.synchronize { @expires_at = expires_at }
     end
 
-    # Pass each refresh to a callable besides on_token_refresh
+    # Pass each refresh to the callables another reads besides on_token_refresh
     #
     # Internal to x-core: Client passes the refreshes of the authenticator it builds to the on_token_refresh of each
-    # client that shares it, and calls it with __send__, since it is private: the callable that does so is not one a
-    # caller gave, so on_token_refresh does not read it.
+    # client that shares it, and calls it with __send__, since it is private: the callables are not ones a caller
+    # gave the authenticator, so on_token_refresh does not read them.
     #
     # @api private
-    # @param listener [#call] the callable passed the authenticator after each refresh
+    # @param hooks [#call] a callable that returns the callables to pass each refresh, read at each refresh
     # @return [#call] the callable
-    def report_refreshes_to(listener) = (@refresh_listener = listener)
+    def report_refreshes_to(hooks) = @reporter.also_to(hooks)
 
     # Refresh the access token, holding the lock
     # @api private
     # @param connection [Connection] the connection to send the refresh over
-    # @return [true] true, once the authenticator holds the new tokens
+    # @return [OAuth2Tokens] the tokens the refresh issued, once the authenticator holds them
     # @raise [AuthorizationError] if X refuses to refresh the token
     # @raise [TooManyRequests, ServerError] if the token endpoint limits the rate of the request or fails to answer
     def refresh(connection)
       update_tokens(Core::TokenEndpoint.fetch(oauth2_client.refresh_token_request(refresh_token:), connection:))
-      true
+      @reporter.issued(OAuth2Tokens.new(access_token:, refresh_token:, expires_at:))
     rescue SimpleOAuth::OAuth2::Error => e
       raise AuthorizationError.from(e, DEFAULT_ERROR_MESSAGE)
     end
 
-    # Pass the authenticator to on_token_refresh, once the lock is released
+    # Pass the tokens of a refresh to its callables, once the lock is released
     #
-    # The callable can make a request of its own, such as looking up the user whose tokens it stores, which
-    # asks this authenticator for a header and so takes the lock again.
+    # A callable can make a request of its own, such as looking up the user whose tokens it stores, which asks this
+    # authenticator for a header and so takes the lock again. The refreshes are reported in the order they were
+    # made, and one already replaced is not reported; see {Core::RefreshReporter}.
     #
     # @api private
+    # @param tokens [OAuth2Tokens] the tokens the refresh issued
     # @return [void]
-    def report_refresh
-      on_token_refresh&.call(self)
-      @refresh_listener&.call(self)
-    end
+    def report_refresh(tokens) = @reporter.report(tokens, on_token_refresh)
 
     # The client for the token endpoint
     # @api private

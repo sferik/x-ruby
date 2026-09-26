@@ -159,7 +159,7 @@ module X
     #   redirect is not a valid URL
     # @raise [TooManyRequests, ServerError] if the token endpoint limits the rate of the request or fails to answer
     # @example Act for the user who authorized the app
-    #   client = authorization.client(request.url, on_token_refresh: ->(auth) { store.save(auth.refresh_token) })
+    #   client = authorization.client(request.url, on_token_refresh: ->(tokens) { store.save(tokens.refresh_token) })
     def client(callback, **options)
       Client.new(**credentials(callback), **options)
     end

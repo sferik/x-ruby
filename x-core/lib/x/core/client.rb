@@ -66,7 +66,7 @@ module X
     #   client.authenticator.token_expired?
     attr_reader :authenticator
 
-    # A callable passed the OAuth 2.0 authenticator after each refresh
+    # A callable passed the OAuth2Tokens of each refresh
     # @api public
     # @return [#call, nil] the callable, or nil for none
     # @example Read the hook a refresh reports to
@@ -115,8 +115,8 @@ module X
     #   the API may have acted on a POST whose answer never arrived
     # @param on_response [#call, nil] a callable passed an X::Response after every request, failed ones included, and
     #   every object a stream delivers; a block passed to a single request receives the same summary, after this
-    # @param on_token_refresh [#call, nil] a callable passed the OAuth 2.0 authenticator after each refresh, to store
-    #   its new tokens
+    # @param on_token_refresh [#call, nil] a callable passed the OAuth2Tokens of each refresh, to store them; the
+    #   refreshes are reported one at a time, in the order they were made, and one already replaced is not reported
     # @return [Client] a new client instance
     # @raise [ArgumentError] if credentials are given that do not form a complete set, which would send requests
     #   without them, or authenticate as the app rather than a user
@@ -127,7 +127,7 @@ module X
     #   client = X::Client.new(bearer_token: "your_bearer_token")
     # @example Create a client with OAuth 2.0 authentication that stores the tokens of each refresh
     #   client = X::Client.new(client_id: "id", client_secret: "secret", access_token: "token", refresh_token: "refresh",
-    #     expires_at: Time.now + 7200, on_token_refresh: ->(auth) { store.save(auth.refresh_token) })
+    #     expires_at: Time.now + 7200, on_token_refresh: ->(tokens) { store.save(tokens.refresh_token) })
     # @example Create a client with OAuth 1.0a authentication
     #   client = X::Client.new(api_key: "key", api_key_secret: "secret", access_token: "token", access_token_secret: "token_secret")
     # @example Create a client that fetches an app-only bearer token with the API key and secret
@@ -184,7 +184,7 @@ module X
     # client reaches the other, since X accepts a refresh token once, unless it is given a client ID, client secret,
     # access token, or refresh token that the authenticator does not hold. It shares it whatever the tokens are when
     # it is built, so a refresh on another thread while it is built reaches it too. A refresh then passes the
-    # authenticator to the on_token_refresh of each client that shares it, once for each distinct callable.
+    # tokens it issued to the on_token_refresh of each client that shares it, once for each distinct callable.
     #
     # @api public
     # @param options [Hash] the options to change, as accepted by initialize

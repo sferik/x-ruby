@@ -752,8 +752,8 @@ module X
     attr_reader expires_at: Time?
     attr_reader connection: Connection
     attr_reader on_token_refresh: _TokenRefreshHook?
-    @refresh_listener: _TokenRefreshHook?
     @mutex: Thread::Mutex
+    @reporter: Core::RefreshReporter
     @refreshed_at: Float?
     def initialize: (client_id: String, access_token: String, refresh_token: String, ?client_secret: String?, ?expires_at: Time?, ?connection: Connection, ?on_token_refresh: _TokenRefreshHook?) -> void
     def header: (Net::HTTPRequest? request) -> Hash[String, String]
@@ -770,13 +770,41 @@ module X
     def retrying_rejected_token: [T] (URI::Generic origin, Connection connection) { () -> T } -> T
     def carried_token?: (Unauthorized error, URI::Generic origin) -> bool
     def update_expires_at: (Time? expires_at) -> void
-    def report_refreshes_to: (_TokenRefreshHook listener) -> _TokenRefreshHook
+    def report_refreshes_to: (^() -> Array[_TokenRefreshHook] hooks) -> ^() -> Array[_TokenRefreshHook]
     attr_reader client_secret: String?
-    def refresh: (Connection connection) -> true
-    def report_refresh: -> void
+    def refresh: (Connection connection) -> OAuth2Tokens
+    def report_refresh: (OAuth2Tokens tokens) -> void
     def oauth2_client: -> SimpleOAuth::OAuth2::Client
     def update_tokens: (SimpleOAuth::OAuth2::Token token) -> void
     def fresh?: () -> bool
+  end
+
+  module Core
+    class RefreshReporter
+      @monitor: Monitor
+      @latest: OAuth2Tokens?
+      @hooks: (^() -> Array[_TokenRefreshHook])?
+
+      def initialize: () -> void
+      def issued: (OAuth2Tokens tokens) -> OAuth2Tokens
+      def also_to: (^() -> Array[_TokenRefreshHook] hooks) -> ^() -> Array[_TokenRefreshHook]
+      def report: (OAuth2Tokens tokens, _TokenRefreshHook? hook) -> void
+
+      private
+      def pass: (OAuth2Tokens tokens, Array[_TokenRefreshHook] hooks) -> void
+    end
+  end
+
+  class OAuth2Tokens
+    attr_reader access_token: String
+    attr_reader refresh_token: String
+    attr_reader expires_at: Time?
+    def initialize: (access_token: String, refresh_token: String, ?expires_at: Time?) -> void
+    def to_h: () -> {access_token: String, refresh_token: String, expires_at: Time?}
+    def ==: (untyped other) -> bool
+    def eql?: (untyped other) -> bool
+    def hash: () -> Integer
+    def inspect: () -> String
   end
 
   interface _ClientRegistry
@@ -786,7 +814,7 @@ module X
   end
 
   interface _TokenRefreshHook
-    def call: (OAuth2Authenticator authenticator) -> untyped
+    def call: (OAuth2Tokens tokens) -> untyped
   end
 
   interface _CredentialHost

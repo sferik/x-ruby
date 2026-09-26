@@ -6,6 +6,7 @@ module X
   class ClientTokenRefreshHookTest < Minitest::Test
     cover_client
     cover OAuth2Authenticator
+    cover Core::RefreshReporter
 
     def setup
       stub_request(:post, "https://api.x.com/2/oauth2/token")
@@ -28,7 +29,7 @@ module X
 
     def test_an_authenticator_passes_a_refresh_to_its_own_callable_before_the_one_it_reports_to
       authenticator = OAuth2Authenticator.new(**test_oauth2_credentials, on_token_refresh: ->(_auth) { @refreshed << :own })
-      authenticator.__send__(:report_refreshes_to, ->(auth) { @refreshed << auth.refresh_token })
+      authenticator.__send__(:report_refreshes_to, -> { [->(tokens) { @refreshed << tokens.refresh_token }] })
       authenticator.refresh!
 
       assert_equal [:own, "NEW_REFRESH_TOKEN"], @refreshed

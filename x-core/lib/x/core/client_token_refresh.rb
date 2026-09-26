@@ -74,7 +74,7 @@ module X
       # The access token for OAuth authentication, as last refreshed
       #
       # It is private, as {ClientCredentials#api_key_secret} is. A hook given to on_token_refresh is passed the
-      # authenticator, which holds the tokens of the refresh it reports.
+      # OAuth2Tokens of the refresh it reports.
       #
       # @api private
       # @return [String, nil] the access token for OAuth authentication
@@ -107,7 +107,7 @@ module X
       def new_oauth2_authenticator(client_id:, access_token:, refresh_token:)
         clients = @token_refresh_clients = ObjectSpace::WeakMap.new.tap { |registry| registry[self] = true }
         OAuth2Authenticator.new(client_id:, client_secret: @client_secret, access_token:, refresh_token:, expires_at: @expires_at, connection: @connection).tap do |authenticator|
-          authenticator.__send__(:report_refreshes_to, ->(refreshed) { clients.keys.filter_map(&:on_token_refresh).uniq.each { |hook| hook.call(refreshed) } })
+          authenticator.__send__(:report_refreshes_to, -> { clients.keys.filter_map(&:on_token_refresh).uniq })
         end
       end
 

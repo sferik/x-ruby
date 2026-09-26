@@ -247,7 +247,7 @@ x_client.app_only.get("tweets/search/stream/rules")
 # Authenticate with OAuth 2.0, refreshing the access token when it expires or the API rejects it,
 # and store the tokens of each refresh, since X accepts a refresh token only once
 oauth2_client = X::Client.new(client_id: "ID", client_secret: "SECRET", access_token: "TOKEN", refresh_token: "REFRESH",
-  expires_at: Time.now + 7200, on_token_refresh: ->(auth) { store(auth.access_token, auth.refresh_token, auth.expires_at) })
+  expires_at: Time.now + 7200, on_token_refresh: ->(tokens) { store(tokens.access_token, tokens.refresh_token, tokens.expires_at) })
 
 # Ask a user to authorize the app with OAuth 2.0 and PKCE, keeping the state and code verifier until X redirects back
 authorization = X::OAuth2Authorization.new(client_id: "ID", redirect_uri: "https://example.com/callback",
@@ -259,7 +259,7 @@ redirect_to authorization.url
 # Then, where X redirects back, exchange the code for a client that acts for the user
 authorization = X::OAuth2Authorization.new(client_id: "ID", redirect_uri: "https://example.com/callback",
   state: session[:state], code_verifier: session[:code_verifier])
-user_client = authorization.client(request.url, on_token_refresh: ->(auth) { store(auth.refresh_token) })
+user_client = authorization.client(request.url, on_token_refresh: ->(tokens) { store(tokens.refresh_token) })
 
 # Define a custom response object
 Language = Struct.new(:code, :name, :local_name, :status, :debug)

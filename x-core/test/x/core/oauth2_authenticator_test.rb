@@ -306,12 +306,15 @@ module X
       assert_not_requested @refresh
     end
 
-    def test_on_token_refresh_receives_the_authenticator_after_its_tokens_change
+    def test_on_token_refresh_receives_the_tokens_the_refresh_issued
+      stub_request(:post, "https://api.x.com/2/oauth2/token")
+        .to_return(status: 200, body: {access_token: "NEW_ACCESS_TOKEN", refresh_token: "NEW_REFRESH_TOKEN", expires_in: 7200}.to_json)
       tokens = []
-      authenticator = OAuth2Authenticator.new(**test_oauth2_credentials, on_token_refresh: ->(auth) { tokens << [auth, auth.refresh_token] })
+      authenticator = OAuth2Authenticator.new(**test_oauth2_credentials, on_token_refresh: ->(refreshed) { tokens << refreshed })
       authenticator.refresh!
 
-      assert_equal [[authenticator, "NEW_REFRESH_TOKEN"]], tokens
+      assert_equal [OAuth2Tokens.new(access_token: "NEW_ACCESS_TOKEN", refresh_token: "NEW_REFRESH_TOKEN", expires_at: authenticator.expires_at)], tokens
+      assert_in_delta Time.now + 7200, tokens.first.expires_at, 5
     end
 
     def test_on_token_refresh_defaults_to_nil
