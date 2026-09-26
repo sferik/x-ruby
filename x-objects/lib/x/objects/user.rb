@@ -194,13 +194,20 @@ module X
     #   @example Leave out the parody accounts
     #     users.reject(&:parody?)
 
-    # @!attribute [r] is_identity_verified
-    #   Whether the account's identity is verified
+    # @!attribute [r] identity_verified
+    #   Whether the account's identity is verified, the is_identity_verified field
     #   @api public
     #   @return [Boolean, nil] true if the identity is verified
-    #   @example Get the raw flag
-    #     user.is_identity_verified
-    attribute :is_identity_verified
+    #   @example Check whether a user's identity is verified
+    #     user.identity_verified?
+    attribute :identity_verified, :boolean, key: %w[is_identity_verified]
+
+    # @!method identity_verified?
+    #   Check whether the account's identity is verified
+    #   @api public
+    #   @return [Boolean] true if the identity is verified
+    #   @example Check whether a user's identity is verified
+    #     user.identity_verified?
 
     # @!attribute [r] subscription_type
     #   The subscription the account pays for: Basic, Premium, PremiumPlus, or None
@@ -343,14 +350,6 @@ module X
     attribute_alias :most_recent_tweet_id, :most_recent_post_id
     alias_method :pinned_tweet, :pinned_post
     alias_method :most_recent_tweet, :most_recent_post
-
-    # Check whether the account's identity is verified
-    #
-    # @api public
-    # @return [Boolean] true if the identity is verified
-    # @example Check whether a user's identity is verified
-    #   user.identity_verified?
-    def identity_verified? = is_identity_verified.eql?(true)
 
     # The permalink of the profile, by username when known and by identifier otherwise
     #

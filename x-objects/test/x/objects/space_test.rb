@@ -59,10 +59,15 @@ module X
     end
 
     def test_ticketed
-      assert @space.is_ticketed
+      assert @space.ticketed
       assert_predicate @space, :ticketed?
       assert_instance_of FalseClass, Space.new({"id" => "1"}).ticketed?
       assert_instance_of FalseClass, Space.new({"id" => "1", "is_ticketed" => false}).ticketed?
+    end
+
+    def test_ticketed_is_read_from_the_field_the_api_names_is_ticketed
+      assert_nil Space.new({"id" => "1"}).ticketed
+      refute_respond_to @space, :is_ticketed
     end
 
     def test_ids

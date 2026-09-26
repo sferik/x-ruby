@@ -797,7 +797,7 @@ module X
     def verified_type: () -> String?
     def parody: () -> bool?
     def parody?: () -> bool
-    def is_identity_verified: () -> bool?
+    def identity_verified: () -> bool?
     def identity_verified?: () -> bool
     def subscription_type: () -> String?
     def affiliation: () -> Hash[String, untyped]?
@@ -1044,7 +1044,7 @@ module X
     def ended_at: () -> Time?
     def scheduled_start: () -> Time?
     def updated_at: () -> Time?
-    def is_ticketed: () -> bool?
+    def ticketed: () -> bool?
     def ticketed?: () -> bool
     def participant_count: () -> Integer?
     def subscriber_count: () -> Integer?

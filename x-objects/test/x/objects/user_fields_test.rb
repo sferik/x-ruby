@@ -23,7 +23,8 @@ module X
       assert_predicate @user, :parody?
       assert @user.parody
       assert_predicate @user, :identity_verified?
-      assert @user.is_identity_verified
+      assert @user.identity_verified
+      refute_respond_to @user, :is_identity_verified
     end
 
     def test_parody_and_identity_verified_of_a_user_the_api_says_nothing_about

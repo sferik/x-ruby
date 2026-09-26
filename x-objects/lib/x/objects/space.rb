@@ -150,13 +150,20 @@ module X
     #     space.updated_at
     attribute :updated_at, :time
 
-    # @!attribute [r] is_ticketed
-    #   Whether the space requires a ticket
+    # @!attribute [r] ticketed
+    #   Whether the space requires a ticket, the is_ticketed field
     #   @api public
     #   @return [Boolean, nil] true if the space is ticketed
-    #   @example Get the raw flag
-    #     space.is_ticketed
-    attribute :is_ticketed
+    #   @example Check whether a space is ticketed
+    #     space.ticketed?
+    attribute :ticketed, :boolean, key: %w[is_ticketed]
+
+    # @!method ticketed?
+    #   Check whether the space requires a ticket
+    #   @api public
+    #   @return [Boolean] true if the space is ticketed
+    #   @example Check whether a space is ticketed
+    #     space.ticketed?
 
     # @!attribute [r] participant_count
     #   The number of participants
@@ -245,14 +252,6 @@ module X
     #   @example Get the invited users
     #     space.invited_users
     references :invited_users, :User, key: %w[invited_user_ids]
-
-    # Check whether the space requires a ticket
-    #
-    # @api public
-    # @return [Boolean] true if the space is ticketed
-    # @example Check whether a space is ticketed
-    #   space.ticketed?
-    def ticketed? = is_ticketed.eql?(true)
 
     # The posts shared in this space
     #
