@@ -368,7 +368,7 @@ module X
   class Authenticator
     AUTHENTICATION_HEADER: String
 
-    def header: (Net::HTTPRequest? request) -> Hash[String, String]
+    def header: (Net::HTTPRequest request) -> Hash[String, String]
     def user_id: () -> Integer?
     def inspect: () -> String
   end
