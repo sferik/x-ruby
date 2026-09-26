@@ -8,13 +8,16 @@ module X
     # Media to act on: what an upload returned, or the identifier of media
     type media = UploadedMedia | Hash[String, untyped] | String | Integer
 
-    # Media to upload: a path to it, an IO open on it, or the source it has been resolved to
-    type uploadable = path | _Reader | Source
+    # Media to upload: a path to it, or an IO open on it
+    type uploadable = path | _Reader
+
+    # Media to upload, or the Source an upload has resolved it to, which the internals of the uploaders pass on
+    type resolvable = uploadable | Source
 
     class Source
       SNIFF_BYTES: Integer
 
-      def self.for: (uploadable media) -> Source
+      def self.for: (resolvable media) -> Source
       def self.named_or_read: (untyped media) -> Source
       def self.path_alone?: (untyped media) -> bool
       def self.on_file?: (untyped media) -> bool
@@ -166,13 +169,13 @@ module X
       extend MediaUpload
 
       def upload: (uploadable media, client: _Client, ?media_category: (String | Symbol)?, ?alt_text: String?, ?processing_timeout: Float | Integer, ?media_type: String?, ?chunk_size_mb: (Float | Integer)?, ?concurrency: Integer) -> UploadedMedia
-      def chunked_upload?: (uploadable media, String | Symbol media_category) -> bool
-      def infer_media_category: (uploadable media) -> String
+      def chunked_upload?: (resolvable media, String | Symbol media_category) -> bool
+      def infer_media_category: (resolvable media) -> String
       def upload_binary: (String content, client: _Client, media_category: String | Symbol) -> UploadedMedia
       def chunked_upload: (uploadable media, client: _Client, ?media_category: (String | Symbol)?, ?media_type: String?, ?chunk_size_mb: (Float | Integer)?, ?concurrency: Integer) -> UploadedMedia
       def await_processing: (media media, client: _Client, ?processing_timeout: Float | Integer) -> UploadedMedia
       def await_processing!: (media media, client: _Client, ?processing_timeout: Float | Integer) -> UploadedMedia
-      def infer_media_type: (uploadable media, String | Symbol media_category) -> String
+      def infer_media_type: (resolvable media, String | Symbol media_category) -> String
     end
 
     module Gif
@@ -182,7 +185,7 @@ module X
       IMAGE_DESCRIPTOR_SIZE: Integer
       extend Gif
 
-      def animated?: (uploadable media) -> bool
+      def animated?: (resolvable media) -> bool
 
       private
       def after_block: (String data, Integer position, Integer block) -> Integer

@@ -139,7 +139,8 @@ module X
         source = Source.for(media)
         media_category = Validator.validate_upload!(source, media_category, alt_text:, chunk_size_mb:, concurrency:, processing_timeout:) { infer_media_category(source) }
         uploaded = if chunked_upload?(source, media_category)
-          chunked_upload(source, client:, media_category:, media_type:, chunk_size_mb:, concurrency:)
+          # The media is passed on as the Source it was resolved to, which the signatures keep out of what media is
+          chunked_upload(_ = source, client:, media_category:, media_type:, chunk_size_mb:, concurrency:)
         else
           upload_binary(source.content, client:, media_category:)
         end
