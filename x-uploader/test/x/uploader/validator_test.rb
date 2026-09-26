@@ -192,6 +192,13 @@ module X
         alt_text: "A pixel", chunk_size_mb: nil, concurrency: 4, processing_timeout: 300)
     end
 
+    def test_validate_upload_infers_a_media_category_it_is_given_none_for_with_the_block
+      inferred = Uploader.const_get(:Validator).validate_upload!(source("test/sample_files/sample.png"), nil,
+        alt_text: nil, chunk_size_mb: nil, concurrency: 4, processing_timeout: 300) { :TWEET_GIF }
+
+      assert_equal "tweet_gif", inferred
+    end
+
     def test_validate_upload_validates_the_file_the_alt_text_and_the_chunk_options
       assert_raises(Errno::ENOENT) { validate_upload("nope.png") }
       assert_raises(ArgumentError) { validate_upload("test/sample_files/sample.png", alt_text: "") }

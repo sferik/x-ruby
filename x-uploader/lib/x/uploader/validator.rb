@@ -27,17 +27,21 @@ module X
       # Validate the arguments of an upload, and give its media category in lowercase
       #
       # It validates everything an upload can be refused for before it sends a request, so that no media is uploaded,
-      # and billed, for an upload that cannot finish.
+      # and billed, for an upload that cannot finish. A media category of nil is inferred with the block, once the
+      # media is known to exist and hold something, so that media that holds nothing raises for that, rather than for
+      # a category nothing names.
       #
       # @api private
       # @param source [Source] the media to upload
-      # @param media_category [String, Symbol] the media category, in any case
+      # @param media_category [String, Symbol, nil] the media category, in any case, or nil to infer it
       # @param alt_text [String, nil] the alt text of the media, or nil for media described with none
       # @param chunk_size_mb [Float, Integer, nil] the size of each chunk in megabytes, or nil to derive one
       # @param concurrency [Integer] the number of chunks uploaded at once, which must be at least one
       # @param processing_timeout [Integer, Float] the seconds to wait for the media to process
+      # @yieldreturn [String, Symbol] the media category inferred from the media, when none is given
       # @return [String] the media category in lowercase
       # @raise [Errno::ENOENT] if the file does not exist
+      # @raise [ArgumentError] if the media is empty
       # @raise [ArgumentError] if the media category is invalid, the alt text is empty or too long, the chunk size is
       #   not positive, the concurrency is less than one, or the processing timeout is not a number of seconds
       # @example Validate the arguments of an upload
@@ -48,7 +52,7 @@ module X
         validate_alt_text!(alt_text)
         validate_chunks!(chunk_size_mb:, concurrency:)
         validate_processing_timeout!(processing_timeout)
-        validate_media_category!(media_category)
+        validate_media_category!(media_category || yield)
       end
 
       # Validate that the media exists, and that it holds something to upload

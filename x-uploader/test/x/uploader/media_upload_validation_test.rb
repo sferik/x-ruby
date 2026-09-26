@@ -50,6 +50,17 @@ module X
       assert_not_requested :post, BASE_URL
     end
 
+    def test_upload_of_empty_media_raises_for_the_empty_media_before_inferring_its_category
+      error = assert_raises(ArgumentError) { Uploader::MediaUpload.upload(StringIO.new(""), client: @client) }
+
+      assert_match(/is empty: there is nothing to upload\z/, error.message)
+      assert_not_requested :post, BASE_URL
+    end
+
+    def test_upload_refuses_its_options_before_inferring_a_category_nothing_names
+      assert_raises(ArgumentError) { Uploader::MediaUpload.upload(StringIO.new("plain text"), client: @client, alt_text: "") }
+    end
+
     def test_upload_describes_media_with_the_longest_alt_text_the_api_takes
       stub_upload_request
       stub_request(:post, METADATA_URL).to_return(headers: JSON_HEADERS, body: {data: {id: TEST_MEDIA_ID}}.to_json)

@@ -206,7 +206,7 @@ module X
       MEDIA_CATEGORIES: Array[String]
       extend Validator
 
-      def validate_upload!: (Source source, String | Symbol media_category, alt_text: String?, chunk_size_mb: (Float | Integer)?, concurrency: Integer, processing_timeout: Float | Integer) -> String
+      def validate_upload!: (Source source, (String | Symbol)? media_category, alt_text: String?, chunk_size_mb: (Float | Integer)?, concurrency: Integer, processing_timeout: Float | Integer) ?{ () -> (String | Symbol) } -> String
       def validate_source!: (Source source) -> nil
       def validate_file_path!: (path file_path) -> nil
       def validate_extension!: (path file_path, Array[String] extensions) -> nil

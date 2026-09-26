@@ -137,7 +137,7 @@ module X
       def upload(media, client:, media_category: nil, alt_text: nil,
         processing_timeout: DEFAULT_PROCESSING_TIMEOUT, media_type: nil, chunk_size_mb: nil, concurrency: DEFAULT_CONCURRENCY)
         source = Source.for(media)
-        media_category = Validator.validate_upload!(source, media_category || infer_media_category(source), alt_text:, chunk_size_mb:, concurrency:, processing_timeout:)
+        media_category = Validator.validate_upload!(source, media_category, alt_text:, chunk_size_mb:, concurrency:, processing_timeout:) { infer_media_category(source) }
         uploaded = if chunked_upload?(source, media_category)
           chunked_upload(source, client:, media_category:, media_type:, chunk_size_mb:, concurrency:)
         else
