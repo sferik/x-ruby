@@ -156,7 +156,7 @@ module X
     # @param object_class [Class] the class for parsing JSON objects, or one that responds to from_response
     #   and builds objects from each whole object the stream delivers, which it receives with the client
     # @yield [Hash, Array] each parsed JSON object from the stream
-    # @return [nil] once the stream ends with no reconnects left, or what the block broke with
+    # @return [Object, nil] what the block broke with, or nil once the stream ends with no reconnects left
     # @raise [ArgumentError] if no block is given
     # @raise [UnsupportedOperation] if the client authenticates with OAuth 2.0 as a user and holds no credentials of
     #   the app, before the stream is opened

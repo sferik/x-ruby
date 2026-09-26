@@ -717,7 +717,7 @@ module X
     attr_reader client: Client
     def initialize: (Client client, ?read_timeout: Float | Integer, ?max_reconnects: Integer | Float) -> void
     def inspect: () -> String
-    def stream: (String endpoint, ?params: params?, ?headers: headers, ?array_class: Class, ?object_class: Class) { (untyped) -> void } -> void
+    def stream: (String endpoint, ?params: params?, ?headers: headers, ?array_class: Class, ?object_class: Class) { (untyped) -> void } -> untyped
     def open_timeout: () -> (Float | Integer)
     def read_timeout: () -> (Float | Integer)
     def write_timeout: () -> (Float | Integer)
