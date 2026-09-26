@@ -25,7 +25,7 @@ module X
     def setup
       @client = CredentialedClient.new
       includes = Objects::Includes.new({"users" => [{"id" => "9", "username" => "sferik"}]})
-      @post = Post.new({"id" => "1", "text" => "Hello", "author_id" => "9"}, client: @client, includes:)
+      @post = Post.build({"id" => "1", "text" => "Hello", "author_id" => "9"}, client: @client, includes:)
     end
 
     def test_as_json_is_the_attributes

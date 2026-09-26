@@ -74,7 +74,7 @@ module X
     end
 
     def test_peer_of_a_received_message_is_the_sender
-      message = DirectMessage.new({"id" => "1", "sender_id" => "8", "dm_conversation_id" => "8-9"}, includes: @includes)
+      message = DirectMessage.build({"id" => "1", "sender_id" => "8", "dm_conversation_id" => "8-9"}, includes: @includes)
 
       assert_equal "friend", message.peer(User.new({"id" => "9"})).username
       assert_equal "friend", message.peer(9).username
@@ -82,14 +82,14 @@ module X
     end
 
     def test_peer_of_a_received_message_is_the_sender_whatever_the_conversation
-      message = DirectMessage.new({"id" => "1", "sender_id" => "8"}, includes: @includes)
+      message = DirectMessage.build({"id" => "1", "sender_id" => "8"}, includes: @includes)
 
       assert_equal "friend", message.peer("9").username
-      assert_equal "friend", DirectMessage.new({"id" => "1", "sender_id" => "8", "dm_conversation_id" => "7-9"}, includes: @includes).peer("9").username
+      assert_equal "friend", DirectMessage.build({"id" => "1", "sender_id" => "8", "dm_conversation_id" => "7-9"}, includes: @includes).peer("9").username
     end
 
     def test_peer_of_a_sent_message_is_the_other_participant
-      message = DirectMessage.new({"id" => "1", "sender_id" => "9", "dm_conversation_id" => "9-8"}, includes: @includes)
+      message = DirectMessage.build({"id" => "1", "sender_id" => "9", "dm_conversation_id" => "9-8"}, includes: @includes)
 
       assert_equal "friend", message.peer("9").username
       assert_equal "friend", message.peer(9).username
@@ -112,8 +112,8 @@ module X
     end
 
     def test_peer_of_a_group_conversation
-      sent = DirectMessage.new({"id" => "1", "sender_id" => "9", "dm_conversation_id" => "1582838223204016129"}, includes: @includes)
-      received = DirectMessage.new({"id" => "2", "sender_id" => "8", "dm_conversation_id" => "1582838223204016129"}, includes: @includes)
+      sent = DirectMessage.build({"id" => "1", "sender_id" => "9", "dm_conversation_id" => "1582838223204016129"}, includes: @includes)
+      received = DirectMessage.build({"id" => "2", "sender_id" => "8", "dm_conversation_id" => "1582838223204016129"}, includes: @includes)
 
       assert_nil sent.peer("9")
       assert_nil received.peer("9")

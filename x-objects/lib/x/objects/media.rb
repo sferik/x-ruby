@@ -107,11 +107,21 @@ module X
     # @api public
     # @param media [#media_key, String, Media] the media key, what an upload returned, or media
     # @param client [Object, nil] the client used to fetch the media
-    # @param batch [Batch, nil] the batch the stub hydrates with, in one lookup for every stub of the batch
     # @return [Media] a stub that hydrates to the full media
     # @example Refer to what an upload returned
     #   X::Media.from_id(uploaded, client: client).hydrate.url
-    def self.from_id(media, client: nil, batch: nil) = super(key_of(media), client:, batch:)
+    def self.from_id(media, client: nil) = super
+
+    # Build a stub of media that hydrates with the stubs of a batch
+    #
+    # @api private
+    # @param media [#media_key, String, Media] the media key, what an upload returned, or media
+    # @param client [Object, nil] the client used to fetch the media
+    # @param batch [Objects::Batch, nil] the batch the stub hydrates with
+    # @return [Media] a stub that hydrates to the full media
+    # @example Build the stub of a page of media
+    #   X::Media.from_id_in_batch("3_1", client: client, batch: batch)
+    def self.from_id_in_batch(media, client:, batch: nil) = super(key_of(media), client:, batch:)
 
     # Look up many media by media key, in parallel batches
     #

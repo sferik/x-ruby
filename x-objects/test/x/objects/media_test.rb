@@ -94,7 +94,7 @@ module X
     def test_the_media_of_a_post_hydrates_to_the_full_media
       client = FakeClient.new
       client.stub(:get, "media/3_1", {"data" => {"media_key" => "3_1", "alt_text" => "A cat"}})
-      post = Post.new({"id" => "1", "attachments" => {"media_keys" => ["3_1"]}}, client:,
+      post = Post.build({"id" => "1", "attachments" => {"media_keys" => ["3_1"]}}, client:,
         includes: Objects::Includes.new({"media" => [{"media_key" => "3_1", "type" => "photo"}]}))
       media = post.media.first
 

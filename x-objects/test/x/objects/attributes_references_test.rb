@@ -16,7 +16,7 @@ module X
           references :members, :User, key: %w[member_ids]
           references :nested_members, :User, key: %w[meta member_ids]
         end
-        @widget = @klass.new({"id" => "1", "owner_id" => "9", "meta" => {"owner_id" => "8", "member_ids" => ["7"]},
+        @widget = @klass.build({"id" => "1", "owner_id" => "9", "meta" => {"owner_id" => "8", "member_ids" => ["7"]},
                               "member_ids" => %w[2 3]}, client: @client, includes: @includes)
       end
 

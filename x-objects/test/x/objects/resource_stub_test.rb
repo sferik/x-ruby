@@ -50,7 +50,7 @@ module X
       end
 
       def test_stub_predicate_for_references
-        post = Post.new({"id" => "1", "author_id" => "9"}, includes: Includes.new({"users" => [{"id" => "9", "username" => "sferik"}]}))
+        post = Post.build({"id" => "1", "author_id" => "9"}, includes: Includes.new({"users" => [{"id" => "9", "username" => "sferik"}]}))
 
         refute_predicate post.author, :stub?
         assert_predicate Post.new({"id" => "1", "author_id" => "8"}).author, :stub?

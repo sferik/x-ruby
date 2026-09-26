@@ -218,7 +218,8 @@ module X
       def find!: (id id, client: _Client, **untyped params) -> R
       def find_all: (Array[id] ids, client: _Client, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[R]
       def hydrate_all: (Array[R?] resources, client: _Client, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[R]
-      def from_id: (id id, ?client: _Client?, ?batch: Batch?) -> R
+      def from_id: (id id, ?client: _Client?) -> R
+      def from_id_in_batch: (id id, client: _Client?, ?batch: Batch?) -> R
       def lookup: (String path, client: _Client, **untyped params) ?{ (Problem problem) -> void } -> R?
       def lookup_all: (String path, client: _Client, **untyped params) ?{ (Problem problem) -> void } -> Array[R]
       def from_response: (body body, client: _Client?, ?hydrated: bool) -> (R | Array[R])?
@@ -595,12 +596,14 @@ module X
     def self.batchable?: () -> bool
     def self.batch_key: () -> Symbol
     def self.endpoint!: () -> String
-    def self.from_id: (Objects::id id, ?client: Objects::_Client?, ?batch: Objects::Batch?) -> Resource
+    def self.from_id: (Objects::id id, ?client: Objects::_Client?) -> Resource
+    def self.from_id_in_batch: (Objects::id id, client: Objects::_Client?, ?batch: Objects::Batch?) -> Resource
+    def self.build: (Hash[untyped, untyped] attrs, ?client: Objects::_Client?, ?includes: Objects::Includes, ?hydrated: bool, ?batch: Objects::Batch?) -> instance
     def self.from_response: (Objects::body body, client: Objects::_Client?, ?hydrated: bool) -> (Resource | Array[Resource])?
     def self.resource_from_response: (Objects::body body, client: Objects::_Client?, ?hydrated: bool) -> Resource?
     def self.collection_from_response: (Objects::body body, client: Objects::_Client?, ?hydrated: bool) -> Array[Resource]
 
-    def initialize: (Hash[untyped, untyped] attrs, ?client: Objects::_Client?, ?includes: Objects::Includes, ?hydrated: bool, ?batch: Objects::Batch?) -> void
+    def initialize: (Hash[untyped, untyped] attrs, ?client: Objects::_Client?, ?hydrated: bool) -> void
     def id: () -> (Integer | String)
     def to_h: () -> Objects::attrs
     def problems: () -> Array[Problem]
@@ -615,6 +618,7 @@ module X
     private
     def hydrated_with: (Resource? resource) -> Resource?
     def hydration_stored?: () -> bool
+    def setup: (Hash[untyped, untyped] attrs, client: Objects::_Client?, hydrated: bool, ?includes: Objects::Includes, ?batch: Objects::Batch?) -> void
     def identify: () -> String
     def fetch: () -> Resource?
     def look_up: () -> Resource?
@@ -657,7 +661,8 @@ module X
     @total: (^(?fresh: bool) -> Integer?)?
     @pages: Objects::Pages
 
-    def initialize: (singleton(Resource) resource_class, String path, client: Objects::_Client, ?params: Objects::params, ?prefetch: bool, ?token_param: String, ?min_results: Integer, ?app_only: bool, ?total: (^(?fresh: bool) -> Integer?)?) -> void
+    def initialize: (singleton(Resource) resource_class, String path, client: Objects::_Client, ?params: Objects::params, ?prefetch: bool, ?token_param: String, ?min_results: Integer, ?app_only: bool) -> void
+    def self.build: [R < Resource] (singleton(Resource) resource_class, String path, client: Objects::_Client, params: Objects::params, min_results: Integer, app_only: bool, total: (^(?fresh: bool) -> Integer?)?, ?prefetch: bool, ?token_param: String) -> Cursor[R]
     def prefetch?: () -> bool
     def app_only?: () -> bool
     def each: () { (R) -> void } -> self
@@ -682,6 +687,7 @@ module X
     def inspect: () -> String
 
     private
+    def setup: (singleton(Resource) resource_class, String path, client: Objects::_Client, params: Objects::params, prefetch: bool, token_param: String, min_results: Integer, app_only: bool, total: (^(?fresh: bool) -> Integer?)?) -> void
     def fresh_total: () -> (^(?fresh: bool) -> Integer?)?
     def own_params: () -> Objects::params
     def id_only_params: () -> Objects::params
@@ -705,8 +711,10 @@ module X
                      | ...
     def self.find!: (untyped media, client: Objects::_Client, **untyped params) -> Media
                   | ...
-    def self.from_id: (untyped media, ?client: Objects::_Client?, ?batch: Objects::Batch?) -> Media
+    def self.from_id: (untyped media, ?client: Objects::_Client?) -> Media
                     | ...
+    def self.from_id_in_batch: (untyped media, client: Objects::_Client?, ?batch: Objects::Batch?) -> Media
+                             | ...
     def self.batch_key: () -> Symbol
     def self.fields_key: () -> String
     def self.default_params: () -> Hash[String, Array[String]]

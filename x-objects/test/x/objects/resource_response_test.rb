@@ -95,7 +95,7 @@ module X
 
       def test_resolve_through_identity_map
         includes = Includes.new({"users" => [{"id" => "9", "username" => "sferik"}]})
-        post = Post.new({"id" => "1", "author_id" => "9"}, client: @client, includes:)
+        post = Post.build({"id" => "1", "author_id" => "9"}, client: @client, includes:)
 
         assert_equal "sferik", post.author.username
         assert_same @client, post.author.client
@@ -104,7 +104,7 @@ module X
 
       def test_resolve_stub_shares_includes_and_client
         includes = Includes.new({"users" => [{"id" => "8"}]})
-        post = Post.new({"id" => "1", "author_id" => "9"}, client: @client, includes:)
+        post = Post.build({"id" => "1", "author_id" => "9"}, client: @client, includes:)
 
         assert_same includes, post.author.send(:includes)
         assert_same @client, post.author.client

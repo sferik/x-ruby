@@ -99,12 +99,45 @@ module X
       # @api public
       # @param id [String, Integer, Resource] the identifier, or a resource whose identifier is taken
       # @param client [Object, nil] the client used to fetch the resource and its references
-      # @param batch [Batch, nil] the batch the stub hydrates with, in one lookup for every stub of the batch
       # @return [Resource] a stub that hydrates to the full resource
       # @raise [ArgumentError] if the identifier is not a number, for a resource whose identifiers are numbers
       # @example Page through the followers of a user without looking the user up
       #   X::User.from_id(7505382, client: client).followers
-      def from_id(id, client: nil, batch: nil) = new({id_key => Objects::Utils.id_from(id)}, client:, batch:)
+      def from_id(id, client: nil) = from_id_in_batch(id, client:)
+
+      # Build a stub that hydrates with the stubs of a batch, in one lookup for them all
+      #
+      # Internal to x-objects: a cursor that reads nothing but identifiers builds its stubs with it, and it takes a
+      # Batch, which is internal too.
+      #
+      # @api private
+      # @param id [String, Integer, Resource] the identifier, or a resource whose identifier is taken
+      # @param client [Object, nil] the client used to fetch the resource and its references
+      # @param batch [Objects::Batch, nil] the batch the stub hydrates with
+      # @return [Resource] a stub that hydrates to the full resource
+      # @raise [ArgumentError] if the identifier is not a number, for a resource whose identifiers are numbers
+      # @example Build the stub of a page of followers
+      #   X::User.from_id_in_batch(7505382, client: client, batch: batch)
+      def from_id_in_batch(id, client:, batch: nil) = build({id_key => Objects::Utils.id_from(id)}, client:, batch:)
+
+      # Build a resource with the internals new keeps to itself
+      #
+      # Internal to x-objects: a response builds its resources over the identity map of its includes, and a cursor
+      # its stubs over a Batch, both of which are internal, so new takes neither.
+      #
+      # @api private
+      # @param attrs [Hash] the attributes, which must include the identifier
+      # @param client [Object, nil] the client used to fetch references
+      # @param includes [Objects::Includes] the identity map of the response the resource came from
+      # @param hydrated [Boolean] whether the resource holds every requested field
+      # @param batch [Objects::Batch, nil] the batch this stub hydrates with, in one lookup for every stub of the batch
+      # @return [Resource] a new resource
+      # @raise [ArgumentError] if the attributes do not include the identifier, or the identifier is not one
+      # @example Build a post over the includes of its response
+      #   X::Post.build({"id" => "1", "author_id" => "9"}, client: client, includes: includes)
+      def build(attrs, client: nil, includes: Objects::Includes.new, hydrated: false, batch: nil)
+        allocate.tap { |resource| resource.__send__(:setup, attrs, client:, includes:, hydrated:, batch:) }
+      end
 
       # The default query parameters requesting every field and expansion
       #
@@ -200,7 +233,7 @@ module X
         data = body["data"]
         return unless data.is_a?(Hash)
 
-        new(data, client:, includes: Objects::Includes.new(body["includes"], problems: Problem.all_from(body)), hydrated:)
+        build(data, client:, includes: Objects::Includes.new(body["includes"], problems: Problem.all_from(body)), hydrated:)
       end
 
       # Build resources from a response with a data array
@@ -217,7 +250,7 @@ module X
         data = body["data"]
         data = nil unless data.is_a?(Array)
         includes = Objects::Includes.new(body["includes"], problems: Problem.all_from(body))
-        Array(data).map { |attrs| new(attrs, client:, includes:, hydrated:) }.freeze
+        Array(data).map { |attrs| build(attrs, client:, includes:, hydrated:) }.freeze
       end
     end
 
@@ -226,23 +259,12 @@ module X
     # @api public
     # @param attrs [Hash] the attributes, which must include the identifier
     # @param client [Object, nil] the client used to fetch references
-    # @param includes [Objects::Includes] the identity map of the response the resource came from
     # @param hydrated [Boolean] whether the resource holds every requested field
-    # @param batch [Batch, nil] the batch this stub hydrates with, in one lookup for every stub of the batch
     # @return [Resource] a new resource
     # @raise [ArgumentError] if the attributes do not include the identifier, or the identifier is not one
     # @example Create a user from attributes
     #   X::User.new({"id" => "7505382", "username" => "sferik"}, client: client)
-    def initialize(attrs, client: nil, includes: Objects::Includes.new, hydrated: false, batch: nil)
-      @attrs = Objects::Utils.deep_freeze(attrs)
-      identify
-      @client = client
-      @includes = includes
-      @hydrated = hydrated
-      @batch = batch
-      @memo = Objects::Memo.new
-      freeze
-    end
+    def initialize(attrs, client: nil, hydrated: false) = setup(attrs, client:, hydrated:)
 
     # The identifier
     #
@@ -343,6 +365,23 @@ module X
 
     private
 
+    # Set the attributes and internals of a new resource, and freeze it
+    # @api private
+    # @param attrs [Hash] the attributes, which must include the identifier
+    # @param client [Object, nil] the client used to fetch references
+    # @param hydrated [Boolean] whether the resource holds every requested field
+    # @param includes [Objects::Includes] the identity map of the response the resource came from
+    # @param batch [Objects::Batch, nil] the batch this stub hydrates with
+    # @return [void]
+    # @raise [ArgumentError] if the attributes do not include the identifier, or the identifier is not one
+    def setup(attrs, client:, hydrated:, includes: Objects::Includes.new, batch: nil)
+      @attrs = Objects::Utils.deep_freeze(attrs)
+      identify
+      @client, @includes, @hydrated, @batch = client, includes, hydrated, batch
+      @memo = Objects::Memo.new
+      freeze
+    end
+
     # Store the full resource a lookup of many found, so hydrate reads it
     #
     # Internal to the object layer: hydrate_all calls it with __send__, since a caller that stored another
@@ -423,7 +462,7 @@ module X
     # @return [Cursor] the cursor
     def cursor(klass, path, max_results:, min_results: 1, total: nil, app_only: false, **params)
       defaults = {max_results:} #: Hash[Symbol, untyped]
-      Cursor.new(klass, path, client: client!, params: defaults.merge(params), min_results:, app_only:, total: counter(total))
+      Cursor.build(klass, path, client: client!, params: defaults.merge(params), min_results:, app_only:, total: counter(total))
     end
   end
 end

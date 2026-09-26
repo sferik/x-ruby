@@ -73,7 +73,9 @@ module X
 
       def test_resolve_builds_one_resource_across_threads
         slow = Class.new(User) do
-          def initialize(...)
+          private
+
+          def setup(...)
             sleep 0.01
             super
           end

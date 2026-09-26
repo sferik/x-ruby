@@ -9,7 +9,7 @@ module X
 
       def setup
         includes = Includes.new({"posts" => [{"id" => "5", "text" => "parent"}]})
-        @post = Post.new({"id" => "1", "referenced_posts" => [{"type" => "replied_to", "id" => "5"}, {"type" => "quoted", "id" => "6"}]},
+        @post = Post.build({"id" => "1", "referenced_posts" => [{"type" => "replied_to", "id" => "5"}, {"type" => "quoted", "id" => "6"}]},
           includes:)
         @repost = Post.new({"id" => "2", "referenced_posts" => [{"type" => "reposted", "id" => "4"}]})
         @plain = Post.new({"id" => "3"})

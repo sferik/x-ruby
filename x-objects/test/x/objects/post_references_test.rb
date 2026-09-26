@@ -13,7 +13,7 @@ module X
                                         "media" => [{"media_key" => "3_1", "url" => "https://pbs.twimg.com/1.jpg"}],
                                         "polls" => [{"id" => "7", "voting_status" => "open"}],
                                         "places" => [{"id" => "p1", "name" => "SF"}]})
-      @post = Post.new({"id" => "1", "author_id" => "9", "in_reply_to_user_id" => "8",
+      @post = Post.build({"id" => "1", "author_id" => "9", "in_reply_to_user_id" => "8",
                         "attachments" => {"media_keys" => ["3_1"], "poll_ids" => ["7"]}, "geo" => {"place_id" => "p1"}},
         client: @client, includes:)
     end

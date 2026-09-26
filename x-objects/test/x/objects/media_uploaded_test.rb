@@ -28,9 +28,9 @@ module X
       assert_equal [{"media.fields" => "url"}], @client.queries
     end
 
-    def test_from_id_refers_to_what_an_upload_returned_by_its_media_key
+    def test_from_id_in_batch_refers_to_what_an_upload_returned_by_its_media_key
       batch = Objects::Batch.new(Media, [KEY], client: @client)
-      stub = Media.from_id(@uploaded, client: @client, batch:)
+      stub = Media.from_id_in_batch(@uploaded, client: @client, batch:)
 
       assert_equal [KEY, false], [stub.id, stub.hydrated?]
       assert_same batch, stub.instance_variable_get(:@batch)

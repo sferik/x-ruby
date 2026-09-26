@@ -40,7 +40,7 @@ module X
       # @return [Resource] the resource
       def resolve(klass, id, client:)
         @monitor.synchronize do
-          @resources[[klass, id]] ||= klass.new(index(klass).fetch(id) { {klass.id_key => id} }, client:, includes: self)
+          @resources[[klass, id]] ||= klass.build(index(klass).fetch(id) { {klass.id_key => id} }, client:, includes: self)
         end
       end
 

@@ -140,7 +140,7 @@ module X
         client = @cursor.client
         resources.each_slice(Finders::MAX_BATCH_SIZE).flat_map do |slice|
           batch = (Batch.new(klass, slice, client:) if klass.batchable?)
-          slice.map { |resource| klass.from_id(resource, client:, batch:) }
+          slice.map { |resource| klass.from_id_in_batch(resource, client:, batch:) }
         end
       end
 
