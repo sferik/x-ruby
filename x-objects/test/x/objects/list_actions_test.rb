@@ -86,7 +86,7 @@ module X
     end
 
     def test_delete_without_client
-      assert_raises(ArgumentError) { List.new({"id" => "1"}).delete }
+      assert_raises(MissingClient) { List.new({"id" => "1"}).delete }
     end
 
     def test_add_member
@@ -128,8 +128,8 @@ module X
     end
 
     def test_members_without_client
-      assert_raises(ArgumentError) { List.new({"id" => "1"}).add_member(2) }
-      assert_raises(ArgumentError) { List.new({"id" => "1"}).remove_member(2) }
+      assert_raises(MissingClient) { List.new({"id" => "1"}).add_member(2) }
+      assert_raises(MissingClient) { List.new({"id" => "1"}).remove_member(2) }
     end
   end
 end

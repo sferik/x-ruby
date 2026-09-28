@@ -19,6 +19,9 @@ module X
   class InvalidAttribute < Objects::Error
   end
 
+  class MissingClient < Objects::Error
+  end
+
   class Usage
     ENDPOINT: String
     FIELDS: Array[String]

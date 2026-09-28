@@ -59,7 +59,7 @@ module X
     end
 
     def test_delete_without_client
-      assert_raises(ArgumentError) { DirectMessage.new({"id" => "1"}).delete }
+      assert_raises(MissingClient) { DirectMessage.new({"id" => "1"}).delete }
     end
 
     def test_from

@@ -51,8 +51,8 @@ module X
     end
 
     def test_hide_without_client
-      assert_raises(ArgumentError) { Post.new({"id" => "1"}).hide_reply }
-      assert_raises(ArgumentError) { Post.new({"id" => "1"}).unhide_reply }
+      assert_raises(MissingClient) { Post.new({"id" => "1"}).hide_reply }
+      assert_raises(MissingClient) { Post.new({"id" => "1"}).unhide_reply }
     end
   end
 end

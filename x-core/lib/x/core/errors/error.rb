@@ -35,7 +35,8 @@ module X
   #   ├── X::UnsupportedOperation      the API offers no way to do what was asked
   #   ├── X::Objects::Error            the failures of the object layer, from x-objects
   #   │   ├── X::MissingResource               a resource that was asked for does not exist
-  #   │   └── X::InvalidAttribute              a response holds a value that is not what the API documents it to be
+  #   │   ├── X::InvalidAttribute              a response holds a value that is not what the API documents it to be
+  #   │   └── X::MissingClient                 a resource that holds no client was asked to make a request
   #   └── X::Uploader::Error           the failures of an upload, from x-uploader
   #       ├── X::AltTextFailed                 the media was uploaded, but its alt text could not be added
   #       ├── X::InvalidMediaType              the media is of a type the API does not take

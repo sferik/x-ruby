@@ -15,6 +15,10 @@ module X
       assert_operator InvalidAttribute, :<, Objects::Error
     end
 
+    def test_a_missing_client_is_an_error_of_the_object_layer
+      assert_operator MissingClient, :<, Objects::Error
+    end
+
     def test_a_timestamp_that_is_not_iso_8601_raises_where_it_is_read
       post = Post.new({"id" => "1", "created_at" => "yesterday"})
       error = assert_raises(InvalidAttribute) { post.created_at }

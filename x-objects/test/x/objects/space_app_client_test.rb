@@ -146,7 +146,7 @@ module X
     end
 
     def test_the_posts_of_a_space_without_a_client_raise
-      assert_raises(ArgumentError) { Space.from_id("1DXxyRYNejbKM").posts }
+      assert_raises(MissingClient) { Space.from_id("1DXxyRYNejbKM").posts }
     end
   end
 end

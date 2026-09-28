@@ -70,7 +70,7 @@ module X
       loaded = Marshal.load(Marshal.dump(@post))
 
       assert_nil loaded.client
-      assert_raises(ArgumentError) { loaded.hydrate }
+      assert_raises(MissingClient) { loaded.hydrate }
       refute_predicate loaded, :hydrated?
     end
 

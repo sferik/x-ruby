@@ -55,7 +55,7 @@ module X
       end
 
       def test_hydrate_without_client
-        error = assert_raises(ArgumentError) { User.new({"id" => "1"}).hydrate }
+        error = assert_raises(MissingClient) { User.new({"id" => "1"}).hydrate }
 
         assert_equal "X::User has no client", error.message
       end
@@ -92,7 +92,7 @@ module X
       end
 
       def test_cursor_without_client
-        error = assert_raises(ArgumentError) { User.new({"id" => "1"}).followers }
+        error = assert_raises(MissingClient) { User.new({"id" => "1"}).followers }
 
         assert_equal "X::User has no client", error.message
       end

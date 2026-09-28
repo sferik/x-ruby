@@ -314,7 +314,7 @@ module X
     # @api public
     # @return [Resource, nil] the full resource or nil if it no longer exists
     # @raise [UnsupportedOperation] if the resource cannot be looked up by identifier, as a poll or a place cannot
-    # @raise [ArgumentError] if the resource has no client
+    # @raise [MissingClient] if the resource has no client
     # @example Fetch the full author of a post
     #   post.author.hydrate.description
     def hydrate
@@ -329,7 +329,7 @@ module X
     # @api public
     # @return [Resource, nil] the fresh resource or nil if it no longer exists
     # @raise [UnsupportedOperation] if the resource cannot be looked up by identifier, as a poll or a place cannot
-    # @raise [ArgumentError] if the resource has no client
+    # @raise [MissingClient] if the resource has no client
     # @example Refresh a user's follower count
     #   user.refresh.followers_count
     def refresh
@@ -436,9 +436,9 @@ module X
     # The client, which must exist
     # @api private
     # @return [Object] the client
-    # @raise [ArgumentError] if the resource has no client
+    # @raise [MissingClient] if the resource has no client
     def client!
-      client || raise(ArgumentError, "#{self.class} has no client")
+      client || raise(MissingClient, "#{self.class} has no client")
     end
 
     # Resolve a referenced resource through the identity map of its response

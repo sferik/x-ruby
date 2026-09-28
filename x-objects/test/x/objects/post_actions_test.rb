@@ -32,7 +32,7 @@ module X
     end
 
     def test_delete_without_client
-      error = assert_raises(ArgumentError) { Post.new({"id" => "1"}).delete }
+      error = assert_raises(MissingClient) { Post.new({"id" => "1"}).delete }
 
       assert_equal "X::Post has no client", error.message
     end

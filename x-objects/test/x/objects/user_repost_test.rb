@@ -40,7 +40,7 @@ module X
     end
 
     def test_actions_without_client
-      error = assert_raises(ArgumentError) { User.new({"id" => "9"}).like("1") }
+      error = assert_raises(MissingClient) { User.new({"id" => "9"}).like("1") }
 
       assert_equal "X::User has no client", error.message
     end

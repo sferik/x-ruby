@@ -69,7 +69,7 @@ An object built this way is not hydrated, because the request may have asked for
 * **Cursors.** Pages are fetched lazily under a lock and cached, so concurrent iteration fetches each page once. `refresh` returns a cursor with an empty cache. `prefetch` returns a cursor that fetches the next page in a background thread.
 * **Parallelism.** `find_all` splits IDs into batches of 100 and fetches the batches on up to 8 threads, preserving order.
 * **Reading part of a collection.** `first`, `take`, `any?`, `none?`, `empty?`, and `one?` request pages no larger than they need, and answer from the pages the cursor already holds. A cursor has no `size`, so `each_slice` and `lazy` do not page a whole collection to measure it; `count` reads every page and `published_count` reads the number the API publishes without reading any.
-* **Serialization.** Resources, problems, the usage, pages, and cursors answer `as_json` and `to_json` with their attributes, so nothing carries a client or its credentials into a cache or a log. `Marshal` carries a resource's attributes alone, and what it reads back has no client and cannot hydrate. Serializing a cursor pages the whole collection.
+* **Serialization.** Resources, problems, the usage, pages, and cursors answer `as_json` and `to_json` with their attributes, so nothing carries a client or its credentials into a cache or a log. `Marshal` carries a resource's attributes alone, and what it reads back has no client, so `hydrate`, a collection, or an action of it raises `X::MissingClient`, an `X::Objects::Error`. Serializing a cursor pages the whole collection.
 
 ## Development
 

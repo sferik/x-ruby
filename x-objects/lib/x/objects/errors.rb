@@ -53,4 +53,16 @@ module X
   #
   # @api public
   class InvalidAttribute < Objects::Error; end
+
+  # Raised when a resource that holds no client is asked for what only a request can answer
+  #
+  # A resource built without a client, such as one Marshal read back, or one built with from_id and no client, holds
+  # its attributes, which it reads as any resource does, but cannot hydrate, refresh, page a collection, or act, since
+  # each of them is a request, and the client is what makes it. Build the resource with the client: of from_id, or
+  # look it up again with a client.
+  #
+  # @api public
+  # @example Hydrate a resource that has a client
+  #   X::User.from_id(7_505_382, client: client).hydrate
+  class MissingClient < Objects::Error; end
 end
