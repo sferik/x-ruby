@@ -1,7 +1,6 @@
 module X
   module Uploader
     VERSION: String
-    JSON_CLASSES: Hash[Symbol, singleton(Array) | singleton(Hash)]
 
     def self.gem_version: () -> Gem::Version
 
@@ -10,65 +9,6 @@ module X
 
     # Media to upload: a path to it, or an IO open on it
     type uploadable = path | _Reader
-
-    # Media to upload, or the Source an upload has resolved it to, which the internals of the uploaders pass on
-    type resolvable = uploadable | Source
-
-    class Source
-      SNIFF_BYTES: Integer
-
-      def self.for: (resolvable media) -> Source
-      def self.named_or_read: (untyped media) -> Source
-      def self.path_alone?: (untyped media) -> bool
-      def self.on_file?: (untyped media) -> bool
-      def self.buffered: (untyped media) -> Buffer
-      def self.position_of: (untyped media) -> Integer?
-
-      attr_reader name: String?
-      def named?: () -> bool
-      def description: () -> String
-      def extension: () -> String
-      def sniff: () -> String
-      def exist?: () -> bool
-      def readable?: () -> bool
-      def size: () -> Integer
-      def content: () -> String
-      def read: (Integer length, Integer offset) -> String
-
-      class Path < Source
-        def initialize: (path path) -> void
-        def name: () -> String
-      end
-
-      class Handle < Source
-        @io: untyped
-        @mutex: Thread::Mutex
-
-        def initialize: (untyped io) -> void
-      end
-
-      class Buffer < Source
-        @content: String
-
-        def initialize: (String content) -> void
-      end
-    end
-
-    module Signature
-      MP4_BRANDS: Array[String]
-      SIGNATURES: Hash[Hash[Integer, String], String]
-      CATEGORIES: Hash[String, String]
-      DEFAULT_CATEGORY: String
-      extend Signature
-
-      def media_type: (String bytes) -> String?
-      def media_type!: (Source source) -> String
-      def media_category!: (Source source) -> String
-      def media_category: (Source source) -> String
-
-      private
-      def matches?: (String bytes, Hash[Integer, String] magic) -> bool
-    end
 
     # What the uploaders ask of a client, which X::Client provides
     interface _Client
@@ -89,44 +29,6 @@ module X
     class Error < ::X::Error
     end
 
-    module Utils
-      extend Utils
-
-      SUBTITLED_MEDIA_CATEGORIES: Hash[String, String]
-      NO_MEDIA_ID: String
-      NO_MEDIA: String
-      NOT_MEDIA: String
-
-      def extension: (path file_path) -> String
-      def media_id: (media media) -> String
-      def media_data: (Hash[String, untyped]? response, String description) -> Hash[String, untyped]
-      def subtitled_media_category: (String | Symbol media_category) -> String
-      def sending_again: [T] (_Client client) { () -> T } -> T
-      def max_retries_of: (_Client client) -> Integer
-    end
-
-    module Multipart
-      extend Multipart
-
-      def headers: (String boundary) -> Hash[String, String]
-      def body: (String name, String content, boundary: String, **untyped fields) -> String
-    end
-
-    module Chunks
-      NO_MEDIA: String
-      extend Chunks
-
-      def init: (client: _Client, source: Source, media_type: String, media_category: String) -> Hash[String, untyped]
-      def append: (client: _Client, source: Source, chunk_size: Integer, media: untyped, boundary: String, concurrency: Integer) -> void
-      def finalize: (client: _Client, media: Hash[String, untyped]) -> Hash[String, untyped]?
-
-      private
-      def await: (Array[Thread] workers) -> void
-      def chunk_queue: (Source source, Integer chunk_size) -> Thread::Queue
-      def append_worker: (Thread::Queue queue, Thread::Queue errors, client: _Client, source: Source, chunk_size: Integer, media_id: String, boundary: String) -> Thread
-      def upload_chunk: (client: _Client, media_id: String, upload_body: String, headers: Hash[String, String]) -> untyped
-    end
-
     module MediaUpload
       BYTES_PER_MB: Integer
       AMPLIFY_VIDEO: String
@@ -137,35 +39,9 @@ module X
       TWEET_GIF: String
       TWEET_IMAGE: String
       TWEET_VIDEO: String
-      MIME_TYPES: Array[String]
-      BMP_MIME_TYPE: String
-      GIF_MIME_TYPE: String
-      JPEG_MIME_TYPE: String
-      PJPEG_MIME_TYPE: String
-      PNG_MIME_TYPE: String
-      TIFF_MIME_TYPE: String
-      WEBP_MIME_TYPE: String
-      GLTF_BINARY_MIME_TYPE: String
-      USDZ_MIME_TYPE: String
-      SUBRIP_MIME_TYPE: String
-      WEBVTT_MIME_TYPE: String
-      MPEG_TS_MIME_TYPE: String
-      MP4_MIME_TYPE: String
-      QUICKTIME_MIME_TYPE: String
-      WEBM_MIME_TYPE: String
-      MIME_TYPE_MAP: Hash[String, String]
-      VIDEO_MIME_TYPES: Array[String]
-      SUBTITLES_MIME_TYPES: Array[String]
       DEFAULT_PROCESSING_TIMEOUT: Integer
       DEFAULT_CONCURRENCY: Integer
       MAX_SIMPLE_UPLOAD_BYTES: Integer
-      MIN_CHECK_AFTER_SECS: Integer
-      STATUS_COMMAND: String
-      VIDEO_CATEGORIES: Array[String]
-      CHUNKED_CATEGORIES: Array[String]
-      GIF_CATEGORIES: Array[String]
-      CATEGORY_MAP: Hash[String, String]
-      CATEGORY_MIME_TYPES: Hash[String, Array[String]]
       extend MediaUpload
 
       def upload: (uploadable media, client: _Client, ?media_category: (String | Symbol)?, ?alt_text: String?, ?processing_timeout: Float | Integer, ?media_type: String?, ?chunk_size_mb: (Float | Integer)?, ?concurrency: Integer) -> UploadedMedia
@@ -173,64 +49,16 @@ module X
       def chunked_upload: (uploadable media, client: _Client, ?media_category: (String | Symbol)?, ?media_type: String?, ?chunk_size_mb: (Float | Integer)?, ?concurrency: Integer) -> UploadedMedia
       def await_processing: (media media, client: _Client, ?processing_timeout: Float | Integer) -> UploadedMedia
       def await_processing!: (media media, client: _Client, ?processing_timeout: Float | Integer) -> UploadedMedia
-
-      module Inference
-        extend Inference
-
-        def chunked_upload?: (resolvable media, String | Symbol media_category) -> bool
-        def infer_media_category: (resolvable media) -> String
-        def infer_media_type: (resolvable media, String | Symbol media_category) -> String
-      end
-    end
-
-    module Gif
-      HEADER_SIZE: Integer
-      EXTENSION_INTRODUCER: Integer
-      IMAGE_SEPARATOR: Integer
-      IMAGE_DESCRIPTOR_SIZE: Integer
-      extend Gif
-
-      def animated?: (resolvable media) -> bool
-
-      private
-      def after_block: (String data, Integer position, Integer block) -> Integer
-      def skip_color_table: (Integer position, Integer flags) -> Integer
-      def skip_sub_blocks: (String data, Integer position) -> Integer
     end
 
     module Metadata
-      SUBTITLED_MEDIA_CATEGORY: String
-      NO_METADATA: String
       extend Metadata
 
       def add_alt_text: (media media, String text, client: _Client) -> Hash[String, untyped]
       def add_subtitles: (media video, media subtitles, String language_code, client: _Client, ?display_name: String?, ?media_category: String | Symbol) -> Hash[String, untyped]
     end
 
-    module Validator
-      BYTES_PER_MB: Integer
-      MAX_ALT_TEXT_LENGTH: Integer
-      MAX_SEGMENTS: Integer
-      MEDIA_CATEGORIES: Array[String]
-      extend Validator
-
-      def validate_upload!: (Source source, (String | Symbol)? media_category, alt_text: String?, chunk_size_mb: (Float | Integer)?, concurrency: Integer, processing_timeout: Float | Integer) ?{ () -> (String | Symbol) } -> String
-      def validate_source!: (Source source) -> nil
-      def validate_file_path!: (path file_path) -> nil
-      def validate_extension!: (path file_path, Array[String] extensions) -> nil
-      def validate_alt_text!: (String? alt_text) -> nil
-      def validate_media_category!: (String | Symbol media_category) -> String
-      def validate_chunks!: (chunk_size_mb: (Float | Integer)?, concurrency: Integer) -> nil
-      def positive_number?: (untyped value) -> bool
-      def validate_processing_timeout!: (untyped processing_timeout) -> nil
-      def validate_segments!: (Source source, (Float | Integer)? chunk_size_mb) -> Integer
-    end
-
     module Account
-      V1_BASE_URL: String
-      PROFILE_IMAGE_URL: String
-      PROFILE_BANNER_URL: String
-      SUPPORTED_EXTENSIONS: Array[String]
       extend Account
 
       def update_profile_image: (path file_path, client: _Client) -> Hash[String, untyped]?
@@ -241,11 +69,6 @@ module X
   end
 
   class UploadedMedia
-    FINAL_STATES: Array[String]
-    NO_MEDIA_ID: String
-
-    @received_at: Time
-
     attr_reader attrs: Hash[String, untyped]
     alias to_h attrs
 
@@ -271,9 +94,6 @@ module X
     alias eql? ==
     def hash: () -> Integer
     def inspect: () -> String
-
-    private
-    def deep_freeze: (untyped value) -> untyped
   end
 
   class InvalidMediaType < Uploader::Error
@@ -289,16 +109,12 @@ module X
   end
 
   class AltTextFailed < Uploader::Error
-    private def self.keeping: [T] (UploadedMedia media) { () -> T } -> T
-
     attr_reader media: UploadedMedia
     def initialize: (UploadedMedia media) -> void
     def to_s: () -> String
   end
 
   class MediaProcessingFailed < Uploader::Error
-    DEFAULT_MESSAGE: String
-
     attr_reader status: UploadedMedia | Hash[String, untyped] | nil
     def initialize: (?String? message, ?status: UploadedMedia | Hash[String, untyped] | nil) -> void
   end
