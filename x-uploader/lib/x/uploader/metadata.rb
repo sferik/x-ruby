@@ -2,7 +2,7 @@
 
 require "x/core"
 require_relative "json_classes"
-require_relative "missing_data"
+require_relative "missing_media_data"
 require_relative "utils"
 require_relative "validator"
 
@@ -31,13 +31,13 @@ module X
       # @return [Hash] the media identifier and the metadata now associated with it
       # @raise [ArgumentError] if the alt text is empty or longer than the API takes, before a request
       # @raise [ArgumentError] if the media given is neither media nor a media identifier
-      # @raise [MissingData] if the media given holds no identifier, or the response holds no metadata or carries no body at all
+      # @raise [MissingMediaData] if the media given holds no identifier, or the response holds no metadata or carries no body at all
       # @example Describe an uploaded image
       #   Uploader::Metadata.add_alt_text(media, "A cat asleep on a keyboard", client: client)
       def add_alt_text(media, text, client:)
         Validator.validate_alt_text!(text)
         body = {id: Utils.media_id(media), metadata: {alt_text: {text:}}}
-        Utils.sending_again(client) { client.post("media/metadata", body, **JSON_CLASSES) }.to_h["data"].then { |data| Hash.try_convert(data) || raise(MissingData, NO_METADATA) }
+        Utils.sending_again(client) { client.post("media/metadata", body, **JSON_CLASSES) }.to_h["data"].then { |data| Hash.try_convert(data) || raise(MissingMediaData, NO_METADATA) }
       end
 
       # Attach uploaded subtitles to an uploaded video
@@ -56,7 +56,7 @@ module X
       # @return [Hash] the video identifier and the subtitles now associated with it
       # @raise [ArgumentError] if the media category is neither tweet_video nor amplify_video
       # @raise [ArgumentError] if the video or the subtitles are neither media nor a media identifier
-      # @raise [MissingData] if the video or the subtitles hold no identifier, or the response holds no metadata or carries no body at all
+      # @raise [MissingMediaData] if the video or the subtitles hold no identifier, or the response holds no metadata or carries no body at all
       # @example Upload a video and its English subtitles
       #   video = Uploader::MediaUpload.upload("cat.mp4", client: client)
       #   subtitles = Uploader::MediaUpload.upload("cat.srt", client: client)
@@ -67,7 +67,7 @@ module X
       def add_subtitles(video, subtitles, language_code, client:, display_name: nil, media_category: SUBTITLED_MEDIA_CATEGORY)
         track = {id: Utils.media_id(subtitles), language_code: language_code.upcase, display_name:}.compact
         body = {id: Utils.media_id(video), media_category: Utils.subtitled_media_category(media_category), subtitles: track}
-        Utils.sending_again(client) { client.post("media/subtitles", body, **JSON_CLASSES) }.to_h["data"].then { |data| Hash.try_convert(data) || raise(MissingData, NO_METADATA) }
+        Utils.sending_again(client) { client.post("media/subtitles", body, **JSON_CLASSES) }.to_h["data"].then { |data| Hash.try_convert(data) || raise(MissingMediaData, NO_METADATA) }
       end
     end
   end

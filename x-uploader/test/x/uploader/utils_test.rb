@@ -25,17 +25,17 @@ module X
     end
 
     def test_media_data_of_a_response_that_carries_no_body
-      error = assert_raises(MissingData) { Uploader.const_get(:Utils).media_data(nil, "of the upload") }
+      error = assert_raises(MissingMediaData) { Uploader.const_get(:Utils).media_data(nil, "of the upload") }
 
       assert_equal "The response of the upload holds no media", error.message
     end
 
     def test_media_data_of_a_response_whose_data_is_not_media
-      assert_raises(MissingData) { Uploader.const_get(:Utils).media_data({"data" => []}, "of the upload") }
+      assert_raises(MissingMediaData) { Uploader.const_get(:Utils).media_data({"data" => []}, "of the upload") }
     end
 
     def test_media_data_of_a_response_that_describes_no_media
-      error = assert_raises(MissingData) { Uploader.const_get(:Utils).media_data({}, "of the upload") }
+      error = assert_raises(MissingMediaData) { Uploader.const_get(:Utils).media_data({}, "of the upload") }
 
       assert_equal "The response of the upload holds no media", error.message
     end
@@ -57,7 +57,7 @@ module X
     end
 
     def test_media_id_of_uploaded_media_without_an_id
-      assert_raises(MissingData) { Uploader.const_get(:Utils).media_id(UploadedMedia.new({"media_key" => "3_7"})) }
+      assert_raises(MissingMediaData) { Uploader.const_get(:Utils).media_id(UploadedMedia.new({"media_key" => "3_7"})) }
     end
 
     def test_media_id_of_an_identifier
@@ -66,7 +66,7 @@ module X
     end
 
     def test_media_id_of_an_upload_response_without_an_id
-      error = assert_raises(MissingData) { Uploader.const_get(:Utils).media_id({"media_key" => "3_7"}) }
+      error = assert_raises(MissingMediaData) { Uploader.const_get(:Utils).media_id({"media_key" => "3_7"}) }
 
       assert_equal "The media given holds no identifier", error.message
     end
@@ -81,14 +81,14 @@ module X
 
     def test_media_id_of_nothing
       [nil, "", {"id" => nil}, {"id" => ""}].each do |media|
-        error = assert_raises(MissingData, media.inspect) { Uploader.const_get(:Utils).media_id(media) }
+        error = assert_raises(MissingMediaData, media.inspect) { Uploader.const_get(:Utils).media_id(media) }
 
         assert_equal "The media given holds no identifier", error.message
       end
     end
 
     def test_awaiting_the_processing_of_nothing_sends_no_request
-      assert_raises(MissingData) { Uploader::MediaUpload.await_processing(nil, client: Client.new) }
+      assert_raises(MissingMediaData) { Uploader::MediaUpload.await_processing(nil, client: Client.new) }
       assert_not_requested :any, /api\.x\.com/
     end
   end

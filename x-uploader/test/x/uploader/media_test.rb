@@ -61,7 +61,7 @@ module X
     def test_upload_binary_raises_for_an_empty_response
       stub_request(:post, UPLOAD_URL).to_return(status: 204)
 
-      assert_raises(MissingData) do
+      assert_raises(MissingMediaData) do
         Uploader::MediaUpload.upload_binary(SAMPLE_BINARY_CONTENT, client: @client, media_category: Uploader::MediaUpload::TWEET_IMAGE)
       end
     end

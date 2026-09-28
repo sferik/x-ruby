@@ -28,26 +28,26 @@ module X
     def test_chunked_upload_raises_when_finalize_returns_empty_response
       stub_chunked_upload_workflow(finalize_status: 204, finalize_body: nil)
 
-      assert_raises(MissingData) { perform_chunked_upload }
+      assert_raises(MissingMediaData) { perform_chunked_upload }
     end
 
     def test_init_raises_when_server_returns_empty_response
       stub_request(:post, init_url).to_return(status: 204)
 
-      assert_raises(MissingData) { init }
+      assert_raises(MissingMediaData) { init }
     end
 
     def test_init_raises_when_server_returns_a_response_without_data
       stub_request(:post, init_url).to_return(status: 202, headers: json_headers, body: "{}")
 
-      assert_raises(MissingData) { init }
+      assert_raises(MissingMediaData) { init }
     end
 
     def test_chunked_upload_raises_before_a_chunk_is_uploaded_when_init_returns_no_media
       stub_request(:post, init_url).to_return(status: 204)
       append = stub_append_request
 
-      assert_raises(MissingData) { perform_chunked_upload }
+      assert_raises(MissingMediaData) { perform_chunked_upload }
       assert_not_requested append
     end
 

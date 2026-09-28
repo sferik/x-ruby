@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require_relative "json_classes"
-require_relative "missing_data"
+require_relative "missing_media_data"
 require_relative "multipart"
 require_relative "utils"
 
@@ -32,13 +32,13 @@ module X
       # @param media_type [String] the MIME type
       # @param media_category [String] the media category
       # @return [Hash] the media the chunks are appended to
-      # @raise [MissingData] if the response holds no media to append the chunks to
+      # @raise [MissingMediaData] if the response holds no media to append the chunks to
       # @example Initialize the upload of a video
       #   Uploader::Chunks.init(client:, source:, media_type: "video/mp4", media_category: "tweet_video")
       def init(client:, source:, media_type:, media_category:)
         body = {media_type:, media_category:, total_bytes: source.size}
         media = Hash.try_convert(client.post("media/upload/initialize", body, **JSON_CLASSES).to_h["data"])
-        raise MissingData, NO_MEDIA unless media&.key?("id")
+        raise MissingMediaData, NO_MEDIA unless media&.key?("id")
 
         media
       end

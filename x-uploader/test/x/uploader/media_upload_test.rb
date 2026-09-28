@@ -85,7 +85,7 @@ module X
     def test_upload_in_chunks_whose_finalize_returns_nothing_raises
       stub_chunked_workflow
       stub_request(:post, "#{BASE_URL}/#{TEST_MEDIA_ID}/finalize").to_return(status: 204)
-      error = assert_raises(MissingData) { Uploader::MediaUpload.upload("test/sample_files/sample.srt", client: @client) }
+      error = assert_raises(MissingMediaData) { Uploader::MediaUpload.upload("test/sample_files/sample.srt", client: @client) }
 
       assert_equal "The response that finalizes the upload holds no media", error.message
       assert_not_requested :get, "#{BASE_URL}?command=STATUS&media_id=#{TEST_MEDIA_ID}"
@@ -104,7 +104,7 @@ module X
       stub_request(:post, BASE_URL).to_return(status: 204)
       metadata = stub_request(:post, "https://api.x.com/2/media/metadata")
 
-      assert_raises(MissingData) { Uploader::MediaUpload.upload("test/sample_files/sample.png", client: @client, alt_text: "A pixel") }
+      assert_raises(MissingMediaData) { Uploader::MediaUpload.upload("test/sample_files/sample.png", client: @client, alt_text: "A pixel") }
       assert_not_requested metadata
     end
 

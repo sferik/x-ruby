@@ -23,7 +23,7 @@ module X
 
     def test_await_processing_raises_for_an_empty_response
       stub_request(:get, status_url).to_return(status: 204)
-      error = assert_raises(MissingData) { await(:await_processing) }
+      error = assert_raises(MissingMediaData) { await(:await_processing) }
 
       assert_equal "The response of the status check holds no media", error.message
     end
@@ -50,7 +50,7 @@ module X
     def test_await_processing_bang_raises_for_an_empty_response
       stub_request(:get, status_url).to_return(status: 204)
 
-      assert_raises(MissingData) { await(:await_processing!) }
+      assert_raises(MissingMediaData) { await(:await_processing!) }
     end
 
     def test_await_processing_bang_gives_up_after_its_timeout

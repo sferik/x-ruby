@@ -279,7 +279,7 @@ module X
   class InvalidMediaType < Uploader::Error
   end
 
-  class MissingData < Uploader::Error
+  class MissingMediaData < Uploader::Error
   end
 
   class MediaProcessingTimeout < Uploader::Error

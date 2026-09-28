@@ -51,7 +51,7 @@ module X
 
     def test_upload_an_image_without_a_response_body_raises
       stub_request(:post, BASE_URL).to_return(status: 204)
-      error = assert_raises(MissingData) { Uploader::MediaUpload.upload("test/sample_files/sample.png", client: @client) }
+      error = assert_raises(MissingMediaData) { Uploader::MediaUpload.upload("test/sample_files/sample.png", client: @client) }
 
       assert_equal "The response of the upload holds no media", error.message
       assert_not_requested :get, STATUS_URL

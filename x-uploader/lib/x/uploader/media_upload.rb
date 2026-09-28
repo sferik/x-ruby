@@ -122,7 +122,7 @@ module X
       #   than one, or the processing timeout is not a number of seconds of at least 0
       # @raise [InvalidMediaType] if no media category is given for media that names no file and no signature names
       #   one, or if media uploaded in chunks is given no media type and none can be inferred
-      # @raise [MissingData] if a response of the upload holds no media, or carries no body at all
+      # @raise [MissingMediaData] if a response of the upload holds no media, or carries no body at all
       # @raise [MediaProcessingFailed] if the media fails to process
       # @raise [MediaProcessingTimeout] if the media is still processing after processing_timeout seconds
       # @raise [AltTextFailed] if the media is uploaded, but its alt text cannot be added, with the media it uploaded
@@ -158,7 +158,7 @@ module X
       # @return [UploadedMedia] the uploaded media, which holds the upload response
       # @raise [ArgumentError] if the media category is invalid, or is that of a video or subtitles, which the API
       #   takes in chunks alone
-      # @raise [MissingData] if the response holds no media, or carries no body at all
+      # @raise [MissingMediaData] if the response holds no media, or carries no body at all
       # @example Upload binary content
       #   Uploader::MediaUpload.upload_binary(data, client: client, media_category: "tweet_image")
       def upload_binary(content, client:, media_category:)
@@ -187,7 +187,7 @@ module X
       # @raise [ArgumentError] if the media category is invalid, the chunk size is not positive or would need more
       #   segments than the API numbers, or the concurrency is less than one
       # @raise [InvalidMediaType] if no media type is given and none can be inferred
-      # @raise [MissingData] if the response that initializes the upload holds no media to append the chunks to, or
+      # @raise [MissingMediaData] if the response that initializes the upload holds no media to append the chunks to, or
       #   the response that finalizes it holds no media or carries no body at all
       # @example Upload a large video
       #   Uploader::MediaUpload.chunked_upload("video.mp4", client: client)
@@ -216,7 +216,7 @@ module X
       # @return [UploadedMedia] the uploaded media, which holds the processing status
       # @raise [ArgumentError] if the processing timeout is not a number of seconds of at least 0
       # @raise [ArgumentError] if the media given is neither media nor a media identifier
-      # @raise [MissingData] if the media given holds no identifier, or a status response holds no media or carries no body at all
+      # @raise [MissingMediaData] if the media given holds no identifier, or a status response holds no media or carries no body at all
       # @raise [MediaProcessingTimeout] if the media is still processing once the processing timeout would pass
       # @example Wait for processing
       #   Uploader::MediaUpload.await_processing(media, client: client)
@@ -248,7 +248,7 @@ module X
       # @return [UploadedMedia] the uploaded media, which holds the processing status
       # @raise [ArgumentError] if the processing timeout is not a number of seconds of at least 0
       # @raise [ArgumentError] if the media given is neither media nor a media identifier
-      # @raise [MissingData] if the media given holds no identifier, or a status response holds no media or carries no body at all
+      # @raise [MissingMediaData] if the media given holds no identifier, or a status response holds no media or carries no body at all
       # @raise [MediaProcessingFailed] if media processing failed, with the status X reported
       # @raise [MediaProcessingTimeout] if the media is still processing once the processing timeout would pass
       # @example Wait for processing with error handling

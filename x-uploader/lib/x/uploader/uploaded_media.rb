@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require "json"
-require_relative "missing_data"
+require_relative "missing_media_data"
 
 module X
   # Media that was uploaded: the response of an upload, or the status of its processing
@@ -58,11 +58,11 @@ module X
     #
     # @api public
     # @return [Integer] the identifier, whether the response held it as a String or an Integer
-    # @raise [MissingData] if the response held no id
+    # @raise [MissingMediaData] if the response held no id
     # @raise [ArgumentError] if the response held an id that names no number
     # @example Get the identifier
     #   media.id # => 1880028106020515840
-    def id = Integer(fetch("id") { raise MissingData, NO_MEDIA_ID }.to_s, 10)
+    def id = Integer(fetch("id") { raise MissingMediaData, NO_MEDIA_ID }.to_s, 10)
 
     # The media key
     #

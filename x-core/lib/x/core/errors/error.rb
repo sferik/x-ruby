@@ -40,7 +40,7 @@ module X
   #       ├── X::InvalidMediaType              the media is of a type the API does not take
   #       ├── X::MediaProcessingFailed         X could not process the media that was uploaded
   #       ├── X::MediaProcessingTimeout        the media was still processing when the wait ran out
-  #       └── X::MissingData                   a response of an upload describes no media
+  #       └── X::MissingMediaData              a response of an upload describes no media
   #
   # @api public
   # @example Rescue every failure of a request

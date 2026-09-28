@@ -31,7 +31,7 @@ module X
       # @raise [Errno::ENOENT] if the file does not exist
       # @raise [ArgumentError] if the media is empty, which holds nothing to upload
       # @raise [InvalidMediaType] if no media category is given for media that names no file and no signature names one
-      # @raise [MissingData] if a response of the upload holds no media, or carries no body at all
+      # @raise [MissingMediaData] if a response of the upload holds no media, or carries no body at all
       # @raise [MediaProcessingFailed] if media processing failed, with the status X reported
       # @raise [MediaProcessingTimeout] if the media is still processing once the processing timeout would pass
       # @raise [AltTextFailed] if the media is uploaded, but its alt text cannot be added, with the media it uploaded

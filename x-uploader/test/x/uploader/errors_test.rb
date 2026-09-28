@@ -62,11 +62,11 @@ module X
     end
   end
 
-  class UploaderMissingDataTest < Minitest::Test
-    cover MissingData
+  class UploaderMissingMediaDataTest < Minitest::Test
+    cover MissingMediaData
 
     def test_it_is_the_failure_of_an_upload_and_of_the_api
-      error = MissingData.new("The response of the upload holds no media")
+      error = MissingMediaData.new("The response of the upload holds no media")
 
       assert_kind_of Uploader::Error, error
       assert_kind_of Error, error
@@ -76,7 +76,7 @@ module X
   class UploaderErrorNamesTest < Minitest::Test
     # Every class a caller names is under X, as the classes of x-core are, and X::Uploader::Error alone is left
     # under the gem's module, for the rescue that means the failure of an upload alone.
-    PROMOTED = %i[AltTextFailed InvalidMediaType MediaProcessingFailed MediaProcessingTimeout MissingData UploadedMedia].freeze
+    PROMOTED = %i[AltTextFailed InvalidMediaType MediaProcessingFailed MediaProcessingTimeout MissingMediaData UploadedMedia].freeze
 
     def test_each_is_named_under_x
       PROMOTED.each { |name| assert X.const_defined?(name, false), "X::#{name} is not defined" }

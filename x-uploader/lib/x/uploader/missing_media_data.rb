@@ -12,5 +12,5 @@ module X
   # It descends from X::Uploader::Error, and so from X::Error, so rescuing the failures of an upload catches it.
   #
   # @api public
-  class MissingData < Uploader::Error; end
+  class MissingMediaData < Uploader::Error; end
 end

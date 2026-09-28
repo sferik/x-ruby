@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require "x/core/retry_handler"
-require_relative "missing_data"
+require_relative "missing_media_data"
 require_relative "uploaded_media"
 
 module X
@@ -45,7 +45,7 @@ module X
       #   identifier
       # @return [String] the media identifier
       # @raise [ArgumentError] if the media is neither media nor a media identifier
-      # @raise [MissingData] if the media is nil or empty, or an upload response holds no identifier
+      # @raise [MissingMediaData] if the media is nil or empty, or an upload response holds no identifier
       # @example The identifier of uploaded media
       #   Uploader::Utils.media_id({"id" => "1880028106020515840"}) # => "1880028106020515840"
       def media_id(media)
@@ -54,7 +54,7 @@ module X
         when String, Integer, nil then media
         else raise ArgumentError, format(NOT_MEDIA, media.inspect)
         end
-        id.to_s.then { |text| text.empty? ? raise(MissingData, NO_MEDIA_ID) : text }
+        id.to_s.then { |text| text.empty? ? raise(MissingMediaData, NO_MEDIA_ID) : text }
       end
 
       # The media a response of an upload describes
@@ -68,11 +68,11 @@ module X
       # @param response [Hash, nil] the parsed response body, or nil for a response without one
       # @param description [String] how the error names the response, for its message
       # @return [Hash] the media
-      # @raise [MissingData] if the response holds no media
+      # @raise [MissingMediaData] if the response holds no media
       # @example The media an upload returned
       #   Uploader::Utils.media_data({"data" => {"id" => 7}}, "of the upload") # => {"id" => 7}
       def media_data(response, description)
-        Hash.try_convert(response.to_h["data"]) || raise(MissingData, format(NO_MEDIA, description))
+        Hash.try_convert(response.to_h["data"]) || raise(MissingMediaData, format(NO_MEDIA, description))
       end
 
       # Send a request again after a server or network error, as an idempotent one is
