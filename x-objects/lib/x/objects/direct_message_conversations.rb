@@ -114,15 +114,19 @@ module X
       end
 
       # The message a send created, from the identifiers the API returned
+      #
+      # It is built as the resources of any response are, so an identifier the response lacks raises where it is read.
+      #
       # @api private
       # @param body [Hash, nil] the response body
       # @param client [Object] the client used to make the request
       # @return [DirectMessage, nil] the message, or nil if the response holds no data
+      # @raise [InvalidAttribute] if the response holds no event identifier, or one that is not one
       def sent(body, client:)
         data = body.to_h["data"]
         return unless data.is_a?(Hash)
 
-        new({"id" => data["dm_event_id"], "dm_conversation_id" => data["dm_conversation_id"]}, client:)
+        resource_from_response({"data" => {"id" => data["dm_event_id"], "dm_conversation_id" => data["dm_conversation_id"]}}, client:)
       end
     end
   end

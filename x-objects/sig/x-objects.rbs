@@ -28,13 +28,13 @@ module X
     def project_usage: () -> Integer?
     def project_cap: () -> Integer?
     def cap_reset_day: () -> Integer?
-    def daily: () -> Hash[Time?, Integer]
-    def daily_by_app: () -> Hash[Integer?, Hash[Time?, Integer]]
+    def daily: () -> Hash[Time, Integer]
+    def daily_by_app: () -> Hash[Integer?, Hash[Time, Integer]]
 
     private
-    def days: (untyped entries) -> Hash[Time?, Integer]
+    def days: (untyped entries) -> Hash[Time, Integer]
     def integer: (String reader, String | Integer | nil value) -> Integer?
-    def time: (String reader, String? value) -> Time?
+    def time: (String reader, untyped value) -> Time
   end
 
   module Objects
@@ -368,7 +368,7 @@ module X
 
     # The class side of DirectMessage, which builds its messages
     interface _DirectMessageClass
-      def new: (attrs attrs, ?client: _Client?) -> DirectMessage
+      def resource_from_response: (body body, client: _Client?, ?hydrated: bool) -> DirectMessage?
     end
 
     module DirectMessageConversations : _DirectMessageClass
@@ -397,7 +397,9 @@ module X
       private
       def pages: (String path, String query, client: _Client, **untyped params) -> Array[Hash[String, untyped]]
       def total: (Array[Hash[String, untyped]] bodies) -> Integer
+      def page_total: (Integer | String | nil value) -> Integer
       def periods: (Array[Hash[String, untyped]] bodies) -> Hash[Time, Integer]
+      def period: (Hash[String, untyped] entry) -> [Time, Integer]
     end
 
     module PostCollections : Resource

@@ -131,7 +131,9 @@ module X
     def test_create_without_event_id
       @client.stub(:post, "dm_conversations/with/8/messages", {"data" => {"dm_conversation_id" => "9-8"}})
 
-      assert_raises(ArgumentError) { DirectMessage.create("8", "yo", client: @client) }
+      error = assert_raises(InvalidAttribute) { DirectMessage.create("8", "yo", client: @client) }
+
+      assert_equal "X::DirectMessage#id cannot be read from nil", error.message
     end
 
     def test_create_with_nil_body

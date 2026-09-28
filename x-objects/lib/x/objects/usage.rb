@@ -98,6 +98,7 @@ module X
     #
     # @api public
     # @return [Hash{Time => Integer}] the number of posts, keyed by the start of each day
+    # @raise [InvalidAttribute] if the response holds a day without a date in ISO 8601, or a number that is not one
     # @example Get the posts read yesterday
     #   usage.daily.values.last(2).first
     def daily = days(attrs.dig("daily_project_usage", "usage"))
@@ -109,7 +110,7 @@ module X
     # @example Total the posts each app read
     #   usage.daily_by_app.transform_values { |days| days.values.sum }
     def daily_by_app
-      by_app = {} #: Hash[Integer?, Hash[Time?, Integer]]
+      by_app = {} #: Hash[Integer?, Hash[Time, Integer]]
       apps = Array(attrs["daily_client_app_usage"]) #: Array[Hash[String, untyped]]
       apps.each { |app| by_app[integer("daily_by_app", app["client_app_id"])] = days(app["usage"]) }
       by_app.freeze
@@ -122,9 +123,9 @@ module X
     # @param entries [Array<Hash>, nil] the entries, each with a date and a usage
     # @return [Hash{Time => Integer}] the number of posts, keyed by the start of each day
     def days(entries)
-      counts = {} #: Hash[Time?, Integer]
+      counts = {} #: Hash[Time, Integer]
       entries = Array(entries) #: Array[Hash[String, untyped]]
-      entries.each { |entry| counts[time("daily", entry.fetch("date"))] = integer("daily", entry["usage"]) || 0 }
+      entries.each { |entry| counts[time("daily", entry["date"])] = integer("daily", entry["usage"]) || 0 }
       counts.freeze
     end
 
@@ -136,12 +137,12 @@ module X
     # @raise [InvalidAttribute] if the value is not a number
     def integer(reader, value) = Objects::Utils.read("#{self.class}##{reader}", value) { Objects::Utils.integer(value) }
 
-    # Read a date the response holds as a Time
+    # Read a date the response holds as a Time, which it must hold
     # @api private
     # @param reader [String] the name of the reader that reads it
-    # @param value [String] the date, in ISO 8601
+    # @param value [String, nil] the date, in ISO 8601
     # @return [Time] the time
-    # @raise [InvalidAttribute] if the value is not ISO 8601
-    def time(reader, value) = Objects::Utils.read("#{self.class}##{reader}", value) { Objects::Utils.time(value) }
+    # @raise [InvalidAttribute] if the value is missing, or is not ISO 8601
+    def time(reader, value) = Objects::Utils.read("#{self.class}##{reader}", value) { Time.iso8601(value.to_s) }
   end
 end

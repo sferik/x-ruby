@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "time"
+require_relative "errors"
 require_relative "utils"
 
 module X
@@ -29,6 +30,7 @@ module X
       # @param client [Object] the client used to make the requests
       # @param params [Hash] query parameters, such as start_time and end_time
       # @return [Integer] the number of matching posts
+      # @raise [InvalidAttribute] if the response holds a total that is not a number
       # @example Count the recent posts about Ruby
       #   X::Post.count("ruby", client: client)
       def count(query, client:, **params) = total(pages(RECENT_ENDPOINT, query, client:, **params))
@@ -40,6 +42,7 @@ module X
       # @param client [Object] the client used to make the requests
       # @param params [Hash] query parameters, such as start_time and end_time
       # @return [Integer] the number of matching posts
+      # @raise [InvalidAttribute] if the response holds a total that is not a number
       # @example Count every post about Ruby
       #   X::Post.count_all("ruby", client: client)
       def count_all(query, client:, **params) = total(pages(ALL_ENDPOINT, query, client:, **params))
@@ -51,6 +54,7 @@ module X
       # @param client [Object] the client used to make the requests
       # @param params [Hash] query parameters, such as granularity, which is day by default
       # @return [Hash{Time => Integer}] the number of matching posts, keyed by the start of each period, oldest first
+      # @raise [InvalidAttribute] if the response holds a period without a start in ISO 8601, or without a count
       # @example Count the recent posts about Ruby by hour
       #   X::Post.count_by_period("ruby", client: client, granularity: "hour")
       def count_by_period(query, client:, **params) = periods(pages(RECENT_ENDPOINT, query, client:, **params))
@@ -62,6 +66,7 @@ module X
       # @param client [Object] the client used to make the requests
       # @param params [Hash] query parameters, such as granularity, which is day by default
       # @return [Hash{Time => Integer}] the number of matching posts, keyed by the start of each period, oldest first
+      # @raise [InvalidAttribute] if the response holds a period without a start in ISO 8601, or without a count
       # @example Count every post about Ruby by day
       #   X::Post.count_all_by_period("ruby", client: client)
       def count_all_by_period(query, client:, **params) = periods(pages(ALL_ENDPOINT, query, client:, **params))
@@ -91,7 +96,15 @@ module X
       # @api private
       # @param bodies [Array<Hash>] the response bodies
       # @return [Integer] the total
-      def total(bodies) = bodies.sum { |body| body.dig("meta", "total_tweet_count") || body.dig("meta", "total_post_count") || 0 }
+      # @raise [InvalidAttribute] if a page holds a total that is not a number
+      def total(bodies) = bodies.sum { |body| page_total(body.dig("meta", "total_tweet_count") || body.dig("meta", "total_post_count")) }
+
+      # The total count of one page, which is zero when the page holds none
+      # @api private
+      # @param value [Integer, String, nil] the total the page holds
+      # @return [Integer] the total
+      # @raise [InvalidAttribute] if the total is not a number
+      def page_total(value) = Utils.read("The total of the counts of #{self}", value) { Utils.integer(value) } || 0
 
       # The count of each period of every page, oldest first
       #
@@ -101,9 +114,24 @@ module X
       # @api private
       # @param bodies [Array<Hash>] the response bodies
       # @return [Hash{Time => Integer}] the counts, keyed by the start of each period, in time order
+      # @raise [InvalidAttribute] if a period has no start in ISO 8601, or no count that is a number
       def periods(bodies)
         entries = bodies.flat_map { |body| Array(body["data"]) } #: Array[Hash[String, untyped]]
-        entries.to_h { |period| [Time.iso8601(period.fetch("start")), period.fetch("tweet_count") { period.fetch("post_count") }] }.sort.to_h.freeze
+        entries.to_h { |entry| period(entry) }.sort.to_h.freeze
+      end
+
+      # The start of a period and the number of posts in it
+      #
+      # The API names the number for tweets or for posts.
+      #
+      # @api private
+      # @param entry [Hash] the period, with its start and its count
+      # @return [Array(Time, Integer)] the start and the count
+      # @raise [InvalidAttribute] if the period has no start in ISO 8601, or no count that is a number
+      def period(entry)
+        Utils.read("A period of the counts of #{self}", entry) do
+          [Time.iso8601(entry["start"].to_s), Integer((entry["tweet_count"] || entry["post_count"]).to_s, 10)]
+        end
       end
     end
   end

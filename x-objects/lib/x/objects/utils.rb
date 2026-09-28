@@ -289,11 +289,14 @@ module X
 
       # Parse an ISO 8601 timestamp
       #
+      # A value that is not a String, such as a number, is not ISO 8601 either, and raises ArgumentError as one.
+      #
       # @api private
       # @param value [String, nil] the timestamp
       # @return [Time, nil] the parsed time or nil if the timestamp is missing
+      # @raise [ArgumentError] if the timestamp is not ISO 8601
       def time(value)
-        Time.iso8601(value) unless value.nil?
+        Time.iso8601(value.to_s) unless value.nil?
       end
     end
   end
