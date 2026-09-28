@@ -13,7 +13,8 @@ module X
   class AltTextFailed < Uploader::Error
     # Add alt text to uploaded media, raising this error, which holds it, on failure
     #
-    # Internal to x-uploader: an upload adds the alt text it is given through it.
+    # Internal to x-uploader: an upload adds the alt text it is given through it, and calls it with __send__, since it
+    # is private.
     #
     # @api private
     # @param media [UploadedMedia] the uploaded media
@@ -21,12 +22,13 @@ module X
     # @return [Object] what the block returns
     # @raise [AltTextFailed] if the block raises an error of the X API
     # @example Add alt text to an upload, keeping the media if it cannot be added
-    #   X::AltTextFailed.keeping(media) { Uploader::Metadata.add_alt_text(media, "A cat", client:) }
+    #   X::AltTextFailed.__send__(:keeping, media) { Uploader::Metadata.add_alt_text(media, "A cat", client:) }
     def self.keeping(media)
       yield
     rescue X::Error
       raise new(media)
     end
+    private_class_method :keeping
 
     # The media that was uploaded, without its alt text
     # @api public

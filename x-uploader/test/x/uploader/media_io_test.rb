@@ -26,22 +26,22 @@ module X
         "sample_animated.gif" => "tweet_gif",
         "sample.mp4" => "tweet_video"
       }.each do |file, category|
-        assert_equal category, Uploader::MediaUpload.infer_media_category(StringIO.new(File.binread("test/sample_files/#{file}"))), file
+        assert_equal category, inference.infer_media_category(StringIO.new(File.binread("test/sample_files/#{file}"))), file
       end
     end
 
     def test_the_category_of_subtitles_that_name_no_file_is_read_from_their_signature
-      assert_equal "subtitles", Uploader::MediaUpload.infer_media_category(StringIO.new("WEBVTT\n\n00:00:01.000 --> 00:00:02.000\nHello\n"))
+      assert_equal "subtitles", inference.infer_media_category(StringIO.new("WEBVTT\n\n00:00:01.000 --> 00:00:02.000\nHello\n"))
     end
 
     def test_a_heif_image_is_not_taken_for_a_video
       heic = StringIO.new("\x00\x00\x00\x18ftypheic\x00\x00\x00\x00mif1heic".b)
 
-      assert_raises(InvalidMediaType) { Uploader::MediaUpload.infer_media_category(heic) }
+      assert_raises(InvalidMediaType) { inference.infer_media_category(heic) }
     end
 
     def test_the_category_of_media_no_signature_names_must_be_given
-      error = assert_raises(InvalidMediaType) { Uploader::MediaUpload.infer_media_category(StringIO.new("not media at all")) }
+      error = assert_raises(InvalidMediaType) { inference.infer_media_category(StringIO.new("not media at all")) }
 
       assert_equal "unable to determine the media type of the media given: pass media_category", error.message
     end
@@ -49,18 +49,18 @@ module X
     def test_the_media_type_of_media_that_names_no_file_is_read_from_its_signature
       png = StringIO.new(File.binread("test/sample_files/sample.png"))
 
-      assert_equal "image/png", Uploader::MediaUpload.infer_media_type(png, "tweet_image")
-      assert_equal "video/webm", Uploader::MediaUpload.infer_media_type(StringIO.new("\x1A\x45\xDF\xA3".b), "tweet_video")
+      assert_equal "image/png", inference.infer_media_type(png, "tweet_image")
+      assert_equal "video/webm", inference.infer_media_type(StringIO.new("\x1A\x45\xDF\xA3".b), "tweet_video")
     end
 
     def test_the_media_type_of_a_category_that_takes_no_type_the_signature_names
       mp4 = StringIO.new(File.binread("test/sample_files/sample.mp4"))
 
-      assert_equal "text/srt", Uploader::MediaUpload.infer_media_type(mp4, "subtitles")
+      assert_equal "text/srt", inference.infer_media_type(mp4, "subtitles")
     end
 
     def test_the_media_type_of_media_neither_a_name_nor_a_signature_names
-      error = assert_raises(InvalidMediaType) { Uploader::MediaUpload.infer_media_type(StringIO.new("not media at all"), "tweet_image") }
+      error = assert_raises(InvalidMediaType) { inference.infer_media_type(StringIO.new("not media at all"), "tweet_image") }
 
       assert_equal "unable to determine the MIME type of the media given", error.message
     end
@@ -123,7 +123,7 @@ module X
     def test_a_large_animated_gif_held_in_memory_uploads_in_chunks
       gif = StringIO.new("GIF89a".b + ("\x00".b * (5 * Uploader::MediaUpload::BYTES_PER_MB)))
 
-      assert Uploader::MediaUpload.chunked_upload?(gif, "tweet_gif")
+      assert inference.chunked_upload?(gif, "tweet_gif")
     end
 
     private

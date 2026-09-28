@@ -68,7 +68,7 @@ module X
 
     def test_infer_media_type_returns_correct_mime_type_for_each_category
       mime_type_expectations.each do |(category, expected_mime), file_path|
-        actual = Uploader::MediaUpload.infer_media_type(file_path, category)
+        actual = inference.infer_media_type(file_path, category)
 
         assert_equal expected_mime, actual, "Expected #{expected_mime} for #{category} with #{file_path}"
       end
@@ -76,13 +76,13 @@ module X
 
     def test_infer_media_type_raises_for_unknown_extension
       assert_raises(InvalidMediaType) do
-        Uploader::MediaUpload.infer_media_type("test/sample_files/sample.unknown", Uploader::MediaUpload::TWEET_IMAGE)
+        inference.infer_media_type("test/sample_files/sample.unknown", Uploader::MediaUpload::TWEET_IMAGE)
       end
     end
 
     def test_infer_media_type_error_message_includes_file_path
       error = assert_raises(InvalidMediaType) do
-        Uploader::MediaUpload.infer_media_type("/tmp/tempfile123", Uploader::MediaUpload::TWEET_IMAGE)
+        inference.infer_media_type("/tmp/tempfile123", Uploader::MediaUpload::TWEET_IMAGE)
       end
 
       assert_includes error.message, "/tmp/tempfile123"

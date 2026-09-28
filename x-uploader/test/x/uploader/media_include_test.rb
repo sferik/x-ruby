@@ -24,7 +24,8 @@ module X
       include X::Uploader::Metadata
 
       %i[init append await transfer extension chunked? still_gif? upload_chunk chunk_queue append_worker media_id v1_client
-        validate_file! body headers construct_upload_body construct_multipart_body construct_banner_body multipart_field].each do |name|
+        validate_file! body headers construct_upload_body construct_multipart_body construct_banner_body multipart_field
+        chunked_upload? infer_media_category infer_media_type].each do |name|
         define_method(name) { raise "#{name} is the caller's own method" }
       end
     end
@@ -53,12 +54,14 @@ module X
       assert_requested(:post, "https://api.x.com/2/media/metadata", body: {id: TEST_MEDIA_ID, metadata: {alt_text: {text: "A cat"}}}.to_json)
     end
 
-    def test_a_class_with_methods_of_its_own_awaits_processing_and_infers_a_media_type
+    def test_a_class_with_methods_of_its_own_awaits_processing
       stub_request(:get, "#{BASE_URL}?command=STATUS&media_id=#{TEST_MEDIA_ID}").to_return(JSON)
-      attachment = Attachment.new
 
-      assert_equal TEST_MEDIA_ID, attachment.await_processing!({"id" => TEST_MEDIA_ID}, client: Client.new)["id"]
-      assert_equal "video/webm", attachment.infer_media_type("clip.webm", "tweet_video")
+      assert_equal TEST_MEDIA_ID, Attachment.new.await_processing!({"id" => TEST_MEDIA_ID}, client: Client.new)["id"]
+    end
+
+    def test_an_uploader_infers_with_no_method_of_its_own
+      %i[chunked_upload? infer_media_category infer_media_type].each { |name| refute_respond_to Uploader::MediaUpload, name }
     end
 
     def test_a_class_with_methods_of_its_own_updates_a_profile_image_and_banner

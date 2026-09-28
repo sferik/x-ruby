@@ -34,6 +34,9 @@ TEST_ACCESS_TOKEN = "TEST_ACCESS_TOKEN"
 TEST_ACCESS_TOKEN_SECRET = "TEST_ACCESS_TOKEN_SECRET"
 TEST_MEDIA_ID = "1880028106020515840"
 
+# The module, private to MediaUpload, that infers how media uploads
+def inference = X::Uploader::MediaUpload.const_get(:Inference)
+
 def test_oauth_credentials
   {
     api_key: TEST_API_KEY,

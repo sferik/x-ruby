@@ -10,7 +10,7 @@ module X
   class SourceBufferTest < Minitest::Test
     cover Uploader.const_get(:Source)
     cover Uploader::MediaUpload
-    cover Uploader::Gif
+    cover Uploader.const_get(:Gif)
 
     PNG = "test/sample_files/sample.png"
 
@@ -45,11 +45,12 @@ module X
 
     def test_the_helpers_leave_the_media_to_be_uploaded
       io = StringIO.new(File.binread(PNG))
+      inferring = inference
 
-      assert_equal "tweet_image", Uploader::MediaUpload.infer_media_category(io)
-      assert_equal "image/png", Uploader::MediaUpload.infer_media_type(io, "tweet_image")
-      refute Uploader::MediaUpload.chunked_upload?(io, "tweet_gif")
-      refute Uploader::Gif.animated?(io)
+      assert_equal "tweet_image", inferring.infer_media_category(io)
+      assert_equal "image/png", inferring.infer_media_type(io, "tweet_image")
+      refute inferring.chunked_upload?(io, "tweet_gif")
+      refute Uploader.const_get(:Gif).animated?(io)
       assert_equal [0, File.binread(PNG)], [io.pos, io.read]
     end
   end

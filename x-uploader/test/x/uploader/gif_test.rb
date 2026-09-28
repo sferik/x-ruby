@@ -6,7 +6,7 @@ require "x/uploader/gif"
 
 module X
   class GifTest < Minitest::Test
-    cover Uploader::Gif
+    cover Uploader.const_get(:Gif)
 
     # A graphic control extension, as animations and transparent images carry
     CONTROL = "\x21\xF9\x04\x00\x0A\x00\x00\x00".b
@@ -50,8 +50,8 @@ module X
     end
 
     def test_real_files
-      refute Uploader::Gif.animated?("test/sample_files/sample.gif")
-      assert Uploader::Gif.animated?("test/sample_files/sample_animated.gif")
+      refute Uploader.const_get(:Gif).animated?("test/sample_files/sample.gif")
+      assert Uploader.const_get(:Gif).animated?("test/sample_files/sample_animated.gif")
     end
 
     private
@@ -72,7 +72,7 @@ module X
       Dir.mktmpdir do |dir|
         path = File.join(dir, "test.gif")
         File.binwrite(path, data)
-        Uploader::Gif.animated?(path)
+        Uploader.const_get(:Gif).animated?(path)
       end
     end
   end

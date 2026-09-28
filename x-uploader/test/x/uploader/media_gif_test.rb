@@ -48,26 +48,26 @@ module X
 
     def test_a_gif_uploads_in_chunks_only_once_a_single_request_cannot_take_it
       with_gif(MAX_SIMPLE) do |path|
-        assert_equal [false, false], %w[tweet_gif dm_gif].map { |category| Uploader::MediaUpload.chunked_upload?(path, category) }
+        assert_equal [false, false], %w[tweet_gif dm_gif].map { |category| inference.chunked_upload?(path, category) }
       end
       with_gif(MAX_SIMPLE + 1) do |path|
-        assert_equal [true, true], %w[tweet_gif dm_gif].map { |category| Uploader::MediaUpload.chunked_upload?(path, category) }
+        assert_equal [true, true], %w[tweet_gif dm_gif].map { |category| inference.chunked_upload?(path, category) }
       end
     end
 
     def test_a_video_and_subtitles_upload_in_chunks_whatever_their_size
-      assert_equal [true] * 4, %w[amplify_video dm_video tweet_video subtitles].map { |category| Uploader::MediaUpload.chunked_upload?("nope.mp4", category) }
+      assert_equal [true] * 4, %w[amplify_video dm_video tweet_video subtitles].map { |category| inference.chunked_upload?("nope.mp4", category) }
     end
 
     def test_an_image_uploads_whole_whatever_its_size
       with_gif(MAX_SIMPLE + 1) do |path|
-        assert_equal [false, false], %w[tweet_image dm_image].map { |category| Uploader::MediaUpload.chunked_upload?(path, category) }
+        assert_equal [false, false], %w[tweet_image dm_image].map { |category| inference.chunked_upload?(path, category) }
       end
     end
 
     def test_the_category_of_a_chunked_upload_is_read_in_any_case
-      assert_equal [true, true, false], [Uploader::MediaUpload.chunked_upload?("nope.mp4", :TWEET_VIDEO),
-        Uploader::MediaUpload.chunked_upload?("nope.mp4", "Tweet_Video"), Uploader::MediaUpload.chunked_upload?("test/sample_files/sample_animated.gif", :TWEET_GIF)]
+      assert_equal [true, true, false], [inference.chunked_upload?("nope.mp4", :TWEET_VIDEO),
+        inference.chunked_upload?("nope.mp4", "Tweet_Video"), inference.chunked_upload?("test/sample_files/sample_animated.gif", :TWEET_GIF)]
     end
 
     private

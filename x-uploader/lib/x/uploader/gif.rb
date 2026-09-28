@@ -81,5 +81,6 @@ module X
         position + 1
       end
     end
+    private_constant :Gif
   end
 end

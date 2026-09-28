@@ -16,23 +16,23 @@ module X
     end
 
     def test_infer_media_category
-      assert_equal "tweet_gif", Uploader::MediaUpload.infer_media_category("a.gif")
-      assert_equal "tweet_video", Uploader::MediaUpload.infer_media_category("a.mp4")
-      assert_equal "subtitles", Uploader::MediaUpload.infer_media_category("a.srt")
-      assert_equal "tweet_image", Uploader::MediaUpload.infer_media_category("a.png")
-      assert_equal "tweet_image", Uploader::MediaUpload.infer_media_category("a.jpeg")
+      assert_equal "tweet_gif", inference.infer_media_category("a.gif")
+      assert_equal "tweet_video", inference.infer_media_category("a.mp4")
+      assert_equal "subtitles", inference.infer_media_category("a.srt")
+      assert_equal "tweet_image", inference.infer_media_category("a.png")
+      assert_equal "tweet_image", inference.infer_media_category("a.jpeg")
     end
 
     def test_infer_media_category_ignores_case_and_unknown_extensions
-      assert_equal "tweet_gif", Uploader::MediaUpload.infer_media_category("A.GIF")
-      assert_equal "tweet_image", Uploader::MediaUpload.infer_media_category("a.unknown")
-      assert_equal "tweet_image", Uploader::MediaUpload.infer_media_category("a")
+      assert_equal "tweet_gif", inference.infer_media_category("A.GIF")
+      assert_equal "tweet_image", inference.infer_media_category("a.unknown")
+      assert_equal "tweet_image", inference.infer_media_category("a")
     end
 
     def test_infer_media_category_tells_a_still_gif_from_an_animated_one
-      assert_equal "tweet_image", Uploader::MediaUpload.infer_media_category("test/sample_files/sample.gif")
-      assert_equal "tweet_gif", Uploader::MediaUpload.infer_media_category("test/sample_files/sample_animated.gif")
-      assert_equal "tweet_image", Uploader::MediaUpload.infer_media_category("test/sample_files/sample.png")
+      assert_equal "tweet_image", inference.infer_media_category("test/sample_files/sample.gif")
+      assert_equal "tweet_gif", inference.infer_media_category("test/sample_files/sample_animated.gif")
+      assert_equal "tweet_image", inference.infer_media_category("test/sample_files/sample.png")
     end
 
     def test_upload_infers_the_category_from_the_extension

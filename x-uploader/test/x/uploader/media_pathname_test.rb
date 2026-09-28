@@ -41,9 +41,9 @@ module X
     end
 
     def test_infers_the_category_and_type_of_a_pathname
-      assert_equal "tweet_gif", Uploader::MediaUpload.infer_media_category(Pathname("test/sample_files/sample_animated.gif"))
-      assert_equal "tweet_image", Uploader::MediaUpload.infer_media_category(Pathname("test/sample_files/sample.gif"))
-      assert_equal "video/quicktime", Uploader::MediaUpload.infer_media_type(Pathname("clip.mov"), "tweet_video")
+      assert_equal "tweet_gif", inference.infer_media_category(Pathname("test/sample_files/sample_animated.gif"))
+      assert_equal "tweet_image", inference.infer_media_category(Pathname("test/sample_files/sample.gif"))
+      assert_equal "video/quicktime", inference.infer_media_type(Pathname("clip.mov"), "tweet_video")
     end
 
     def test_update_profile_image_and_banner_at_a_pathname

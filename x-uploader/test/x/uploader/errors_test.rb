@@ -97,7 +97,7 @@ module X
     def test_holds_the_media_and_names_it_with_the_reason_it_failed
       media = UploadedMedia.new({"id" => "7"})
       failure = Class.new(Error) { def message = "Connection reset" }
-      error = assert_raises(AltTextFailed) { AltTextFailed.keeping(media) { raise failure } }
+      error = assert_raises(AltTextFailed) { AltTextFailed.__send__(:keeping, media) { raise failure } }
 
       assert_same media, error.media
       assert_equal ["Media 7 was uploaded, but its alt text could not be added: Connection reset"] * 2, [error.message, error.to_s]
@@ -107,9 +107,13 @@ module X
       assert_equal "Media 7 was uploaded, but its alt text could not be added", AltTextFailed.new(UploadedMedia.new({"id" => "7"})).message
     end
 
+    def test_keeping_is_private
+      refute_respond_to AltTextFailed, :keeping
+    end
+
     def test_keeping_returns_what_the_block_returns_and_raises_what_is_not_an_error_of_the_api
-      assert_equal 1, AltTextFailed.keeping(nil) { 1 }
-      assert_raises(ArgumentError) { AltTextFailed.keeping(nil) { raise ArgumentError } }
+      assert_equal 1, AltTextFailed.__send__(:keeping, nil) { 1 }
+      assert_raises(ArgumentError) { AltTextFailed.__send__(:keeping, nil) { raise ArgumentError } }
     end
   end
 

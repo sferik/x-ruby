@@ -36,6 +36,10 @@ module X
       assert_empty Uploader.const_get(:Chunks).constants
     end
 
+    def test_the_uploader_names_its_public_modules_alone
+      assert_equal %i[API Account Error MediaUpload Metadata VERSION], Uploader.constants.sort
+    end
+
     private
 
     def chunk_options_of(**)

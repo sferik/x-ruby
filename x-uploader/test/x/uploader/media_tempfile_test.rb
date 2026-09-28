@@ -18,7 +18,7 @@ module X
 
     def test_the_category_of_a_file_whose_extension_names_no_type_is_read_from_its_signature
       {"sample.png" => "tweet_image", "sample_animated.gif" => "tweet_gif", "sample.mp4" => "tweet_video"}.each do |file, category|
-        in_tempfile(file) { |tempfile| assert_equal category, Uploader::MediaUpload.infer_media_category(tempfile), file }
+        in_tempfile(file) { |tempfile| assert_equal category, inference.infer_media_category(tempfile), file }
       end
     end
 
@@ -26,7 +26,7 @@ module X
       Tempfile.create("unknown") do |tempfile|
         tempfile.write("not media at all")
 
-        assert_equal "tweet_image", Uploader::MediaUpload.infer_media_category(tempfile)
+        assert_equal "tweet_image", inference.infer_media_category(tempfile)
       end
     end
 
@@ -35,21 +35,21 @@ module X
         tempfile.binmode
         tempfile.write(File.binread("test/sample_files/sample.mp4"))
 
-        assert_equal "tweet_image", Uploader::MediaUpload.infer_media_category(tempfile)
+        assert_equal "tweet_image", inference.infer_media_category(tempfile)
       end
     end
 
     def test_a_missing_file_whose_extension_names_no_type_is_an_image
-      assert_equal "tweet_image", Uploader::MediaUpload.infer_media_category("missing")
+      assert_equal "tweet_image", inference.infer_media_category("missing")
     end
 
     def test_the_media_type_of_a_file_whose_extension_names_no_type_is_read_from_its_signature
-      in_tempfile("sample.mp4") { |tempfile| assert_equal "video/mp4", Uploader::MediaUpload.infer_media_type(tempfile, "tweet_video") }
-      in_tempfile("sample.png") { |tempfile| assert_equal "image/png", Uploader::MediaUpload.infer_media_type(tempfile, "tweet_image") }
+      in_tempfile("sample.mp4") { |tempfile| assert_equal "video/mp4", inference.infer_media_type(tempfile, "tweet_video") }
+      in_tempfile("sample.png") { |tempfile| assert_equal "image/png", inference.infer_media_type(tempfile, "tweet_image") }
     end
 
     def test_the_media_type_of_a_missing_file_whose_extension_names_no_type_cannot_be_read
-      error = assert_raises(InvalidMediaType) { Uploader::MediaUpload.infer_media_type("missing", "tweet_image") }
+      error = assert_raises(InvalidMediaType) { inference.infer_media_type("missing", "tweet_image") }
 
       assert_equal "unable to determine the MIME type of missing", error.message
     end
