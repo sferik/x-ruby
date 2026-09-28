@@ -25,6 +25,10 @@ module X
       end
     end
 
+    def test_an_authorization_error_is_no_http_error
+      assert_equal [AuthorizationError, Error, StandardError], AuthorizationError.ancestors.take_while { |ancestor| !ancestor.eql?(Exception) }
+    end
+
     [IOError, Net::HTTPBadResponse, Net::ProtocolError, OpenSSL::SSL::SSLError, SocketError, SystemCallError,
       Timeout::Error, Zlib::Error].each do |error_class|
       define_method "test_#{error_class.name.gsub("::", "_").downcase}_raises_network_error" do

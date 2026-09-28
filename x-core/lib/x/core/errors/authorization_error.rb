@@ -10,6 +10,12 @@ module X
   # 429 Too Many Requests or a server error, refuses nothing, so it raises the TooManyRequests or ServerError a
   # response of the API raises, which a client retries, rather than this error.
   #
+  # It descends from Error directly, rather than from HTTPError or Unauthorized, since the redirect back from X raises
+  # it without a response, for a user who declined or a state that does not match. A client that refreshes an
+  # OAuth 2.0 token the API rejected raises it when X refuses the refresh, with the Unauthorized that rejected the
+  # token as its cause, so rescue both to ask the user to authorize the app again: Unauthorized for credentials the
+  # API rejects, and this error for a refresh token X no longer accepts.
+  #
   # @api public
   class AuthorizationError < Error
     # The OAuth 2.0 error code X reported, such as access_denied or invalid_request
@@ -29,6 +35,9 @@ module X
     attr_reader :status
 
     # Build the error of a failure that simple_oauth reports
+    #
+    # It is raised with the cause of the failure, rather than the failure, so that its cause is the error of x-core
+    # it was raised in rescue of, such as the Unauthorized that led a client to refresh, and nil for none.
     #
     # @api private
     # @param error [SimpleOAuth::OAuth2::Error] the failure

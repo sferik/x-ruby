@@ -147,7 +147,7 @@ module X
       token = Core::TokenEndpoint.fetch(oauth2_client.authorization_code_request(code:, redirect_uri:, code_verifier:), connection:)
       credentials_from(token)
     rescue SimpleOAuth::OAuth2::Error => e
-      raise AuthorizationError.from(e, DEFAULT_ERROR_MESSAGE)
+      raise AuthorizationError.from(e, DEFAULT_ERROR_MESSAGE), cause: nil
     end
 
     # Exchange the code of the redirect back from X for a client

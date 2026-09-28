@@ -284,7 +284,7 @@ module X
       update_tokens(Core::TokenEndpoint.fetch(oauth2_client.refresh_token_request(refresh_token:), connection:))
       @reporter.issued(OAuth2Tokens.new(access_token:, refresh_token:, expires_at:))
     rescue SimpleOAuth::OAuth2::Error => e
-      raise AuthorizationError.from(e, DEFAULT_ERROR_MESSAGE)
+      raise AuthorizationError.from(e, DEFAULT_ERROR_MESSAGE), cause: e.cause
     end
 
     # Pass the tokens of a refresh to its callables, once the lock is released
