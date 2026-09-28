@@ -20,12 +20,12 @@ module X
     end
 
     def test_fields_key
-      assert_equal "user.fields", User.fields_key
+      assert_equal "user.fields", User.__send__(:fields_key)
     end
 
     def test_class_configuration
-      assert_equal "users", User.endpoint
-      assert_equal "users", User.includes_key
+      assert_equal "users", User.__send__(:endpoint)
+      assert_equal "users", User.__send__(:includes_key)
       assert_equal({"user.fields" => User::FIELDS, "post.fields" => Post::FIELDS, "expansions" => User::EXPANSIONS},
         User.default_params)
     end

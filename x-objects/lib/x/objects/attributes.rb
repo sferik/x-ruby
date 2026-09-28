@@ -21,10 +21,10 @@ module X
       # @api private
       # @return [Array<Symbol>] the attribute names
       # @example Get the attributes of a user
-      #   X::User.attribute_names
+      #   X::User.__send__(:attribute_names)
       def attribute_names
         parent = superclass
-        @attribute_names ||= parent.is_a?(Attributes) ? parent.attribute_names.dup : [:id]
+        @attribute_names ||= parent.respond_to?(:attribute_names, true) ? parent.__send__(:attribute_names).dup : [:id]
       end
 
       # The other names some attributes are read by, which a pattern can ask for
@@ -32,11 +32,13 @@ module X
       # @api private
       # @return [Array<Symbol>] the alias names
       # @example Get the attribute aliases of a user
-      #   X::User.attribute_aliases # => [:tweet_count, :pinned_tweet_id, :most_recent_tweet_id]
+      #   X::User.__send__(:attribute_aliases) # => [:tweet_count, :pinned_tweet_id, :most_recent_tweet_id]
       def attribute_aliases
         parent = superclass
-        @attribute_aliases ||= parent.is_a?(Attributes) ? parent.attribute_aliases.dup : []
+        @attribute_aliases ||= parent.respond_to?(:attribute_aliases, true) ? parent.__send__(:attribute_aliases).dup : []
       end
+
+      private :attribute_names, :attribute_aliases
 
       private
 

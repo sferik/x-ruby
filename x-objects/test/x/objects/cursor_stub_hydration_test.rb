@@ -69,8 +69,8 @@ module X
     end
 
     def test_only_resources_with_a_batch_lookup_are_batchable
-      assert_equal [true, true, true, true], [User, Post, Space, Media].map(&:batchable?)
-      assert_equal [false, false, false, false], [List, Community, DirectMessage, Poll].map(&:batchable?)
+      assert_equal [true, true, true, true], [User, Post, Space, Media].map { |klass| klass.__send__(:batchable?) }
+      assert_equal [false, false, false, false], [List, Community, DirectMessage, Poll].map { |klass| klass.__send__(:batchable?) }
     end
 
     def test_refreshing_a_stub_of_a_page_looks_it_up_again_on_its_own

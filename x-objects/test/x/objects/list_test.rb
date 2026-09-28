@@ -10,14 +10,14 @@ module X
     def setup
       @client = FakeClient.new
       includes = Objects::Includes.new({"users" => [{"id" => "9", "username" => "sferik"}]})
-      @list = List.build({"id" => "1", "name" => "Ruby", "description" => "d", "created_at" => "2024-01-02T03:04:05.000Z",
+      @list = List.__send__(:build, {"id" => "1", "name" => "Ruby", "description" => "d", "created_at" => "2024-01-02T03:04:05.000Z",
                         "follower_count" => 2, "member_count" => 3, "owner_id" => "9", "private" => true},
         client: @client, includes:)
     end
 
     def test_class_configuration
-      assert_equal "lists", List.endpoint
-      assert_nil List.includes_key
+      assert_equal "lists", List.__send__(:endpoint)
+      assert_nil List.__send__(:includes_key)
       assert_equal({"list.fields" => List::FIELDS, "user.fields" => User::FIELDS, "expansions" => List::EXPANSIONS}, List.default_params)
     end
 

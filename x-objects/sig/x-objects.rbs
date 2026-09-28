@@ -201,10 +201,9 @@ module X
       @attribute_names: Array[Symbol]?
       @attribute_aliases: Array[Symbol]?
 
+      private
       def attribute_names: () -> Array[Symbol]
       def attribute_aliases: () -> Array[Symbol]
-
-      private
       def attribute_alias: (Symbol name, Symbol original) -> void
       def attribute: (Symbol name, ?Symbol type, ?key: key) -> void
       def reference: (Symbol name, Symbol klass_name, key: key) -> void
@@ -278,12 +277,7 @@ module X
     end
 
     interface _FinderHost
-      def endpoint!: () -> String
-      def batchable?: () -> bool
-      def id_type: () -> Symbol
       def default_params: () -> Hash[String, Array[String]]
-      def batch_key: () -> Symbol
-      def fully_requested_by?: (Hash[String, untyped] query) -> bool
       def resource_from_response: (body body, client: _Client?, ?hydrated: bool) -> Resource?
       def collection_from_response: (body body, client: _Client?, ?hydrated: bool) -> Array[Resource]
     end
@@ -318,11 +312,10 @@ module X
       def find!: (id id, client: _Client, **untyped params) -> Resource
       def hydrate_all: (Array[Resource?] resources, client: _Client, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[Resource]
       def find_all: (Array[id] ids, client: _Client, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[Resource]
+      private
       def lookup: (String path, client: _Client, **untyped params) ?{ (Problem problem) -> void } -> Resource?
       def lookup_all: (String path, client: _Client, **untyped params) ?{ (Problem problem) -> void } -> Array[Resource]
       def client_for: (_Client client) -> _Client
-
-      private
       def replacer: (Array[Resource] found, Hash[Symbol, untyped] params) -> ^(Resource) -> Resource?
       def get: (String path, client: _Client, query: Hash[String, untyped]) -> body
       def lookup_in_batches: (String path, Symbol key, Array[String] values, client: _Client, concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[Resource]
@@ -331,6 +324,13 @@ module X
       def validate_concurrency!: (Integer concurrency) -> void
       def validate_class!: (Array[Resource] resources) -> void
       def reporting: (body body) ?{ (Problem problem) -> void } -> body
+
+      # The private class methods of the resource class that extends it, which it reads
+      def endpoint!: () -> String
+      def batchable?: () -> bool
+      def id_type: () -> Symbol
+      def batch_key: () -> Symbol
+      def fully_requested_by?: (Hash[String, untyped] query) -> bool
     end
 
     module PostWrites : _Lookup[Post]
@@ -585,20 +585,20 @@ module X
     @batch: Objects::Batch?
     @memo: Objects::Memo
 
-    def self.endpoint: () -> String?
-    def self.id_key: () -> String
-    def self.id_type: () -> Symbol
-    def self.includes_key: () -> String?
-    def self.fields_key: () -> String?
-    def self.fully_requested_by?: (Hash[String, untyped] query) -> bool
+    private def self.endpoint: () -> String?
+    private def self.id_key: () -> String
+    private def self.id_type: () -> Symbol
+    private def self.includes_key: () -> String?
+    private def self.fields_key: () -> String?
+    private def self.fully_requested_by?: (Hash[String, untyped] query) -> bool
     def self.default_params: () -> Hash[String, Array[String]]
-    def self.hydratable?: () -> bool
-    def self.batchable?: () -> bool
-    def self.batch_key: () -> Symbol
-    def self.endpoint!: () -> String
+    private def self.hydratable?: () -> bool
+    private def self.batchable?: () -> bool
+    private def self.batch_key: () -> Symbol
+    private def self.endpoint!: () -> String
     def self.from_id: (Objects::id id, ?client: Objects::_Client?) -> Resource
-    def self.from_id_in_batch: (Objects::id id, client: Objects::_Client?, ?batch: Objects::Batch?) -> Resource
-    def self.build: (Hash[untyped, untyped] attrs, ?client: Objects::_Client?, ?includes: Objects::Includes, ?hydrated: bool, ?batch: Objects::Batch?) -> instance
+    private def self.from_id_in_batch: (Objects::id id, client: Objects::_Client?, ?batch: Objects::Batch?) -> Resource
+    private def self.build: (Hash[untyped, untyped] attrs, ?client: Objects::_Client?, ?includes: Objects::Includes, ?hydrated: bool, ?batch: Objects::Batch?) -> instance
     def self.from_response: (Objects::body body, client: Objects::_Client?, ?hydrated: bool) -> (Resource | Array[Resource])?
     def self.resource_from_response: (Objects::body body, client: Objects::_Client?, ?hydrated: bool) -> Resource?
     def self.collection_from_response: (Objects::body body, client: Objects::_Client?, ?hydrated: bool) -> Array[Resource]
@@ -662,7 +662,7 @@ module X
     @pages: Objects::Pages
 
     def initialize: (singleton(Resource) resource_class, String path, client: Objects::_Client, ?params: Objects::params, ?prefetch: bool, ?token_param: String, ?min_results: Integer, ?app_only: bool) -> void
-    def self.build: [R < Resource] (singleton(Resource) resource_class, String path, client: Objects::_Client, params: Objects::params, min_results: Integer, app_only: bool, total: (^(?fresh: bool) -> Integer?)?, ?prefetch: bool, ?token_param: String) -> Cursor[R]
+    private def self.build: [R < Resource] (singleton(Resource) resource_class, String path, client: Objects::_Client, params: Objects::params, min_results: Integer, app_only: bool, total: (^(?fresh: bool) -> Integer?)?, ?prefetch: bool, ?token_param: String) -> Cursor[R]
     def prefetch?: () -> bool
     def app_only?: () -> bool
     def each: () { (R) -> void } -> self
@@ -698,13 +698,13 @@ module X
     include Objects::_Hydration[Media]
     FIELDS: Array[String]
 
-    def self.id_type: () -> Symbol
+    private def self.id_type: () -> Symbol
     def id: () -> String
 
-    def self.id_key: () -> String
-    def self.includes_key: () -> String
-    def self.endpoint: () -> String
-    def self.key_of: (untyped media) -> untyped
+    private def self.id_key: () -> String
+    private def self.includes_key: () -> String
+    private def self.endpoint: () -> String
+    private def self.key_of: (untyped media) -> untyped
     def self.find: (untyped media, client: Objects::_Client, **untyped params) ?{ (Problem problem) -> void } -> Media?
                  | ...
     def self.find_all: (Array[untyped] media, client: Objects::_Client, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[Media]
@@ -713,10 +713,10 @@ module X
                   | ...
     def self.from_id: (untyped media, ?client: Objects::_Client?) -> Media
                     | ...
-    def self.from_id_in_batch: (untyped media, client: Objects::_Client?, ?batch: Objects::Batch?) -> Media
+    private def self.from_id_in_batch: (untyped media, client: Objects::_Client?, ?batch: Objects::Batch?) -> Media
                              | ...
-    def self.batch_key: () -> Symbol
-    def self.fields_key: () -> String
+    private def self.batch_key: () -> Symbol
+    private def self.fields_key: () -> String
     def self.default_params: () -> Hash[String, Array[String]]
     def media_key: () -> String
     def type: () -> String?
@@ -738,7 +738,7 @@ module X
 
     def id: () -> Integer
 
-    def self.includes_key: () -> String
+    private def self.includes_key: () -> String
     def options: () -> Array[Hash[String, untyped]]?
     def duration_minutes: () -> Integer?
     def end_datetime: () -> Time?
@@ -750,10 +750,10 @@ module X
     include Objects::_Hydration[Place]
     FIELDS: Array[String]
 
-    def self.id_type: () -> Symbol
+    private def self.id_type: () -> Symbol
     def id: () -> String
 
-    def self.includes_key: () -> String
+    private def self.includes_key: () -> String
     def name: () -> String?
     def full_name: () -> String?
     def country: () -> String?
@@ -776,9 +776,9 @@ module X
     MAX_RESULTS: Integer
     MAX_SEARCH_RESULTS: Integer
 
-    def self.endpoint: () -> String
-    def self.includes_key: () -> String
-    def self.fields_key: () -> String
+    private def self.endpoint: () -> String
+    private def self.includes_key: () -> String
+    private def self.fields_key: () -> String
     def self.default_params: () -> Hash[String, Array[String]]
     def self.search: (String query, client: Objects::_Client, **untyped params) -> Cursor[User]
 
@@ -854,9 +854,9 @@ module X
     MAX_RESULTS: Integer
     MAX_ARCHIVE_RESULTS: Integer
 
-    def self.endpoint: () -> String
-    def self.includes_key: () -> String
-    def self.fields_key: () -> String
+    private def self.endpoint: () -> String
+    private def self.includes_key: () -> String
+    private def self.fields_key: () -> String
     def self.default_params: () -> Hash[String, Array[String]]
     def self.search: (String query, client: Objects::_Client, **untyped params) -> Cursor[Post]
     def self.search_all: (String query, client: Objects::_Client, **untyped params) -> Cursor[Post]
@@ -924,8 +924,8 @@ module X
 
     def id: () -> Integer
 
-    def self.endpoint: () -> String
-    def self.fields_key: () -> String
+    private def self.endpoint: () -> String
+    private def self.fields_key: () -> String
     def self.default_params: () -> Hash[String, Array[String]]
     def self.search: (String query, client: Objects::_Client, **untyped params) -> Cursor[Community]
 
@@ -948,8 +948,8 @@ module X
 
     def id: () -> Integer
 
-    def self.endpoint: () -> String
-    def self.fields_key: () -> String
+    private def self.endpoint: () -> String
+    private def self.fields_key: () -> String
     def self.default_params: () -> Hash[String, Array[String]]
     def self.create: (String name, client: Objects::_Client, **untyped params) -> List?
     def self.update: (Objects::id list, client: Objects::_Client, **untyped params) -> bool
@@ -991,8 +991,8 @@ module X
 
     def id: () -> Integer
 
-    def self.endpoint: () -> String
-    def self.fields_key: () -> String
+    private def self.endpoint: () -> String
+    private def self.fields_key: () -> String
     def self.default_params: () -> Hash[String, Array[String]]
     def self.all: (client: Objects::_Client, **untyped params) -> Cursor[DirectMessage]
     def self.with: (Objects::id user, client: Objects::_Client, **untyped params) -> Cursor[DirectMessage]
@@ -1027,12 +1027,12 @@ module X
     EXPANSIONS: Array[String]
     MAX_RESULTS: Integer
 
-    def self.id_type: () -> Symbol
+    private def self.id_type: () -> Symbol
     def id: () -> String
 
-    def self.endpoint: () -> String
-    def self.client_for: (Objects::_Client client) -> Objects::_Client
-    def self.fields_key: () -> String
+    private def self.endpoint: () -> String
+    private def self.client_for: (Objects::_Client client) -> Objects::_Client
+    private def self.fields_key: () -> String
     def self.default_params: () -> Hash[String, Array[String]]
     def self.search: (String query, client: Objects::_Client, **untyped params) -> Cursor[Space]
 

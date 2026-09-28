@@ -140,7 +140,7 @@ module X
       @client.stub(:get, "users/7505382", {"data" => {"id" => "7505382", "username" => "sferik"}})
 
       assert_equal "sferik", @client.find_user(7_505_382).username
-      assert_same @client, User.client_for(@client)
+      assert_same @client, User.__send__(:client_for, @client)
       assert_empty @client.app.requests
     end
 

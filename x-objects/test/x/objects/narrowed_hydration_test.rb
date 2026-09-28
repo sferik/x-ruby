@@ -57,12 +57,12 @@ module X
     end
 
     def test_a_lookup_of_many_from_an_endpoint_with_other_fields_is_not_hydrated
-      refute_predicate User.lookup_all("users", client: @client, "user.fields": "name").first, :hydrated?
-      assert_predicate User.lookup_all("users", client: @client).first, :hydrated?
+      refute_predicate User.__send__(:lookup_all, "users", client: @client, "user.fields": "name").first, :hydrated?
+      assert_predicate User.__send__(:lookup_all, "users", client: @client).first, :hydrated?
     end
 
     def test_a_resource_without_default_parameters_is_fully_requested_by_any_request
-      assert Poll.fully_requested_by?({"poll.fields" => "id"})
+      assert Poll.__send__(:fully_requested_by?, {"poll.fields" => "id"})
     end
   end
 end

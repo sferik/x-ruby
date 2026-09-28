@@ -50,22 +50,22 @@ module X
       end
 
       def test_stub_predicate_for_references
-        post = Post.build({"id" => "1", "author_id" => "9"}, includes: Includes.new({"users" => [{"id" => "9", "username" => "sferik"}]}))
+        post = Post.__send__(:build, {"id" => "1", "author_id" => "9"}, includes: Includes.new({"users" => [{"id" => "9", "username" => "sferik"}]}))
 
         refute_predicate post.author, :stub?
         assert_predicate Post.new({"id" => "1", "author_id" => "8"}).author, :stub?
       end
 
       def test_fields_key_defaults_to_nil
-        assert_nil Resource.fields_key
-        assert_nil Poll.fields_key
-        assert_nil Poll.fields_key
-        assert_nil Place.fields_key
+        assert_nil Resource.__send__(:fields_key)
+        assert_nil Poll.__send__(:fields_key)
+        assert_nil Poll.__send__(:fields_key)
+        assert_nil Place.__send__(:fields_key)
       end
 
       def test_fields_keys
         assert_equal %w[user.fields post.fields list.fields dm_event.fields space.fields community.fields],
-          [User, Post, List, DirectMessage, Space, Community].map(&:fields_key)
+          [User, Post, List, DirectMessage, Space, Community].map { |klass| klass.__send__(:fields_key) }
       end
     end
   end

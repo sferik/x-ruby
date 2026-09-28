@@ -13,7 +13,7 @@ module X
     end
 
     def test_fields_key
-      assert_equal "post.fields", Post.fields_key
+      assert_equal "post.fields", Post.__send__(:fields_key)
     end
 
     def test_create_with_reply_to

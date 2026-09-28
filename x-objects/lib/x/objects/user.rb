@@ -34,7 +34,7 @@ module X
       # @api private
       # @return [String] the endpoint
       # @example Get the endpoint
-      #   X::User.endpoint # => "users"
+      #   X::User.__send__(:endpoint) # => "users"
       def endpoint = "users"
 
       # The key under which users appear in the includes of a response
@@ -42,7 +42,7 @@ module X
       # @api private
       # @return [String] the includes key
       # @example Get the includes key
-      #   X::User.includes_key # => "users"
+      #   X::User.__send__(:includes_key) # => "users"
       def includes_key = "users"
 
       # The query parameter that selects user fields
@@ -50,8 +50,10 @@ module X
       # @api private
       # @return [String] the fields parameter
       # @example Get the fields parameter
-      #   X::User.fields_key # => "user.fields"
+      #   X::User.__send__(:fields_key) # => "user.fields"
       def fields_key = "user.fields"
+
+      private :endpoint, :includes_key, :fields_key
 
       # The default query parameters requesting every user field and expansion
       #

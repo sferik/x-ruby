@@ -14,14 +14,14 @@ module X
     end
 
     def test_class_configuration
-      assert_equal "media_key", Media.id_key
-      assert_equal "media", Media.includes_key
-      assert_equal ["media", :media_keys, "media.fields"], [Media.endpoint, Media.batch_key, Media.fields_key]
+      assert_equal "media_key", Media.__send__(:id_key)
+      assert_equal "media", Media.__send__(:includes_key)
+      assert_equal ["media", :media_keys, "media.fields"], [Media.__send__(:endpoint), Media.__send__(:batch_key), Media.__send__(:fields_key)]
       assert_equal({"media.fields" => Media::FIELDS}, Media.default_params)
     end
 
     def test_other_resources_are_looked_up_in_batches_by_ids
-      assert_equal [:ids, :ids], [User.batch_key, Space.batch_key]
+      assert_equal [:ids, :ids], [User.__send__(:batch_key), Space.__send__(:batch_key)]
     end
 
     def test_find_looks_media_up_by_media_key_with_every_field
@@ -87,14 +87,14 @@ module X
     end
 
     def test_key_of_takes_a_media_key_as_it_is
-      assert_equal "3_1", Media.key_of("3_1")
-      assert_equal "3_1", Media.key_of(@media)
+      assert_equal "3_1", Media.__send__(:key_of, "3_1")
+      assert_equal "3_1", Media.__send__(:key_of, @media)
     end
 
     def test_the_media_of_a_post_hydrates_to_the_full_media
       client = FakeClient.new
       client.stub(:get, "media/3_1", {"data" => {"media_key" => "3_1", "alt_text" => "A cat"}})
-      post = Post.build({"id" => "1", "attachments" => {"media_keys" => ["3_1"]}}, client:,
+      post = Post.__send__(:build, {"id" => "1", "attachments" => {"media_keys" => ["3_1"]}}, client:,
         includes: Objects::Includes.new({"media" => [{"media_key" => "3_1", "type" => "photo"}]}))
       media = post.media.first
 

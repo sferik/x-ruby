@@ -14,7 +14,7 @@ module X
     # @api private
     # @return [String] the identifier key
     # @example Get the identifier key
-    #   X::Media.id_key # => "media_key"
+    #   X::Media.__send__(:id_key) # => "media_key"
     def self.id_key
       "media_key"
     end
@@ -24,7 +24,7 @@ module X
     # @api private
     # @return [String] the endpoint
     # @example Get the lookup endpoint
-    #   X::Media.endpoint # => "media"
+    #   X::Media.__send__(:endpoint) # => "media"
     def self.endpoint
       "media"
     end
@@ -34,7 +34,7 @@ module X
     # @api private
     # @return [Symbol] the parameter name
     # @example Get the parameter of a batch lookup
-    #   X::Media.batch_key # => :media_keys
+    #   X::Media.__send__(:batch_key) # => :media_keys
     def self.batch_key = :media_keys
 
     # The name of the fields parameter
@@ -42,7 +42,7 @@ module X
     # @api private
     # @return [String] the fields parameter
     # @example Get the fields parameter
-    #   X::Media.fields_key # => "media.fields"
+    #   X::Media.__send__(:fields_key) # => "media.fields"
     def self.fields_key = "media.fields"
 
     # The default query parameters requesting every public field
@@ -60,7 +60,7 @@ module X
     # @api private
     # @return [Symbol] raw
     # @example Get the identifier type
-    #   X::Media.id_type # => :raw
+    #   X::Media.__send__(:id_type) # => :raw
     def self.id_type = :raw
 
     # The media key of what an upload returned, or of a value that is one already
@@ -72,7 +72,7 @@ module X
     # @param media [#media_key, String] the media, or its media key
     # @return [Object] the media key
     # @example Get the media key of an upload
-    #   X::Media.key_of(uploaded) # => "3_1880028106020515840"
+    #   X::Media.__send__(:key_of, uploaded) # => "3_1880028106020515840"
     def self.key_of(media) = media.respond_to?(:media_key) ? media.media_key : media
 
     # Look up media by media key
@@ -120,7 +120,7 @@ module X
     # @param batch [Objects::Batch, nil] the batch the stub hydrates with
     # @return [Media] a stub that hydrates to the full media
     # @example Build the stub of a page of media
-    #   X::Media.from_id_in_batch("3_1", client: client, batch: batch)
+    #   X::Media.__send__(:from_id_in_batch, "3_1", client: client, batch: batch)
     def self.from_id_in_batch(media, client:, batch: nil) = super(key_of(media), client:, batch:)
 
     # Look up many media by media key, in parallel batches
@@ -140,10 +140,11 @@ module X
     # @api private
     # @return [String] the includes key
     # @example Get the includes key
-    #   X::Media.includes_key # => "media"
+    #   X::Media.__send__(:includes_key) # => "media"
     def self.includes_key
       "media"
     end
+    private_class_method :id_key, :endpoint, :batch_key, :fields_key, :id_type, :key_of, :from_id_in_batch, :includes_key
 
     # @!attribute [r] media_key
     #   The media key

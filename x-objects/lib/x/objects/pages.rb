@@ -122,7 +122,7 @@ module X
       # @return [Array<Resource>] the resources
       def resources_from(body)
         klass = @cursor.resource_class
-        resources = klass.collection_from_response(body, client: @cursor.client, hydrated: klass.fully_requested_by?(@cursor.params))
+        resources = klass.collection_from_response(body, client: @cursor.client, hydrated: klass.__send__(:fully_requested_by?, @cursor.params))
         id_only? ? stubs_from(resources) : resources
       end
 
@@ -139,15 +139,15 @@ module X
         klass = @cursor.resource_class
         client = @cursor.client
         resources.each_slice(Finders::MAX_BATCH_SIZE).flat_map do |slice|
-          batch = (Batch.new(klass, slice, client:) if klass.batchable?)
-          slice.map { |resource| klass.from_id_in_batch(resource, client:, batch:) }
+          batch = (Batch.new(klass, slice, client:) if klass.__send__(:batchable?))
+          slice.map { |resource| klass.__send__(:from_id_in_batch, resource, client:, batch:) }
         end
       end
 
       # Check whether the cursor requests nothing but identifiers
       # @api private
       # @return [Boolean] true if the fields parameter selects only the identifier
-      def id_only? = @cursor.params[@cursor.resource_class.fields_key].eql?(@cursor.resource_class.id_key)
+      def id_only? = @cursor.params[@cursor.resource_class.__send__(:fields_key)].eql?(@cursor.resource_class.__send__(:id_key))
 
       # Build the query parameters for a page, including the previous page token
       #

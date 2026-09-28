@@ -12,8 +12,8 @@ module X
     end
 
     def test_class_configuration
-      assert_equal "polls", Poll.includes_key
-      assert_nil Poll.endpoint
+      assert_equal "polls", Poll.__send__(:includes_key)
+      assert_nil Poll.__send__(:endpoint)
     end
 
     def test_attributes

@@ -40,7 +40,7 @@ module X
       # @api private
       # @return [String] the endpoint
       # @example Get the endpoint
-      #   X::Post.endpoint # => "tweets"
+      #   X::Post.__send__(:endpoint) # => "tweets"
       def endpoint
         "tweets"
       end
@@ -50,7 +50,7 @@ module X
       # @api private
       # @return [String] the includes key
       # @example Get the includes key
-      #   X::Post.includes_key # => "posts"
+      #   X::Post.__send__(:includes_key) # => "posts"
       def includes_key
         "posts"
       end
@@ -60,8 +60,10 @@ module X
       # @api private
       # @return [String] the fields parameter
       # @example Get the fields parameter
-      #   X::Post.fields_key # => "post.fields"
+      #   X::Post.__send__(:fields_key) # => "post.fields"
       def fields_key = "post.fields"
+
+      private :endpoint, :includes_key, :fields_key
 
       # The default query parameters requesting every post field and expansion
       #

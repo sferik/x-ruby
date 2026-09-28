@@ -23,7 +23,7 @@ module X
       # @api private
       # @return [Boolean] false
       # @example Check whether lists can be looked up in batches
-      #   X::List.batchable? # => false
+      #   X::List.__send__(:batchable?) # => false
       def batchable? = false
 
       # The API endpoint used to look up lists by identifier
@@ -31,7 +31,7 @@ module X
       # @api private
       # @return [String] the endpoint
       # @example Get the endpoint
-      #   X::List.endpoint # => "lists"
+      #   X::List.__send__(:endpoint) # => "lists"
       def endpoint
         "lists"
       end
@@ -41,8 +41,10 @@ module X
       # @api private
       # @return [String] the fields parameter
       # @example Get the fields parameter
-      #   X::List.fields_key # => "list.fields"
+      #   X::List.__send__(:fields_key) # => "list.fields"
       def fields_key = "list.fields"
+
+      private :batchable?, :endpoint, :fields_key
 
       # The default query parameters requesting every list field and expansion
       #

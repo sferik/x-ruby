@@ -97,11 +97,12 @@ module X
     # @param app_only [Boolean] whether the pages are fetched with the app-only client of the client
     # @return [Cursor] a new cursor
     # @example Build a cursor over the followers of a user, which counts them with followers_count
-    #   X::Cursor.build(X::User, "users/7505382/followers", client: client, params: {}, min_results: 1, app_only: false,
+    #   X::Cursor.__send__(:build, X::User, "users/7505382/followers", client: client, params: {}, min_results: 1, app_only: false,
     #     total: ->(fresh: false) { 42 })
     def self.build(resource_class, path, client:, params:, min_results:, app_only:, total:, prefetch: false, token_param: DEFAULT_TOKEN_PARAM)
       allocate.tap { |cursor| cursor.__send__(:setup, resource_class, path, client:, params:, prefetch:, token_param:, min_results:, app_only:, total:) }
     end
+    private_class_method :build
 
     # Check whether the next page is fetched in the background
     #
@@ -182,7 +183,7 @@ module X
     # @return [Cursor] a new cursor
     # @example Iterate again with fresh data
     #   followers = user.followers.refresh
-    def refresh = self.class.build(resource_class, path, client:, params: own_params, prefetch: prefetch?, token_param:, min_results:, app_only: app_only?, total: fresh_total)
+    def refresh = self.class.__send__(:build, resource_class, path, client:, params: own_params, prefetch: prefetch?, token_param:, min_results:, app_only: app_only?, total: fresh_total)
 
     # Return a new cursor over the same collection with prefetching enabled
     #
@@ -190,7 +191,7 @@ module X
     # @return [Cursor] a new cursor
     # @example Fetch every follower while overlapping requests with processing
     #   user.followers.prefetch.each { |follower| process(follower) }
-    def prefetch = self.class.build(resource_class, path, client:, params: own_params, prefetch: true, token_param:, min_results:, app_only: app_only?, total: @total)
+    def prefetch = self.class.__send__(:build, resource_class, path, client:, params: own_params, prefetch: true, token_param:, min_results:, app_only: app_only?, total: @total)
 
     # Return a new cursor over the same collection that yields stubs
     #
@@ -202,7 +203,7 @@ module X
     # @raise [UnsupportedOperation] if the resource class has no fields parameter
     # @example Check whether a user is among thousands of followers without fetching their fields
     #   user.followers.stubs.any?(other)
-    def stubs = self.class.build(resource_class, path, client:, params: id_only_params, prefetch: prefetch?, token_param:, min_results:, app_only: app_only?, total: @total)
+    def stubs = self.class.__send__(:build, resource_class, path, client:, params: id_only_params, prefetch: prefetch?, token_param:, min_results:, app_only: app_only?, total: @total)
 
     # The first resource, or the first few, requesting pages no larger than needed
     #
@@ -395,10 +396,11 @@ module X
     # @return [Hash{String => Object}] the query parameters
     # @raise [UnsupportedOperation] if the resource class has no fields parameter
     def id_only_params
-      fields_key = resource_class.fields_key || raise(UnsupportedOperation, "#{resource_class} has no fields parameter")
+      fields_key = resource_class.__send__(:fields_key) || raise(UnsupportedOperation, "#{resource_class} has no fields parameter") #: String
+      id_key = resource_class.__send__(:id_key) #: String
       dropped = {} #: Hash[String, nil]
       resource_class.default_params.each_key { |key| dropped[key] = nil }
-      params.merge(dropped, fields_key => resource_class.id_key)
+      params.merge(dropped, fields_key => id_key)
     end
   end
 end

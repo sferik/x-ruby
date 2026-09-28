@@ -13,8 +13,8 @@ module X
     end
 
     def test_class_configuration
-      assert_equal "places", Place.includes_key
-      assert_nil Place.endpoint
+      assert_equal "places", Place.__send__(:includes_key)
+      assert_nil Place.__send__(:endpoint)
     end
 
     def test_attributes

@@ -40,7 +40,7 @@ module X
       # @return [Resource] the resource
       def resolve(klass, id, client:)
         @monitor.synchronize do
-          @resources[[klass, id]] ||= klass.build(index(klass).fetch(id) { {klass.id_key => id} }, client:, includes: self)
+          @resources[[klass, id]] ||= klass.__send__(:build, index(klass).fetch(id) { {klass.__send__(:id_key) => id} }, client:, includes: self)
         end
       end
 
@@ -52,9 +52,9 @@ module X
       # @param klass [Class] the resource class
       # @return [Hash{String => Hash}] the expanded objects keyed by identifier
       def index(klass)
-        key = klass.includes_key
+        key = klass.__send__(:includes_key)
         entries = @data.fetch(key, []) #: Array[Hash[String, untyped]]
-        @index[key] ||= entries.group_by { |attrs| attrs[klass.id_key] }.transform_values(&:first)
+        @index[key] ||= entries.group_by { |attrs| attrs[klass.__send__(:id_key)] }.transform_values(&:first)
       end
     end
   end

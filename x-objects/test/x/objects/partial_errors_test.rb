@@ -102,15 +102,15 @@ module X
         yielded = []
 
         assert_equal ["sferik"], User.hydrate_all([User.from_id(1), User.from_id(5)], client: @client) { |problem| yielded << problem.parameter }.map(&:username)
-        User.lookup("users/me", client: @client) { |problem| yielded << problem.parameter }
-        User.lookup_all("users", client: @client) { |problem| yielded << problem.parameter }
+        User.__send__(:lookup, "users/me", client: @client) { |problem| yielded << problem.parameter }
+        User.__send__(:lookup_all, "users", client: @client) { |problem| yielded << problem.parameter }
 
         assert_equal %w[ids pinned_tweet_id ids], yielded
       end
 
       def test_lookup_all_builds_hydrated_resources_with_the_parameters
         @client.stub(:get, "users/by", {"data" => [{"id" => "1", "username" => "sferik"}]})
-        users = User.lookup_all("users/by", client: @client, usernames: "sferik")
+        users = User.__send__(:lookup_all, "users/by", client: @client, usernames: "sferik")
 
         assert_equal [[1, true]], users.map { |user| [user.id, user.hydrated?] }
         assert_same @client, users.first.client

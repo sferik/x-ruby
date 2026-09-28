@@ -99,7 +99,7 @@ module X
 
       def test_lookup_all_without_data
         @client.stub(:get, "users/by", {"meta" => {}})
-        users = User.lookup_all("users/by", client: @client)
+        users = User.__send__(:lookup_all, "users/by", client: @client)
 
         assert_empty users
         assert_predicate users, :frozen?

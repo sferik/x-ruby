@@ -14,10 +14,11 @@ module X
     # @api private
     # @return [String] the includes key
     # @example Get the includes key
-    #   X::Poll.includes_key # => "polls"
+    #   X::Poll.__send__(:includes_key) # => "polls"
     def self.includes_key
       "polls"
     end
+    private_class_method :includes_key
 
     # @!attribute [r] options
     #   The poll options with their positions, labels, and vote counts

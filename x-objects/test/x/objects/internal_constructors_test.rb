@@ -26,7 +26,7 @@ module X
     end
 
     def test_build_resolves_references_over_the_includes_it_is_given
-      post = Post.build({"id" => "1", "author_id" => "9"}, client: @client, includes: @includes, hydrated: true)
+      post = Post.__send__(:build, {"id" => "1", "author_id" => "9"}, client: @client, includes: @includes, hydrated: true)
 
       assert_equal ["sferik", true, true], [post.author.username, post.hydrated?, post.frozen?]
     end
@@ -38,7 +38,7 @@ module X
 
     def test_from_id_in_batch_builds_a_stub_of_the_batch
       batch = Objects::Batch.new(User, [1], client: @client)
-      stub = User.from_id_in_batch(1, client: @client, batch:)
+      stub = User.__send__(:from_id_in_batch, 1, client: @client, batch:)
 
       assert_equal [1, true, []], [stub.id, stub.stub?, stub.problems]
       assert_same batch, stub.instance_variable_get(:@batch)
@@ -55,7 +55,7 @@ module X
     end
 
     def test_cursor_build_reads_the_total_it_is_given
-      cursor = Cursor.build(User, "users/1/followers", client: @client, params: {max_results: 5}, min_results: 2, app_only: false,
+      cursor = Cursor.__send__(:build, User, "users/1/followers", client: @client, params: {max_results: 5}, min_results: 2, app_only: false,
         total: ->(fresh: false) { fresh ? 2 : 1 })
 
       assert_equal [1, 2, true], [cursor.published_count, cursor.refresh.published_count, cursor.frozen?]

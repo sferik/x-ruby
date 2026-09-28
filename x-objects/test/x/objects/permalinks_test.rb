@@ -18,8 +18,8 @@ module X
     def test_post_url
       includes = Objects::Includes.new({"users" => [{"id" => "9", "username" => "sferik"}]})
 
-      assert_equal "https://x.com/sferik/status/1", Post.build({"id" => "1", "author_id" => "9"}, includes:).permalink
-      assert_equal "https://x.com/i/status/1", Post.build({"id" => "1", "author_id" => "8"}, includes:).permalink
+      assert_equal "https://x.com/sferik/status/1", Post.__send__(:build, {"id" => "1", "author_id" => "9"}, includes:).permalink
+      assert_equal "https://x.com/i/status/1", Post.__send__(:build, {"id" => "1", "author_id" => "8"}, includes:).permalink
       assert_equal "https://x.com/i/status/1", Post.new({"id" => "1"}).permalink
     end
 
@@ -33,7 +33,7 @@ module X
 
     def test_a_permalink_is_also_a_uri
       includes = Objects::Includes.new({"users" => [{"id" => "9", "username" => "sferik"}]})
-      resources = [User.new({"id" => "1", "username" => "sferik"}), Post.build({"id" => "1", "author_id" => "9"}, includes:),
+      resources = [User.new({"id" => "1", "username" => "sferik"}), Post.__send__(:build, {"id" => "1", "author_id" => "9"}, includes:),
         List.new({"id" => "1"}), Community.new({"id" => "7"})]
 
       assert_equal ["https://x.com/sferik", "https://x.com/sferik/status/1", "https://x.com/i/lists/1",

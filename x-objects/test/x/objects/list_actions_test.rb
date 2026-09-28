@@ -12,7 +12,7 @@ module X
     end
 
     def test_fields_key
-      assert_equal "list.fields", List.fields_key
+      assert_equal "list.fields", List.__send__(:fields_key)
     end
 
     def test_create

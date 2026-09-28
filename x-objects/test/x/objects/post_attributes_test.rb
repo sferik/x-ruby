@@ -27,8 +27,8 @@ module X
     end
 
     def test_class_configuration
-      assert_equal "tweets", Post.endpoint
-      assert_equal "posts", Post.includes_key
+      assert_equal "tweets", Post.__send__(:endpoint)
+      assert_equal "posts", Post.__send__(:includes_key)
       assert_same Post, Tweet
     end
 

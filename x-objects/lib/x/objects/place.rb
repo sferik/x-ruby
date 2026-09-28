@@ -14,7 +14,7 @@ module X
     # @api private
     # @return [Symbol] raw
     # @example Get the identifier type
-    #   X::Place.id_type # => :raw
+    #   X::Place.__send__(:id_type) # => :raw
     def self.id_type = :raw
 
     # The key under which places appear in the includes of a response
@@ -22,10 +22,11 @@ module X
     # @api private
     # @return [String] the includes key
     # @example Get the includes key
-    #   X::Place.includes_key # => "places"
+    #   X::Place.__send__(:includes_key) # => "places"
     def self.includes_key
       "places"
     end
+    private_class_method :id_type, :includes_key
 
     # @!attribute [r] name
     #   The short name

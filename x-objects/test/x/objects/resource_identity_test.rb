@@ -15,15 +15,15 @@ module X
       end
 
       def test_class_defaults
-        assert_nil Resource.endpoint
-        assert_equal "id", Resource.id_key
-        assert_nil Resource.includes_key
+        assert_nil Resource.__send__(:endpoint)
+        assert_equal "id", Resource.__send__(:id_key)
+        assert_nil Resource.__send__(:includes_key)
         assert_empty Resource.default_params
       end
 
       def test_endpoint_bang
-        assert_equal "users", User.endpoint!
-        error = assert_raises(UnsupportedOperation) { Poll.endpoint! }
+        assert_equal "users", User.__send__(:endpoint!)
+        error = assert_raises(UnsupportedOperation) { Poll.__send__(:endpoint!) }
 
         assert_equal "X::Poll cannot be fetched by id", error.message
       end

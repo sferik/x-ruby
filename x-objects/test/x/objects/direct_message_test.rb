@@ -11,7 +11,7 @@ module X
       includes = Objects::Includes.new({"users" => [{"id" => "9", "username" => "sferik"}, {"id" => "8"}],
                                         "posts" => [{"id" => "5", "text" => "shared"}],
                                         "media" => [{"media_key" => "3_1"}]})
-      @message = DirectMessage.build({"id" => "1", "text" => "hi", "event_type" => "MessageCreate",
+      @message = DirectMessage.__send__(:build, {"id" => "1", "text" => "hi", "event_type" => "MessageCreate",
                                     "created_at" => "2024-01-02T03:04:05.000Z", "sender_id" => "9",
                                     "dm_conversation_id" => "9-8", "participant_ids" => %w[9 8],
                                     "referenced_posts" => [{"id" => "5"}], "attachments" => {"media_keys" => ["3_1"]},
@@ -20,8 +20,8 @@ module X
     end
 
     def test_class_configuration
-      assert_equal "dm_events", DirectMessage.endpoint
-      assert_nil DirectMessage.includes_key
+      assert_equal "dm_events", DirectMessage.__send__(:endpoint)
+      assert_nil DirectMessage.__send__(:includes_key)
       expected = {"dm_event.fields" => DirectMessage::FIELDS, "user.fields" => User::FIELDS, "post.fields" => Post::FIELDS,
                   "media.fields" => Media::FIELDS, "expansions" => DirectMessage::EXPANSIONS}
 

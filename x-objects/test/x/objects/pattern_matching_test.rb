@@ -47,7 +47,7 @@ module X
       end
 
       assert_equal({id: 7505382, username: "sferik", created_at: Time.utc(2007, 7, 16, 12, 59, 1)}, matched.compact)
-      assert_equal User.attribute_names.size, matched.size
+      assert_equal User.__send__(:attribute_names).size, matched.size
     end
 
     def test_deconstruct_keys_reads_the_attributes_it_is_asked_for
@@ -71,38 +71,38 @@ module X
 
     def test_a_pattern_asking_for_every_attribute_reads_each_once_by_the_name_it_is_declared_by
       refute_includes @post.deconstruct_keys(nil), :retweet_count
-      assert_equal Post.attribute_names, @post.deconstruct_keys(nil).keys
+      assert_equal Post.__send__(:attribute_names), @post.deconstruct_keys(nil).keys
     end
 
     def test_declaring_an_alias_records_its_name_after_the_ones_it_inherits
       klass = Class.new(User) { attribute_alias :handle, :username }
 
-      assert_equal %i[tweet_count pinned_tweet_id most_recent_tweet_id], User.attribute_aliases
-      assert_equal User.attribute_aliases + [:handle], klass.attribute_aliases
+      assert_equal %i[tweet_count pinned_tweet_id most_recent_tweet_id], User.__send__(:attribute_aliases)
+      assert_equal User.__send__(:attribute_aliases) + [:handle], klass.__send__(:attribute_aliases)
       assert_equal "sferik", klass.new({"id" => "1", "username" => "sferik"}).handle
-      assert_equal %i[retweet_count edit_history_tweet_ids note_tweet referenced_tweets], Post.attribute_aliases
-      assert_equal %i[conversation_id referenced_tweets], DirectMessage.attribute_aliases
+      assert_equal %i[retweet_count edit_history_tweet_ids note_tweet referenced_tweets], Post.__send__(:attribute_aliases)
+      assert_equal %i[conversation_id referenced_tweets], DirectMessage.__send__(:attribute_aliases)
     end
 
     def test_a_resource_without_aliases_declares_none
-      assert_empty Resource.attribute_aliases
-      assert_empty Class.new { extend Objects::Attributes }.attribute_aliases
-      assert_empty List.attribute_aliases
+      assert_empty Resource.__send__(:attribute_aliases)
+      assert_empty Class.new { extend Objects::Attributes }.__send__(:attribute_aliases)
+      assert_empty List.__send__(:attribute_aliases)
     end
 
     def test_declaring_an_attribute_records_its_name_after_the_ones_it_inherits
       klass = Class.new(User) { attribute :nickname }
 
-      assert_equal User.attribute_names + [:nickname], klass.attribute_names
-      refute_includes User.attribute_names, :nickname
-      assert_equal [:id], Class.new { extend Objects::Attributes }.attribute_names
+      assert_equal User.__send__(:attribute_names) + [:nickname], klass.__send__(:attribute_names)
+      refute_includes User.__send__(:attribute_names), :nickname
+      assert_equal [:id], Class.new { extend Objects::Attributes }.__send__(:attribute_names)
     end
 
     def test_every_resource_declares_its_identifier_and_its_own_attributes
-      assert_equal [:id], Resource.attribute_names
-      assert_equal :id, User.attribute_names.first
-      assert_includes User.attribute_names, :username
-      refute_includes Post.attribute_names, :username
+      assert_equal [:id], Resource.__send__(:attribute_names)
+      assert_equal :id, User.__send__(:attribute_names).first
+      assert_includes User.__send__(:attribute_names), :username
+      refute_includes Post.__send__(:attribute_names), :username
     end
   end
 end

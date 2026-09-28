@@ -14,9 +14,9 @@ module X
     end
 
     def test_class_configuration
-      assert_equal "communities", Community.endpoint
-      assert_nil Community.includes_key
-      assert_equal "community.fields", Community.fields_key
+      assert_equal "communities", Community.__send__(:endpoint)
+      assert_nil Community.__send__(:includes_key)
+      assert_equal "community.fields", Community.__send__(:fields_key)
       assert_equal({"community.fields" => Community::FIELDS}, Community.default_params)
     end
 

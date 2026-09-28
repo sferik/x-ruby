@@ -13,8 +13,8 @@ module X
     cover Media
 
     def test_id_types
-      assert_equal %i[integer integer integer integer integer integer], [User, Post, List, DirectMessage, Community, Poll].map(&:id_type)
-      assert_equal %i[raw raw raw], [Space, Place, Media].map(&:id_type)
+      assert_equal %i[integer integer integer integer integer integer], [User, Post, List, DirectMessage, Community, Poll].map { |klass| klass.__send__(:id_type) }
+      assert_equal %i[raw raw raw], [Space, Place, Media].map { |klass| klass.__send__(:id_type) }
     end
 
     def test_numeric_identifiers_are_integers

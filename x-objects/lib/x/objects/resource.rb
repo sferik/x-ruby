@@ -56,7 +56,7 @@ module X
       # @api private
       # @return [String, nil] the endpoint or nil if the resource cannot be looked up
       # @example Get the endpoint
-      #   X::User.endpoint # => "users"
+      #   X::User.__send__(:endpoint) # => "users"
       def endpoint
       end
 
@@ -65,7 +65,7 @@ module X
       # @api private
       # @return [String] the identifier key
       # @example Get the identifier key
-      #   X::Media.id_key # => "media_key"
+      #   X::Media.__send__(:id_key) # => "media_key"
       def id_key = "id"
 
       # The type of the identifier, integer unless it is not a number
@@ -73,7 +73,7 @@ module X
       # @api private
       # @return [Symbol] integer, or raw for an identifier that is not a number
       # @example Get the identifier type
-      #   X::Space.id_type # => :raw
+      #   X::Space.__send__(:id_type) # => :raw
       def id_type = :integer
 
       # The key under which this resource appears in the includes of a response
@@ -81,7 +81,7 @@ module X
       # @api private
       # @return [String, nil] the includes key or nil if the resource is never expanded
       # @example Get the includes key
-      #   X::User.includes_key # => "users"
+      #   X::User.__send__(:includes_key) # => "users"
       def includes_key
       end
 
@@ -90,7 +90,7 @@ module X
       # @api private
       # @return [String, nil] the fields parameter or nil if the resource has no fields parameter
       # @example Get the fields parameter
-      #   X::User.fields_key # => "user.fields"
+      #   X::User.__send__(:fields_key) # => "user.fields"
       def fields_key
       end
 
@@ -117,7 +117,7 @@ module X
       # @return [Resource] a stub that hydrates to the full resource
       # @raise [ArgumentError] if the identifier is not a number, for a resource whose identifiers are numbers
       # @example Build the stub of a page of followers
-      #   X::User.from_id_in_batch(7505382, client: client, batch: batch)
+      #   X::User.__send__(:from_id_in_batch, 7505382, client: client, batch: batch)
       def from_id_in_batch(id, client:, batch: nil) = build({id_key => Objects::Utils.id_from(id)}, client:, batch:)
 
       # Build a resource with the internals new keeps to itself
@@ -134,7 +134,7 @@ module X
       # @return [Resource] a new resource
       # @raise [ArgumentError] if the attributes do not include the identifier, or the identifier is not one
       # @example Build a post over the includes of its response
-      #   X::Post.build({"id" => "1", "author_id" => "9"}, client: client, includes: includes)
+      #   X::Post.__send__(:build, {"id" => "1", "author_id" => "9"}, client: client, includes: includes)
       def build(attrs, client: nil, includes: Objects::Includes.new, hydrated: false, batch: nil)
         allocate.tap { |resource| resource.__send__(:setup, attrs, client:, includes:, hydrated:, batch:) }
       end
@@ -156,7 +156,7 @@ module X
       # @param query [Hash{String => Object}] the query parameters of the request, merged over the defaults
       # @return [Boolean] true if every default parameter has its default value
       # @example Check a request that asks for the name of a user alone
-      #   X::User.fully_requested_by?("user.fields" => "name") # => false
+      #   X::User.__send__(:fully_requested_by?, "user.fields" => "name") # => false
       def fully_requested_by?(query)
         Objects::Utils.query(default_params).all? { |key, value| query[key].eql?(value) }
       end
@@ -166,7 +166,7 @@ module X
       # @api private
       # @return [Boolean] true if the resource has a lookup endpoint
       # @example Check whether a resource is hydratable
-      #   X::Media.hydratable? # => false
+      #   X::Media.__send__(:hydratable?) # => false
       def hydratable? = !endpoint.nil?
 
       # Check whether this resource can be looked up many at a time
@@ -176,7 +176,7 @@ module X
       # @api private
       # @return [Boolean] true if the resource has a batch lookup
       # @example Check whether lists can be looked up in batches
-      #   X::List.batchable? # => false
+      #   X::List.__send__(:batchable?) # => false
       def batchable? = hydratable?
 
       # The query parameter a batch lookup takes the identifiers in
@@ -184,7 +184,7 @@ module X
       # @api private
       # @return [Symbol] the parameter name
       # @example Get the parameter of a batch lookup of media
-      #   X::Media.batch_key # => :media_keys
+      #   X::Media.__send__(:batch_key) # => :media_keys
       def batch_key = :ids
 
       # The lookup endpoint, which must exist
@@ -193,8 +193,10 @@ module X
       # @return [String] the endpoint
       # @raise [UnsupportedOperation] if the resource cannot be looked up by identifier
       # @example Get the lookup endpoint
-      #   X::User.endpoint! # => "users"
+      #   X::User.__send__(:endpoint!) # => "users"
       def endpoint! = endpoint || raise(UnsupportedOperation, "#{self} cannot be fetched by #{id_key}")
+
+      private :endpoint, :id_key, :id_type, :includes_key, :fields_key, :from_id_in_batch, :build, :fully_requested_by?, :hydratable?, :batchable?, :batch_key, :endpoint!
 
       # Build the resource or resources a response holds
       #
@@ -273,7 +275,7 @@ module X
     # @example Get the identifier
     #   user.id # => 7505382
     def id
-      Objects::Attributes::CONVERTERS.fetch(self.class.id_type).call(attrs.fetch(self.class.id_key))
+      Objects::Attributes::CONVERTERS.fetch(self.class.__send__(:id_type)).call(attrs.fetch(self.class.__send__(:id_key)))
     end
 
     # Check whether the resource holds every field the object layer requests
@@ -306,7 +308,7 @@ module X
     # @return [Boolean] true if the resource holds only its identifier
     # @example Check whether the author of a post was included in the response
     #   post.author.stub? # => false
-    def stub? = attrs.keys.eql?([self.class.id_key])
+    def stub? = attrs.keys.eql?([self.class.__send__(:id_key)])
 
     # Fetch the full resource, memoizing the result
     #
@@ -412,11 +414,11 @@ module X
     # @example Refuse a user whose identifier is not a number
     #   X::User.new({"id" => "abc"})
     def identify
-      key = self.class.id_key
+      key = self.class.__send__(:id_key)
       value = attrs[key]
       raise ArgumentError, "#{self.class} requires #{key}" if value.nil?
 
-      Objects::Utils.id_of(value, raw: self.class.id_type.eql?(:raw))
+      Objects::Utils.id_of(value, raw: self.class.__send__(:id_type).eql?(:raw))
     end
 
     # Fetch the full resource from the API, in the lookup of its batch if it has one
@@ -430,7 +432,7 @@ module X
     # Look the full resource up on its own
     # @api private
     # @return [Resource, nil] the full resource or nil if it no longer exists
-    def look_up = self.class.lookup("#{self.class.endpoint!}/#{id}", client: client!)
+    def look_up = self.class.__send__(:lookup, "#{self.class.__send__(:endpoint!)}/#{id}", client: client!)
 
     # The client, which must exist
     # @api private
@@ -462,7 +464,7 @@ module X
     # @return [Cursor] the cursor
     def cursor(klass, path, max_results:, min_results: 1, total: nil, app_only: false, **params)
       defaults = {max_results:} #: Hash[Symbol, untyped]
-      Cursor.build(klass, path, client: client!, params: defaults.merge(params), min_results:, app_only:, total: counter(total))
+      Cursor.__send__(:build, klass, path, client: client!, params: defaults.merge(params), min_results:, app_only:, total: counter(total))
     end
   end
 end

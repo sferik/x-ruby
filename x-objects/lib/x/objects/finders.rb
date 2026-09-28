@@ -140,7 +140,7 @@ module X
       # @return [Resource, nil] the resource or nil if the response has no data
       # @yieldparam problem [Problem] each problem the API reported
       # @example Fetch the authenticated user
-      #   X::User.lookup("users/me", client: client)
+      #   X::User.__send__(:lookup, "users/me", client: client)
       def lookup(path, client:, **params, &)
         query = Utils.merge_params(default_params, params)
         resource_from_response(reporting(get(path, client:, query:), &), client:, hydrated: fully_requested_by?(query))
@@ -159,7 +159,7 @@ module X
       # @return [Array<Resource>] the resources
       # @yieldparam problem [Problem] each problem the API reported
       # @example Fetch users by username
-      #   X::User.lookup_all("users/by", client: client, usernames: ["sferik", "gem"])
+      #   X::User.__send__(:lookup_all, "users/by", client: client, usernames: ["sferik", "gem"])
       def lookup_all(path, client:, **params, &)
         query = Utils.merge_params(default_params, params)
         collection_from_response(reporting(get(path, client:, query:), &), client:, hydrated: fully_requested_by?(query))
@@ -174,8 +174,10 @@ module X
       # @param client [Object] the client the lookup was given
       # @return [Object] the client the request is made with
       # @example Get the client a user lookup requests with
-      #   X::User.client_for(client) # => client
+      #   X::User.__send__(:client_for, client) # => client
       def client_for(client) = client
+
+      private :lookup, :lookup_all, :client_for
 
       private
 

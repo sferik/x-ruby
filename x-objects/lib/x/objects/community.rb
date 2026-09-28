@@ -21,7 +21,7 @@ module X
       # @api private
       # @return [Boolean] false
       # @example Check whether communities can be looked up in batches
-      #   X::Community.batchable? # => false
+      #   X::Community.__send__(:batchable?) # => false
       def batchable? = false
 
       # The API endpoint used to look up communities by identifier
@@ -29,7 +29,7 @@ module X
       # @api private
       # @return [String] the endpoint
       # @example Get the endpoint
-      #   X::Community.endpoint # => "communities"
+      #   X::Community.__send__(:endpoint) # => "communities"
       def endpoint = "communities"
 
       # The query parameter that selects community fields
@@ -37,8 +37,10 @@ module X
       # @api private
       # @return [String] the fields parameter
       # @example Get the fields parameter
-      #   X::Community.fields_key # => "community.fields"
+      #   X::Community.__send__(:fields_key) # => "community.fields"
       def fields_key = "community.fields"
+
+      private :batchable?, :endpoint, :fields_key
 
       # The default query parameters requesting every community field
       #

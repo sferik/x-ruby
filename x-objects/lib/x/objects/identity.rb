@@ -53,8 +53,8 @@ module X
       #   end
       def deconstruct_keys(keys)
         klass = self.class
-        names = klass.attribute_names
-        names = (names + klass.attribute_aliases) & keys unless keys.nil?
+        names = klass.__send__(:attribute_names)
+        names = (names + klass.__send__(:attribute_aliases)) & keys unless keys.nil?
         names.to_h { |name| [name, public_send(name)] }
       end
     end

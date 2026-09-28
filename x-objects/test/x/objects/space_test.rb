@@ -9,7 +9,7 @@ module X
     def setup
       @client = FakeClient.new
       includes = Objects::Includes.new({"users" => [{"id" => "9", "username" => "sferik"}]})
-      @space = Space.build({"id" => "1", "title" => "Ruby", "state" => "live", "lang" => "en",
+      @space = Space.__send__(:build, {"id" => "1", "title" => "Ruby", "state" => "live", "lang" => "en",
                           "created_at" => "2024-01-02T03:04:05.000Z", "started_at" => "2024-01-02T03:05:05.000Z",
                           "ended_at" => "2024-01-02T04:04:05.000Z", "scheduled_start" => "2024-01-02T03:00:00.000Z",
                           "updated_at" => "2024-01-02T03:06:05.000Z", "is_ticketed" => true, "participant_count" => 2,
@@ -18,12 +18,12 @@ module X
     end
 
     def test_fields_key
-      assert_equal "space.fields", Space.fields_key
+      assert_equal "space.fields", Space.__send__(:fields_key)
     end
 
     def test_class_configuration
-      assert_equal "spaces", Space.endpoint
-      assert_nil Space.includes_key
+      assert_equal "spaces", Space.__send__(:endpoint)
+      assert_nil Space.__send__(:includes_key)
       assert_equal({"space.fields" => Space::FIELDS, "user.fields" => User::FIELDS, "expansions" => Space::EXPANSIONS}, Space.default_params)
     end
 

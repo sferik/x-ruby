@@ -26,7 +26,7 @@ module X
       # @api private
       # @return [String] the endpoint
       # @example Get the endpoint
-      #   X::Space.endpoint # => "spaces"
+      #   X::Space.__send__(:endpoint) # => "spaces"
       def endpoint
         "spaces"
       end
@@ -36,7 +36,7 @@ module X
       # @api private
       # @return [Symbol] raw
       # @example Get the identifier type
-      #   X::Space.id_type # => :raw
+      #   X::Space.__send__(:id_type) # => :raw
       def id_type = :raw
 
       # The client a space lookup requests with
@@ -49,7 +49,7 @@ module X
       # @param client [Object] the client the lookup was given
       # @return [Object] the client's app-only client, or the client itself
       # @example Get the client a space lookup requests with
-      #   X::Space.client_for(client)
+      #   X::Space.__send__(:client_for, client)
       def client_for(client) = Objects::Utils.space_client(client)
 
       # The query parameter that selects space fields
@@ -57,8 +57,10 @@ module X
       # @api private
       # @return [String] the fields parameter
       # @example Get the fields parameter
-      #   X::Space.fields_key # => "space.fields"
+      #   X::Space.__send__(:fields_key) # => "space.fields"
       def fields_key = "space.fields"
+
+      private :endpoint, :id_type, :client_for, :fields_key
 
       # The default query parameters requesting every space field and user expansion
       #

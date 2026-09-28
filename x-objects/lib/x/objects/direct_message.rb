@@ -26,7 +26,7 @@ module X
       # @api private
       # @return [Boolean] false
       # @example Check whether direct message events can be looked up in batches
-      #   X::DirectMessage.batchable? # => false
+      #   X::DirectMessage.__send__(:batchable?) # => false
       def batchable? = false
 
       # The API endpoint used to look up direct message events by identifier
@@ -34,7 +34,7 @@ module X
       # @api private
       # @return [String] the endpoint
       # @example Get the endpoint
-      #   X::DirectMessage.endpoint # => "dm_events"
+      #   X::DirectMessage.__send__(:endpoint) # => "dm_events"
       def endpoint
         "dm_events"
       end
@@ -44,8 +44,10 @@ module X
       # @api private
       # @return [String] the fields parameter
       # @example Get the fields parameter
-      #   X::DirectMessage.fields_key # => "dm_event.fields"
+      #   X::DirectMessage.__send__(:fields_key) # => "dm_event.fields"
       def fields_key = "dm_event.fields"
+
+      private :batchable?, :endpoint, :fields_key
 
       # The default query parameters requesting every direct message field and expansion
       #
