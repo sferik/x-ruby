@@ -82,18 +82,28 @@ module X
         @expires_at = expires_at
       end
 
+      # Refuse an authenticator beside credentials, and credentials of no complete set
+      # @api private
+      # @param authenticator [Authenticator, nil] the authenticator the client was given, or nil
+      # @return [void]
+      # @raise [ArgumentError] if the authenticator is not an Authenticator, or is given beside credentials
+      # @raise [ArgumentError] if the credentials do not form complete sets
+      def validate_credentials!(authenticator)
+        CredentialValidator.validate_authenticator!(authenticator, credentials)
+        CredentialValidator.validate!(credentials)
+      end
+
       # Take the authenticator the client was given, or build one of its credentials
       #
       # The authenticator built is the one of the first complete set of credentials held, and a client that holds no
-      # complete set sends its requests without credentials. An authenticator is refused beside credentials, which it
-      # would leave unused, before the client takes it.
+      # complete set sends its requests without credentials. Taking an authenticator binds it to the connection of the
+      # client and reports its refreshes to the client, so the client checks the authenticator, and every other
+      # option, before it takes it, and a client that raises leaves the authenticator as it was.
       #
       # @api private
       # @param given [Authenticator, nil] the authenticator the client was given, or nil to build one
       # @return [void]
-      # @raise [ArgumentError] if the authenticator is not an Authenticator, or is given beside credentials
       def initialize_authenticator(given)
-        CredentialValidator.validate_authenticator!(given, credentials)
         @given_authenticator = given
         @authenticator = given ? take(given) : built_authenticator
       end

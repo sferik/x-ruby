@@ -316,6 +316,7 @@ module X
       def refresh_token: () -> String?
       def credentials: () -> { api_key: String?, api_key_secret: String?, access_token: String?, access_token_secret: String?, bearer_token: String?, client_id: String?, client_secret: String?, refresh_token: String?, expires_at: Time? }
       def initialize_credentials: (api_key: String?, api_key_secret: String?, access_token: String?, access_token_secret: String?, bearer_token: String?, client_id: String?, client_secret: String?, refresh_token: String?, expires_at: Time?) -> void
+      def validate_credentials!: (Authenticator? authenticator) -> void
       def initialize_authenticator: (Authenticator? given) -> void
       def built_authenticator: () -> Authenticator
       def with_credentials: (Hash[Symbol, untyped] options) -> Hash[Symbol, untyped]

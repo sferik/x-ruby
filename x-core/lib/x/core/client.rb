@@ -201,10 +201,10 @@ module X
       @request_builder = Core::RequestBuilder.new
       @response_parser = Core::ResponseParser.new
       initialize_credentials(api_key:, api_key_secret:, access_token:, access_token_secret:, bearer_token:, client_id:, client_secret:, refresh_token:, expires_at:)
-      @on_token_refresh = on_token_refresh
-      initialize_authenticator(authenticator)
-      Core::CredentialValidator.validate!(credentials)
+      validate_credentials!(authenticator)
       initialize_settings(base_url:, default_array_class:, default_object_class:, headers:, on_response:, max_redirects:, max_rate_limit_retries:, max_rate_limit_wait:, max_retries:)
+      @on_token_refresh = on_token_refresh
+      initialize_authenticator(authenticator) # last, since it takes an authenticator it was given, which a client that raised must leave alone
     end
 
     # Summarize the client for the console without revealing credentials
