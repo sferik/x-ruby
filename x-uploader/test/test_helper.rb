@@ -45,3 +45,16 @@ def test_oauth_credentials
     access_token_secret: TEST_ACCESS_TOKEN_SECRET
   }
 end
+
+# Run a block on a monotonic clock that stands still but for the sleeps of MediaUpload, which pass at once and are
+# added to the waits given, and for the seconds advance_clock passes, as a request that takes them does. It starts
+# at no time in particular, as a monotonic clock does, so a deadline counted from zero would be wrong.
+def on_fake_clock(waits = [], &)
+  @fake_clock = 1000
+  Process.stub(:clock_gettime, ->(clock) { clock.eql?(Process::CLOCK_MONOTONIC) ? @fake_clock : raise(ArgumentError, "not the monotonic clock") }) do
+    X::Uploader::MediaUpload.stub(:sleep, ->(seconds) { (waits << seconds) && (@fake_clock += seconds) }, &)
+  end
+end
+
+# Pass seconds on the clock of on_fake_clock, as a request that takes them does
+def advance_clock(seconds) = @fake_clock += seconds

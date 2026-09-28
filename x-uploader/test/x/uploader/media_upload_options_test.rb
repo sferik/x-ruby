@@ -44,7 +44,8 @@ module X
 
     def chunk_options_of(**)
       options = nil
-      Uploader::MediaUpload.stub(:chunked_upload, ->(*, **kwargs) { options = kwargs.except(:client) }) do
+      uploaded = UploadedMedia.new({"id" => TEST_MEDIA_ID})
+      Uploader::MediaUpload.stub(:chunked_upload, ->(*, **kwargs) { (options = kwargs.except(:client)) && uploaded }) do
         Uploader::MediaUpload.upload("test/sample_files/sample.mp4", client: @client, **)
       end
       options

@@ -79,6 +79,8 @@ module X
       def subtitled_media_category: (String | Symbol media_category) -> String
       def sending_again: [T] (_Client client) { () -> T } -> T
       def max_retries_of: (_Client client) -> Integer
+      def processed!: (UploadedMedia status) -> UploadedMedia
+      def seconds_from_now: (Float | Integer seconds) -> Float
     end
 
     module Multipart

@@ -72,7 +72,7 @@ module X
       stub_video_upload_that_keeps_processing(check_after_secs: 300)
       waits = []
 
-      Uploader::MediaUpload.stub(:sleep, ->(seconds) { waits << seconds }) do
+      on_fake_clock(waits) do
         assert_raises(MediaProcessingTimeout) { Uploader::MediaUpload.upload("test/sample_files/sample.mp4", client: @client) }
       end
 
@@ -88,7 +88,7 @@ module X
     end
 
     def await(method, **)
-      Uploader::MediaUpload.stub(:sleep, nil) { Uploader::MediaUpload.public_send(method, media_hash, client: @client, **) }
+      on_fake_clock { Uploader::MediaUpload.public_send(method, media_hash, client: @client, **) }
     end
 
     def media_hash

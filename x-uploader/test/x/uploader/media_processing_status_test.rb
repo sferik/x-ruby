@@ -66,6 +66,34 @@ module X
       assert_equal "succeeded", await(processing_timeout: 5).dig("processing_info", "state")
     end
 
+    def test_counts_the_time_the_checks_take_toward_the_timeout
+      stub_request(:get, STATUS_URL).to_return do
+        advance_clock(4)
+        {headers: {"content-type" => "application/json"}, body: {data: {processing_info: {state: "pending", check_after_secs: 1}}}.to_json}
+      end
+
+      assert_raises(MediaProcessingTimeout) { await(processing_timeout: 10) }
+      assert_equal [1, 1], @sleeps
+      assert_requested(:get, STATUS_URL, times: 3)
+    end
+
+    def test_returns_the_status_of_a_check_that_finishes_after_the_deadline
+      responses = [{"state" => "pending", "check_after_secs" => 5}, {"state" => "succeeded"}].map do |processing_info|
+        {headers: {"content-type" => "application/json"}, body: {data: {processing_info:}}.to_json}
+      end
+      stub_request(:get, STATUS_URL).to_return { advance_clock(3) && responses.shift }
+
+      assert_equal "succeeded", await(processing_timeout: 8).dig("processing_info", "state")
+      assert_equal [5], @sleeps
+    end
+
+    def test_waits_for_as_long_as_processing_takes_without_a_deadline
+      stub_statuses(*Array.new(3) { {"processing_info" => {"state" => "pending", "check_after_secs" => 3600}} }, {"processing_info" => {"state" => "succeeded"}})
+
+      assert_equal "succeeded", await(processing_timeout: Float::INFINITY).dig("processing_info", "state")
+      assert_equal [3600] * 3, @sleeps
+    end
+
     def test_waits_ten_minutes_by_default
       stub_statuses({"processing_info" => {"state" => "pending", "check_after_secs" => 60}})
 
@@ -99,9 +127,7 @@ module X
     private
 
     def await(**)
-      Uploader::MediaUpload.stub(:sleep, ->(seconds) { @sleeps << seconds }) do
-        Uploader::MediaUpload.await_processing({"id" => TEST_MEDIA_ID}, client: @client, **)
-      end
+      on_fake_clock(@sleeps) { Uploader::MediaUpload.await_processing({"id" => TEST_MEDIA_ID}, client: @client, **) }
     end
 
     def stub_statuses(*statuses)

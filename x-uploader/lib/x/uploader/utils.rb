@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "x/core/retry_handler"
+require_relative "media_processing_failed"
 require_relative "missing_media_data"
 require_relative "uploaded_media"
 
@@ -106,6 +107,28 @@ module X
         retrying = client #: untyped
         retrying.respond_to?(:max_retries) ? retrying.max_retries : Core::RetryHandler::DEFAULT_MAX_RETRIES
       end
+
+      # The processing status of media, unless the media failed to process
+      #
+      # @api private
+      # @param status [UploadedMedia] the processing status X reported, or the response of an upload
+      # @return [UploadedMedia] the status, of media that has processed, is still processing, or needs no processing
+      # @raise [MediaProcessingFailed] if the media failed to process, with the status
+      # @example The status of media that has processed
+      #   Uploader::Utils.processed!(status) # => status
+      def processed!(status) = status.tap { raise MediaProcessingFailed.new(status:) if status.failed? }
+
+      # The time on the monotonic clock some seconds from now, which keeps a deadline
+      #
+      # The monotonic clock counts from no time in particular, but never goes back, as the time of day does when the
+      # clock of the system is set, so the seconds between two of its times are the seconds that passed between them.
+      #
+      # @api private
+      # @param seconds [Integer, Float] the seconds from now, or Float::INFINITY for a time never reached
+      # @return [Float] the time on the monotonic clock
+      # @example The time on the monotonic clock a minute from now
+      #   Uploader::Utils.seconds_from_now(60) # => 1234.5
+      def seconds_from_now(seconds) = Process.clock_gettime(Process::CLOCK_MONOTONIC) + seconds
 
       # The media category the subtitles endpoint takes, from one given in any form
       #

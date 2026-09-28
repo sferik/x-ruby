@@ -42,6 +42,23 @@ module X
       assert_equal "Media processing did not finish within 4 seconds", error.message
     end
 
+    def test_upload_checks_no_status_of_media_that_has_already_been_processed
+      stub_request(:post, BASE_URL).to_return(headers: JSON_HEADERS, body: {data: {id: TEST_MEDIA_ID, processing_info: {state: "succeeded"}}}.to_json)
+      response = Uploader::MediaUpload.upload(ANIMATED_GIF, client: @client)
+
+      assert_equal "succeeded", response.state
+      assert_not_requested :get, STATUS_URL
+    end
+
+    def test_upload_raises_for_media_that_has_already_failed_to_process_without_checking_its_status
+      failed = {"id" => TEST_MEDIA_ID, "processing_info" => {"state" => "failed", "error" => {"message" => "Unsupported"}}}
+      stub_request(:post, BASE_URL).to_return(headers: JSON_HEADERS, body: {data: failed}.to_json)
+      error = assert_raises(MediaProcessingFailed) { Uploader::MediaUpload.upload(ANIMATED_GIF, client: @client) }
+
+      assert_equal UploadedMedia.new(failed), error.status
+      assert_not_requested :get, STATUS_URL
+    end
+
     def test_upload_an_image_that_needs_no_processing
       stub_request(:post, BASE_URL).to_return(headers: JSON_HEADERS, body: {data: {id: TEST_MEDIA_ID}}.to_json)
 

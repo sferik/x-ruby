@@ -57,7 +57,7 @@ module X
       VIDEO_MIME_TYPES = [MP4_MIME_TYPE, QUICKTIME_MIME_TYPE, WEBM_MIME_TYPE, MPEG_TS_MIME_TYPE].freeze
       # MIME types of the subtitles the API takes, the first of which subtitles of no known type are uploaded as
       SUBTITLES_MIME_TYPES = [SUBRIP_MIME_TYPE, WEBVTT_MIME_TYPE].freeze
-      # Default number of seconds await_processing waits between checks before it gives up
+      # Default number of seconds await_processing waits for processing to finish before it gives up
       DEFAULT_PROCESSING_TIMEOUT = 600
       # Default number of chunks uploaded at once
       DEFAULT_CONCURRENCY = 4
@@ -98,6 +98,10 @@ module X
       # argument is validated before the first request, so that no media is uploaded, and billed, for an upload
       # that cannot finish.
       #
+      # Media the response of the upload says is still processing is awaited as {await_processing!} awaits it. Media
+      # the response says has already failed to process raises MediaProcessingFailed with that response, and media it
+      # says has finished is returned as it is, without a check of its status.
+      #
       # @api public
       # @param media [String, Pathname, IO, StringIO] the path to the media to upload, or an IO open on it
       # @param client [Client] the X API client
@@ -105,7 +109,8 @@ module X
       #   of the file, or from the bytes media that names none begins with
       # @param alt_text [String, nil] alt text describing the media, for people who cannot see it, of 1 to 1,000 characters
       # @param processing_timeout [Integer, Float] the seconds to wait for media, such as a video or an animated GIF, to
-      #   process, of at least 0, or Float::INFINITY to wait for as long as processing takes
+      #   process, of at least 0, from when it is uploaded, as {await_processing} counts them, or Float::INFINITY to
+      #   wait for as long as processing takes
       # @param media_type [String, nil] the MIME type of media uploaded in chunks, inferred from the media and
       #   category when nil; an upload in a single request sends no type, since the API types the media itself, so
       #   one given for an image is not sent
@@ -124,7 +129,7 @@ module X
       #   one, or if media uploaded in chunks is given no media type and none can be inferred
       # @raise [MissingMediaData] if a response of the upload holds no media, or carries no body at all
       # @raise [MediaProcessingFailed] if the media fails to process
-      # @raise [MediaProcessingTimeout] if the media is still processing after processing_timeout seconds
+      # @raise [MediaProcessingTimeout] if the media is still processing once processing_timeout seconds would pass
       # @raise [AltTextFailed] if the media is uploaded, but its alt text cannot be added, with the media it uploaded
       # @example Upload an image
       #   Uploader::MediaUpload.upload("image.png", client: client)
@@ -144,7 +149,7 @@ module X
         else
           upload_binary(source.content, client:, media_category:)
         end
-        uploaded = await_processing!(uploaded, client:, processing_timeout:) if uploaded.key?("processing_info")
+        uploaded = Utils.processed!(uploaded.processing? ? await_processing(uploaded, client:, processing_timeout:) : uploaded)
         AltTextFailed.__send__(:keeping, uploaded) { Metadata.add_alt_text(uploaded, alt_text, client:) } unless alt_text.nil?
         uploaded
       end
@@ -205,19 +210,24 @@ module X
 
       # Wait for media processing to complete
       #
-      # Between checks it waits as long as X asks, and at least a second. It gives up, rather than wait past the
-      # processing timeout, once those waits would add up to more than the processing timeout.
+      # It checks the status of the media at once, and between checks waits as long as X asks, and at least a second.
+      #
+      # The processing timeout is a deadline, the seconds from when it is called, measured on the monotonic clock, so
+      # that it counts the time each check takes, with any wait for a rate limit and any retry the client makes, as
+      # well as the waits between them. It gives up once the next check X asks for would come after the deadline,
+      # rather than sleep past it, or check before X asks. A check under way at the deadline is let finish, and its
+      # status returned if processing has finished, so it can return that much after the deadline.
       #
       # @api public
       # @param media [UploadedMedia, Hash, String, Integer] the uploaded media, or the media identifier
       # @param client [Client] the X API client
-      # @param processing_timeout [Integer, Float] the seconds to wait between checks, in all, before giving up, or
-      #   Float::INFINITY to wait for as long as processing takes
+      # @param processing_timeout [Integer, Float] the seconds from now to wait for processing to finish, checks and
+      #   all, before giving up, or Float::INFINITY to wait for as long as processing takes
       # @return [UploadedMedia] the uploaded media, which holds the processing status
       # @raise [ArgumentError] if the processing timeout is not a number of seconds of at least 0
       # @raise [ArgumentError] if the media given is neither media nor a media identifier
       # @raise [MissingMediaData] if the media given holds no identifier, or a status response holds no media or carries no body at all
-      # @raise [MediaProcessingTimeout] if the media is still processing once the processing timeout would pass
+      # @raise [MediaProcessingTimeout] if the media is still processing once the next check would pass the deadline
       # @example Wait for processing
       #   Uploader::MediaUpload.await_processing(media, client: client)
       # @example Wait for the processing of media known by its identifier
@@ -226,13 +236,13 @@ module X
       #   Uploader::MediaUpload.await_processing(media, client: client, processing_timeout: 1800)
       def await_processing(media, client:, processing_timeout: DEFAULT_PROCESSING_TIMEOUT)
         Validator.validate_processing_timeout!(processing_timeout)
-        waited, media_id = 0, Utils.media_id(media)
+        deadline, media_id = Utils.seconds_from_now(processing_timeout), Utils.media_id(media)
         loop do
           status = UploadedMedia.new(Utils.media_data(client.get("media/upload", params: {command: STATUS_COMMAND, media_id:}, **JSON_CLASSES), "of the status check"))
           return status unless status.processing?
 
           wait = [status.check_after_secs.to_i, MIN_CHECK_AFTER_SECS].max
-          raise MediaProcessingTimeout.new(status:, timeout: processing_timeout) if (waited += wait) > processing_timeout
+          raise MediaProcessingTimeout.new(status:, timeout: processing_timeout) if Utils.seconds_from_now(wait) > deadline
 
           sleep wait
         end
@@ -243,18 +253,19 @@ module X
       # @api public
       # @param media [UploadedMedia, Hash, String, Integer] the uploaded media, or the media identifier
       # @param client [Client] the X API client
-      # @param processing_timeout [Integer, Float] the seconds to wait between checks, in all, before giving up, or
-      #   Float::INFINITY to wait for as long as processing takes
+      # @param processing_timeout [Integer, Float] the seconds from now to wait for processing to finish, checks and
+      #   all, before giving up, as {await_processing} counts them, or Float::INFINITY to wait for as long as
+      #   processing takes
       # @return [UploadedMedia] the uploaded media, which holds the processing status
       # @raise [ArgumentError] if the processing timeout is not a number of seconds of at least 0
       # @raise [ArgumentError] if the media given is neither media nor a media identifier
       # @raise [MissingMediaData] if the media given holds no identifier, or a status response holds no media or carries no body at all
       # @raise [MediaProcessingFailed] if media processing failed, with the status X reported
-      # @raise [MediaProcessingTimeout] if the media is still processing once the processing timeout would pass
+      # @raise [MediaProcessingTimeout] if the media is still processing once the next check would pass the deadline
       # @example Wait for processing with error handling
       #   Uploader::MediaUpload.await_processing!(media, client: client)
       def await_processing!(media, client:, processing_timeout: DEFAULT_PROCESSING_TIMEOUT)
-        await_processing(media, client:, processing_timeout:).tap { |status| raise MediaProcessingFailed.new(status:) if status.failed? }
+        Utils.processed!(await_processing(media, client:, processing_timeout:))
       end
 
       # Infers how media uploads: in chunks or whole, in which category, and as which type

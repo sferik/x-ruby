@@ -8,6 +8,25 @@ module X
   class UtilsTest < Minitest::Test
     cover Uploader.const_get(:Utils)
 
+    def test_processed_is_the_status_of_media_that_has_not_failed
+      [{"id" => 7}, {"processing_info" => {"state" => "pending"}}, {"processing_info" => {"state" => "succeeded"}}].each do |attrs|
+        status = UploadedMedia.new(attrs)
+
+        assert_same status, Uploader.const_get(:Utils).processed!(status)
+      end
+    end
+
+    def test_processed_raises_for_media_that_failed_to_process
+      status = UploadedMedia.new({"processing_info" => {"state" => "failed"}})
+      error = assert_raises(MediaProcessingFailed) { Uploader.const_get(:Utils).processed!(status) }
+
+      assert_same status, error.status
+    end
+
+    def test_seconds_from_now_on_the_monotonic_clock
+      assert_equal [1060, 1000.5], on_fake_clock { [60, 0.5].map { |seconds| Uploader.const_get(:Utils).seconds_from_now(seconds) } }
+    end
+
     def test_extension_is_lowercase_and_has_no_dot
       assert_equal "jpg", Uploader.const_get(:Utils).extension("photos/cat.JPG")
     end
