@@ -10,7 +10,7 @@ end
 
 module X
   class StreamingClientCallbackTest < Minitest::Test
-    cover Connection
+    cover Core::Connection
     cover Core::StreamParser
     cover StreamingClient
 

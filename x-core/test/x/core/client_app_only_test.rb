@@ -39,33 +39,36 @@ module X
 
     def test_the_token_is_fetched_over_the_client_connection
       client = Client.new(**test_oauth_credentials)
-      options = nil
-      authenticator = AppOnlyAuthenticator.new(api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET)
-      AppOnlyAuthenticator.stub(:new, ->(**given) {
-        options ||= given
-        authenticator
-      }) { client.app_only }
+      connections = []
+      fetch = Core::TokenEndpoint.method(:fetch)
+      Core::TokenEndpoint.stub(:fetch, ->(request, connection:) { fetch.call(request, connection: connections.push(connection).last) }) { client.app_only }
 
-      assert_same client.instance_variable_get(:@connection), options[:connection]
-      assert_equal [TEST_API_KEY, TEST_API_KEY_SECRET], options.values_at(:api_key, :api_key_secret)
+      assert_equal [client.instance_variable_get(:@connection)], connections
+    end
+
+    def test_the_token_is_fetched_with_the_api_key_and_secret
+      Client.new(**test_oauth_credentials).app_only
+
+      assert_requested :post, AppOnlyAuthenticator::TOKEN_URL,
+        headers: {"Authorization" => "Basic #{["#{TEST_API_KEY}:#{TEST_API_KEY_SECRET}"].pack("m0")}"}
     end
 
     def test_an_app_only_client_fetches_its_token_over_the_client_connection
       client = Client.new(api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET, proxy_url: "http://proxy.example.com:8080", open_timeout: 5)
 
-      assert_same client.instance_variable_get(:@connection), client.authenticator.connection
+      assert_same client.instance_variable_get(:@connection), client.authenticator.send(:connection)
     end
 
     def test_an_oauth2_client_refreshes_its_token_over_the_client_connection
       client = Client.new(**test_oauth2_credentials, proxy_url: "http://proxy.example.com:8080", read_timeout: 5)
 
-      assert_same client.instance_variable_get(:@connection), client.authenticator.connection
+      assert_same client.instance_variable_get(:@connection), client.authenticator.send(:connection)
     end
 
     def test_the_client_connection_settings_reach_the_token_request
       client = Client.new(api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET, proxy_url: "http://proxy.example.com:8080")
 
-      assert_equal "http://proxy.example.com:8080", client.authenticator.connection.send(:proxy_url)
+      assert_equal "http://proxy.example.com:8080", client.authenticator.send(:connection).send(:proxy_url)
     end
 
     def test_a_given_bearer_token_is_used_without_a_request

@@ -28,12 +28,6 @@ module X
     # @example Get the API key
     #   authenticator.api_key
     attr_reader :api_key
-    # The connection used to fetch the bearer token
-    # @api public
-    # @return [Connection] the connection
-    # @example Get the connection
-    #   authenticator.connection
-    attr_reader :connection
 
     # Initialize a new app-only authenticator
     #
@@ -41,15 +35,14 @@ module X
     # @param api_key [String] the API key
     # @param api_key_secret [String] the API key secret
     # @param bearer_token [String, nil] a bearer token already fetched with these credentials
-    # @param connection [Connection] the connection used to fetch the bearer token
     # @return [AppOnlyAuthenticator] a new authenticator
     # @example Create an app-only authenticator
     #   X::AppOnlyAuthenticator.new(api_key: "key", api_key_secret: "secret")
-    def initialize(api_key:, api_key_secret:, bearer_token: nil, connection: Connection.new)
+    def initialize(api_key:, api_key_secret:, bearer_token: nil)
       @api_key = api_key
       @api_key_secret = api_key_secret
       @bearer_token = bearer_token
-      @connection = connection
+      @connection = Core::Connection.new
       @mutex = Mutex.new
     end
 
@@ -84,6 +77,24 @@ module X
     #   bearer_token
     def bearer_token
       @mutex.synchronize { @bearer_token ||= fetch_bearer_token }
+    end
+
+    # The connection the bearer token is fetched over
+    # @api private
+    # @return [Core::Connection] the connection
+    attr_reader :connection
+
+    # Fetch the bearer token over a connection
+    #
+    # Internal to x-core: a client fetches the token of the authenticator it builds over its own connection, with its
+    # proxy, timeouts, and debug output, and calls it with __send__, since it is private.
+    #
+    # @api private
+    # @param connection [Core::Connection] the connection to fetch the token over
+    # @return [AppOnlyAuthenticator] the authenticator
+    def token_requests_over(connection)
+      @connection = connection
+      self
     end
 
     # The API key secret, which buys the bearer token

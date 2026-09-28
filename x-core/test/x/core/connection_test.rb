@@ -6,27 +6,27 @@ require_relative "../../test_helper"
 
 module X
   class ConnectionTest < Minitest::Test
-    cover Connection
+    cover Core::Connection
 
     def setup
-      @connection = Connection.new
+      @connection = Core::Connection.new
     end
 
     def test_initialization_defaults
-      assert_equal Connection::DEFAULT_OPEN_TIMEOUT, @connection.open_timeout
-      assert_equal Connection::DEFAULT_READ_TIMEOUT, @connection.read_timeout
-      assert_equal Connection::DEFAULT_WRITE_TIMEOUT, @connection.write_timeout
+      assert_equal Core::Connection::DEFAULT_OPEN_TIMEOUT, @connection.open_timeout
+      assert_equal Core::Connection::DEFAULT_READ_TIMEOUT, @connection.read_timeout
+      assert_equal Core::Connection::DEFAULT_WRITE_TIMEOUT, @connection.write_timeout
       assert_nil @connection.debug_output
       assert_nil @connection.send(:proxy_url)
     end
 
     def test_the_errors_a_connection_reads_as_network_errors_are_private
-      assert_raises(NameError) { Connection::NETWORK_ERRORS }
-      assert_raises(NameError) { Connection::STALE_CONNECTION_ERRORS }
+      assert_raises(NameError) { Core::Connection::NETWORK_ERRORS }
+      assert_raises(NameError) { Core::Connection::STALE_CONNECTION_ERRORS }
     end
 
     def test_custom_initialization
-      connection = Connection.new(open_timeout: 10, read_timeout: 20, write_timeout: 30, debug_output: $stderr,
+      connection = Core::Connection.new(open_timeout: 10, read_timeout: 20, write_timeout: 30, debug_output: $stderr,
         proxy_url: "http://example.com:8080")
 
       assert_equal 10, connection.open_timeout
@@ -41,9 +41,9 @@ module X
 
       assert_equal "api.x.com", http_client.address
       assert_equal 443, http_client.port
-      assert_equal Connection::DEFAULT_OPEN_TIMEOUT, http_client.open_timeout
-      assert_equal Connection::DEFAULT_READ_TIMEOUT, http_client.read_timeout
-      assert_equal Connection::DEFAULT_WRITE_TIMEOUT, http_client.write_timeout
+      assert_equal Core::Connection::DEFAULT_OPEN_TIMEOUT, http_client.open_timeout
+      assert_equal Core::Connection::DEFAULT_READ_TIMEOUT, http_client.read_timeout
+      assert_equal Core::Connection::DEFAULT_WRITE_TIMEOUT, http_client.write_timeout
     end
 
     def test_http_client_leaves_retries_to_the_caller
@@ -51,12 +51,12 @@ module X
     end
 
     def test_http_client_keeps_a_connection_open_beyond_a_burst_of_requests
-      assert_equal Connection::DEFAULT_KEEP_ALIVE_TIMEOUT, @connection.keep_alive_timeout
+      assert_equal Core::Connection::DEFAULT_KEEP_ALIVE_TIMEOUT, @connection.keep_alive_timeout
       assert_equal 30, @connection.send(:build_http_client, URI("https://api.x.com/2/tweets")).keep_alive_timeout
     end
 
     def test_http_client_keeps_a_connection_open_for_the_keep_alive_timeout_given
-      connection = Connection.new(keep_alive_timeout: 5)
+      connection = Core::Connection.new(keep_alive_timeout: 5)
 
       assert_equal 5, connection.keep_alive_timeout
       assert_equal 5, connection.send(:build_http_client, URI("https://api.x.com/2/tweets")).keep_alive_timeout
@@ -69,7 +69,7 @@ module X
     end
 
     def test_client_properties
-      connection = Connection.new(open_timeout: 10, read_timeout: 20, write_timeout: 30, debug_output: $stderr,
+      connection = Core::Connection.new(open_timeout: 10, read_timeout: 20, write_timeout: 30, debug_output: $stderr,
         proxy_url: "https://proxy.com")
       http_client = connection.send(:build_http_client, URI("https://api.x.com/2/tweets"))
 
@@ -92,14 +92,14 @@ module X
   class ConnectionIPv6Test < Minitest::Test
     include LocalServer
 
-    cover Connection
+    cover Core::Connection
 
     # The first net-http that can request a host named by an IPv6 literal, which Ruby 4.0 ships; the 0.6 of Ruby 3.4
     # builds the Host header of such a request without the brackets, then empties it, and raises before it connects
     NET_HTTP_WITH_IPV6_LITERALS = Gem::Version.new("0.8")
 
     def setup
-      @connection = Connection.new
+      @connection = Core::Connection.new
       skip "net-http #{Net::HTTP::VERSION} cannot request an IPv6 literal host" if net_http < NET_HTTP_WITH_IPV6_LITERALS
     end
 
@@ -133,10 +133,10 @@ module X
   end
 
   class ConnectionNetworkErrorTest < Minitest::Test
-    cover Connection
+    cover Core::Connection
 
     def setup
-      @connection = Connection.new
+      @connection = Core::Connection.new
     end
 
     def test_network_error

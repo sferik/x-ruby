@@ -14,13 +14,19 @@ module X
 
     def test_initialize
       assert_equal TEST_API_KEY, @authenticator.api_key
-      assert_instance_of Connection, @authenticator.connection
+      assert_instance_of Core::Connection, @authenticator.send(:connection)
     end
 
-    def test_initialize_with_connection
-      connection = Connection.new(open_timeout: 5)
+    def test_the_token_can_be_fetched_over_another_connection
+      connection = Core::Connection.new(open_timeout: 5)
+      authenticator = AppOnlyAuthenticator.new(api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET)
 
-      assert_same connection, AppOnlyAuthenticator.new(api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET, connection:).connection
+      assert_same authenticator, authenticator.send(:token_requests_over, connection)
+      assert_same connection, authenticator.send(:connection)
+    end
+
+    def test_the_connection_is_private
+      %i[connection token_requests_over].each { |name| refute_respond_to @authenticator, name }
     end
 
     def test_inspect_hides_the_credentials
@@ -47,7 +53,7 @@ module X
       requests = []
       connection = Minitest::Mock.new
       connection.expect(:perform, Net::HTTP.post(URI(AppOnlyAuthenticator::TOKEN_URL), "")) { |request:| requests << request }
-      authenticator = AppOnlyAuthenticator.new(api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET, connection:)
+      authenticator = AppOnlyAuthenticator.new(api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET).send(:token_requests_over, connection)
 
       assert_equal TEST_BEARER_TOKEN, authenticator.send(:bearer_token)
       assert_instance_of Net::HTTP::Post, requests.first

@@ -69,16 +69,10 @@ module X
     #   session[:code_verifier] = authorization.code_verifier
     attr_reader :code_verifier
 
-    # The connection that exchanges the authorization code for tokens
-    # @api public
-    # @return [Connection] the connection
-    # @example Get the connection
-    #   authorization.connection
-    attr_reader :connection
-
     # Initialize an authorization
     #
-    # A new state and code verifier are generated unless they are given.
+    # A new state and code verifier are generated unless they are given. The authorization code is exchanged for
+    # tokens with the proxy, timeouts, and debug output given, which a client built with {#client} is given too.
     #
     # @api public
     # @param client_id [String] the OAuth 2.0 client ID of the app
@@ -87,14 +81,20 @@ module X
     # @param scopes [Array<String>] the scopes to ask the user for; offline.access keeps a refresh token
     # @param state [String] the state, as stored when the user was sent to X
     # @param code_verifier [String] the PKCE code verifier, as stored when the user was sent to X
-    # @param connection [Connection] the connection that exchanges the authorization code for tokens
+    # @param proxy_url [String, URI::Generic, nil] the proxy URL for the token request
+    # @param open_timeout [Integer, Float] the timeout for opening connections in seconds
+    # @param read_timeout [Integer, Float] the timeout for reading responses in seconds
+    # @param write_timeout [Integer, Float] the timeout for writing requests in seconds
+    # @param debug_output [IO, #<<, nil] the IO object for debug output, or anything else that takes a String with <<,
+    #   such as a StringIO or a Logger
     # @return [OAuth2Authorization] a new authorization
     # @raise [ArgumentError] if the state is nil or empty, which would accept the redirect of any authorization
     # @raise [ArgumentError] if the code verifier is not 43 to 128 unreserved characters
     # @example Start an authorization
     #   authorization = X::OAuth2Authorization.new(client_id: "id", redirect_uri: "https://example.com/callback")
     def initialize(client_id:, redirect_uri:, client_secret: nil, scopes: DEFAULT_SCOPES, state: SecureRandom.urlsafe_base64(STATE_BYTES),
-      code_verifier: SimpleOAuth::OAuth2::PKCE.generate.verifier, connection: Connection.new)
+      code_verifier: SimpleOAuth::OAuth2::PKCE.generate.verifier, proxy_url: nil, open_timeout: Client::DEFAULT_OPEN_TIMEOUT,
+      read_timeout: Client::DEFAULT_READ_TIMEOUT, write_timeout: Client::DEFAULT_WRITE_TIMEOUT, debug_output: nil)
       raise ArgumentError, "state must not be nil or empty; pass the state stored when the user was sent to X" if state.to_s.empty?
 
       @client_id = client_id
@@ -104,7 +104,8 @@ module X
       @state = state
       @pkce = SimpleOAuth::OAuth2::PKCE.new(verifier: code_verifier)
       @code_verifier = code_verifier
-      @connection = connection
+      @settings = {proxy_url:, open_timeout:, read_timeout:, write_timeout:, debug_output:}
+      @connection = Core::Connection.new(**@settings)
     end
 
     # Summarize the authorization for the console without revealing its secrets
@@ -153,7 +154,8 @@ module X
     #
     # @api public
     # @param callback [String, Hash] the redirect back from X: its URL, its query string, or its query parameters
-    # @param options [Hash] other options of Client#initialize, such as on_token_refresh
+    # @param options [Hash] other options of Client#initialize, such as on_token_refresh, which it is built with
+    #   beside the proxy, timeouts, and debug output of the authorization, and in place of them
     # @return [Client] a client with the user's credentials
     # @raise [AuthorizationError] if the user denied the app, the state does not match, X refuses the code, or the
     #   redirect is not a valid URL
@@ -161,7 +163,7 @@ module X
     # @example Act for the user who authorized the app
     #   client = authorization.client(request.url, on_token_refresh: ->(tokens) { store.save(tokens.refresh_token) })
     def client(callback, **options)
-      Client.new(**credentials(callback), **options)
+      Client.new(**credentials(callback), **@settings, **options)
     end
 
     private
@@ -174,6 +176,11 @@ module X
     # @api private
     # @return [String, nil] the client secret, or nil for a public client
     attr_reader :client_secret
+
+    # The connection that exchanges the authorization code for tokens
+    # @api private
+    # @return [Core::Connection] the connection
+    attr_reader :connection
 
     # The client for the authorization page and token endpoint
     # @api private

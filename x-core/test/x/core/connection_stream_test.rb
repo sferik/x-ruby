@@ -8,11 +8,11 @@ module X
   class ConnectionStreamTest < Minitest::Test
     include LocalServer
 
-    cover Connection
+    cover Core::Connection
     cover Core::StreamCallbackError
 
     def setup
-      @connection = Connection.new
+      @connection = Core::Connection.new
     end
 
     def test_perform_stream

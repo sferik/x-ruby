@@ -49,13 +49,24 @@ module X
     end
 
     def test_attributes
-      connection = Connection.new
       authorization = authorization(client_secret: TEST_CLIENT_SECRET, scopes: %w[users.read], state: "STATE",
-        code_verifier: CODE_VERIFIER, connection:)
+        code_verifier: CODE_VERIFIER)
 
       assert_equal [TEST_CLIENT_ID, REDIRECT_URI, %w[users.read], "STATE", CODE_VERIFIER],
         [authorization.client_id, authorization.redirect_uri, authorization.scopes, authorization.state, authorization.code_verifier]
-      assert_same connection, authorization.connection
+    end
+
+    def test_the_connection_is_built_with_the_settings_given
+      output = StringIO.new
+      connection = authorization(proxy_url: "http://proxy.example.com:8080", open_timeout: 1, read_timeout: 2, write_timeout: 3,
+        debug_output: output).send(:connection)
+
+      assert_equal ["http://proxy.example.com:8080", 1, 2, 3, output],
+        [connection.send(:proxy_url), connection.open_timeout, connection.read_timeout, connection.write_timeout, connection.debug_output]
+    end
+
+    def test_the_connection_is_private
+      refute_respond_to authorization, :connection
     end
 
     def test_the_client_secret_is_kept_private
@@ -70,7 +81,10 @@ module X
 
       assert_nil authorization.send(:client_secret)
       assert_equal OAuth2Authorization::DEFAULT_SCOPES, authorization.scopes
-      assert_instance_of Connection, authorization.connection
+      connection = authorization.send(:connection)
+
+      assert_equal [nil, Client::DEFAULT_OPEN_TIMEOUT, Client::DEFAULT_READ_TIMEOUT, Client::DEFAULT_WRITE_TIMEOUT, nil],
+        [connection.send(:proxy_url), connection.open_timeout, connection.read_timeout, connection.write_timeout, connection.debug_output]
     end
 
     def test_a_nil_state_is_refused
@@ -145,10 +159,10 @@ module X
       response = Net::HTTPOK.new("1.1", "200", "OK")
       response.instance_variable_set(:@body, TOKENS.to_json)
       response.instance_variable_set(:@read, true)
-      connection = Connection.new
+      authorization = authorization()
       requests = []
-      connection.stub(:perform, ->(request:) { requests << request.body and response }) do
-        authorization(connection:).credentials("state=STATE&code=CODE")
+      authorization.send(:connection).stub(:perform, ->(request:) { requests << request.body and response }) do
+        authorization.credentials("state=STATE&code=CODE")
       end
 
       assert_equal ["#{TOKEN_BODY}&client_id=#{TEST_CLIENT_ID}"], requests
@@ -160,6 +174,20 @@ module X
 
       assert_instance_of OAuth2Authenticator, client.authenticator
       assert_equal ["ACCESS", "REFRESH", "https://api.x.com/3/"], [client.send(:access_token), client.send(:refresh_token), client.base_url]
+    end
+
+    def test_the_client_reaches_the_api_as_the_authorization_did
+      stub_token
+      client = authorization(proxy_url: "http://proxy.example.com:8080", read_timeout: 2).client("state=STATE&code=CODE")
+
+      assert_equal ["http://proxy.example.com:8080", 2, Client::DEFAULT_OPEN_TIMEOUT], [client.send(:proxy_url), client.read_timeout, client.open_timeout]
+    end
+
+    def test_the_options_of_the_client_replace_the_settings_of_the_authorization
+      stub_token
+      client = authorization(read_timeout: 2).client("state=STATE&code=CODE", read_timeout: 5)
+
+      assert_equal 5, client.read_timeout
     end
 
     def test_a_denied_authorization_raises

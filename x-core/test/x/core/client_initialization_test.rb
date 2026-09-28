@@ -95,9 +95,9 @@ module X
       client = Client.new
       connection = client.instance_variable_get(:@connection)
 
-      assert_equal Connection::DEFAULT_OPEN_TIMEOUT, connection.open_timeout
-      assert_equal Connection::DEFAULT_READ_TIMEOUT, connection.read_timeout
-      assert_equal Connection::DEFAULT_WRITE_TIMEOUT, connection.write_timeout
+      assert_equal Core::Connection::DEFAULT_OPEN_TIMEOUT, connection.open_timeout
+      assert_equal Core::Connection::DEFAULT_READ_TIMEOUT, connection.read_timeout
+      assert_equal Core::Connection::DEFAULT_WRITE_TIMEOUT, connection.write_timeout
       assert_nil connection.debug_output
       assert_nil connection.send(:proxy_url)
     end

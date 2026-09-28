@@ -10,7 +10,7 @@ module X
     cover Core::RequestContext
     cover Core::ResponseParser
     cover Core::StreamParser
-    cover Connection
+    cover Core::Connection
     cover HTTPError
     cover InvalidResponse
     cover NetworkError

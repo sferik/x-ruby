@@ -365,6 +365,37 @@ module X
       private
       def incomplete?: (Hash[Symbol, String | Time | nil] credentials) -> bool
     end
+
+    class Connection
+      DEFAULT_OPEN_TIMEOUT: Integer
+      DEFAULT_READ_TIMEOUT: Integer
+      DEFAULT_WRITE_TIMEOUT: Integer
+      DEFAULT_KEEP_ALIVE_TIMEOUT: Integer
+
+      include ConnectionProxy
+      include ConnectionRequest
+      include ProxySetting
+
+      attr_reader open_timeout : Float | Integer
+      attr_reader read_timeout : Float | Integer
+      attr_reader write_timeout : Float | Integer
+      attr_reader keep_alive_timeout : Float | Integer
+      attr_reader debug_output : _DebugOutput?
+
+      def initialize: (?open_timeout: Float | Integer, ?read_timeout: Float | Integer, ?write_timeout: Float | Integer, ?keep_alive_timeout: Float | Integer, ?proxy_url: (URI::Generic | String)?, ?debug_output: _DebugOutput?) -> void
+      def inspect: () -> String
+      def perform: (request: Net::HTTPRequest) -> Net::HTTPResponse
+      def perform_stream: (request: Net::HTTPRequest) { (Net::HTTPResponse) -> void } -> void
+
+      @pool: ConnectionPool
+
+      def close: () -> void
+
+      private
+      def host_and_port: (URI::Generic uri) -> [String, Integer]
+      def build_http_client: (URI::Generic uri) -> Net::HTTP
+      def configure_http_client: (Net::HTTP http_client) -> Net::HTTP
+    end
   end
 
   class Authenticator
@@ -398,9 +429,9 @@ module X
     attr_reader scopes: Array[String]
     attr_reader state: String
     attr_reader code_verifier: String
-    attr_reader connection: Connection
+    @settings: {proxy_url: (URI::Generic | String)?, open_timeout: Float | Integer, read_timeout: Float | Integer, write_timeout: Float | Integer, debug_output: _DebugOutput?}
 
-    def initialize: (client_id: String, redirect_uri: String, ?client_secret: String?, ?scopes: Array[String], ?state: String, ?code_verifier: String, ?connection: Connection) -> void
+    def initialize: (client_id: String, redirect_uri: String, ?client_secret: String?, ?scopes: Array[String], ?state: String, ?code_verifier: String, ?proxy_url: (URI::Generic | String)?, ?open_timeout: Float | Integer, ?read_timeout: Float | Integer, ?write_timeout: Float | Integer, ?debug_output: _DebugOutput?) -> void
     def inspect: () -> String
     def url: () -> String
     def credentials: (String | Hash[String | Symbol, String] callback) -> Hash[Symbol, String | Time | nil]
@@ -408,6 +439,7 @@ module X
 
     private
     attr_reader client_secret: String?
+    attr_reader connection: Core::Connection
     def oauth2_client: () -> SimpleOAuth::OAuth2::Client
     def query_of: (String | Hash[String | Symbol, String] callback) -> (String | Hash[String | Symbol, String])
     def credentials_from: (SimpleOAuth::OAuth2::Token token) -> Hash[Symbol, String | Time | nil]
@@ -429,11 +461,12 @@ module X
     @mutex: Thread::Mutex
 
     attr_reader api_key: String
-    attr_reader connection: Connection
-    def initialize: (api_key: String, api_key_secret: String, ?bearer_token: String?, ?connection: Connection) -> void
+    def initialize: (api_key: String, api_key_secret: String, ?bearer_token: String?) -> void
     def header: (Net::HTTPRequest? request) -> Hash[String, String]
 
     private
+    attr_reader connection: Core::Connection
+    def token_requests_over: (Core::Connection connection) -> self
     def bearer_token: () -> String
     attr_reader api_key_secret: String
     def retrying_rejected_token: [T] (URI::Generic origin) { () -> T } -> T
@@ -610,37 +643,6 @@ module X
   class UnprocessableEntity < ClientError
   end
 
-  class Connection
-    DEFAULT_OPEN_TIMEOUT: Integer
-    DEFAULT_READ_TIMEOUT: Integer
-    DEFAULT_WRITE_TIMEOUT: Integer
-    DEFAULT_KEEP_ALIVE_TIMEOUT: Integer
-
-    include Core::ConnectionProxy
-    include Core::ConnectionRequest
-    include Core::ProxySetting
-
-    attr_reader open_timeout : Float | Integer
-    attr_reader read_timeout : Float | Integer
-    attr_reader write_timeout : Float | Integer
-    attr_reader keep_alive_timeout : Float | Integer
-    attr_reader debug_output : _DebugOutput?
-
-    def initialize: (?open_timeout: Float | Integer, ?read_timeout: Float | Integer, ?write_timeout: Float | Integer, ?keep_alive_timeout: Float | Integer, ?proxy_url: (URI::Generic | String)?, ?debug_output: _DebugOutput?) -> void
-    def inspect: () -> String
-    def perform: (request: Net::HTTPRequest) -> Net::HTTPResponse
-    def perform_stream: (request: Net::HTTPRequest) { (Net::HTTPResponse) -> void } -> void
-
-    @pool: Core::ConnectionPool
-
-    def close: () -> void
-
-    private
-    def host_and_port: (URI::Generic uri) -> [String, Integer]
-    def build_http_client: (URI::Generic uri) -> Net::HTTP
-    def configure_http_client: (Net::HTTP http_client) -> Net::HTTP
-  end
-
   # Where the requests and responses of a connection are written for debugging, as Net::HTTP writes them: an IO,
   # a StringIO, a Logger, or anything else that takes a String with <<
   interface _DebugOutput
@@ -712,7 +714,7 @@ module X
     type addable_rule = Hash[untyped, untyped] | String
     type rule = addable_rule | Integer
 
-    @connection: Connection
+    @connection: Core::Connection
     @reconnect_handler: Core::ReconnectHandler
     @request_builder: Core::RequestBuilder
     @response_parser: Core::ResponseParser
@@ -754,25 +756,26 @@ module X
     attr_reader access_token: String
     attr_reader refresh_token: String
     attr_reader expires_at: Time?
-    attr_reader connection: Connection
     @mutex: Thread::Mutex
     @reporter: Core::RefreshReporter
     @refreshed_at: Float?
-    def initialize: (client_id: String, access_token: String, refresh_token: String, ?client_secret: String?, ?expires_at: Time?, ?connection: Connection) -> void
+    def initialize: (client_id: String, access_token: String, refresh_token: String, ?client_secret: String?, ?expires_at: Time?) -> void
     def header: (Net::HTTPRequest? request) -> Hash[String, String]
     def inspect: () -> String
     def token_expired?: -> bool
     def refresh!: -> OAuth2Authenticator
 
     private
-    def refresh_expired_token: (Connection connection) -> void
-    def refresh_rejected_token!: (String rejected_token, Connection connection) -> bool
+    attr_reader connection: Core::Connection
+    def token_requests_over: (Core::Connection connection) -> self
+    def refresh_expired_token: (Core::Connection connection) -> void
+    def refresh_rejected_token!: (String rejected_token, Core::Connection connection) -> bool
     def holds?: (Hash[Symbol, untyped] options) -> bool
-    def retrying_rejected_token: [T] (URI::Generic origin, Connection connection) { () -> T } -> T
+    def retrying_rejected_token: [T] (URI::Generic origin, Core::Connection connection) { () -> T } -> T
     def update_expires_at: (Time? expires_at) -> void
     def report_refreshes_to: (^() -> Array[_TokenRefreshHook] hooks) -> ^() -> Array[_TokenRefreshHook]
     attr_reader client_secret: String?
-    def refresh: (Connection connection) -> OAuth2Tokens
+    def refresh: (Core::Connection connection) -> OAuth2Tokens
     def report_refresh: (OAuth2Tokens tokens) -> void
     def oauth2_client: -> SimpleOAuth::OAuth2::Client
     def update_tokens: (SimpleOAuth::OAuth2::Token token) -> void
@@ -846,13 +849,17 @@ module X
     DEFAULT_BASE_URL: String
     DEFAULT_ARRAY_CLASS: singleton(Array)
     DEFAULT_OBJECT_CLASS: singleton(Hash)
+    DEFAULT_OPEN_TIMEOUT: Integer
+    DEFAULT_READ_TIMEOUT: Integer
+    DEFAULT_WRITE_TIMEOUT: Integer
+    DEFAULT_KEEP_ALIVE_TIMEOUT: Integer
     DEFAULT_MAX_REDIRECTS: Integer
     DEFAULT_MAX_RATE_LIMIT_RETRIES: Integer
     DEFAULT_MAX_RATE_LIMIT_WAIT: Integer
     DEFAULT_MAX_RETRIES: Integer
     FORM_CONTENT_TYPE: String
     @authenticator: Authenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator
-    @connection: Connection
+    @connection: Core::Connection
     @request_builder: Core::RequestBuilder
     @redirect_handler: Core::RedirectHandler
     @rate_limit_handler: Core::RateLimitHandler

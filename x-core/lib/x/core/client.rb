@@ -47,6 +47,14 @@ module X
     DEFAULT_ARRAY_CLASS = Array
     # Default class for parsing JSON objects
     DEFAULT_OBJECT_CLASS = Hash
+    # Default timeout for opening connections in seconds
+    DEFAULT_OPEN_TIMEOUT = Core::Connection::DEFAULT_OPEN_TIMEOUT
+    # Default timeout for reading responses in seconds
+    DEFAULT_READ_TIMEOUT = Core::Connection::DEFAULT_READ_TIMEOUT
+    # Default timeout for writing requests in seconds
+    DEFAULT_WRITE_TIMEOUT = Core::Connection::DEFAULT_WRITE_TIMEOUT
+    # Default time to keep a connection open for the next request to the same host, in seconds
+    DEFAULT_KEEP_ALIVE_TIMEOUT = Core::Connection::DEFAULT_KEEP_ALIVE_TIMEOUT
     # Default maximum number of redirects to follow
     DEFAULT_MAX_REDIRECTS = Core::RedirectHandler::DEFAULT_MAX_REDIRECTS
     # Default maximum number of times to retry a request refused for a rate limit
@@ -141,10 +149,10 @@ module X
     def initialize(api_key: nil, api_key_secret: nil, access_token: nil, access_token_secret: nil,
       bearer_token: nil, client_id: nil, client_secret: nil, refresh_token: nil, expires_at: nil,
       base_url: DEFAULT_BASE_URL,
-      open_timeout: Connection::DEFAULT_OPEN_TIMEOUT,
-      read_timeout: Connection::DEFAULT_READ_TIMEOUT,
-      write_timeout: Connection::DEFAULT_WRITE_TIMEOUT,
-      keep_alive_timeout: Connection::DEFAULT_KEEP_ALIVE_TIMEOUT,
+      open_timeout: DEFAULT_OPEN_TIMEOUT,
+      read_timeout: DEFAULT_READ_TIMEOUT,
+      write_timeout: DEFAULT_WRITE_TIMEOUT,
+      keep_alive_timeout: DEFAULT_KEEP_ALIVE_TIMEOUT,
       debug_output: nil,
       proxy_url: nil,
       default_array_class: DEFAULT_ARRAY_CLASS,
@@ -157,7 +165,7 @@ module X
       on_response: nil,
       on_token_refresh: nil)
       @proxy_url = proxy_url
-      @connection = Connection.new(open_timeout:, read_timeout:, write_timeout:, keep_alive_timeout:, debug_output:, proxy_url:)
+      @connection = Core::Connection.new(open_timeout:, read_timeout:, write_timeout:, keep_alive_timeout:, debug_output:, proxy_url:)
       @app_only_monitor = Monitor.new
       @request_builder = Core::RequestBuilder.new
       @response_parser = Core::ResponseParser.new

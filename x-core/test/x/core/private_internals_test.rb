@@ -7,7 +7,7 @@ module X
   # protected methods, and would call a protected method public
   class PrivateInternalsTest < Minitest::Test
     def test_no_class_of_x_core_has_a_protected_method
-      [Client, StreamingClient, Connection, OAuth2Authenticator].each do |klass|
+      [Client, StreamingClient, Core::Connection, OAuth2Authenticator].each do |klass|
         assert_empty klass.protected_instance_methods, "Expected #{klass} to have no protected methods"
       end
     end

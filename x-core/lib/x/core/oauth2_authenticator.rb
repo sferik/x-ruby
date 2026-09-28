@@ -57,18 +57,6 @@ module X
     #   authenticator.expires_at
     attr_reader :expires_at
 
-    # The connection for making token requests
-    #
-    # refresh! sends its request over it, as does a request signed with the authenticator alone. A client refreshes
-    # over its own connection instead, so that the copies of a client that share its authenticator, but were given
-    # another proxy, other timeouts, or other debug output, refresh with those.
-    #
-    # @api public
-    # @return [Connection] the connection instance
-    # @example Get the connection
-    #   authenticator.connection
-    attr_reader :connection
-
     # Initialize a new OAuth 2.0 authenticator
     #
     # @api public
@@ -78,7 +66,6 @@ module X
     # @param access_token [String] the OAuth 2.0 access token
     # @param refresh_token [String] the OAuth 2.0 refresh token
     # @param expires_at [Time, nil] the expiration time of the access token
-    # @param connection [Connection] the connection for making token requests
     # @return [OAuth2Authenticator] a new authenticator instance
     # @example Create an authenticator
     #   authenticator = X::OAuth2Authenticator.new(
@@ -87,14 +74,13 @@ module X
     #     access_token: "token",
     #     refresh_token: "refresh"
     #   )
-    def initialize(client_id:, access_token:, refresh_token:, client_secret: nil, expires_at: nil,
-      connection: Connection.new)
+    def initialize(client_id:, access_token:, refresh_token:, client_secret: nil, expires_at: nil)
       @client_id = client_id
       @client_secret = client_secret
       @access_token = access_token
       @refresh_token = refresh_token
       @expires_at = expires_at
-      @connection = connection
+      @connection = Core::Connection.new
       @mutex = Mutex.new
       @reporter = Core::RefreshReporter.new
     end
@@ -161,9 +147,32 @@ module X
     #   client_secret
     attr_reader :client_secret
 
+    # The connection for making token requests
+    #
+    # refresh! sends its request over it, as does a request signed with the authenticator alone. A client refreshes
+    # over its own connection instead, so that the copies of a client that share its authenticator, but were given
+    # another proxy, other timeouts, or other debug output, refresh with those.
+    #
+    # @api private
+    # @return [Core::Connection] the connection
+    attr_reader :connection
+
+    # Send the token requests of the authenticator over a connection
+    #
+    # Internal to x-core: a client refreshes the tokens of the authenticator it builds over its own connection, with
+    # its proxy, timeouts, and debug output, and calls it with __send__, since it is private.
+    #
+    # @api private
+    # @param connection [Core::Connection] the connection to send the token requests over
+    # @return [OAuth2Authenticator] the authenticator
+    def token_requests_over(connection)
+      @connection = connection
+      self
+    end
+
     # Refresh the access token if it has expired, over a connection
     # @api private
-    # @param connection [Connection] the connection to send the refresh over
+    # @param connection [Core::Connection] the connection to send the refresh over
     # @return [void]
     # @raise [AuthorizationError] if X refuses to refresh the token
     # @raise [TooManyRequests, ServerError] if the token endpoint limits the rate of the request or fails to answer
@@ -181,7 +190,7 @@ module X
     #
     # @api private
     # @param rejected_token [String] the access token the API rejected
-    # @param connection [Connection] the connection to send the refresh over
+    # @param connection [Core::Connection] the connection to send the refresh over
     # @return [Boolean] true if the access token is no longer the one rejected
     # @raise [AuthorizationError] if X refuses to refresh the token
     # @raise [TooManyRequests, ServerError] if the token endpoint limits the rate of the request or fails to answer
@@ -210,7 +219,7 @@ module X
     #
     # @api private
     # @param origin [URI::Generic] a URI of the origin the token is sent to, such as the base URL of a client
-    # @param connection [Connection] the connection to send a refresh over
+    # @param connection [Core::Connection] the connection to send a refresh over
     # @yield runs the request
     # @return [Object] what the block returns
     # @raise [Unauthorized] if the request is rejected again, or by another origin, or a refresh does not replace
@@ -267,7 +276,7 @@ module X
 
     # Refresh the access token, holding the lock
     # @api private
-    # @param connection [Connection] the connection to send the refresh over
+    # @param connection [Core::Connection] the connection to send the refresh over
     # @return [OAuth2Tokens] the tokens the refresh issued, once the authenticator holds them
     # @raise [AuthorizationError] if X refuses to refresh the token
     # @raise [TooManyRequests, ServerError] if the token endpoint limits the rate of the request or fails to answer

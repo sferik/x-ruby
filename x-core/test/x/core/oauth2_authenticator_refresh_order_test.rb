@@ -17,8 +17,8 @@ module X
 
     def test_a_refresh_another_replaced_before_it_was_reported_is_not_reported
       authenticator = oauth2_authenticator_reporting_to(->(tokens) { @stored << tokens.refresh_token })
-      first = authenticator.__send__(:refresh, authenticator.connection)
-      second = authenticator.__send__(:refresh, authenticator.connection)
+      first = authenticator.__send__(:refresh, authenticator.send(:connection))
+      second = authenticator.__send__(:refresh, authenticator.send(:connection))
       authenticator.__send__(:report_refresh, second)
       authenticator.__send__(:report_refresh, first)
 

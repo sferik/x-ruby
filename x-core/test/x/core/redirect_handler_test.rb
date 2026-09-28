@@ -7,7 +7,7 @@ module X
     cover Core::RedirectHandler
 
     def setup
-      @connection = Connection.new
+      @connection = Core::Connection.new
       @request_builder = Core::RequestBuilder.new
       @redirect_handler = Core::RedirectHandler.new(connection: @connection, request_builder: @request_builder)
     end
@@ -21,7 +21,7 @@ module X
     def test_initialize_with_defaults
       redirect_handler = Core::RedirectHandler.new
 
-      assert_instance_of Connection, redirect_handler.connection
+      assert_instance_of Core::Connection, redirect_handler.connection
       assert_instance_of Core::RequestBuilder, redirect_handler.request_builder
     end
 
@@ -268,7 +268,7 @@ module X
     cover Core::RedirectHandler
 
     def setup
-      @connection = Connection.new
+      @connection = Core::Connection.new
       @request_builder = Core::RequestBuilder.new
       @redirect_handler = Core::RedirectHandler.new(connection: @connection, request_builder: @request_builder)
     end

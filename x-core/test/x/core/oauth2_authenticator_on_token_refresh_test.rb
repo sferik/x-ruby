@@ -34,12 +34,12 @@ module X
     end
 
     def test_refresh_rejected_token_passes_a_refresh_to_on_token_refresh
-      assert authenticator.send(:refresh_rejected_token!, TEST_ACCESS_TOKEN, authenticator.connection)
+      assert authenticator.send(:refresh_rejected_token!, TEST_ACCESS_TOKEN, authenticator.send(:connection))
       assert_equal ["NEW_ACCESS_TOKEN"], @refreshed
     end
 
     def test_refresh_rejected_token_without_a_refresh_leaves_on_token_refresh_alone
-      assert authenticator.send(:refresh_rejected_token!, "OLDER_ACCESS_TOKEN", authenticator.connection)
+      assert authenticator.send(:refresh_rejected_token!, "OLDER_ACCESS_TOKEN", authenticator.send(:connection))
       assert_empty @refreshed
     end
 
@@ -57,9 +57,9 @@ module X
     def test_on_token_refresh_can_refresh_a_rejected_token
       replaced = []
       authenticator = nil #: OAuth2Authenticator?
-      authenticator = oauth2_authenticator_reporting_to(->(_) { replaced << authenticator&.send(:refresh_rejected_token!, TEST_ACCESS_TOKEN, Connection.new) })
+      authenticator = oauth2_authenticator_reporting_to(->(_) { replaced << authenticator&.send(:refresh_rejected_token!, TEST_ACCESS_TOKEN, Core::Connection.new) })
 
-      assert authenticator.send(:refresh_rejected_token!, TEST_ACCESS_TOKEN, authenticator.connection)
+      assert authenticator.send(:refresh_rejected_token!, TEST_ACCESS_TOKEN, authenticator.send(:connection))
       assert_equal [true], replaced
       assert_requested @refresh, times: 1
     end

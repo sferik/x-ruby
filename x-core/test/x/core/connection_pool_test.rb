@@ -195,12 +195,12 @@ module X
   end
 
   class ConnectionKeepAliveTest < Minitest::Test
-    cover Connection
+    cover Core::Connection
     cover Core::ConnectionRequest
 
     def setup
       stub_request(:get, "https://example.com/")
-      @connection = Connection.new
+      @connection = Core::Connection.new
     end
 
     def perform(connection = @connection) = connection.perform(request: Net::HTTP::Get.new(URI("https://example.com/")))
@@ -231,7 +231,7 @@ module X
     end
 
     def test_a_reused_connection_keeps_the_timeouts_it_was_opened_with
-      connection = Connection.new(open_timeout: 6, read_timeout: 5, write_timeout: 7)
+      connection = Core::Connection.new(open_timeout: 6, read_timeout: 5, write_timeout: 7)
       clients = opened(connection) { 2.times { perform(connection) } }
 
       assert_equal 1, clients.size

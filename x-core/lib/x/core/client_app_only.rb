@@ -67,7 +67,7 @@ module X
       def app_bearer_token
         key = api_key #: String
         secret = api_key_secret #: String
-        bearer_token || AppOnlyAuthenticator.new(api_key: key, api_key_secret: secret, connection: @connection).__send__(:bearer_token)
+        bearer_token || AppOnlyAuthenticator.new(api_key: key, api_key_secret: secret).__send__(:token_requests_over, @connection).__send__(:bearer_token)
       end
     end
   end

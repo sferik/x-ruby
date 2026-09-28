@@ -107,7 +107,8 @@ module X
       # @return [OAuth2Authenticator] the OAuth 2.0 authenticator
       def new_oauth2_authenticator(client_id:, access_token:, refresh_token:)
         clients = @token_refresh_clients = ObjectSpace::WeakMap.new.tap { |registry| registry[self] = true }
-        OAuth2Authenticator.new(client_id:, client_secret: @client_secret, access_token:, refresh_token:, expires_at: @expires_at, connection: @connection).tap do |authenticator|
+        OAuth2Authenticator.new(client_id:, client_secret: @client_secret, access_token:, refresh_token:, expires_at: @expires_at).tap do |authenticator|
+          authenticator.__send__(:token_requests_over, @connection)
           authenticator.__send__(:report_refreshes_to, -> { clients.keys.filter_map(&:on_token_refresh).uniq })
         end
       end
