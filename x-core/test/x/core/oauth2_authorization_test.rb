@@ -168,28 +168,6 @@ module X
       assert_equal ["#{TOKEN_BODY}&client_id=#{TEST_CLIENT_ID}"], requests
     end
 
-    def test_client_acts_for_the_user
-      stub_token
-      client = authorization.client("state=STATE&code=CODE", base_url: "https://api.x.com/3/")
-
-      assert_instance_of OAuth2Authenticator, client.authenticator
-      assert_equal ["ACCESS", "REFRESH", "https://api.x.com/3/"], [client.send(:access_token), client.send(:refresh_token), client.base_url]
-    end
-
-    def test_the_client_reaches_the_api_as_the_authorization_did
-      stub_token
-      client = authorization(proxy_url: "http://proxy.example.com:8080", read_timeout: 2).client("state=STATE&code=CODE")
-
-      assert_equal ["http://proxy.example.com:8080", 2, Client::DEFAULT_OPEN_TIMEOUT], [client.send(:proxy_url), client.read_timeout, client.open_timeout]
-    end
-
-    def test_the_options_of_the_client_replace_the_settings_of_the_authorization
-      stub_token
-      client = authorization(read_timeout: 2).client("state=STATE&code=CODE", read_timeout: 5)
-
-      assert_equal 5, client.read_timeout
-    end
-
     def test_a_denied_authorization_raises
       error = assert_raises(AuthorizationError) do
         authorization.credentials("error=access_denied&error_description=The+user+denied+the+request&state=STATE")
@@ -236,6 +214,74 @@ module X
       stub_request(:post, "https://api.x.com/2/oauth2/token").to_return(status: 502, body: "")
 
       assert_raises(BadGateway) { authorization.credentials("state=STATE&code=CODE") }
+    end
+  end
+
+  class OAuth2AuthorizationClientTest < Minitest::Test
+    cover OAuth2Authorization
+
+    REDIRECT_URI = "https://example.com/callback"
+    CODE_VERIFIER = ("a" * 43).freeze
+    TOKENS = {token_type: "bearer", access_token: "ACCESS", refresh_token: "REFRESH", expires_in: 7200}.freeze
+
+    def authorization(**options)
+      OAuth2Authorization.new(client_id: TEST_CLIENT_ID, redirect_uri: REDIRECT_URI, state: "STATE", code_verifier: CODE_VERIFIER, **options)
+    end
+
+    def stub_token(body: TOKENS, status: 200)
+      stub_request(:post, "https://api.x.com/2/oauth2/token").to_return(status:, body: body.to_json)
+    end
+
+    def test_client_acts_for_the_user
+      stub_token
+      client = authorization.client("state=STATE&code=CODE", base_url: "https://api.x.com/3/")
+
+      assert_instance_of OAuth2Authenticator, client.authenticator
+      assert_equal ["ACCESS", "REFRESH", "https://api.x.com/3/"], [client.send(:access_token), client.send(:refresh_token), client.base_url]
+    end
+
+    def test_the_client_reaches_the_api_as_the_authorization_did
+      stub_token
+      client = authorization(proxy_url: "http://proxy.example.com:8080", read_timeout: 2).client("state=STATE&code=CODE")
+
+      assert_equal ["http://proxy.example.com:8080", 2, Client::DEFAULT_OPEN_TIMEOUT], [client.send(:proxy_url), client.read_timeout, client.open_timeout]
+    end
+
+    def test_the_options_of_the_client_replace_the_settings_of_the_authorization
+      stub_token
+      client = authorization(read_timeout: 2).client("state=STATE&code=CODE", read_timeout: 5)
+
+      assert_equal 5, client.read_timeout
+    end
+
+    def test_an_option_the_client_refuses_raises_before_the_code_is_exchanged
+      error = assert_raises(ArgumentError) { authorization.client("state=STATE&code=CODE", on_token_refersh: -> {}) }
+
+      assert_equal "unknown keyword: :on_token_refersh", error.message
+      assert_not_requested :post, "https://api.x.com/2/oauth2/token"
+    end
+
+    def test_a_setting_the_client_refuses_raises_before_the_code_is_exchanged
+      assert_raises(ArgumentError) { authorization.client("state=STATE&code=CODE", max_retries: -1) }
+
+      assert_not_requested :post, "https://api.x.com/2/oauth2/token"
+    end
+
+    def test_a_credential_given_to_the_client_raises_before_the_code_is_exchanged
+      %i[api_key api_key_secret access_token access_token_secret bearer_token client_id client_secret refresh_token
+        expires_at authenticator].each do |name|
+        error = assert_raises(ArgumentError) { authorization.client("state=STATE&code=CODE", name => nil, :base_url => "https://api.x.com/3/") }
+
+        assert_equal "The client of an authorization authenticates with the tokens X exchanges the code for, so it " \
+          "cannot be given #{name}", error.message
+      end
+      assert_not_requested :post, "https://api.x.com/2/oauth2/token"
+    end
+
+    def test_credentials_given_to_the_client_are_named_together
+      error = assert_raises(ArgumentError) { authorization.client("state=STATE&code=CODE", access_token: "A", refresh_token: "R") }
+
+      assert error.message.end_with?("cannot be given access_token, refresh_token")
     end
   end
 end

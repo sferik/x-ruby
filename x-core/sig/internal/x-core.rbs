@@ -446,6 +446,8 @@ module X
     STATE_BYTES: Integer
     DEFAULT_ERROR_MESSAGE: String
     INVALID_CALLBACK_MESSAGE: String
+    CREDENTIALS: Array[Symbol]
+    CREDENTIALS_GIVEN_MESSAGE: String
 
     @pkce: SimpleOAuth::OAuth2::PKCE
     @settings: {proxy_url: (URI::Generic | String)?, open_timeout: (Float | Integer)?, read_timeout: (Float | Integer)?, write_timeout: (Float | Integer)?, debug_output: _DebugOutput?}

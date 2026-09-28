@@ -33,6 +33,14 @@ module X
     # The message raised for a redirect back from X that is not a valid URL
     INVALID_CALLBACK_MESSAGE = "The redirect back from X is not a valid URL"
     private_constant :INVALID_CALLBACK_MESSAGE
+    # The options of Client#initialize that the exchange of the code gives the client of #client
+    CREDENTIALS = %i[api_key api_key_secret access_token access_token_secret bearer_token client_id client_secret
+      refresh_token expires_at authenticator].freeze
+    private_constant :CREDENTIALS
+    # The message raised for credentials given to #client, which the exchange of the code gives the client
+    CREDENTIALS_GIVEN_MESSAGE = "The client of an authorization authenticates with the tokens X exchanges the code " \
+      "for, so it cannot be given %s"
+    private_constant :CREDENTIALS_GIVEN_MESSAGE
 
     # The OAuth 2.0 client ID of the app
     # @api public
@@ -153,17 +161,27 @@ module X
 
     # Exchange the code of the redirect back from X for a client
     #
+    # The options are checked before the code is exchanged, since X accepts it once, so an option the client refuses,
+    # such as a misspelled keyword, raises before the code is spent rather than after, with the tokens it was
+    # exchanged for lost.
+    #
     # @api public
     # @param callback [String, Hash] the redirect back from X: its URL, its query string, or its query parameters
     # @param options [Hash] other options of Client#initialize, such as on_token_refresh, which it is built with
     #   beside the proxy, timeouts, and debug output of the authorization, and in place of them
     # @return [Client] a client with the user's credentials
+    # @raise [ArgumentError] if an option is one Client#initialize refuses, or a credential or an authenticator,
+    #   which the client is given by the exchange of the code
     # @raise [AuthorizationError] if the user denied the app, the state does not match, X refuses the code, or the
     #   redirect is not a valid URL
     # @raise [TooManyRequests, ServerError] if the token endpoint limits the rate of the request or fails to answer
     # @example Act for the user who authorized the app
     #   client = authorization.client(request.url, on_token_refresh: ->(tokens) { store.save(tokens.refresh_token) })
     def client(callback, **options) # steep:ignore DifferentMethodParameterKind
+      given = options.keys & CREDENTIALS
+      raise ArgumentError, format(CREDENTIALS_GIVEN_MESSAGE, given.join(", ")) unless given.empty?
+
+      Client.new(**options) # refuses an option before the code, which X accepts once, is spent
       Client.new(**credentials(callback), **@settings, **options)
     end
 
