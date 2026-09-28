@@ -57,7 +57,7 @@ module X
       copy = client.with(api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET)
 
       assert_same copy.authenticator, client.authenticator
-      assert_equal [true, true], client.instance_variable_get(:@token_refresh_clients).then { |clients| [clients[client], clients[copy]] }
+      assert_equal [true, true], client.authenticator.__send__(:clients).then { |clients| [clients[client], clients[copy]] }
     end
 
     def test_a_copy_with_another_oauth2_credential_builds_an_authenticator_of_its_own

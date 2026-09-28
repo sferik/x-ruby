@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative "authenticator"
+
 module X
   module Core
     # Checks that the credentials of a new client form complete sets
@@ -43,6 +45,16 @@ module X
       EMPTY_CREDENTIAL = "%s is empty. Pass the credential, or leave it out, since an empty one authenticates nothing"
       private_constant :EMPTY_CREDENTIAL
 
+      # The message of the error raised for an authenticator that is not one
+      NOT_AN_AUTHENTICATOR = "authenticator must be an X::Authenticator, such as an X::OAuth2Authenticator, or nil, " \
+        "not a %s"
+      private_constant :NOT_AN_AUTHENTICATOR
+
+      # The message of the error raised for an authenticator given beside credentials
+      AUTHENTICATOR_AND_CREDENTIALS = "An authenticator holds the credentials it authenticates with, so it cannot be " \
+        "given beside %s. Pass the authenticator, or the credentials, and leave out the other"
+      private_constant :AUTHENTICATOR_AND_CREDENTIALS
+
       # Raise for an empty credential, or an expiration time that is not a Time
       #
       # An environment variable that is not set is often read as an empty String, as ENV.fetch("X_BEARER_TOKEN", "")
@@ -77,6 +89,29 @@ module X
       #   X::Core::CredentialValidator.validate_expires_at!(Time.now + 7200)
       def validate_expires_at!(expires_at)
         raise ArgumentError, INVALID_EXPIRES_AT unless expires_at.nil? || expires_at.is_a?(Time)
+      end
+
+      # Raise for an authenticator that is not one, or that is given beside credentials
+      #
+      # A client given an authenticator authenticates with it alone, so a credential given beside it, the expiration
+      # time of an OAuth 2.0 access token included, which an OAuth2Authenticator is built with, would go unused. The
+      # error names the class of something that is not an authenticator, rather than inspect it, since a Hash of
+      # credentials passed in its place would show them.
+      #
+      # @api private
+      # @param authenticator [Object] the authenticator, or nil for none
+      # @param credentials [Hash{Symbol => String, Time, nil}] the credentials, as Client#initialize accepts them
+      # @return [void]
+      # @raise [ArgumentError] if the authenticator is neither an Authenticator nor nil, or is given beside a
+      #   credential
+      # @example Check the authenticator of a client
+      #   X::Core::CredentialValidator.validate_authenticator!(authenticator, bearer_token: nil)
+      def validate_authenticator!(authenticator, credentials)
+        return if authenticator.nil?
+        raise ArgumentError, format(NOT_AN_AUTHENTICATOR, authenticator.class) unless authenticator.is_a?(Authenticator)
+
+        given = credentials.compact.keys
+        raise ArgumentError, format(AUTHENTICATOR_AND_CREDENTIALS, given.join(", ")) unless given.empty?
       end
 
       # Raise for credentials that do not form a complete set

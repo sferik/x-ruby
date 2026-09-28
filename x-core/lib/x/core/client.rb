@@ -78,6 +78,14 @@ module X
     private_constant :FORM_CONTENT_TYPE
 
     # The authenticator for API requests
+    #
+    # It is the one the client was given, or else the one it built of its credentials. A client sends the token
+    # requests of an authenticator that makes them, an AppOnlyAuthenticator or an OAuth2Authenticator, over its own
+    # connection, with its proxy, timeouts, and debug output, whether it built the authenticator or was given it; an
+    # authenticator given to several clients sends them over the connection of the first. The refreshes of an
+    # OAuth2Authenticator reach the on_token_refresh of each client that authenticates with it, and the expires_at of
+    # the client is the authenticator's.
+    #
     # @api public
     # @return [Authenticator] the authenticator instance
     # @example Check if the OAuth 2.0 token has expired
@@ -103,6 +111,8 @@ module X
     # @param client_secret [String, nil] the OAuth 2.0 client secret
     # @param refresh_token [String, nil] the OAuth 2.0 refresh token
     # @param expires_at [Time, nil] the time the OAuth 2.0 access token expires, after which a request refreshes it
+    # @param authenticator [Authenticator, nil] an authenticator to authenticate with in place of credentials, such as
+    #   an OAuth2Authenticator built elsewhere, or nil to build one of the credentials; see {#authenticator}
     # @param base_url [String] the base URL for API requests
     # @param open_timeout [Integer, Float, nil] the timeout for opening connections in seconds, or nil for none
     # @param read_timeout [Integer, Float, nil] the timeout for reading responses in seconds, or nil for none
@@ -142,6 +152,8 @@ module X
     # @raise [ArgumentError] if a credential is an empty String, as an environment variable that is not set is often
     #   read, which would send an Authorization header that authenticates nothing
     # @raise [ArgumentError] if expires_at is neither a Time nor nil
+    # @raise [ArgumentError] if an authenticator is given that is not an Authenticator, or beside credentials or
+    #   expires_at, which it would leave unused
     # @raise [ArgumentError] if a timeout is neither a finite number of seconds of at least 0 nor, for any but
     #   keep_alive_timeout, nil, or if a maximum is not a count or a number of seconds of at least 0
     # @example Create a client with bearer token authentication
@@ -151,6 +163,9 @@ module X
     #     expires_at: Time.now + 7200, on_token_refresh: ->(tokens) { store.save(tokens.refresh_token) })
     # @example Create a client with OAuth 1.0a authentication
     #   client = X::Client.new(api_key: "key", api_key_secret: "secret", access_token: "token", access_token_secret: "token_secret")
+    # @example Create a client that authenticates with an authenticator built elsewhere
+    #   client = X::Client.new(authenticator: X::OAuth2Authenticator.new(client_id: "id", access_token: "token",
+    #     refresh_token: "refresh", expires_at: Time.now + 7200), on_token_refresh: ->(tokens) { store.save(tokens) })
     # @example Create a client that fetches an app-only bearer token with the API key and secret
     #   client = X::Client.new(api_key: "key", api_key_secret: "secret")
     # @example Create a client that retries a rate-limited request up to three times
@@ -160,7 +175,7 @@ module X
     # @example Create a client that names the application in the User-Agent of every request
     #   client = X::Client.new(bearer_token: "your_bearer_token", headers: {"User-Agent" => "my-app/1.0"})
     def initialize(api_key: nil, api_key_secret: nil, access_token: nil, access_token_secret: nil,
-      bearer_token: nil, client_id: nil, client_secret: nil, refresh_token: nil, expires_at: nil,
+      bearer_token: nil, client_id: nil, client_secret: nil, refresh_token: nil, expires_at: nil, authenticator: nil,
       base_url: DEFAULT_BASE_URL,
       open_timeout: DEFAULT_OPEN_TIMEOUT,
       read_timeout: DEFAULT_READ_TIMEOUT,
@@ -184,7 +199,7 @@ module X
       @response_parser = Core::ResponseParser.new
       initialize_credentials(api_key:, api_key_secret:, access_token:, access_token_secret:, bearer_token:, client_id:, client_secret:, refresh_token:, expires_at:)
       @on_token_refresh = on_token_refresh
-      initialize_authenticator
+      initialize_authenticator(authenticator)
       Core::CredentialValidator.validate!(credentials)
       initialize_settings(base_url:, default_array_class:, default_object_class:, headers:, on_response:, max_redirects:, max_rate_limit_retries:, max_rate_limit_wait:, max_retries:)
     end
@@ -207,6 +222,9 @@ module X
     # it is built, so a refresh on another thread while it is built reaches it too. A refresh then passes the
     # tokens it issued to the on_token_refresh of each client that shares it, once for each distinct callable.
     #
+    # A copy of a client that was given its authenticator shares it, unless the copy is given a credential, which
+    # replaces it, or an authenticator of its own, which also replaces the credentials of a client that holds them.
+    #
     # @api public
     # @param options [Hash] the options to change, as accepted by initialize
     # @return [Client] a new client with the same credentials and settings, apart from the options given
@@ -214,8 +232,10 @@ module X
     #   v1_client = client.with(base_url: "https://api.x.com/1.1/")
     # @example Derive an app-only client from the API key and secret
     #   app_client = client.with(access_token: nil, access_token_secret: nil)
+    # @example Derive a client that authenticates with another authenticator
+    #   user_client = app_client.with(authenticator: X::OAuth2Authenticator.new(**stored_tokens))
     def with(**options) # steep:ignore DifferentMethodParameterKind
-      self.class.new(**credentials, **settings, **options).tap { |copy| copy.__send__(:share_authenticator, authenticator, @token_refresh_clients, options) }
+      self.class.new(**settings, **with_credentials(options)).tap { |copy| copy.__send__(:share_authenticator, authenticator, options) }
     end
 
     # Perform a GET request to the X API

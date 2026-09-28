@@ -82,15 +82,43 @@ module X
         @expires_at = expires_at
       end
 
-      # Build the authenticator of the first complete set of credentials held
+      # Take the authenticator the client was given, or build one of its credentials
       #
-      # A client that holds no complete set sends its requests without credentials.
+      # The authenticator built is the one of the first complete set of credentials held, and a client that holds no
+      # complete set sends its requests without credentials. An authenticator is refused beside credentials, which it
+      # would leave unused, before the client takes it.
       #
       # @api private
+      # @param given [Authenticator, nil] the authenticator the client was given, or nil to build one
       # @return [void]
-      def initialize_authenticator
-        @authenticator = oauth1_authenticator || oauth2_authenticator || app_only_authenticator || bearer_authenticator ||
-          Authenticator.new
+      # @raise [ArgumentError] if the authenticator is not an Authenticator, or is given beside credentials
+      def initialize_authenticator(given)
+        CredentialValidator.validate_authenticator!(given, credentials)
+        @given_authenticator = given
+        @authenticator = given ? take(given) : built_authenticator
+      end
+
+      # Build the authenticator of the first complete set of credentials held
+      # @api private
+      # @return [Authenticator] the authenticator, which sends no credentials when no set is complete
+      def built_authenticator
+        oauth1_authenticator || oauth2_authenticator || app_only_authenticator || bearer_authenticator || Authenticator.new
+      end
+
+      # The options of a copy of the client, beside the credentials it is built with
+      #
+      # An authenticator given to the copy replaces the credentials of the client, a credential given to it replaces
+      # the authenticator the client was given, and a copy given neither shares that authenticator. An expiration
+      # time is no credential, and is refused beside an authenticator, as it is when a client is built.
+      #
+      # @api private
+      # @param options [Hash{Symbol => Object}] the options the copy is given
+      # @return [Hash{Symbol => Object}] the options, beside the credentials or the authenticator the copy shares
+      def with_credentials(options)
+        given = @given_authenticator
+        return {authenticator: given, **options} if given && !options.keys.intersect?(credentials.except(:expires_at).keys)
+
+        options[:authenticator] ? options : {**credentials, **options}
       end
 
       # Build an OAuth 1.0a authenticator if credentials are available

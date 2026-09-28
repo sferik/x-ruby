@@ -207,9 +207,9 @@ module X
     def test_a_copy_joins_the_clients_that_share_the_authenticator
       client = Client.new(**test_oauth2_credentials)
       copy = client.with
-      clients = client.instance_variable_get(:@token_refresh_clients)
+      clients = client.authenticator.__send__(:clients)
 
-      assert_same clients, copy.instance_variable_get(:@token_refresh_clients)
+      assert_same clients, copy.authenticator.__send__(:clients)
       assert_equal [true, true], [clients[client], clients[copy]]
     end
 

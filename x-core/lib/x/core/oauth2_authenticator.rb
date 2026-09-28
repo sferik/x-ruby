@@ -83,6 +83,7 @@ module X
       @connection = Core::Connection.new
       @mutex = Mutex.new
       @reporter = Core::RefreshReporter.new
+      @clients = ObjectSpace::WeakMap.new
     end
 
     # Generate the authentication header, refreshing an expired token first
@@ -157,16 +158,32 @@ module X
     # @return [Core::Connection] the connection
     attr_reader :connection
 
-    # Send the token requests of the authenticator over a connection
+    # The clients that authenticate with the authenticator, held weakly
     #
-    # Internal to x-core: a client refreshes the tokens of the authenticator it builds over its own connection, with
-    # its proxy, timeouts, and debug output, and calls it with __send__, since it is private.
+    # Each refresh reaches the on_token_refresh of each of them. Internal to x-core: a client joins the clients of the
+    # authenticator it builds, shares with the client it was copied from, or is given, and reads them with __send__,
+    # since they are private.
+    #
+    # @api private
+    # @return [ObjectSpace::WeakMap] the clients, each held as a key
+    attr_reader :clients
+
+    # Send the token requests over the connection of the first client that takes it
+    #
+    # The authenticator is shared by the copies of the client that takes it, and may be given to other clients
+    # besides, so a client that takes it after the first leaves it sending them over the connection of the first,
+    # as a copy of a client leaves the authenticator of that client. Internal to x-core: a client sends the token
+    # requests of the authenticator it builds, or is given, over its own connection, with its proxy, timeouts, and
+    # debug output, and calls it with __send__, since it is private.
     #
     # @api private
     # @param connection [Core::Connection] the connection to send the token requests over
     # @return [OAuth2Authenticator] the authenticator
     def token_requests_over(connection)
-      @connection = connection
+      @mutex.synchronize do
+        @connection = connection unless @taken
+        @taken = true
+      end
       self
     end
 

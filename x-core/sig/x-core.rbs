@@ -222,7 +222,7 @@ module X
     module ClientTokenRefresh : _TokenRefreshHost
       @authenticator: Authenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator
       @connection: Connection
-      @token_refresh_clients: _ClientRegistry
+      @given_authenticator: Authenticator?
       @client_id: String?
       @client_secret: String?
       @access_token: String?
@@ -232,8 +232,11 @@ module X
       def expires_at: () -> Time?
 
       private
-      def share_authenticator: (Authenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator other, _ClientRegistry clients, Hash[Symbol, untyped] options) -> void
+      def share_authenticator: (Authenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator other, Hash[Symbol, untyped] options) -> void
+      def take: (Authenticator authenticator) -> Authenticator
+      def join: (OAuth2Authenticator authenticator) -> OAuth2Authenticator
       def oauth2_authenticator_in_use: () -> OAuth2Authenticator?
+      def oauth2_credentials_in_use: () -> OAuth2Authenticator?
       def oauth2_authenticator: -> OAuth2Authenticator?
       def access_token: () -> String?
       def refresh_token: () -> String?
@@ -285,6 +288,8 @@ module X
       def app_only_copy: () -> Client
       def build_app_only: () -> Client
       def app_bearer_token: () -> String
+      def app_credentials: () -> [String, String]?
+      def authenticator: () -> (Authenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator)
       def credentials: () -> { api_key: String?, api_key_secret: String?, access_token: String?, access_token_secret: String?, bearer_token: String?, client_id: String?, client_secret: String?, refresh_token: String?, expires_at: Time? }
       def api_key: () -> String?
       def api_key_secret: () -> String?
@@ -292,8 +297,8 @@ module X
     end
 
     module ClientCredentials : _CredentialHost
-      @token_refresh_clients: _ClientRegistry
       @connection: Connection
+      @given_authenticator: Authenticator?
 
       @authenticator: Authenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator
 
@@ -313,7 +318,10 @@ module X
       def refresh_token: () -> String?
       def credentials: () -> { api_key: String?, api_key_secret: String?, access_token: String?, access_token_secret: String?, bearer_token: String?, client_id: String?, client_secret: String?, refresh_token: String?, expires_at: Time? }
       def initialize_credentials: (api_key: String?, api_key_secret: String?, access_token: String?, access_token_secret: String?, bearer_token: String?, client_id: String?, client_secret: String?, refresh_token: String?, expires_at: Time?) -> void
-      def initialize_authenticator: () -> void
+      def initialize_authenticator: (Authenticator? given) -> void
+      def built_authenticator: () -> Authenticator
+      def with_credentials: (Hash[Symbol, untyped] options) -> Hash[Symbol, untyped]
+      def take: (Authenticator authenticator) -> Authenticator
       def oauth1_authenticator: -> OAuth1Authenticator?
       def bearer_authenticator: -> BearerTokenAuthenticator?
       def app_only_authenticator: -> AppOnlyAuthenticator?
@@ -362,11 +370,14 @@ module X
       INCOMPLETE_CREDENTIALS: String
       INVALID_EXPIRES_AT: String
       EMPTY_CREDENTIAL: String
+      NOT_AN_AUTHENTICATOR: String
+      AUTHENTICATOR_AND_CREDENTIALS: String
       CREDENTIAL_SETS: Array[Array[Symbol]]
       extend CredentialValidator
 
       def validate_values!: (Hash[Symbol, String | Time | nil] credentials) -> void
       def validate_expires_at!: (untyped expires_at) -> void
+      def validate_authenticator!: (untyped authenticator, Hash[Symbol, String | Time | nil] credentials) -> void
       def validate!: (Hash[Symbol, String | Time | nil] credentials) -> void
 
       private
@@ -467,6 +478,7 @@ module X
 
     @bearer_token: String?
     @mutex: Thread::Mutex
+    @taken: bool
 
     attr_reader api_key: String
     def initialize: (api_key: String, api_key_secret: String, ?bearer_token: String?) -> void
@@ -767,6 +779,7 @@ module X
     @mutex: Thread::Mutex
     @reporter: Core::RefreshReporter
     @refreshed_at: Float?
+    @taken: bool
     def initialize: (client_id: String, access_token: String, refresh_token: String, ?client_secret: String?, ?expires_at: Time?) -> void
     def header: (Net::HTTPRequest? request) -> Hash[String, String]
     def inspect: () -> String
@@ -775,6 +788,7 @@ module X
 
     private
     attr_reader connection: Core::Connection
+    attr_reader clients: _ClientRegistry
     def token_requests_over: (Core::Connection connection) -> self
     def refresh_expired_token: (Core::Connection connection) -> void
     def refresh_rejected_token!: (String rejected_token, Core::Connection connection) -> bool
@@ -882,7 +896,7 @@ module X
     @rate_limit_handler: Core::RateLimitHandler
     @retry_handler: Core::RetryHandler
     @response_parser: Core::ResponseParser
-    @token_refresh_clients: _ClientRegistry
+    @given_authenticator: Authenticator?
     @client_id: String?
     @client_secret: String?
     @access_token: String?
@@ -891,9 +905,9 @@ module X
 
     attr_reader on_token_refresh: _TokenRefreshHook?
     attr_reader authenticator: Authenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator
-    def initialize: (?api_key: String?, ?api_key_secret: String?, ?access_token: String?, ?access_token_secret: String?, ?bearer_token: String?, ?client_id: String?, ?client_secret: String?, ?refresh_token: String?, ?expires_at: Time?, ?base_url: String, ?open_timeout: (Float | Integer)?, ?read_timeout: (Float | Integer)?, ?write_timeout: (Float | Integer)?, ?keep_alive_timeout: Float | Integer, ?debug_output: _DebugOutput?, ?proxy_url: (URI::Generic | String)?, ?default_array_class: Class, ?default_object_class: object_class, ?headers: headers, ?max_redirects: Integer, ?max_rate_limit_retries: Integer, ?max_rate_limit_wait: Float | Integer, ?max_retries: Integer, ?on_response: _ResponseHook?, ?on_token_refresh: _TokenRefreshHook?) -> void
+    def initialize: (?api_key: String?, ?api_key_secret: String?, ?access_token: String?, ?access_token_secret: String?, ?bearer_token: String?, ?client_id: String?, ?client_secret: String?, ?refresh_token: String?, ?expires_at: Time?, ?authenticator: Authenticator?, ?base_url: String, ?open_timeout: (Float | Integer)?, ?read_timeout: (Float | Integer)?, ?write_timeout: (Float | Integer)?, ?keep_alive_timeout: Float | Integer, ?debug_output: _DebugOutput?, ?proxy_url: (URI::Generic | String)?, ?default_array_class: Class, ?default_object_class: object_class, ?headers: headers, ?max_redirects: Integer, ?max_rate_limit_retries: Integer, ?max_rate_limit_wait: Float | Integer, ?max_retries: Integer, ?on_response: _ResponseHook?, ?on_token_refresh: _TokenRefreshHook?) -> void
     def inspect: () -> String
-    def with: (?api_key: String?, ?api_key_secret: String?, ?access_token: String?, ?access_token_secret: String?, ?bearer_token: String?, ?client_id: String?, ?client_secret: String?, ?refresh_token: String?, ?expires_at: Time?, ?base_url: String, ?open_timeout: (Float | Integer)?, ?read_timeout: (Float | Integer)?, ?write_timeout: (Float | Integer)?, ?keep_alive_timeout: Float | Integer, ?debug_output: _DebugOutput?, ?proxy_url: (URI::Generic | String)?, ?default_array_class: Class, ?default_object_class: object_class, ?headers: headers, ?max_redirects: Integer, ?max_rate_limit_retries: Integer, ?max_rate_limit_wait: Float | Integer, ?max_retries: Integer, ?on_response: _ResponseHook?, ?on_token_refresh: _TokenRefreshHook?) -> Client
+    def with: (?api_key: String?, ?api_key_secret: String?, ?access_token: String?, ?access_token_secret: String?, ?bearer_token: String?, ?client_id: String?, ?client_secret: String?, ?refresh_token: String?, ?expires_at: Time?, ?authenticator: Authenticator?, ?base_url: String, ?open_timeout: (Float | Integer)?, ?read_timeout: (Float | Integer)?, ?write_timeout: (Float | Integer)?, ?keep_alive_timeout: Float | Integer, ?debug_output: _DebugOutput?, ?proxy_url: (URI::Generic | String)?, ?default_array_class: Class, ?default_object_class: object_class, ?headers: headers, ?max_redirects: Integer, ?max_rate_limit_retries: Integer, ?max_rate_limit_wait: Float | Integer, ?max_retries: Integer, ?on_response: _ResponseHook?, ?on_token_refresh: _TokenRefreshHook?) -> Client
     def get: (String endpoint, ?params: params?, ?headers: headers, ?array_class: Class, ?object_class: object_class) ?{ (Response) -> void } -> untyped
     def post: (String endpoint, ?body? body, ?params: params?, ?form: params?, ?headers: headers, ?array_class: Class, ?object_class: object_class) ?{ (Response) -> void } -> untyped
     def put: (String endpoint, ?body? body, ?params: params?, ?form: params?, ?headers: headers, ?array_class: Class, ?object_class: object_class) ?{ (Response) -> void } -> untyped

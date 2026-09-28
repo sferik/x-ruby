@@ -84,16 +84,21 @@ module X
     # @return [Core::Connection] the connection
     attr_reader :connection
 
-    # Fetch the bearer token over a connection
+    # Fetch the bearer token over the connection of the first client that takes it
     #
-    # Internal to x-core: a client fetches the token of the authenticator it builds over its own connection, with its
-    # proxy, timeouts, and debug output, and calls it with __send__, since it is private.
+    # A client that takes it after the first leaves it fetching over the connection of the first; see
+    # {OAuth2Authenticator}. Internal to x-core: a client fetches the token of the authenticator it builds, or is
+    # given, over its own connection, with its proxy, timeouts, and debug output, and calls it with __send__, since it
+    # is private.
     #
     # @api private
     # @param connection [Core::Connection] the connection to fetch the token over
     # @return [AppOnlyAuthenticator] the authenticator
     def token_requests_over(connection)
-      @connection = connection
+      @mutex.synchronize do
+        @connection = connection unless @taken
+        @taken = true
+      end
       self
     end
 

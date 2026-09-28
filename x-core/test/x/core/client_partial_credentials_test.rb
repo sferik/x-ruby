@@ -36,8 +36,7 @@ module X
     def authenticator_for(credentials)
       client = Client.new
       credentials.each { |name, value| client.instance_variable_set(:"@#{name}", value) }
-      client.send(:initialize_authenticator)
-      client.authenticator
+      client.send(:built_authenticator)
     end
   end
 end
