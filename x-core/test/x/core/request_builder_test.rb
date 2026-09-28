@@ -14,6 +14,23 @@ module X
       @uri = URI("http://example.com")
     end
 
+    def test_merge_headers_replaces_a_header_whose_name_differs_in_case_alone
+      assert_equal({"X-Trace" => "a", "user-agent" => "b"},
+        Core::RequestBuilder.merge_headers({"X-Trace" => "a", "User-Agent" => "x"}, {"user-agent" => "b"}))
+    end
+
+    def test_merge_headers_replaces_a_header_named_by_a_symbol
+      assert_equal({"User-Agent" => "b"}, Core::RequestBuilder.merge_headers({"user-agent": "x"}, {"User-Agent" => "b"}))
+    end
+
+    def test_merge_headers_replaces_a_header_with_one_named_by_a_symbol
+      assert_equal({"user-agent": "b"}, Core::RequestBuilder.merge_headers({"User-Agent" => "x"}, {"user-agent": "b"}))
+    end
+
+    def test_merge_headers_keeps_the_headers_that_are_not_overridden
+      assert_equal({"X-Trace" => "a", "X-Other" => "b"}, Core::RequestBuilder.merge_headers({"X-Trace" => "a"}, {"X-Other" => "b"}))
+    end
+
     def test_build_get_request
       expected = "OAuth oauth_consumer_key=\"TEST_API_KEY\", oauth_nonce=\"TEST_OAUTH_NONCE\", " \
                  "oauth_signature=\"YF2HnkQuY39Db8GywIJy%2BUfFxnc%3D\", oauth_signature_method=\"HMAC-SHA1\", " \

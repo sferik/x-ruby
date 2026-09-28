@@ -366,7 +366,7 @@ module X
     # @return [Net::HTTPRequest] the request
     def request_for(uri, headers)
       authenticator, headers = Core::Origin.credentials_for(from: URI(client.base_url), to: uri,
-        authenticator: app_client.authenticator, headers: client.headers.merge(headers))
+        authenticator: app_client.authenticator, headers: Core::RequestBuilder.merge_headers(client.headers, headers))
       @request_builder.build(http_method: :get, uri:, headers:, authenticator:)
     end
 

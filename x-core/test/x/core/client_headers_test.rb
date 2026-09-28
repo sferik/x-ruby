@@ -36,6 +36,28 @@ module X
       assert_requested :get, "https://api.x.com/2/users/me", headers: {"X-Trace" => "request"}
     end
 
+    def test_a_header_of_a_request_replaces_one_of_the_client_named_in_another_case
+      stub_request(:get, "https://api.x.com/2/users/me")
+      Client.new(headers: {"user-agent" => "client"}).get("users/me", headers: {"User-Agent" => "request"})
+
+      assert_requested :get, "https://api.x.com/2/users/me", headers: {"User-Agent" => "request"}
+    end
+
+    def test_a_header_of_the_client_replaces_a_default_of_the_gem_named_in_another_case
+      stub_request(:get, "https://api.x.com/2/users/me")
+      Client.new(headers: {"user-agent" => "my-app/1.0"}).get("users/me")
+
+      assert_requested :get, "https://api.x.com/2/users/me", headers: {"User-Agent" => "my-app/1.0"}
+    end
+
+    def test_the_form_content_type_is_sent_in_place_of_one_of_the_clients_headers_named_in_another_case
+      stub_request(:post, "https://api.x.com/2/settings")
+      Client.new(headers: {"content-type" => "application/json; charset=utf-8"}).post("settings", form: {lang: "en"})
+
+      assert_requested :post, "https://api.x.com/2/settings",
+        headers: {"Content-Type" => "application/x-www-form-urlencoded; charset=utf-8"}
+    end
+
     def test_the_form_content_type_is_sent_in_place_of_one_of_the_clients_headers
       stub_request(:post, "https://api.x.com/2/settings")
       Client.new(headers: {"Content-Type" => "application/json; charset=utf-8"}).post("settings", form: {lang: "en"})
@@ -71,6 +93,14 @@ module X
 
     def test_a_header_of_a_stream_replaces_one_of_the_client
       client = Client.new(bearer_token: TEST_BEARER_TOKEN, headers: {"X-Trace" => "client"})
+      stub_request(:get, "https://api.x.com/2/tweets/search/stream").to_return(body: "")
+      client.streaming(max_reconnects: 0).stream("tweets/search/stream", headers: {"X-Trace" => "stream"}) { |object| object }
+
+      assert_requested :get, "https://api.x.com/2/tweets/search/stream", headers: {"X-Trace" => "stream"}
+    end
+
+    def test_a_header_of_a_stream_replaces_one_of_the_client_named_in_another_case
+      client = Client.new(bearer_token: TEST_BEARER_TOKEN, headers: {"x-trace" => "client"})
       stub_request(:get, "https://api.x.com/2/tweets/search/stream").to_return(body: "")
       client.streaming(max_reconnects: 0).stream("tweets/search/stream", headers: {"X-Trace" => "stream"}) { |object| object }
 

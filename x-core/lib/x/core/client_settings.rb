@@ -111,10 +111,12 @@ module X
 
       # The headers of a request, the client's under the request's own
       #
+      # A header of the request is sent in place of one of the client whose name differs from it in case alone.
+      #
       # @api private
       # @param request_headers [Hash{String => String}] the headers passed to the request
       # @return [Hash{String => String}] the headers to send
-      def headers_for(request_headers) = headers.merge(request_headers)
+      def headers_for(request_headers) = RequestBuilder.merge_headers(headers, request_headers)
 
       # Pass a response to on_response and to the block of the request
       #

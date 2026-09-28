@@ -40,6 +40,21 @@ module X
       #   X::Core::RequestBuilder.idempotent?(:post) # => false
       def self.idempotent?(http_method) = IDEMPOTENT_METHODS.include?(http_method)
 
+      # Merge headers over others, as HTTP names them, without regard to case
+      #
+      # A header of overrides is sent in place of one of headers whose name differs from it in case alone, as
+      # "user-agent" is sent in place of "User-Agent", where Hash#merge would keep both and send whichever came last.
+      #
+      # @api private
+      # @param headers [Hash{String, Symbol => String}] the headers overridden
+      # @param overrides [Hash{String, Symbol => String}] the headers sent in place of those of the same name
+      # @return [Hash{String, Symbol => String}] the headers of both, those of overrides in place of the others
+      # @example Replace the User-Agent of a client with one named in lowercase
+      #   X::Core::RequestBuilder.merge_headers({"User-Agent" => "a"}, {"user-agent" => "b"}) # => {"user-agent" => "b"}
+      def self.merge_headers(headers, overrides)
+        headers.reject { |name, _| overrides.any? { |override, _| override.to_s.casecmp?(name.to_s) } }.merge(overrides)
+      end
+
       # Build an HTTP request
       #
       # @api private
@@ -102,7 +117,7 @@ module X
       # @return [void]
       def add_headers(request:, headers:, body:)
         defaults = body.nil? ? DEFAULT_HEADERS : DEFAULT_HEADERS.merge(BODY_HEADERS)
-        defaults.merge(headers).each do |key, value|
+        RequestBuilder.merge_headers(defaults, headers).each do |key, value|
           request[key] = value
         end
       end

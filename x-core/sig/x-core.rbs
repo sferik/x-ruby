@@ -85,6 +85,7 @@ module X
       IDEMPOTENT_METHODS: Array[Symbol]
 
       def self.idempotent?: (Symbol http_method) -> bool
+      def self.merge_headers: (headers headers, headers overrides) -> headers
       def build: (http_method: Symbol, uri: URI::Generic, ?body: String?, ?headers: headers, ?authenticator: Authenticator) -> (Net::HTTPRequest)
 
       private

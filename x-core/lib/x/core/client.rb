@@ -311,7 +311,7 @@ module X
     # @return [Object, nil] the parsed response body, or what an object_class that responds to from_response builds
     def execute_request(http_method, endpoint, body: nil, params: nil, form: nil, headers: {}, array_class: default_array_class, object_class: default_object_class, &block)
       uri = URI.join(base_url, endpoint_with(endpoint, params))
-      headers = {"Content-Type" => FORM_CONTENT_TYPE}.merge(headers) unless form.nil?
+      headers = Core::RequestBuilder.merge_headers({"Content-Type" => FORM_CONTENT_TYPE}, headers) unless form.nil?
       headers = headers_for(headers)
       @retry_handler.handle(idempotent: Core::RequestBuilder.idempotent?(http_method)) do
         @rate_limit_handler.handle do
