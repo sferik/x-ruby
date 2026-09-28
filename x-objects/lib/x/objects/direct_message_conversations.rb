@@ -28,7 +28,7 @@ module X
       # @example Start a group conversation with an image
       #   X::DirectMessage.create_group([alice, bob], client: client, media_ids: media)
       def create_group(users, text = nil, client:, media_ids: nil, **params)
-        body = {conversation_type: "Group", participant_ids: users.map { |user| Utils.id_of(user) }, message: message(text, params, media_ids)}
+        body = {conversation_type: "Group", participant_ids: users.map { |user| Utils.id_of(user, User) }, message: message(text, params, media_ids)}
         sent(client.post("dm_conversations", body, **Utils::JSON_CLASSES), client:)
       end
 

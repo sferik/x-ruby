@@ -71,7 +71,7 @@ module X
       def test_refuses_an_identifier_that_is_not_one
         error = assert_raises(ArgumentError) { User.new({"id" => "abc"}) }
 
-        assert_equal "\"abc\" is not an identifier: pass a resource, an Integer, or a String of digits", error.message
+        assert_equal "\"abc\" is not an identifier: pass X::User, an Integer, or a String of digits", error.message
         assert_raises(ArgumentError) { Space.new({"id" => "a/b"}) }
         assert_raises(ArgumentError) { Media.new({"media_key" => ""}) }
       end

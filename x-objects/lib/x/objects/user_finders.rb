@@ -87,7 +87,7 @@ module X
       # @example Look up many users by identifier, read as Strings
       #   X::User.find_all_by_id(ENV.fetch("USER_IDS").split(","), client: client)
       def find_all_by_id(ids, client:, concurrency: Finders::DEFAULT_CONCURRENCY, **params, &)
-        ids = ids.map { |id| Utils.id_of(id) }
+        ids = ids.map { |id| Utils.id_of(id, self) }
         in_order_of(lookup_in_batches(endpoint!, batch_key, ids, client:, concurrency:, **params, &), ids) #: Array[User]
       end
 
@@ -106,7 +106,7 @@ module X
       # @example Look up a user by an identifier read as a String
       #   X::User.find_by_id(ENV.fetch("USER_ID"), client: client)
       def find_by_id(id, client:, **params, &)
-        lookup("#{endpoint!}/#{Utils.id_of(id)}", client:, **params, &) #: User?
+        lookup("#{endpoint!}/#{Utils.id_of(id, self)}", client:, **params, &) #: User?
       end
 
       # Look up a user by identifier, which must exist
@@ -122,7 +122,7 @@ module X
       #   X::User.find_by_id!("7505382", client: client)
       def find_by_id!(id, client:, **params)
         problems = [] #: Array[Problem]
-        find_by_id(id, client:, **params) { |problem| problems << problem } || raise(MissingResource.new("Could not find #{self} #{Utils.id_of(id)}", problems:))
+        find_by_id(id, client:, **params) { |problem| problems << problem } || raise(MissingResource.new("Could not find #{self} #{Utils.id_of(id, self)}", problems:))
       end
 
       # Look up many users by username, in parallel batches, once each
@@ -223,7 +223,7 @@ module X
       # @param value [Integer, User, String] an identifier or user, or a username
       # @return [String] the identifier, or the username in lowercase after an at sign
       def key_of(value)
-        Utils.id?(value) ? Utils.id_of(value) : "@#{normalize(value)}"
+        Utils.id?(value) ? Utils.id_of(value, self) : "@#{normalize(value)}"
       end
 
       # A username without an at sign, in lowercase, since case does not matter

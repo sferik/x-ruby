@@ -97,10 +97,11 @@ module X
       # Build a resource from an identifier, or from a resource, without a request
       #
       # @api public
-      # @param id [String, Integer, Resource] the identifier, or a resource whose identifier is taken
+      # @param id [String, Integer, Resource] the identifier, or a resource of this class, whose identifier is taken
       # @param client [Object, nil] the client used to fetch the resource and its references
       # @return [Resource] a stub that hydrates to the full resource
-      # @raise [ArgumentError] if the identifier is not a number, for a resource whose identifiers are numbers
+      # @raise [ArgumentError] if the identifier is not a number, for a resource whose identifiers are numbers, or the
+      #   resource is of another class
       # @example Page through the followers of a user without looking the user up
       #   X::User.from_id(7505382, client: client).followers
       def from_id(id, client: nil) = from_id_in_batch(id, client:)
@@ -111,14 +112,15 @@ module X
       # Batch, which is internal too.
       #
       # @api private
-      # @param id [String, Integer, Resource] the identifier, or a resource whose identifier is taken
+      # @param id [String, Integer, Resource] the identifier, or a resource of this class, whose identifier is taken
       # @param client [Object, nil] the client used to fetch the resource and its references
       # @param batch [Objects::Batch, nil] the batch the stub hydrates with
       # @return [Resource] a stub that hydrates to the full resource
-      # @raise [ArgumentError] if the identifier is not a number, for a resource whose identifiers are numbers
+      # @raise [ArgumentError] if the identifier is not a number, for a resource whose identifiers are numbers, or the
+      #   resource is of another class
       # @example Build the stub of a page of followers
       #   X::User.__send__(:from_id_in_batch, 7505382, client: client, batch: batch)
-      def from_id_in_batch(id, client:, batch: nil) = build({id_key => Objects::Utils.id_from(id)}, client:, batch:)
+      def from_id_in_batch(id, client:, batch: nil) = build({id_key => Objects::Utils.id_from(id, self)}, client:, batch:)
 
       # Build a resource with the internals new keeps to itself
       #
@@ -432,7 +434,7 @@ module X
       value = attrs[key]
       raise ArgumentError, "#{self.class} requires #{key}" if value.nil?
 
-      Objects::Utils.id_of(value, raw: self.class.__send__(:id_type).eql?(:raw))
+      Objects::Utils.id_of(value, self.class)
     end
 
     # Fetch the full resource from the API, in the lookup of its batch if it has one

@@ -9,7 +9,7 @@ module X
     cover Objects::API::Lookups
     cover Objects::Finders
 
-    RAW_MESSAGE = "\"a/b?c=d\" is not an identifier: pass a resource, or a String of word characters"
+    RAW_MESSAGE = "\"a/b?c=d\" is not an identifier: pass X::Space, or a String of word characters"
 
     def setup
       @client = FakeClient.new
@@ -81,12 +81,12 @@ module X
     end
 
     def test_a_raw_identifier_of_word_characters_is_taken_as_it_is
-      assert_equal %w[1DXxyRYNejbKM 3_1880028106020515840 f29bbd03562e37d3 a], %w[1DXxyRYNejbKM 3_1880028106020515840 f29bbd03562e37d3 a].map { |id| Objects::Utils.id_of(id, raw: true) }
+      assert_equal %w[1DXxyRYNejbKM 3_1880028106020515840 f29bbd03562e37d3 a], %w[1DXxyRYNejbKM 3_1880028106020515840 f29bbd03562e37d3 a].map { |id| Objects::Utils.id_of(id, Space) }
     end
 
     def test_a_one_to_one_conversation_identifier_is_taken_as_it_is
-      assert_equal "1-2", Objects::Utils.id_of("1-2", raw: true)
-      assert_raises(ArgumentError) { Objects::Utils.id_of("a-2", raw: true) }
+      assert_equal "1-2", Objects::Utils.id_of("1-2", Space)
+      assert_raises(ArgumentError) { Objects::Utils.id_of("a-2", Space) }
     end
 
     def test_find_by_username_looks_a_number_up_as_a_username

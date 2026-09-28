@@ -31,32 +31,34 @@ module X
       # Look up a resource by identifier
       #
       # @api public
-      # @param id [String, Integer, Resource] the identifier
+      # @param id [String, Integer, Resource] the identifier, or a resource of this class
       # @param client [Object] the client used to make the request
       # @param params [Hash] query parameters merged over the default parameters; one that overrides a default field
       #   or expansion parameter builds resources that are not hydrated, so hydrate fetches the rest
       # @return [Resource, nil] the resource or nil if it was not found
+      # @raise [ArgumentError] if the identifier is not one, or is a resource of another class, before a request
       # @yieldparam problem [Problem] each problem the API reported, such as a resource that was not found
       # @example Look up a post by identifier
       #   X::Post.find(1234567890, client: client)
-      def find(id, client:, **params, &) = lookup("#{endpoint!}/#{Utils.id_of(id, raw: id_type.eql?(:raw))}", client:, **params, &)
+      def find(id, client:, **params, &) = lookup("#{endpoint!}/#{Utils.id_of(id, self)}", client:, **params, &)
 
       # Look up a resource by identifier, which must exist
       #
       # The error it raises names the identifier looked up, whether the identifier or a resource was given.
       #
       # @api public
-      # @param id [String, Integer, Resource] the identifier
+      # @param id [String, Integer, Resource] the identifier, or a resource of this class
       # @param client [Object] the client used to make the request
       # @param params [Hash] query parameters merged over the default parameters; one that overrides a default field
       #   or expansion parameter builds resources that are not hydrated, so hydrate fetches the rest
       # @return [Resource] the resource
+      # @raise [ArgumentError] if the identifier is not one, or is a resource of another class, before a request
       # @raise [MissingResource] if the resource was not found
       # @example Look up a post by identifier
       #   X::Post.find!(1234567890, client: client)
       def find!(id, client:, **params)
         problems = [] #: Array[Problem]
-        find(id, client:, **params) { |problem| problems << problem } || raise(MissingResource.new("Could not find #{self} #{Utils.id_from(id)}", problems:))
+        find(id, client:, **params) { |problem| problems << problem } || raise(MissingResource.new("Could not find #{self} #{Utils.id_from(id, self)}", problems:))
       end
 
       # Replace the resources that are not hydrated with the full resources
@@ -103,7 +105,7 @@ module X
       # the batches were answered in.
       #
       # @api public
-      # @param ids [Array<String, Integer, Resource>] the identifiers
+      # @param ids [Array<String, Integer, Resource>] the identifiers, or resources of this class
       # @param client [Object] the client used to make the requests
       # @param concurrency [Integer] the number of batches looked up at once, which must be at least one; each is a
       #   request of up to MAX_BATCH_SIZE identifiers, so a lower number spends a rate limit more slowly
@@ -111,6 +113,7 @@ module X
       #   or expansion parameter builds resources that are not hydrated, so hydrate fetches the rest
       # @return [Array<Resource>] the resources that were found, frozen
       # @raise [ArgumentError] if the concurrency is less than one
+      # @raise [ArgumentError] if an identifier is not one, or is a resource of another class, before a request
       # @raise [UnsupportedOperation] if the API offers no batch lookup of the resource, as it offers none for
       #   communities, lists, or direct message events, which are looked up one at a time, or no lookup at all, as it
       #   offers none for polls or places
@@ -123,7 +126,7 @@ module X
         path = endpoint!
         raise UnsupportedOperation, format(NO_BATCH_LOOKUP, self, ids.size) unless batchable?
 
-        ids = ids.map { |id| Utils.id_of(id, raw: id_type.eql?(:raw)) }
+        ids = ids.map { |id| Utils.id_of(id, self) }
         in_order_of(lookup_in_batches(path, batch_key, ids, client:, concurrency:, **params, &), ids)
       end
 

@@ -10,27 +10,27 @@ module X
     cover Objects::Relationships
     cover Objects::API::Actions::Relationships
 
-    MESSAGE = "\"sferik\" is not an identifier: pass a resource, an Integer, or a String of digits"
+    MESSAGE = "\"sferik\" is not an identifier: pass X::User, an Integer, or a String of digits"
 
     def setup
       @client = FakeClient.new
     end
 
     def test_an_identifier_of_digits
-      assert_equal %w[7505382 7505382 7505382], [7_505_382, "7505382", User.new({"id" => "7505382"})].map { |value| Objects::Utils.id_of(value) }
+      assert_equal %w[7505382 7505382 7505382], [7_505_382, "7505382", User.new({"id" => "7505382"})].map { |value| Objects::Utils.id_of(value, User) }
     end
 
     def test_a_value_that_is_not_a_number_is_refused
-      error = assert_raises(ArgumentError) { Objects::Utils.id_of("sferik") }
+      error = assert_raises(ArgumentError) { Objects::Utils.id_of("sferik", User) }
 
       assert_equal MESSAGE, error.message
-      assert_raises(ArgumentError) { Objects::Utils.id_of("12a") }
-      assert_raises(ArgumentError) { Objects::Utils.id_of("a12") }
-      assert_raises(ArgumentError) { Objects::Utils.id_of("") }
+      assert_raises(ArgumentError) { Objects::Utils.id_of("12a", User) }
+      assert_raises(ArgumentError) { Objects::Utils.id_of("a12", User) }
+      assert_raises(ArgumentError) { Objects::Utils.id_of("", User) }
     end
 
     def test_a_raw_identifier_is_taken_as_it_is
-      assert_equal "1DXxyRYNejbKM", Objects::Utils.id_of("1DXxyRYNejbKM", raw: true)
+      assert_equal "1DXxyRYNejbKM", Objects::Utils.id_of("1DXxyRYNejbKM", Space)
     end
 
     def test_from_id_refuses_a_username

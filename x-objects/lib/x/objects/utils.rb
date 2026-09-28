@@ -28,7 +28,10 @@ module X
 
       # The message of the error raised for something that is neither media nor the identifier of media
       NOT_MEDIA = "media is what an upload returned, media such as X::Media, or a media identifier, not %s"
-      private_constant :MEDIA_KEY, :NOT_MEDIA
+
+      # The message of the error raised for a resource of another class than the one an identifier was expected of
+      FOREIGN_RESOURCE = "%<given>s %<id>s is not %<expected>s: pass %<expected>s or its identifier"
+      private_constant :MEDIA_KEY, :NOT_MEDIA, :FOREIGN_RESOURCE
 
       extend self
 
@@ -93,32 +96,43 @@ module X
         query(defaults.merge(params))
       end
 
-      # Extract an identifier from a resource or a raw value
+      # Extract the identifier of a resource of a class from the resource or a raw value
       #
       # The identifiers of most resources are numbers, so a value that is not, such as a username, raises rather than
       # reach the API as an identifier it cannot be. The identifiers that are not numbers, such as those of spaces and
-      # media, are word characters, so anything else raises rather than reach the API as part of a path.
+      # media, are word characters, so anything else raises rather than reach the API as part of a path. A resource
+      # of another class raises too, since its identifier is one of another kind of resource, which the API would
+      # read as the identifier of a resource of this class, such as a list followed as though it were a user.
       #
       # @api private
       # @param value [#id, String, Integer] a resource or an identifier
-      # @param raw [Boolean] true for a resource whose identifiers are not numbers, such as a space
+      # @param klass [Class] the resource class the identifier is of
       # @return [String] the identifier
-      # @raise [ArgumentError] if the identifier is not a number, or is not word characters when raw
-      def id_of(value, raw: false)
-        id = id_from(value)
+      # @raise [ArgumentError] if the value is a resource of another class, or the identifier is not a number, or is
+      #   not word characters for a resource whose identifiers are not numbers, such as a space
+      def id_of(value, klass)
+        id = id_from(value, klass)
+        raw = klass.__send__(:id_type).eql?(:raw)
         return id if id.match?(raw ? RAW_ID : NUMERIC_ID)
 
-        raise ArgumentError, "#{value.inspect} is not an identifier: pass a resource, #{raw ? "or a String of word characters" : "an Integer, or a String of digits"}"
+        raise ArgumentError, "#{value.inspect} is not an identifier: pass #{klass}, #{raw ? "or a String of word characters" : "an Integer, or a String of digits"}"
       end
 
       # The identifier a value carries, read from a resource or taken as it is
       #
-      # The resource this builds checks the identifier when it is made, so this only reads one.
+      # The resource this builds checks the identifier when it is made, so this only reads one, and refuses a
+      # resource of another class, whose identifier is not one of this class.
       #
       # @api private
       # @param value [#id, String, Integer] a resource or an identifier
+      # @param klass [Class] the resource class the identifier is of
       # @return [String] the identifier
-      def id_from(value) = value.respond_to?(:id) ? value.id.to_s : value.to_s
+      # @raise [ArgumentError] if the value is a resource of another class
+      def id_from(value, klass)
+        raise ArgumentError, format(FOREIGN_RESOURCE, given: value.class, id: value.id, expected: klass) if value.is_a?(Resource) && !value.is_a?(klass)
+
+        value.respond_to?(:id) ? value.id.to_s : value.to_s
+      end
 
       # Normalize a username, dropping the at sign a handle is often written with
       #

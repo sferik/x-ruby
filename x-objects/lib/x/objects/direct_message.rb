@@ -82,7 +82,7 @@ module X
       # @example Print the conversation with a user
       #   X::DirectMessage.with(user, client: client).each { |message| puts message.text }
       def with(user, client:, **params)
-        path = "dm_conversations/with/#{Objects::Utils.id_of(user)}/dm_events"
+        path = "dm_conversations/with/#{Objects::Utils.id_of(user, User)}/dm_events"
         Cursor.new(self, path, client:, params: {max_results: MAX_RESULTS}.merge(params))
       end
 
@@ -103,7 +103,7 @@ module X
       # @example Send an image without text
       #   X::DirectMessage.create(user, client: client, media_ids: media)
       def create(user, text = nil, client:, media_ids: nil, **params)
-        path = "dm_conversations/with/#{Objects::Utils.id_of(user)}/messages"
+        path = "dm_conversations/with/#{Objects::Utils.id_of(user, User)}/messages"
         sent(client.post(path, message(text, params, media_ids), **Objects::Utils::JSON_CLASSES), client:)
       end
 
@@ -116,7 +116,7 @@ module X
       # @example Delete a direct message
       #   X::DirectMessage.delete("1234567890", client: client)
       def delete(message, client:)
-        body = client.delete("dm_events/#{Objects::Utils.id_of(message)}", **Objects::Utils::JSON_CLASSES)
+        body = client.delete("dm_events/#{Objects::Utils.id_of(message, self)}", **Objects::Utils::JSON_CLASSES)
         body.to_h.dig("data", "deleted").eql?(true)
       end
     end
@@ -236,7 +236,7 @@ module X
     # @return [Boolean] true if the user sent the message
     # @example Split messages into sent and received
     #   messages.partition { |message| message.from?(client.current_user!) }
-    def from?(user) = sender_id.to_s.eql?(Objects::Utils.id_of(user))
+    def from?(user) = sender_id.to_s.eql?(Objects::Utils.id_of(user, User))
 
     # Check whether the message belongs to a group conversation
     #
@@ -268,7 +268,7 @@ module X
       return if group?
       return sender unless from?(user)
 
-      user_id = Objects::Utils.id_of(user)
+      user_id = Objects::Utils.id_of(user, User)
       resolve(User, dm_conversation_id.to_s.split("-").find { |id| !id.eql?(user_id) }) #: User?
     end
 

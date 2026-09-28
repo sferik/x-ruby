@@ -53,7 +53,7 @@ module X
       # @example Delete a post
       #   X::Post.delete("1234567890", client: client)
       def delete(post, client:)
-        body = client.delete("tweets/#{Utils.id_of(post)}", **Utils::JSON_CLASSES)
+        body = client.delete("tweets/#{Utils.id_of(post, Post)}", **Utils::JSON_CLASSES)
         body.to_h.dig("data", "deleted").eql?(true)
       end
 
@@ -92,7 +92,7 @@ module X
       # @param client [Object] the client used to make the request
       # @return [Boolean, nil] whether the reply is hidden, as the response reports, or nil if it does not
       def change_visibility(post, hidden, client:)
-        client.put("tweets/#{Utils.id_of(post)}/hidden", {hidden:}, **Utils::JSON_CLASSES).to_h.dig("data", "hidden")
+        client.put("tweets/#{Utils.id_of(post, Post)}/hidden", {hidden:}, **Utils::JSON_CLASSES).to_h.dig("data", "hidden")
       end
 
       # The fields of a new post that refer to other posts, media, or a community
@@ -111,11 +111,11 @@ module X
       # @return [Hash{Symbol => Object}] the fields, without those given nil
       def referenced(params, reply_to:, quote:, media_ids:, community:)
         fields = {} #: Hash[Symbol, untyped]
-        fields[:reply] = merged(params, :reply, in_reply_to_tweet_id: Utils.id_of(reply_to)) unless reply_to.nil?
-        fields[:quote_tweet_id] = Utils.id_of(quote) unless quote.nil?
+        fields[:reply] = merged(params, :reply, in_reply_to_tweet_id: Utils.id_of(reply_to, Post)) unless reply_to.nil?
+        fields[:quote_tweet_id] = Utils.id_of(quote, Post) unless quote.nil?
         ids = Utils.media_ids_of(media_ids)
         fields[:media] = merged(params, :media, media_ids: ids) unless ids.empty?
-        fields[:community_id] = Utils.id_of(community) unless community.nil?
+        fields[:community_id] = Utils.id_of(community, Community) unless community.nil?
         fields
       end
 

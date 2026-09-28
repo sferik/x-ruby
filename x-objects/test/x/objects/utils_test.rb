@@ -87,19 +87,19 @@ module X
       end
 
       def test_id_of_resource
-        assert_equal "7505382", Utils.id_of(User.new({"id" => "7505382"}))
+        assert_equal "7505382", Utils.id_of(User.new({"id" => "7505382"}), User)
       end
 
       def test_id_of_object_with_integer_id
-        assert_equal "7505382", Utils.id_of(Struct.new(:id).new(7505382))
+        assert_equal "7505382", Utils.id_of(Struct.new(:id).new(7505382), User)
       end
 
       def test_id_of_integer
-        assert_equal "7505382", Utils.id_of(7505382)
+        assert_equal "7505382", Utils.id_of(7505382, User)
       end
 
       def test_id_of_string
-        assert_equal "7505382", Utils.id_of("7505382")
+        assert_equal "7505382", Utils.id_of("7505382", User)
       end
 
       def test_id_predicate_for_resource

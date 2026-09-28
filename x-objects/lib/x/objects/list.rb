@@ -80,7 +80,7 @@ module X
       # @example Rename a list and make it private
       #   X::List.update("1234567890", client: client, name: "Rubyists", private: true)
       def update(list, client:, **params)
-        body = client.put("lists/#{Objects::Utils.id_of(list)}", params, **Objects::Utils::JSON_CLASSES)
+        body = client.put("lists/#{Objects::Utils.id_of(list, self)}", params, **Objects::Utils::JSON_CLASSES)
         body.to_h.dig("data", "updated").eql?(true)
       end
 
@@ -93,7 +93,7 @@ module X
       # @example Delete a list
       #   X::List.delete("1234567890", client: client)
       def delete(list, client:)
-        body = client.delete("lists/#{Objects::Utils.id_of(list)}", **Objects::Utils::JSON_CLASSES)
+        body = client.delete("lists/#{Objects::Utils.id_of(list, self)}", **Objects::Utils::JSON_CLASSES)
         body.to_h.dig("data", "deleted").eql?(true)
       end
     end
@@ -216,9 +216,10 @@ module X
     # @example Check whether a user is on a list
     #   list.member?(user)
     def member?(user)
-      return members.stubs.include?(User.from_id(user)) unless fewer_memberships?(user)
+      member = User.from_id(user)
+      return members.stubs.include?(member) unless fewer_memberships?(user)
 
-      User.from_id(user, client: client!).list_memberships.stubs.include?(self)
+      User.from_id(member, client: client!).list_memberships.stubs.include?(self)
     end
 
     # The permalink of the list
@@ -245,7 +246,7 @@ module X
     # @example Add a member
     #   list.add_member(user)
     def add_member(user)
-      body = client!.post("lists/#{id}/members", {user_id: Objects::Utils.id_of(user)}, **Objects::Utils::JSON_CLASSES)
+      body = client!.post("lists/#{id}/members", {user_id: Objects::Utils.id_of(user, User)}, **Objects::Utils::JSON_CLASSES)
       body.to_h.dig("data", "is_member").eql?(true)
     end
 
@@ -257,7 +258,7 @@ module X
     # @example Remove a member
     #   list.remove_member(user)
     def remove_member(user)
-      body = client!.delete("lists/#{id}/members/#{Objects::Utils.id_of(user)}", **Objects::Utils::JSON_CLASSES)
+      body = client!.delete("lists/#{id}/members/#{Objects::Utils.id_of(user, User)}", **Objects::Utils::JSON_CLASSES)
       body.to_h.dig("data", "is_member").eql?(false)
     end
 
