@@ -5,7 +5,11 @@ require_relative "utils"
 module X
   module Objects
     # Creating and deleting posts, and hiding replies, as the authenticated user
-    # @api public
+    #
+    # Internal to x-objects: the methods it gives Post, such as X::Post.create, are public API, but the module is only
+    # how they are shared, and which classes extend or include it can change within 1.x.
+    #
+    # @api private
     module PostWrites
       # Create a post as the authenticated user
       #

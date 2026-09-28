@@ -7,7 +7,11 @@ require_relative "utils"
 module X
   module Objects
     # Class methods that look users up by identifier or username, and the authenticated user, extended into User
-    # @api public
+    #
+    # Internal to x-objects: the methods it gives User, such as X::User.find_by_username, are public API, but the module
+    # is only how they are shared, and which classes extend or include it can change within 1.x.
+    #
+    # @api private
     module UserFinders
       # Look up a user by identifier or username
       #

@@ -9,7 +9,10 @@ module X
     # ActiveSupport's Object#as_json would otherwise read the instance variables, which hold the client and so its
     # credentials, and loop for good once a reference has resolved.
     #
-    # @api public
+    # Internal to x-objects: the methods it gives a resource and X::Usage, such as to_json, are public API, but the
+    # module is only how they are shared, and which classes extend or include it can change within 1.x.
+    #
+    # @api private
     module Serialization
       # The attributes, as a JSON encoder and ActiveSupport read them
       #

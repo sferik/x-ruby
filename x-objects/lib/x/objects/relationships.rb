@@ -7,7 +7,11 @@ require_relative "utils"
 module X
   module Objects
     # Relationships with users, posts, and lists, changed as the authenticated user
-    # @api public
+    #
+    # Internal to x-objects: the methods it gives a user, such as follow, are public API, but the module is only how
+    # they are shared, and which classes extend or include it can change within 1.x.
+    #
+    # @api private
     module Relationships
       # Follow a user, acting as this user, which must be the authenticated user
       #

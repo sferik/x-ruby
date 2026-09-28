@@ -3,7 +3,11 @@
 module X
   module Objects
     # Equality and hashing by class and identifier, so the same resource fetched twice compares equal
-    # @api public
+    #
+    # Internal to x-objects: the methods it gives a resource, such as ==, are public API, but the module is only how
+    # they are shared, and which classes extend or include it can change within 1.x.
+    #
+    # @api private
     module Identity
       # Compare resources by class and identifier
       #

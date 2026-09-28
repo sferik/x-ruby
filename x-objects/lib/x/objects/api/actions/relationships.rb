@@ -7,7 +7,12 @@ module X
     module API
       module Actions
         # Follow, block, and mute users as the authenticated user
-        # @api public
+        #
+        # Internal to x-objects: X::Objects::API includes it, and its methods are public API of the client that
+        # includes API, but the module is only how they are grouped, and some of them need the methods of another,
+        # so include API rather than this module alone.
+        #
+        # @api private
         module Relationships
           # Follow a user as the authenticated user
           #

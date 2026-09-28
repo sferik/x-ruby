@@ -8,7 +8,11 @@ require_relative "utils"
 module X
   module Objects
     # Class methods that look resources up, extended into every resource class
-    # @api public
+    #
+    # Internal to x-objects: the methods it gives a resource class, such as X::Post.find, are public API, but the module
+    # is only how they are shared, and which classes extend or include it can change within 1.x.
+    #
+    # @api private
     module Finders
       # Maximum number of identifiers accepted by a batch lookup endpoint
       MAX_BATCH_SIZE = 100

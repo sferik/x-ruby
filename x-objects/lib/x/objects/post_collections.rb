@@ -3,7 +3,11 @@
 module X
   module Objects
     # The collections of a post: the users who liked and reposted it, and its reposts and quotes, included into Post
-    # @api public
+    #
+    # Internal to x-objects: the methods it gives a post, such as liked_by, are public API, but the module is only how
+    # they are shared, and which classes extend or include it can change within 1.x.
+    #
+    # @api private
     module PostCollections
       # The users who liked this post
       #

@@ -10,7 +10,10 @@ module X
     # The counts endpoints refuse OAuth 1.0a, so a client that signs with it counts with a copy that authenticates as
     # the app.
     #
-    # @api public
+    # Internal to x-objects: the methods it gives Post, such as X::Post.count, are public API, but the module is only
+    # how they are shared, and which classes extend or include it can change within 1.x.
+    #
+    # @api private
     module PostCounts
       # The endpoint that counts the posts from the last seven days
       RECENT_ENDPOINT = "tweets/counts/recent"

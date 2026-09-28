@@ -6,7 +6,11 @@ require_relative "utils"
 module X
   module Objects
     # Group conversations of direct messages: starting one, sending to one, and reading one, extended by DirectMessage
-    # @api public
+    #
+    # Internal to x-objects: the methods it gives DirectMessage, such as X::DirectMessage.create_group, are public API,
+    # but the module is only how they are shared, and which classes extend or include it can change within 1.x.
+    #
+    # @api private
     module DirectMessageConversations
       # The pattern of a conversation identifier: two user identifiers joined with a hyphen, or a group's own number
       CONVERSATION_ID = /\A\d+(-\d+)?\z/

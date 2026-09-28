@@ -7,7 +7,12 @@ module X
     module API
       module Lookups
         # Look up and search users, and the authenticated user, mixed into a client through API
-        # @api public
+        #
+        # Internal to x-objects: X::Objects::API includes it, and its methods are public API of the client that
+        # includes API, but the module is only how they are grouped, and some of them need the methods of another,
+        # so include API rather than this module alone.
+        #
+        # @api private
         module Users
           # Look up a user by identifier or username
           #

@@ -3,7 +3,11 @@
 module X
   module Objects
     # Resolves the posts a post refers to through its referenced_posts attribute
-    # @api public
+    #
+    # Internal to x-objects: the methods it gives a post, such as replied_to, are public API, but the module is only how
+    # they are shared, and which classes extend or include it can change within 1.x.
+    #
+    # @api private
     module References
       # Referenced post type for replies
       REPLIED_TO = "replied_to"
