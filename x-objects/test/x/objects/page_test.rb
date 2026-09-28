@@ -31,6 +31,11 @@ module X
       assert_equal @users, @page.each { |_user| nil }
     end
 
+    def test_the_class_publishes_no_delegation_methods
+      refute_respond_to Page, :def_delegator
+      refute_respond_to Page, :delegate
+    end
+
     def test_next_token
       assert_equal "abc", @page.next_token
       assert_nil Page.new([], {}).next_token

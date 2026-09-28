@@ -5,7 +5,6 @@ target :lib do
   signature "sig"
   signature "../x-core/sig/x-core.rbs"
   check "lib"
-  library "forwardable"
   library "json"
   library "monitor"
   library "net-http"

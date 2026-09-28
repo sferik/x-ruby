@@ -229,7 +229,6 @@ module X
   end
 
   class Page[R < Resource = Resource]
-    extend Forwardable
     include Enumerable[R]
 
     attr_reader items: Array[R]

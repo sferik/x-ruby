@@ -1,13 +1,11 @@
 # frozen_string_literal: true
 
-require "forwardable"
 require "json"
 
 module X
   # One page of results from a paginated endpoint
   # @api public
   class Page
-    extend Forwardable
     include Enumerable
 
     # The resources on this page
@@ -47,14 +45,14 @@ module X
       freeze
     end
 
-    # @!method each
-    #   Iterate over the resources on this page
-    #   @api public
-    #   @yield [Resource] each resource
-    #   @return [Enumerator, Array<Resource>] an enumerator without a block, otherwise the resources
-    #   @example Iterate over a page
-    #     page.each { |user| puts user.username }
-    def_delegator :items, :each
+    # Iterate over the resources on this page
+    #
+    # @api public
+    # @yield [Resource] each resource
+    # @return [Enumerator, Array<Resource>] an enumerator without a block, otherwise the resources
+    # @example Iterate over a page
+    #   page.each { |user| puts user.username }
+    def each(&) = items.each(&) # steep:ignore BlockTypeMismatch
 
     # The token used to fetch the next page
     #
