@@ -43,7 +43,8 @@ module X
       # @raise [Errno::ENOENT] if the file does not exist
       # @raise [ArgumentError] if the media is empty
       # @raise [ArgumentError] if the media category is invalid, the alt text is empty or too long, the chunk size is
-      #   not positive, the concurrency is less than one, or the processing timeout is not a number of seconds
+      #   not a positive, finite number, the concurrency is less than one, or the processing timeout is not a number of
+      #   seconds
       # @example Validate the arguments of an upload
       #   Uploader::Validator.validate_upload!(source, :TWEET_IMAGE, alt_text: nil, chunk_size_mb: nil, concurrency: 4,
       #     processing_timeout: 300) # => "tweet_image"
@@ -116,27 +117,31 @@ module X
       # Validate the chunk size and concurrency of a chunked upload
       #
       # Anything that is not a number, such as a String read from an environment variable, raises ArgumentError too,
-      # rather than NoMethodError from the check.
+      # rather than NoMethodError from the check, as does Float::INFINITY, which no chunk is the size of, rather than
+      # FloatDomainError once the chunk size is rounded to a whole byte.
       #
       # @api private
-      # @param chunk_size_mb [Float, Integer, nil] the size of each chunk in megabytes, which must be positive, or
-      #   nil for a chunk size derived from the file
+      # @param chunk_size_mb [Float, Integer, nil] the size of each chunk in megabytes, which must be positive and
+      #   finite, or nil for a chunk size derived from the file
       # @param concurrency [Integer] the number of chunks uploaded at once, which must be at least one
       # @return [void]
-      # @raise [ArgumentError] if the chunk size is not a positive number, or the concurrency is not an Integer of at
+      # @raise [ArgumentError] if the chunk size is not a positive, finite number, or the concurrency is not an Integer of at
       #   least one
       # @example Validate the options of a chunked upload
       #   Uploader::Validator.validate_chunks!(chunk_size_mb: 4, concurrency: 2)
       def validate_chunks!(chunk_size_mb:, concurrency:)
-        raise ArgumentError, "chunk_size_mb must be a positive number, not #{chunk_size_mb.inspect}" unless chunk_size_mb.nil? || positive_number?(chunk_size_mb)
+        raise ArgumentError, "chunk_size_mb must be a positive, finite number, not #{chunk_size_mb.inspect}" unless chunk_size_mb.nil? || positive_number?(chunk_size_mb)
         raise ArgumentError, "concurrency must be an Integer of at least 1, not #{concurrency.inspect}" unless concurrency.instance_of?(Integer) && concurrency.positive?
       end
 
-      # Check whether a value is a real number above zero
+      # Check whether a value is a finite real number above zero
+      #
+      # Float::INFINITY is not finite, and Float::NAN is neither finite nor above zero.
+      #
       # @api private
       # @param value [Object] the value
-      # @return [Boolean] true if the value is a positive real number
-      def positive_number?(value) = value.is_a?(Numeric) && value.real? && value.positive?
+      # @return [Boolean] true if the value is a positive, finite real number
+      def positive_number?(value) = value.is_a?(Numeric) && value.real? && value.positive? && value.finite?
 
       # Validate the seconds to wait for media to process
       #

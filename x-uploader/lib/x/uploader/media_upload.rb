@@ -118,8 +118,8 @@ module X
       # @raise [Errno::ENOENT] if the file does not exist
       # @raise [ArgumentError] if the media is empty, which holds nothing to upload
       # @raise [ArgumentError] if the media category is invalid, the alt text is empty or longer than the API takes,
-      #   the chunk size is not positive or would need more segments than the API numbers, the concurrency is less
-      #   than one, or the processing timeout is not a number of seconds of at least 0
+      #   the chunk size is not a positive, finite number or would need more segments than the API numbers, the
+      #   concurrency is less than one, or the processing timeout is not a number of seconds of at least 0
       # @raise [InvalidMediaType] if no media category is given for media that names no file and no signature names
       #   one, or if media uploaded in chunks is given no media type and none can be inferred
       # @raise [MissingMediaData] if a response of the upload holds no media, or carries no body at all
@@ -184,8 +184,8 @@ module X
       # @raise [ArgumentError] if the media is neither a path nor an IO
       # @raise [Errno::ENOENT] if the file does not exist
       # @raise [ArgumentError] if the media is empty, which holds nothing to upload
-      # @raise [ArgumentError] if the media category is invalid, the chunk size is not positive or would need more
-      #   segments than the API numbers, or the concurrency is less than one
+      # @raise [ArgumentError] if the media category is invalid, the chunk size is not a positive, finite number or
+      #   would need more segments than the API numbers, or the concurrency is less than one
       # @raise [InvalidMediaType] if no media type is given and none can be inferred
       # @raise [MissingMediaData] if the response that initializes the upload holds no media to append the chunks to, or
       #   the response that finalizes it holds no media or carries no body at all

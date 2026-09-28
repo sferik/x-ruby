@@ -62,7 +62,7 @@ module X
     def test_validate_chunks_raises_for_a_chunk_size_that_is_not_positive
       error = assert_raises(ArgumentError) { Uploader.const_get(:Validator).validate_chunks!(chunk_size_mb: 0, concurrency: 1) }
 
-      assert_equal "chunk_size_mb must be a positive number, not 0", error.message
+      assert_equal "chunk_size_mb must be a positive, finite number, not 0", error.message
       assert_raises(ArgumentError) { Uploader.const_get(:Validator).validate_chunks!(chunk_size_mb: -1, concurrency: 1) }
     end
 
@@ -82,7 +82,13 @@ module X
     def test_validate_chunks_raises_for_a_chunk_size_that_is_not_a_real_number
       messages = ["1", Complex(1, 0)].map { |chunk_size_mb| assert_raises(ArgumentError) { Uploader.const_get(:Validator).validate_chunks!(chunk_size_mb:, concurrency: 1) }.message }
 
-      assert_equal ['"1"', "(1+0i)"].map { |value| "chunk_size_mb must be a positive number, not #{value}" }, messages
+      assert_equal ['"1"', "(1+0i)"].map { |value| "chunk_size_mb must be a positive, finite number, not #{value}" }, messages
+    end
+
+    def test_validate_chunks_raises_for_a_chunk_size_that_is_not_finite
+      messages = [Float::INFINITY, Float::NAN].map { |chunk_size_mb| assert_raises(ArgumentError) { Uploader.const_get(:Validator).validate_chunks!(chunk_size_mb:, concurrency: 1) }.message }
+
+      assert_equal %w[Infinity NaN].map { |value| "chunk_size_mb must be a positive, finite number, not #{value}" }, messages
     end
 
     def test_validate_media_category

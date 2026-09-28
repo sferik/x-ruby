@@ -47,8 +47,16 @@ module X
       size = assert_raises(ArgumentError) { chunked_upload("test/sample_files/sample.mp4", chunk_size_mb: 0) }
       concurrency = assert_raises(ArgumentError) { chunked_upload("test/sample_files/sample.mp4", concurrency: 0) }
 
-      assert_equal "chunk_size_mb must be a positive number, not 0", size.message
+      assert_equal "chunk_size_mb must be a positive, finite number, not 0", size.message
       assert_equal "concurrency must be an Integer of at least 1, not 0", concurrency.message
+      assert_not_requested :post, "#{BASE_URL}/initialize"
+    end
+
+    def test_a_chunk_size_that_is_not_finite_uploads_nothing
+      [Float::INFINITY, Float::NAN].each do |chunk_size_mb|
+        assert_raises(ArgumentError) { upload("test/sample_files/sample.mp4", chunk_size_mb:) }
+        assert_raises(ArgumentError) { chunked_upload("test/sample_files/sample.mp4", chunk_size_mb:) }
+      end
       assert_not_requested :post, "#{BASE_URL}/initialize"
     end
 
