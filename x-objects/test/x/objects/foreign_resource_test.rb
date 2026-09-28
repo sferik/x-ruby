@@ -33,9 +33,29 @@ module X
       assert_equal "7", Objects::Utils.id_from(Class.new(User).new({"id" => "7"}), User)
     end
 
-    def test_an_object_that_is_not_a_resource_is_read_by_its_identifier
-      assert_equal "7", Objects::Utils.id_of(Struct.new(:id).new(7), Post)
-      assert_equal "7", Objects::Utils.id_from(Struct.new(:id).new(7), Post)
+    def test_an_object_that_is_not_a_resource_is_refused_though_it_answers_id
+      record = Struct.new(:id).new(7)
+      message = "#{record.inspect} is not an identifier: pass X::Post, an Integer, or a String of digits"
+
+      assert_equal message, assert_raises(ArgumentError) { Objects::Utils.id_of(record, Post) }.message
+      assert_equal message, assert_raises(ArgumentError) { Objects::Utils.id_from(record, Post) }.message
+    end
+
+    def test_an_identifier_of_a_subclass_of_string_is_taken
+      assert_equal "7", Objects::Utils.id_from(Class.new(String).new("7"), Post)
+    end
+
+    def test_an_object_that_is_not_a_resource_is_neither_a_raw_identifier_nor_taken_for_an_identifier
+      record = Struct.new(:id).new("1DX")
+
+      assert_equal "#{record.inspect} is not an identifier: pass X::Space, or a String of word characters", assert_raises(ArgumentError) { Objects::Utils.id_from(record, Space) }.message
+      refute Objects::Utils.id?(record)
+    end
+
+    def test_a_client_refuses_to_act_on_an_object_that_is_not_a_resource
+      record = Struct.new(:id).new(7)
+
+      assert_refused(-> { @client.find_post(record) }, -> { @client.find_user(record) }, -> { @client.find_all_users([record]) })
     end
 
     def test_a_lookup_refuses_a_resource_of_another_class
@@ -103,6 +123,13 @@ module X
 
     def test_the_actions_on_lists_refuse_another_resource
       assert_refused(%i[follow_list unfollow_list pin_list unpin_list update_list delete_list], @user)
+    end
+
+    def test_the_actions_refuse_an_object_that_is_not_a_resource_though_it_answers_id
+      record = Struct.new(:id).new(7)
+
+      assert_refused(%i[follow block mute], record)
+      assert_refused(%i[like repost bookmark delete_post], record)
     end
 
     def test_the_writes_of_a_post_refuse_a_resource_of_another_class

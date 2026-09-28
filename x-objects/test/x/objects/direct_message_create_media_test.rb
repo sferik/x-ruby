@@ -7,6 +7,7 @@ module X
     cover DirectMessage
     cover Objects::DirectMessageConversations
     cover Objects::Utils
+    cover Objects::MediaIds
 
     def setup
       @client = FakeClient.new

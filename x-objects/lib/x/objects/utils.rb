@@ -23,15 +23,9 @@ module X
       # may precede
       USERNAME = /\A@?\w{1,15}\z/
 
-      # The pattern of a media key, which names the media identifier after the number of its type and an underscore
-      MEDIA_KEY = /\A\d+_(\d+)\z/
-
-      # The message of the error raised for something that is neither media nor the identifier of media
-      NOT_MEDIA = "media is what an upload returned, media such as X::Media, or a media identifier, not %s"
-
       # The message of the error raised for a resource of another class than the one an identifier was expected of
       FOREIGN_RESOURCE = "%<given>s %<id>s is not %<expected>s: pass %<expected>s or its identifier"
-      private_constant :MEDIA_KEY, :NOT_MEDIA, :FOREIGN_RESOURCE
+      private_constant :FOREIGN_RESOURCE
 
       extend self
 
@@ -105,33 +99,49 @@ module X
       # read as the identifier of a resource of this class, such as a list followed as though it were a user.
       #
       # @api private
-      # @param value [#id, String, Integer] a resource or an identifier
+      # @param value [Resource, String, Integer] a resource or an identifier
       # @param klass [Class] the resource class the identifier is of
       # @return [String] the identifier
-      # @raise [ArgumentError] if the value is a resource of another class, or the identifier is not a number, or is
-      #   not word characters for a resource whose identifiers are not numbers, such as a space
+      # @raise [ArgumentError] if the value is a resource of another class, is neither a resource nor an identifier,
+      #   or the identifier is not a number, or is not word characters for a resource whose identifiers are not
+      #   numbers, such as a space
       def id_of(value, klass)
         id = id_from(value, klass)
-        raw = klass.__send__(:id_type).eql?(:raw)
-        return id if id.match?(raw ? RAW_ID : NUMERIC_ID)
+        return id if id.match?(klass.__send__(:id_type).eql?(:raw) ? RAW_ID : NUMERIC_ID)
 
-        raise ArgumentError, "#{value.inspect} is not an identifier: pass #{klass}, #{raw ? "or a String of word characters" : "an Integer, or a String of digits"}"
+        not_an_identifier(value, klass)
       end
 
       # The identifier a value carries, read from a resource or taken as it is
       #
       # The resource this builds checks the identifier when it is made, so this only reads one, and refuses a
-      # resource of another class, whose identifier is not one of this class.
+      # resource of another class, whose identifier is not one of this class. Anything else that answers id, such as a
+      # record of an application's database, is refused too, rather than send an identifier of its own to the API as
+      # one of X.
       #
       # @api private
-      # @param value [#id, String, Integer] a resource or an identifier
+      # @param value [Resource, String, Integer] a resource or an identifier
       # @param klass [Class] the resource class the identifier is of
       # @return [String] the identifier
-      # @raise [ArgumentError] if the value is a resource of another class
+      # @raise [ArgumentError] if the value is a resource of another class, or is neither a resource nor an identifier
       def id_from(value, klass)
-        raise ArgumentError, format(FOREIGN_RESOURCE, given: value.class, id: value.id, expected: klass) if value.is_a?(Resource) && !value.is_a?(klass)
+        return value.id.to_s if value.is_a?(klass)
+        return value.to_s if value.is_a?(String) || value.instance_of?(Integer)
+        raise ArgumentError, format(FOREIGN_RESOURCE, given: value.class, id: value.id, expected: klass) if value.is_a?(Resource)
 
-        value.respond_to?(:id) ? value.id.to_s : value.to_s
+        not_an_identifier(value, klass)
+      end
+
+      # Refuse a value that is not an identifier of a resource of a class
+      #
+      # @api private
+      # @param value [Object] the value
+      # @param klass [Class] the resource class the identifier is of
+      # @return [void]
+      # @raise [ArgumentError] always
+      def not_an_identifier(value, klass)
+        raw = klass.__send__(:id_type).eql?(:raw)
+        raise ArgumentError, "#{value.inspect} is not an identifier: pass #{klass}, #{raw ? "or a String of word characters" : "an Integer, or a String of digits"}"
       end
 
       # Normalize a username, dropping the at sign a handle is often written with
@@ -214,61 +224,16 @@ module X
         Integer(value.to_s, 10) unless value.nil?
       end
 
-      # Extract a media identifier from an upload, from media, or from a raw value
-      #
-      # What an upload returns is read with fetch, which a Hash answers and so does the uploaded media of
-      # x-uploader, which this gem does not depend on. Media, such as the media of a post, is read from its media
-      # key, which names the identifier.
-      #
-      # @api private
-      # @param value [#fetch, #media_key, String, Integer] what an upload returned, holding an id, media, or an
-      #   identifier
-      # @return [String] the media identifier
-      # @raise [ArgumentError] if the value is none of them
-      def media_id_of(value)
-        case value
-        when String, Integer then value.to_s
-        else value.respond_to?(:fetch) ? value.fetch("id").to_s : media_key_id(value)
-        end
-      end
-
-      # The media identifier a media key names
-      # @api private
-      # @param media [#media_key, Object] the media
-      # @return [String] the media identifier
-      # @raise [ArgumentError] if the media has no media key that names an identifier
-      def media_key_id(media)
-        key = media.media_key if media.respond_to?(:media_key)
-        key.to_s[MEDIA_KEY, 1] || raise(ArgumentError, format(NOT_MEDIA, media.inspect))
-      end
-
-      # The media identifiers of one upload or of several
-      #
-      # One upload needs no array around it, so a single value is read as a list of one, and nil, like an empty
-      # list, as none.
-      #
-      # @api private
-      # @param media_ids [Array, #fetch, Media, String, Integer, nil] what the uploads returned, media, or identifiers,
-      #   one or many
-      # @return [Array<String>] the media identifiers, empty for nil
-      def media_ids_of(media_ids)
-        case media_ids
-        when nil then []
-        when Array then media_ids.map { |media| media_id_of(media) }
-        else [media_id_of(media_ids)]
-        end
-      end
-
       # Check whether a value identifies a resource rather than naming one
       #
       # An Integer is an identifier and a String is a name, such as a username, so that an
       # account whose username is all digits is looked up as the name it is.
       #
       # @api private
-      # @param value [#id, String, Integer] a resource, an identifier, or a username
+      # @param value [Resource, String, Integer] a resource, an identifier, or a username
       # @return [Boolean] true if the value is a resource or an Integer identifier
       def id?(value)
-        value.respond_to?(:id) || value.instance_of?(Integer)
+        value.is_a?(Resource) || value.instance_of?(Integer)
       end
 
       # Read a value of a response, which must be what the API documents it to be

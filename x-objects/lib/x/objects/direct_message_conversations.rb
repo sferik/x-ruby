@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative "cursor"
+require_relative "media_ids"
 require_relative "utils"
 
 module X
@@ -106,7 +107,7 @@ module X
         raise ArgumentError, "pass media_ids or attachments, not both" if !media_ids.nil? && params.key?(:attachments)
 
         fields = {text:, **params}.compact
-        attachments = Utils.media_ids_of(media_ids).map { |media_id| {media_id:} }
+        attachments = MediaIds.media_ids_of(media_ids).map { |media_id| {media_id:} }
         fields[:attachments] = attachments unless attachments.empty?
         raise ArgumentError, "a direct message needs text, or something else to show, such as media_ids" if fields.empty?
 

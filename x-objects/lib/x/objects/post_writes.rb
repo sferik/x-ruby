@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require_relative "media_ids"
 require_relative "utils"
 
 module X
@@ -117,7 +118,7 @@ module X
         fields = {} #: Hash[Symbol, untyped]
         fields[:reply] = merged(params, :reply, in_reply_to_tweet_id: Utils.id_of(reply_to, Post)) unless reply_to.nil?
         fields[:quote_tweet_id] = Utils.id_of(quote, Post) unless quote.nil?
-        ids = Utils.media_ids_of(media_ids)
+        ids = MediaIds.media_ids_of(media_ids)
         fields[:media] = merged(params, :media, media_ids: ids) unless ids.empty?
         fields[:community_id] = Utils.id_of(community, Community) unless community.nil?
         fields

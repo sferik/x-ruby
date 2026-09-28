@@ -90,8 +90,8 @@ module X
         assert_equal "7505382", Utils.id_of(User.new({"id" => "7505382"}), User)
       end
 
-      def test_id_of_object_with_integer_id
-        assert_equal "7505382", Utils.id_of(Struct.new(:id).new(7505382), User)
+      def test_id_of_object_with_integer_id_that_is_not_a_resource
+        assert_raises(ArgumentError) { Utils.id_of(Struct.new(:id).new(7505382), User) }
       end
 
       def test_id_of_integer

@@ -39,8 +39,6 @@ module X
       NUMERIC_ID: Regexp
       RAW_ID: Regexp
       USERNAME: Regexp
-      MEDIA_KEY: Regexp
-      NOT_MEDIA: String
       FOREIGN_RESOURCE: String
 
       def deep_freeze: (untyped value) -> untyped
@@ -50,11 +48,9 @@ module X
       def merge_params: (params defaults, params params) -> query
       def id_of: (untyped value, Class klass) -> String
       def id_from: (untyped value, Class klass) -> String
-      def media_ids_of: (untyped media_ids) -> Array[String]
+      def not_an_identifier: (untyped value, Class klass) -> bot
       def username: (untyped value) -> String
       def username!: (untyped value) -> String
-      def media_id_of: (untyped value) -> String
-      def media_key_id: (untyped media) -> String
       def integer: (String | Integer | nil value) -> Integer?
       def authenticated_user_id: (untyped client) -> Integer?
       def app_client: (untyped client) -> untyped
@@ -63,6 +59,17 @@ module X
       def id?: (untyped value) -> bool
       def time: (String? value) -> Time?
       def read: [T] (String name, untyped value) { (untyped value) -> T } -> T
+    end
+
+    module MediaIds
+      extend MediaIds
+
+      MEDIA_KEY: Regexp
+      NOT_MEDIA: String
+
+      def media_ids_of: (untyped media_ids) -> Array[String]
+      def media_id_of: (untyped value) -> String
+      def media_key_id: (untyped media) -> String
     end
 
     module Shape
