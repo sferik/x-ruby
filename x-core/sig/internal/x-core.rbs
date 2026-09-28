@@ -601,6 +601,7 @@ module X
     def rule_to_add: (addable_rule rule) -> Hash[untyped, untyped]
     def identifier_of: (rule rule) -> (String | Integer)?
     def value_of: (rule rule) -> String
+    def open_stream: (URI::Generic uri, headers headers, array_class: Class, object_class: object_class) { (untyped) -> void } -> void
     def app_client: () -> Client
     def request_for: (URI::Generic uri, headers headers) -> Net::HTTPRequest
     def report: (URI::Generic uri, Net::HTTPResponse response, String? body) -> void

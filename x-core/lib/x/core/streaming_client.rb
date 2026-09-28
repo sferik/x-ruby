@@ -143,8 +143,10 @@ module X
     # The stream endpoints take app-only authentication, so a client that authenticates as a user streams with the
     # bearer token its app_only client holds. A client that authenticates with OAuth 2.0 as a user and holds neither
     # the app's bearer token nor its API key and secret raises UnsupportedOperation before it connects, rather than
-    # open a stream X would refuse with 403 Forbidden. A
-    # stream that drops reconnects, backing off as X recommends, up to max_reconnects times in a row. The API bills
+    # open a stream X would refuse with 403 Forbidden. A bearer token X rejects with 401 Unauthorized, as it does one
+    # that was invalidated, is fetched again with the API key and secret the app_only client holds, as it is for a
+    # request, and the stream is opened once more with it. A stream that drops reconnects, backing off as X
+    # recommends, up to max_reconnects times in a row. The API bills
     # each object a stream delivers, so the client's on_response receives each one, as well as a failed response.
     #
     # A stream runs until its block stops it: break out of the block to stop the stream and return a value, throw to
@@ -175,11 +177,7 @@ module X
 
       uri = URI.join(client.base_url, endpoint_with(endpoint, params))
       @reconnect_handler.handle(block) do |deliver|
-        request = request_for(uri, headers)
-        @connection.perform_stream(request:) do |response|
-          @stream_parser.process(response:, response_parser: @response_parser, array_class:, object_class:, client:,
-            on_body: ->(body = nil) { report(uri, response, body) }, request:, &deliver)
-        end
+        app_client.__send__(:refreshing_rejected_token) { open_stream(uri, headers, array_class:, object_class:, &deliver) }
       end
     end
 
@@ -361,6 +359,22 @@ module X
       hash["value"] || hash[:value] || raise(ArgumentError, format(NOT_A_RULE, rule.inspect))
     end
 
+    # Open a stream once, and deliver each object it sends until it ends
+    # @api private
+    # @param uri [URI::Generic] the URI of the stream
+    # @param headers [Hash] the headers of the stream, beside those of the client
+    # @param array_class [Class] the class for parsing JSON arrays
+    # @param object_class [Class, #from_response] the class for parsing JSON objects
+    # @yield [Hash, Array] each parsed JSON object from the stream
+    # @return [void]
+    def open_stream(uri, headers, array_class:, object_class:, &)
+      request = request_for(uri, headers)
+      @connection.perform_stream(request:) do |response|
+        @stream_parser.process(response:, response_parser: @response_parser, array_class:, object_class:, client:,
+          on_body: ->(body = nil) { report(uri, response, body) }, request:, &)
+      end
+    end
+
     # The client the rules are read and changed with, which authenticates as the app
     # @api private
     # @return [Client] the app-only client
@@ -388,8 +402,6 @@ module X
     # @param response [Net::HTTPResponse] the HTTP response
     # @param body [String, nil] the object the stream delivered, or nil for the whole body
     # @return [void]
-    def report(uri, response, body)
-      client.on_response&.call(Response.new(:get, uri, response, body:))
-    end
+    def report(uri, response, body) = client.on_response&.call(Response.new(:get, uri, response, body:))
   end
 end
