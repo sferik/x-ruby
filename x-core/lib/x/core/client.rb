@@ -32,6 +32,16 @@ module X
   # is sent there without them, as a redirect that leads to one is, so that the credentials of the API never reach
   # a host they were not meant for; see {Core::Origin}.
   #
+  # The object_class of a request, of a stream, or of a client is one of two things. A class that JSON.parse builds
+  # each JSON object of the body into, as it does Hash, the default, OpenStruct, or a Struct, whose new takes no
+  # arguments and whose instances take each member with []=. Or anything that responds to from_response, which
+  # builds the result from the whole body instead, as the resource classes of x-objects do: it is passed the body
+  # parsed into Hashes and Arrays, whatever the array_class, and the client that made the request as client:, and
+  # what it returns is what the request returns, or, for a stream, what its block is passed for each object. Later
+  # versions of 1.x may pass it keyword arguments of their own, so it accepts the ones it does not read with **, as
+  # in def self.from_response(body, client:, **). The signatures of x-core state it as the X::_ResponseBuilder
+  # interface.
+  #
   # @api public
   class Client
     include Core::ClientAppOnly
@@ -103,7 +113,8 @@ module X
     #   such as a StringIO or a Logger
     # @param proxy_url [String, URI::Generic, nil] the proxy URL for requests
     # @param default_array_class [Class] the default class for parsing JSON arrays
-    # @param default_object_class [Class] the default class for parsing JSON objects
+    # @param default_object_class [Class, #from_response] the default class for parsing JSON objects, or one that
+    #   responds to from_response and builds the result from the whole body; see {Client}
     # @param headers [Hash{String => String}] headers sent with every request the client makes, as defaults: a
     #   header of the same name passed to a request is sent in place of one of these, and each of these is sent in
     #   place of a default of the gem, such as its User-Agent
@@ -213,7 +224,8 @@ module X
     # @param params [Hash, nil] query parameters appended to the endpoint; nil values are dropped and arrays are joined with commas
     # @param headers [Hash] additional headers for the request
     # @param array_class [Class] the class for parsing JSON arrays
-    # @param object_class [Class] the class for parsing JSON objects, or one that responds to from_response
+    # @param object_class [Class, #from_response] the class for parsing JSON objects, or one that responds to
+    #   from_response and builds the result from the whole body; see {Client}
     # @return [Object, nil] the parsed response body, or what an object_class that responds to from_response builds
     # @yieldparam response [Response] the summary of each response the request got, as {#on_response} receives it
     # @example Get a user by username
@@ -237,7 +249,8 @@ module X
     # @param form [Hash, nil] fields to send as a form-encoded body, in place of a body
     # @param headers [Hash] additional headers for the request
     # @param array_class [Class] the class for parsing JSON arrays
-    # @param object_class [Class] the class for parsing JSON objects, or one that responds to from_response
+    # @param object_class [Class, #from_response] the class for parsing JSON objects, or one that responds to
+    #   from_response and builds the result from the whole body; see {Client}
     # @return [Object, nil] the parsed response body, or what an object_class that responds to from_response builds
     # @raise [ArgumentError] if both a body and form fields are given
     # @yieldparam response [Response] the summary of each response the request got, as {#on_response} receives it
@@ -260,7 +273,8 @@ module X
     # @param form [Hash, nil] fields to send as a form-encoded body, in place of a body
     # @param headers [Hash] additional headers for the request
     # @param array_class [Class] the class for parsing JSON arrays
-    # @param object_class [Class] the class for parsing JSON objects, or one that responds to from_response
+    # @param object_class [Class, #from_response] the class for parsing JSON objects, or one that responds to
+    #   from_response and builds the result from the whole body; see {Client}
     # @return [Object, nil] the parsed response body, or what an object_class that responds to from_response builds
     # @raise [ArgumentError] if both a body and form fields are given
     # @yieldparam response [Response] the summary of each response the request got, as {#on_response} receives it
@@ -278,7 +292,8 @@ module X
     # @param params [Hash, nil] query parameters appended to the endpoint
     # @param headers [Hash] additional headers for the request
     # @param array_class [Class] the class for parsing JSON arrays
-    # @param object_class [Class] the class for parsing JSON objects, or one that responds to from_response
+    # @param object_class [Class, #from_response] the class for parsing JSON objects, or one that responds to
+    #   from_response and builds the result from the whole body; see {Client}
     # @return [Object, nil] the parsed response body, or what an object_class that responds to from_response builds
     # @yieldparam response [Response] the summary of each response the request got, as {#on_response} receives it
     # @example Delete a post

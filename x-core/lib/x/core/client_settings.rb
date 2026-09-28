@@ -34,8 +34,12 @@ module X
       attr_reader :default_array_class
 
       # The default class for parsing JSON objects
+      #
+      # It is a class that JSON.parse builds each JSON object into, or one that responds to from_response and builds
+      # the result from the whole body; see {Client}.
+      #
       # @api public
-      # @return [Class] the default class for parsing JSON objects
+      # @return [Class, #from_response] the default class for parsing JSON objects
       # @example Get the default object class
       #   client.default_object_class # => Hash
       attr_reader :default_object_class
@@ -89,7 +93,7 @@ module X
       # @api private
       # @param base_url [String] the base URL for API requests
       # @param default_array_class [Class] the default class for parsing JSON arrays
-      # @param default_object_class [Class] the default class for parsing JSON objects
+      # @param default_object_class [Class, #from_response] the default class for parsing JSON objects
       # @param headers [Hash{String => String}] the headers sent with every request
       # @param on_response [#call, nil] the callable passed an X::Response after every request and streamed object
       # @param max_redirects [Integer] the maximum number of redirects to follow

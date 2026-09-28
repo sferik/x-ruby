@@ -153,8 +153,8 @@ module X
     # @param headers [Hash] additional headers for the request, sent in place of the client's headers of the same
     #   name, which are themselves sent in place of the defaults of the gem
     # @param array_class [Class] the class for parsing JSON arrays
-    # @param object_class [Class] the class for parsing JSON objects, or one that responds to from_response
-    #   and builds objects from each whole object the stream delivers, which it receives with the client
+    # @param object_class [Class, #from_response] the class for parsing JSON objects, or one that responds to
+    #   from_response and builds the result from each whole object the stream delivers; see {Client}
     # @yield [Hash, Array] each parsed JSON object from the stream
     # @return [Object, nil] what the block broke with, or nil once the stream ends with no reconnects left
     # @raise [ArgumentError] if no block is given

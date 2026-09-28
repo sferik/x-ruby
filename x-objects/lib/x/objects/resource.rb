@@ -202,6 +202,8 @@ module X
       #
       # A response whose data is an object builds one resource, and one whose data is an array builds
       # one for each element. A client calls this when a resource class is the object_class of a request.
+      # A later version of x-core may pass it keywords of its own, which are ignored, as X::Client asks of
+      # what it calls from_response on.
       #
       # A response holds only the fields its request asked for, so what this builds is not hydrated
       # unless told otherwise, and hydrate fetches the full resource.
@@ -216,7 +218,7 @@ module X
       #   X::User.from_response({"data" => {"id" => "7505382"}}, client: client)
       # @example Build users from a client request
       #   client.get("users/by?usernames=sferik,gem", object_class: X::User)
-      def from_response(body, client:, hydrated: false)
+      def from_response(body, client:, hydrated: false, **)
         return collection_from_response(body, client:, hydrated:) if body.to_h["data"].is_a?(Array)
 
         resource_from_response(body, client:, hydrated:)

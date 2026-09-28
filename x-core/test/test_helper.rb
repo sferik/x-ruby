@@ -106,10 +106,11 @@ def get_request(url = "https://example.com/")
   Net::HTTP::Get.new(URI(url))
 end
 
-# A class that builds objects from a whole response, as the object layer's resources do
+# A class that builds objects from a whole response, as the object layer's resources do, accepting the keywords
+# later versions of x-core may pass it
 class ResponseBuilder
   # Return what it was given, so a test can see the body and the client
-  def self.from_response(body, client:) = {body:, client:}
+  def self.from_response(body, client:, **) = {body:, client:}
 end
 
 # Answer one request from a server on the loopback interface, for the requests webmock cannot stand in for

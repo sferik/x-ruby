@@ -228,7 +228,7 @@ module X
       def from_id_in_batch: (id id, client: _Client?, ?batch: Batch?) -> R
       def lookup: (String path, client: _Client, **untyped params) ?{ (Problem problem) -> void } -> R?
       def lookup_all: (String path, client: _Client, **untyped params) ?{ (Problem problem) -> void } -> Array[R]
-      def from_response: (body body, client: _Client?, ?hydrated: bool) -> (R | Array[R])?
+      def from_response: (body body, client: _Client?, ?hydrated: bool, **untyped) -> (R | Array[R])?
       def resource_from_response: (body body, client: _Client?, ?hydrated: bool) -> R?
       def collection_from_response: (body body, client: _Client?, ?hydrated: bool) -> Array[R]
     end
@@ -607,7 +607,7 @@ module X
     private def self.from_id_in_batch: (Objects::id id, client: Objects::_Client?, ?batch: Objects::Batch?) -> Resource
     private def self.build: (Hash[untyped, untyped] attrs, ?client: Objects::_Client?, ?includes: Objects::Includes, ?hydrated: bool, ?batch: Objects::Batch?) -> instance
     private def self.built: (Hash[untyped, untyped] attrs, client: Objects::_Client?, includes: Objects::Includes, hydrated: bool) -> Resource
-    def self.from_response: (Objects::body body, client: Objects::_Client?, ?hydrated: bool) -> (Resource | Array[Resource])?
+    def self.from_response: (Objects::body body, client: Objects::_Client?, ?hydrated: bool, **untyped) -> (Resource | Array[Resource])?
     def self.resource_from_response: (Objects::body body, client: Objects::_Client?, ?hydrated: bool) -> Resource?
     def self.collection_from_response: (Objects::body body, client: Objects::_Client?, ?hydrated: bool) -> Array[Resource]
 

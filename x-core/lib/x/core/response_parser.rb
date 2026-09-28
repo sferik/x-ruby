@@ -89,7 +89,8 @@ module X
       #
       # JSON gives every object in a document the same object_class, at every depth. A class that
       # models a whole response instead responds to from_response, which receives the document
-      # parsed into Hashes and Arrays along with the client, and whatever it returns is the result.
+      # parsed into Hashes and Arrays along with the client, and whatever it returns is the result;
+      # see {Client} for the protocol, which later versions of 1.x may pass other keywords to.
       #
       # @api private
       # @param json [String] the JSON document
