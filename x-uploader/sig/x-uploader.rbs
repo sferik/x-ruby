@@ -77,7 +77,7 @@ module X
     def id: () -> Integer
     def media_key: () -> String?
     def bytesize: () -> Integer?
-    def expires_at: () -> Time?
+    def expires_after_secs: () -> Integer?
     def processing_info: () -> Hash[String, untyped]?
     def state: () -> String?
     def check_after_secs: () -> Integer?

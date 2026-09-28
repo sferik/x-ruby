@@ -50,7 +50,6 @@ module X
     #   X::UploadedMedia.new({"id" => "1880028106020515840"})
     def initialize(attrs)
       @attrs = deep_freeze(attrs)
-      @received_at = Time.now
       freeze
     end
 
@@ -80,18 +79,17 @@ module X
     #   media.bytesize # => 1048576
     def bytesize = self["size"]
 
-    # The time after which the media can no longer be attached to a post
+    # The seconds after the response within which the media can be attached to a post
     #
-    # X reports the seconds the media has left, which are counted from when the response arrived, in UTC as the
-    # times of the object layer are.
+    # X counts them from when it sent the response, which the media does not hold, so they are read as X reported
+    # them: media rebuilt from its attributes later, as from JSON it was stored as, holds the seconds of the response
+    # it was built from, not those it has left.
     #
     # @api public
-    # @return [Time, nil] the expiration time, in UTC, if the response reports it
-    # @example Get the expiration time
-    #   media.expires_at # => 2026-09-19 12:00:00 UTC
-    def expires_at
-      self["expires_after_secs"]&.then { |seconds| (@received_at + seconds).utc }
-    end
+    # @return [Integer, nil] the seconds, if the response reports them
+    # @example Get the time after which media just uploaded can no longer be attached
+    #   Time.now + media.expires_after_secs # => 2026-09-19 12:00:00 -0700
+    def expires_after_secs = self["expires_after_secs"]
 
     # What X reports of the processing of the media
     #

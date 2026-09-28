@@ -203,8 +203,6 @@ module X
     FINAL_STATES: Array[String]
     NO_MEDIA_ID: String
 
-    @received_at: Time
-
     private
     def deep_freeze: (untyped value) -> untyped
   end

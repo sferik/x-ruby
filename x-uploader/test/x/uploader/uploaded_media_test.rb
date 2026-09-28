@@ -39,13 +39,15 @@ module X
       assert_raises(ArgumentError) { UploadedMedia.new({"id" => "0x10"}).id }
     end
 
-    def test_expires_at_counts_from_when_the_response_arrived
-      now = Time.at(1_789_000_000)
-      media = Time.stub(:now, now) { UploadedMedia.new(ATTRS) }
+    def test_expires_after_secs_reads_the_seconds_the_response_reports
+      assert_equal [86_400, nil], [UploadedMedia.new(ATTRS).expires_after_secs, UploadedMedia.new({"id" => "7"}).expires_after_secs]
+    end
 
-      assert_equal now + 86_400, media.expires_at
-      assert_predicate media.expires_at, :utc?
-      assert_nil UploadedMedia.new({"id" => "7"}).expires_at
+    def test_media_rebuilt_from_its_json_reads_as_the_media_it_was_built_from
+      media = UploadedMedia.new(ATTRS)
+      rebuilt = UploadedMedia.new(JSON.parse(media.to_json))
+
+      assert_equal [media, media.expires_after_secs], [rebuilt, rebuilt.expires_after_secs]
     end
 
     def test_media_that_x_does_not_process_is_ready
