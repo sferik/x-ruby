@@ -10,6 +10,13 @@ module X
   class SignatureTest < Minitest::Test
     cover Uploader.const_get(:Signature)
 
+    # The EBML header an encoder such as FFmpeg writes, before the DocType it names
+    EBML_HEADER = "\x1A\x45\xDF\xA3\x9F\x42\x86\x81\x01\x42\xF7\x81\x01\x42\xF2\x81\x04\x42\xF3\x81\x08"
+    # The header of a WebM file, whose DocType is webm
+    WEBM = "#{EBML_HEADER}\x42\x82\x84webm\x42\x87\x81\x04\x42\x85\x81\x02".freeze
+    # The header of a Matroska file that is not WebM, whose DocType is matroska
+    MATROSKA = "#{EBML_HEADER}\x42\x82\x88matroska\x42\x87\x81\x04\x42\x85\x81\x02".freeze
+
     SIGNED = {
       "image/gif" => ["GIF87a", "GIF89a"],
       "image/png" => ["\x89PNG\r\n\x1A\n"],
@@ -17,7 +24,7 @@ module X
       "image/bmp" => ["BM\x00\x00"],
       "image/tiff" => ["II*\x00", "MM\x00*"],
       "image/webp" => ["RIFF\x00\x00\x00\x00WEBPVP8 "],
-      "video/webm" => ["\x1A\x45\xDF\xA3"],
+      "video/webm" => [WEBM],
       "video/quicktime" => ["\x00\x00\x00\x14ftypqt  "],
       "video/mp4" => ["isom", "iso2", "iso3", "iso4", "iso5", "iso6", "iso7", "iso8", "iso9", "mp41", "mp42", "avc1", "M4V ", "M4VH",
         "M4VP", "dash", "MSNV", "3gp4", "3gp5", "3gp6", "3g2a", "f4v ", "XAVC", "mmp4"]
@@ -37,6 +44,12 @@ module X
 
     def test_media_no_signature_names_has_no_media_type
       ["", "not media at all", "RIFF\x00\x00\x00\x00AVI LIST", "PK\x03\x04", "1\n00:00:01,000 --> 00:00:02,000\n"].each do |bytes|
+        assert_nil Uploader.const_get(:Signature).media_type(bytes.b), bytes.inspect
+      end
+    end
+
+    def test_a_matroska_file_that_is_not_webm_has_no_media_type
+      [MATROSKA, "\x1A\x45\xDF\xA3", "\x1A\x45\xDF\xA3\x42\x82\x88webmwebm"].each do |bytes|
         assert_nil Uploader.const_get(:Signature).media_type(bytes.b), bytes.inspect
       end
     end
@@ -74,7 +87,7 @@ module X
       {
         "GIF89a" => "tweet_gif",
         "\x00\x00\x00\x18ftypmp42" => "tweet_video",
-        "\x1A\x45\xDF\xA3" => "tweet_video",
+        WEBM => "tweet_video",
         "WEBVTT\n" => "subtitles",
         "BM\x00\x00" => "tweet_image"
       }.each do |bytes, category|

@@ -71,14 +71,17 @@ module X
       CHUNKED_CATEGORIES = [*VIDEO_CATEGORIES, SUBTITLES].freeze
       # Media categories of animated GIFs, which upload in chunks only when a single request cannot take them
       GIF_CATEGORIES = [DM_GIF, TWEET_GIF].freeze
-      # Mapping of file extensions to the media categories of posts; any other extension is an image. An AVI or
-      # Matroska file is a video, though the API documents no type for one, so that it uploads in chunks, as MP4,
-      # rather than whole as an image, and X decides whether to process it.
+      # Mapping of file extensions to the media categories of posts; any other extension is an image
       CATEGORY_MAP = {
-        "avi" => TWEET_VIDEO, "gif" => TWEET_GIF, "m2ts" => TWEET_VIDEO, "m4v" => TWEET_VIDEO, "mkv" => TWEET_VIDEO,
-        "mov" => TWEET_VIDEO, "mp4" => TWEET_VIDEO, "mts" => TWEET_VIDEO, "qt" => TWEET_VIDEO, "ts" => TWEET_VIDEO,
-        "webm" => TWEET_VIDEO, "srt" => SUBTITLES, "vtt" => SUBTITLES
+        "gif" => TWEET_GIF, "m2ts" => TWEET_VIDEO, "m4v" => TWEET_VIDEO, "mov" => TWEET_VIDEO, "mp4" => TWEET_VIDEO,
+        "mts" => TWEET_VIDEO, "qt" => TWEET_VIDEO, "ts" => TWEET_VIDEO, "webm" => TWEET_VIDEO, "srt" => SUBTITLES,
+        "vtt" => SUBTITLES
       }.freeze
+      # The containers of the video file extensions the API documents no media type for, by extension: a video the
+      # API takes is MP4, QuickTime, WebM, or MPEG-TS, so a file of one of these uploads only as the type its signature
+      # names, such as a WebM video named .mkv, and raises before a request otherwise, rather than be sent as a type
+      # it is not
+      UNDOCUMENTED_VIDEOS = {"avi" => "AVI", "mkv" => "Matroska"}.freeze
       # Mapping of media categories to the MIME types they take, the first by default; images are typed by their extension
       CATEGORY_MIME_TYPES = {
         TWEET_GIF => [GIF_MIME_TYPE], DM_GIF => [GIF_MIME_TYPE], TWEET_VIDEO => VIDEO_MIME_TYPES, DM_VIDEO => VIDEO_MIME_TYPES,
@@ -88,7 +91,7 @@ module X
         :TIFF_MIME_TYPE, :WEBP_MIME_TYPE, :GLTF_BINARY_MIME_TYPE, :USDZ_MIME_TYPE, :SUBRIP_MIME_TYPE, :WEBVTT_MIME_TYPE,
         :MPEG_TS_MIME_TYPE, :MP4_MIME_TYPE, :QUICKTIME_MIME_TYPE, :WEBM_MIME_TYPE, :MIME_TYPE_MAP, :VIDEO_MIME_TYPES,
         :SUBTITLES_MIME_TYPES, :MIN_CHECK_AFTER_SECS, :STATUS_COMMAND, :VIDEO_CATEGORIES, :CHUNKED_CATEGORIES, :GIF_CATEGORIES,
-        :CATEGORY_MAP, :CATEGORY_MIME_TYPES
+        :CATEGORY_MAP, :CATEGORY_MIME_TYPES, :UNDOCUMENTED_VIDEOS
 
       # Upload media, in chunks when the API needs them, awaiting any processing
       #
@@ -317,6 +320,7 @@ module X
         #   Inference.infer_media_category(StringIO.new(gif)) # => "tweet_gif"
         def infer_media_category(media)
           source = Source.for(media)
+          documented!(source)
           category = CATEGORY_MAP.fetch(source.extension) { MIME_TYPE_MAP.key?(source.extension) ? TWEET_IMAGE : Signature.media_category(source) }
           # A GIF of a single frame is an image, which its category is read again as
           (category.eql?(TWEET_GIF) && source.readable? && !Gif.animated?(source)) ? TWEET_IMAGE : category
@@ -340,10 +344,38 @@ module X
         # @example Inference.infer_media_type("clip.webm", "tweet_video") #=> "video/webm"
         def infer_media_type(media, media_category)
           source = Source.for(media)
+          documented!(source)
           from_media = MIME_TYPE_MAP.fetch(source.extension) { Signature.media_type(source.sniff) if source.readable? }
           taken = CATEGORY_MIME_TYPES.fetch(media_category.to_s.downcase, [from_media])
           (taken.include?(from_media) ? from_media : taken.first) ||
             raise(InvalidMediaType, "unable to determine the MIME type of #{source.description}")
+        end
+
+        # Refuse a video of a container the API documents no media type for
+        #
+        # An AVI or Matroska file is a video X documents no type for, so it is refused before a request, rather than
+        # be sent as a type it is not, unless it begins with the signature of a type the API documents, as a WebM
+        # video named .mkv does. Media whose name names no type, such as a StringIO or a Tempfile, is refused too when
+        # it begins with the header of Matroska and is not WebM, since a video category would otherwise send it as MP4.
+        #
+        # @api private
+        # @param source [Source] the media
+        # @return [void]
+        # @raise [InvalidMediaType] if the media is of such a container and no signature names its type
+        def documented!(source)
+          container = UNDOCUMENTED_VIDEOS.fetch(source.extension) { "Matroska" if matroska?(source) }
+          return if container.nil? || (source.readable? && Signature.media_type(source.sniff))
+
+          raise InvalidMediaType, "the API documents no media type for #{container} video, such as #{source.description}: " \
+            "convert it to MP4, QuickTime, WebM, or MPEG-TS"
+        end
+
+        # Whether media whose name names no type begins with the header of Matroska
+        # @api private
+        # @param source [Source] the media
+        # @return [Boolean] true if the name of the media names no type and the media is Matroska
+        def matroska?(source)
+          !MIME_TYPE_MAP.key?(source.extension) && source.readable? && Signature.matroska?(source.sniff)
         end
       end
       private_constant :Inference

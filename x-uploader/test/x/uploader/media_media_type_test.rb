@@ -46,8 +46,8 @@ module X
           %w[a.mts tweet_video]].map { |file, category| inference.infer_media_type(file, category) }
     end
 
-    def test_videos_of_other_names_upload_as_mp4
-      assert_equal %w[video/mp4] * 3, %w[a.m4v a.avi a.mkv].map { |file| inference.infer_media_type(file, "tweet_video") }
+    def test_an_m4v_video_uploads_as_mp4
+      assert_equal "video/mp4", inference.infer_media_type("a.m4v", "tweet_video")
     end
 
     def test_subtitles_category_takes_webvtt
@@ -72,7 +72,7 @@ module X
       category = inference.method(:infer_media_category)
 
       assert_equal %w[tweet_video] * 7, %w[a.mp4 a.mov a.qt a.webm a.ts a.m2ts a.mts].map(&category)
-      assert_equal %w[tweet_video] * 3, %w[a.m4v a.AVI a.mkv].map(&category)
+      assert_equal "tweet_video", category.call("a.m4v")
       assert_equal %w[subtitles subtitles], %w[a.srt a.VTT].map(&category)
       assert_equal %w[tweet_image] * 4, %w[a.bmp a.tiff a.glb a.usdz].map(&category)
     end

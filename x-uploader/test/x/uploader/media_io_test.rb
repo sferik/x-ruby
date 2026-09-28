@@ -50,7 +50,7 @@ module X
       png = StringIO.new(File.binread("test/sample_files/sample.png"))
 
       assert_equal "image/png", inference.infer_media_type(png, "tweet_image")
-      assert_equal "video/webm", inference.infer_media_type(StringIO.new("\x1A\x45\xDF\xA3".b), "tweet_video")
+      assert_equal "video/webm", inference.infer_media_type(StringIO.new("\x1A\x45\xDF\xA3\x9F\x42\x82\x84webm".b), "tweet_video")
     end
 
     def test_the_media_type_of_a_category_that_takes_no_type_the_signature_names

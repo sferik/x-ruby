@@ -40,7 +40,6 @@ module X
         {0 => "II*\x00".b} => "image/tiff",
         {0 => "MM\x00*".b} => "image/tiff",
         {0 => "RIFF".b, 8 => "WEBP".b} => "image/webp",
-        {0 => [0x1A, 0x45, 0xDF, 0xA3].pack("C*")} => "video/webm", # the EBML header of Matroska
         {4 => "ftypqt  ".b} => "video/quicktime",
         **MP4_BRANDS.to_h { |brand| [{4 => "ftyp#{brand}".b}, "video/mp4"] },
         {0 => "glTF".b} => "model/gltf-binary",
@@ -58,9 +57,18 @@ module X
       }.freeze
       # The media category of media whose type belongs to none of its own
       DEFAULT_CATEGORY = "tweet_image"
-      private_constant :MP4_BRANDS, :SIGNATURES, :DEFAULT_CATEGORY
+      # The bytes of the EBML header a Matroska file begins with, which a WebM file, being Matroska, begins with too
+      EBML = [0x1A, 0x45, 0xDF, 0xA3].pack("C*")
+      # The DocType element of the EBML header of a WebM file: its identifier, the length of its value, and "webm", which
+      # a Matroska file that is not WebM names "matroska" in place of. The header is the first thing in the file, so
+      # its DocType is among the bytes a signature is read from.
+      WEBM_DOC_TYPE = [0x42, 0x82, 0x84].pack("C*") + "webm".b
+      private_constant :MP4_BRANDS, :SIGNATURES, :DEFAULT_CATEGORY, :EBML, :WEBM_DOC_TYPE
 
       # The media type the signature of media names
+      #
+      # A Matroska file is WebM, which the API documents, only when its EBML header names webm as its DocType; the API
+      # documents no type for any other Matroska file, such as an .mkv video, so its signature names none.
       #
       # @api private
       # @param bytes [String] the bytes the media begins with, as {Source#sniff} reads them
@@ -68,8 +76,21 @@ module X
       # @example Read the media type of a PNG image
       #   Uploader::Signature.media_type("\x89PNG\r\n\x1A\n".b) # => "image/png"
       def media_type(bytes)
+        return matroska_type(bytes) if matroska?(bytes)
+
         SIGNATURES.find { |magic, _| matches?(bytes, magic) }&.last
       end
+
+      # Whether media begins with the EBML header of Matroska
+      #
+      # WebM is Matroska, so a WebM file begins with it too.
+      #
+      # @api private
+      # @param bytes [String] the bytes the media begins with, as {Source#sniff} reads them
+      # @return [Boolean] true if the media is Matroska
+      # @example Tell a Matroska file
+      #   Uploader::Signature.matroska?("\x1A\x45\xDF\xA3...".b) # => true
+      def matroska?(bytes) = bytes.start_with?(EBML)
 
       # The media type the signature of media names, which one must name
       #
@@ -112,6 +133,12 @@ module X
       end
 
       private
+
+      # The media type of a Matroska file, which is WebM when its DocType is webm
+      # @api private
+      # @param bytes [String] the bytes the media begins with, an EBML header first
+      # @return [String, nil] video/webm, or nil for a Matroska file that is not WebM
+      def matroska_type(bytes) = ("video/webm" if bytes.include?(WEBM_DOC_TYPE))
 
       # Whether media begins with the bytes of a signature
       # @api private
