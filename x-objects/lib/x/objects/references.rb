@@ -21,7 +21,7 @@ module X
       # @example Get the referenced posts
       #   post.references
       def references
-        Array(referenced_posts).filter_map do |reference|
+        referenced_posts.filter_map do |reference|
           resolve(Post, reference["id"]) #: Post?
         end.freeze
       end
@@ -96,7 +96,7 @@ module X
       # @param types [Array<String>] the referenced post types
       # @return [Post, nil] the referenced post or nil if there is none of those types
       def reference(*types)
-        found = Array(referenced_posts).find { |element| types.include?(element["type"]) }
+        found = referenced_posts.find { |element| types.include?(element["type"]) }
         return if found.nil?
 
         resolve(Post, found["id"]) #: Post?

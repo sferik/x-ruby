@@ -23,10 +23,10 @@ module X
     # @!attribute [r] options
     #   The poll options with their positions, labels, and vote counts
     #   @api public
-    #   @return [Array<Hash>, nil] the options
+    #   @return [Array<Hash>] the options, empty if there are none
     #   @example Get the options
     #     poll.options
-    attribute :options
+    attribute :options, :list
 
     # @!attribute [r] duration_minutes
     #   The duration of the poll in minutes

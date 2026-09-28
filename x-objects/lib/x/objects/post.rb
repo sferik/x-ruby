@@ -227,7 +227,7 @@ module X
     # @!attribute [r] edit_history_post_ids
     #   The identifiers of every version of the post
     #   @api public
-    #   @return [Array<Integer>, nil] the edit history identifiers
+    #   @return [Array<Integer>] the edit history identifiers, empty if there are none
     #   @example Get the edit history identifiers
     #     post.edit_history_post_ids
     attribute :edit_history_post_ids, :integers
@@ -255,28 +255,28 @@ module X
     # The links in the full text, each with its shortened url and its expanded_url
     #
     # @api public
-    # @return [Array<Hash>, nil] the links
+    # @return [Array<Hash>] the links, empty if there are none
     # @example Get the links
     #   post.urls # => [{"url" => "https://t.co/...", "expanded_url" => "https://github.com/sferik/x-ruby", ...}]
-    def urls = entities&.dig("urls")
+    def urls = entities&.dig("urls") || Objects::Attributes::EMPTY_LIST
 
     attribute_names.push(:text, :entities, :urls)
 
     # @!attribute [r] context_annotations
     #   The context annotations
     #   @api public
-    #   @return [Array<Hash>, nil] the context annotations
+    #   @return [Array<Hash>] the context annotations, empty if there are none
     #   @example Get the context annotations
     #     post.context_annotations
-    attribute :context_annotations
+    attribute :context_annotations, :list
 
     # @!attribute [r] referenced_posts
     #   The referenced posts with their types and identifiers
     #   @api public
-    #   @return [Array<Hash>, nil] the referenced posts
+    #   @return [Array<Hash>] the referenced posts, empty if there are none
     #   @example Get the referenced posts
     #     post.referenced_posts
-    attribute :referenced_posts
+    attribute :referenced_posts, :list
 
     # @!attribute [r] attachments
     #   The attachment keys and identifiers
@@ -450,7 +450,7 @@ module X
     # @example Display a post with its links in full
     #   post.expanded_text
     def expanded_text
-      Array(urls).reduce(text) { |expanded, link| expanded&.gsub(link.fetch("url"), link["expanded_url"] || link.fetch("url")) }
+      urls.reduce(text) { |expanded, link| expanded&.gsub(link.fetch("url"), link["expanded_url"] || link.fetch("url")) }
     end
 
     # Delete this post as the authenticated user

@@ -7,13 +7,17 @@ module X
     # Class-level macros for declaring resource attributes and references
     # @api private
     module Attributes
+      # The value of a list the response omitted, which reads as empty, as a list of references does, rather than nil
+      EMPTY_LIST = [] #: Array[untyped]
+      EMPTY_LIST.freeze
       # Converters keyed by attribute type
       CONVERTERS = {
         raw: ->(value) { value },
         boolean: ->(value) { value },
         time: ->(value) { Utils.time(value) },
         integer: ->(value) { Utils.integer(value) },
-        integers: ->(value) { value&.map { |id| Utils.integer(id) } }
+        integers: ->(value) { (value || EMPTY_LIST).map { |id| Utils.integer(id) }.freeze },
+        list: ->(value) { value || EMPTY_LIST }
       }.freeze
 
       # The names of the attributes declared on this class, which pattern matching reads
@@ -57,7 +61,8 @@ module X
       #
       # @api private
       # @param name [Symbol] the reader name
-      # @param type [Symbol] the attribute type: raw, boolean, time, integer, or integers
+      # @param type [Symbol] the attribute type: raw, boolean, time, integer, integers, or list, of which integers and
+      #   list read a list the response omitted as empty
       # @param key [Array<String>] the key path
       # @return [void]
       def attribute(name, type = :raw, key: [name.to_s])

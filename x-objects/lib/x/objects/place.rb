@@ -71,10 +71,10 @@ module X
     # @!attribute [r] contained_within
     #   The identifiers of the places containing this place
     #   @api public
-    #   @return [Array<String>, nil] the containing place identifiers
+    #   @return [Array<String>] the containing place identifiers, empty if there are none
     #   @example Get the containing places
     #     place.contained_within
-    attribute :contained_within
+    attribute :contained_within, :list
 
     # @!attribute [r] geo
     #   The GeoJSON bounding box

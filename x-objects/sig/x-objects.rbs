@@ -196,6 +196,7 @@ module X
     end
 
     module Attributes : Class
+      EMPTY_LIST: Array[untyped]
       CONVERTERS: Hash[Symbol, ^(untyped) -> untyped]
 
       @attribute_names: Array[Symbol]?
@@ -395,7 +396,7 @@ module X
       REPOSTED: String
       RETWEETED: String
 
-      def referenced_posts: () -> Array[Hash[String, String]]?
+      def referenced_posts: () -> Array[Hash[String, String]]
       def referenced_tweets: () -> Array[Hash[String, String]]?
       def references: () -> Array[Post]
       def replied_to: () -> Post?
@@ -726,7 +727,7 @@ module X
     def duration_ms: () -> Integer?
     def height: () -> Integer?
     def width: () -> Integer?
-    def variants: () -> Array[Hash[String, untyped]]?
+    def variants: () -> Array[Hash[String, untyped]]
     def public_metrics: () -> Hash[String, untyped]?
     def view_count: () -> Integer?
   end
@@ -739,7 +740,7 @@ module X
     def id: () -> Integer
 
     private def self.includes_key: () -> String
-    def options: () -> Array[Hash[String, untyped]]?
+    def options: () -> Array[Hash[String, untyped]]
     def duration_minutes: () -> Integer?
     def end_datetime: () -> Time?
     def voting_status: () -> String?
@@ -759,7 +760,7 @@ module X
     def country: () -> String?
     def country_code: () -> String?
     def place_type: () -> String?
-    def contained_within: () -> Array[String]?
+    def contained_within: () -> Array[String]
     def geo: () -> Hash[String, untyped]?
   end
 
@@ -802,7 +803,7 @@ module X
     def subscription_type: () -> String?
     def affiliation: () -> Hash[String, untyped]?
     def verified_followers_count: () -> Integer?
-    def connection_status: () -> Array[String]?
+    def connection_status: () -> Array[String]
     def pinned_post_id: () -> Integer?
     def pinned_tweet_id: () -> Integer?
     def most_recent_post_id: () -> Integer?
@@ -875,13 +876,13 @@ module X
     def possibly_sensitive: () -> bool?
     def possibly_sensitive?: () -> bool
     def reply_settings: () -> String?
-    def edit_history_post_ids: () -> Array[Integer]?
+    def edit_history_post_ids: () -> Array[Integer]
     def edit_history_tweet_ids: () -> Array[Integer]?
     def edit_controls: () -> Hash[String, untyped]?
     def entities: () -> Hash[String, untyped]?
-    def urls: () -> Array[Hash[String, untyped]]?
-    def context_annotations: () -> Array[Hash[String, untyped]]?
-    def referenced_posts: () -> Array[Hash[String, String]]?
+    def urls: () -> Array[Hash[String, untyped]]
+    def context_annotations: () -> Array[Hash[String, untyped]]
+    def referenced_posts: () -> Array[Hash[String, String]]
     def referenced_tweets: () -> Array[Hash[String, String]]?
     def attachments: () -> Hash[String, untyped]?
     def coordinates: () -> Array[Float]?
@@ -1005,8 +1006,8 @@ module X
     def sender_id: () -> Integer?
     def dm_conversation_id: () -> String?
     def conversation_id: () -> String?
-    def participant_ids: () -> Array[Integer]?
-    def referenced_posts: () -> Array[Hash[String, String]]?
+    def participant_ids: () -> Array[Integer]
+    def referenced_posts: () -> Array[Hash[String, String]]
     def referenced_tweets: () -> Array[Hash[String, String]]?
     def attachments: () -> Hash[String, untyped]?
     def entities: () -> Hash[String, untyped]?
@@ -1049,10 +1050,10 @@ module X
     def participant_count: () -> Integer?
     def subscriber_count: () -> Integer?
     def creator_id: () -> Integer?
-    def host_ids: () -> Array[Integer]?
-    def speaker_ids: () -> Array[Integer]?
-    def invited_user_ids: () -> Array[Integer]?
-    def topic_ids: () -> Array[Integer]?
+    def host_ids: () -> Array[Integer]
+    def speaker_ids: () -> Array[Integer]
+    def invited_user_ids: () -> Array[Integer]
+    def topic_ids: () -> Array[Integer]
     def creator: () -> User?
     def hosts: () -> Array[User]
     def speakers: () -> Array[User]

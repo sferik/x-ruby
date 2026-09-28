@@ -28,9 +28,9 @@ module X
       assert_equal "3_1", Media.new({"media_key" => "3_1"}).id
     end
 
-    def test_missing_identifiers_are_nil
+    def test_a_missing_identifier_is_nil_and_a_missing_list_of_them_empty
       assert_nil Post.new({"id" => "1"}).author_id
-      assert_nil Space.new({"id" => "a"}).host_ids
+      assert_empty Space.new({"id" => "a"}).host_ids
     end
 
     def test_integer_reads_decimal_digits

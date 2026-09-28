@@ -164,7 +164,7 @@ module X
     # @!attribute [r] participant_ids
     #   The identifiers of the participants who joined or left
     #   @api public
-    #   @return [Array<Integer>, nil] the participant identifiers
+    #   @return [Array<Integer>] the participant identifiers, empty if there are none
     #   @example Get the participant identifiers
     #     message.participant_ids
     attribute :participant_ids, :integers
@@ -172,10 +172,10 @@ module X
     # @!attribute [r] referenced_posts
     #   The referenced posts with their identifiers
     #   @api public
-    #   @return [Array<Hash>, nil] the referenced posts
+    #   @return [Array<Hash>] the referenced posts, empty if there are none
     #   @example Get the referenced posts
     #     message.referenced_posts
-    attribute :referenced_posts
+    attribute :referenced_posts, :list
 
     # @!attribute [r] attachments
     #   The attachment keys
@@ -224,7 +224,7 @@ module X
     # @example Get the referenced posts
     #   message.references
     def references
-      Array(referenced_posts).filter_map do |reference|
+      referenced_posts.filter_map do |reference|
         resolve(Post, reference["id"]) #: Post?
       end.freeze
     end

@@ -194,7 +194,7 @@ module X
     # @!attribute [r] host_ids
     #   The identifiers of the hosts
     #   @api public
-    #   @return [Array<Integer>, nil] the host identifiers
+    #   @return [Array<Integer>] the host identifiers, empty if there are none
     #   @example Get the host identifiers
     #     space.host_ids
     attribute :host_ids, :integers
@@ -202,7 +202,7 @@ module X
     # @!attribute [r] speaker_ids
     #   The identifiers of the speakers
     #   @api public
-    #   @return [Array<Integer>, nil] the speaker identifiers
+    #   @return [Array<Integer>] the speaker identifiers, empty if there are none
     #   @example Get the speaker identifiers
     #     space.speaker_ids
     attribute :speaker_ids, :integers
@@ -210,7 +210,7 @@ module X
     # @!attribute [r] invited_user_ids
     #   The identifiers of the invited users
     #   @api public
-    #   @return [Array<Integer>, nil] the invited user identifiers
+    #   @return [Array<Integer>] the invited user identifiers, empty if there are none
     #   @example Get the invited user identifiers
     #     space.invited_user_ids
     attribute :invited_user_ids, :integers
@@ -218,7 +218,7 @@ module X
     # @!attribute [r] topic_ids
     #   The identifiers of the topics
     #   @api public
-    #   @return [Array<Integer>, nil] the topic identifiers
+    #   @return [Array<Integer>] the topic identifiers, empty if there are none
     #   @example Get the topic identifiers
     #     space.topic_ids
     attribute :topic_ids, :integers

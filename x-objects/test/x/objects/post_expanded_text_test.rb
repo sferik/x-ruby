@@ -10,7 +10,7 @@ module X
 
     def test_urls
       assert_equal [LINK], Post.new({"id" => "1", "entities" => {"urls" => [LINK]}}).urls
-      assert_nil Post.new({"id" => "1"}).urls
+      assert_empty Post.new({"id" => "1"}).urls
     end
 
     def test_expanded_text_replaces_every_link
@@ -57,13 +57,13 @@ module X
       entities = {"annotations" => [{"normalized_text" => "Ruby"}]}
       post = Post.new({"id" => "1", "text" => "A long post…", "entities" => entities, "note_post" => {"text" => "A long post"}})
 
-      assert_equal ["A long post", entities, nil], [post.text, post.entities, post.urls]
+      assert_equal ["A long post", entities, []], [post.text, post.entities, post.urls]
     end
 
     def test_a_long_post_without_entities_anywhere_has_none
       post = Post.new({"id" => "1", "text" => "A long post…", "note_post" => {"text" => "A long post"}})
 
-      assert_equal ["A long post", nil, nil], [post.text, post.entities, post.urls]
+      assert_equal ["A long post", nil, []], [post.text, post.entities, post.urls]
     end
 
     def test_expanded_text_uses_only_the_links_of_the_post_itself

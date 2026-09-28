@@ -213,10 +213,10 @@ module X
     # @!attribute [r] variants
     #   The video variants with their bit rates, content types, and URLs
     #   @api public
-    #   @return [Array<Hash>, nil] the variants
+    #   @return [Array<Hash>] the variants, empty if there are none
     #   @example Get the variants
     #     media.variants
-    attribute :variants
+    attribute :variants, :list
 
     # @!attribute [r] public_metrics
     #   The public metrics

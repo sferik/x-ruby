@@ -238,10 +238,10 @@ module X
     # @!attribute [r] connection_status
     #   How the authenticated user and this user are connected
     #   @api public
-    #   @return [Array<String>, nil] following, followed_by, blocking, muting, follow_request_sent, or follow_request_received
+    #   @return [Array<String>] following, followed_by, blocking, muting, follow_request_sent, or follow_request_received, empty if there are none
     #   @example Check whether this user follows the authenticated user
     #     client.find_user("sferik", "user.fields": "connection_status").connection_status.include?("followed_by")
-    attribute :connection_status
+    attribute :connection_status, :list
 
     # @!attribute [r] pinned_post_id
     #   The identifier of the pinned post
