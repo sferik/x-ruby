@@ -161,12 +161,12 @@ module X
     end
 
     class Batch
-      @klass: singleton(Resource)
+      @klass: BatchFinders
       @ids: Array[untyped]
       @client: _Client
       @memo: Memo
 
-      def initialize: (singleton(Resource) klass, Array[untyped] ids, client: _Client) -> void
+      def initialize: (BatchFinders klass, Array[untyped] ids, client: _Client) -> void
       def fetch: (untyped id) -> Resource?
 
       private
@@ -219,16 +219,24 @@ module X
       def key_path: (untyped key) -> key
     end
 
-    # The class-side lookups of a concrete resource class, typed with that class
-    interface _Lookup[R]
-      def find: (id id, client: _Client, **untyped params) ?{ (Problem problem) -> void } -> R?
-      def find!: (id id, client: _Client, **untyped params) -> R
-      def find_all: (Array[id] ids, client: _Client, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[R]
-      def hydrate_all: (Array[R?] resources, client: _Client, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[R]
+    # The class side of every concrete resource class, typed with that class
+    interface _ResourceClass[R]
       def from_id: (id id, ?client: _Client?) -> R
       def from_response: (body body, client: _Client?, ?hydrated: bool, **untyped) -> (R | Array[R])?
       def resource_from_response: (body body, client: _Client?, ?hydrated: bool) -> R?
       def collection_from_response: (body body, client: _Client?, ?hydrated: bool) -> Array[R]
+    end
+
+    # The class-side lookups of a concrete resource class the API looks up by identifier, typed with that class
+    interface _Lookup[R]
+      def find: (id id, client: _Client, **untyped params) ?{ (Problem problem) -> void } -> R?
+      def find!: (id id, client: _Client, **untyped params) -> R
+    end
+
+    # The class-side lookups of a concrete resource class the API looks up many at a time, typed with that class
+    interface _BatchLookup[R]
+      def find_all: (Array[id] ids, client: _Client, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[R]
+      def hydrate_all: (Array[R?] resources, client: _Client, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[R]
     end
 
     # The instance-side hydration of a concrete resource class, typed with that class
@@ -287,7 +295,9 @@ module X
       def collection_from_response: (body body, client: _Client?, ?hydrated: bool) -> Array[Resource]
     end
 
-    module UserFinders : Class, Finders
+    module UserFinders : Class, BatchFinders
+      include BatchFinders
+
       def find: (id id_or_username, client: _Client, **untyped params) ?{ (Problem problem) -> void } -> Resource?
       def find!: (id id_or_username, client: _Client, **untyped params) -> Resource
       def find_all: (Array[id] ids_or_usernames, client: _Client, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[User]
@@ -307,38 +317,44 @@ module X
     end
 
     module Finders : Class, _FinderHost
-      MAX_BATCH_SIZE: Integer
-      DEFAULT_CONCURRENCY: Integer
-      INVALID_CONCURRENCY: String
-      FOREIGN_RESOURCE: String
-      NO_BATCH_LOOKUP: String
-
       def find: (id id, client: _Client, **untyped params) ?{ (Problem problem) -> void } -> Resource?
       def find!: (id id, client: _Client, **untyped params) -> Resource
-      def hydrate_all: (Array[Resource?] resources, client: _Client, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[Resource]
-      def find_all: (Array[id] ids, client: _Client, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[Resource]
       private
       def lookup: (String path, client: _Client, **untyped params) ?{ (Problem problem) -> void } -> Resource?
       def lookup_all: (String path, client: _Client, **untyped params) ?{ (Problem problem) -> void } -> Array[Resource]
       def client_for: (_Client client) -> _Client
-      def replacer: (Array[Resource] found, Hash[Symbol, untyped] params) -> ^(Resource) -> Resource?
       def get: (String path, client: _Client, query: Hash[String, untyped]) -> body
+      def reporting: (body body) ?{ (Problem problem) -> void } -> body
+
+      # The private class methods of the resource class that extends it, which it reads
+      def endpoint!: () -> String
+      def fully_requested_by?: (Hash[String, untyped] query) -> bool
+    end
+
+    module BatchFinders : Class, _FinderHost
+      include Finders
+
+      MAX_BATCH_SIZE: Integer
+      DEFAULT_CONCURRENCY: Integer
+      INVALID_CONCURRENCY: String
+      FOREIGN_RESOURCE: String
+
+      def hydrate_all: (Array[Resource?] resources, client: _Client, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[Resource]
+      def find_all: (Array[id] ids, client: _Client, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[Resource]
+      private
+      def replacer: (Array[Resource] found, Hash[Symbol, untyped] params) -> ^(Resource) -> Resource?
       def lookup_in_batches: (String path, Symbol key, Array[String] values, client: _Client, concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[Resource]
       def in_order_of: (Array[Resource] resources, Array[String] ids) -> Array[Resource]
       def settled?: (Resource resource) -> bool
       def validate_concurrency!: (Integer concurrency) -> void
       def validate_class!: (Array[Resource] resources) -> void
-      def reporting: (body body) ?{ (Problem problem) -> void } -> body
 
       # The private class methods of the resource class that extends it, which it reads
-      def endpoint!: () -> String
-      def batchable?: () -> bool
       def id_type: () -> Symbol
       def batch_key: () -> Symbol
-      def fully_requested_by?: (Hash[String, untyped] query) -> bool
     end
 
-    module PostWrites : _Lookup[Post]
+    module PostWrites : _ResourceClass[Post]
       def create: (?String? text, client: _Client, ?reply_to: id?, ?quote: id?, ?media_ids: untyped, ?community: id?, **untyped params) -> Post?
       def delete: (id post, client: _Client) -> bool
       def hide_reply: (id post, client: _Client) -> bool
@@ -577,7 +593,6 @@ module X
 
   class Resource
     extend Objects::Attributes
-    extend Objects::Finders
     include Objects::PublishedCount
     include Objects::Identity
     include Objects::Serialization
@@ -597,8 +612,6 @@ module X
     private def self.fields_key: () -> String?
     private def self.fully_requested_by?: (Hash[String, untyped] query) -> bool
     def self.default_params: () -> Hash[String, Array[String]]
-    private def self.hydratable?: () -> bool
-    private def self.batchable?: () -> bool
     private def self.batch_key: () -> Symbol
     private def self.endpoint!: () -> String
     def self.from_id: (Objects::id id, ?client: Objects::_Client?) -> Resource
@@ -700,7 +713,10 @@ module X
   end
 
   class Media < Resource
+    extend Objects::BatchFinders
+    extend Objects::_ResourceClass[Media]
     extend Objects::_Lookup[Media]
+    extend Objects::_BatchLookup[Media]
     include Objects::_Hydration[Media]
     FIELDS: Array[String]
 
@@ -738,7 +754,7 @@ module X
   end
 
   class Poll < Resource
-    extend Objects::_Lookup[Poll]
+    extend Objects::_ResourceClass[Poll]
     include Objects::_Hydration[Poll]
     FIELDS: Array[String]
 
@@ -752,7 +768,7 @@ module X
   end
 
   class Place < Resource
-    extend Objects::_Lookup[Place]
+    extend Objects::_ResourceClass[Place]
     include Objects::_Hydration[Place]
     FIELDS: Array[String]
 
@@ -770,7 +786,9 @@ module X
   end
 
   class User < Resource
+    extend Objects::_ResourceClass[User]
     extend Objects::_Lookup[User]
+    extend Objects::_BatchLookup[User]
     include Objects::_Hydration[User]
     include Objects::Relationships
     extend Objects::UserFinders
@@ -847,7 +865,10 @@ module X
   end
 
   class Post < Resource
+    extend Objects::BatchFinders
+    extend Objects::_ResourceClass[Post]
     extend Objects::_Lookup[Post]
+    extend Objects::_BatchLookup[Post]
     extend Objects::PostCounts
     extend Objects::PostWrites
     include Objects::_Hydration[Post]
@@ -923,6 +944,8 @@ module X
   class Tweet = Post
 
   class Community < Resource
+    extend Objects::Finders
+    extend Objects::_ResourceClass[Community]
     extend Objects::_Lookup[Community]
     include Objects::_Hydration[Community]
     FIELDS: Array[String]
@@ -946,6 +969,8 @@ module X
   end
 
   class List < Resource
+    extend Objects::Finders
+    extend Objects::_ResourceClass[List]
     extend Objects::_Lookup[List]
     include Objects::_Hydration[List]
     FIELDS: Array[String]
@@ -988,7 +1013,9 @@ module X
   end
 
   class DirectMessage < Resource
+    extend Objects::Finders
     extend Objects::DirectMessageConversations
+    extend Objects::_ResourceClass[DirectMessage]
     extend Objects::_Lookup[DirectMessage]
     include Objects::_Hydration[DirectMessage]
     FIELDS: Array[String]
@@ -1027,7 +1054,10 @@ module X
   end
 
   class Space < Resource
+    extend Objects::BatchFinders
+    extend Objects::_ResourceClass[Space]
     extend Objects::_Lookup[Space]
+    extend Objects::_BatchLookup[Space]
     include Objects::_Hydration[Space]
     FIELDS: Array[String]
     EXPANSIONS: Array[String]

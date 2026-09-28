@@ -7,6 +7,7 @@ module X
     cover Space
     cover Cursor
     cover Objects::Finders
+    cover Objects::BatchFinders
     cover Objects::Pages
     cover Resource
 

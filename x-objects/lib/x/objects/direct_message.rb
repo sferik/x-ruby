@@ -2,12 +2,14 @@
 
 require_relative "cursor"
 require_relative "direct_message_conversations"
+require_relative "finders"
 require_relative "resource"
 
 module X
   # A direct message event
   # @api public
   class DirectMessage < Resource
+    extend Objects::Finders
     extend Objects::DirectMessageConversations
 
     # The direct message event fields the object layer requests; the sender, the participants, and the posts a
@@ -19,16 +21,6 @@ module X
     MAX_RESULTS = 100
 
     class << self
-      # Check whether direct message events can be looked up many at a time
-      #
-      # The API offers no batch lookup of them, so each stub hydrates on its own.
-      #
-      # @api private
-      # @return [Boolean] false
-      # @example Check whether direct message events can be looked up in batches
-      #   X::DirectMessage.__send__(:batchable?) # => false
-      def batchable? = false
-
       # The API endpoint used to look up direct message events by identifier
       #
       # @api private
@@ -47,7 +39,7 @@ module X
       #   X::DirectMessage.__send__(:fields_key) # => "dm_event.fields"
       def fields_key = "dm_event.fields"
 
-      private :batchable?, :endpoint, :fields_key
+      private :endpoint, :fields_key
 
       # The default query parameters requesting every direct message field and expansion
       #

@@ -5,7 +5,7 @@ require_relative "../../test_helper"
 module X
   module Objects
     class FindersConcurrencyTest < Minitest::Test
-      cover Finders
+      cover BatchFinders
       cover UserFinders
       cover X::Media
       cover API::Lookups
@@ -27,7 +27,7 @@ module X
       end
 
       def test_the_default_concurrency_is_four_and_named_by_the_finders_alone
-        assert_equal [4, 100], [Finders::DEFAULT_CONCURRENCY, Finders::MAX_BATCH_SIZE]
+        assert_equal [4, 100], [BatchFinders::DEFAULT_CONCURRENCY, BatchFinders::MAX_BATCH_SIZE]
         refute Resource.const_defined?(:DEFAULT_CONCURRENCY) || Resource.const_defined?(:MAX_BATCH_SIZE)
       end
 

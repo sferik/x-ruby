@@ -4,7 +4,6 @@ require "json"
 require_relative "attributes"
 require_relative "published_count"
 require_relative "errors"
-require_relative "finders"
 require_relative "identity"
 require_relative "includes"
 require_relative "memo"
@@ -17,7 +16,6 @@ module X
   # @api public
   class Resource
     extend Objects::Attributes
-    extend Objects::Finders
     include Objects::PublishedCount
     include Objects::Identity
     include Objects::Serialization
@@ -163,24 +161,6 @@ module X
         Objects::Utils.query(default_params).all? { |key, value| query[key].eql?(value) }
       end
 
-      # Check whether this resource can be looked up by identifier
-      #
-      # @api private
-      # @return [Boolean] true if the resource has a lookup endpoint
-      # @example Check whether a resource is hydratable
-      #   X::Media.__send__(:hydratable?) # => false
-      def hydratable? = !endpoint.nil?
-
-      # Check whether this resource can be looked up many at a time
-      #
-      # The stubs of a page of such a resource hydrate together, in one lookup.
-      #
-      # @api private
-      # @return [Boolean] true if the resource has a batch lookup
-      # @example Check whether lists can be looked up in batches
-      #   X::List.__send__(:batchable?) # => false
-      def batchable? = hydratable?
-
       # The query parameter a batch lookup takes the identifiers in
       #
       # @api private
@@ -198,7 +178,7 @@ module X
       #   X::User.__send__(:endpoint!) # => "users"
       def endpoint! = endpoint || raise(UnsupportedOperation, "#{self} cannot be fetched by #{id_key}")
 
-      private :endpoint, :id_key, :id_type, :includes_key, :fields_key, :from_id_in_batch, :build, :fully_requested_by?, :hydratable?, :batchable?, :batch_key, :endpoint!
+      private :endpoint, :id_key, :id_type, :includes_key, :fields_key, :from_id_in_batch, :build, :fully_requested_by?, :batch_key, :endpoint!
 
       # Build the resource or resources a response holds
       #
@@ -330,7 +310,7 @@ module X
     #
     # @api public
     # @return [Resource, nil] the full resource or nil if it no longer exists
-    # @raise [UnsupportedOperation] if the resource cannot be looked up by identifier
+    # @raise [UnsupportedOperation] if the resource cannot be looked up by identifier, as a poll or a place cannot
     # @raise [ArgumentError] if the resource has no client
     # @example Fetch the full author of a post
     #   post.author.hydrate.description
@@ -345,7 +325,7 @@ module X
     #
     # @api public
     # @return [Resource, nil] the fresh resource or nil if it no longer exists
-    # @raise [UnsupportedOperation] if the resource cannot be looked up by identifier
+    # @raise [UnsupportedOperation] if the resource cannot be looked up by identifier, as a poll or a place cannot
     # @raise [ArgumentError] if the resource has no client
     # @example Refresh a user's follower count
     #   user.refresh.followers_count

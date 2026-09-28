@@ -7,6 +7,7 @@ module X
     class ResourceIdentityTest < Minitest::Test
       cover Resource
       cover Objects::Finders
+      cover Objects::BatchFinders
       cover Identity
 
       def setup
@@ -28,20 +29,16 @@ module X
         assert_equal "X::Poll cannot be fetched by id", error.message
       end
 
-      # A resource the API offers no lookup of is not one to look up one at a time either
-      def test_find_without_endpoint
-        assert_raises(UnsupportedOperation) { Poll.find(1, client: FakeClient.new) }
-        [Poll, Place].each do |resource|
-          error = assert_raises(UnsupportedOperation) { resource.find_all([1, 2], client: FakeClient.new) }
-
-          assert_equal "#{resource} cannot be fetched by id", error.message
-          assert_raises(UnsupportedOperation) { resource.hydrate_all([resource.from_id(1)], client: FakeClient.new) }
+      # A resource the API offers no lookup of answers no finder, rather than one that only raises
+      def test_a_resource_without_a_lookup_answers_no_finder
+        [Resource, Poll, Place].each do |resource|
+          %i[find find! find_all hydrate_all].each { |name| refute_respond_to resource, name }
         end
       end
 
-      def test_hydratable
-        refute_predicate Resource, :hydratable?
-        assert_predicate User, :hydratable?
+      def test_a_resource_without_a_lookup_is_built_from_an_identifier
+        assert_equal [1, "abc"], [Poll.from_id(1).id, Place.from_id("abc").id]
+        assert_equal Place.new({"id" => "abc", "name" => "Home"}), Place.from_id("abc")
       end
 
       def test_attrs_are_deep_frozen_with_string_keys

@@ -4,6 +4,12 @@ require_relative "resource"
 
 module X
   # A place tagged in a post
+  #
+  # The API offers no lookup of places, so a place is read from the response of the post that expanded it, and the class
+  # answers no finder. from_id builds one from its identifier, which a place the response did not expand is built as
+  # too, and which compares equal to the place it identifies, but hydrate and refresh raise UnsupportedOperation for one
+  # that is not hydrated, since there is nothing to look it up with.
+  #
   # @api public
   class Place < Resource
     # Every public place field

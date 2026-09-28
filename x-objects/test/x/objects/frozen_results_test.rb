@@ -8,6 +8,7 @@ module X
     cover Cursor
     cover Objects::Pages
     cover Objects::Finders
+    cover Objects::BatchFinders
     cover Objects::UserFinders
 
     def setup

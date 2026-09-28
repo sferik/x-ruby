@@ -2,7 +2,7 @@
 
 require "monitor"
 require_relative "batch"
-require_relative "finders"
+require_relative "batch_finders"
 require_relative "page"
 require "x/core/problem"
 require_relative "utils"
@@ -130,7 +130,7 @@ module X
       #
       # Hydrating one stub looks up the stubs of its batch in one request, rather than every stub of a page of up
       # to a thousand, since the API bills each resource a lookup returns. A resource without a batch lookup, such
-      # as a list, hydrates each stub on its own.
+      # as a list, whose class BatchFinders does not extend, hydrates each stub on its own.
       #
       # @api private
       # @param resources [Array<Resource>] the resources of the page
@@ -138,8 +138,8 @@ module X
       def stubs_from(resources)
         klass = @cursor.resource_class
         client = @cursor.client
-        resources.each_slice(Finders::MAX_BATCH_SIZE).flat_map do |slice|
-          batch = (Batch.new(klass, slice, client:) if klass.__send__(:batchable?))
+        resources.each_slice(BatchFinders::MAX_BATCH_SIZE).flat_map do |slice|
+          batch = (Batch.new(klass, slice, client:) if klass.is_a?(BatchFinders))
           slice.map { |resource| klass.__send__(:from_id_in_batch, resource, client:, batch:) }
         end
       end

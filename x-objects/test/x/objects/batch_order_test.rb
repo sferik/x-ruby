@@ -6,6 +6,7 @@ module X
   # A batch lookup returns the resources in the order they were asked for, whatever order the API answers in
   class BatchOrderTest < Minitest::Test
     cover Objects::Finders
+    cover Objects::BatchFinders
     cover Objects::UserFinders
     cover Media
 

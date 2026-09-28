@@ -8,6 +8,7 @@ module X
       cover MissingResource
       cover Resource
       cover Objects::Finders
+      cover Objects::BatchFinders
       cover API::Lookups
 
       def setup

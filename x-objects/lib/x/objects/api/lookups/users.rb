@@ -119,7 +119,7 @@ module X
           #   client.find_all_users(["sferik", "gem"])
           # @example Look up many users one batch at a time
           #   client.find_all_users(ids, concurrency: 1)
-          def find_all_users(ids_or_usernames, concurrency: Finders::DEFAULT_CONCURRENCY, **params, &)
+          def find_all_users(ids_or_usernames, concurrency: BatchFinders::DEFAULT_CONCURRENCY, **params, &)
             User.find_all(ids_or_usernames, client: self, concurrency:, **params, &)
           end
 
@@ -138,7 +138,7 @@ module X
           # @yieldparam problem [Problem] each problem the API reported, such as a username that was not found
           # @example Look up many users by username
           #   client.find_all_users_by_username(["sferik", "1234567890"])
-          def find_all_users_by_username(usernames, concurrency: Finders::DEFAULT_CONCURRENCY, **params, &)
+          def find_all_users_by_username(usernames, concurrency: BatchFinders::DEFAULT_CONCURRENCY, **params, &)
             User.find_all_by_username(usernames, client: self, concurrency:, **params, &)
           end
 
@@ -156,7 +156,7 @@ module X
           # @yieldparam problem [Problem] each problem the API reported, such as an identifier that was not found
           # @example Look up many users by identifier, read as Strings
           #   client.find_all_users_by_id(ENV.fetch("USER_IDS").split(","))
-          def find_all_users_by_id(ids, concurrency: Finders::DEFAULT_CONCURRENCY, **params, &)
+          def find_all_users_by_id(ids, concurrency: BatchFinders::DEFAULT_CONCURRENCY, **params, &)
             User.find_all_by_id(ids, client: self, concurrency:, **params, &)
           end
 

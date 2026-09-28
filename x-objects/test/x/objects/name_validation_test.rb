@@ -7,7 +7,7 @@ module X
     cover Objects::Utils
     cover Objects::UserFinders
     cover Objects::API::Lookups
-    cover Objects::Finders
+    cover Objects::BatchFinders
 
     RAW_MESSAGE = "\"a/b?c=d\" is not an identifier: pass X::Space, or a String of word characters"
 

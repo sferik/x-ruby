@@ -7,6 +7,7 @@ module X
     class ResourceStubTest < Minitest::Test
       cover Resource
       cover Objects::Finders
+      cover Objects::BatchFinders
 
       def setup
         @client = FakeClient.new

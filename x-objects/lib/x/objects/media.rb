@@ -1,11 +1,14 @@
 # frozen_string_literal: true
 
+require_relative "batch_finders"
 require_relative "resource"
 
 module X
   # A photo, video, or animated GIF attached to a post, which its media key identifies
   # @api public
   class Media < Resource
+    extend Objects::BatchFinders
+
     # Every public media field
     FIELDS = %w[alt_text duration_ms height media_key preview_image_url public_metrics type url variants width].freeze
 
@@ -133,7 +136,7 @@ module X
     # @yieldparam problem [Problem] each problem the API reported
     # @example Look up what the uploads returned
     #   X::Media.find_all(uploads, client: client)
-    def self.find_all(media, client:, concurrency: Objects::Finders::DEFAULT_CONCURRENCY, **params) = super(media.map { |value| key_of(value) }, client:, concurrency:, **params)
+    def self.find_all(media, client:, concurrency: Objects::BatchFinders::DEFAULT_CONCURRENCY, **params) = super(media.map { |value| key_of(value) }, client:, concurrency:, **params)
 
     # The key under which media appear in the includes of a response
     #

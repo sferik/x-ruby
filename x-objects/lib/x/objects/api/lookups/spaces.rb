@@ -51,7 +51,7 @@ module X
           # @yieldparam problem [Problem] each problem the API reported, such as a resource that was not found
           # @example Look up many spaces
           #   client.find_all_spaces(["1DXxyRYNejbKM", "1OwGWzarWnNKQ"]).map(&:title)
-          def find_all_spaces(ids, concurrency: Finders::DEFAULT_CONCURRENCY, **params, &)
+          def find_all_spaces(ids, concurrency: BatchFinders::DEFAULT_CONCURRENCY, **params, &)
             Space.find_all(ids, client: self, concurrency:, **params, &)
           end
 

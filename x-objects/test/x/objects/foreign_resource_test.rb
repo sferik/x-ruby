@@ -9,6 +9,7 @@ module X
     cover Objects::Utils
     cover Resource
     cover Objects::Finders
+    cover Objects::BatchFinders
     cover Objects::UserFinders
     cover Media
 

@@ -6,6 +6,7 @@ module X
   module Objects
     class PartialErrorsTest < Minitest::Test
       cover Finders
+      cover BatchFinders
       cover Resource
       cover Includes
       cover Cursor

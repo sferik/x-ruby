@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require_relative "batch_finders"
 require_relative "cursor"
 require_relative "resource"
 
@@ -12,6 +13,8 @@ module X
   #
   # @api public
   class Space < Resource
+    extend Objects::BatchFinders
+
     # Every public space field
     FIELDS = %w[created_at ended_at id is_ticketed lang participant_count scheduled_start started_at state
       subscriber_count title updated_at].freeze

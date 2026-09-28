@@ -2,28 +2,21 @@
 
 require "uri"
 require_relative "cursor"
+require_relative "finders"
 require_relative "resource"
 
 module X
   # A community of users who post to one another
   # @api public
   class Community < Resource
+    extend Objects::Finders
+
     # Every public community field
     FIELDS = %w[access created_at description id join_policy member_count name].freeze
     # Maximum number of communities per page of a search
     MAX_RESULTS = 100
 
     class << self
-      # Check whether communities can be looked up many at a time
-      #
-      # The API offers no batch lookup of them, so each stub hydrates on its own.
-      #
-      # @api private
-      # @return [Boolean] false
-      # @example Check whether communities can be looked up in batches
-      #   X::Community.__send__(:batchable?) # => false
-      def batchable? = false
-
       # The API endpoint used to look up communities by identifier
       #
       # @api private
@@ -40,7 +33,7 @@ module X
       #   X::Community.__send__(:fields_key) # => "community.fields"
       def fields_key = "community.fields"
 
-      private :batchable?, :endpoint, :fields_key
+      private :endpoint, :fields_key
 
       # The default query parameters requesting every community field
       #

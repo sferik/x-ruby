@@ -10,7 +10,7 @@ module X
       # Initialize a batch over some identifiers
       #
       # @api private
-      # @param klass [Class] the class of the resources
+      # @param klass [Class] the class of the resources, which BatchFinders extends
       # @param ids [Array<String, Integer>] the identifiers
       # @param client [Object] the client used to make the requests
       # @return [Batch] a new batch

@@ -55,7 +55,7 @@ module X
           #   client.find_all_posts([1234567890, 1234567891])
           # @example Look up many posts one batch at a time
           #   client.find_all_posts(ids, concurrency: 1)
-          def find_all_posts(ids, concurrency: Finders::DEFAULT_CONCURRENCY, **params, &)
+          def find_all_posts(ids, concurrency: BatchFinders::DEFAULT_CONCURRENCY, **params, &)
             Post.find_all(ids, client: self, concurrency:, **params, &)
           end
 

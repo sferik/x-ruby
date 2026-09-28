@@ -68,9 +68,9 @@ module X
       assert_equal ["users/1/owned_lists", "lists/2", "lists/3"], @client.paths
     end
 
-    def test_only_resources_with_a_batch_lookup_are_batchable
-      assert_equal [true, true, true, true], [User, Post, Space, Media].map { |klass| klass.__send__(:batchable?) }
-      assert_equal [false, false, false, false], [List, Community, DirectMessage, Poll].map { |klass| klass.__send__(:batchable?) }
+    def test_only_resources_with_a_batch_lookup_look_up_many_at_a_time
+      assert_equal [true, true, true, true], [User, Post, Space, Media].map { |klass| klass.is_a?(Objects::BatchFinders) }
+      assert_equal [false, false, false, false], [List, Community, DirectMessage, Poll].map { |klass| klass.is_a?(Objects::BatchFinders) }
     end
 
     def test_refreshing_a_stub_of_a_page_looks_it_up_again_on_its_own

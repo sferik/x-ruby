@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative "../../finders"
+require_relative "../../batch_finders"
 require_relative "../../media"
 
 module X
@@ -51,7 +51,7 @@ module X
           #   client.find_all_media(post.media)
           # @example Look up media by media key
           #   client.find_all_media(%w[3_1880028106020515840 3_1880028106020515841])
-          def find_all_media(media, concurrency: Finders::DEFAULT_CONCURRENCY, **params, &)
+          def find_all_media(media, concurrency: BatchFinders::DEFAULT_CONCURRENCY, **params, &)
             X::Media.find_all(media, client: self, concurrency:, **params, &)
           end
 

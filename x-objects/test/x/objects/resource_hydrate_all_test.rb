@@ -6,7 +6,7 @@ module X
   module Objects
     class ResourceHydrateAllTest < Minitest::Test
       cover Resource
-      cover Objects::Finders
+      cover Objects::BatchFinders
 
       def setup
         @client = FakeClient.new
@@ -67,12 +67,13 @@ module X
         assert_empty User.hydrate_all([], client: @client)
       end
 
-      def test_hydrate_all_without_stubs_needs_no_batch_lookup
-        lists = [List.new({"id" => "1", "name" => "Rubyists"}, client: @client, hydrated: true)]
+      def test_hydrate_all_without_stubs_needs_no_lookup
+        media = [Media.new({"media_key" => "3_1", "type" => "photo"}, client: @client, hydrated: true)]
 
-        assert_equal lists, List.hydrate_all(lists, client: @client)
+        assert_equal media, Media.hydrate_all(media, client: @client)
         assert_empty Media.hydrate_all([], client: @client)
-        refute_same lists, List.hydrate_all(lists, client: @client)
+        refute_same media, Media.hydrate_all(media, client: @client)
+        assert_empty @client.requests
       end
 
       def test_hydrate_all_merges_params

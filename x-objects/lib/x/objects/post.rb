@@ -2,6 +2,7 @@
 
 require "json"
 require "uri"
+require_relative "batch_finders"
 require_relative "community"
 require_relative "cursor"
 require_relative "post_collections"
@@ -31,6 +32,7 @@ module X
 
     include Objects::References
     include Objects::PostCollections
+    extend Objects::BatchFinders
     extend Objects::PostCounts
     extend Objects::PostWrites
 

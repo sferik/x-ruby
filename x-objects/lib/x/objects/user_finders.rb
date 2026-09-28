@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require_relative "errors"
-require_relative "finders"
+require_relative "batch_finders"
 require_relative "utils"
 
 module X
@@ -13,6 +13,8 @@ module X
     #
     # @api private
     module UserFinders
+      include BatchFinders
+
       # Look up a user by identifier or username
       #
       # An Integer or a user is looked up by identifier, and a String by username, with or without a leading at sign.
@@ -68,7 +70,7 @@ module X
       # @yieldparam problem [Problem] each problem the API reported, such as a user that was not found
       # @example Look up many users by username
       #   X::User.find_all(["sferik", "gem"], client: client)
-      def find_all(ids_or_usernames, client:, concurrency: Finders::DEFAULT_CONCURRENCY, **params, &)
+      def find_all(ids_or_usernames, client:, concurrency: DEFAULT_CONCURRENCY, **params, &)
         ids, usernames = ids_or_usernames.partition { |value| Utils.id?(value) }
         found = super(ids, client:, concurrency:, **params) #: Array[User]
         in_order(found + find_all_by_username(usernames, client:, concurrency:, **params, &), ids_or_usernames)
@@ -90,7 +92,7 @@ module X
       # @yieldparam problem [Problem] each problem the API reported, such as an identifier that was not found
       # @example Look up many users by identifier, read as Strings
       #   X::User.find_all_by_id(ENV.fetch("USER_IDS").split(","), client: client)
-      def find_all_by_id(ids, client:, concurrency: Finders::DEFAULT_CONCURRENCY, **params, &)
+      def find_all_by_id(ids, client:, concurrency: DEFAULT_CONCURRENCY, **params, &)
         ids = ids.map { |id| Utils.id_of(id, self) }
         in_order_of(lookup_in_batches(endpoint!, batch_key, ids, client:, concurrency:, **params, &), ids) #: Array[User]
       end
@@ -143,7 +145,7 @@ module X
       # @yieldparam problem [Problem] each problem the API reported, such as a username that was not found
       # @example Look up many users by username
       #   X::User.find_all_by_username(["sferik", "gem"], client: client)
-      def find_all_by_username(usernames, client:, concurrency: Finders::DEFAULT_CONCURRENCY, **params, &)
+      def find_all_by_username(usernames, client:, concurrency: DEFAULT_CONCURRENCY, **params, &)
         usernames = usernames.map { |username| normalize(Utils.username!(username)) }
         found = lookup_in_batches("users/by", :usernames, usernames, client:, concurrency:, **params, &) #: Array[User]
         in_order(found, usernames)

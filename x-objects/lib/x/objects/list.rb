@@ -2,12 +2,15 @@
 
 require "uri"
 require_relative "cursor"
+require_relative "finders"
 require_relative "resource"
 
 module X
   # A curated list of users
   # @api public
   class List < Resource
+    extend Objects::Finders
+
     # Every public list field
     FIELDS = %w[created_at description follower_count id member_count name private].freeze
     # Every expansion available on list endpoints
@@ -16,16 +19,6 @@ module X
     MAX_RESULTS = 100
 
     class << self
-      # Check whether lists can be looked up many at a time
-      #
-      # The API offers no batch lookup of them, so each stub hydrates on its own.
-      #
-      # @api private
-      # @return [Boolean] false
-      # @example Check whether lists can be looked up in batches
-      #   X::List.__send__(:batchable?) # => false
-      def batchable? = false
-
       # The API endpoint used to look up lists by identifier
       #
       # @api private
@@ -44,7 +37,7 @@ module X
       #   X::List.__send__(:fields_key) # => "list.fields"
       def fields_key = "list.fields"
 
-      private :batchable?, :endpoint, :fields_key
+      private :endpoint, :fields_key
 
       # The default query parameters requesting every list field and expansion
       #

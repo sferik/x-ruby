@@ -9,6 +9,7 @@ module X
     class ResourceHydrateAllStoredTest < Minitest::Test
       cover Resource
       cover Objects::Finders
+      cover Objects::BatchFinders
 
       def setup
         @client = FakeClient.new
@@ -30,6 +31,14 @@ module X
 
         assert_equal %w[user2 user3], User.hydrate_all([found, User.from_id(3)], client: @client).map(&:username)
         assert_equal %w[users/2 users], @client.paths
+      end
+
+      # A concurrency that would look nothing up is refused even when every resource is hydrated already
+      def test_hydrate_all_refuses_a_concurrency_below_one_with_nothing_to_look_up
+        hydrated = User.new({"id" => "1"}, client: @client, hydrated: true)
+
+        assert_raises(ArgumentError) { User.hydrate_all([hydrated], client: @client, concurrency: 0) }
+        assert_empty @client.requests
       end
     end
   end
