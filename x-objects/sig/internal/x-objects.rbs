@@ -1,0 +1,648 @@
+# The internals of x-objects: the modules, classes, constants, and methods the code keeps private, which Steep type
+# checks it against, but which the gem does not ship, since the gemspec packages sig/*.rbs alone. Code that depends
+# on x-objects is checked against sig/x-objects.rbs, which declares its public interface, so that it cannot refer to
+# what the code hides, and these can change within 1.x.
+#
+# The modules the resource classes and X::Objects::API are built of are declared here with the methods they give,
+# which sig/x-objects.rbs declares on the classes and on API themselves, so that how those methods are grouped can
+# change within 1.x.
+module X
+  module Objects
+    type key = Array[String]
+
+    # What a resource that publishes the number of a collection answers, which Resource does
+    interface _Counted
+      def refresh: () -> Resource?
+      def hydrate: () -> Resource?
+    end
+
+    module PublishedCount : _Counted
+      private
+      def counter: (Symbol? total) -> (^(?fresh: bool) -> Integer?)?
+    end
+
+    # Serialization of what an API response held, by its attributes alone
+    module Serialization : _Attributed
+      def as_json: (*untyped) -> Hash[String, untyped]
+      def to_json: (?JSON::State? state) -> String
+    end
+
+    # Anything the object layer built from an API response, which holds its attributes
+    interface _Attributed
+      def attrs: () -> Hash[String, untyped]
+    end
+
+    module Utils
+      extend Utils
+
+      JSON_CLASSES: Hash[Symbol, singleton(Array) | singleton(Hash)]
+      NUMERIC_ID: Regexp
+      RAW_ID: Regexp
+      USERNAME: Regexp
+      MEDIA_KEY: Regexp
+      NOT_MEDIA: String
+      FOREIGN_RESOURCE: String
+
+      def deep_freeze: (untyped value) -> untyped
+      def path: (String base, params params) -> String
+      def query: (params params) -> query
+      def query_value: (untyped value) -> untyped
+      def merge_params: (params defaults, params params) -> query
+      def id_of: (untyped value, Class klass) -> String
+      def id_from: (untyped value, Class klass) -> String
+      def media_ids_of: (untyped media_ids) -> Array[String]
+      def username: (untyped value) -> String
+      def username!: (untyped value) -> String
+      def media_id_of: (untyped value) -> String
+      def media_key_id: (untyped media) -> String
+      def integer: (String | Integer | nil value) -> Integer?
+      def authenticated_user_id: (untyped client) -> Integer?
+      def app_client: (untyped client) -> untyped
+      def space_client: (untyped client) -> untyped
+      def authenticator_of: (untyped client) -> untyped
+      def id?: (untyped value) -> bool
+      def time: (String? value) -> Time?
+      def read: [T] (String name, untyped value) { (untyped value) -> T } -> T
+    end
+
+    module Parallel
+      extend Parallel
+
+      def map: [T, U] (Enumerable[T] items, concurrency: Integer) { (T) -> U } -> Array[U]
+      private def drain: (Thread::Queue queue, Array[Thread] threads) -> void
+      private def worker: [T, U] (Thread::Queue queue, Thread::Queue errors, Array[T] items, Array[U?] results) { (T) -> U } -> Thread
+    end
+
+    class Pages
+      @cursor: Cursor[untyped]
+      @monitor: Monitor
+      @pages: Array[Page[untyped]?]
+
+      def initialize: (Cursor[untyped] cursor) -> void
+      def at: (Integer index) -> Page[untyped]?
+      def read: (Integer count) -> Array[Resource]
+
+      private
+      def fetched: () -> Array[Page[untyped]]
+      def next_page: (Integer wanted) -> Page[untyped]?
+      def cached: (Integer index) -> Page[untyped]?
+      def fetch: (Integer index, ?Integer? wanted) -> Page[untyped]?
+      def requester: () -> _Client
+      def resources_from: (body body) -> Array[Resource]
+      def stubs_from: (Array[Resource] resources) -> Array[Resource]
+      def id_only?: () -> bool
+      def params_for: (Integer index) -> query?
+      def sized: (query params, Integer wanted) -> query
+      def prefetch: (Integer index) -> Thread
+    end
+
+    class Batch
+      @klass: BatchFinders
+      @ids: Array[untyped]
+      @client: _Client
+      @memo: Memo
+
+      def initialize: (BatchFinders klass, Array[untyped] ids, client: _Client) -> void
+      def fetch: (untyped id) -> Resource?
+
+      private
+      def resources: () -> Hash[untyped, Resource]
+    end
+
+    class Memo
+      UNSET: Object
+
+      @monitor: Monitor
+      @value: untyped
+
+      def initialize: () -> void
+      def fetch: () { () -> untyped } -> untyped
+      def stored?: () -> bool
+      def store: (untyped value) -> untyped
+    end
+
+    class Includes
+      @data: Hash[String?, untyped]
+      @monitor: Monitor
+      @index: Hash[String?, Hash[untyped, attrs]]
+      @resources: Hash[[singleton(Resource), untyped], Resource]
+
+      @problems: Array[Problem]
+
+      attr_reader problems: Array[Problem]
+
+      def initialize: (?Hash[untyped, untyped]? data, ?problems: Array[Problem]) -> void
+      def resolve: (singleton(Resource) klass, untyped id, client: _Client? client) -> Resource
+
+      private
+      def index: (singleton(Resource) klass) -> Hash[untyped, attrs]
+    end
+
+    module Attributes : Class
+      EMPTY_LIST: Array[untyped]
+      CONVERTERS: Hash[Symbol, ^(untyped) -> untyped]
+
+      @attribute_names: Array[Symbol]?
+      @attribute_aliases: Array[Symbol]?
+
+      private
+      def attribute_names: () -> Array[Symbol]
+      def attribute_aliases: () -> Array[Symbol]
+      def attribute_alias: (Symbol name, Symbol original) -> void
+      def attribute: (Symbol name, ?Symbol type, ?key: key) -> void
+      def reference: (Symbol name, Symbol klass_name, key: key) -> void
+      def references: (Symbol name, Symbol klass_name, key: key) -> void
+      def key_path: (untyped key) -> key
+    end
+
+    interface _Identifiable
+      def id: () -> (Integer | String)
+      def class: () -> singleton(Resource)
+    end
+
+    module Identity : _Identifiable
+      def ==: (untyped other) -> bool
+      def eql?: (untyped other) -> bool
+      def hash: () -> Integer
+      def deconstruct_keys: (Array[Symbol]? keys) -> Hash[Symbol, untyped]
+    end
+
+    interface _Following
+      def following: (**untyped params) -> Cursor[User]
+    end
+
+    module Relationships : Resource, _Following
+      def follow: (id user) -> bool
+      def unfollow: (id user) -> bool
+      def block: (id user) -> bool
+      def unblock: (id user) -> bool
+      def mute: (id user) -> bool
+      def unmute: (id user) -> bool
+      def like: (id post) -> bool
+      def unlike: (id post) -> bool
+      def repost: (id post) -> bool
+      def retweet: (id post) -> bool
+      def unrepost: (id post) -> bool
+      def unretweet: (id post) -> bool
+      def bookmark: (id post) -> bool
+      def unbookmark: (id post) -> bool
+      def follow_list: (id list) -> bool
+      def unfollow_list: (id list) -> bool
+      def pin_list: (id list) -> bool
+      def unpin_list: (id list) -> bool
+      def follows?: (id user) -> bool
+
+      private
+      def authenticated_user_id: () -> Integer?
+      def connection_status_of: (id user) -> Array[String]
+      def relate: (String relation, String key, String target, *String states) -> bool
+      def unrelate: (String relation, String target, String state) -> bool
+    end
+
+    interface _FinderHost
+      def default_params: () -> Hash[String, Array[String]]
+      def resource_from_response: (body body, client: _Client?, ?hydrated: bool) -> Resource?
+      def collection_from_response: (body body, client: _Client?, ?hydrated: bool) -> Array[Resource]
+    end
+
+    module UserFinders : Class, BatchFinders
+      include BatchFinders
+
+      def find: (id id_or_username, client: _Client, **untyped params) ?{ (Problem problem) -> void } -> Resource?
+      def find!: (id id_or_username, client: _Client, **untyped params) -> Resource
+      def find_all: (Array[id] ids_or_usernames, client: _Client, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[User]
+      def find_all_by_id: (Array[id] ids, client: _Client, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[User]
+      def find_by_id: (id id, client: _Client, **untyped params) ?{ (Problem problem) -> void } -> User?
+      def find_by_id!: (id id, client: _Client, **untyped params) -> User
+      def find_all_by_username: (Array[id] usernames, client: _Client, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[User]
+      def find_by_username: (untyped username, client: _Client, **untyped params) ?{ (Problem problem) -> void } -> User?
+      def find_by_username!: (untyped username, client: _Client, **untyped params) -> User
+      def current: (client: _Client, **untyped params) ?{ (Problem problem) -> void } -> User?
+      def current!: (client: _Client, **untyped params) -> User
+
+      private
+      def in_order: (Array[User] users, Array[id] ids_or_usernames) -> Array[User]
+      def key_of: (untyped value) -> String
+      def normalize: (untyped username) -> String
+    end
+
+    module Finders : Class, _FinderHost
+      def find: (id id, client: _Client, **untyped params) ?{ (Problem problem) -> void } -> Resource?
+      def find!: (id id, client: _Client, **untyped params) -> Resource
+      private
+      def lookup: (String path, client: _Client, **untyped params) ?{ (Problem problem) -> void } -> Resource?
+      def lookup_all: (String path, client: _Client, **untyped params) ?{ (Problem problem) -> void } -> Array[Resource]
+      def client_for: (_Client client) -> _Client
+      def get: (String path, client: _Client, query: Hash[String, untyped]) -> body
+      def reporting: (body body) ?{ (Problem problem) -> void } -> body
+
+      # The private class methods of the resource class that extends it, which it reads
+      def endpoint!: () -> String
+      def fully_requested_by?: (Hash[String, untyped] query) -> bool
+    end
+
+    module BatchFinders : Class, _FinderHost
+      include Finders
+
+      MAX_BATCH_SIZE: Integer
+      DEFAULT_CONCURRENCY: Integer
+      INVALID_CONCURRENCY: String
+      FOREIGN_RESOURCE: String
+
+      def hydrate_all: (Array[Resource?] resources, client: _Client, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[Resource]
+      def find_all: (Array[id] ids, client: _Client, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[Resource]
+      private
+      def replacer: (Array[Resource] found, Hash[Symbol, untyped] params) -> ^(Resource) -> Resource?
+      def lookup_in_batches: (String path, Symbol key, Array[String] values, client: _Client, concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[Resource]
+      def in_order_of: (Array[Resource] resources, Array[String] ids) -> Array[Resource]
+      def settled?: (Resource resource) -> bool
+      def validate_concurrency!: (Integer concurrency) -> void
+      def validate_class!: (Array[Resource] resources) -> void
+
+      # The private class methods of the resource class that extends it, which it reads
+      def id_type: () -> Symbol
+      def batch_key: () -> Symbol
+    end
+
+    module PostWrites : _ResourceClass[Post]
+      def create: (?String? text, client: _Client, ?reply_to: id?, ?quote: id?, ?media_ids: untyped, ?community: id?, **untyped params) -> Post?
+      def delete: (id post, client: _Client) -> bool
+      def hide_reply: (id post, client: _Client) -> bool
+      def unhide_reply: (id post, client: _Client) -> bool
+
+      private
+      def change_visibility: (id post, bool hidden, client: _Client) -> bool?
+      def referenced: (Hash[Symbol, untyped] params, reply_to: id?, quote: id?, media_ids: untyped, community: id?) -> Hash[Symbol, untyped]
+      def merged: (Hash[Symbol, untyped] params, Symbol key, **untyped field) -> Hash[Symbol, untyped]
+    end
+
+    # The class side of DirectMessage, which builds its messages
+    interface _DirectMessageClass
+      def resource_from_response: (body body, client: _Client?, ?hydrated: bool) -> DirectMessage?
+    end
+
+    module DirectMessageConversations : _DirectMessageClass
+      CONVERSATION_ID: Regexp
+
+      def create_group: (Array[id] users, ?String? text, client: _Client, ?media_ids: untyped, **untyped params) -> DirectMessage?
+      def create_in: (DirectMessage | String | Integer conversation, ?String? text, client: _Client, ?media_ids: untyped, **untyped params) -> DirectMessage?
+      def `in`: (DirectMessage | String | Integer conversation, client: _Client, **untyped params) -> Cursor[DirectMessage]
+
+      private
+      def conversation_id_of: (DirectMessage | String | Integer conversation) -> String
+      def message: (String? text, Hash[Symbol, untyped] params, untyped media_ids) -> Hash[Symbol, untyped]
+      def sent: (body body, client: _Client) -> DirectMessage?
+    end
+
+    module PostCounts
+      RECENT_ENDPOINT: String
+      ALL_ENDPOINT: String
+      DEFAULT_GRANULARITY: String
+
+      def count: (String query, client: _Client, **untyped params) -> Integer
+      def count_all: (String query, client: _Client, **untyped params) -> Integer
+      def count_by_period: (String query, client: _Client, **untyped params) -> Hash[Time, Integer]
+      def count_all_by_period: (String query, client: _Client, **untyped params) -> Hash[Time, Integer]
+
+      private
+      def pages: (String path, String query, client: _Client, **untyped params) -> Array[Hash[String, untyped]]
+      def total: (Array[Hash[String, untyped]] bodies) -> Integer
+      def page_total: (Integer | String | nil value) -> Integer
+      def periods: (Array[Hash[String, untyped]] bodies) -> Hash[Time, Integer]
+      def period: (Hash[String, untyped] entry) -> [Time, Integer]
+    end
+
+    module PostCollections : Resource
+      def liked_by: (**untyped params) -> Cursor[User]
+      def reposted_by: (**untyped params) -> Cursor[User]
+      def retweeted_by: (**untyped params) -> Cursor[User]
+      def reposts: (**untyped params) -> Cursor[Post]
+      def retweets: (**untyped params) -> Cursor[Post]
+      def quotes: (**untyped params) -> Cursor[Post]
+      def quote_tweets: (**untyped params) -> Cursor[Post]
+    end
+
+    module References : Resource
+      REPLIED_TO: String
+      QUOTED: String
+      REPOSTED: String
+      RETWEETED: String
+
+      def referenced_posts: () -> Array[Hash[String, String]]
+      def referenced_tweets: () -> Array[Hash[String, String]]
+      def references: () -> Array[Post]
+      def replied_to: () -> Post?
+      def quoted: () -> Post?
+      def reposted: () -> Post?
+      def retweeted: () -> Post?
+      def reply?: () -> bool
+      def quote?: () -> bool
+      def repost?: () -> bool
+      def retweet?: () -> bool
+
+      private
+      def reference: (*String types) -> Post?
+    end
+
+    interface _CurrentUser
+      def current_user!: () -> User
+      def current_user_id: () -> Integer
+    end
+
+    module API : _Client
+      include API::Lookups
+      include API::Actions
+
+      module Lookups : _Client
+        include Lookups::Users
+        include Lookups::Posts
+        include Lookups::Lists
+        include Lookups::Spaces
+        include Lookups::Media
+        include Lookups::Communities
+        include Lookups::DirectMessages
+
+        module Users : _Client
+          @current_user: [untyped, User]?
+
+          def find_user: (id | String id_or_username, **untyped params) ?{ (Problem problem) -> void } -> User?
+          def find_user!: (id | String id_or_username, **untyped params) -> User
+          def find_user_by_username: (String username, **untyped params) ?{ (Problem problem) -> void } -> User?
+          def find_user_by_username!: (String username, **untyped params) -> User
+          def find_all_users: (Array[id | String] ids_or_usernames, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[User]
+          def find_all_users_by_username: (Array[String] usernames, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[User]
+          def find_user_by_id: (id id, **untyped params) ?{ (Problem problem) -> void } -> User?
+          def find_user_by_id!: (id id, **untyped params) -> User
+          def find_all_users_by_id: (Array[id] ids, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[User]
+          def current_user!: () -> User
+          def current_user_id: () -> Integer
+          def search_users: (String query, **untyped params) -> Cursor[User]
+        end
+
+        module Posts : _Client
+          def find_post: (id id, **untyped params) ?{ (Problem problem) -> void } -> Post?
+          def find_tweet: (id id, **untyped params) ?{ (Problem problem) -> void } -> Post?
+          def find_post!: (id id, **untyped params) -> Post
+          def find_tweet!: (id id, **untyped params) -> Post
+          def find_all_posts: (Array[id] ids, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[Post]
+          def find_all_tweets: (Array[id] ids, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[Post]
+          def search_posts: (String query, **untyped params) -> Cursor[Post]
+          def search_tweets: (String query, **untyped params) -> Cursor[Post]
+          def search_all_posts: (String query, **untyped params) -> Cursor[Post]
+          def reposts_of_me: (**untyped params) -> Cursor[Post]
+          def retweets_of_me: (**untyped params) -> Cursor[Post]
+          def search_all_tweets: (String query, **untyped params) -> Cursor[Post]
+          def usage: (**untyped params) -> Usage
+          def count_posts: (String query, **untyped params) -> Integer
+          def count_tweets: (String query, **untyped params) -> Integer
+          def count_all_posts: (String query, **untyped params) -> Integer
+          def count_all_tweets: (String query, **untyped params) -> Integer
+          def count_posts_by_period: (String query, **untyped params) -> Hash[Time, Integer]
+          def count_tweets_by_period: (String query, **untyped params) -> Hash[Time, Integer]
+          def count_all_posts_by_period: (String query, **untyped params) -> Hash[Time, Integer]
+          def count_all_tweets_by_period: (String query, **untyped params) -> Hash[Time, Integer]
+        end
+
+        module Lists : _Client
+          def find_list: (id id, **untyped params) ?{ (Problem problem) -> void } -> List?
+          def find_list!: (id id, **untyped params) -> List
+        end
+
+        module Spaces : _Client
+          def find_space: (id id, **untyped params) ?{ (Problem problem) -> void } -> Space?
+          def find_space!: (id id, **untyped params) -> Space
+          def find_all_spaces: (Array[id] ids, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[Space]
+          def search_spaces: (String query, **untyped params) -> Cursor[Space]
+        end
+
+        module Media : _Client
+          def find_media: (id | _MediaKeyHolder media_key, **untyped params) ?{ (Problem problem) -> void } -> X::Media?
+          def find_all_media: (Array[id | _MediaKeyHolder] media, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[X::Media]
+          def find_media!: (id | _MediaKeyHolder media_key, **untyped params) -> X::Media
+        end
+
+        module Communities : _Client
+          def find_community: (id id, **untyped params) ?{ (Problem problem) -> void } -> Community?
+          def find_community!: (id id, **untyped params) -> Community
+          def search_communities: (String query, **untyped params) -> Cursor[Community]
+        end
+
+        module DirectMessages : _Client
+          def find_direct_message: (id id, **untyped params) ?{ (Problem problem) -> void } -> DirectMessage?
+          def find_dm: (id id, **untyped params) ?{ (Problem problem) -> void } -> DirectMessage?
+          def find_direct_message!: (id id, **untyped params) -> DirectMessage
+          def find_dm!: (id id, **untyped params) -> DirectMessage
+          def direct_messages: (**untyped params) -> Cursor[DirectMessage]
+          def dms: (**untyped params) -> Cursor[DirectMessage]
+          def direct_messages_with: (id user, **untyped params) -> Cursor[DirectMessage]
+          def dms_with: (id user, **untyped params) -> Cursor[DirectMessage]
+          def direct_messages_in: (DirectMessage | String | Integer conversation, **untyped params) -> Cursor[DirectMessage]
+          def dms_in: (DirectMessage | String | Integer conversation, **untyped params) -> Cursor[DirectMessage]
+        end
+      end
+
+      module Actions : _Client, _CurrentUser
+        include Actions::Posts
+        include Actions::Lists
+        include Actions::DirectMessages
+        include Actions::Relationships
+        include Actions::Engagement
+
+        module Posts : _Client
+          def create_post: (?String? text, **untyped params) -> Post?
+          def create_tweet: (?String? text, **untyped params) -> Post?
+          def delete_post: (id post) -> bool
+          def delete_tweet: (id post) -> bool
+          def hide_reply: (id post) -> bool
+          def unhide_reply: (id post) -> bool
+        end
+
+        module Lists : _Client, _CurrentUser
+          def create_list: (String name, **untyped params) -> List?
+          def update_list: (id list, **untyped params) -> bool
+          def delete_list: (id list) -> bool
+          def add_list_member: (id list, id user) -> bool
+          def remove_list_member: (id list, id user) -> bool
+          def follow_list: (id list) -> bool
+          def unfollow_list: (id list) -> bool
+          def pin_list: (id list) -> bool
+          def unpin_list: (id list) -> bool
+        end
+
+        module DirectMessages : _Client
+          def create_direct_message: (id user, ?String? text, **untyped params) -> DirectMessage?
+          def create_dm: (id user, ?String? text, **untyped params) -> DirectMessage?
+          def create_group_direct_message: (Array[id] users, ?String? text, **untyped params) -> DirectMessage?
+          def create_group_dm: (Array[id] users, ?String? text, **untyped params) -> DirectMessage?
+          def create_direct_message_in: (DirectMessage | String | Integer conversation, ?String? text, **untyped params) -> DirectMessage?
+          def create_dm_in: (DirectMessage | String | Integer conversation, ?String? text, **untyped params) -> DirectMessage?
+          def delete_direct_message: (id message) -> bool
+          def delete_dm: (id message) -> bool
+        end
+
+        module Relationships : _Client, _CurrentUser
+          def follow: (id user) -> bool
+          def unfollow: (id user) -> bool
+          def block: (id user) -> bool
+          def unblock: (id user) -> bool
+          def mute: (id user) -> bool
+          def unmute: (id user) -> bool
+        end
+
+        module Engagement : _Client, _CurrentUser
+          def like: (id post) -> bool
+          def unlike: (id post) -> bool
+          def repost: (id post) -> bool
+          def retweet: (id post) -> bool
+          def unrepost: (id post) -> bool
+          def unretweet: (id post) -> bool
+          def bookmark: (id post) -> bool
+          def unbookmark: (id post) -> bool
+        end
+      end
+    end
+  end
+
+  class Usage
+    include Objects::Serialization
+
+    private
+    def days: (untyped entries) -> Hash[Time, Integer]
+    def integer: (String reader, String | Integer | nil value) -> Integer?
+    def time: (String reader, untyped value) -> Time
+  end
+
+  class Resource
+    extend Objects::Attributes
+    include Objects::PublishedCount
+    include Objects::Identity
+    include Objects::Serialization
+
+    private attr_reader includes: Objects::Includes
+
+    @hydrated: bool
+    @batch: Objects::Batch?
+    @memo: Objects::Memo
+
+    private def self.endpoint: () -> String?
+    private def self.id_key: () -> String
+    private def self.id_type: () -> Symbol
+    private def self.includes_key: () -> String?
+    private def self.fields_key: () -> String?
+    private def self.fully_requested_by?: (Hash[String, untyped] query) -> bool
+    private def self.batch_key: () -> Symbol
+    private def self.endpoint!: () -> String
+    private def self.from_id_in_batch: (Objects::id id, client: Objects::_Client?, ?batch: Objects::Batch?) -> Resource
+    private def self.build: (Hash[untyped, untyped] attrs, ?client: Objects::_Client?, ?includes: Objects::Includes, ?hydrated: bool, ?batch: Objects::Batch?) -> instance
+    private def self.built: (Hash[untyped, untyped] attrs, client: Objects::_Client?, includes: Objects::Includes, hydrated: bool) -> Resource
+
+    private
+    def hydrated_with: (Resource? resource) -> Resource?
+    def hydration_stored?: () -> bool
+    def setup: (Hash[untyped, untyped] attrs, client: Objects::_Client?, hydrated: bool, ?includes: Objects::Includes, ?batch: Objects::Batch?) -> void
+    def identify: () -> String
+    def fetch: () -> Resource?
+    def look_up: () -> Resource?
+    def client!: () -> Objects::_Client
+    def resolve: (singleton(Resource) klass, untyped id) -> Resource?
+    def cursor: (singleton(Resource) klass, String path, max_results: Integer?, ?min_results: Integer, ?total: Symbol?, ?app_only: bool, **untyped params) -> Cursor[untyped]
+  end
+
+  class Cursor[R < Resource = Resource]
+    @prefetch: bool
+    @app_only: bool
+    @total: (^(?fresh: bool) -> Integer?)?
+    @pages: Objects::Pages
+
+    private def self.build: [R < Resource] (singleton(Resource) resource_class, String path, client: Objects::_Client, params: Objects::params, min_results: Integer, app_only: bool, total: (^(?fresh: bool) -> Integer?)?, ?prefetch: bool, ?token_param: String) -> Cursor[R]
+
+    private
+    def setup: (singleton(Resource) resource_class, String path, client: Objects::_Client, params: Objects::params, prefetch: bool, token_param: String, min_results: Integer, app_only: bool, total: (^(?fresh: bool) -> Integer?)?) -> void
+    def fresh_total: () -> (^(?fresh: bool) -> Integer?)?
+    def own_params: () -> Objects::params
+    def id_only_params: () -> Objects::params
+  end
+
+  class Media < Resource
+    extend Objects::BatchFinders
+
+    private def self.id_type: () -> Symbol
+    private def self.id_key: () -> String
+    private def self.includes_key: () -> String
+    private def self.endpoint: () -> String
+    private def self.key_of: (untyped media) -> untyped
+    private def self.from_id_in_batch: (untyped media, client: Objects::_Client?, ?batch: Objects::Batch?) -> Media
+                             | ...
+    private def self.batch_key: () -> Symbol
+    private def self.fields_key: () -> String
+  end
+
+  class Poll < Resource
+    private def self.includes_key: () -> String
+  end
+
+  class Place < Resource
+    private def self.id_type: () -> Symbol
+    private def self.includes_key: () -> String
+  end
+
+  class User < Resource
+    include Objects::Relationships
+    extend Objects::UserFinders
+
+    private def self.endpoint: () -> String
+    private def self.includes_key: () -> String
+    private def self.fields_key: () -> String
+  end
+
+  class Post < Resource
+    extend Objects::BatchFinders
+    extend Objects::PostCounts
+    extend Objects::PostWrites
+    include Objects::References
+    include Objects::PostCollections
+
+    private def self.endpoint: () -> String
+    private def self.includes_key: () -> String
+    private def self.fields_key: () -> String
+    private def self.context_annotations?: (Hash[Symbol, untyped] params) -> bool
+
+    private
+    def full: () -> Hash[String, untyped]
+  end
+
+  class Community < Resource
+    extend Objects::Finders
+
+    private def self.endpoint: () -> String
+    private def self.fields_key: () -> String
+  end
+
+  class List < Resource
+    extend Objects::Finders
+
+    private def self.endpoint: () -> String
+    private def self.fields_key: () -> String
+
+    private
+    def fewer_memberships?: (Objects::id user) -> bool
+    def listed_count_of: (Objects::id user) -> Integer?
+  end
+
+  class DirectMessage < Resource
+    extend Objects::Finders
+    extend Objects::DirectMessageConversations
+
+    private def self.endpoint: () -> String
+    private def self.fields_key: () -> String
+  end
+
+  class Space < Resource
+    extend Objects::BatchFinders
+
+    private def self.id_type: () -> Symbol
+    private def self.endpoint: () -> String
+    private def self.client_for: (Objects::_Client client) -> Objects::_Client
+    private def self.fields_key: () -> String
+  end
+end

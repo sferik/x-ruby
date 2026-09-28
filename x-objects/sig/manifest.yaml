@@ -2,6 +2,5 @@
 dependencies:
   - name: forwardable
   - name: json
-  - name: monitor
   - name: uri
   - name: x-core
