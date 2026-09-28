@@ -40,6 +40,9 @@ module X
         @mutex: Thread::Mutex
 
         def initialize: (untyped io) -> void
+
+        private
+        def open_for_reading?: () -> bool
       end
 
       class Buffer < Source

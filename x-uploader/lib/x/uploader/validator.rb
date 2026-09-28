@@ -65,11 +65,12 @@ module X
       # @param source [Source] the media to validate
       # @return [void]
       # @raise [Errno::ENOENT] if the file does not exist
-      # @raise [ArgumentError] if the media is empty
+      # @raise [ArgumentError] if the media cannot be read, or is empty
       # @example Validate the media of an upload
       #   Uploader::Validator.validate_source!(source)
       def validate_source!(source)
         raise Errno::ENOENT, source.description unless source.exist?
+        raise ArgumentError, "#{source.description} cannot be read: it is not a file, or not one open for reading" unless source.readable?
         raise ArgumentError, "#{source.description} is empty: there is nothing to upload" if source.size.zero?
       end
 
@@ -79,7 +80,7 @@ module X
       # @param file_path [String, Pathname] the file path to validate
       # @return [void]
       # @raise [Errno::ENOENT] if the file does not exist
-      # @raise [ArgumentError] if the file is empty
+      # @raise [ArgumentError] if the file cannot be read, or is empty
       # @example Validate a file path
       #   Uploader::Validator.validate_file_path!("image.png")
       def validate_file_path!(file_path) = validate_source!(Source::Path.new(file_path))

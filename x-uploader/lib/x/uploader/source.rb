@@ -185,11 +185,11 @@ module X
 
         # Whether the media can be read
         #
-        # A file that is not there, or that is a directory, cannot be.
+        # A file that is not there, that is a directory, or that the process has no permission to read, cannot be.
         #
         # @api private
         # @return [Boolean] true if the media is a file that can be read
-        def readable? = File.file?(name)
+        def readable? = File.file?(name) && File.readable?(name)
 
         # The size of the media in bytes
         # @api private
@@ -235,10 +235,10 @@ module X
         # @return [Boolean] true
         def exist? = true
 
-        # Whether the media can be read, which an IO open on a directory cannot
+        # Whether the media can be read: the IO is open on a file, and open for reading
         # @api private
-        # @return [Boolean] true if the IO is open on a file
-        def readable? = @io.stat.file?
+        # @return [Boolean] true if the IO is open on a file for reading
+        def readable? = @io.stat.file? && open_for_reading?
 
         # The size of the media in bytes
         # @api private
@@ -268,6 +268,18 @@ module X
               @io.seek(position)
             end
           end
+        end
+
+        private
+
+        # Whether the IO is open for reading, told by reading nothing from it
+        # @api private
+        # @return [Boolean] true if the IO can be read
+        def open_for_reading?
+          @io.read(0)
+          true
+        rescue IOError
+          false
         end
       end
 
