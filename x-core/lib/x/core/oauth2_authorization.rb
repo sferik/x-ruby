@@ -82,14 +82,15 @@ module X
     # @param state [String] the state, as stored when the user was sent to X
     # @param code_verifier [String] the PKCE code verifier, as stored when the user was sent to X
     # @param proxy_url [String, URI::Generic, nil] the proxy URL for the token request
-    # @param open_timeout [Integer, Float] the timeout for opening connections in seconds
-    # @param read_timeout [Integer, Float] the timeout for reading responses in seconds
-    # @param write_timeout [Integer, Float] the timeout for writing requests in seconds
+    # @param open_timeout [Integer, Float, nil] the timeout for opening connections in seconds, or nil for none
+    # @param read_timeout [Integer, Float, nil] the timeout for reading responses in seconds, or nil for none
+    # @param write_timeout [Integer, Float, nil] the timeout for writing requests in seconds, or nil for none
     # @param debug_output [IO, #<<, nil] the IO object for debug output, or anything else that takes a String with <<,
     #   such as a StringIO or a Logger
     # @return [OAuth2Authorization] a new authorization
     # @raise [ArgumentError] if the state is nil or empty, which would accept the redirect of any authorization
     # @raise [ArgumentError] if the code verifier is not 43 to 128 unreserved characters
+    # @raise [ArgumentError] if a timeout is neither a finite number of seconds of at least 0 nor nil
     # @example Start an authorization
     #   authorization = X::OAuth2Authorization.new(client_id: "id", redirect_uri: "https://example.com/callback")
     def initialize(client_id:, redirect_uri:, client_secret: nil, scopes: DEFAULT_SCOPES, state: SecureRandom.urlsafe_base64(STATE_BYTES),

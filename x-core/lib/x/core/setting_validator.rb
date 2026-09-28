@@ -9,8 +9,13 @@ module X
     # comparison, in place of the failure it was compared for. So each is checked when the handler is built, which
     # is when the client that holds it is.
     #
-    # Internal to x-core: the handlers of redirects, rate limits, retries, and reconnects check their settings with
-    # it.
+    # A timeout is handed to Net::HTTP, which reads it only once a request waits, so a timeout that is not a number
+    # raises from inside Net::HTTP as the first request is sent, and Float::INFINITY raises there too, or ends the
+    # thread that Timeout keeps for every timeout of the process, since no deadline can be set that far off. So each
+    # is checked when the connection is built, which is when the client that holds it is.
+    #
+    # Internal to x-core: the handlers of redirects, rate limits, retries, and reconnects, and a connection, check
+    # their settings with it.
     #
     # @api private
     module SettingValidator
@@ -22,7 +27,11 @@ module X
       INVALID_COUNT_OR_INFINITY = "%s must be an Integer of at least 0, or Float::INFINITY for no limit, not %s"
       # The message of the error raised for seconds that are not a number of at least 0
       INVALID_SECONDS = "%s must be a number of seconds of at least 0, not %s"
-      private_constant :INVALID_COUNT, :INVALID_COUNT_OR_INFINITY, :INVALID_SECONDS
+      # The message of the error raised for seconds that are not a finite number of at least 0
+      INVALID_FINITE_SECONDS = "%s must be a finite number of seconds of at least 0, not %s"
+      # The message of the error raised for a timeout that is neither a finite number of seconds of at least 0 nor nil
+      INVALID_TIMEOUT = "%s must be a finite number of seconds of at least 0, or nil for no timeout, not %s"
+      private_constant :INVALID_COUNT, :INVALID_COUNT_OR_INFINITY, :INVALID_SECONDS, :INVALID_FINITE_SECONDS, :INVALID_TIMEOUT
 
       # Check that a count is an Integer of at least 0
       #
@@ -64,9 +73,41 @@ module X
       # @example Check the longest wait for a rate limit
       #   X::Core::SettingValidator.seconds!(:max_rate_limit_wait, 900) # => 900
       def seconds!(name, value)
-        return value if value.is_a?(Numeric) && value.real? && !value.negative?
+        return value if seconds?(value)
 
         raise ArgumentError, format(INVALID_SECONDS, name, value.inspect)
+      end
+
+      # Check that seconds are a finite real number of at least 0
+      #
+      # @api private
+      # @param name [Symbol] the name of the setting, which the error names
+      # @param value [Object] the value of the setting
+      # @return [Integer, Float] the value
+      # @raise [ArgumentError] if the value is not a finite real number of at least 0
+      # @example Check the time a connection is kept open
+      #   X::Core::SettingValidator.finite_seconds!(:keep_alive_timeout, 30) # => 30
+      def finite_seconds!(name, value)
+        return value if finite_seconds?(value)
+
+        raise ArgumentError, format(INVALID_FINITE_SECONDS, name, value.inspect)
+      end
+
+      # Check that a timeout is finite seconds of at least 0, or nil for no timeout
+      #
+      # Net::HTTP waits for as long as it takes when a timeout is nil.
+      #
+      # @api private
+      # @param name [Symbol] the name of the setting, which the error names
+      # @param value [Object] the value of the setting
+      # @return [Integer, Float, nil] the value
+      # @raise [ArgumentError] if the value is neither a finite real number of at least 0 nor nil
+      # @example Check the timeout for reading a response
+      #   X::Core::SettingValidator.timeout!(:read_timeout, 60) # => 60
+      def timeout!(name, value)
+        return value if value.nil? || finite_seconds?(value)
+
+        raise ArgumentError, format(INVALID_TIMEOUT, name, value.inspect)
       end
 
       private
@@ -76,6 +117,18 @@ module X
       # @param value [Object] the value
       # @return [Boolean] true if the value is an Integer of at least 0
       def count?(value) = value.instance_of?(Integer) && !value.negative?
+
+      # Check whether a value is a real number of at least 0
+      # @api private
+      # @param value [Object] the value
+      # @return [Boolean] true if the value is a real number of at least 0
+      def seconds?(value) = value.is_a?(Numeric) && value.real? && !value.negative?
+
+      # Check whether a value is a finite real number of at least 0
+      # @api private
+      # @param value [Object] the value
+      # @return [Boolean] true if the value is a finite real number of at least 0
+      def finite_seconds?(value) = seconds?(value) && value.finite?
     end
   end
 end

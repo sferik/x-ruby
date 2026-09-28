@@ -69,10 +69,13 @@ module X
     #
     # @api public
     # @param client [Client] the client whose credentials, base URL, and settings the stream uses
-    # @param read_timeout [Integer, Float] the timeout for reading from a stream in seconds
+    # @param read_timeout [Integer, Float, nil] the timeout for reading from a stream in seconds, or nil for none,
+    #   which leaves a stream X stopped sending to open until the operating system gives up on its connection
     # @param max_reconnects [Integer, Float] the maximum number of times in a row to reconnect a stream that drops
     #   without delivering an object, or Float::INFINITY, the default, for no limit
     # @return [StreamingClient] a new instance
+    # @raise [ArgumentError] if the read timeout is neither a finite number of seconds of at least 0 nor nil, or the
+    #   maximum number of reconnects is neither a count nor Float::INFINITY
     # @example Create a streaming client
     #   streaming_client = X::StreamingClient.new(client, max_reconnects: 5)
     def initialize(client, read_timeout: DEFAULT_READ_TIMEOUT, max_reconnects: DEFAULT_MAX_RECONNECTS)
@@ -88,21 +91,21 @@ module X
 
     # The timeout for opening a stream's connection, in seconds, which is the client's
     # @api public
-    # @return [Integer, Float] the timeout
+    # @return [Integer, Float, nil] the timeout, or nil for none
     # @example Get the open timeout
     #   streaming_client.open_timeout # => 10
     def open_timeout = @connection.open_timeout
 
     # The timeout for reading from a stream, in seconds
     # @api public
-    # @return [Integer, Float] the timeout
+    # @return [Integer, Float, nil] the timeout, or nil for none
     # @example Get the read timeout
     #   streaming_client.read_timeout # => 30
     def read_timeout = @connection.read_timeout
 
     # The timeout for writing a stream's request, in seconds, which is the client's
     # @api public
-    # @return [Integer, Float] the timeout
+    # @return [Integer, Float, nil] the timeout, or nil for none
     # @example Get the write timeout
     #   streaming_client.write_timeout # => 60
     def write_timeout = @connection.write_timeout

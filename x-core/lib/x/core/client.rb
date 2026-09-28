@@ -104,9 +104,9 @@ module X
     # @param refresh_token [String, nil] the OAuth 2.0 refresh token
     # @param expires_at [Time, nil] the time the OAuth 2.0 access token expires, after which a request refreshes it
     # @param base_url [String] the base URL for API requests
-    # @param open_timeout [Integer, Float] the timeout for opening connections in seconds
-    # @param read_timeout [Integer, Float] the timeout for reading responses in seconds
-    # @param write_timeout [Integer, Float] the timeout for writing requests in seconds
+    # @param open_timeout [Integer, Float, nil] the timeout for opening connections in seconds, or nil for none
+    # @param read_timeout [Integer, Float, nil] the timeout for reading responses in seconds, or nil for none
+    # @param write_timeout [Integer, Float, nil] the timeout for writing requests in seconds, or nil for none
     # @param keep_alive_timeout [Integer, Float] the time to keep a connection open for the next request to the same
     #   host, in seconds, which a proxy that closes idle connections sooner than X does may need lowered
     # @param debug_output [IO, #<<, nil] the IO object for debug output, or anything else that takes a String with <<,
@@ -142,6 +142,8 @@ module X
     # @raise [ArgumentError] if a credential is an empty String, as an environment variable that is not set is often
     #   read, which would send an Authorization header that authenticates nothing
     # @raise [ArgumentError] if expires_at is neither a Time nor nil
+    # @raise [ArgumentError] if a timeout is neither a finite number of seconds of at least 0 nor, for any but
+    #   keep_alive_timeout, nil, or if a maximum is not a count or a number of seconds of at least 0
     # @example Create a client with bearer token authentication
     #   client = X::Client.new(bearer_token: "your_bearer_token")
     # @example Create a client with OAuth 2.0 authentication that stores the tokens of each refresh
@@ -305,11 +307,13 @@ module X
     # A client for the streaming endpoints, which reads and reconnects differently
     #
     # @api public
-    # @param read_timeout [Integer, Float] the timeout for reading from a stream in seconds, as
+    # @param read_timeout [Integer, Float, nil] the timeout for reading from a stream in seconds, as
     #   {StreamingClient#initialize} takes it
     # @param max_reconnects [Integer, Float] the maximum number of times in a row to reconnect a stream that drops, as
     #   {StreamingClient#initialize} takes it
     # @return [StreamingClient] a streaming client that shares this client's credentials and settings
+    # @raise [ArgumentError] if the read timeout is neither a finite number of seconds of at least 0 nor nil, or the
+    #   maximum number of reconnects is neither a count nor Float::INFINITY
     # @example Stream filtered posts, giving up after five reconnects in a row
     #   client.streaming(max_reconnects: 5).stream("tweets/search/stream") { |post| puts post }
     def streaming(read_timeout: StreamingClient::DEFAULT_READ_TIMEOUT, max_reconnects: StreamingClient::DEFAULT_MAX_RECONNECTS)

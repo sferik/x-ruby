@@ -8,6 +8,7 @@ require_relative "connection_pool"
 require_relative "connection_proxy"
 require_relative "connection_request"
 require_relative "proxy_setting"
+require_relative "setting_validator"
 require_relative "errors/network_error"
 require_relative "errors/stream_callback_error"
 
@@ -46,21 +47,21 @@ module X
       DEFAULT_KEEP_ALIVE_TIMEOUT = 30 # seconds
       # The timeout for opening connections in seconds
       # @api private
-      # @return [Integer, Float] the timeout for opening connections in seconds
+      # @return [Integer, Float, nil] the timeout for opening connections in seconds, or nil for none
       # @example Get the open timeout
       #   connection.open_timeout # => 10
       attr_reader :open_timeout
 
       # The timeout for reading responses in seconds
       # @api private
-      # @return [Integer, Float] the timeout for reading responses in seconds
+      # @return [Integer, Float, nil] the timeout for reading responses in seconds, or nil for none
       # @example Get the read timeout
       #   connection.read_timeout # => 60
       attr_reader :read_timeout
 
       # The timeout for writing requests in seconds
       # @api private
-      # @return [Integer, Float] the timeout for writing requests in seconds
+      # @return [Integer, Float, nil] the timeout for writing requests in seconds, or nil for none
       # @example Get the write timeout
       #   connection.write_timeout # => 60
       attr_reader :write_timeout
@@ -83,25 +84,27 @@ module X
       # Initialize a new connection
       #
       # @api private
-      # @param open_timeout [Integer, Float] the timeout for opening connections in seconds
-      # @param read_timeout [Integer, Float] the timeout for reading responses in seconds
-      # @param write_timeout [Integer, Float] the timeout for writing requests in seconds
+      # @param open_timeout [Integer, Float, nil] the timeout for opening connections in seconds, or nil for none
+      # @param read_timeout [Integer, Float, nil] the timeout for reading responses in seconds, or nil for none
+      # @param write_timeout [Integer, Float, nil] the timeout for writing requests in seconds, or nil for none
       # @param keep_alive_timeout [Integer, Float] the time to keep a connection open for the next request to the same
       #   host, in seconds, which a proxy that closes idle connections sooner than X does may need lowered
       # @param debug_output [IO, #<<, nil] the IO object for debug output, or anything else that takes a String with <<,
       #   such as a StringIO or a Logger
       # @param proxy_url [String, URI::Generic, nil] the proxy URL for requests
       # @return [Connection] a new connection instance
+      # @raise [ArgumentError] if a timeout is neither a finite number of seconds of at least 0 nor, for any but
+      #   keep_alive_timeout, nil
       # @example Create a connection with default settings
       #   connection = X::Core::Connection.new
       # @example Create a connection with custom timeouts
       #   connection = X::Core::Connection.new(open_timeout: 30, read_timeout: 30)
       def initialize(open_timeout: DEFAULT_OPEN_TIMEOUT, read_timeout: DEFAULT_READ_TIMEOUT,
         write_timeout: DEFAULT_WRITE_TIMEOUT, keep_alive_timeout: DEFAULT_KEEP_ALIVE_TIMEOUT, debug_output: nil, proxy_url: nil)
-        @open_timeout = open_timeout
-        @read_timeout = read_timeout
-        @write_timeout = write_timeout
-        @keep_alive_timeout = keep_alive_timeout
+        @open_timeout = SettingValidator.timeout!(:open_timeout, open_timeout)
+        @read_timeout = SettingValidator.timeout!(:read_timeout, read_timeout)
+        @write_timeout = SettingValidator.timeout!(:write_timeout, write_timeout)
+        @keep_alive_timeout = SettingValidator.finite_seconds!(:keep_alive_timeout, keep_alive_timeout)
         @debug_output = debug_output
         @pool = ConnectionPool.new
         initialize_proxy(proxy_url)

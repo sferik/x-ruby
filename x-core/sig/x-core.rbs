@@ -254,9 +254,9 @@ module X
       attr_reader default_object_class: object_class
       attr_reader on_response: _ResponseHook?
       attr_reader headers: headers
-      def open_timeout: () -> (Float | Integer)
-      def read_timeout: () -> (Float | Integer)
-      def write_timeout: () -> (Float | Integer)
+      def open_timeout: () -> (Float | Integer)?
+      def read_timeout: () -> (Float | Integer)?
+      def write_timeout: () -> (Float | Integer)?
       def keep_alive_timeout: () -> (Float | Integer)
       def debug_output: () -> _DebugOutput?
       def max_redirects: () -> Integer
@@ -342,14 +342,20 @@ module X
       INVALID_COUNT: String
       INVALID_COUNT_OR_INFINITY: String
       INVALID_SECONDS: String
+      INVALID_FINITE_SECONDS: String
+      INVALID_TIMEOUT: String
       extend SettingValidator
 
       def count!: (Symbol name, untyped value) -> untyped
       def count_or_infinity!: (Symbol name, untyped value) -> untyped
       def seconds!: (Symbol name, untyped value) -> untyped
+      def finite_seconds!: (Symbol name, untyped value) -> untyped
+      def timeout!: (Symbol name, untyped value) -> untyped
 
       private
       def count?: (untyped value) -> bool
+      def seconds?: (untyped value) -> bool
+      def finite_seconds?: (untyped value) -> bool
     end
 
     module CredentialValidator
@@ -377,13 +383,13 @@ module X
       include ConnectionRequest
       include ProxySetting
 
-      attr_reader open_timeout : Float | Integer
-      attr_reader read_timeout : Float | Integer
-      attr_reader write_timeout : Float | Integer
+      attr_reader open_timeout : (Float | Integer)?
+      attr_reader read_timeout : (Float | Integer)?
+      attr_reader write_timeout : (Float | Integer)?
       attr_reader keep_alive_timeout : Float | Integer
       attr_reader debug_output : _DebugOutput?
 
-      def initialize: (?open_timeout: Float | Integer, ?read_timeout: Float | Integer, ?write_timeout: Float | Integer, ?keep_alive_timeout: Float | Integer, ?proxy_url: (URI::Generic | String)?, ?debug_output: _DebugOutput?) -> void
+      def initialize: (?open_timeout: (Float | Integer)?, ?read_timeout: (Float | Integer)?, ?write_timeout: (Float | Integer)?, ?keep_alive_timeout: Float | Integer, ?proxy_url: (URI::Generic | String)?, ?debug_output: _DebugOutput?) -> void
       def inspect: () -> String
       def perform: (request: Net::HTTPRequest) -> Net::HTTPResponse
       def perform_stream: (request: Net::HTTPRequest) { (Net::HTTPResponse) -> void } -> void
@@ -431,13 +437,13 @@ module X
     attr_reader scopes: Array[String]
     attr_reader state: String
     attr_reader code_verifier: String
-    @settings: {proxy_url: (URI::Generic | String)?, open_timeout: Float | Integer, read_timeout: Float | Integer, write_timeout: Float | Integer, debug_output: _DebugOutput?}
+    @settings: {proxy_url: (URI::Generic | String)?, open_timeout: (Float | Integer)?, read_timeout: (Float | Integer)?, write_timeout: (Float | Integer)?, debug_output: _DebugOutput?}
 
-    def initialize: (client_id: String, redirect_uri: String, ?client_secret: String?, ?scopes: Array[String], ?state: String, ?code_verifier: String, ?proxy_url: (URI::Generic | String)?, ?open_timeout: Float | Integer, ?read_timeout: Float | Integer, ?write_timeout: Float | Integer, ?debug_output: _DebugOutput?) -> void
+    def initialize: (client_id: String, redirect_uri: String, ?client_secret: String?, ?scopes: Array[String], ?state: String, ?code_verifier: String, ?proxy_url: (URI::Generic | String)?, ?open_timeout: (Float | Integer)?, ?read_timeout: (Float | Integer)?, ?write_timeout: (Float | Integer)?, ?debug_output: _DebugOutput?) -> void
     def inspect: () -> String
     def url: () -> String
     def credentials: (String | Hash[String | Symbol, String] callback) -> Hash[Symbol, String | Time | nil]
-    def client: (String | Hash[String | Symbol, String] callback, ?api_key: String?, ?api_key_secret: String?, ?access_token: String?, ?access_token_secret: String?, ?bearer_token: String?, ?client_id: String?, ?client_secret: String?, ?refresh_token: String?, ?expires_at: Time?, ?base_url: String, ?open_timeout: Float | Integer, ?read_timeout: Float | Integer, ?write_timeout: Float | Integer, ?keep_alive_timeout: Float | Integer, ?debug_output: _DebugOutput?, ?proxy_url: (URI::Generic | String)?, ?default_array_class: Class, ?default_object_class: object_class, ?headers: headers, ?max_redirects: Integer, ?max_rate_limit_retries: Integer, ?max_rate_limit_wait: Float | Integer, ?max_retries: Integer, ?on_response: _ResponseHook?, ?on_token_refresh: _TokenRefreshHook?) -> Client
+    def client: (String | Hash[String | Symbol, String] callback, ?api_key: String?, ?api_key_secret: String?, ?access_token: String?, ?access_token_secret: String?, ?bearer_token: String?, ?client_id: String?, ?client_secret: String?, ?refresh_token: String?, ?expires_at: Time?, ?base_url: String, ?open_timeout: (Float | Integer)?, ?read_timeout: (Float | Integer)?, ?write_timeout: (Float | Integer)?, ?keep_alive_timeout: Float | Integer, ?debug_output: _DebugOutput?, ?proxy_url: (URI::Generic | String)?, ?default_array_class: Class, ?default_object_class: object_class, ?headers: headers, ?max_redirects: Integer, ?max_rate_limit_retries: Integer, ?max_rate_limit_wait: Float | Integer, ?max_retries: Integer, ?on_response: _ResponseHook?, ?on_token_refresh: _TokenRefreshHook?) -> Client
 
     private
     attr_reader client_secret: String?
@@ -723,12 +729,12 @@ module X
     @stream_parser: Core::StreamParser
 
     attr_reader client: Client
-    def initialize: (Client client, ?read_timeout: Float | Integer, ?max_reconnects: Integer | Float) -> void
+    def initialize: (Client client, ?read_timeout: (Float | Integer)?, ?max_reconnects: Integer | Float) -> void
     def inspect: () -> String
     def stream: (String endpoint, ?params: params?, ?headers: headers, ?array_class: Class, ?object_class: object_class) { (untyped) -> void } -> untyped
-    def open_timeout: () -> (Float | Integer)
-    def read_timeout: () -> (Float | Integer)
-    def write_timeout: () -> (Float | Integer)
+    def open_timeout: () -> (Float | Integer)?
+    def read_timeout: () -> (Float | Integer)?
+    def write_timeout: () -> (Float | Integer)?
     def debug_output: () -> _DebugOutput?
     def max_reconnects: () -> (Integer | Float)
     def stream_rules: (?params: params?) -> Array[Hash[String, untyped]]
@@ -885,14 +891,14 @@ module X
 
     attr_reader on_token_refresh: _TokenRefreshHook?
     attr_reader authenticator: Authenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator
-    def initialize: (?api_key: String?, ?api_key_secret: String?, ?access_token: String?, ?access_token_secret: String?, ?bearer_token: String?, ?client_id: String?, ?client_secret: String?, ?refresh_token: String?, ?expires_at: Time?, ?base_url: String, ?open_timeout: Float | Integer, ?read_timeout: Float | Integer, ?write_timeout: Float | Integer, ?keep_alive_timeout: Float | Integer, ?debug_output: _DebugOutput?, ?proxy_url: (URI::Generic | String)?, ?default_array_class: Class, ?default_object_class: object_class, ?headers: headers, ?max_redirects: Integer, ?max_rate_limit_retries: Integer, ?max_rate_limit_wait: Float | Integer, ?max_retries: Integer, ?on_response: _ResponseHook?, ?on_token_refresh: _TokenRefreshHook?) -> void
+    def initialize: (?api_key: String?, ?api_key_secret: String?, ?access_token: String?, ?access_token_secret: String?, ?bearer_token: String?, ?client_id: String?, ?client_secret: String?, ?refresh_token: String?, ?expires_at: Time?, ?base_url: String, ?open_timeout: (Float | Integer)?, ?read_timeout: (Float | Integer)?, ?write_timeout: (Float | Integer)?, ?keep_alive_timeout: Float | Integer, ?debug_output: _DebugOutput?, ?proxy_url: (URI::Generic | String)?, ?default_array_class: Class, ?default_object_class: object_class, ?headers: headers, ?max_redirects: Integer, ?max_rate_limit_retries: Integer, ?max_rate_limit_wait: Float | Integer, ?max_retries: Integer, ?on_response: _ResponseHook?, ?on_token_refresh: _TokenRefreshHook?) -> void
     def inspect: () -> String
-    def with: (?api_key: String?, ?api_key_secret: String?, ?access_token: String?, ?access_token_secret: String?, ?bearer_token: String?, ?client_id: String?, ?client_secret: String?, ?refresh_token: String?, ?expires_at: Time?, ?base_url: String, ?open_timeout: Float | Integer, ?read_timeout: Float | Integer, ?write_timeout: Float | Integer, ?keep_alive_timeout: Float | Integer, ?debug_output: _DebugOutput?, ?proxy_url: (URI::Generic | String)?, ?default_array_class: Class, ?default_object_class: object_class, ?headers: headers, ?max_redirects: Integer, ?max_rate_limit_retries: Integer, ?max_rate_limit_wait: Float | Integer, ?max_retries: Integer, ?on_response: _ResponseHook?, ?on_token_refresh: _TokenRefreshHook?) -> Client
+    def with: (?api_key: String?, ?api_key_secret: String?, ?access_token: String?, ?access_token_secret: String?, ?bearer_token: String?, ?client_id: String?, ?client_secret: String?, ?refresh_token: String?, ?expires_at: Time?, ?base_url: String, ?open_timeout: (Float | Integer)?, ?read_timeout: (Float | Integer)?, ?write_timeout: (Float | Integer)?, ?keep_alive_timeout: Float | Integer, ?debug_output: _DebugOutput?, ?proxy_url: (URI::Generic | String)?, ?default_array_class: Class, ?default_object_class: object_class, ?headers: headers, ?max_redirects: Integer, ?max_rate_limit_retries: Integer, ?max_rate_limit_wait: Float | Integer, ?max_retries: Integer, ?on_response: _ResponseHook?, ?on_token_refresh: _TokenRefreshHook?) -> Client
     def get: (String endpoint, ?params: params?, ?headers: headers, ?array_class: Class, ?object_class: object_class) ?{ (Response) -> void } -> untyped
     def post: (String endpoint, ?body? body, ?params: params?, ?form: params?, ?headers: headers, ?array_class: Class, ?object_class: object_class) ?{ (Response) -> void } -> untyped
     def put: (String endpoint, ?body? body, ?params: params?, ?form: params?, ?headers: headers, ?array_class: Class, ?object_class: object_class) ?{ (Response) -> void } -> untyped
     def delete: (String endpoint, ?params: params?, ?headers: headers, ?array_class: Class, ?object_class: object_class) ?{ (Response) -> void } -> untyped
-    def streaming: (?read_timeout: Float | Integer, ?max_reconnects: Float | Integer) -> StreamingClient
+    def streaming: (?read_timeout: (Float | Integer)?, ?max_reconnects: Float | Integer) -> StreamingClient
     def close: () -> void
 
     private
