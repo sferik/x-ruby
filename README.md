@@ -257,6 +257,12 @@ x_client.app_only.get("tweets/search/stream/rules")
 oauth2_client = X::Client.new(client_id: "ID", client_secret: "SECRET", access_token: "TOKEN", refresh_token: "REFRESH",
   expires_at: Time.now + 7200, on_token_refresh: ->(tokens) { store(tokens.access_token, tokens.refresh_token, tokens.expires_at) })
 
+# Authenticate with a scheme of your own: subclass X::Authenticator and return the headers that authenticate a request
+class VaultAuthenticator < X::Authenticator
+  def header(_request) = {AUTHENTICATION_HEADER => "Bearer #{Vault.read("x/bearer_token")}"}
+end
+vault_client = X::Client.new(authenticator: VaultAuthenticator.new)
+
 # Ask a user to authorize the app with OAuth 2.0 and PKCE, keeping the state and code verifier until X redirects back
 authorization = X::OAuth2Authorization.new(client_id: "ID", redirect_uri: "https://example.com/callback",
   scopes: %w[tweet.read tweet.write users.read offline.access])

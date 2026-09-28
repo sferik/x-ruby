@@ -88,10 +88,7 @@ module X
 
     # Generate the authentication header, refreshing an expired token first
     #
-    # Internal to x-core: RequestBuilder signs its requests with it, and it takes the Net::HTTP request it signs,
-    # so that it can change within 1.x, as that request may.
-    #
-    # @api private
+    # @api public
     # @param _request [Net::HTTPRequest, nil] the HTTP request (unused)
     # @return [Hash{String => String}] the authentication header
     # @raise [AuthorizationError] if the token has expired and X refuses to refresh it

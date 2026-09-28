@@ -15,10 +15,12 @@ module X
 
     def user_id: () -> Integer?
     def inspect: () -> String
+    def header: (Net::HTTPRequest request) -> Hash[String, String]
   end
 
   class BearerTokenAuthenticator < Authenticator
     def initialize: (bearer_token: String) -> void
+    def header: (Net::HTTPRequest? request) -> Hash[String, String]
   end
 
   class OAuth2Authorization
@@ -51,6 +53,7 @@ module X
 
     attr_reader api_key: String
     def initialize: (api_key: String, api_key_secret: String, ?bearer_token: String?) -> void
+    def header: (Net::HTTPRequest? request) -> Hash[String, String]
   end
 
   class OAuth1Authenticator < Authenticator
@@ -58,6 +61,7 @@ module X
     attr_reader access_token: String
     def initialize: (api_key: String, api_key_secret: String, access_token: String, access_token_secret: String) -> void
     def user_id: () -> Integer?
+    def header: (Net::HTTPRequest request) -> Hash[String, String]
   end
 
   class Error < StandardError
@@ -269,6 +273,7 @@ module X
     def inspect: () -> String
     def token_expired?: -> bool
     def refresh!: -> OAuth2Authenticator
+    def header: (Net::HTTPRequest? request) -> Hash[String, String]
   end
 
   class OAuth2Tokens

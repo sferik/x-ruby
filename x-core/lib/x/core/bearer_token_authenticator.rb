@@ -19,10 +19,7 @@ module X
 
     # Generate the authentication header for a request
     #
-    # Internal to x-core: RequestBuilder signs its requests with it, and it takes the Net::HTTP request it signs,
-    # so that it can change within 1.x, as that request may.
-    #
-    # @api private
+    # @api public
     # @param _request [Net::HTTPRequest] the HTTP request
     # @return [Hash{String => String}] the authentication header with bearer token
     # @example Generate a bearer authentication header

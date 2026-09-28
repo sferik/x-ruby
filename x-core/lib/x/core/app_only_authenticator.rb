@@ -48,10 +48,7 @@ module X
 
     # Generate the authentication header, fetching the bearer token first if needed
     #
-    # Internal to x-core: RequestBuilder signs its requests with it, and it takes the Net::HTTP request it signs,
-    # so that it can change within 1.x, as that request may.
-    #
-    # @api private
+    # @api public
     # @param _request [Net::HTTPRequest, nil] the request, which app-only authentication does not sign
     # @return [Hash{String => String}] the authorization header
     # @raise [AuthorizationError] if X refuses to issue the bearer token

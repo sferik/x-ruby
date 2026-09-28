@@ -429,13 +429,7 @@ module X
     end
   end
 
-  class Authenticator
-    def header: (Net::HTTPRequest request) -> Hash[String, String]
-  end
-
   class BearerTokenAuthenticator < Authenticator
-    def header: (Net::HTTPRequest? request) -> Hash[String, String]
-
     private
     attr_reader bearer_token: String
   end
@@ -467,8 +461,6 @@ module X
     @mutex: Thread::Mutex
     @taken: bool
 
-    def header: (Net::HTTPRequest? request) -> Hash[String, String]
-
     private
     attr_reader connection: Core::Connection
     def token_requests_over: (Core::Connection connection) -> self
@@ -482,8 +474,6 @@ module X
 
   class OAuth1Authenticator < Authenticator
     FORM_CONTENT_TYPE: String
-
-    def header: (Net::HTTPRequest request) -> Hash[String, String]
 
     private
     attr_reader api_key_secret: String
@@ -610,8 +600,6 @@ module X
     @reporter: Core::RefreshReporter
     @refreshed_at: Float?
     @taken: bool
-
-    def header: (Net::HTTPRequest? request) -> Hash[String, String]
 
     private
     attr_reader connection: Core::Connection

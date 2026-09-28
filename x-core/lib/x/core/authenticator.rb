@@ -3,22 +3,36 @@
 # A Ruby client for the X API
 module X
   # Base class for authentication
+  #
+  # Subclass it to authenticate with a scheme of your own, overriding {#header}, as the authenticators of x-core do.
+  #
   # @api public
   class Authenticator
     # The HTTP header name for authentication
     AUTHENTICATION_HEADER = "Authorization"
 
-    # Generate the authentication header for a request, which has none
+    # Generate the authentication headers for a request, which authenticates as no one
     #
-    # Internal to x-core: RequestBuilder signs its requests with it, and it takes the Net::HTTP request it signs,
-    # so that it can change within 1.x, as that request may.
+    # A client calls it for every request it sends to the origin of its base URL, and every stream it opens there,
+    # once the request is built, just before it is sent, and sends each header it returns, in place of any header of
+    # the same name. The request is the Net::HTTPRequest that is sent, whose method, URI, headers, and body are set,
+    # so an authenticator of your own can sign any of them: subclass X::Authenticator and override this method, and
+    # give an instance to the authenticator: of X::Client.new or X::Client#with. A request to another origin, such as
+    # one a redirect leads to, is not passed to it, so its headers never leave the origin they were built for. It is
+    # called on the thread that sends the request, so one a client shares across threads must be thread-safe.
     #
-    # @api private
+    # A client refreshes the token of none but its own OAuth 2.0 authenticator, so an authenticator of your own that
+    # holds a token that expires refreshes it here. A client given one takes it to authenticate as the app, as it
+    # does an X::Authenticator itself, so app_only returns the client, and a stream is opened with it.
+    #
+    # @api public
     # @param _request [Net::HTTPRequest] the HTTP request
-    # @return [Hash{String => String}] the authentication header, empty
-    # @example Generate no authentication header
-    #   authenticator = X::Authenticator.new
-    #   authenticator.header(request) # => {}
+    # @return [Hash{String => String}] the headers that authenticate the request, empty for none
+    # @example Authenticate every request with a token an application keeps
+    #   class VaultAuthenticator < X::Authenticator
+    #     def header(_request) = {AUTHENTICATION_HEADER => "Bearer #{Vault.read("x/bearer_token")}"}
+    #   end
+    #   client = X::Client.new(authenticator: VaultAuthenticator.new)
     def header(_request)
       {}
     end
