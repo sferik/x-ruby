@@ -178,6 +178,7 @@ module X
 
     class RedirectHandler
       DEFAULT_MAX_REDIRECTS: Integer
+      METHOD_PRESERVING_CODES: Array[Integer]
 
       attr_reader connection: Connection
       attr_reader request_builder: RequestBuilder
@@ -187,6 +188,7 @@ module X
 
       private
       def build_new_uri: (Net::HTTPResponse response, URI::Generic uri) -> URI::Generic?
+      def headers_for: (Integer response_code, headers headers) -> headers
       def build_request: (Net::HTTPRequest request, URI::Generic new_uri, Integer response_code, headers headers, Authenticator authenticator) -> Net::HTTPRequest
     end
 

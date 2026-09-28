@@ -19,6 +19,9 @@ module X
     class RedirectHandler
       # Default maximum number of redirects to follow
       DEFAULT_MAX_REDIRECTS = 10
+      # The redirects that keep the method and the body of the request; every other one is followed with a GET
+      METHOD_PRESERVING_CODES = [307, 308].freeze
+      private_constant :METHOD_PRESERVING_CODES
 
       # The maximum number of redirects to follow
       # @api private
@@ -63,7 +66,8 @@ module X
       # A redirect to another scheme, host, or port drops the credentials, the authenticator's and any Authorization,
       # Cookie, or Proxy-Authorization header among the headers, as Origin decides; see {Origin}. A 307 or 308 keeps
       # the method and the body of the request, so a request whose body holds something private replays it to the
-      # host it is redirected to, whatever its origin.
+      # host it is redirected to, whatever its origin. Any other is followed with a GET, which sends no body, so it
+      # sends no Content-Type either, such as the form type of a request given form:.
       #
       # A redirect that cannot be followed, such as 304 Not Modified or one whose location is missing, is not a
       # valid URL, or is not an HTTP or HTTPS URL, is returned as it is, so that the client raises an HTTPError for it,
@@ -88,8 +92,9 @@ module X
         return response if new_uri.nil?
         raise TooManyRedirects, "Too many redirects" if redirect_count >= max_redirects
 
-        authenticator, headers = Origin.credentials_for(from: uri, to: new_uri, authenticator:, headers:)
-        new_request = build_request(request, new_uri, Integer(response.code), headers, authenticator)
+        code = Integer(response.code)
+        authenticator, headers = Origin.credentials_for(from: uri, to: new_uri, authenticator:, headers: headers_for(code, headers))
+        new_request = build_request(request, new_uri, code, headers, authenticator)
         handle(response: connection.perform(request: new_request), request: new_request, headers:, authenticator:,
           redirect_count: redirect_count + 1)
       end
@@ -113,6 +118,17 @@ module X
         nil
       end
 
+      # The headers of a redirected request, without a Content-Type a GET does not send
+      # @api private
+      # @param response_code [Integer] the status code of the redirect
+      # @param headers [Hash] the headers of the request that was redirected
+      # @return [Hash] the headers to send with the redirected request
+      def headers_for(response_code, headers)
+        return headers if METHOD_PRESERVING_CODES.include?(response_code)
+
+        headers.reject { |name, _| name.to_s.casecmp?("Content-Type") }
+      end
+
       # Build a new request for the redirect
       # @api private
       # @param request [Net::HTTPRequest] the original request
@@ -123,7 +139,7 @@ module X
       # @return [Net::HTTPRequest] the new request
       def build_request(request, uri, response_code, headers, authenticator)
         http_method = :get
-        if [307, 308].include?(response_code)
+        if METHOD_PRESERVING_CODES.include?(response_code)
           http_method = request.method.downcase.to_sym
           body = request.body
         end
