@@ -106,11 +106,13 @@ module X
       # @api private
       # @param alt_text [String, nil] the alt text to validate, or nil for media described with none
       # @return [void]
-      # @raise [ArgumentError] if the alt text is empty or longer than the API takes
+      # @raise [ArgumentError] if the alt text is not a String, or is empty or longer than the API takes
       # @example Validate alt text
       #   Uploader::Validator.validate_alt_text!("A cat asleep on a keyboard")
       def validate_alt_text!(alt_text)
-        return if alt_text.nil? || (1..MAX_ALT_TEXT_LENGTH).cover?(alt_text.length)
+        return if alt_text.nil?
+        raise ArgumentError, "alt_text must be a String, or nil for none, not #{alt_text.inspect}" unless alt_text.is_a?(String)
+        return if (1..MAX_ALT_TEXT_LENGTH).cover?(alt_text.length)
 
         raise ArgumentError, "alt_text must be 1 to #{MAX_ALT_TEXT_LENGTH} characters, not #{alt_text.length}"
       end

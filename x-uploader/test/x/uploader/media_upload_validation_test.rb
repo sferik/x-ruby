@@ -50,6 +50,13 @@ module X
       assert_not_requested :post, BASE_URL
     end
 
+    def test_upload_rejects_alt_text_that_is_not_a_string_before_uploading_anything
+      error = assert_raises(ArgumentError) { Uploader::MediaUpload.upload("test/sample_files/sample.mp4", client: @client, alt_text: 5) }
+
+      assert_equal "alt_text must be a String, or nil for none, not 5", error.message
+      assert_not_requested :post, "#{BASE_URL}/initialize"
+    end
+
     def test_upload_of_empty_media_raises_for_the_empty_media_before_inferring_its_category
       error = assert_raises(ArgumentError) { Uploader::MediaUpload.upload(StringIO.new(""), client: @client) }
 

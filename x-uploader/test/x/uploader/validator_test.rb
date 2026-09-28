@@ -138,6 +138,18 @@ module X
       assert_nil Uploader.const_get(:Validator).validate_alt_text!(nil)
     end
 
+    def test_validate_alt_text_raises_for_alt_text_that_is_not_a_string
+      [5, :cat, ["A cat"]].each do |alt_text|
+        error = assert_raises(ArgumentError) { Uploader.const_get(:Validator).validate_alt_text!(alt_text) }
+
+        assert_equal "alt_text must be a String, or nil for none, not #{alt_text.inspect}", error.message
+      end
+    end
+
+    def test_alt_text_of_a_subclass_of_string_is_valid
+      assert_nil Uploader.const_get(:Validator).validate_alt_text!(Class.new(String).new("A cat asleep on a keyboard"))
+    end
+
     def test_validate_alt_text_raises_for_empty_alt_text
       error = assert_raises(ArgumentError) { Uploader.const_get(:Validator).validate_alt_text!("") }
 
