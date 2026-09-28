@@ -100,7 +100,6 @@ module X
     attr_reader http_response : Net::HTTPResponse
     attr_reader problem : Problem?
 
-    def initialize: (http_response: Net::HTTPResponse, ?request: Net::HTTPRequest?) -> void
     def http_method: () -> Symbol?
     def uri: () -> URI::Generic?
     def headers: () -> Hash[String, String]
@@ -125,7 +124,6 @@ module X
   end
 
   class NetworkError < Error
-    def initialize: (String message, ?request: Net::HTTPRequest?) -> void
     def http_method: () -> Symbol?
     def uri: () -> URI::Generic?
   end
@@ -164,7 +162,6 @@ module X
     attr_reader http_response: Net::HTTPResponse
     attr_reader body: String?
 
-    def initialize: (http_response: Net::HTTPResponse, ?body: String?, ?request: Net::HTTPRequest?) -> void
     def http_method: () -> Symbol?
     def uri: () -> URI::Generic?
     def headers: () -> Hash[String, String]
@@ -202,7 +199,6 @@ module X
     attr_reader uri: URI::Generic
     attr_reader http_response: Net::HTTPResponse
 
-    def initialize: (Symbol http_method, URI::Generic uri, Net::HTTPResponse http_response, ?body: String?) -> void
     def headers: () -> Hash[String, String]
     def body: () -> String?
     def status: () -> Integer
@@ -221,7 +217,6 @@ module X
 
     attr_reader type: String
     attr_reader http_response: Net::HTTPResponse
-    def initialize: (type: String, http_response: Net::HTTPResponse) -> void
     def limit: -> Integer
     def remaining: -> Integer
     def exhausted?: -> bool
