@@ -32,7 +32,7 @@ module X
       stub_rules({"meta" => {"summary" => {"deleted" => 2}}}, method: :post)
 
       assert_equal 2, @streaming_client.delete_stream_rules([1, {id: "2"}])
-      assert_requested(:post, RULES_URL, body: {delete: {ids: [1, "2"]}}.to_json)
+      assert_requested(:post, RULES_URL, body: {delete: {ids: %w[1 2]}}.to_json)
     end
 
     def test_deleting_rules_by_the_values_given_as_strings
@@ -84,7 +84,7 @@ module X
       stub_rules({"meta" => {"summary" => {"deleted" => 2}}}, method: :post)
       @streaming_client.delete_stream_rules([{id: 1}, {value: "ruby"}])
 
-      assert_requested(:post, RULES_URL, body: {delete: {ids: [1], values: ["ruby"]}}.to_json)
+      assert_requested(:post, RULES_URL, body: {delete: {ids: ["1"], values: ["ruby"]}}.to_json)
     end
 
     def test_a_response_of_no_content_holds_no_rules_and_deletes_none
@@ -102,25 +102,25 @@ module X
       assert_equal 0, @streaming_client.delete_stream_rules(1)
     end
 
-    def test_the_rules_changed_are_hashes_whatever_the_client_parses_into
+    def test_the_rules_changed_are_read_whatever_the_client_parses_into
       stub_rules({"data" => [RUBY_RULE], "meta" => {"summary" => {"deleted" => 1}}}, method: :post)
       streaming_client = Client.new(bearer_token: TEST_BEARER_TOKEN, default_object_class: OpenStruct, default_array_class: Set).streaming
 
-      assert_equal [RUBY_RULE], streaming_client.add_stream_rules("ruby")
+      assert_equal [StreamRule.new(id: 1, value: "ruby -is:retweet", tag: "ruby")], streaming_client.add_stream_rules("ruby")
       assert_equal 1, streaming_client.delete_stream_rules(1)
     end
 
     def test_deleting_something_that_is_neither_a_rule_nor_an_identifier
       error = assert_raises(ArgumentError) { @streaming_client.delete_stream_rules({"tag" => "ruby"}) }
 
-      assert_equal 'a rule is a Hash holding an id or a value, the value it matches, or its identifier, not {"tag" => "ruby"}', error.message
+      assert_equal 'a rule is a StreamRule, a Hash holding an id or a value, the value it matches, or its identifier, not {"tag" => "ruby"}', error.message
     end
 
     def test_deleting_something_that_is_neither_a_hash_a_string_nor_an_integer
       [:ruby, nil, 1.0].each do |rule|
         error = assert_raises(ArgumentError) { @streaming_client.delete_stream_rules([rule]) }
 
-        assert_equal "a rule is a Hash holding an id or a value, the value it matches, or its identifier, not #{rule.inspect}", error.message
+        assert_equal "a rule is a StreamRule, a Hash holding an id or a value, the value it matches, or its identifier, not #{rule.inspect}", error.message
       end
       assert_not_requested(:post, RULES_URL)
     end

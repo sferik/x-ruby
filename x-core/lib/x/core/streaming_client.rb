@@ -11,6 +11,7 @@ require_relative "request_encoding"
 require_relative "response"
 require_relative "response_parser"
 require_relative "stream_parser"
+require_relative "stream_rule"
 
 module X
   # A client for the streaming endpoints, which hold a connection open rather than answer a request
@@ -50,9 +51,9 @@ module X
     # The endpoint that reads and changes the rules the filtered stream matches posts against
     RULES_ENDPOINT = "tweets/search/stream/rules"
     # The message of the error raised for something that is neither a rule nor the identifier of one
-    NOT_A_RULE = "a rule is a Hash holding an id or a value, the value it matches, or its identifier, not %s"
+    NOT_A_RULE = "a rule is a StreamRule, a Hash holding an id or a value, the value it matches, or its identifier, not %s"
     # The message of the error raised for something that is neither a rule to add nor the value one matches
-    NOT_A_RULE_TO_ADD = "a rule to add is a Hash holding a value, or the value it matches, not %s"
+    NOT_A_RULE_TO_ADD = "a rule to add is a StreamRule, a Hash holding a value, or the value it matches, not %s"
     private_constant :RULES_ENDPOINT, :NOT_A_RULE, :NOT_A_RULE_TO_ADD
     # The classes the rules endpoints parse into, whatever parsing classes the client defaults to
     JSON_CLASSES = {array_class: Array, object_class: Hash}.freeze
@@ -190,64 +191,66 @@ module X
     #
     # @api public
     # @param params [Hash, nil] query parameters appended to the endpoint of each page
-    # @return [Array<Hash>] the rules, each holding its id, value, and tag, empty if the app has none
+    # @return [Array<StreamRule>] the rules, frozen, empty if the app has none
     # @raise [UnsupportedOperation] if the client authenticates with OAuth 2.0 as a user and holds no credentials of
     #   the app
     # @raise [HTTPError] if the API refuses the request
     # @example Print the rules of the app
-    #   streaming_client.stream_rules.each { |rule| puts "#{rule["tag"]}: #{rule["value"]}" }
+    #   streaming_client.stream_rules.each { |rule| puts "#{rule.tag}: #{rule.value}" }
     # @example Read two rules by identifier
     #   streaming_client.stream_rules(params: {ids: "1,2"})
     def stream_rules(params: nil)
       body = app_client.get(RULES_ENDPOINT, params:, **JSON_CLASSES)
       token = body.to_h.dig("meta", "next_token")
-      rules_of(body) + (token ? stream_rules(params: params.to_h.merge(pagination_token: token)) : [])
+      (rules_of(body) + (token ? stream_rules(params: params.to_h.merge(pagination_token: token)) : [])).freeze
     end
 
     # Add rules for the filtered stream to match posts against
     #
-    # A rule is a Hash of the value it matches and the tag it is labelled with, or a String, which is the value of a
-    # rule without a tag. No rules add none, and send no request. Anything else raises before a request, as it does
-    # for delete_stream_rules.
+    # A rule is a StreamRule, or a Hash of the value it matches and the tag it is labelled with, or a String, which is
+    # the value of a rule without a tag. A StreamRule is added by its value and tag, so the rules of one app, as
+    # stream_rules returns them, add themselves to another. No rules add none, and send no request. Anything else
+    # raises before a request, as it does for delete_stream_rules.
     #
     # The API adds the rules it can and reports the rest, such as a rule the app already has, as errors of a
     # response that otherwise succeeds. The rules that were added are returned, and each rule that was not is
     # yielded as the Problem the API reported, as a finder of x-objects yields the problems of a lookup.
     #
     # @api public
-    # @param rules [Array<Hash, String>, Hash, String] the rules to add
+    # @param rules [Array<StreamRule, Hash, String>, StreamRule, Hash, String] the rules to add
     # @param dry_run [Boolean] true to have the API check the rules and add none of them
     # @yieldparam problem [Problem] each rule the API did not add, and why, such as a DuplicateRule
-    # @return [Array<Hash>] the rules that were added, each holding the id the API gave it, empty if none were given
-    # @raise [ArgumentError] if something is neither a Hash that holds a value nor a String
+    # @return [Array<StreamRule>] the rules that were added, frozen, each holding the id the API gave it, empty if
+    #   none were given
+    # @raise [ArgumentError] if something is neither a StreamRule, a Hash that holds a value, nor a String
     # @raise [UnsupportedOperation] if the client authenticates with OAuth 2.0 as a user and holds no credentials of
     #   the app
     # @raise [HTTPError] if the API refuses the request, which adds none of the rules
     # @example Add a rule with a tag
-    #   streaming_client.add_stream_rules({value: "ruby -is:retweet", tag: "ruby"})
+    #   rule = streaming_client.add_stream_rules(X::StreamRule.new(value: "ruby -is:retweet", tag: "ruby")).first
+    #   rule.id # => 1165037377523306498
     # @example Check rules without adding them
     #   streaming_client.add_stream_rules(["ruby", "crystal"], dry_run: true)
     # @example Report the rules that were not added
     #   streaming_client.add_stream_rules(%w[ruby crystal]) { |problem| warn "#{problem.value}: #{problem.title}" }
     def add_stream_rules(rules, dry_run: false)
       rules = each_rule(rules)
-      return [] if rules.empty?
-
-      body = change_rules({add: rules.map { |rule| rule_to_add(rule) }}, dry_run:)
+      body = change_rules({add: rules.map { |rule| rule_to_add(rule) }}, dry_run:) unless rules.empty?
       Problem.all_from(body).each { |problem| yield problem } if block_given?
       rules_of(body)
     end
 
     # Delete rules of the filtered stream
     #
-    # A rule is deleted by its identifier, or by the value it matches: a rule the API returned, a Hash that holds an
-    # id, or an Integer is deleted by identifier, and a Hash that holds a value and no identifier, or a String, is
-    # deleted by value, so what add_stream_rules was given deletes what it added. No rules delete none, and send no
-    # request, since the API refuses a deletion that names no rule.
+    # A rule is deleted by its identifier, or by the value it matches: a StreamRule the API returned, a Hash that holds
+    # an id, or an Integer is deleted by identifier, so what stream_rules returned deletes itself, and a StreamRule or
+    # a Hash that holds a value and no identifier, or a String, is deleted by value, so what add_stream_rules was
+    # given deletes what it added. No rules delete none, and send no request, since the API refuses a deletion that
+    # names no rule.
     #
     # @api public
-    # @param rules [Array<Hash, String, Integer>, Hash, String, Integer] the rules to delete, the values they match,
-    #   or their identifiers
+    # @param rules [Array<StreamRule, Hash, String, Integer>, StreamRule, Hash, String, Integer] the rules to delete,
+    #   the values they match, or their identifiers
     # @param dry_run [Boolean] true to have the API check the rules and delete none of them
     # @return [Integer] the number of rules deleted, or that a dry run would delete, 0 if none were given
     # @raise [ArgumentError] if something is neither a rule nor the identifier of one
@@ -259,7 +262,7 @@ module X
     # @example Delete the rules that match two values
     #   streaming_client.delete_stream_rules(["ruby", "crystal"])
     # @example Delete a rule by the identifier the API gave it
-    #   streaming_client.delete_stream_rules({id: "1165037377523306498"})
+    #   streaming_client.delete_stream_rules(1165037377523306498)
     def delete_stream_rules(rules, dry_run: false)
       rules = each_rule(rules)
       return 0 if rules.empty?
@@ -272,17 +275,15 @@ module X
 
     # The rules to delete, named by identifier and by the value they match
     #
-    # A list the API is given none of would delete every rule, so neither is sent unless it holds something.
+    # A list the API is given none of would delete every rule, so neither is sent unless it holds something. The API
+    # takes an identifier as a String, as it sends one, so an Integer is sent as one.
     #
     # @api private
     # @param ids [Array] the rules that hold an identifier
     # @param values [Array] the rules that hold a value and no identifier
     # @return [Hash{Symbol => Array}] the identifiers and values of the rules to delete
     def deletion(ids, values)
-      deleted = {} #: Hash[Symbol, Array[untyped]]
-      deleted[:ids] = ids.map { |rule| identifier_of(rule) } unless ids.empty?
-      deleted[:values] = values.map { |rule| value_of(rule) } unless values.empty?
-      deleted
+      {ids: ids.map { |rule| identifier_of(rule).to_s }, values: values.map { |rule| value_of(rule) }}.reject { |_, list| list.empty? }
     end
 
     # Send a change of the rules, as the app
@@ -290,26 +291,34 @@ module X
     # @param body [Hash] the rules to add or delete
     # @param dry_run [Boolean] true to have the API check the rules and change none of them
     # @return [Hash, nil] the parsed response body
-    def change_rules(body, dry_run:)
-      app_client.post(RULES_ENDPOINT, body, params: {dry_run: (true if dry_run)}, **JSON_CLASSES)
-    end
+    def change_rules(body, dry_run:) = app_client.post(RULES_ENDPOINT, body, params: {dry_run: (true if dry_run)}, **JSON_CLASSES)
 
     # The rules given, which may be one rule rather than a list of them
     #
-    # Array() would read a Hash as the list of its pairs, so a single rule given as a Hash is wrapped instead.
+    # Array() would read a Hash as the list of its pairs, so a single rule given as a Hash is wrapped instead. A
+    # StreamRule is read as the Hash of what it holds, which the rest read as they read any other.
     #
     # @api private
-    # @param rules [Array, Hash, String, Integer] the rules, or one rule
+    # @param rules [Array, StreamRule, Hash, String, Integer] the rules, or one rule
     # @return [Array] the rules
-    def each_rule(rules) = Hash.try_convert(rules) ? [rules] : Array(rules)
+    def each_rule(rules)
+      (Hash.try_convert(rules) ? [rules] : Array(rules)).map { |rule| rule.is_a?(StreamRule) ? rule.to_h.compact : rule }
+    end
 
     # The rules of a response, which holds none when it changed or matched none
     # @api private
     # @param body [Hash, nil] the parsed response body
-    # @return [Array<Hash>] the rules
-    def rules_of(body) = Array(body.to_h["data"])
+    # @return [Array<StreamRule>] the rules, frozen
+    def rules_of(body)
+      rules = Array(body.to_h["data"]) #: Array[Hash[String, untyped]]
+      rules.map { |rule| StreamRule.new(id: rule["id"], value: rule["value"], tag: rule["tag"]) }.freeze
+    end
 
     # A rule to add, from the rule itself or the value it matches
+    #
+    # The API gives each rule it adds an identifier of its own, so one that a rule holds, as a rule that was read
+    # does, is not sent.
+    #
     # @api private
     # @param rule [Hash, String] the rule, or the value it matches
     # @return [Hash] the rule
@@ -319,7 +328,7 @@ module X
       return {value:} if value
 
       hash = Hash.try_convert(rule)
-      return hash if hash && (hash["value"] || hash[:value])
+      return hash.except("id", :id) if hash && (hash["value"] || hash[:value])
 
       raise ArgumentError, format(NOT_A_RULE_TO_ADD, rule.inspect)
     end

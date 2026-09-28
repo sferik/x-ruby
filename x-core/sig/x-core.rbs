@@ -719,6 +719,24 @@ module X
     def reset_in: -> Integer
   end
 
+  class StreamRule
+    NOT_A_STRING: String
+
+    attr_reader id: Integer?
+    attr_reader value: String
+    attr_reader tag: String?
+    def initialize: (value: String, ?tag: String?, ?id: (Integer | String)?) -> void
+    def to_h: () -> {id: Integer?, value: String, tag: String?}
+    def deconstruct_keys: (Array[Symbol]? _keys) -> {id: Integer?, value: String, tag: String?}
+    def ==: (untyped other) -> bool
+    def eql?: (untyped other) -> bool
+    def hash: () -> Integer
+    def inspect: () -> String
+
+    private
+    def string!: (Symbol name, untyped string) -> String
+  end
+
   class StreamingClient
     include Core::ProxySetting
     include Core::RequestEncoding
@@ -731,7 +749,7 @@ module X
     NOT_A_RULE_TO_ADD: String
     JSON_CLASSES: Hash[Symbol, Class]
 
-    type addable_rule = Hash[untyped, untyped] | String
+    type addable_rule = StreamRule | Hash[untyped, untyped] | String
     type rule = addable_rule | Integer
 
     @connection: Core::Connection
@@ -749,15 +767,15 @@ module X
     def write_timeout: () -> (Float | Integer)?
     def debug_output: () -> _DebugOutput?
     def max_reconnects: () -> (Integer | Float)
-    def stream_rules: (?params: params?) -> Array[Hash[String, untyped]]
-    def add_stream_rules: (Array[addable_rule] | addable_rule rules, ?dry_run: bool) ?{ (Problem problem) -> void } -> Array[Hash[String, untyped]]
+    def stream_rules: (?params: params?) -> Array[StreamRule]
+    def add_stream_rules: (Array[addable_rule] | addable_rule rules, ?dry_run: bool) ?{ (Problem problem) -> void } -> Array[StreamRule]
     def delete_stream_rules: (Array[rule] | rule rules, ?dry_run: bool) -> Integer
 
     private
     def deletion: (Array[untyped] ids, Array[untyped] values) -> Hash[Symbol, Array[untyped]]
     def change_rules: (Hash[Symbol, untyped] body, dry_run: bool) -> Hash[String, untyped]?
     def each_rule: (untyped rules) -> Array[untyped]
-    def rules_of: (Hash[String, untyped]? body) -> Array[Hash[String, untyped]]
+    def rules_of: (Hash[String, untyped]? body) -> Array[StreamRule]
     def rule_to_add: (addable_rule rule) -> Hash[untyped, untyped]
     def identifier_of: (rule rule) -> (String | Integer)?
     def value_of: (rule rule) -> String
