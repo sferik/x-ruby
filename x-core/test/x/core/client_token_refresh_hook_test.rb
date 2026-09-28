@@ -14,10 +14,8 @@ module X
       @refreshed = []
     end
 
-    def test_the_authenticator_of_a_client_holds_no_callable_of_its_own
-      client = Client.new(**test_oauth2_credentials, on_token_refresh: ->(auth) { @refreshed << auth.access_token })
-
-      assert_nil client.authenticator.on_token_refresh
+    def test_an_authenticator_holds_no_callable_of_its_own
+      refute_respond_to Client.new(**test_oauth2_credentials, on_token_refresh: ->(_) {}).authenticator, :on_token_refresh
     end
 
     def test_a_refresh_by_the_authenticator_of_a_client_reaches_the_hook_of_the_client
@@ -27,12 +25,16 @@ module X
       assert_equal ["NEW_ACCESS_TOKEN"], @refreshed
     end
 
-    def test_an_authenticator_passes_a_refresh_to_its_own_callable_before_the_one_it_reports_to
-      authenticator = OAuth2Authenticator.new(**test_oauth2_credentials, on_token_refresh: ->(_auth) { @refreshed << :own })
-      authenticator.__send__(:report_refreshes_to, -> { [->(tokens) { @refreshed << tokens.refresh_token }] })
-      authenticator.refresh!
+    def test_an_authenticator_that_reports_to_nothing_refreshes
+      authenticator = OAuth2Authenticator.new(**test_oauth2_credentials)
 
-      assert_equal [:own, "NEW_REFRESH_TOKEN"], @refreshed
+      assert_equal "NEW_REFRESH_TOKEN", authenticator.refresh!.refresh_token
+    end
+
+    def test_an_authenticator_passes_a_refresh_to_each_callable_it_reports_to_in_order
+      oauth2_authenticator_reporting_to(->(_) { @refreshed << :first }, ->(tokens) { @refreshed << tokens.refresh_token }).refresh!
+
+      assert_equal [:first, "NEW_REFRESH_TOKEN"], @refreshed
     end
 
     def test_what_an_authenticator_reports_to_is_private

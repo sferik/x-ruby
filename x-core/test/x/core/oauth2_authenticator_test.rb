@@ -257,15 +257,11 @@ module X
       stub_request(:post, "https://api.x.com/2/oauth2/token")
         .to_return(status: 200, body: {access_token: "NEW_ACCESS_TOKEN", refresh_token: "NEW_REFRESH_TOKEN", expires_in: 7200}.to_json)
       tokens = []
-      authenticator = OAuth2Authenticator.new(**test_oauth2_credentials, on_token_refresh: ->(refreshed) { tokens << refreshed })
+      authenticator = oauth2_authenticator_reporting_to(->(refreshed) { tokens << refreshed })
       authenticator.refresh!
 
       assert_equal [OAuth2Tokens.new(access_token: "NEW_ACCESS_TOKEN", refresh_token: "NEW_REFRESH_TOKEN", expires_at: authenticator.expires_at)], tokens
       assert_in_delta Time.now + 7200, tokens.first.expires_at, 5
-    end
-
-    def test_on_token_refresh_defaults_to_nil
-      assert_nil OAuth2Authenticator.new(**test_oauth2_credentials).on_token_refresh
     end
 
     def test_refresh_rejected_token_refreshes_the_token_that_was_rejected

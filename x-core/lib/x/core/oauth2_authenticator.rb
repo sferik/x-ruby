@@ -14,8 +14,9 @@ module X
   # Handles OAuth 2.0 authentication, refreshing the access token when it expires
   #
   # X issues a new refresh token with each access token and accepts a refresh token once, so an authenticator
-  # refreshes under a lock, and passes on_token_refresh the tokens each refresh issued, as OAuth2Tokens, so that
-  # they can be stored.
+  # refreshes under a lock, and the authenticator of a client passes the tokens each refresh issued, as OAuth2Tokens,
+  # to the on_token_refresh of that client and of each copy of it that shares the authenticator, so that they can be
+  # stored.
   #
   # @api public
   class OAuth2Authenticator < Authenticator
@@ -68,18 +69,6 @@ module X
     #   authenticator.connection
     attr_reader :connection
 
-    # A callable passed the OAuth2Tokens of each refresh, to store them
-    #
-    # It is the callable the authenticator was built with. An authenticator a client builds is built with none: the
-    # on_token_refresh of the client, and of each copy of it that shares the authenticator, is passed each refresh,
-    # and is read from the client.
-    #
-    # @api public
-    # @return [#call, nil] the callable, or nil for none
-    # @example Get the callable
-    #   authenticator.on_token_refresh
-    attr_reader :on_token_refresh
-
     # Initialize a new OAuth 2.0 authenticator
     #
     # @api public
@@ -90,7 +79,6 @@ module X
     # @param refresh_token [String] the OAuth 2.0 refresh token
     # @param expires_at [Time, nil] the expiration time of the access token
     # @param connection [Connection] the connection for making token requests
-    # @param on_token_refresh [#call, nil] a callable passed the OAuth2Tokens of each refresh
     # @return [OAuth2Authenticator] a new authenticator instance
     # @example Create an authenticator
     #   authenticator = X::OAuth2Authenticator.new(
@@ -100,14 +88,13 @@ module X
     #     refresh_token: "refresh"
     #   )
     def initialize(client_id:, access_token:, refresh_token:, client_secret: nil, expires_at: nil,
-      connection: Connection.new, on_token_refresh: nil)
+      connection: Connection.new)
       @client_id = client_id
       @client_secret = client_secret
       @access_token = access_token
       @refresh_token = refresh_token
       @expires_at = expires_at
       @connection = connection
-      @on_token_refresh = on_token_refresh
       @mutex = Mutex.new
       @reporter = Core::RefreshReporter.new
     end
@@ -151,7 +138,8 @@ module X
 
     # Refresh the access token using the refresh token
     #
-    # The authenticator holds the new tokens once it returns, and has passed them to on_token_refresh.
+    # The authenticator holds the new tokens once it returns, and the authenticator of a client has passed them to the
+    # on_token_refresh of the clients that share it.
     #
     # @api public
     # @return [OAuth2Authenticator] the authenticator, which holds the new tokens
@@ -267,16 +255,15 @@ module X
       @mutex.synchronize { @expires_at = expires_at }
     end
 
-    # Pass each refresh to the callables another reads besides on_token_refresh
+    # Pass each refresh to the callables another reads
     #
     # Internal to x-core: Client passes the refreshes of the authenticator it builds to the on_token_refresh of each
-    # client that shares it, and calls it with __send__, since it is private: the callables are not ones a caller
-    # gave the authenticator, so on_token_refresh does not read them.
+    # client that shares it, and calls it with __send__, since it is private.
     #
     # @api private
     # @param hooks [#call] a callable that returns the callables to pass each refresh, read at each refresh
     # @return [#call] the callable
-    def report_refreshes_to(hooks) = @reporter.also_to(hooks)
+    def report_refreshes_to(hooks) = @reporter.to(hooks)
 
     # Refresh the access token, holding the lock
     # @api private
@@ -300,7 +287,7 @@ module X
     # @api private
     # @param tokens [OAuth2Tokens] the tokens the refresh issued
     # @return [void]
-    def report_refresh(tokens) = @reporter.report(tokens, on_token_refresh)
+    def report_refresh(tokens) = @reporter.report(tokens)
 
     # The client for the token endpoint
     # @api private

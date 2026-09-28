@@ -14,7 +14,7 @@ module X
     end
 
     def authenticator(**options)
-      OAuth2Authenticator.new(**test_oauth2_credentials, on_token_refresh: ->(auth) { @refreshed << auth.access_token }, **options)
+      oauth2_authenticator_reporting_to(->(auth) { @refreshed << auth.access_token }, **options)
     end
 
     def test_refresh_returns_the_authenticator_after_on_token_refresh
@@ -48,8 +48,7 @@ module X
         .to_return(status: 200, body: {access_token: "NEW_ACCESS_TOKEN", expires_in: 7200}.to_json)
       headers = []
       authenticator = nil #: OAuth2Authenticator?
-      authenticator = OAuth2Authenticator.new(**test_oauth2_credentials, expires_at: Time.now - 1,
-        on_token_refresh: ->(_) { headers << authenticator&.header(nil) })
+      authenticator = oauth2_authenticator_reporting_to(->(_) { headers << authenticator&.header(nil) }, expires_at: Time.now - 1)
 
       assert_equal({"Authorization" => "Bearer NEW_ACCESS_TOKEN"}, authenticator.header(nil))
       assert_equal [{"Authorization" => "Bearer NEW_ACCESS_TOKEN"}], headers
@@ -58,8 +57,7 @@ module X
     def test_on_token_refresh_can_refresh_a_rejected_token
       replaced = []
       authenticator = nil #: OAuth2Authenticator?
-      authenticator = OAuth2Authenticator.new(**test_oauth2_credentials,
-        on_token_refresh: ->(_) { replaced << authenticator&.send(:refresh_rejected_token!, TEST_ACCESS_TOKEN, Connection.new) })
+      authenticator = oauth2_authenticator_reporting_to(->(_) { replaced << authenticator&.send(:refresh_rejected_token!, TEST_ACCESS_TOKEN, Connection.new) })
 
       assert authenticator.send(:refresh_rejected_token!, TEST_ACCESS_TOKEN, authenticator.connection)
       assert_equal [true], replaced

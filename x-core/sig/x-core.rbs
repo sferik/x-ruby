@@ -755,11 +755,10 @@ module X
     attr_reader refresh_token: String
     attr_reader expires_at: Time?
     attr_reader connection: Connection
-    attr_reader on_token_refresh: _TokenRefreshHook?
     @mutex: Thread::Mutex
     @reporter: Core::RefreshReporter
     @refreshed_at: Float?
-    def initialize: (client_id: String, access_token: String, refresh_token: String, ?client_secret: String?, ?expires_at: Time?, ?connection: Connection, ?on_token_refresh: _TokenRefreshHook?) -> void
+    def initialize: (client_id: String, access_token: String, refresh_token: String, ?client_secret: String?, ?expires_at: Time?, ?connection: Connection) -> void
     def header: (Net::HTTPRequest? request) -> Hash[String, String]
     def inspect: () -> String
     def token_expired?: -> bool
@@ -788,11 +787,11 @@ module X
 
       def initialize: () -> void
       def issued: (OAuth2Tokens tokens) -> OAuth2Tokens
-      def also_to: (^() -> Array[_TokenRefreshHook] hooks) -> ^() -> Array[_TokenRefreshHook]
-      def report: (OAuth2Tokens tokens, _TokenRefreshHook? hook) -> void
+      def to: (^() -> Array[_TokenRefreshHook] hooks) -> ^() -> Array[_TokenRefreshHook]
+      def report: (OAuth2Tokens tokens) -> void
 
       private
-      def pass: (OAuth2Tokens tokens, Array[_TokenRefreshHook] hooks) -> void
+      def pass: (OAuth2Tokens tokens) -> void
     end
   end
 

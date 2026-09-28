@@ -87,6 +87,13 @@ def test_oauth2_credentials
   }
 end
 
+# An OAuth 2.0 authenticator that reports its refreshes to hooks, as the authenticator a client builds reports them
+def oauth2_authenticator_reporting_to(*hooks, **options)
+  X::OAuth2Authenticator.new(**test_oauth2_credentials, **options).tap do |authenticator|
+    authenticator.__send__(:report_refreshes_to, -> { hooks })
+  end
+end
+
 # Fix the nonce and the timestamp that OAuth headers are signed with, so signatures are deterministic
 def with_fixed_oauth_params(nonce: TEST_OAUTH_NONCE, time: Time.utc(1983, 11, 24), &block)
   SecureRandom.stub(:hex, nonce) do

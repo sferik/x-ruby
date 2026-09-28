@@ -16,7 +16,7 @@ module X
     end
 
     def test_a_refresh_another_replaced_before_it_was_reported_is_not_reported
-      authenticator = OAuth2Authenticator.new(**test_oauth2_credentials, on_token_refresh: ->(tokens) { @stored << tokens.refresh_token })
+      authenticator = oauth2_authenticator_reporting_to(->(tokens) { @stored << tokens.refresh_token })
       first = authenticator.__send__(:refresh, authenticator.connection)
       second = authenticator.__send__(:refresh, authenticator.connection)
       authenticator.__send__(:report_refresh, second)
@@ -26,7 +26,7 @@ module X
     end
 
     def test_a_refresh_waits_to_be_reported_until_the_one_before_it_has_been
-      authenticator = OAuth2Authenticator.new(**test_oauth2_credentials, on_token_refresh: storing_the_first_slowly)
+      authenticator = oauth2_authenticator_reporting_to(storing_the_first_slowly)
       first = Thread.new { authenticator.refresh! }
       @storing.pop
       second = Thread.new { authenticator.refresh! }
@@ -40,8 +40,8 @@ module X
     end
 
     def test_a_hook_that_raises_keeps_no_other_from_the_tokens
-      authenticator = OAuth2Authenticator.new(**test_oauth2_credentials, on_token_refresh: ->(_) { raise ArgumentError, "store is down" })
-      authenticator.__send__(:report_refreshes_to, -> { [->(tokens) { @stored << tokens.refresh_token }, ->(_) { raise KeyError }] })
+      authenticator = oauth2_authenticator_reporting_to(->(_) { raise ArgumentError, "store is down" },
+        ->(tokens) { @stored << tokens.refresh_token }, ->(_) { raise KeyError })
       error = assert_raises(ArgumentError) { authenticator.refresh! }
 
       assert_equal ["store is down", ["FIRST_REFRESH_TOKEN"]], [error.message, @stored]

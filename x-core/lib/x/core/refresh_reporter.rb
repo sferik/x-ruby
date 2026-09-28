@@ -30,19 +30,18 @@ module X
       # @return [OAuth2Tokens] the tokens
       def issued(tokens) = (@latest = tokens)
 
-      # Pass each refresh to the callables another reads, too
+      # Pass each refresh to the callables another reads
       # @api private
       # @param hooks [#call] a callable that returns the callables to pass each refresh, read at each refresh
       # @return [#call] the callable
-      def also_to(hooks) = (@hooks = hooks)
+      def to(hooks) = (@hooks = hooks)
 
       # Pass the tokens of a refresh to the callables, unless a later one replaced them
       # @api private
       # @param tokens [OAuth2Tokens] the tokens the refresh issued
-      # @param hook [#call, nil] the callable the authenticator was built with
       # @return [void]
-      def report(tokens, hook)
-        @monitor.synchronize { pass(tokens, [hook].compact) if tokens.equal?(@latest) }
+      def report(tokens)
+        @monitor.synchronize { pass(tokens) if tokens.equal?(@latest) }
       end
 
       private
@@ -50,12 +49,12 @@ module X
       # Pass tokens to each callable, raising the first error once all have run
       # @api private
       # @param tokens [OAuth2Tokens] the tokens the refresh issued
-      # @param hooks [Array<#call>] the callables the authenticator was built with
       # @return [void]
-      def pass(tokens, hooks)
-        others = @hooks
-        hooks.concat(others.call) if others
-        errors = hooks.filter_map do |hook|
+      def pass(tokens)
+        hooks = @hooks
+        return unless hooks
+
+        errors = hooks.call.filter_map do |hook|
           hook.call(tokens)
           nil
         rescue => e
