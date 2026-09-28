@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "uri"
+
 module X
   module Core
     # Checks the settings of the handlers of a client when the client is built
@@ -14,8 +16,12 @@ module X
     # thread that Timeout keeps for every timeout of the process, since no deadline can be set that far off. So each
     # is checked when the connection is built, which is when the client that holds it is.
     #
-    # Internal to x-core: the handlers of redirects, rate limits, retries, and reconnects, and a connection, check
-    # their settings with it.
+    # The base URL and the headers of a client are read only once a request is built, so a base URL that is no URL,
+    # or headers that are not a Hash of names to values, raised from the first request, rather than where the client
+    # was given them, so each is checked when the client is built.
+    #
+    # Internal to x-core: the handlers of redirects, rate limits, retries, and reconnects, a connection, and a client
+    # check their settings with it.
     #
     # @api private
     module SettingValidator
@@ -31,7 +37,15 @@ module X
       INVALID_FINITE_SECONDS = "%s must be a finite number of seconds of at least 0, not %s"
       # The message of the error raised for a timeout that is neither a finite number of seconds of at least 0 nor nil
       INVALID_TIMEOUT = "%s must be a finite number of seconds of at least 0, or nil for no timeout, not %s"
-      private_constant :INVALID_COUNT, :INVALID_COUNT_OR_INFINITY, :INVALID_SECONDS, :INVALID_FINITE_SECONDS, :INVALID_TIMEOUT
+      # The message of the error raised for a base URL that is not an absolute HTTP or HTTPS URL
+      INVALID_BASE_URL = "base_url must be an absolute http or https URL, such as \"https://api.x.com/2/\", not %s"
+      # The message of the error raised for headers that are not a Hash
+      INVALID_HEADERS = "headers must be a Hash of header names to values, not a %s"
+      # The message of the error raised for a header whose name or value is not what a header takes
+      INVALID_HEADER = "headers must name each header with a String or a Symbol and give it a String, " \
+        "not %<name>s with a %<value>s"
+      private_constant :INVALID_COUNT, :INVALID_COUNT_OR_INFINITY, :INVALID_SECONDS, :INVALID_FINITE_SECONDS, :INVALID_TIMEOUT,
+        :INVALID_BASE_URL, :INVALID_HEADERS, :INVALID_HEADER
 
       # Check that a count is an Integer of at least 0
       #
@@ -110,7 +124,68 @@ module X
         raise ArgumentError, format(INVALID_TIMEOUT, name, value.inspect)
       end
 
+      # Check that a base URL is an absolute HTTP or HTTPS URL, with a host
+      #
+      # @api private
+      # @param value [Object] the base URL
+      # @return [String] the base URL
+      # @raise [ArgumentError] if the base URL is not a String that is an absolute http or https URL with a host
+      # @example Check the base URL of the v1.1 API
+      #   X::Core::SettingValidator.base_url!("https://api.x.com/1.1/") # => "https://api.x.com/1.1/"
+      def base_url!(value)
+        return value if value.is_a?(String) && http_url?(value)
+
+        raise ArgumentError, format(INVALID_BASE_URL, value.inspect)
+      end
+
+      # Check that headers are a Hash of header names to String values
+      #
+      # Each header must be named with a String or a Symbol. The error names the class of what is not a Hash, and the
+      # name of a header whose name or value is not what a header takes with the class of its value, rather than
+      # inspect either, since headers carry credentials, such as an Authorization header.
+      #
+      # @api private
+      # @param value [Object] the headers
+      # @return [Hash{String, Symbol => String}] the headers
+      # @raise [ArgumentError] if the headers are not a Hash, or name a header with anything but a String or a
+      #   Symbol, or give one anything but a String
+      # @example Check headers that name the application
+      #   X::Core::SettingValidator.headers!("User-Agent" => "MyApp/1.0") # => {"User-Agent" => "MyApp/1.0"}
+      def headers!(value)
+        raise ArgumentError, format(INVALID_HEADERS, value.class) unless value.is_a?(Hash)
+
+        invalid = value.find { |name, header| !header_name?(name) || !header.is_a?(String) }
+        invalid ? invalid_header!(*invalid) : value
+      end
+
       private
+
+      # Raise for a header whose name or value is not what a header takes
+      # @api private
+      # @param name [Object] the name of the header
+      # @param header [Object] the value of the header
+      # @return [void]
+      # @raise [ArgumentError] always
+      def invalid_header!(name, header)
+        raise ArgumentError, format(INVALID_HEADER, name: header_name?(name) ? name.inspect : "a #{name.class}", value: header.class)
+      end
+
+      # Check whether a value names a header, as a String or a Symbol does
+      # @api private
+      # @param value [Object] the value
+      # @return [Boolean] true if the value is a String or a Symbol
+      def header_name?(value) = value.is_a?(String) || value.instance_of?(Symbol)
+
+      # Check whether a String is an absolute HTTP or HTTPS URL with a host
+      # @api private
+      # @param value [String] the URL
+      # @return [Boolean] true if the URL is an absolute http or https URL with a host
+      def http_url?(value)
+        uri = URI(value)
+        uri.is_a?(URI::HTTP) && !uri.host.to_s.empty?
+      rescue URI::InvalidURIError
+        false
+      end
 
       # Check whether a value is an Integer of at least 0
       # @api private

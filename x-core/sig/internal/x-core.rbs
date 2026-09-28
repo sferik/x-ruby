@@ -350,6 +350,9 @@ module X
       INVALID_SECONDS: String
       INVALID_FINITE_SECONDS: String
       INVALID_TIMEOUT: String
+      INVALID_BASE_URL: String
+      INVALID_HEADERS: String
+      INVALID_HEADER: String
       extend SettingValidator
 
       def count!: (Symbol name, untyped value) -> untyped
@@ -357,8 +360,13 @@ module X
       def seconds!: (Symbol name, untyped value) -> untyped
       def finite_seconds!: (Symbol name, untyped value) -> untyped
       def timeout!: (Symbol name, untyped value) -> untyped
+      def base_url!: (untyped value) -> String
+      def headers!: (untyped value) -> headers
 
       private
+      def invalid_header!: (untyped name, untyped header) -> bot
+      def header_name?: (untyped value) -> bool
+      def http_url?: (String value) -> bool
       def count?: (untyped value) -> bool
       def seconds?: (untyped value) -> bool
       def finite_seconds?: (untyped value) -> bool

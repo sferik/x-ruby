@@ -5,6 +5,7 @@ require_relative "rate_limit_handler"
 require_relative "redirect_handler"
 require_relative "response"
 require_relative "retry_handler"
+require_relative "setting_validator"
 
 module X
   module Core
@@ -103,10 +104,11 @@ module X
       # @return [void]
       def initialize_settings(base_url:, default_array_class:, default_object_class:, headers:, on_response:,
         max_redirects:, max_rate_limit_retries:, max_rate_limit_wait:, max_retries:)
+        base_url = SettingValidator.base_url!(base_url)
         @base_url = base_url.end_with?("/") ? base_url : "#{base_url}/"
         @default_array_class = default_array_class
         @default_object_class = default_object_class
-        @headers = headers.dup.freeze
+        @headers = SettingValidator.headers!(headers).dup.freeze
         @on_response = on_response
         @redirect_handler = RedirectHandler.new(connection: @connection, request_builder: @request_builder, max_redirects:)
         @rate_limit_handler = RateLimitHandler.new(max_rate_limit_retries:, max_rate_limit_wait:)
