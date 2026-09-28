@@ -2,6 +2,7 @@
 
 require "time"
 require_relative "errors"
+require_relative "shape"
 require_relative "utils"
 
 module X
@@ -80,13 +81,14 @@ module X
       # @param client [Object] the client used to make the requests
       # @param params [Hash] query parameters
       # @return [Array<Hash>] the response bodies
+      # @raise [InvalidAttribute] if a response holds a meta that is not an object
       def pages(path, query, client:, **params)
         params = {query:, granularity: DEFAULT_GRANULARITY}.merge(params)
         client = Utils.app_client(client)
         bodies = [] #: Array[Hash[String, untyped]]
         loop do
           bodies << client.get(Utils.path(path, params), **Utils::JSON_CLASSES).to_h
-          token = bodies.last.dig("meta", "next_token") or break
+          token = Shape.dig("The next page of the counts of #{self}", bodies.last, %w[meta next_token]) or break
           params = params.merge(next_token: token)
         end
         bodies
@@ -114,9 +116,10 @@ module X
       # @api private
       # @param bodies [Array<Hash>] the response bodies
       # @return [Hash{Time => Integer}] the counts, keyed by the start of each period, in time order
-      # @raise [InvalidAttribute] if a period has no start in ISO 8601, or no count that is a number
+      # @raise [InvalidAttribute] if a period has no start in ISO 8601, or no count that is a number, or a response
+      #   holds the periods as something other than a list of objects
       def periods(bodies)
-        entries = bodies.flat_map { |body| Array(body["data"]) } #: Array[Hash[String, untyped]]
+        entries = bodies.flat_map { |body| Shape.objects("A period of the counts of #{self}", body["data"]) } #: Array[Hash[String, untyped]]
         entries.to_h { |entry| period(entry) }.sort.to_h.freeze
       end
 

@@ -213,10 +213,11 @@ module X
     #
     # @api public
     # @return [Array<Post>] the referenced posts
+    # @raise [InvalidAttribute] if the response holds a referenced post that is not an object
     # @example Get the referenced posts
     #   message.references
     def references
-      referenced_posts.filter_map do |reference|
+      Objects::Shape.objects("#{self.class}#referenced_posts", referenced_posts).filter_map do |reference|
         resolve(Post, reference["id"]) #: Post?
       end.freeze
     end

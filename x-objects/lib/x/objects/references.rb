@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative "shape"
+
 module X
   module Objects
     # Resolves the posts a post refers to through its referenced_posts attribute
@@ -22,10 +24,11 @@ module X
       #
       # @api public
       # @return [Array<Post>] the referenced posts
+      # @raise [InvalidAttribute] if the response holds a referenced post that is not an object
       # @example Get the referenced posts
       #   post.references
       def references
-        referenced_posts.filter_map do |reference|
+        Shape.objects("#{self.class}#referenced_posts", referenced_posts).filter_map do |reference|
           resolve(Post, reference["id"]) #: Post?
         end.freeze
       end
@@ -34,6 +37,7 @@ module X
       #
       # @api public
       # @return [Post, nil] the replied-to post
+      # @raise [InvalidAttribute] if the response holds a referenced post that is not an object
       # @example Get the replied-to post
       #   post.replied_to
       def replied_to
@@ -44,6 +48,7 @@ module X
       #
       # @api public
       # @return [Post, nil] the quoted post
+      # @raise [InvalidAttribute] if the response holds a referenced post that is not an object
       # @example Get the quoted post
       #   post.quoted
       def quoted
@@ -54,6 +59,7 @@ module X
       #
       # @api public
       # @return [Post, nil] the reposted post
+      # @raise [InvalidAttribute] if the response holds a referenced post that is not an object
       # @example Get the reposted post
       #   post.reposted
       def reposted
@@ -99,8 +105,9 @@ module X
       # @api private
       # @param types [Array<String>] the referenced post types
       # @return [Post, nil] the referenced post or nil if there is none of those types
+      # @raise [InvalidAttribute] if the response holds a referenced post that is not an object
       def reference(*types)
-        found = referenced_posts.find { |element| types.include?(element["type"]) }
+        found = Shape.objects("#{self.class}#referenced_posts", referenced_posts).find { |element| types.include?(element["type"]) }
         return if found.nil?
 
         resolve(Post, found["id"]) #: Post?

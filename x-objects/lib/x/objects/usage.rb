@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative "serialization"
+require_relative "shape"
 require_relative "utils"
 
 module X
@@ -98,21 +99,25 @@ module X
     #
     # @api public
     # @return [Hash{Time => Integer}] the number of posts, keyed by the start of each day
-    # @raise [InvalidAttribute] if the response holds a day without a date in ISO 8601, or a number that is not one
+    # @raise [InvalidAttribute] if the response holds a day without a date in ISO 8601, or a number that is not one,
+    #   or holds the days as something other than a list of objects
     # @example Get the posts read yesterday
     #   usage.daily.values.last(2).first
-    def daily = days(attrs.dig("daily_project_usage", "usage"))
+    def daily = days("daily", Objects::Shape.dig("#{self.class}#daily", attrs, %w[daily_project_usage usage]))
 
     # The number of posts each of the project's apps read each day
     #
     # @api public
     # @return [Hash{Integer, nil => Hash{Time => Integer}}] the daily usage, keyed by the identifier of each app
+    # @raise [InvalidAttribute] if the response holds an app identifier that is not a number, a day without a date in
+    #   ISO 8601, or a number that is not one, or holds the apps or their days as something other than a list of objects
     # @example Total the posts each app read
     #   usage.daily_by_app.transform_values { |days| days.values.sum }
     def daily_by_app
       by_app = {} #: Hash[Integer?, Hash[Time, Integer]]
-      apps = Array(attrs["daily_client_app_usage"]) #: Array[Hash[String, untyped]]
-      apps.each { |app| by_app[integer("daily_by_app", app["client_app_id"])] = days(app["usage"]) }
+      Objects::Shape.objects("#{self.class}#daily_by_app", attrs["daily_client_app_usage"]).each do |app|
+        by_app[integer("daily_by_app", app["client_app_id"])] = days("daily_by_app", app["usage"])
+      end
       by_app.freeze
     end
 
@@ -120,12 +125,15 @@ module X
 
     # Read daily usage entries, counting a day without a number as zero
     # @api private
+    # @param reader [String] the name of the reader that reads them
     # @param entries [Array<Hash>, nil] the entries, each with a date and a usage
     # @return [Hash{Time => Integer}] the number of posts, keyed by the start of each day
-    def days(entries)
+    # @raise [InvalidAttribute] if an entry has no date in ISO 8601, or a number that is not one, or the entries are
+    #   not a list of objects
+    def days(reader, entries)
       counts = {} #: Hash[Time, Integer]
-      entries = Array(entries) #: Array[Hash[String, untyped]]
-      entries.each { |entry| counts[time("daily", entry["date"])] = integer("daily", entry["usage"]) || 0 }
+      entries = Objects::Shape.objects("#{self.class}##{reader}", entries)
+      entries.each { |entry| counts[time(reader, entry["date"])] = integer(reader, entry["usage"]) || 0 }
       counts.freeze
     end
 

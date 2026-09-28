@@ -35,7 +35,18 @@ module X
     def test_expanded_text_rejects_a_link_without_a_url
       post = Post.new({"id" => "1", "text" => "hi", "entities" => {"urls" => [{"expanded_url" => "https://x.com"}]}})
 
-      assert_raises(KeyError) { post.expanded_text }
+      error = assert_raises(InvalidAttribute) { post.expanded_text }
+
+      assert_equal "X::Post#expanded_text cannot be read from {\"expanded_url\" => \"https://x.com\"}", error.message
+      assert_equal "a link needs a url, and an expanded_url if any, that are Strings", error.cause.message
+    end
+
+    def test_expanded_text_rejects_a_link_whose_urls_are_not_strings
+      [{"url" => 1}, {"url" => "https://t.co/abc", "expanded_url" => 1}].each do |link|
+        post = Post.new({"id" => "1", "text" => "See https://t.co/abc", "entities" => {"urls" => [link]}})
+
+        assert_raises(InvalidAttribute) { post.expanded_text }
+      end
     end
 
     def test_expanded_text_without_links

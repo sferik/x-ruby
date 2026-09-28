@@ -143,9 +143,10 @@ module X
     #
     # @api public
     # @return [String, nil] the text
+    # @raise [InvalidAttribute] if the response holds a note_post that is not an object
     # @example Get the text
     #   post.text
-    def text = full["text"]
+    def text = Objects::Shape.dig("#{self.class}#text", full, %w[text])
 
     # @!attribute [r] lang
     #   The BCP 47 language tag
@@ -250,17 +251,19 @@ module X
     #
     # @api public
     # @return [Hash, nil] the entities
+    # @raise [InvalidAttribute] if the response holds a note_post, or entities, that is not an object
     # @example Get the entities
     #   post.entities
-    def entities = note_post&.[]("entities") || attrs["entities"]
+    def entities = Objects::Shape.read_object("#{self.class}#entities", Objects::Shape.dig("#{self.class}#entities", note_post, %w[entities]) || attrs["entities"])
 
     # The links in the full text, each with its shortened url and its expanded_url
     #
     # @api public
     # @return [Array<Hash>] the links, empty if there are none
+    # @raise [InvalidAttribute] if the response holds entities, or links, that are not what the API documents
     # @example Get the links
     #   post.urls # => [{"url" => "https://t.co/...", "expanded_url" => "https://github.com/sferik/x-ruby", ...}]
-    def urls = entities&.dig("urls") || Objects::Attributes::EMPTY_LIST
+    def urls = Objects::Shape.objects("#{self.class}#urls", entities&.[]("urls"))
 
     attribute_names.push(:text, :entities, :urls)
 
@@ -447,13 +450,15 @@ module X
 
     # The text with every shortened link replaced by the URL it stands for
     #
+    # A link the API expanded to no URL is left as it is. A link without a url to replace is not one the API
+    # documents, so it raises, as any value of a response that cannot be read does, rather than being passed over.
+    #
     # @api public
     # @return [String, nil] the text with expanded links
+    # @raise [InvalidAttribute] if the response holds a link that is not an object with a url that is a String
     # @example Display a post with its links in full
     #   post.expanded_text
-    def expanded_text
-      urls.reduce(text) { |expanded, link| expanded&.gsub(link.fetch("url"), link["expanded_url"] || link.fetch("url")) }
-    end
+    def expanded_text = urls.reduce(text) { |expanded, link| Objects::Utils.read("#{self.class}#expanded_text", link) { expand(expanded, link) } }
 
     # Delete this post as the authenticated user
     #
@@ -494,6 +499,23 @@ module X
     # @api private
     # @return [Hash] the attributes
     def full = note_post || attrs
+
+    # Replace the shortened url of a link in a text by the URL it stands for
+    #
+    # A link the API expanded to no URL stands for its url itself.
+    #
+    # @api private
+    # @param text [String, nil] the text
+    # @param link [Hash] the link
+    # @return [String, nil] the text with the link expanded, or nil for no text
+    # @raise [ArgumentError] if the link has no url, or names a URL that is not a String
+    def expand(text, link)
+      url = link["url"]
+      expanded_url = link["expanded_url"] || url
+      raise ArgumentError, "a link needs a url, and an expanded_url if any, that are Strings" unless [url, expanded_url].all?(String)
+
+      text&.gsub(url, expanded_url)
+    end
   end
 
   # Alias for Post

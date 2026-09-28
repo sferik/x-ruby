@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require_relative "shape"
 require_relative "utils"
 
 module X
@@ -16,8 +17,8 @@ module X
         boolean: ->(value) { value },
         time: ->(value) { Utils.time(value) },
         integer: ->(value) { Utils.integer(value) },
-        integers: ->(value) { (value || EMPTY_LIST).map { |id| Utils.integer(id) }.freeze },
-        list: ->(value) { value || EMPTY_LIST }
+        integers: ->(value) { (Shape.list(value) || EMPTY_LIST).map { |id| Utils.integer(id) }.freeze },
+        list: ->(value) { Shape.list(value) || EMPTY_LIST }
       }.freeze
 
       # The names of the attributes declared on this class, which pattern matching reads
@@ -72,13 +73,13 @@ module X
         converter = CONVERTERS.fetch(type)
         define_method(name) do
           # @type self: Resource
-          Utils.read("#{self.class}##{name}", attrs.dig(*path)) { |value| converter.call(value) }
+          Utils.read("#{self.class}##{name}", Shape.dig("#{self.class}##{name}", attrs, path)) { |value| converter.call(value) }
         end
         return unless type.eql?(:boolean)
 
         define_method(:"#{name}?") do
           # @type self: Resource
-          attrs.dig(*path).eql?(true)
+          public_send(name).eql?(true)
         end
       end
 
@@ -89,11 +90,13 @@ module X
       # @param klass_name [Symbol] the referenced resource class name under X
       # @param key [Array<String>] the key path holding the identifier
       # @return [void]
+      # @raise [InvalidAttribute] from the reader, if the response holds an identifier that is not one, or a key path
+      #   that passes through something other than an object
       def reference(name, klass_name, key:)
         path = key_path(key)
         define_method(name) do
           # @type self: Resource
-          resolve(X.const_get(klass_name), attrs.dig(*path))
+          resolve(X.const_get(klass_name), Shape.dig("#{self.class}##{name}", attrs, path))
         end
       end
 
@@ -104,11 +107,14 @@ module X
       # @param klass_name [Symbol] the referenced resource class name under X
       # @param key [Array<String>] the key path holding the identifiers
       # @return [void]
+      # @raise [InvalidAttribute] from the reader, if the response holds something other than a list of identifiers
       def references(name, klass_name, key:)
         path = key_path(key)
         define_method(name) do
           # @type self: Resource
-          Array(attrs.dig(*path)).map { |id| resolve(X.const_get(klass_name), id) }.freeze
+          reader = "#{self.class}##{name}"
+          ids = Utils.read(reader, Shape.dig(reader, attrs, path)) { |value| Shape.list(value) } || EMPTY_LIST
+          ids.map { |id| resolve(X.const_get(klass_name), id) }.freeze
         end
       end
 

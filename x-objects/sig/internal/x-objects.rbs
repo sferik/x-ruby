@@ -65,6 +65,17 @@ module X
       def read: [T] (String name, untyped value) { (untyped value) -> T } -> T
     end
 
+    module Shape
+      extend Shape
+
+      def dig: (String name, untyped value, Array[String] path) -> untyped
+      def read_object: (String name, untyped value) -> Hash[untyped, untyped]?
+      def objects: (String name, untyped value) -> Array[Hash[String, untyped]]
+      def object: (untyped value) -> Hash[untyped, untyped]?
+      def object!: (untyped value) -> Hash[untyped, untyped]
+      def list: (untyped value) -> Array[untyped]?
+    end
+
     module Parallel
       extend Parallel
 
@@ -507,7 +518,7 @@ module X
     include Objects::Serialization
 
     private
-    def days: (untyped entries) -> Hash[Time, Integer]
+    def days: (String reader, untyped entries) -> Hash[Time, Integer]
     def integer: (String reader, String | Integer | nil value) -> Integer?
     def time: (String reader, untyped value) -> Time
   end
@@ -609,6 +620,7 @@ module X
 
     private
     def full: () -> Hash[String, untyped]
+    def expand: (String? text, Hash[String, untyped] link) -> String?
   end
 
   class Community < Resource
