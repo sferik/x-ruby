@@ -68,7 +68,7 @@ module X
     # @return [Integer, nil] the identifier
     # @example Get the project identifier
     #   usage.project_id # => 1234567890
-    def project_id = Objects::Utils.integer(attrs["project_id"])
+    def project_id = integer("project_id", attrs["project_id"])
 
     # The number of posts the project has read in the current billing cycle
     #
@@ -76,7 +76,7 @@ module X
     # @return [Integer, nil] the number of posts
     # @example Get the posts read this cycle
     #   usage.project_usage # => 1234
-    def project_usage = Objects::Utils.integer(attrs["project_usage"])
+    def project_usage = integer("project_usage", attrs["project_usage"])
 
     # The number of posts the project may read in a billing cycle
     #
@@ -84,7 +84,7 @@ module X
     # @return [Integer, nil] the cap
     # @example Get the cap
     #   usage.project_cap # => 3000000
-    def project_cap = Objects::Utils.integer(attrs["project_cap"])
+    def project_cap = integer("project_cap", attrs["project_cap"])
 
     # The day of the month the billing cycle, and so the usage, starts over
     #
@@ -111,7 +111,7 @@ module X
     def daily_by_app
       by_app = {} #: Hash[Integer?, Hash[Time?, Integer]]
       apps = Array(attrs["daily_client_app_usage"]) #: Array[Hash[String, untyped]]
-      apps.each { |app| by_app[Objects::Utils.integer(app["client_app_id"])] = days(app["usage"]) }
+      apps.each { |app| by_app[integer("daily_by_app", app["client_app_id"])] = days(app["usage"]) }
       by_app.freeze
     end
 
@@ -124,8 +124,24 @@ module X
     def days(entries)
       counts = {} #: Hash[Time?, Integer]
       entries = Array(entries) #: Array[Hash[String, untyped]]
-      entries.each { |entry| counts[Objects::Utils.time(entry.fetch("date"))] = Objects::Utils.integer(entry["usage"]) || 0 }
+      entries.each { |entry| counts[time("daily", entry.fetch("date"))] = integer("daily", entry["usage"]) || 0 }
       counts.freeze
     end
+
+    # Read an identifier or a count the response holds as an Integer
+    # @api private
+    # @param reader [String] the name of the reader that reads it
+    # @param value [String, Integer, nil] the value
+    # @return [Integer, nil] the Integer, or nil if the value is missing
+    # @raise [InvalidAttribute] if the value is not a number
+    def integer(reader, value) = Objects::Utils.read("#{self.class}##{reader}", value) { Objects::Utils.integer(value) }
+
+    # Read a date the response holds as a Time
+    # @api private
+    # @param reader [String] the name of the reader that reads it
+    # @param value [String] the date, in ISO 8601
+    # @return [Time] the time
+    # @raise [InvalidAttribute] if the value is not ISO 8601
+    def time(reader, value) = Objects::Utils.read("#{self.class}##{reader}", value) { Objects::Utils.time(value) }
   end
 end

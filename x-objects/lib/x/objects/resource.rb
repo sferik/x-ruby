@@ -211,6 +211,7 @@ module X
       # @param client [Object] the client used to make the request
       # @param hydrated [Boolean] whether the response holds every field the object layer requests
       # @return [Resource, Array<Resource>, nil] the resource or resources, or nil if the response has no data
+      # @raise [InvalidAttribute] if the response holds a resource without an identifier, or with one that is not one
       # @example Build a user from a response
       #   X::User.from_response({"data" => {"id" => "7505382"}}, client: client)
       # @example Build users from a client request
@@ -228,6 +229,7 @@ module X
       # @param client [Object] the client used to make the request
       # @param hydrated [Boolean] whether the response holds every field the object layer requests
       # @return [Resource, nil] the resource or nil if the response has no data
+      # @raise [InvalidAttribute] if the response holds a resource without an identifier, or with one that is not one
       # @example Build a user from a response
       #   X::User.resource_from_response({"data" => {"id" => "7505382"}}, client: client)
       def resource_from_response(body, client:, hydrated: false)
@@ -235,7 +237,7 @@ module X
         data = body["data"]
         return unless data.is_a?(Hash)
 
-        build(data, client:, includes: Objects::Includes.new(body["includes"], problems: Problem.all_from(body)), hydrated:)
+        built(data, client:, includes: Objects::Includes.new(body["includes"], problems: Problem.all_from(body)), hydrated:)
       end
 
       # Build resources from a response with a data array
@@ -245,15 +247,25 @@ module X
       # @param client [Object] the client used to make the request
       # @param hydrated [Boolean] whether the response holds every field the object layer requests
       # @return [Array<Resource>] the resources
+      # @raise [InvalidAttribute] if the response holds a resource without an identifier, or with one that is not one
       # @example Build users from a response
       #   X::User.collection_from_response({"data" => [{"id" => "7505382"}]}, client: client)
       def collection_from_response(body, client:, hydrated: false)
         body = body.to_h
-        data = body["data"]
-        data = nil unless data.is_a?(Array)
+        data = Array.try_convert(body["data"])
         includes = Objects::Includes.new(body["includes"], problems: Problem.all_from(body))
-        Array(data).map { |attrs| build(attrs, client:, includes:, hydrated:) }.freeze
+        Array(data).map { |attrs| built(attrs, client:, includes:, hydrated:) }.freeze
       end
+
+      # Build a resource a response holds, whose identifier must be one
+      # @api private
+      # @param attrs [Hash] the attributes the response holds
+      # @param client [Object, nil] the client used to fetch references
+      # @param includes [Objects::Includes] the identity map of the response
+      # @param hydrated [Boolean] whether the resource holds every requested field
+      # @return [Resource] the resource
+      # @raise [InvalidAttribute] if the attributes hold no identifier, or hold one that is not one
+      private def built(attrs, client:, includes:, hydrated:) = Objects::Utils.read("#{self}##{id_key}", Hash.try_convert(attrs)&.[](id_key)) { build(attrs, client:, includes:, hydrated:) }
     end
 
     # Initialize a new immutable resource
@@ -447,8 +459,9 @@ module X
     # @param klass [Class] the resource class
     # @param id [String, nil] the identifier
     # @return [Resource, nil] the resource or nil if the identifier is missing
+    # @raise [InvalidAttribute] if the identifier is not one
     def resolve(klass, id)
-      includes.resolve(klass, id, client:) unless id.nil?
+      Objects::Utils.read("The reference of #{self.class} to #{klass}", id) { includes.resolve(klass, id, client:) } unless id.nil?
     end
 
     # Build a cursor over a collection endpoint scoped to this resource

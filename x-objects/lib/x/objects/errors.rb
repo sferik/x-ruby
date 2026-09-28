@@ -43,4 +43,14 @@ module X
       @problems = problems.dup.freeze
     end
   end
+
+  # Raised when a response holds a value that cannot be read as what the API documents it to be
+  #
+  # A timestamp that is not ISO 8601, or an identifier that is not one, is read when the attribute or the reference
+  # that holds it is read, and the identifier of a resource when the resource is built from the response, so that one
+  # value the object layer cannot read raises where it is read, as this error, which descends from X::Error, rather
+  # than as the ArgumentError the same value raises when a caller passes it. The cause is the error that refused it.
+  #
+  # @api public
+  class InvalidAttribute < Objects::Error; end
 end

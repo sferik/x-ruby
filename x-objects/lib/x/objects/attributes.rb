@@ -65,13 +65,14 @@ module X
       #   list read a list the response omitted as empty
       # @param key [Array<String>] the key path
       # @return [void]
+      # @raise [InvalidAttribute] from the reader, if the response holds a value the type cannot be read from
       def attribute(name, type = :raw, key: [name.to_s])
         attribute_names << name
         path = key_path(key)
         converter = CONVERTERS.fetch(type)
         define_method(name) do
           # @type self: Resource
-          converter.call(attrs.dig(*path))
+          Utils.read("#{self.class}##{name}", attrs.dig(*path)) { |value| converter.call(value) }
         end
         return unless type.eql?(:boolean)
 

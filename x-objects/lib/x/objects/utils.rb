@@ -2,6 +2,7 @@
 
 require "time"
 require "uri"
+require_relative "errors"
 
 module X
   module Objects
@@ -254,6 +255,22 @@ module X
       # @return [Boolean] true if the value is a resource or an Integer identifier
       def id?(value)
         value.respond_to?(:id) || value.instance_of?(Integer)
+      end
+
+      # Read a value of a response, which must be what the API documents it to be
+      #
+      # @api private
+      # @param name [String] what the value is, such as the reader that reads it
+      # @param value [Object] the value the response holds
+      # @yieldparam value [Object] the value
+      # @return [Object] what the block returns
+      # @raise [InvalidAttribute] if the block raises ArgumentError for the value
+      # @example Read the time a post was created
+      #   X::Objects::Utils.read("X::Post#created_at", attrs["created_at"]) { |value| X::Objects::Utils.time(value) }
+      def read(name, value)
+        yield value
+      rescue ArgumentError
+        raise InvalidAttribute, "#{name} cannot be read from #{value.inspect}"
       end
 
       # Parse an ISO 8601 timestamp
