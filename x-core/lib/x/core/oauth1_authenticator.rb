@@ -3,6 +3,7 @@
 require "simple_oauth"
 require "uri"
 require_relative "authenticator"
+require_relative "credential_validator"
 
 module X
   # Authenticator for OAuth 1.0a authentication
@@ -34,6 +35,7 @@ module X
     # @param access_token [String] the access token
     # @param access_token_secret [String] the access token secret
     # @return [OAuth1Authenticator] a new instance
+    # @raise [ArgumentError] if a credential is nil or empty
     # @example Create an OAuth authenticator
     #   authenticator = X::OAuth1Authenticator.new(
     #     api_key: "key",
@@ -42,6 +44,7 @@ module X
     #     access_token_secret: "token_secret"
     #   )
     def initialize(api_key:, api_key_secret:, access_token:, access_token_secret:)
+      Core::CredentialValidator.validate_required!({api_key:, api_key_secret:, access_token:, access_token_secret:})
       @api_key = api_key
       @api_key_secret = api_key_secret
       @access_token = access_token
@@ -58,7 +61,7 @@ module X
     # @example Read the user a client acts for without a request
     #   client.authenticator.user_id # => 7505382
     def user_id
-      prefix = access_token.to_s[/\A(\d+)-/, 1]
+      prefix = access_token[/\A(\d+)-/, 1]
       Integer(prefix, 10) if prefix
     end
 

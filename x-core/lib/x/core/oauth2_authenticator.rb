@@ -3,6 +3,7 @@
 require "simple_oauth"
 require_relative "authenticator"
 require_relative "connection"
+require_relative "credential_validator"
 require_relative "errors/authorization_error"
 require_relative "errors/unauthorized"
 require_relative "oauth2_tokens"
@@ -67,6 +68,8 @@ module X
     # @param refresh_token [String] the OAuth 2.0 refresh token
     # @param expires_at [Time, nil] the expiration time of the access token
     # @return [OAuth2Authenticator] a new authenticator instance
+    # @raise [ArgumentError] if the client ID, access token, or refresh token is nil or empty, the client secret is
+    #   empty, or the expiration time is neither a Time nor nil
     # @example Create an authenticator
     #   authenticator = X::OAuth2Authenticator.new(
     #     client_id: "id",
@@ -75,6 +78,7 @@ module X
     #     refresh_token: "refresh"
     #   )
     def initialize(client_id:, access_token:, refresh_token:, client_secret: nil, expires_at: nil)
+      Core::CredentialValidator.validate_required!({client_id:, access_token:, refresh_token:}, {client_secret:, expires_at:})
       @client_id = client_id
       @client_secret = client_secret
       @access_token = access_token

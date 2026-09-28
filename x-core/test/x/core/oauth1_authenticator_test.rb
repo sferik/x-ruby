@@ -34,7 +34,7 @@ module X
     end
 
     def test_an_access_token_that_names_no_user_has_no_user_id
-      ["abc", "-7505382", "7505382", "", nil, "7505382abc", " 7505382-abc"].each do |access_token|
+      ["abc", "-7505382", "7505382", "7505382abc", " 7505382-abc"].each do |access_token|
         assert_nil OAuth1Authenticator.new(**test_oauth_credentials, access_token:).user_id
       end
     end

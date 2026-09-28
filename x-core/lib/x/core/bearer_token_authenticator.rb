@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative "authenticator"
+require_relative "credential_validator"
 
 module X
   # Authenticator for Bearer token authentication
@@ -11,9 +12,11 @@ module X
     # @api public
     # @param bearer_token [String] the bearer token for authentication
     # @return [BearerTokenAuthenticator] a new instance
+    # @raise [ArgumentError] if the bearer token is nil or empty
     # @example Create a new bearer token authenticator
     #   authenticator = X::BearerTokenAuthenticator.new(bearer_token: "token")
     def initialize(bearer_token:)
+      Core::CredentialValidator.validate_required!({bearer_token:})
       @bearer_token = bearer_token
     end
 

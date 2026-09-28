@@ -27,6 +27,12 @@ module X
       assert_equal TEST_INVALID_EXPIRES_AT, error.message
     end
 
+    def test_an_expiration_time_that_is_not_a_time_is_refused_beside_a_bearer_token
+      error = assert_raises(ArgumentError) { Client.new(bearer_token: TEST_BEARER_TOKEN, expires_at: "2026-09-28T00:00:00Z") }
+
+      assert_equal TEST_INVALID_EXPIRES_AT, error.message
+    end
+
     def test_an_expiration_time_of_a_subclass_of_time_is_allowed
       expires_at = Class.new(Time).at(Time.now.to_i + 60)
 

@@ -3,6 +3,7 @@
 require "simple_oauth"
 require_relative "authenticator"
 require_relative "connection"
+require_relative "credential_validator"
 require_relative "errors/authorization_error"
 require_relative "errors/unauthorized"
 require_relative "origin"
@@ -36,9 +37,11 @@ module X
     # @param api_key_secret [String] the API key secret
     # @param bearer_token [String, nil] a bearer token already fetched with these credentials
     # @return [AppOnlyAuthenticator] a new authenticator
+    # @raise [ArgumentError] if the API key or secret is nil or empty, or the bearer token is empty
     # @example Create an app-only authenticator
     #   X::AppOnlyAuthenticator.new(api_key: "key", api_key_secret: "secret")
     def initialize(api_key:, api_key_secret:, bearer_token: nil)
+      Core::CredentialValidator.validate_required!({api_key:, api_key_secret:}, {bearer_token:})
       @api_key = api_key
       @api_key_secret = api_key_secret
       @bearer_token = bearer_token

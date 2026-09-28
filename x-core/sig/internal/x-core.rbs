@@ -376,12 +376,14 @@ module X
       INCOMPLETE_CREDENTIALS: String
       INVALID_EXPIRES_AT: String
       EMPTY_CREDENTIAL: String
+      MISSING_CREDENTIAL: String
       NOT_AN_AUTHENTICATOR: String
       AUTHENTICATOR_AND_CREDENTIALS: String
       CREDENTIAL_SETS: Array[Array[Symbol]]
       extend CredentialValidator
 
       def validate_values!: (Hash[Symbol, String | Time | nil] credentials) -> void
+      def validate_required!: (Hash[Symbol, String?] required, ?Hash[Symbol, String | Time | nil] others) -> void
       def validate_expires_at!: (untyped expires_at) -> void
       def validate_authenticator!: (untyped authenticator, Hash[Symbol, String | Time | nil] credentials) -> void
       def validate!: (Hash[Symbol, String | Time | nil] credentials) -> void

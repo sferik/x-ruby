@@ -45,6 +45,10 @@ module X
       EMPTY_CREDENTIAL = "%s is empty. Pass the credential, or leave it out, since an empty one authenticates nothing"
       private_constant :EMPTY_CREDENTIAL
 
+      # The message raised for a credential an authenticator requires that is nil or empty
+      MISSING_CREDENTIAL = "%s is nil or empty. Pass the credential, which the authenticator cannot authenticate without"
+      private_constant :MISSING_CREDENTIAL
+
       # The message of the error raised for an authenticator that is not one
       NOT_AN_AUTHENTICATOR = "authenticator must be an X::Authenticator, such as an X::OAuth2Authenticator, or nil, " \
         "not a %s"
@@ -73,7 +77,27 @@ module X
           when String then raise ArgumentError, format(EMPTY_CREDENTIAL, name) unless value.match?(/\S/)
           end
         end
-        validate_expires_at!(credentials.fetch(:expires_at))
+        validate_expires_at!(credentials[:expires_at])
+      end
+
+      # Raise for a credential an authenticator requires that is nil or empty
+      #
+      # An authenticator is given the credentials it authenticates with, so each is required, and one given as nil,
+      # as ENV[] reads a variable that is not set, or as an empty String, would authenticate nothing. The others it
+      # takes beside them are checked as {#validate_values!} checks those of a client.
+      #
+      # @api private
+      # @param required [Hash{Symbol => String, nil}] the credentials the authenticator requires, by the names it
+      #   takes them by
+      # @param others [Hash{Symbol => String, Time, nil}] the credentials and expiration time it takes beside them
+      # @return [void]
+      # @raise [ArgumentError] if a credential required is nil, an empty String, or one of whitespace alone
+      # @raise [ArgumentError] if another credential is empty, or the expiration time is neither a Time nor nil
+      # @example Check the credential of a bearer token authenticator
+      #   X::Core::CredentialValidator.validate_required!({bearer_token: ENV["X_BEARER_TOKEN"]})
+      def validate_required!(required, others = {})
+        required.each { |name, value| raise ArgumentError, format(MISSING_CREDENTIAL, name) unless value.to_s.match?(/\S/) }
+        validate_values!(others)
       end
 
       # Raise for an expiration time that is not a Time
