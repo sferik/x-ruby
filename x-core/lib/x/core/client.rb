@@ -201,7 +201,7 @@ module X
     #   v1_client = client.with(base_url: "https://api.x.com/1.1/")
     # @example Derive an app-only client from the API key and secret
     #   app_client = client.with(access_token: nil, access_token_secret: nil)
-    def with(**options)
+    def with(**options) # steep:ignore DifferentMethodParameterKind
       self.class.new(**credentials, **settings, **options).tap { |copy| copy.__send__(:share_authenticator, authenticator, @token_refresh_clients, options) }
     end
 
@@ -290,12 +290,15 @@ module X
     # A client for the streaming endpoints, which reads and reconnects differently
     #
     # @api public
-    # @param options [Hash] the options of {StreamingClient#initialize}, such as read_timeout and max_reconnects
+    # @param read_timeout [Integer, Float] the timeout for reading from a stream in seconds, as
+    #   {StreamingClient#initialize} takes it
+    # @param max_reconnects [Integer, Float] the maximum number of times in a row to reconnect a stream that drops, as
+    #   {StreamingClient#initialize} takes it
     # @return [StreamingClient] a streaming client that shares this client's credentials and settings
     # @example Stream filtered posts, giving up after five reconnects in a row
     #   client.streaming(max_reconnects: 5).stream("tweets/search/stream") { |post| puts post }
-    def streaming(**options)
-      StreamingClient.new(self, **options)
+    def streaming(read_timeout: StreamingClient::DEFAULT_READ_TIMEOUT, max_reconnects: StreamingClient::DEFAULT_MAX_RECONNECTS)
+      StreamingClient.new(self, read_timeout:, max_reconnects:)
     end
 
     # Close the connections the client keeps open between requests

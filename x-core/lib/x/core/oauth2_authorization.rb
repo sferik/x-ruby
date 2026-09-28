@@ -162,7 +162,7 @@ module X
     # @raise [TooManyRequests, ServerError] if the token endpoint limits the rate of the request or fails to answer
     # @example Act for the user who authorized the app
     #   client = authorization.client(request.url, on_token_refresh: ->(tokens) { store.save(tokens.refresh_token) })
-    def client(callback, **options)
+    def client(callback, **options) # steep:ignore DifferentMethodParameterKind
       Client.new(**credentials(callback), **@settings, **options)
     end
 

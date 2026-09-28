@@ -13,6 +13,12 @@ module X
       end
     end
 
+    def test_a_streaming_client_built_with_no_settings_takes_the_defaults
+      streaming = StreamingClient.new(Client.new)
+
+      assert_equal [StreamingClient::DEFAULT_READ_TIMEOUT, StreamingClient::DEFAULT_MAX_RECONNECTS], [streaming.read_timeout, streaming.max_reconnects]
+    end
+
     def test_the_settings_are_read_from_the_connection_and_the_reconnect_handler
       debug_output = StringIO.new
       client = Client.new(bearer_token: TEST_BEARER_TOKEN, open_timeout: 3, write_timeout: 4, debug_output:)
