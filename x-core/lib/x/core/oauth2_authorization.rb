@@ -7,6 +7,7 @@ require_relative "client"
 require_relative "connection"
 require_relative "errors/authorization_error"
 require_relative "oauth2_authenticator"
+require_relative "oauth2_tokens"
 require_relative "token_endpoint"
 
 module X
@@ -151,19 +152,18 @@ module X
     # @raise [TooManyRequests, ServerError] if the token endpoint limits the rate of the request or fails to answer
     # @example Store the credentials of the user
     #   store.save(authorization.credentials(request.url))
-    def credentials(callback)
-      code = SimpleOAuth::OAuth2::AuthorizationResponse.parse(query_of(callback), state:).code
-      token = Core::TokenEndpoint.fetch(oauth2_client.authorization_code_request(code:, redirect_uri:, code_verifier:), connection:)
-      credentials_from(token)
-    rescue SimpleOAuth::OAuth2::Error => e
-      raise AuthorizationError.from(e, DEFAULT_ERROR_MESSAGE), cause: nil
-    end
+    def credentials(callback) = credentials_from(exchange(callback))
 
     # Exchange the code of the redirect back from X for a client
     #
     # The options are checked before the code is exchanged, since X accepts it once, so an option the client refuses,
     # such as a misspelled keyword, raises before the code is spent rather than after, with the tokens it was
     # exchanged for lost.
+    #
+    # The on_token_refresh of the client is passed the OAuth2Tokens of the exchange before the client is returned, as
+    # it is passed those of each refresh after, so that a callable that stores them stores every refresh token X
+    # issues, the first among them; a refresh token held by the client alone would be lost with it, and the user would
+    # have to authorize the app again. It is passed nothing without offline.access, which issues no refresh token.
     #
     # @api public
     # @param callback [String, Hash] the redirect back from X: its URL, its query string, or its query parameters
@@ -175,14 +175,16 @@ module X
     # @raise [AuthorizationError] if the user denied the app, the state does not match, X refuses the code, or the
     #   redirect is not a valid URL
     # @raise [TooManyRequests, ServerError] if the token endpoint limits the rate of the request or fails to answer
-    # @example Act for the user who authorized the app
+    # @raise [StandardError] if on_token_refresh raises for the tokens of the exchange
+    # @example Act for the user who authorized the app, storing the refresh token of the exchange and of each refresh
     #   client = authorization.client(request.url, on_token_refresh: ->(tokens) { store.save(tokens.refresh_token) })
     def client(callback, **options) # steep:ignore DifferentMethodParameterKind
       given = options.keys & CREDENTIALS
       raise ArgumentError, format(CREDENTIALS_GIVEN_MESSAGE, given.join(", ")) unless given.empty?
 
       Client.new(**options) # refuses an option before the code, which X accepts once, is spent
-      Client.new(**credentials(callback), **@settings, **options)
+      token = exchange(callback)
+      Client.new(**credentials_from(token), **@settings, **options).tap { |client| report_exchange(client, token) }
     end
 
     private
@@ -218,6 +220,32 @@ module X
       String.try_convert(callback)&.then { |url| URI(url).query } || callback
     rescue URI::InvalidURIError
       raise AuthorizationError.new(INVALID_CALLBACK_MESSAGE)
+    end
+
+    # Exchange the code of the redirect back from X for a token
+    # @api private
+    # @param callback [String, Hash] the redirect back from X: its URL, its query string, or its query parameters
+    # @return [SimpleOAuth::OAuth2::Token] the token
+    # @raise [AuthorizationError] if the user denied the app, the state does not match, X refuses the code, or the
+    #   redirect is not a valid URL
+    def exchange(callback)
+      code = SimpleOAuth::OAuth2::AuthorizationResponse.parse(query_of(callback), state:).code
+      Core::TokenEndpoint.fetch(oauth2_client.authorization_code_request(code:, redirect_uri:, code_verifier:), connection:)
+    rescue SimpleOAuth::OAuth2::Error => e
+      raise AuthorizationError.from(e, DEFAULT_ERROR_MESSAGE), cause: nil
+    end
+
+    # Pass the tokens of the exchange to the on_token_refresh of the client
+    # @api private
+    # @param client [Client] the client
+    # @param token [SimpleOAuth::OAuth2::Token] the token of the exchange
+    # @return [void]
+    def report_exchange(client, token)
+      refresh_token = token.refresh_token
+      hook = client.on_token_refresh
+      return unless refresh_token && hook
+
+      hook.call(OAuth2Tokens.new(access_token: token.access_token, refresh_token:, expires_at: token.expires_at))
     end
 
     # The credentials of a client from the token X returned

@@ -92,7 +92,7 @@ module X
     #   client.authenticator.token_expired?
     attr_reader :authenticator
 
-    # A callable passed the OAuth2Tokens of each refresh
+    # A callable passed the OAuth2Tokens of each refresh, and of an authorization
     # @api public
     # @return [#call, nil] the callable, or nil for none
     # @example Read the hook a refresh reports to
@@ -145,7 +145,8 @@ module X
     # @param on_response [#call, nil] a callable passed an X::Response after every request, failed ones included, and
     #   every object a stream delivers; a block passed to a single request receives the same summary, after this
     # @param on_token_refresh [#call, nil] a callable passed the OAuth2Tokens of each refresh, to store them; the
-    #   refreshes are reported one at a time, in the order they were made, and one already replaced is not reported
+    #   refreshes are reported one at a time, in the order they were made, and one already replaced is not reported;
+    #   the client of OAuth2Authorization#client passes it the tokens of the exchange of the code as well
     # @return [Client] a new client instance
     # @raise [ArgumentError] if credentials are given that do not form a complete set, which would send requests
     #   without them, or authenticate as the app rather than a user
