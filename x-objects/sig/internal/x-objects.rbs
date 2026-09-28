@@ -381,7 +381,7 @@ module X
         include Lookups::DirectMessages
 
         module Users : _Client
-          @current_user: [untyped, User]?
+          @x_objects_current_user: [untyped, User]?
 
           def find_user: (id | String id_or_username, **untyped params) ?{ (Problem problem) -> void } -> User?
           def find_user!: (id | String id_or_username, **untyped params) -> User

@@ -34,6 +34,15 @@ module X
       end
     end
 
+    def test_the_user_is_kept_apart_from_a_current_user_of_the_class_that_includes_the_api
+      client = FakeClient.new
+      client.instance_variable_set(:@current_user, :the_application_user)
+      client.stub(:get, "users/me", {"data" => {"id" => "9"}})
+
+      assert_equal 9, client.current_user!.id
+      assert_equal :the_application_user, client.instance_variable_get(:@current_user)
+    end
+
     def test_credentials_that_name_a_user_need_no_request
       client = UserClient.new(7_505_382)
 

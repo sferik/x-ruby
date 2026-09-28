@@ -163,7 +163,9 @@ module X
           # The authenticated user, fetched once per client and credentials
           #
           # A client whose credentials change authenticates as someone else, so a client that has an authenticator
-          # fetches the user again once the authenticator is replaced.
+          # fetches the user again once the authenticator is replaced. The user is kept in an instance variable named
+          # for this gem, since any class can include X::Objects::API, and one named @current_user, as an application
+          # often names its own, would be overwritten.
           #
           # @api public
           # @return [User] the authenticated user
@@ -172,11 +174,11 @@ module X
           #   client.current_user!.home_timeline.each { |post| puts post.text }
           def current_user!
             authenticator = Utils.authenticator_of(self)
-            owner, user = @current_user
+            owner, user = @x_objects_current_user
             return user if user && owner.equal?(authenticator)
 
             user = User.current!(client: self)
-            @current_user = [authenticator, user]
+            @x_objects_current_user = [authenticator, user]
             user
           end
 
