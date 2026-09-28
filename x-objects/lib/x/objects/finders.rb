@@ -23,7 +23,7 @@ module X
       # @param id [String, Integer, Resource] the identifier, or a resource of this class
       # @param client [Object] the client used to make the request
       # @param params [Hash] query parameters merged over the default parameters; one that overrides a default field
-      #   or expansion parameter builds resources that are not hydrated, so hydrate fetches the rest
+      #   or expansion parameter to leave some out builds resources that are not hydrated, so hydrate fetches the rest
       # @return [Resource, nil] the resource or nil if it was not found
       # @raise [ArgumentError] if the identifier is not one, or is a resource of another class, before a request
       # @yieldparam problem [Problem] each problem the API reported, such as a resource that was not found
@@ -39,7 +39,7 @@ module X
       # @param id [String, Integer, Resource] the identifier, or a resource of this class
       # @param client [Object] the client used to make the request
       # @param params [Hash] query parameters merged over the default parameters; one that overrides a default field
-      #   or expansion parameter builds resources that are not hydrated, so hydrate fetches the rest
+      #   or expansion parameter to leave some out builds resources that are not hydrated, so hydrate fetches the rest
       # @return [Resource] the resource
       # @raise [ArgumentError] if the identifier is not one, or is a resource of another class, before a request
       # @raise [MissingResource] if the resource was not found
@@ -59,7 +59,7 @@ module X
       # @param path [String] the endpoint path
       # @param client [Object] the client used to make the request
       # @param params [Hash] query parameters merged over the default parameters; one that overrides a default field
-      #   or expansion parameter builds resources that are not hydrated, so hydrate fetches the rest
+      #   or expansion parameter to leave some out builds resources that are not hydrated, so hydrate fetches the rest
       # @return [Resource, nil] the resource or nil if the response has no data
       # @yieldparam problem [Problem] each problem the API reported
       # @example Fetch the authenticated user
@@ -78,7 +78,7 @@ module X
       # @param path [String] the endpoint path
       # @param client [Object] the client used to make the request
       # @param params [Hash] query parameters merged over the default parameters; one that overrides a default field
-      #   or expansion parameter builds resources that are not hydrated, so hydrate fetches the rest
+      #   or expansion parameter to leave some out builds resources that are not hydrated, so hydrate fetches the rest
       # @return [Array<Resource>] the resources
       # @yieldparam problem [Problem] each problem the API reported
       # @example Fetch users by username

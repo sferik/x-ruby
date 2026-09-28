@@ -24,7 +24,7 @@ module X
           # @param media_key [String, X::Media, #media_key] the media key, such as 3_1880028106020515840, media, or what
           #   an upload returned
           # @param params [Hash] query parameters merged over the default parameters; one that overrides a default field
-          #   parameter builds media that is not hydrated, so hydrate fetches the rest
+          #   parameter to leave some out builds media that is not hydrated, so hydrate fetches the rest
           # @return [X::Media, nil] the media, or nil if it was not found
           # @yieldparam problem [Problem] each problem the API reported
           # @example Look up media by media key

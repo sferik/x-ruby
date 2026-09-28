@@ -42,6 +42,24 @@ module X
       assert_predicate User.find(1, client: @client, "user.fields": User::FIELDS.join(",")), :hydrated?
     end
 
+    def test_a_lookup_that_asks_for_more_than_the_default_fields_stays_hydrated
+      user = User.find(1, client: @client, "user.fields": User::FIELDS + ["most_recent_tweet_id"])
+
+      assert_predicate user, :hydrated?
+      assert_same user, user.hydrate
+      assert_predicate User.find(1, client: @client, "user.fields": User::FIELDS.reverse), :hydrated?
+      assert_predicate User.find(1, client: @client, expansions: [*User::EXPANSIONS, "affiliation.user_id"]), :hydrated?
+    end
+
+    def test_a_lookup_that_leaves_out_one_default_field_is_not_hydrated
+      refute_predicate User.find(1, client: @client, "user.fields": User::FIELDS.drop(1) + ["most_recent_tweet_id"]), :hydrated?
+      refute_predicate User.find(1, client: @client, "user.fields": ""), :hydrated?
+    end
+
+    def test_a_batch_lookup_that_asks_for_more_than_the_default_fields_is_hydrated
+      assert_predicate User.find_all([1], client: @client, "user.fields": [*User::FIELDS, "most_recent_tweet_id"]).first, :hydrated?
+    end
+
     def test_a_lookup_with_a_parameter_that_is_no_default_stays_hydrated
       assert_predicate User.find(1, client: @client, "media.fields": "url"), :hydrated?
     end

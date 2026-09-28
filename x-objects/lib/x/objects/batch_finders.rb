@@ -49,7 +49,7 @@ module X
       # @param client [Object] the client used to make the requests
       # @param concurrency [Integer] the number of batch lookups made at once, which must be at least one
       # @param params [Hash] query parameters merged over the default parameters; one that overrides a default field
-      #   or expansion parameter builds resources that are not hydrated, so hydrate fetches the rest
+      #   or expansion parameter to leave some out builds resources that are not hydrated, so hydrate fetches the rest
       # @return [Array<Resource>] the resources, in order, with the ones that were not hydrated replaced, frozen
       # @raise [ArgumentError] if the concurrency is less than one
       # @raise [ArgumentError] if a resource is not of this class, which a lookup of its identifier would find
@@ -78,7 +78,7 @@ module X
       # @param concurrency [Integer] the number of batches looked up at once, which must be at least one; each is a
       #   request of up to MAX_BATCH_SIZE identifiers, so a lower number spends a rate limit more slowly
       # @param params [Hash] query parameters merged over the default parameters; one that overrides a default field
-      #   or expansion parameter builds resources that are not hydrated, so hydrate fetches the rest
+      #   or expansion parameter to leave some out builds resources that are not hydrated, so hydrate fetches the rest
       # @return [Array<Resource>] the resources that were found, frozen
       # @raise [ArgumentError] if the concurrency is less than one
       # @raise [ArgumentError] if an identifier is not one, or is a resource of another class, before a request
@@ -118,7 +118,7 @@ module X
       # @param client [Object] the client used to make the requests
       # @param concurrency [Integer] the number of batches looked up at once
       # @param params [Hash] query parameters merged over the default parameters; one that overrides a default field
-      #   or expansion parameter builds resources that are not hydrated, so hydrate fetches the rest
+      #   or expansion parameter to leave some out builds resources that are not hydrated, so hydrate fetches the rest
       # @return [Array<Resource>] the resources that were found, in the order the batches were answered in
       # @raise [ArgumentError] if the concurrency is less than one
       # @yieldparam problem [Problem] each problem the responses reported

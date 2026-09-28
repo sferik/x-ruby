@@ -149,16 +149,19 @@ module X
 
       # Check whether a request asks for every default field and expansion
       #
-      # A request that overrides a default parameter, to ask for fewer fields or for others, builds resources that
-      # are not hydrated, so that hydrate fetches the full resource rather than return one that lacks fields.
+      # A request that overrides a default parameter to leave out a field or an expansion it names builds resources
+      # that are not hydrated, so that hydrate fetches the full resource rather than return one that lacks fields. A
+      # request that asks for every one of them, in any order, and for more besides, such as non_public_metrics, is
+      # hydrated, so hydrate returns the resource it built, which holds the fields it added, rather than fetch one
+      # that lacks them.
       #
       # @api private
       # @param query [Hash{String => Object}] the query parameters of the request, merged over the defaults
-      # @return [Boolean] true if every default parameter has its default value
+      # @return [Boolean] true if every default parameter asks for every value it asks for by default
       # @example Check a request that asks for the name of a user alone
       #   X::User.__send__(:fully_requested_by?, "user.fields" => "name") # => false
       def fully_requested_by?(query)
-        Objects::Utils.query(default_params).all? { |key, value| query[key].eql?(value) }
+        Objects::Utils.query(default_params).all? { |key, value| (value.split(",") - query[key].to_s.split(",")).empty? }
       end
 
       # The query parameter a batch lookup takes the identifiers in
@@ -276,9 +279,9 @@ module X
 
     # Check whether the resource holds every field the object layer requests
     #
-    # A resource is hydrated when it was the subject of a response to a request that kept every default field and
-    # expansion parameter. A stub, a reference a response included, and a resource looked up with parameters that
-    # override those defaults are not, so hydrate fetches the full resource.
+    # A resource is hydrated when it was the subject of a response to a request that asked for every default field
+    # and expansion, whether or not it asked for more. A stub, a reference a response included, and a resource looked
+    # up with parameters that leave out some of those defaults are not, so hydrate fetches the full resource.
     #
     # @api public
     # @return [Boolean] true if the resource holds every field the object layer requests
