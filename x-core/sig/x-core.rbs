@@ -201,6 +201,7 @@ module X
       def error: (Net::HTTPResponse response, Net::HTTPRequest? request) -> HTTPError
 
       private
+      def blank?: (String body) -> bool
       def error_class: (Net::HTTPResponse response) -> (singleton(HTTPError) | singleton(BadGateway) | singleton(BadRequest) | singleton(Conflict) | singleton(Forbidden) | singleton(GatewayTimeout) | singleton(Gone) | singleton(InternalServerError) | singleton(MethodNotAllowed) | singleton(NotAcceptable) | singleton(NotFound) | singleton(PayloadTooLarge) | singleton(RequestTimeout) | singleton(ServiceUnavailable) | singleton(TooManyRequests) | singleton(Unauthorized) | singleton(UnavailableForLegalReasons) | singleton(UnprocessableEntity) | singleton(UnsupportedMediaType))
     end
 
@@ -393,6 +394,7 @@ module X
 
       private
       def host_and_port: (URI::Generic uri) -> [String, Integer]
+      def open_http_client: (URI::Generic uri, bool use_ssl) -> Net::HTTP
       def build_http_client: (URI::Generic uri) -> Net::HTTP
       def configure_http_client: (Net::HTTP http_client) -> Net::HTTP
     end

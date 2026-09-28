@@ -58,8 +58,11 @@ module X
 
     # The body summarized: one streamed object, or else the whole body
     #
+    # It is tagged UTF-8, the encoding of the JSON the API sends. A body that is not valid UTF-8 keeps its bytes, so
+    # valid_encoding? tells it apart, and scrub replaces what is not UTF-8.
+    #
     # @api public
-    # @return [String, nil] the body
+    # @return [String, nil] the body, tagged UTF-8
     # @example Log the body
     #   logger.debug(response.body)
     def body = @body || http_response.body

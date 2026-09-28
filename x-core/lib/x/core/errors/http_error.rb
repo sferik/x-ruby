@@ -88,10 +88,11 @@ module X
     # The body of the response, as it arrived
     #
     # A server can send any body with an error, so it is the JSON the API describes a failure with, or whatever
-    # else was sent in its place, such as the page of a proxy.
+    # else was sent in its place, such as the page of a proxy. It is tagged UTF-8, the encoding of the JSON the API
+    # sends, and a body that is not valid UTF-8 keeps its bytes, so valid_encoding? tells it apart.
     #
     # @api public
-    # @return [String, nil] the body, or nil for a response without one
+    # @return [String, nil] the body, tagged UTF-8, or nil for a response without one
     # @example Log what the API sent
     #   logger.error(error.body)
     def body = http_response.body

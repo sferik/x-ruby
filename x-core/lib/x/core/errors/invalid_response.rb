@@ -29,9 +29,10 @@ module X
     # The body that is not JSON: the whole body of a response, or the line of a stream
     #
     # The body of a stream can be read only as it arrives, so an error raised for a line of a stream holds that line.
+    # It is tagged UTF-8, as {Response#body} is, and keeps the bytes of a body that is not valid UTF-8.
     #
     # @api public
-    # @return [String, nil] the body, or the line of a stream, or nil for an error built without one
+    # @return [String, nil] the body, or the line of a stream, tagged UTF-8, or nil for an error built without one
     # @example Read the body that could not be parsed
     #   error.body
     attr_reader :body

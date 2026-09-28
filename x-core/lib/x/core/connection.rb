@@ -123,9 +123,13 @@ module X
       # Internal to x-core: Client, its redirects, and token requests send their requests with it, so that it can change
       # within 1.x, as the Net::HTTP requests it takes may.
       #
+      # The body of the response is tagged UTF-8, the encoding of the JSON the API sends, rather than the binary that
+      # Net::HTTP reads it as, so that it can be searched and joined with other Strings. A body that is not valid
+      # UTF-8, such as the page of a proxy in another encoding, keeps its bytes, and valid_encoding? tells it apart.
+      #
       # @api private
       # @param request [Net::HTTPRequest] the HTTP request to perform
-      # @return [Net::HTTPResponse] the HTTP response
+      # @return [Net::HTTPResponse] the HTTP response, whose body is tagged UTF-8
       # @raise [NetworkError] if a network error occurs
       # @example Perform a request
       #   response = connection.perform(request: request)
@@ -133,8 +137,7 @@ module X
         uri = request.uri
         hostname, port = host_and_port(uri)
         use_ssl = uri.scheme.eql?("https")
-        open = -> { build_http_client(uri).tap { |http_client| http_client.use_ssl = use_ssl } }
-        send_request(request, [use_ssl, hostname, port], open)
+        send_request(request, [use_ssl, hostname, port], -> { open_http_client(uri, use_ssl) })
       rescue *NETWORK_ERRORS => e
         raise NetworkError.new("Network error: #{e}", request:)
       end
@@ -149,6 +152,10 @@ module X
       # An error the block raises, which StreamParser tags as a StreamCallbackError, is raised as it was, rather than
       # reported as a network error: the callbacks of a stream run inside the request that reads it, and the errors a
       # socket raises are the ones a stream reconnects after.
+      #
+      # The body is not tagged UTF-8 here, as the body of {#perform} is: Net::HTTP tags a body it reads whole, and
+      # raises for one it passes to a block a chunk at a time, as a stream is read. StreamParser tags each line of
+      # a stream, and the body of a stream that failed, which it reads whole.
       #
       # @api private
       # @param request [Net::HTTPRequest] the HTTP request to perform
@@ -194,6 +201,19 @@ module X
         hostname = uri.hostname #: String
         port = uri.port #: Integer
         [hostname, port]
+      end
+
+      # Open an HTTP client for requests read whole, which tags each body UTF-8
+      #
+      # @api private
+      # @param uri [URI::Generic] the URI of the request
+      # @param use_ssl [Boolean] whether to connect over TLS
+      # @return [Net::HTTP] the HTTP client
+      def open_http_client(uri, use_ssl)
+        build_http_client(uri).tap do |http_client|
+          http_client.use_ssl = use_ssl
+          http_client.response_body_encoding = Encoding::UTF_8
+        end
       end
 
       # Build an HTTP client for the host of a URI

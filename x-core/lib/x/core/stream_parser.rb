@@ -52,6 +52,10 @@ module X
       private
 
       # Raise the error of a failed response, after passing it to on_body
+      #
+      # The body of a failed response is read whole, by on_body or by the error, so it is tagged UTF-8 before either
+      # reads it, as the body of a request is; see {Connection#perform}.
+      #
       # @api private
       # @param response [Net::HTTPResponse] the HTTP response
       # @param response_parser [ResponseParser] the response parser that raises the error
@@ -63,6 +67,7 @@ module X
       def raise_unless_successful(response:, response_parser:, on_body:, request:)
         return if response.is_a?(Net::HTTPSuccess)
 
+        response.body_encoding = Encoding::UTF_8
         tagging_callback_errors { on_body&.call }
         response_parser.parse(response:, request:)
       end
@@ -127,13 +132,18 @@ module X
       end
 
       # Decode a line of JSON and yield the result
+      #
+      # Net::HTTP passes the body of a stream in binary chunks, and a chunk can end within a character, so each line
+      # is tagged UTF-8 once it is whole, before on_body, the decoder, or an error reads it. A line that is not valid
+      # UTF-8 keeps its bytes, as the body of a request does; see {Connection#perform}.
+      #
       # @api private
       # @param line [String] the JSON line to decode
       # @param decode [Proc] decodes a line of JSON
       # @yield [Object] the decoded JSON document
       # @return [void]
       def yield_json(line:, decode:)
-        yield decode.call(line)
+        yield decode.call(line.force_encoding(Encoding::UTF_8))
       end
     end
   end

@@ -76,7 +76,7 @@ module X
         raise error(response, request) unless response.is_a?(Net::HTTPSuccess)
 
         body = response.body.to_s
-        return unless body.match?(/\S/)
+        return if blank?(body)
 
         begin
           decode(body, array_class:, object_class:, client:)
@@ -122,6 +122,16 @@ module X
       end
 
       private
+
+      # Check whether a body holds nothing but whitespace
+      #
+      # A body that is not valid UTF-8 holds something other than whitespace, and a regular expression raises for it,
+      # so it is not matched against one: it is not JSON, and raises InvalidResponse, which holds it.
+      #
+      # @api private
+      # @param body [String] the body of the response, tagged UTF-8
+      # @return [Boolean] true for a body that is empty or holds whitespace alone
+      def blank?(body) = body.valid_encoding? && !body.match?(/\S/)
 
       # Get the error class for a response, falling back on its class of status
       # @api private
