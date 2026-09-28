@@ -108,6 +108,13 @@ module X
       assert_multipart_banner_request
     end
 
+    def test_update_profile_banner_returns_nil_whatever_the_client_answers
+      stub_request(:post, V1_PROFILE_BANNER_URL).to_return(headers: {"content-type" => "application/json"}, body: {id: 1}.to_json)
+
+      assert_nil update_profile_banner("test/sample_files/sample.png")
+      assert_nil Uploader::Account.update_profile_banner_binary(SAMPLE_BINARY_CONTENT, client: @client)
+    end
+
     def test_update_profile_banner_with_dimensions
       stub_profile_banner_request
       update_profile_banner_with_dimensions

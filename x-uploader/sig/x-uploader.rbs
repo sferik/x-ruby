@@ -23,7 +23,7 @@ module X
       def add_alt_text: (media media, String text) -> Hash[String, untyped]
       def add_subtitles: (media video, media subtitles, String language_code, **untyped options) -> Hash[String, untyped]
       def update_profile_image: (path file_path) -> Hash[String, untyped]?
-      def update_profile_banner: (path file_path, **untyped options) -> Hash[String, untyped]?
+      def update_profile_banner: (path file_path, **untyped options) -> nil
     end
 
     class Error < ::X::Error
@@ -63,8 +63,8 @@ module X
 
       def update_profile_image: (path file_path, client: _Client) -> Hash[String, untyped]?
       def update_profile_image_binary: (String content, client: _Client) -> Hash[String, untyped]?
-      def update_profile_banner: (path file_path, client: _Client, ?width: Integer?, ?height: Integer?, ?offset_left: Integer?, ?offset_top: Integer?) -> Hash[String, untyped]?
-      def update_profile_banner_binary: (String content, client: _Client, ?width: Integer?, ?height: Integer?, ?offset_left: Integer?, ?offset_top: Integer?) -> Hash[String, untyped]?
+      def update_profile_banner: (path file_path, client: _Client, ?width: Integer?, ?height: Integer?, ?offset_left: Integer?, ?offset_top: Integer?) -> nil
+      def update_profile_banner_binary: (String content, client: _Client, ?width: Integer?, ?height: Integer?, ?offset_left: Integer?, ?offset_top: Integer?) -> nil
     end
   end
 

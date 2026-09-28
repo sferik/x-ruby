@@ -108,7 +108,8 @@ module X
       #
       # @api public
       # @param file_path [String, Pathname] the path to the image file
-      # @return [Hash, nil] the user whose profile image was updated
+      # @return [Hash, nil] the user whose profile image was updated, as the Hash of the API v1.1 that
+      #   {Account.update_profile_image} returns, or nil for a response with no body
       # @raise [Errno::ENOENT] if the file does not exist
       # @raise [ArgumentError] if the file is empty, which holds nothing to upload
       # @raise [InvalidMediaType] if the file is not a GIF, JPEG, or PNG image
@@ -123,7 +124,7 @@ module X
       # @api public
       # @param file_path [String, Pathname] the path to the image file
       # @param options [Hash] the options of {Account.update_profile_banner}: width, height, offset_left, and offset_top
-      # @return [Hash, nil] nil once the banner is updated, which the API answers without content
+      # @return [nil] nil once the banner is updated, which the API answers with no content
       # @raise [Errno::ENOENT] if the file does not exist
       # @raise [ArgumentError] if the file is empty, which holds nothing to upload
       # @raise [InvalidMediaType] if the file is not a GIF, JPEG, or PNG image

@@ -34,10 +34,14 @@ module X
 
       # Update the authenticating user's profile image
       #
+      # It returns the user the API v1.1 answers with, deliberately as the Hash it parses to, keyed as v1.1 keys it,
+      # such as screen_name rather than username: the API v2 has no endpoint that updates a profile image, and an
+      # X::User of x-objects, which x-uploader does not load, reads the users of the API v2 alone.
+      #
       # @api public
       # @param file_path [String, Pathname] the path to the image file
       # @param client [Client] the X API client
-      # @return [Hash, nil] the updated user object
+      # @return [Hash, nil] the updated user, as the API v1.1 answers with it, or nil for a response with no body
       # @raise [Errno::ENOENT] if the file does not exist
       # @raise [ArgumentError] if the file is empty, which holds nothing to upload
       # @raise [InvalidMediaType] if the file type is not supported
@@ -51,10 +55,12 @@ module X
 
       # Update the authenticating user's profile image from binary content
       #
+      # Like {update_profile_image}, it returns the user the API v1.1 answers with as the Hash it parses to.
+      #
       # @api public
       # @param content [String] the binary image content
       # @param client [Client] the X API client
-      # @return [Hash, nil] the updated user object
+      # @return [Hash, nil] the updated user, as the API v1.1 answers with it, or nil for a response with no body
       # @example Update profile image from binary content
       #   Uploader::Account.update_profile_image_binary(image_data, client: client)
       def update_profile_image_binary(content, client:)
@@ -66,6 +72,9 @@ module X
 
       # Update the authenticating user's profile banner
       #
+      # It returns nil, whatever the client answers with, since the endpoint answers with no content once the banner
+      # is updated.
+      #
       # @api public
       # @param file_path [String, Pathname] the path to the image file
       # @param client [Client] the X API client
@@ -73,7 +82,7 @@ module X
       # @param height [Integer, nil] the height of the banner
       # @param offset_left [Integer, nil] the left offset of the banner
       # @param offset_top [Integer, nil] the top offset of the banner
-      # @return [Hash, nil] nil on success (204 No Content)
+      # @return [nil] nil once the banner is updated, which the API answers with no content
       # @raise [Errno::ENOENT] if the file does not exist
       # @raise [ArgumentError] if the file is empty, which holds nothing to upload
       # @raise [InvalidMediaType] if the file type is not supported
@@ -89,6 +98,8 @@ module X
 
       # Update the authenticating user's profile banner from binary content
       #
+      # Like {update_profile_banner}, it returns nil, whatever the client answers with.
+      #
       # @api public
       # @param content [String] the binary image content
       # @param client [Client] the X API client
@@ -96,7 +107,7 @@ module X
       # @param height [Integer, nil] the height of the banner
       # @param offset_left [Integer, nil] the left offset of the banner
       # @param offset_top [Integer, nil] the top offset of the banner
-      # @return [Hash, nil] nil on success (204 No Content)
+      # @return [nil] nil once the banner is updated, which the API answers with no content
       # @example Update profile banner from binary content
       #   Uploader::Account.update_profile_banner_binary(image_data, client: client)
       def update_profile_banner_binary(content, client:, width: nil, height: nil, offset_left: nil, offset_top: nil)
@@ -104,6 +115,7 @@ module X
         body = Multipart.body("banner", content, boundary:, width:, height:, offset_left:, offset_top:)
         headers = Multipart.headers(boundary)
         client.post(PROFILE_BANNER_URL, body, headers:, **JSON_CLASSES)
+        nil
       end
     end
   end
