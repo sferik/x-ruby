@@ -78,10 +78,14 @@ module X
       end
 
       # A proxy URL without its user and password
+      #
+      # A password written into a URL unescaped can hold any character, an @ or a / among them, so everything
+      # between the scheme and the last @ is left out, and everything before the last @ of a URL without a scheme.
+      #
       # @api private
       # @param proxy_url [String, URI::Generic] the proxy URL
       # @return [String] the URL, without the user and password
-      def redact(proxy_url) = String(proxy_url).sub(%r{(?<=//)[^/@]*@}, "")
+      def redact(proxy_url) = String(proxy_url).sub(%r{([^/]*//)?.*@}m, "\\1")
     end
   end
 end

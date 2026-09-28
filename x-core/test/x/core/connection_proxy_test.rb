@@ -56,6 +56,42 @@ module X
       assert_equal "Invalid proxy URL: http://example.com:8080", error.message
     end
 
+    def test_invalid_proxy_url_message_leaves_out_a_password_holding_an_at_sign
+      error = assert_raises(ArgumentError) { Core::Connection.new(proxy_url: "http://user:p@ss@proxy.com:8080 ") }
+
+      assert_equal "Invalid proxy URL: http://proxy.com:8080 ", error.message
+    end
+
+    def test_invalid_proxy_url_message_leaves_out_a_password_holding_a_slash
+      error = assert_raises(ArgumentError) { Core::Connection.new(proxy_url: "ftp://user:pa/ss@proxy.com:8080") }
+
+      assert_equal "Invalid proxy URL: ftp://proxy.com:8080", error.message
+    end
+
+    def test_invalid_proxy_url_message_leaves_out_a_password_holding_a_line_break
+      error = assert_raises(ArgumentError) { Core::Connection.new(proxy_url: "http://user:pa\nss@proxy.com:8080") }
+
+      assert_equal "Invalid proxy URL: http://proxy.com:8080", error.message
+    end
+
+    def test_invalid_proxy_url_message_leaves_out_the_password_of_a_url_without_a_scheme
+      error = assert_raises(ArgumentError) { Core::Connection.new(proxy_url: "user:secret@proxy.com:8080") }
+
+      assert_equal "Invalid proxy URL: proxy.com:8080", error.message
+    end
+
+    def test_invalid_proxy_url_message_keeps_the_slashes_of_a_url_without_a_scheme
+      error = assert_raises(ArgumentError) { Core::Connection.new(proxy_url: "//user:secret@proxy.com:8080") }
+
+      assert_equal "Invalid proxy URL: //proxy.com:8080", error.message
+    end
+
+    def test_inspect_leaves_out_a_password_holding_an_at_sign
+      connection = Core::Connection.new(proxy_url: URI::HTTP.build(userinfo: "user:p%40ss", host: "proxy.com", port: 8080))
+
+      refute_includes connection.inspect, "user"
+    end
+
     def test_a_connection_built_without_a_proxy_has_none
       assert_equal [nil, nil], [@connection.send(:proxy_url), @connection.send(:proxy_uri)]
     end
