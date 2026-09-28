@@ -1,9 +1,11 @@
 # frozen_string_literal: true
 
-# Type checks x-uploader against the signatures that x-core ships
+# Type checks x-uploader against the signatures that x-core ships, and the internals of x-core, whose
+# X::Core::RetryHandler it retries the requests of an upload with
 target :lib do
   signature "sig"
   signature "../x-core/sig/x-core.rbs"
+  signature "../x-core/sig/internal"
   check "lib"
   library "forwardable"
   library "json"

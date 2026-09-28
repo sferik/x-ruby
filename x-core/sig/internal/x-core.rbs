@@ -1,0 +1,673 @@
+# The internals of x-core: the modules, classes, constants, and methods the code keeps private, which Steep type
+# checks it against, but which the gem does not ship, since the gemspec packages sig/*.rbs alone. Code that depends
+# on x-core is checked against sig/x-core.rbs, which declares its public interface, so that it cannot refer to what
+# the code hides, and these can change within 1.x.
+module X
+  module Core
+    module TokenEndpoint
+      extend TokenEndpoint
+
+      FAILURES: Array[singleton(Net::HTTPTooManyRequests) | singleton(Net::HTTPServerError)]
+
+      def fetch: (SimpleOAuth::OAuth2::Request token_request, connection: Connection) -> SimpleOAuth::OAuth2::Token
+
+      private
+      def failure?: (Net::HTTPResponse response) -> bool
+      def post: (SimpleOAuth::OAuth2::Request token_request) -> Net::HTTP::Post
+    end
+
+    class StreamCallbackError < StandardError
+      attr_reader error: StandardError
+
+      def initialize: (StandardError error) -> void
+    end
+
+    module ProxySetting
+      @proxy_url: (URI::Generic | String)?
+
+      private
+      def proxy_url: () -> (URI::Generic | String)?
+    end
+
+    module ConnectionProxy : ProxySetting
+      @proxy_url: (URI::Generic | String)?
+      @proxy_uri: URI::Generic?
+
+      private
+      attr_reader proxy_uri: URI::Generic?
+      def initialize_proxy: ((URI::Generic | String)? proxy_url) -> void
+      def proxy_for: (URI::Generic uri) -> URI::Generic?
+      def decode: (String? component) -> String?
+      def redacted_proxy_url: () -> String?
+      def parse_proxy_url: (URI::Generic | String proxy_url) -> URI::Generic
+      def redact: (URI::Generic | String proxy_url) -> String
+    end
+
+    class ConnectionPool
+      MAX_IDLE: Integer
+
+      @lock: Thread::Mutex
+      @idle: Hash[[bool, String, Integer], Array[Net::HTTP]]
+      @pid: Integer?
+
+      def initialize: () -> void
+      def with: [T] ([bool, String, Integer] key, ^() -> Net::HTTP open, ?fresh: bool) { (Net::HTTP, bool) -> T } -> T
+      def clear: () -> void
+
+      private
+      def checkout: ([bool, String, Integer] key, ^() -> Net::HTTP open, bool fresh) -> [Hash[[bool, String, Integer], Array[Net::HTTP]], Net::HTTP, bool]
+      def checkin: ([bool, String, Integer] key, Net::HTTP http_client, Hash[[bool, String, Integer], Array[Net::HTTP]] pool) -> Array[Net::HTTP]?
+      def forget_after_fork: () -> void
+      def close: (Net::HTTP http_client) -> void
+    end
+
+    module RequestContext
+      QUERY: Regexp
+
+      @http_method: Symbol?
+      @uri: URI::Generic?
+      @request_line: String?
+
+      attr_reader http_method: Symbol?
+      attr_reader uri: URI::Generic?
+
+      private
+      def name_request: (Net::HTTPRequest? request) -> void
+      def message_naming_request: (String message) -> String
+    end
+
+    class RequestBuilder
+      HTTP_METHODS: Hash[Symbol, (singleton(Net::HTTP::Get) | singleton(Net::HTTP::Post) | singleton(Net::HTTP::Put) | singleton(Net::HTTP::Delete))]
+      DEFAULT_HEADERS: Hash[String, String]
+      BODY_HEADERS: Hash[String, String]
+      IDEMPOTENT_METHODS: Array[Symbol]
+
+      def self.idempotent?: (Symbol http_method) -> bool
+      def self.merge_headers: (headers headers, headers overrides) -> headers
+      def build: (http_method: Symbol, uri: URI::Generic, ?body: String?, ?headers: headers, ?authenticator: Authenticator) -> (Net::HTTPRequest)
+
+      private
+      def create_request: (http_method: Symbol, uri: URI::Generic, body: String?) -> (Net::HTTPRequest)
+      def add_authentication: (request: Net::HTTPRequest, authenticator: Authenticator) -> void
+      def add_headers: (request: Net::HTTPRequest, headers: headers, body: String?) -> void
+      def escape_query_params: (URI::Generic uri) -> URI::Generic
+    end
+
+    class RateLimitHandler
+      DEFAULT_MAX_RETRIES: Integer
+      DEFAULT_MAX_WAIT: Integer
+      UNREPORTED_RESET_WAIT: Integer
+      RESET_JITTER: Integer
+
+      attr_reader max_rate_limit_retries: Integer
+      attr_reader max_rate_limit_wait: Float | Integer
+      def initialize: (?max_rate_limit_retries: Integer, ?max_rate_limit_wait: Float | Integer) -> void
+      def handle: [T] () { () -> T } -> T
+
+      private
+      def wait_before_retry: (TooManyRequests error, Integer retries) -> Float
+    end
+
+    module ConnectionRequest
+      NETWORK_ERRORS: Array[singleton(IOError) | singleton(Net::HTTPBadResponse) | singleton(Net::ProtocolError) | singleton(OpenSSL::SSL::SSLError) | singleton(SocketError) | singleton(SystemCallError) | singleton(Timeout::Error) | singleton(Zlib::Error)]
+      STALE_CONNECTION_ERRORS: Array[singleton(EOFError) | singleton(Errno::ECONNABORTED) | singleton(Errno::ECONNRESET) | singleton(Errno::EPIPE)]
+
+      @pool: ConnectionPool
+
+      private
+      def send_request: (Net::HTTPRequest request, [bool, String, Integer] key, ^() -> Net::HTTP open) -> Net::HTTPResponse
+      def idempotent?: (Net::HTTPRequest request) -> bool
+    end
+
+    class RetryHandler
+      DEFAULT_MAX_RETRIES: Integer
+      INITIAL_WAIT: Integer
+      MAX_RETRY_AFTER: Integer
+      RETRIABLE_ERRORS: Array[singleton(NetworkError) | singleton(ServerError)]
+
+      attr_reader max_retries: Integer
+      def initialize: (?max_retries: Integer) -> void
+      def handle: [T] (idempotent: bool) { () -> T } -> T
+
+      private
+      def retry_after: (NetworkError | ServerError error) -> Integer?
+      def backoff: (Integer retries) -> Float
+    end
+
+    class ReconnectHandler
+      DEFAULT_MAX_RECONNECTS: Float
+      NETWORK_BACKOFF_STEP: Float
+      MAX_NETWORK_BACKOFF: Integer
+      HTTP_BACKOFF_START: Integer
+      RATE_LIMIT_BACKOFF_START: Integer
+      MAX_HTTP_BACKOFF: Integer
+      RECONNECTABLE_ERRORS: Array[singleton(NetworkError) | singleton(ServerError) | singleton(Conflict) | singleton(TooManyRequests) | singleton(InvalidResponse)]
+
+      ConsumerError: singleton(StandardError)
+
+      type state = {reconnects: Integer}
+
+      attr_reader max_reconnects: Integer | Float
+      def initialize: (?max_reconnects: Integer | Float) -> void
+      def handle: (^(untyped) -> void consumer) { (^(untyped) -> void) -> void } -> nil
+
+      private
+      def cause_of: (StandardError error) -> StandardError
+      def run_once: (^(^(untyped) -> void) -> void stream, ^(untyped) -> void deliver, state state) -> bool
+      def out_of_reconnects?: (StandardError? error, state state) -> bool
+      def delivery_to: (^(untyped) -> void consumer, state state) -> ^(untyped) -> void
+      def backoff: (StandardError error, Integer reconnects) -> (Float | Integer)
+      def network_backoff: (Integer reconnects) -> (Float | Integer)
+      def http_backoff: (Integer reconnects) -> Integer
+      def rate_limit_backoff: (TooManyRequests error, Integer reconnects) -> Integer
+    end
+
+    module Origin
+      extend Origin
+
+      CREDENTIAL_HEADERS: Array[String]
+
+      def credentials_for: [K < _ToS] (from: URI::Generic, to: URI::Generic, authenticator: Authenticator, headers: Hash[K, String]) -> [Authenticator, Hash[K, String]]
+      def same?: (URI::Generic uri, URI::Generic other) -> bool
+      def answered?: (HTTPError error, URI::Generic origin) -> bool
+
+      private
+      def of: (URI::Generic uri) -> [String?, String?, Integer?]
+      def without_credentials: [K < _ToS] (Hash[K, String] headers) -> Hash[K, String]
+    end
+
+    class RedirectHandler
+      DEFAULT_MAX_REDIRECTS: Integer
+
+      attr_reader connection: Connection
+      attr_reader request_builder: RequestBuilder
+      attr_reader max_redirects: Integer
+      def initialize: (?connection: Connection, ?request_builder: RequestBuilder, ?max_redirects: Integer) -> void
+      def handle: (response: Net::HTTPResponse, request: Net::HTTPRequest, ?headers: headers, ?authenticator: Authenticator, ?redirect_count: Integer) -> Net::HTTPResponse
+
+      private
+      def build_new_uri: (Net::HTTPResponse response, URI::Generic uri) -> URI::Generic?
+      def build_request: (Net::HTTPRequest request, URI::Generic new_uri, Integer response_code, headers headers, Authenticator authenticator) -> Net::HTTPRequest
+    end
+
+    class ResponseParser
+      STATUS_CLASS_ERRORS: Hash[Integer, singleton(ClientError) | singleton(ServerError)]
+      ERROR_MAP: Hash[Integer, singleton(BadGateway) | singleton(BadRequest) | singleton(Conflict) | singleton(Forbidden) | singleton(GatewayTimeout) | singleton(Gone) | singleton(InternalServerError) | singleton(MethodNotAllowed) | singleton(NotAcceptable) | singleton(NotFound) | singleton(PayloadTooLarge) | singleton(RequestTimeout) | singleton(ServiceUnavailable) | singleton(TooManyRequests) | singleton(Unauthorized) | singleton(UnavailableForLegalReasons) | singleton(UnprocessableEntity) | singleton(UnsupportedMediaType)]
+
+      def parse: (response: Net::HTTPResponse, ?array_class: Class?, ?object_class: untyped, ?client: Client?, ?request: Net::HTTPRequest?) -> untyped
+      def decode: (String json, ?array_class: Class?, ?object_class: untyped, ?client: Client?) -> untyped
+      def error: (Net::HTTPResponse response, Net::HTTPRequest? request) -> HTTPError
+
+      private
+      def blank?: (String body) -> bool
+      def error_class: (Net::HTTPResponse response) -> (singleton(HTTPError) | singleton(BadGateway) | singleton(BadRequest) | singleton(Conflict) | singleton(Forbidden) | singleton(GatewayTimeout) | singleton(Gone) | singleton(InternalServerError) | singleton(MethodNotAllowed) | singleton(NotAcceptable) | singleton(NotFound) | singleton(PayloadTooLarge) | singleton(RequestTimeout) | singleton(ServiceUnavailable) | singleton(TooManyRequests) | singleton(Unauthorized) | singleton(UnavailableForLegalReasons) | singleton(UnprocessableEntity) | singleton(UnsupportedMediaType))
+    end
+
+    class StreamParser
+      LINE_DELIMITER: String
+
+      def process: (response: Net::HTTPResponse, response_parser: ResponseParser, ?array_class: Class?, ?object_class: untyped, ?client: Client?, ?on_body: _BodyHook?, ?request: Net::HTTPRequest?) { (untyped) -> void } -> void
+
+      private
+      def raise_unless_successful: (response: Net::HTTPResponse, response_parser: ResponseParser, on_body: _BodyHook?, request: Net::HTTPRequest?) -> void
+      def tagging_callback_errors: [T] () { () -> T } -> T
+      def read_lines: (response: Net::HTTPResponse, decode: ^(String) -> untyped) { (untyped) -> void } -> void
+      def process_buffer: (buffer: String, decode: ^(String) -> untyped) { (untyped) -> void } -> void
+      def process_remaining: (buffer: String, decode: ^(String) -> untyped) { (untyped) -> void } -> void
+      def yield_json: (line: String, decode: ^(String) -> untyped) { (untyped) -> void } -> void
+    end
+
+    module ClientTokenRefresh : _TokenRefreshHost
+      @authenticator: Authenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator
+      @connection: Connection
+      @given_authenticator: Authenticator?
+      @client_id: String?
+      @client_secret: String?
+      @access_token: String?
+      @refresh_token: String?
+      @expires_at: Time?
+
+      def expires_at: () -> Time?
+
+      private
+      def share_authenticator: (Authenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator other, Hash[Symbol, untyped] options) -> void
+      def take: (Authenticator authenticator) -> Authenticator
+      def join: (OAuth2Authenticator authenticator) -> OAuth2Authenticator
+      def oauth2_authenticator_in_use: () -> OAuth2Authenticator?
+      def oauth2_credentials_in_use: () -> OAuth2Authenticator?
+      def oauth2_authenticator: -> OAuth2Authenticator?
+      def access_token: () -> String?
+      def refresh_token: () -> String?
+      def new_oauth2_authenticator: (client_id: String, access_token: String, refresh_token: String) -> OAuth2Authenticator
+      def refreshing_rejected_token: [T] () { () -> T } -> T
+    end
+
+    module ClientSettings : _SettingsHost
+      extend Forwardable
+      @connection: Connection
+      @request_builder: RequestBuilder
+      @redirect_handler: RedirectHandler
+      @rate_limit_handler: RateLimitHandler
+      @retry_handler: RetryHandler
+
+      attr_reader base_url: String
+      attr_reader default_array_class: Class
+      attr_reader default_object_class: object_class
+      attr_reader on_response: _ResponseHook?
+      attr_reader headers: headers
+      def open_timeout: () -> (Float | Integer)?
+      def read_timeout: () -> (Float | Integer)?
+      def write_timeout: () -> (Float | Integer)?
+      def keep_alive_timeout: () -> (Float | Integer)
+      def debug_output: () -> _DebugOutput?
+      def max_redirects: () -> Integer
+      def max_rate_limit_retries: () -> Integer
+      def max_rate_limit_wait: () -> (Float | Integer)
+      def max_retries: () -> Integer
+
+      private
+      def settings: () -> Hash[Symbol, untyped]
+      def proxy_url: () -> (URI::Generic | String)?
+      def initialize_settings: (base_url: String, default_array_class: Class, default_object_class: object_class, headers: headers, on_response: _ResponseHook?, max_redirects: Integer, max_rate_limit_retries: Integer, max_rate_limit_wait: Float | Integer, max_retries: Integer) -> void
+      def headers_for: (headers request_headers) -> headers
+      def report: (Symbol http_method, URI::Generic uri, Net::HTTPResponse response) ?{ (Response) -> void } -> void
+    end
+
+    module ClientAppOnly : _CredentialHost
+      NO_APP_CREDENTIALS: String
+
+      @app_only: Client?
+      @app_only_monitor: Monitor
+      @connection: Connection
+
+      def app_only: () -> (Client | self)
+
+      private
+      def app_only_copy: () -> Client
+      def build_app_only: () -> Client
+      def app_bearer_token: () -> String
+      def app_credentials: () -> [String, String]?
+      def authenticator: () -> (Authenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator)
+      def credentials: () -> { api_key: String?, api_key_secret: String?, access_token: String?, access_token_secret: String?, bearer_token: String?, client_id: String?, client_secret: String?, refresh_token: String?, expires_at: Time? }
+      def api_key: () -> String?
+      def api_key_secret: () -> String?
+      def bearer_token: () -> String?
+    end
+
+    module ClientCredentials : _CredentialHost
+      @connection: Connection
+      @given_authenticator: Authenticator?
+
+      @authenticator: Authenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator
+
+      attr_reader api_key: String?
+      @access_token: String?
+      @refresh_token: String?
+      @expires_at: Time?
+      attr_reader client_id: String?
+
+      private
+      def oauth2_authenticator: () -> OAuth2Authenticator?
+      attr_reader api_key_secret: String?
+      attr_reader access_token_secret: String?
+      attr_reader bearer_token: String?
+      attr_reader client_secret: String?
+      def access_token: () -> String?
+      def refresh_token: () -> String?
+      def credentials: () -> { api_key: String?, api_key_secret: String?, access_token: String?, access_token_secret: String?, bearer_token: String?, client_id: String?, client_secret: String?, refresh_token: String?, expires_at: Time? }
+      def initialize_credentials: (api_key: String?, api_key_secret: String?, access_token: String?, access_token_secret: String?, bearer_token: String?, client_id: String?, client_secret: String?, refresh_token: String?, expires_at: Time?) -> void
+      def initialize_authenticator: (Authenticator? given) -> void
+      def built_authenticator: () -> Authenticator
+      def with_credentials: (Hash[Symbol, untyped] options) -> Hash[Symbol, untyped]
+      def take: (Authenticator authenticator) -> Authenticator
+      def oauth1_authenticator: -> OAuth1Authenticator?
+      def bearer_authenticator: -> BearerTokenAuthenticator?
+      def app_only_authenticator: -> AppOnlyAuthenticator?
+    end
+
+    module RequestEncoding
+      LEADING_SLASHES: Regexp
+      BODY_AND_FORM: String
+
+      private
+      def endpoint_with: (String endpoint, params? params) -> String
+      def query_value: (untyped value) -> untyped
+      def encode_body: (body? body, params? form) -> String?
+    end
+
+    # What a Response and an HTTPError hold the headers of
+    interface _HTTPResponseHolder
+      def http_response: () -> Net::HTTPResponse
+    end
+
+    module ResponseHeaders : _HTTPResponseHolder
+      def headers: () -> Hash[String, String]
+    end
+
+    module SettingValidator
+      INVALID_COUNT: String
+      INVALID_COUNT_OR_INFINITY: String
+      INVALID_SECONDS: String
+      INVALID_FINITE_SECONDS: String
+      INVALID_TIMEOUT: String
+      extend SettingValidator
+
+      def count!: (Symbol name, untyped value) -> untyped
+      def count_or_infinity!: (Symbol name, untyped value) -> untyped
+      def seconds!: (Symbol name, untyped value) -> untyped
+      def finite_seconds!: (Symbol name, untyped value) -> untyped
+      def timeout!: (Symbol name, untyped value) -> untyped
+
+      private
+      def count?: (untyped value) -> bool
+      def seconds?: (untyped value) -> bool
+      def finite_seconds?: (untyped value) -> bool
+    end
+
+    module CredentialValidator
+      INCOMPLETE_CREDENTIALS: String
+      INVALID_EXPIRES_AT: String
+      EMPTY_CREDENTIAL: String
+      NOT_AN_AUTHENTICATOR: String
+      AUTHENTICATOR_AND_CREDENTIALS: String
+      CREDENTIAL_SETS: Array[Array[Symbol]]
+      extend CredentialValidator
+
+      def validate_values!: (Hash[Symbol, String | Time | nil] credentials) -> void
+      def validate_expires_at!: (untyped expires_at) -> void
+      def validate_authenticator!: (untyped authenticator, Hash[Symbol, String | Time | nil] credentials) -> void
+      def validate!: (Hash[Symbol, String | Time | nil] credentials) -> void
+
+      private
+      def incomplete?: (Hash[Symbol, String | Time | nil] credentials) -> bool
+    end
+
+    class Connection
+      DEFAULT_OPEN_TIMEOUT: Integer
+      DEFAULT_READ_TIMEOUT: Integer
+      DEFAULT_WRITE_TIMEOUT: Integer
+      DEFAULT_KEEP_ALIVE_TIMEOUT: Integer
+
+      include ConnectionProxy
+      include ConnectionRequest
+      include ProxySetting
+
+      attr_reader open_timeout : (Float | Integer)?
+      attr_reader read_timeout : (Float | Integer)?
+      attr_reader write_timeout : (Float | Integer)?
+      attr_reader keep_alive_timeout : Float | Integer
+      attr_reader debug_output : _DebugOutput?
+
+      def initialize: (?open_timeout: (Float | Integer)?, ?read_timeout: (Float | Integer)?, ?write_timeout: (Float | Integer)?, ?keep_alive_timeout: Float | Integer, ?proxy_url: (URI::Generic | String)?, ?debug_output: _DebugOutput?) -> void
+      def inspect: () -> String
+      def perform: (request: Net::HTTPRequest) -> Net::HTTPResponse
+      def perform_stream: (request: Net::HTTPRequest) { (Net::HTTPResponse) -> void } -> void
+
+      @pool: ConnectionPool
+
+      def close: () -> void
+
+      private
+      def host_and_port: (URI::Generic uri) -> [String, Integer]
+      def open_http_client: (URI::Generic uri, bool use_ssl) -> Net::HTTP
+      def build_http_client: (URI::Generic uri) -> Net::HTTP
+      def configure_http_client: (Net::HTTP http_client) -> Net::HTTP
+    end
+
+    class RefreshReporter
+      @monitor: Monitor
+      @latest: OAuth2Tokens?
+      @hooks: (^() -> Array[_TokenRefreshHook])?
+
+      def initialize: () -> void
+      def issued: (OAuth2Tokens tokens) -> OAuth2Tokens
+      def to: (^() -> Array[_TokenRefreshHook] hooks) -> ^() -> Array[_TokenRefreshHook]
+      def report: (OAuth2Tokens tokens) -> void
+
+      private
+      def pass: (OAuth2Tokens tokens) -> void
+    end
+  end
+
+  class Authenticator
+    def header: (Net::HTTPRequest request) -> Hash[String, String]
+  end
+
+  class BearerTokenAuthenticator < Authenticator
+    def header: (Net::HTTPRequest? request) -> Hash[String, String]
+
+    private
+    attr_reader bearer_token: String
+  end
+
+  class OAuth2Authorization
+    STATE_BYTES: Integer
+    DEFAULT_ERROR_MESSAGE: String
+    INVALID_CALLBACK_MESSAGE: String
+
+    @pkce: SimpleOAuth::OAuth2::PKCE
+    @settings: {proxy_url: (URI::Generic | String)?, open_timeout: (Float | Integer)?, read_timeout: (Float | Integer)?, write_timeout: (Float | Integer)?, debug_output: _DebugOutput?}
+
+    private
+    attr_reader client_secret: String?
+    attr_reader connection: Core::Connection
+    def oauth2_client: () -> SimpleOAuth::OAuth2::Client
+    def query_of: (String | Hash[String | Symbol, String] callback) -> (String | Hash[String | Symbol, String])
+    def credentials_from: (SimpleOAuth::OAuth2::Token token) -> Hash[Symbol, String | Time | nil]
+  end
+
+  class AuthorizationError < Error
+    def self.from: (SimpleOAuth::OAuth2::Error error, String default_message) -> AuthorizationError
+  end
+
+  class AppOnlyAuthenticator < Authenticator
+    DEFAULT_ERROR_MESSAGE: String
+
+    @bearer_token: String?
+    @mutex: Thread::Mutex
+    @taken: bool
+
+    def header: (Net::HTTPRequest? request) -> Hash[String, String]
+
+    private
+    attr_reader connection: Core::Connection
+    def token_requests_over: (Core::Connection connection) -> self
+    def bearer_token: () -> String
+    attr_reader api_key_secret: String
+    def retrying_rejected_token: [T] (URI::Generic origin) { () -> T } -> T
+    def drop_bearer_token: (String rejected) -> void
+    def fetch_bearer_token: () -> String
+    def token_request: () -> SimpleOAuth::OAuth2::Request
+  end
+
+  class OAuth1Authenticator < Authenticator
+    FORM_CONTENT_TYPE: String
+
+    def header: (Net::HTTPRequest request) -> Hash[String, String]
+
+    private
+    attr_reader api_key_secret: String
+    attr_reader access_token_secret: String
+    def credentials: -> Hash[Symbol, String]
+    def form_params: (Net::HTTPRequest request) -> Array[[String, String]]
+    def form_body: (Net::HTTPRequest request) -> String
+    def form_encoded?: (Net::HTTPRequest request) -> bool
+  end
+
+  class Problem
+    INTEGER_ID_TYPES: Array[String]
+
+    private
+    def identifier: (untyped value) -> untyped
+    def numeric_identifier?: (untyped value) -> bool
+    def deep_freeze: (untyped value) -> untyped
+  end
+
+  class HTTPError < Error
+    include Core::RequestContext
+    include Core::ResponseHeaders
+
+    JSON_CONTENT_TYPE_REGEXP: Regexp
+    PROBLEM_KEYS: Array[String]
+    RETRY_AFTER_HEADER: String
+    RETRY_AFTER_SECONDS: Regexp
+
+    private
+    def seconds_until: (String value) -> Integer?
+    def parsed_body: () -> Hash[String, untyped]
+    def problem_from: (Hash[String, untyped] body) -> Hash[String, untyped]?
+    def message_from: (Hash[String, untyped] body) -> String?
+    def message_from_errors: (untyped errors) -> String?
+    def message_from_problem: (Hash[String, untyped] body) -> String?
+    def json?: () -> bool
+  end
+
+  class NetworkError < Error
+    include Core::RequestContext
+  end
+
+  class InvalidResponse < Error
+    include Core::RequestContext
+    include Core::ResponseHeaders
+  end
+
+  class TooManyRequests < ClientError
+    @rate_limits: Array[RateLimit]
+  end
+
+  # What a stream passes each line of its body, and the body of a failed response before it raises
+  interface _BodyHook
+    def call: (?String body) -> untyped
+  end
+
+  class Response
+    include Core::ResponseHeaders
+
+    @body: String?
+    @parsed_body: Hash[String, untyped]?
+
+    private
+    def parsed_body: () -> Hash[String, untyped]
+    def parse_body: () -> Hash[String, untyped]
+  end
+
+  class RateLimit
+    def self.all_from: (Net::HTTPResponse http_response) -> Array[RateLimit]
+    def self.reported?: (String type, Net::HTTPResponse http_response) -> bool
+  end
+
+  class StreamRule
+    NOT_A_STRING: String
+
+    private
+    def string!: (Symbol name, untyped string) -> String
+  end
+
+  class StreamingClient
+    include Core::ProxySetting
+    include Core::RequestEncoding
+
+    NO_BLOCK_MESSAGE: String
+    RULES_ENDPOINT: String
+    NOT_A_RULE: String
+    NOT_A_RULE_TO_ADD: String
+    JSON_CLASSES: Hash[Symbol, Class]
+
+    @connection: Core::Connection
+    @reconnect_handler: Core::ReconnectHandler
+    @request_builder: Core::RequestBuilder
+    @response_parser: Core::ResponseParser
+    @stream_parser: Core::StreamParser
+
+    private
+    def deletion: (Array[untyped] ids, Array[untyped] values) -> Hash[Symbol, Array[untyped]]
+    def change_rules: (Hash[Symbol, untyped] body, dry_run: bool) -> Hash[String, untyped]?
+    def each_rule: (untyped rules) -> Array[untyped]
+    def rules_of: (Hash[String, untyped]? body) -> Array[StreamRule]
+    def rule_to_add: (addable_rule rule) -> Hash[untyped, untyped]
+    def identifier_of: (rule rule) -> (String | Integer)?
+    def value_of: (rule rule) -> String
+    def app_client: () -> Client
+    def request_for: (URI::Generic uri, headers headers) -> Net::HTTPRequest
+    def report: (URI::Generic uri, Net::HTTPResponse response, String? body) -> void
+  end
+
+  class OAuth2Authenticator < Authenticator
+    EXPIRATION_BUFFER: Integer
+    DEFAULT_ERROR_MESSAGE: String
+    FRESH_TOKEN_SECONDS: Integer
+
+    @mutex: Thread::Mutex
+    @reporter: Core::RefreshReporter
+    @refreshed_at: Float?
+    @taken: bool
+
+    def header: (Net::HTTPRequest? request) -> Hash[String, String]
+
+    private
+    attr_reader connection: Core::Connection
+    attr_reader clients: _ClientRegistry
+    def token_requests_over: (Core::Connection connection) -> self
+    def refresh_expired_token: (Core::Connection connection) -> void
+    def refresh_rejected_token!: (String rejected_token, Core::Connection connection) -> bool
+    def holds?: (Hash[Symbol, untyped] options) -> bool
+    def retrying_rejected_token: [T] (URI::Generic origin, Core::Connection connection) { () -> T } -> T
+    def update_expires_at: (Time? expires_at) -> void
+    def report_refreshes_to: (^() -> Array[_TokenRefreshHook] hooks) -> ^() -> Array[_TokenRefreshHook]
+    attr_reader client_secret: String?
+    def refresh: (Core::Connection connection) -> OAuth2Tokens
+    def report_refresh: (OAuth2Tokens tokens) -> void
+    def oauth2_client: -> SimpleOAuth::OAuth2::Client
+    def update_tokens: (SimpleOAuth::OAuth2::Token token) -> void
+    def fresh?: () -> bool
+  end
+
+  interface _ClientRegistry
+    def []=: (untyped client, bool shared) -> bool
+    def delete: (untyped client) -> bool?
+    def keys: () -> Array[Client]
+  end
+
+  interface _CredentialHost
+    def authenticator: () -> (Authenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator)
+    def with: (**untyped options) -> Client
+    def expires_at: () -> Time?
+  end
+
+  interface _TokenRefreshHost
+    def base_url: () -> String
+  end
+
+  interface _SettingsHost
+    def on_token_refresh: () -> _TokenRefreshHook?
+  end
+
+  class Client
+    include Core::ClientAppOnly
+    include Core::ClientCredentials
+    include Core::ClientSettings
+    include Core::ClientTokenRefresh
+    include Core::ProxySetting
+    include Core::RequestEncoding
+
+    FORM_CONTENT_TYPE: String
+
+    @authenticator: Authenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator
+    @connection: Core::Connection
+    @request_builder: Core::RequestBuilder
+    @redirect_handler: Core::RedirectHandler
+    @rate_limit_handler: Core::RateLimitHandler
+    @retry_handler: Core::RetryHandler
+    @response_parser: Core::ResponseParser
+    @given_authenticator: Authenticator?
+    @client_id: String?
+    @client_secret: String?
+    @access_token: String?
+    @refresh_token: String?
+    @expires_at: Time?
+
+    private
+    def perform: (:delete | :get | :post | :put http_method, URI::Generic uri, body: String?, headers: headers, array_class: Class, object_class: object_class) ?{ (Response) -> void } -> untyped
+    def execute_request: (:delete | :get | :post | :put http_method, String endpoint, ?body: body?, ?params: params?, ?form: params?, ?headers: headers, ?array_class: Class, ?object_class: object_class) ?{ (Response) -> void } -> untyped
+  end
+end
