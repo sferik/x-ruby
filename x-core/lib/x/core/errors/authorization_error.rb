@@ -31,7 +31,7 @@ module X
     # @return [Integer, nil] the status, or nil if the error came from the redirect back from X rather than a response
     # @example Tell a revoked token from a request X could not read
     #   rescue X::AuthorizationError => e
-    #     store.forget(user) if e.status.eql?(400) && e.error_code.eql?("invalid_grant")
+    #     store.forget(user) if e.status.eql?(400) && e.error_code.eql?("invalid_request")
     attr_reader :status
 
     # Build the error of a failure that simple_oauth reports
