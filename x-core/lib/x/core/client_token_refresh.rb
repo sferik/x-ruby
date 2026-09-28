@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require_relative "app_only_authenticator"
 require_relative "oauth2_authenticator"
 
 module X
@@ -113,14 +114,18 @@ module X
 
       # Run a request, again if a refresh replaces an OAuth 2.0 token the API rejects
       #
-      # Only a rejection by the origin of the base URL, which the token is sent to, refreshes it; see {Origin}.
+      # Only a rejection by the origin of the base URL, which the token is sent to, refreshes it; see {Origin}. An
+      # app-only bearer token the API rejects is fetched again the same way; see {AppOnlyAuthenticator}.
       #
       # @api private
       # @yield runs the request
       # @return [Object] what the block returns
       def refreshing_rejected_token(&)
-        current = oauth2_authenticator_in_use
-        current.nil? ? yield : current.__send__(:retrying_rejected_token, URI(base_url), @connection, &)
+        case (current = @authenticator)
+        when OAuth2Authenticator then current.__send__(:retrying_rejected_token, URI(base_url), @connection, &)
+        when AppOnlyAuthenticator then current.__send__(:retrying_rejected_token, URI(base_url), &)
+        else yield
+        end
       end
     end
   end

@@ -4,10 +4,16 @@ require "simple_oauth"
 require_relative "authenticator"
 require_relative "connection"
 require_relative "errors/authorization_error"
+require_relative "errors/unauthorized"
+require_relative "origin"
 require_relative "token_endpoint"
 
 module X
   # Authenticates as an app with a bearer token, fetched with the API key and secret when first needed
+  #
+  # A bearer token the API rejects with 401 Unauthorized, as it does one that was invalidated, is dropped, and the
+  # request is sent again with one fetched in its place.
+  #
   # @api public
   class AppOnlyAuthenticator < Authenticator
     # The endpoint that exchanges an API key and secret for a bearer token
@@ -86,6 +92,37 @@ module X
     # @example Buy a bearer token with the API key secret
     #   api_key_secret
     attr_reader :api_key_secret
+
+    # Run a request, again with a bearer token fetched in place of one the API rejects
+    #
+    # Only a rejection by the origin the token is sent to drops it; see {Core::Origin}. A token fetched for the
+    # request itself is not fetched again, since the endpoint that just issued it would issue it again. Internal to
+    # x-core: Client runs each request through it, and calls it with __send__, since it is private.
+    #
+    # @api private
+    # @param origin [URI::Generic] the base URL of the client, the origin the token is sent to
+    # @yield runs the request
+    # @return [Object] what the block returns
+    # @raise [Unauthorized] if the API rejects the token fetched in place of the one it rejected
+    def retrying_rejected_token(origin)
+      token = @bearer_token
+      begin
+        yield
+      rescue Unauthorized => e
+        raise unless token && Core::Origin.answered?(e, origin)
+
+        drop_bearer_token(token)
+        yield
+      end
+    end
+
+    # Drop a bearer token the API rejected, unless another request already replaced it
+    # @api private
+    # @param rejected [String] the bearer token the API rejected
+    # @return [void]
+    def drop_bearer_token(rejected)
+      @mutex.synchronize { @bearer_token = nil if @bearer_token.eql?(rejected) }
+    end
 
     # Exchange the API key and secret for a bearer token
     # @api private

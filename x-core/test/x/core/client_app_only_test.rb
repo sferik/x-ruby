@@ -18,7 +18,7 @@ module X
       client = Client.new(**test_oauth_credentials, base_url: "https://api.x.com/2/")
       copies = [client.app_only, client.app_only]
 
-      assert_equal [BearerTokenAuthenticator] * 2, copies.map { |copy| copy.authenticator.class }
+      assert_equal [AppOnlyAuthenticator] * 2, copies.map { |copy| copy.authenticator.class }
       assert_requested @token_request, times: 1
     end
 
@@ -33,7 +33,7 @@ module X
       client = Client.new(**test_oauth_credentials, **test_oauth2_credentials.except(:client_secret), expires_at: Time.now + 60)
       copy = client.app_only
 
-      assert_instance_of BearerTokenAuthenticator, copy.authenticator
+      assert_instance_of AppOnlyAuthenticator, copy.authenticator
       assert_equal({api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET, bearer_token: TEST_BEARER_TOKEN}, copy.send(:credentials).compact)
     end
 
@@ -42,7 +42,7 @@ module X
       options = nil
       authenticator = AppOnlyAuthenticator.new(api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET)
       AppOnlyAuthenticator.stub(:new, ->(**given) {
-        options = given
+        options ||= given
         authenticator
       }) { client.app_only }
 

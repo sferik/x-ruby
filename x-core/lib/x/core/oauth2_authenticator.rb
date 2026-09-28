@@ -233,23 +233,10 @@ module X
       begin
         yield
       rescue Unauthorized => e
-        raise unless carried_token?(e, origin) && refresh_rejected_token!(token, connection)
+        raise unless Core::Origin.answered?(e, origin) && refresh_rejected_token!(token, connection)
 
         yield
       end
-    end
-
-    # Check whether a rejection came from the origin the token is sent to
-    #
-    # A request answered by that origin carried the token, and one answered by another carried none.
-    #
-    # @api private
-    # @param error [Unauthorized] the rejection
-    # @param origin [URI::Generic] a URI of the origin the token is sent to
-    # @return [Boolean] true if the response that rejected the request came from that origin
-    def carried_token?(error, origin)
-      uri = error.http_response.uri
-      !uri.nil? && Core::Origin.same?(origin, uri)
     end
 
     # Check whether the authenticator holds the credentials among some options

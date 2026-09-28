@@ -51,6 +51,22 @@ module X
       #   X::Core::Origin.same?(URI(client.base_url), uri)
       def same?(uri, other) = of(uri).eql?(of(other))
 
+      # Check whether the response an error was raised for came from an origin
+      #
+      # A request answered by the origin its credentials were given for carried them, and one answered by another,
+      # after a redirect there, carried none, so only a rejection by that origin rejected them.
+      #
+      # @api private
+      # @param error [HTTPError] the error
+      # @param origin [URI::Generic] a URI of the origin
+      # @return [Boolean] true if the response came from the origin, and false for one that names no URI
+      # @example Check whether a rejection came from the base URL of a client
+      #   X::Core::Origin.answered?(error, URI(client.base_url))
+      def answered?(error, origin)
+        uri = error.http_response.uri
+        !uri.nil? && same?(origin, uri)
+      end
+
       private
 
       # The scheme, host, and port of a URI, in lowercase

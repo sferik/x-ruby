@@ -177,10 +177,14 @@ module X
       assert_equal "#<X::Client base_url=\"https://api.x.com/2/\" authenticator=#<X::AppOnlyAuthenticator>>", client.inspect
     end
 
-    def test_a_bearer_token_takes_precedence
-      client = Client.new(api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET, bearer_token: TEST_BEARER_TOKEN)
+    def test_a_bearer_token_given_beside_the_api_key_is_sent_without_a_request
+      token_request = stub_request(:post, AppOnlyAuthenticator::TOKEN_URL)
+      stub_request(:get, "https://api.x.com/2/tweets/1").with(headers: {"Authorization" => "Bearer GIVEN"})
+      client = Client.new(api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET, bearer_token: "GIVEN")
+      client.get("tweets/1")
 
-      assert_instance_of BearerTokenAuthenticator, client.authenticator
+      assert_instance_of AppOnlyAuthenticator, client.authenticator
+      assert_not_requested token_request
     end
 
     def test_requests_fetch_the_bearer_token

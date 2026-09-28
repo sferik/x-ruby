@@ -89,7 +89,7 @@ module X
       # @api private
       # @return [void]
       def initialize_authenticator
-        @authenticator = oauth1_authenticator || oauth2_authenticator || bearer_authenticator || app_only_authenticator ||
+        @authenticator = oauth1_authenticator || oauth2_authenticator || app_only_authenticator || bearer_authenticator ||
           Authenticator.new
       end
 
@@ -104,12 +104,15 @@ module X
       end
 
       # Build an app-only authenticator on the client's connection, given API keys
+      #
+      # A bearer token given beside them is sent until the API rejects it, and one is fetched with them in its place.
+      #
       # @api private
       # @return [AppOnlyAuthenticator, nil] the app-only authenticator or nil
       def app_only_authenticator
         return unless api_key && api_key_secret
 
-        AppOnlyAuthenticator.new(api_key:, api_key_secret:, connection: @connection)
+        AppOnlyAuthenticator.new(api_key:, api_key_secret:, bearer_token:, connection: @connection)
       end
 
       # Build a bearer token authenticator if credentials are available

@@ -93,7 +93,7 @@ module X
     def test_complete_sets_beside_each_other_are_allowed
       assert_instance_of OAuth1Authenticator, Client.new(**test_oauth_credentials, bearer_token: TEST_BEARER_TOKEN).authenticator
       assert_instance_of OAuth2Authenticator, Client.new(**test_oauth2_credentials, api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET).authenticator
-      assert_instance_of BearerTokenAuthenticator, Client.new(bearer_token: TEST_BEARER_TOKEN, api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET).authenticator
+      assert_instance_of AppOnlyAuthenticator, Client.new(bearer_token: TEST_BEARER_TOKEN, api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET).authenticator
       assert_instance_of OAuth1Authenticator, Client.new(**test_oauth_credentials, **test_oauth2_credentials).authenticator
     end
 

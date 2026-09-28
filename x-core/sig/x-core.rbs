@@ -171,6 +171,7 @@ module X
 
       def credentials_for: [K < _ToS] (from: URI::Generic, to: URI::Generic, authenticator: Authenticator, headers: Hash[K, String]) -> [Authenticator, Hash[K, String]]
       def same?: (URI::Generic uri, URI::Generic other) -> bool
+      def answered?: (HTTPError error, URI::Generic origin) -> bool
 
       private
       def of: (URI::Generic uri) -> [String?, String?, Integer?]
@@ -435,6 +436,8 @@ module X
     private
     def bearer_token: () -> String
     attr_reader api_key_secret: String
+    def retrying_rejected_token: [T] (URI::Generic origin) { () -> T } -> T
+    def drop_bearer_token: (String rejected) -> void
     def fetch_bearer_token: () -> String
     def token_request: () -> SimpleOAuth::OAuth2::Request
   end
@@ -767,7 +770,6 @@ module X
     def refresh_rejected_token!: (String rejected_token, Connection connection) -> bool
     def holds?: (Hash[Symbol, untyped] options) -> bool
     def retrying_rejected_token: [T] (URI::Generic origin, Connection connection) { () -> T } -> T
-    def carried_token?: (Unauthorized error, URI::Generic origin) -> bool
     def update_expires_at: (Time? expires_at) -> void
     def report_refreshes_to: (^() -> Array[_TokenRefreshHook] hooks) -> ^() -> Array[_TokenRefreshHook]
     attr_reader client_secret: String?
