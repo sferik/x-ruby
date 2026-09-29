@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative "errors/unsupported_marshal_format"
+
 module X
   # A rule of the filtered stream: the value it matches posts against, the tag it is labelled with, and the
   # identifier the API gave it
@@ -16,6 +18,10 @@ module X
     # The message of the error raised for a value or a tag that is not a String
     NOT_A_STRING = "%s must be a String, not %s"
     private_constant :NOT_A_STRING
+
+    # The number of the format of the state Marshal writes, which a release that changes the format raises
+    MARSHAL_FORMAT = 1
+    private_constant :MARSHAL_FORMAT
 
     # The identifier the API gave the rule
     #
@@ -103,6 +109,32 @@ module X
     # @example Inspect a rule
     #   rule.inspect # => #<X::StreamRule id=1165037377523306498 value="ruby -is:retweet" tag="ruby">
     def inspect = "#<#{self.class} id=#{id.inspect} value=#{value.inspect} tag=#{tag.inspect}>"
+
+    # The state Marshal writes
+    #
+    # What is written is plain data, led by the number of its format, so that a rule written by one release of 1.x is
+    # read by a later one: its identifier, value, and tag, as to_h gives them.
+    #
+    # @api public
+    # @return [Array(Integer, Hash{Symbol => Integer, String, nil})] the number of the format, then the rule as a Hash
+    # @example Cache the rules of the filtered stream
+    #   Rails.cache.write("rules", streaming_client.stream_rules)
+    def marshal_dump = [MARSHAL_FORMAT, to_h]
+
+    # Restore a rule Marshal read, built as the constructor builds it, frozen
+    #
+    # @api public
+    # @param state [Array] the state Marshal wrote
+    # @return [void]
+    # @raise [UnsupportedMarshalFormat] if the state is of a format this release does not read
+    # @example Read cached rules
+    #   Marshal.load(Marshal.dump(rule)).value
+    def marshal_load(state)
+      format, rule = state
+      raise UnsupportedMarshalFormat, "#{self.class} reads format #{MARSHAL_FORMAT} of Marshal, not #{format.inspect}" unless MARSHAL_FORMAT.eql?(format)
+
+      initialize(**rule)
+    end
 
     private
 

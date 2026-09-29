@@ -276,6 +276,8 @@ module X
     def eql?: (untyped other) -> bool
     def hash: () -> Integer
     def inspect: () -> String
+    def marshal_dump: () -> [Integer, {id: Integer?, value: String, tag: String?}]
+    def marshal_load: ([Integer, {id: Integer?, value: String, tag: String?}] state) -> void
   end
 
   class StreamingClient

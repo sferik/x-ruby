@@ -627,6 +627,7 @@ module X
 
   class StreamRule
     NOT_A_STRING: String
+    MARSHAL_FORMAT: Integer
 
     private
     def string!: (Symbol name, untyped string) -> String
