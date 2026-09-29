@@ -26,13 +26,13 @@ module X
     def self.keeping(media)
       yield
     rescue X::Error
-      raise new(media)
+      raise new(media:)
     end
     private_class_method :keeping
 
     # The media that was uploaded, without its alt text
     # @api public
-    # @return [UploadedMedia] the uploaded media
+    # @return [UploadedMedia, nil] the uploaded media, or nil if none was given
     # @example Add the alt text again later
     #   rescue X::AltTextFailed => e
     #     client.add_alt_text(e.media, "A cat asleep on a keyboard")
@@ -40,19 +40,25 @@ module X
 
     # Initialize the error with the media that was uploaded
     #
+    # The message is the one given, or else names the media by its identifier, when media was given.
+    #
     # @api public
-    # @param media [UploadedMedia] the media that was uploaded
+    # @param message [String, nil] the message, or nil for one that names the media
+    # @param media [UploadedMedia, nil] the media that was uploaded
     # @return [AltTextFailed] a new error
     # @example Raise the error for media whose alt text could not be added
-    #   raise X::AltTextFailed.new(media)
-    def initialize(media)
+    #   raise X::AltTextFailed.new(media: media)
+    # @example Raise the error with a message of its own, as a test stub may
+    #   raise X::AltTextFailed, "Alt text could not be added"
+    def initialize(message = nil, media: nil)
       @media = media
-      super("Media #{media.id} was uploaded, but its alt text could not be added")
+      super(message || ["Media", media&.id, "was uploaded, but its alt text could not be added"].compact.join(" "))
     end
 
     # The message, ending with why the alt text could not be added
     #
-    # It ends with the message of the error that failed to add the alt text, which is the cause.
+    # It ends with the message of the error that failed to add the alt text, which is the cause, if there is one,
+    # whether the message was given or named the media.
     #
     # @api public
     # @return [String] the message

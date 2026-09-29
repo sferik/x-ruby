@@ -109,8 +109,8 @@ module X
   end
 
   class AltTextFailed < Uploader::Error
-    attr_reader media: UploadedMedia
-    def initialize: (UploadedMedia media) -> void
+    attr_reader media: UploadedMedia?
+    def initialize: (?String? message, ?media: UploadedMedia?) -> void
     def to_s: () -> String
   end
 

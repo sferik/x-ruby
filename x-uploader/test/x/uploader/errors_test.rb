@@ -104,7 +104,28 @@ module X
     end
 
     def test_names_the_media_alone_without_a_cause
-      assert_equal "Media 7 was uploaded, but its alt text could not be added", AltTextFailed.new(UploadedMedia.new({"id" => "7"})).message
+      assert_equal "Media 7 was uploaded, but its alt text could not be added", AltTextFailed.new(media: UploadedMedia.new({"id" => "7"})).message
+    end
+
+    def test_takes_a_message_of_its_own_as_a_test_stub_raises_it
+      error = assert_raises(AltTextFailed) { raise AltTextFailed, "Alt text could not be added" }
+
+      assert_equal "Alt text could not be added", error.message
+      assert_nil error.media
+    end
+
+    def test_names_no_media_when_given_none
+      assert_equal "Media was uploaded, but its alt text could not be added", AltTextFailed.new.message
+    end
+
+    def test_a_message_of_its_own_ends_with_the_reason_it_failed
+      error = assert_raises(AltTextFailed) do
+        raise Error, "Connection reset"
+      rescue Error
+        raise AltTextFailed.new("No alt text", media: UploadedMedia.new({"id" => "7"}))
+      end
+
+      assert_equal ["No alt text: Connection reset", 7], [error.message, error.media.id]
     end
 
     def test_keeping_is_private
@@ -121,7 +142,7 @@ module X
     cover Uploader::Error
 
     def test_every_error_of_an_upload_is_an_uploader_error
-      errors = [AltTextFailed.new(UploadedMedia.new({"id" => "7"})), InvalidMediaType.new, MediaProcessingFailed.new, MediaProcessingTimeout.new]
+      errors = [AltTextFailed.new(media: UploadedMedia.new({"id" => "7"})), InvalidMediaType.new, MediaProcessingFailed.new, MediaProcessingTimeout.new]
 
       assert(errors.all? { |error| error.is_a?(Uploader::Error) })
       assert(errors.all? { |error| error.is_a?(Error) })
