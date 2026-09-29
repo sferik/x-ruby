@@ -281,8 +281,6 @@ module X
 
     interface _FinderHost
       def default_params: () -> Hash[String, Array[String]]
-      def resource_from_response: (body body, client: _Client?, ?hydrated: bool, ?query: Hash[String, untyped]?) -> Resource?
-      def collection_from_response: (body body, client: _Client?, ?hydrated: bool, ?query: Hash[String, untyped]?) -> Array[Resource]
     end
 
     module UserFinders : Class, BatchFinders
@@ -319,6 +317,8 @@ module X
       # The private class methods of the resource class that extends it, which it reads
       def endpoint!: () -> String
       def fully_requested_by?: (Hash[String, untyped] query) -> bool
+      def resource_built_from: (body body, client: _Client?, hydrated: bool, query: Hash[String, untyped]?) -> Resource?
+      def collection_built_from: (body body, client: _Client?, hydrated: bool, query: Hash[String, untyped]?) -> Array[Resource]
     end
 
     module BatchFinders : Class, _FinderHost
@@ -358,7 +358,7 @@ module X
 
     # The class side of DirectMessage, which builds its messages
     interface _DirectMessageClass
-      def resource_from_response: (body body, client: _Client?, ?hydrated: bool, ?query: Hash[String, untyped]?) -> DirectMessage?
+      def resource_from_response: (body body, client: _Client?, ?hydrated: bool) -> DirectMessage?
     end
 
     module DirectMessageConversations : _DirectMessageClass
@@ -677,6 +677,8 @@ module X
     private def self.includes_key: () -> String?
     private def self.fields_key: () -> String?
     private def self.fully_requested_by?: (Hash[String, untyped] query) -> bool
+    private def self.resource_built_from: (Objects::body body, client: Objects::_Client?, hydrated: bool, query: Hash[String, untyped]?) -> Resource?
+    private def self.collection_built_from: (Objects::body body, client: Objects::_Client?, hydrated: bool, query: Hash[String, untyped]?) -> Array[Resource]
     private def self.batch_key: () -> Symbol
     private def self.endpoint!: () -> String
     private def self.from_id_in_batch: (Objects::id id, client: Objects::_Client?, ?batch: Objects::Batch?) -> Resource
@@ -722,6 +724,7 @@ module X
     attr_reader token_param: String
     def setup: (singleton(Resource) resource_class, String path, client: Objects::_Client, params: Objects::params, prefetch: bool, token_param: String, min_results: Integer, app_only: bool, total: (^(?fresh: bool) -> Integer?)?, ids_only: bool) -> void
     def ids_only?: () -> bool
+    def app_only?: () -> bool
     def fresh_total: () -> (^(?fresh: bool) -> Integer?)?
     def own_params: () -> Objects::params
     def id_only_params: () -> Objects::params

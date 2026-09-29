@@ -51,8 +51,8 @@ module X
     #
     # Internal to x-objects: a resource builds the cursors of its collections, and the searches and lookups build
     # theirs, with it, and new is private, so that the settings a cursor pages with can change within 1.x, as the
-    # readers of the token parameter and the smallest page are private for the same reason. A cursor
-    # is made from another with refresh, prefetch, and stubs.
+    # readers of the token parameter, the smallest page, and whether the pages are fetched as the app are private for
+    # the same reason. A cursor is made from another with refresh, prefetch, and stubs.
     #
     # @api private
     # @param resource_class [Class] the class of the resources in the collection
@@ -86,17 +86,6 @@ module X
     # @example Check whether a cursor prefetches
     #   cursor.prefetch? # => false
     def prefetch? = @prefetch
-
-    # Check whether the pages are fetched with the app-only client of the client
-    #
-    # The space endpoints refuse the OAuth 1.0a of a user, so a cursor over one fetches its pages with the app-only
-    # client, while its resources hold the client, so that they act as the user.
-    #
-    # @api public
-    # @return [Boolean] true if pages are fetched as the app
-    # @example Check whether a cursor fetches as the app
-    #   space.posts.app_only? # => true
-    def app_only? = @app_only
 
     # Iterate over every resource, fetching pages as needed
     #
@@ -407,6 +396,16 @@ module X
     # @api private
     # @return [String] the parameter name
     attr_reader :token_param
+
+    # Check whether the pages are fetched with the app-only client of the client
+    #
+    # The space endpoints refuse the OAuth 1.0a of a user, so a cursor over one fetches its pages with the app-only
+    # client, while its resources hold the client, so that they act as the user. Internal to x-objects: Pages asks
+    # it which client fetches a page.
+    #
+    # @api private
+    # @return [Boolean] true if pages are fetched as the app
+    def app_only? = @app_only
 
     # Check whether the endpoint gives the resources by their identifiers alone
     #

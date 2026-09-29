@@ -66,7 +66,7 @@ module X
       #   X::User.__send__(:lookup, "users/me", client: client)
       def lookup(path, client:, **params, &)
         query = Utils.merge_params(default_params, params)
-        resource_from_response(reporting(get(path, client:, query:), &), client:, hydrated: fully_requested_by?(query), query:)
+        resource_built_from(reporting(get(path, client:, query:), &), client:, hydrated: fully_requested_by?(query), query:)
       end
 
       # Fetch a list of resources from an endpoint without paginating
@@ -85,7 +85,7 @@ module X
       #   X::User.__send__(:lookup_all, "users/by", client: client, usernames: ["sferik", "gem"])
       def lookup_all(path, client:, **params, &)
         query = Utils.merge_params(default_params, params)
-        collection_from_response(reporting(get(path, client:, query:), &), client:, hydrated: fully_requested_by?(query), query:)
+        collection_built_from(reporting(get(path, client:, query:), &), client:, hydrated: fully_requested_by?(query), query:)
       end
 
       # The client a lookup of this resource makes its requests with

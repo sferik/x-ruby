@@ -121,7 +121,7 @@ module X
       # The client that fetches the pages, as the app for a space endpoint
       # @api private
       # @return [Object] the client
-      def requester = @cursor.app_only? ? Utils.space_client(@cursor.client) : @cursor.client
+      def requester = @cursor.__send__(:app_only?) ? Utils.space_client(@cursor.client) : @cursor.client
 
       # Build the resources of a page, as stubs for a cursor of identifiers
       # @api private
@@ -130,7 +130,7 @@ module X
       def resources_from(body)
         klass = @cursor.resource_class
         params = @cursor.params
-        resources = klass.collection_from_response(body, client: @cursor.client, hydrated: klass.__send__(:fully_requested_by?, params), query: params)
+        resources = klass.__send__(:collection_built_from, body, client: @cursor.client, hydrated: klass.__send__(:fully_requested_by?, params), query: params)
         id_only? ? stubs_from(resources) : resources
       end
 

@@ -6,11 +6,18 @@ module X
   # What a resource class reads of itself and of another to look resources up is private, and read with __send__
   class PrivateInternalsTest < Minitest::Test
     RESOURCE_METHODS = %i[endpoint endpoint! id_key id_type includes_key fields_key from_id_in_batch build fully_requested_by?
-      batch_key lookup lookup_all client_for attribute_names attribute_aliases reference_keys referenced_ids].freeze
+      batch_key lookup lookup_all client_for attribute_names attribute_aliases reference_keys referenced_ids resource_built_from
+      collection_built_from].freeze
 
     def test_no_resource_class_reads_its_lookups_publicly
       [Resource, User, Post, List, DirectMessage, Space, Community, Media, Poll, Place].each do |klass|
         RESOURCE_METHODS.each { |name| refute_respond_to klass, name, "Expected #{klass}.#{name} to be private" }
+      end
+    end
+
+    def test_a_resource_class_builds_from_a_response_without_the_query_of_its_request
+      [:resource_from_response, :collection_from_response].each do |name|
+        refute_includes User.method(name).parameters, [:key, :query]
       end
     end
 
@@ -27,6 +34,7 @@ module X
 
       refute_respond_to cursor, :token_param
       refute_respond_to cursor, :min_results
+      refute_respond_to cursor, :app_only?
       assert_raises(NameError) { Cursor::DEFAULT_TOKEN_PARAM }
     end
 

@@ -70,7 +70,7 @@ module X
       assert_equal ["buyer"], buyers.map(&:username)
       assert_equal [{"max_results" => "100", **Objects::Utils.query(User.default_params)}], @client.queries
       assert_empty @client.app.requests
-      refute_predicate buyers, :app_only?
+      refute buyers.__send__(:app_only?)
     end
 
     def test_the_buyers_of_a_space_take_parameters

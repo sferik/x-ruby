@@ -39,7 +39,7 @@ module X
     def test_the_resources_of_one_response_report_its_problems_and_resolve_as_hydrated_as_they_did
       body = {"data" => [{"id" => "1", "author_id" => "9", "attachments" => {"poll_ids" => ["5"]}}], "includes" => {"polls" => [{"id" => "5"}]},
               "errors" => [{"title" => "Not Found Error", "resource_id" => "9"}]}
-      post = Marshal.load(Marshal.dump(Page.new(Post.collection_from_response(body, client: nil, query: Objects::Utils.query(Post.default_params)), {}))).first
+      post = Marshal.load(Marshal.dump(Page.new(Post.__send__(:collection_built_from, body, client: nil, hydrated: false, query: Objects::Utils.query(Post.default_params)), {}))).first
 
       assert_equal [["9"], true], [post.problems.map(&:resource_id), post.polls.first.hydrated?]
     end
