@@ -323,6 +323,8 @@ module X
     def eql?: (untyped other) -> bool
     def hash: () -> Integer
     def inspect: () -> String
+    def marshal_dump: () -> [Integer, {access_token: String, refresh_token: String, expires_at: Time?}]
+    def marshal_load: ([Integer, {access_token: String, refresh_token: String, expires_at: Time?}] state) -> void
   end
 
   interface _TokenRefreshHook

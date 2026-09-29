@@ -625,6 +625,10 @@ module X
     def field: (String name) -> Integer
   end
 
+  class OAuth2Tokens
+    MARSHAL_FORMAT: Integer
+  end
+
   class StreamRule
     NOT_A_STRING: String
     MARSHAL_FORMAT: Integer

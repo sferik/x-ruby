@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative "errors/unsupported_marshal_format"
+
 module X
   # The OAuth 2.0 tokens one refresh issued, which on_token_refresh is passed to store
   #
@@ -8,6 +10,10 @@ module X
   #
   # @api public
   class OAuth2Tokens
+    # The number of the format of the state Marshal writes, which a release that changes the format raises
+    MARSHAL_FORMAT = 1
+    private_constant :MARSHAL_FORMAT
+
     # The OAuth 2.0 access token the refresh issued
     # @api public
     # @return [String] the access token
@@ -81,5 +87,32 @@ module X
     # @example Inspect tokens
     #   tokens.inspect # => #<X::OAuth2Tokens expires_at=nil>
     def inspect = "#<#{self.class} expires_at=#{expires_at.inspect}>"
+
+    # The state Marshal writes
+    #
+    # What is written is plain data, led by the number of its format, so that tokens written by one release of 1.x are
+    # read by a later one: the tokens and their expiration time, as to_h gives them. It holds the tokens themselves,
+    # since tokens are marshalled to be stored, so what Marshal wrote is kept as secret as the tokens are.
+    #
+    # @api public
+    # @return [Array(Integer, Hash{Symbol => String, Time, nil})] the number of the format, then the tokens as a Hash
+    # @example Store the tokens of a refresh
+    #   X::Client.new(**credentials, on_token_refresh: ->(tokens) { File.binwrite("tokens", Marshal.dump(tokens)) })
+    def marshal_dump = [MARSHAL_FORMAT, to_h]
+
+    # Restore tokens Marshal read, built as the constructor builds them, frozen
+    #
+    # @api public
+    # @param state [Array] the state Marshal wrote
+    # @return [void]
+    # @raise [UnsupportedMarshalFormat] if the state is of a format this release does not read
+    # @example Read stored tokens
+    #   Marshal.load(File.binread("tokens")).expires_at
+    def marshal_load(state)
+      format, tokens = state
+      raise UnsupportedMarshalFormat, "#{self.class} reads format #{MARSHAL_FORMAT} of Marshal, not #{format.inspect}" unless MARSHAL_FORMAT.eql?(format)
+
+      initialize(**tokens)
+    end
   end
 end
