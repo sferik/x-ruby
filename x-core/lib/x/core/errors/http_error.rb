@@ -12,8 +12,8 @@ module X
   #
   # The message is what the API said went wrong, read from the body of the response, behind the method and path of
   # the request it answered. {#body} holds that body as it arrived, {#headers} the headers it came with, and
-  # {#problem} the JSON object within it that describes the failure, for code that acts on the reason rather than
-  # logging it. {#http_method} and {#uri} are the request the API refused.
+  # {#problems} the JSON objects within it that describe the failure, the first of which is {#problem}, for code that
+  # acts on the reason rather than logging it. {#http_method} and {#uri} are the request the API refused.
   #
   # @api public
   class HTTPError < Error
@@ -44,11 +44,21 @@ module X
     #   error.http_response.message # => "Too Many Requests"
     attr_reader :http_response
 
-    # The problem the API described in the body of the response
+    # The problems the API described in the body of the response
+    #
+    # They are the errors the body names, such as each parameter of the request the API refused, or else the
+    # problem the body describes itself.
+    #
+    # @api public
+    # @return [Array<Problem>] the problems, frozen, empty for a response that describes none in JSON
+    # @example Name each parameter the API refused
+    #   error.problems.map(&:parameter) # => ["ids", "user.fields"]
+    attr_reader :problems
+
+    # The first of {#problems}
     #
     # It is the first error the body names, which is the most specific thing the API said about the request, or
-    # else the problem the body describes itself. The whole body is {#body}, so a response that names several
-    # errors keeps every one of them there.
+    # else the problem the body describes itself.
     #
     # @api public
     # @return [Problem, nil] the problem, or nil for a response that describes none in JSON
@@ -56,7 +66,7 @@ module X
     #   error.problem&.parameter # => "ids"
     # @example Act on the reason rather than the status
     #   retry_without(error.problem.value) if error.problem&.not_found?
-    attr_reader :problem
+    def problem = problems.first
 
     # Initialize a new HTTPError
     #
@@ -73,7 +83,7 @@ module X
       @http_response = http_response
       name_request(request)
       parsed = parsed_body
-      @problem = Problem.from(problem_from(parsed))
+      @problems = problems_from(parsed).map { |attrs| Problem.new(attrs) }.freeze
       super(message_naming_request(message_from(parsed) || http_response.message))
     end
 
@@ -142,14 +152,17 @@ module X
       {}
     end
 
-    # The problem a body describes, if it describes one
+    # The problems a body describes
     #
     # @api private
     # @param body [Hash{String => Object}] the parsed body
-    # @return [Hash{String => Object}, nil] the first error the body names, the body itself if it describes the
-    #   failure, or nil if it describes none
-    def problem_from(body)
-      Hash.try_convert(Array(body["errors"]).first) || (body if PROBLEM_KEYS.any? { |key| body.key?(key) })
+    # @return [Array<Hash{String => Object}>] the errors the body names, or else the body itself if it describes the
+    #   failure, or none if it describes none
+    def problems_from(body)
+      errors = Array(body["errors"]).filter_map { |error| Hash.try_convert(error) }
+      return errors unless errors.empty?
+
+      (PROBLEM_KEYS.any? { |key| body.key?(key) }) ? [body] : []
     end
 
     # The message a body describes the failure with

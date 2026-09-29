@@ -535,7 +535,7 @@ module X
     private
     def seconds_until: (String value) -> Integer?
     def parsed_body: () -> Hash[String, untyped]
-    def problem_from: (Hash[String, untyped] body) -> Hash[String, untyped]?
+    def problems_from: (Hash[String, untyped] body) -> Array[Hash[String, untyped]]
     def message_from: (Hash[String, untyped] body) -> String?
     def message_from_errors: (untyped errors) -> String?
     def message_from_problem: (Hash[String, untyped] body) -> String?

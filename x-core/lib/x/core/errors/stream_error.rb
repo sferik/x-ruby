@@ -14,7 +14,7 @@ module X
   # A stream reconnects after a line that holds operational-disconnects alone, as it does after a connection that
   # dropped, and raises this error once it has no reconnects left. After any other problems it stops, and the error
   # reaches the caller, who decides whether to open the stream again. The message names the request, and each
-  # problem, and {#problems} holds them, as {HTTPError#problem} holds the one of a response the API refused.
+  # problem, and {#problems} holds them, as {HTTPError#problems} holds those of a response the API refused.
   # {#http_method} and {#uri} are the request of the stream.
   #
   # @api public
