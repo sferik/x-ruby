@@ -2,6 +2,7 @@
 
 require "uri"
 require_relative "connection"
+require_relative "credential_holder"
 require_relative "origin"
 require_relative "problem"
 require_relative "proxy_setting"
@@ -39,6 +40,7 @@ module X
   #
   # @api public
   class StreamingClient
+    include Core::CredentialHolder
     include Core::ProxySetting
     include Core::RequestEncoding
 
@@ -135,9 +137,7 @@ module X
     # @return [String] the class name and the client it streams with
     # @example Inspect a streaming client
     #   streaming_client.inspect # => #<X::StreamingClient client=#<X::Client ...>>
-    def inspect
-      "#<#{self.class} client=#{client.inspect}>"
-    end
+    def inspect = "#<#{self.class} client=#{client.inspect}>"
 
     # Stream data from the X API
     #

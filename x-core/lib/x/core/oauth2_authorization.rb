@@ -5,6 +5,7 @@ require "simple_oauth"
 require "uri"
 require_relative "client"
 require_relative "connection"
+require_relative "credential_holder"
 require_relative "credential_validator"
 require_relative "errors/authorization_error"
 require_relative "errors/token_report_failed"
@@ -21,6 +22,8 @@ module X
   #
   # @api public
   class OAuth2Authorization
+    include Core::CredentialHolder
+
     # The page that asks a user to authorize an app
     AUTHORIZATION_URL = "https://x.com/i/oauth2/authorize"
     # The endpoint that exchanges an authorization code for tokens

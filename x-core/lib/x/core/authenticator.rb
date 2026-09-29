@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative "credential_holder"
+
 # A Ruby client for the X API
 module X
   # Base class for authentication
@@ -8,6 +10,8 @@ module X
   #
   # @api public
   class Authenticator
+    include Core::CredentialHolder
+
     # The HTTP header name for authentication
     AUTHENTICATION_HEADER = "Authorization"
 

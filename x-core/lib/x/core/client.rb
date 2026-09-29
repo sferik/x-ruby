@@ -10,6 +10,7 @@ require_relative "client_credentials"
 require_relative "client_settings"
 require_relative "client_token_refresh"
 require_relative "connection"
+require_relative "credential_holder"
 require_relative "credential_validator"
 require_relative "oauth1_authenticator"
 require_relative "oauth2_authenticator"
@@ -48,6 +49,7 @@ module X
     include Core::ClientAppOnly
     include Core::ClientCredentials
     include Core::ClientSettings
+    include Core::CredentialHolder
     include Core::ClientTokenRefresh
     include Core::ProxySetting
     include Core::RequestEncoding

@@ -22,6 +22,12 @@ module X
       def initialize: (StandardError error) -> void
     end
 
+    module CredentialHolder
+      MARSHAL_MESSAGE: String
+
+      def marshal_dump: () -> bot
+    end
+
     module ProxySetting
       @proxy_url: (URI::Generic | String)?
 
@@ -473,7 +479,13 @@ module X
     attr_reader bearer_token: String
   end
 
+  class Authenticator
+    include Core::CredentialHolder
+  end
+
   class OAuth2Authorization
+    include Core::CredentialHolder
+
     STATE_BYTES: Integer
     DEFAULT_ERROR_MESSAGE: String
     INVALID_CALLBACK_MESSAGE: String
@@ -638,6 +650,7 @@ module X
   end
 
   class StreamingClient
+    include Core::CredentialHolder
     include Core::ProxySetting
     include Core::RequestEncoding
 
@@ -755,6 +768,7 @@ module X
     include Core::ClientAppOnly
     include Core::ClientCredentials
     include Core::ClientSettings
+    include Core::CredentialHolder
     include Core::ClientTokenRefresh
     include Core::ProxySetting
     include Core::RequestEncoding
