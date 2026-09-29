@@ -163,7 +163,8 @@ module X
     #   from_response and builds the result from each whole object the stream delivers; see {Client}
     # @yield [Hash, Array] each parsed JSON object from the stream
     # @return [Object, nil] what the block broke with, or nil once the stream ends with no reconnects left
-    # @raise [ArgumentError] if no block is given
+    # @raise [ArgumentError] if no block is given, or the endpoint is not a valid URL, or does not resolve to an http or
+    #   https URL, before the stream is opened
     # @raise [UnsupportedOperation] if the client authenticates with OAuth 2.0 as a user and holds no credentials of
     #   the app, before the stream is opened
     # @raise [HTTPError] if the response is not successful and the stream may not reconnect
@@ -175,7 +176,7 @@ module X
       object_class: client.default_object_class, &block)
       raise ArgumentError, NO_BLOCK_MESSAGE if block.nil?
 
-      uri = URI.join(client.base_url, endpoint_with(endpoint, params))
+      uri = uri_for(client.base_url, endpoint, params)
       @reconnect_handler.handle(block) do |deliver|
         app_client.__send__(:refreshing_rejected_token) { open_stream(uri, headers, array_class:, object_class:, &deliver) }
       end

@@ -16,7 +16,33 @@ module X
       BODY_AND_FORM = "Pass a body or form fields, not both, since a request sends one body"
       private_constant :BODY_AND_FORM
 
+      # The message of the error raised for an endpoint that does not resolve to a URL a request can be sent to
+      INVALID_ENDPOINT = "Invalid endpoint %s: %s"
+      private_constant :INVALID_ENDPOINT
+
       private
+
+      # Resolve an endpoint and its query parameters against a base URL
+      #
+      # An endpoint that is not a valid URL reference, such as one that holds a space or a malformed percent escape,
+      # or that resolves to anything but an http or https URL with a host, such as "foo:bar", raises ArgumentError
+      # naming it, before any request is built, rather than the URI::InvalidURIError or the ArgumentError of Net::HTTP
+      # it would raise as the request was built.
+      #
+      # @api private
+      # @param base_url [String] the base URL the endpoint is relative to
+      # @param endpoint [String] the endpoint, with or without a leading slash or a query string
+      # @param params [Hash, nil] the query parameters
+      # @return [URI::HTTP] the URL of the request
+      # @raise [ArgumentError] if the endpoint does not resolve to an http or https URL with a host
+      def uri_for(base_url, endpoint, params)
+        uri = URI.join(base_url, endpoint_with(endpoint, params))
+        return uri if uri.is_a?(URI::HTTP) && !uri.host.to_s.empty?
+
+        raise ArgumentError, format(INVALID_ENDPOINT, endpoint.inspect, "it does not name an http or https URL")
+      rescue URI::InvalidURIError
+        raise ArgumentError, format(INVALID_ENDPOINT, endpoint.inspect, "it is not a valid URL; escape what a URL may not hold, such as a space")
+      end
 
       # Append query parameters to an endpoint, relative to the base URL
       #

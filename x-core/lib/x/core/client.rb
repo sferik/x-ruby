@@ -252,6 +252,8 @@ module X
     # @param object_class [Class, #from_response] the class for parsing JSON objects, or one that responds to
     #   from_response and builds the result from the whole body; see {Client}
     # @return [Object, nil] the parsed response body, or what an object_class that responds to from_response builds
+    # @raise [ArgumentError] if the endpoint is not a valid URL, or does not resolve to an http or https URL, before
+    #   the request is sent
     # @yieldparam response [Response] the summary of each response the request got, as {#on_response} receives it
     # @example Get a user by username
     #   client.get("users/by/username/sferik")
@@ -278,6 +280,8 @@ module X
     #   from_response and builds the result from the whole body; see {Client}
     # @return [Object, nil] the parsed response body, or what an object_class that responds to from_response builds
     # @raise [ArgumentError] if both a body and form fields are given
+    # @raise [ArgumentError] if the endpoint is not a valid URL, or does not resolve to an http or https URL, before
+    #   the request is sent
     # @yieldparam response [Response] the summary of each response the request got, as {#on_response} receives it
     # @example Create a post
     #   client.post("tweets", {text: "Hello, World!"})
@@ -302,6 +306,8 @@ module X
     #   from_response and builds the result from the whole body; see {Client}
     # @return [Object, nil] the parsed response body, or what an object_class that responds to from_response builds
     # @raise [ArgumentError] if both a body and form fields are given
+    # @raise [ArgumentError] if the endpoint is not a valid URL, or does not resolve to an http or https URL, before
+    #   the request is sent
     # @yieldparam response [Response] the summary of each response the request got, as {#on_response} receives it
     # @example Update a resource
     #   client.put("some/endpoint", {key: "value"})
@@ -320,6 +326,8 @@ module X
     # @param object_class [Class, #from_response] the class for parsing JSON objects, or one that responds to
     #   from_response and builds the result from the whole body; see {Client}
     # @return [Object, nil] the parsed response body, or what an object_class that responds to from_response builds
+    # @raise [ArgumentError] if the endpoint is not a valid URL, or does not resolve to an http or https URL, before
+    #   the request is sent
     # @yieldparam response [Response] the summary of each response the request got, as {#on_response} receives it
     # @example Delete a post
     #   client.delete("tweets/1234567890")
@@ -363,7 +371,7 @@ module X
     # @api private
     # @return [Object, nil] the parsed response body, or what an object_class that responds to from_response builds
     def execute_request(http_method, endpoint, body: nil, params: nil, form: nil, headers: {}, array_class: default_array_class, object_class: default_object_class, &block)
-      uri = URI.join(base_url, endpoint_with(endpoint, params))
+      uri = uri_for(base_url, endpoint, params)
       headers = Core::RequestBuilder.merge_headers({"Content-Type" => FORM_CONTENT_TYPE}, headers) unless form.nil?
       headers = headers_for(headers)
       @retry_handler.handle(idempotent: Core::RequestBuilder.idempotent?(http_method)) do

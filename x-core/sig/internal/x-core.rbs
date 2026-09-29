@@ -332,8 +332,10 @@ module X
     module RequestEncoding
       LEADING_SLASHES: Regexp
       BODY_AND_FORM: String
+      INVALID_ENDPOINT: String
 
       private
+      def uri_for: (String base_url, String endpoint, params? params) -> URI::HTTP
       def endpoint_with: (String endpoint, params? params) -> String
       def query_value: (untyped value) -> untyped
       def encode_body: (body? body, params? form) -> String?
