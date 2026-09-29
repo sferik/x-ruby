@@ -297,6 +297,8 @@ module X
     def initialize: (Array[R] items, Hash[untyped, untyped] meta, ?problems: Array[Problem]) -> void
     def each: () { (R) -> void } -> Array[R]
             | () -> Enumerator[R, Array[R]]
+    def to_a: () -> Array[R]
+    def entries: () -> Array[R]
     def next_token: () -> String?
     def result_count: () -> Integer?
     def as_json: (*untyped) -> Array[Hash[String, untyped]]
@@ -328,6 +330,8 @@ module X
     def first: () -> R?
              | (Integer count) -> Array[R]
     def take: (Integer count) -> Array[R]
+    def to_a: () -> Array[R]
+    def entries: () -> Array[R]
     def ids: () -> Array[Integer | String]
     def any?: (*untyped pattern) ?{ (R) -> boolish } -> bool
     def none?: (*untyped pattern) ?{ (R) -> boolish } -> bool

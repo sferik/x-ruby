@@ -66,6 +66,16 @@ module X
     #   page.each { |user| puts user.username }
     def each(&) = items.each(&) # steep:ignore BlockTypeMismatch
 
+    # The resources on this page, frozen, as {#items} returns them
+    #
+    # @api public
+    # @return [Array<Resource>] the resources
+    # @example Get the resources on a page as an Array
+    #   page.to_a
+    def to_a = items
+
+    alias_method :entries, :to_a
+
     # The token used to fetch the next page
     #
     # @api public

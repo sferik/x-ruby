@@ -204,6 +204,19 @@ module X
       resource
     end
 
+    # Every resource, fetching every page
+    #
+    # The array is frozen, as the arrays first and take return are, since a cursor keeps the pages it read and a
+    # caller that changed what it returned would change nothing the cursor holds.
+    #
+    # @api public
+    # @return [Array<Resource>] every resource, frozen
+    # @example Read every follower
+    #   user.followers.to_a
+    def to_a = super.freeze
+
+    alias_method :entries, :to_a
+
     # The first few resources, requesting pages no larger than needed, as first does
     #
     # @api public

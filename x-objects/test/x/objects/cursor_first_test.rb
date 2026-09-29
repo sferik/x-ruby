@@ -31,6 +31,15 @@ module X
       assert_equal [{"max_results" => "10"}], @client.queries.map { |query| query.slice("max_results") }
     end
 
+    def test_every_resource_is_read_into_a_frozen_array
+      @client.stub(:get, "users/1/followers", ->(query, _) { {"data" => [{"id" => query["pagination_token"] ? "2" : "1"}], "meta" => {"next_token" => (query["pagination_token"] ? nil : "p2")}} })
+      cursor = @user.followers
+
+      [cursor.to_a, cursor.entries].each do |resources|
+        assert_equal [[1, 2], true], [resources.map(&:id), resources.frozen?]
+      end
+    end
+
     def test_take_requests_a_page_of_that_size
       assert_equal [1, 2, 3], @user.followers.take(3).map(&:id)
       assert_equal "3", @client.queries.first["max_results"]

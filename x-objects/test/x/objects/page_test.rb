@@ -16,6 +16,11 @@ module X
       assert_predicate @page.items, :frozen?
     end
 
+    def test_the_resources_are_read_into_the_frozen_array_of_the_items
+      assert_same @page.items, @page.to_a
+      assert_same @page.items, @page.entries
+    end
+
     def test_meta_is_deep_frozen_with_string_keys
       assert_equal({"next_token" => "abc", "result_count" => 2}, @page.meta)
       assert_predicate @page.meta, :frozen?
