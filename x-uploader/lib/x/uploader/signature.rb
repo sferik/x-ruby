@@ -8,8 +8,9 @@ module X
     #
     # Media given as a file is typed by the name of the file. Media given as an IO that names none, such as a
     # StringIO, is typed by its signature: the bytes every file of a type begins with. Only a type the API documents
-    # for an upload is read, and only one whose signature names it on its own, so SubRip subtitles, which begin with
-    # nothing a text file could not, are not among them.
+    # for an upload of a media category it documents is read, so a glTF 3D model, which no category takes, is not
+    # among them, and only one whose signature names it on its own, so SubRip subtitles, which begin with nothing a
+    # text file could not, are not among them either.
     #
     # Internal to x-uploader: X::Uploader::MediaUpload reads a signature with it.
     #
@@ -42,7 +43,6 @@ module X
         {0 => "RIFF".b, 8 => "WEBP".b} => "image/webp",
         {4 => "ftypqt  ".b} => "video/quicktime",
         **MP4_BRANDS.to_h { |brand| [{4 => "ftyp#{brand}".b}, "video/mp4"] },
-        {0 => "glTF".b} => "model/gltf-binary",
         {0 => [0xEF, 0xBB, 0xBF].pack("C*") + "WEBVTT"} => "text/vtt", # a byte order mark before the header
         {0 => "WEBVTT".b} => "text/vtt",
         {0 => "G".b, 188 => "G".b, 376 => "G".b} => "video/mp2t",

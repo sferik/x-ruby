@@ -127,8 +127,6 @@ module X
       PNG_MIME_TYPE: String
       TIFF_MIME_TYPE: String
       WEBP_MIME_TYPE: String
-      GLTF_BINARY_MIME_TYPE: String
-      USDZ_MIME_TYPE: String
       SUBRIP_MIME_TYPE: String
       WEBVTT_MIME_TYPE: String
       MPEG_TS_MIME_TYPE: String
@@ -145,6 +143,7 @@ module X
       GIF_CATEGORIES: Array[String]
       CATEGORY_MAP: Hash[String, String]
       UNDOCUMENTED_VIDEOS: Hash[String, String]
+      UNDOCUMENTED_MODELS: Hash[String, String]
       CATEGORY_MIME_TYPES: Hash[String, Array[String]]
 
       module Inference

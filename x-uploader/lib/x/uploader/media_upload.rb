@@ -38,18 +38,20 @@ module X
       MAX_SIMPLE_UPLOAD_BYTES = 5 * BYTES_PER_MB
       # Media category constants
       AMPLIFY_VIDEO, DM_GIF, DM_IMAGE, DM_VIDEO, SUBTITLES, TWEET_GIF, TWEET_IMAGE, TWEET_VIDEO = Validator::MEDIA_CATEGORIES
-      # Supported MIME types: every media type the API documents for an upload
-      MIME_TYPES = %w[image/bmp image/gif image/jpeg image/pjpeg image/png image/tiff image/webp model/gltf-binary
-        model/vnd.usdz+zip text/srt text/vtt video/mp2t video/mp4 video/quicktime video/webm].map(&:freeze).freeze
+      # Supported MIME types: every media type the API documents for an upload of a media category it documents. The
+      # initialization of an upload also takes the types of a glTF or USDZ 3D model, model/gltf-binary and
+      # model/vnd.usdz+zip, but no media category takes a model, so they are left out, and a file of either raises
+      # before a request, rather than be sent as an image X refuses once it is uploaded.
+      MIME_TYPES = %w[image/bmp image/gif image/jpeg image/pjpeg image/png image/tiff image/webp text/srt text/vtt
+        video/mp2t video/mp4 video/quicktime video/webm].map(&:freeze).freeze
       # MIME type constants
       BMP_MIME_TYPE, GIF_MIME_TYPE, JPEG_MIME_TYPE, PJPEG_MIME_TYPE, PNG_MIME_TYPE, TIFF_MIME_TYPE, WEBP_MIME_TYPE,
-        GLTF_BINARY_MIME_TYPE, USDZ_MIME_TYPE, SUBRIP_MIME_TYPE, WEBVTT_MIME_TYPE, MPEG_TS_MIME_TYPE, MP4_MIME_TYPE,
-        QUICKTIME_MIME_TYPE, WEBM_MIME_TYPE = MIME_TYPES
+        SUBRIP_MIME_TYPE, WEBVTT_MIME_TYPE, MPEG_TS_MIME_TYPE, MP4_MIME_TYPE, QUICKTIME_MIME_TYPE, WEBM_MIME_TYPE = MIME_TYPES
       # Mapping of file extensions to MIME types
       MIME_TYPE_MAP = {
         "bmp" => BMP_MIME_TYPE, "gif" => GIF_MIME_TYPE, "jpg" => JPEG_MIME_TYPE, "jpeg" => JPEG_MIME_TYPE, "pjp" => PJPEG_MIME_TYPE,
         "pjpeg" => PJPEG_MIME_TYPE, "png" => PNG_MIME_TYPE, "tif" => TIFF_MIME_TYPE, "tiff" => TIFF_MIME_TYPE, "webp" => WEBP_MIME_TYPE,
-        "glb" => GLTF_BINARY_MIME_TYPE, "usdz" => USDZ_MIME_TYPE, "srt" => SUBRIP_MIME_TYPE, "vtt" => WEBVTT_MIME_TYPE,
+        "srt" => SUBRIP_MIME_TYPE, "vtt" => WEBVTT_MIME_TYPE,
         "m2ts" => MPEG_TS_MIME_TYPE, "mts" => MPEG_TS_MIME_TYPE, "ts" => MPEG_TS_MIME_TYPE, "m4v" => MP4_MIME_TYPE,
         "mp4" => MP4_MIME_TYPE, "mov" => QUICKTIME_MIME_TYPE, "qt" => QUICKTIME_MIME_TYPE, "webm" => WEBM_MIME_TYPE
       }.freeze
@@ -82,16 +84,20 @@ module X
       # names, such as a WebM video named .mkv, and raises before a request otherwise, rather than be sent as a type
       # it is not
       UNDOCUMENTED_VIDEOS = {"avi" => "AVI", "mkv" => "Matroska"}.freeze
+      # The formats of the 3D model file extensions no media category the API documents takes, by extension: the
+      # initialization of an upload takes their media types, but X attaches images, GIFs, and videos to a post, so a
+      # file of one raises before a request, rather than be sent as an image
+      UNDOCUMENTED_MODELS = {"glb" => "glTF", "usdz" => "USDZ"}.freeze
       # Mapping of media categories to the MIME types they take, the first by default; images are typed by their extension
       CATEGORY_MIME_TYPES = {
         TWEET_GIF => [GIF_MIME_TYPE], DM_GIF => [GIF_MIME_TYPE], TWEET_VIDEO => VIDEO_MIME_TYPES, DM_VIDEO => VIDEO_MIME_TYPES,
         AMPLIFY_VIDEO => VIDEO_MIME_TYPES, SUBTITLES => SUBTITLES_MIME_TYPES
       }.freeze
       private_constant :MIME_TYPES, :BMP_MIME_TYPE, :GIF_MIME_TYPE, :JPEG_MIME_TYPE, :PJPEG_MIME_TYPE, :PNG_MIME_TYPE,
-        :TIFF_MIME_TYPE, :WEBP_MIME_TYPE, :GLTF_BINARY_MIME_TYPE, :USDZ_MIME_TYPE, :SUBRIP_MIME_TYPE, :WEBVTT_MIME_TYPE,
-        :MPEG_TS_MIME_TYPE, :MP4_MIME_TYPE, :QUICKTIME_MIME_TYPE, :WEBM_MIME_TYPE, :MIME_TYPE_MAP, :VIDEO_MIME_TYPES,
-        :SUBTITLES_MIME_TYPES, :MIN_CHECK_AFTER_SECS, :STATUS_COMMAND, :VIDEO_CATEGORIES, :CHUNKED_CATEGORIES, :GIF_CATEGORIES,
-        :CATEGORY_MAP, :CATEGORY_MIME_TYPES, :UNDOCUMENTED_VIDEOS
+        :TIFF_MIME_TYPE, :WEBP_MIME_TYPE, :SUBRIP_MIME_TYPE, :WEBVTT_MIME_TYPE, :MPEG_TS_MIME_TYPE, :MP4_MIME_TYPE,
+        :QUICKTIME_MIME_TYPE, :WEBM_MIME_TYPE, :MIME_TYPE_MAP, :VIDEO_MIME_TYPES, :SUBTITLES_MIME_TYPES, :MIN_CHECK_AFTER_SECS,
+        :STATUS_COMMAND, :VIDEO_CATEGORIES, :CHUNKED_CATEGORIES, :GIF_CATEGORIES, :CATEGORY_MAP, :CATEGORY_MIME_TYPES,
+        :UNDOCUMENTED_VIDEOS, :UNDOCUMENTED_MODELS
 
       # Upload media, in chunks when the API needs them, awaiting any processing
       #
@@ -357,18 +363,22 @@ module X
             raise(InvalidMediaType, "unable to determine the MIME type of #{source.description}")
         end
 
-        # Refuse a video of a container the API documents no media type for
+        # Refuse a video of a container the API documents no media type for, or a 3D model
         #
         # An AVI or Matroska file is a video X documents no type for, so it is refused before a request, rather than
         # be sent as a type it is not, unless it begins with the signature of a type the API documents, as a WebM
         # video named .mkv does. Media whose name names no type, such as a StringIO or a Tempfile, is refused too when
         # it begins with the header of Matroska and is not WebM, since a video category would otherwise send it as MP4.
+        # A .glb or .usdz file is a 3D model, which no media category takes, so it is refused whatever it holds.
         #
         # @api private
         # @param source [Source] the media
         # @return [void]
-        # @raise [InvalidMediaType] if the media is of such a container and no signature names its type
+        # @raise [InvalidMediaType] if the media is a 3D model, or of such a container and no signature names its type
         def documented!(source)
+          model = UNDOCUMENTED_MODELS[source.extension]
+          raise InvalidMediaType, "no media category the API documents takes a #{model} 3D model, such as #{source.description}" if model
+
           container = UNDOCUMENTED_VIDEOS.fetch(source.extension) { "Matroska" if matroska?(source) }
           return if container.nil? || (source.readable? && Signature.media_type(source.sniff))
 

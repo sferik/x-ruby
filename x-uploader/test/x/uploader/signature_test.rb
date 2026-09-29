@@ -29,7 +29,6 @@ module X
       "video/mp4" => ["isom", "iso2", "iso3", "iso4", "iso5", "iso6", "iso7", "iso8", "iso9", "mp41", "mp42", "avc1", "M4V ", "M4VH",
         "M4VP", "dash", "MSNV", "3gp4", "3gp5", "3gp6", "3g2a", "f4v ", "XAVC", "mmp4"]
         .map { |brand| "\x00\x00\x00\x18ftyp#{brand}" },
-      "model/gltf-binary" => ["glTF\x02\x00\x00\x00"],
       "text/vtt" => ["WEBVTT\n\n", "\xEF\xBB\xBFWEBVTT\n"],
       "video/mp2t" => [("G" + ("\xFF" * 187)) * 3, ("\x00\x00\x00\x00G" + ("\xFF" * 187)) * 3]
     }.freeze
@@ -43,7 +42,7 @@ module X
     end
 
     def test_media_no_signature_names_has_no_media_type
-      ["", "not media at all", "RIFF\x00\x00\x00\x00AVI LIST", "PK\x03\x04", "1\n00:00:01,000 --> 00:00:02,000\n"].each do |bytes|
+      ["", "not media at all", "RIFF\x00\x00\x00\x00AVI LIST", "PK\x03\x04", "glTF\x02\x00\x00\x00", "1\n00:00:01,000 --> 00:00:02,000\n"].each do |bytes|
         assert_nil Uploader.const_get(:Signature).media_type(bytes.b), bytes.inspect
       end
     end
