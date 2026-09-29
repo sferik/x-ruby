@@ -389,7 +389,9 @@ See other common usage [examples](https://github.com/sferik/x-ruby/tree/main/exa
 
 ## History and Philosophy
 
-This library is a rewrite of the [Twitter Ruby library](https://github.com/sferik/twitter). Over 16 years of development, that library ballooned to over 3,000 lines of code (plus 7,500 lines of tests), not counting dependencies. The HTTP layer of this library, `x-core`, is about 1,000 lines of code (plus 2,000 test lines) and only depends on the `simple_oauth` gem, which has no dependencies of its own. That doesn’t mean new features won’t be added over time, but the benefits of more code must be weighed against the benefits of less:
+This library is a from-scratch rewrite of the [Twitter Ruby library](https://github.com/sferik/twitter). Rather than carry that library’s design forward, it aims to be more minimal and modular: a lightweight core, `x-core`, that handles HTTP and little else, with optional gems, `x-uploader` and `x-objects`, built on top of it. You pay only for what you use. An application that needs nothing but raw JSON can depend on `x-core` alone and never load the code for uploads or objects.
+
+That doesn’t mean new features won’t be added over time, but the benefits of more code must be weighed against the benefits of less:
 
 * Less code is easier to maintain.
 * Less code means fewer bugs.
@@ -398,10 +400,6 @@ This library is a rewrite of the [Twitter Ruby library](https://github.com/sferi
 In the immortal words of [Ezra Zygmuntowicz](https://github.com/ezmobius) and his [Merb](https://github.com/merb) project (may they both rest in peace):
 
 > No code is faster than no code.
-
-The tests for the previous version of this library executed in about 2 seconds. That sounds pretty fast until you see that the tests for this library run in a fraction of a second. This means you can automatically run the tests any time you write a file and receive immediate feedback. For such workflows, 2 seconds feels painfully slow.
-
-This code is not littered with comments that are intended to generate documentation. Rather, this code is intended to be simple enough to serve as its own documentation. If you want to understand how something works, don’t read the documentation—it might be wrong—read the code. The code is always right.
 
 ## Features
 
