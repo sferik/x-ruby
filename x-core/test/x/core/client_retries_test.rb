@@ -40,12 +40,20 @@ module X
       assert_equal [[503, 200], [1]], [@responses, @sleeps]
     end
 
-    def test_a_lookup_is_sent_again_after_a_network_error
+    def test_a_lookup_is_sent_again_after_a_network_error_that_kept_it_from_the_api
       client = retrying_client
-      stub_request(:get, URL).to_raise(EOFError).then.to_return(SUCCESS)
+      stub_request(:get, URL).to_raise(Errno::ECONNREFUSED).then.to_return(SUCCESS)
 
       assert_equal({"data" => {"id" => "1"}}, without_sleeping(client) { client.get("users/me") })
       assert_equal [1], @sleeps
+    end
+
+    def test_a_lookup_that_timed_out_reading_its_answer_is_not_sent_again
+      client = retrying_client
+      stub_request(:get, URL).to_raise(Net::ReadTimeout).then.to_return(SUCCESS)
+
+      assert_raises(NetworkError) { without_sleeping(client) { client.get("users/me") } }
+      assert_requested :get, URL, times: 1
     end
 
     def test_a_lookup_is_signed_afresh_each_time

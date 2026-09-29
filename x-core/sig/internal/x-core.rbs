@@ -124,12 +124,14 @@ module X
       INITIAL_WAIT: Integer
       MAX_RETRY_AFTER: Integer
       RETRIABLE_ERRORS: Array[singleton(NetworkError) | singleton(ServerError)]
+      UNSENT_ERRORS: Array[singleton(Exception)]
 
       attr_reader max_retries: Integer
       def initialize: (?max_retries: Integer) -> void
-      def handle: [T] (idempotent: bool) { () -> T } -> T
+      def handle: [T] (idempotent: bool, ?resend_unanswered: bool) { () -> T } -> T
 
       private
+      def resendable?: (NetworkError | ServerError error, bool resend_unanswered) -> bool
       def retry_after: (NetworkError | ServerError error) -> Integer?
       def backoff: (Integer retries) -> Float
     end

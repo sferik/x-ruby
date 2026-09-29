@@ -106,16 +106,17 @@ module X
     private
 
     # Run the block, collecting the waits, with the random share of each one fixed
-    def handle(handler, idempotent: true, random: 0.0, &)
+    def handle(handler, idempotent: true, random: 0.0, **options, &)
       handler.stub(:rand, random) do
-        handler.stub(:sleep, ->(seconds) { @sleeps << seconds }) { handler.handle(idempotent:, &) }
+        handler.stub(:sleep, ->(seconds) { @sleeps << seconds }) { handler.handle(idempotent:, **options, &) }
       end
     end
 
-    # Raise the given error, counting the attempt it ends
-    def fail_with(error_class, retry_after: nil)
+    # Raise the given error, counting the attempt it ends; a NetworkError is caused by a refused connection unless
+    # another cause is given
+    def fail_with(error_class, retry_after: nil, cause: Errno::ECONNREFUSED.new)
       @attempts += 1
-      raise error_class, "boom" if error_class.equal?(NetworkError)
+      raise error_class, "boom", cause: cause if error_class.equal?(NetworkError)
 
       response = Net::HTTPResponse.new("1.1", status_of(error_class), "Boom")
       response["retry-after"] = retry_after unless retry_after.nil?

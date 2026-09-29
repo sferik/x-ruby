@@ -155,7 +155,8 @@ module X
       # the POSTs of an upload have the same effect sent twice as sent once, such as a chunk, which names the segment
       # it is appended at. Those are sent again up to the max_retries of the client, after the wait a failed response
       # asks for, or a backoff that grows with each retry and is cut short at random, so that the requests one
-      # failure ended are not sent again together.
+      # failure ended are not sent again together. They are sent again after a timeout too, which a client sends no
+      # read again after, since the API bills an upload for nothing it sends twice.
       #
       # @api private
       # @param client [Client] the X API client
@@ -164,7 +165,7 @@ module X
       # @example Append a chunk, again after a failure
       #   Uploader::Utils.sending_again(client) { client.post("media/upload/1/append", body, headers:) }
       def sending_again(client, &)
-        Core::RetryHandler.new(max_retries: max_retries_of(client)).handle(idempotent: true, &)
+        Core::RetryHandler.new(max_retries: max_retries_of(client)).handle(idempotent: true, resend_unanswered: true, &)
       end
 
       # The number of times a request of an upload is sent again

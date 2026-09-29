@@ -155,7 +155,9 @@ module X
     #   a random share of each wait taken off so that the requests one failure of the API ended are not sent again
     #   together, or for as long as the response asks when it carries a Retry-After header, whichever is longer, and
     #   a response that asks for longer than a minute raises at once; only a GET, PUT, or DELETE is sent again, since
-    #   the API may have acted on a POST whose answer never arrived
+    #   the API may have acted on a POST whose answer never arrived, and one whose answer never arrived is sent again
+    #   only when it never reached the API, such as for a connection refused or one that timed out opening, since the
+    #   API bills a read it answered, such as one that timed out reading its response, whether or not the answer came
     # @param on_response [#call, nil] a callable passed an X::Response after every request, failed ones included, and
     #   every object a stream delivers; a block passed to a single request receives the same summary, after this
     # @param on_token_refresh [#call, nil] a callable passed the OAuth2Tokens of each refresh, to store them; the

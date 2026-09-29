@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "net/http"
+require "socket"
 require_relative "errors/http_error"
 require_relative "errors/network_error"
 require_relative "errors/server_error"
@@ -23,6 +25,9 @@ module X
       MAX_RETRY_AFTER = 60
       # The failures a retry may follow, neither of which the request itself is the reason for
       RETRIABLE_ERRORS = [NetworkError, ServerError].freeze
+      # The errors of a socket, the cause of a NetworkError, that fail a request before any of it is written: a host
+      # that cannot be resolved or reached, a connection refused, and a connection or TLS handshake that timed out
+      UNSENT_ERRORS = [Errno::ECONNREFUSED, Errno::EHOSTUNREACH, Errno::ENETUNREACH, Net::OpenTimeout, SocketError].freeze
 
       # The maximum number of times to send an idempotent request again after a failure
       # @api private
@@ -52,8 +57,15 @@ module X
       # API may have acted on a POST whose answer never arrived, so sending that again could post twice. The block
       # must build its request anew each time, so that each attempt is signed afresh.
       #
+      # A NetworkError is retried only when the request never left: a request that timed out reading its response,
+      # or whose connection dropped once it was written, may have been answered, and the API bills a read it answered
+      # whether or not the answer arrived, so sending it again could bill it again. resend_unanswered retries those
+      # too, for a request the API bills nothing for, such as the chunk of an upload.
+      #
       # @api private
       # @param idempotent [Boolean] whether sending the request again has the same effect as sending it once
+      # @param resend_unanswered [Boolean] whether to send the request again after a NetworkError that may have come
+      #   after the API received it
       # @yield runs the request
       # @return [Object] what the block returns
       # @raise [NetworkError] if the request fails once more than the retries allow
@@ -61,14 +73,14 @@ module X
       #   than MAX_RETRY_AFTER
       # @example Retry a lookup
       #   handler.handle(idempotent: true) { client.get("users/me") }
-      def handle(idempotent:)
+      def handle(idempotent:, resend_unanswered: false)
         retries = 0
         begin
           yield
         rescue *RETRIABLE_ERRORS => e
           retries += 1
           requested = retry_after(e)
-          raise unless idempotent && retries <= max_retries && requested.to_i <= MAX_RETRY_AFTER
+          raise unless idempotent && retries <= max_retries && requested.to_i <= MAX_RETRY_AFTER && resendable?(e, resend_unanswered)
 
           sleep([requested, backoff(retries)].compact.max)
           retry
@@ -76,6 +88,19 @@ module X
       end
 
       private
+
+      # Whether a failure leaves a request safe to send again
+      #
+      # A ServerError is an answer, which says the API failed to act on the request. A NetworkError says the API never
+      # received it only when its cause is among UNSENT_ERRORS; any other may have come after the API answered.
+      #
+      # @api private
+      # @param error [Error] the error the request raised
+      # @param resend_unanswered [Boolean] whether a request the API may have answered is sent again
+      # @return [Boolean] true if the request may be sent again
+      def resendable?(error, resend_unanswered)
+        resend_unanswered || error.is_a?(ServerError) || UNSENT_ERRORS.any? { |unsent| error.cause.is_a?(unsent) }
+      end
 
       # The seconds a response asks a request to wait before it is sent again
       #
