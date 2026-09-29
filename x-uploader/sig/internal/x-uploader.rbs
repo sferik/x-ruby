@@ -176,6 +176,7 @@ module X
       BYTES_PER_MB: Integer
       MAX_ALT_TEXT_LENGTH: Integer
       MAX_SEGMENTS: Integer
+      MAX_CHUNK: Integer
       MEDIA_CATEGORIES: Array[String]
       extend Validator
 
@@ -189,6 +190,7 @@ module X
       def positive_number?: (untyped value) -> bool
       def validate_processing_timeout!: (untyped processing_timeout) -> nil
       def validate_segments!: (Source source, (Float | Integer)? chunk_size_mb) -> Integer
+      def derived_chunk_size: (Integer file_size) -> Integer
     end
 
     module Account

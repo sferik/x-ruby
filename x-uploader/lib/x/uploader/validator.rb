@@ -18,9 +18,15 @@ module X
       BYTES_PER_MB = 1_048_576
       # Greatest number of characters of alt text the API takes
       MAX_ALT_TEXT_LENGTH = 1000
-      # Greatest number of segments an upload in chunks can have: the API takes a segment_index of 0 to 999, so an
-      # upload in more chunks than these would fail partway, once the media uploaded so far had been billed
+      # Greatest number of segments an upload in chunks can have: the API has taken a segment_index of 0 to 999, so
+      # an upload in more chunks than these would fail partway, once the media uploaded so far had been billed. The
+      # OpenAPI specification of the API v2 now allows one of up to 9999, but the guides document no number of
+      # segments, so the fewer are kept to, which a chunk of MAX_CHUNK bytes uploads 5 GB of media in
       MAX_SEGMENTS = 1000
+      # Greatest number of bytes in a segment of an upload in chunks: the guide to chunked uploads says to keep each
+      # segment at or below 5 MB, of the 8 MB the server takes at most, so a chunk is 5 megabytes at most, which is
+      # below 8 MB whether a megabyte is read as 1,000,000 bytes or as 1,048,576
+      MAX_CHUNK = 5 * BYTES_PER_MB
       # Valid media category values
       MEDIA_CATEGORIES = %w[amplify_video dm_gif dm_image dm_video subtitles tweet_gif tweet_image tweet_video].map(&:freeze).freeze
 
@@ -43,8 +49,8 @@ module X
       # @raise [Errno::ENOENT] if the file does not exist
       # @raise [ArgumentError] if the media is empty
       # @raise [ArgumentError] if the media category is invalid, the alt text is empty or too long, the chunk size is
-      #   not a positive, finite number, the concurrency is less than one, or the processing timeout is not a number of
-      #   seconds
+      #   not a positive, finite number or is larger than a segment the API takes, the concurrency is less than one, or
+      #   the processing timeout is not a number of seconds
       # @example Validate the arguments of an upload
       #   Uploader::Validator.validate_upload!(source, :TWEET_IMAGE, alt_text: nil, chunk_size_mb: nil, concurrency: 4,
       #     processing_timeout: 300) # => "tweet_image"
@@ -119,21 +125,23 @@ module X
 
       # Validate the chunk size and concurrency of a chunked upload
       #
-      # Anything that is not a number, such as a String read from an environment variable, raises ArgumentError too,
+      # A chunk size above the MAX_CHUNK bytes of a segment raises too, since the server would refuse the first
+      # segment, once the upload had been initialized. Anything that is not a number, such as a String read from an environment variable, raises ArgumentError too,
       # rather than NoMethodError from the check, as does Float::INFINITY, which no chunk is the size of, rather than
       # FloatDomainError once the chunk size is rounded to a whole byte.
       #
       # @api private
       # @param chunk_size_mb [Float, Integer, nil] the size of each chunk in megabytes, which must be positive and
-      #   finite, or nil for a chunk size derived from the file
+      #   finite, and at most 5, or nil for a chunk size derived from the file
       # @param concurrency [Integer] the number of chunks uploaded at once, which must be at least one
       # @return [void]
-      # @raise [ArgumentError] if the chunk size is not a positive, finite number, or the concurrency is not an Integer of at
-      #   least one
+      # @raise [ArgumentError] if the chunk size is not a positive, finite number, or is larger than a segment the API
+      #   takes, or the concurrency is not an Integer of at least one
       # @example Validate the options of a chunked upload
       #   Uploader::Validator.validate_chunks!(chunk_size_mb: 4, concurrency: 2)
       def validate_chunks!(chunk_size_mb:, concurrency:)
         raise ArgumentError, "chunk_size_mb must be a positive, finite number, not #{chunk_size_mb.inspect}" unless chunk_size_mb.nil? || positive_number?(chunk_size_mb)
+        raise ArgumentError, "chunk_size_mb must be at most #{MAX_CHUNK / BYTES_PER_MB}, the megabytes of a segment the API takes, not #{chunk_size_mb}" if chunk_size_mb && chunk_size_mb * BYTES_PER_MB > MAX_CHUNK
         raise ArgumentError, "concurrency must be an Integer of at least 1, not #{concurrency.inspect}" unless concurrency.instance_of?(Integer) && concurrency.positive?
       end
 
@@ -166,28 +174,43 @@ module X
 
       # The size in bytes of the chunks a file uploads in
       #
-      # The API numbers no more than MAX_SEGMENTS segments, which an upload in more chunks would fail partway of.
+      # The API numbers no more than MAX_SEGMENTS segments, of no more than MAX_CHUNK bytes each, which an upload in
+      # more chunks, or in larger ones, would fail partway of.
       #
       # A chunk size of nil is derived from the size of the media: a megabyte, as every upload in chunks used, or the
-      # size that uploads the media in MAX_SEGMENTS chunks, whichever is larger, so that media of any size uploads.
+      # size that uploads the media in MAX_SEGMENTS chunks, whichever is larger, but no larger than MAX_CHUNK, so that
+      # media of any size up to MAX_SEGMENTS chunks of MAX_CHUNK bytes uploads, and larger media raises before a
+      # request.
       #
       # @api private
       # @param source [Source] the media to upload
       # @param chunk_size_mb [Float, Integer, nil] the size of each chunk in megabytes, or nil to derive one
       # @return [Integer] the size of each chunk in bytes, rounded up to a whole byte
       # @raise [Errno::ENOENT] if the file does not exist
-      # @raise [ArgumentError] if chunks of the size given would be more than the API numbers
+      # @raise [ArgumentError] if chunks of the size given, or of the largest size a segment can be, would be more
+      #   than the API numbers
       # @example Derive the chunk size of a video
       #   Uploader::Validator.validate_segments!(source, nil) # => 1048576
       def validate_segments!(source, chunk_size_mb)
         file_size = source.size
-        return [BYTES_PER_MB, (file_size.to_f / MAX_SEGMENTS).ceil].max if chunk_size_mb.nil?
-
-        chunk_size = (chunk_size_mb * BYTES_PER_MB).ceil
+        chunk_size = chunk_size_mb.nil? ? derived_chunk_size(file_size) : (chunk_size_mb * BYTES_PER_MB).ceil
         return chunk_size if file_size <= chunk_size * MAX_SEGMENTS
+        raise ArgumentError, "#{source.description} is #{file_size} bytes, more than the #{MAX_SEGMENTS} segments of #{MAX_CHUNK} bytes the API takes" if chunk_size_mb.nil?
 
         raise ArgumentError, "chunk_size_mb of #{chunk_size_mb} uploads #{file_size} bytes in more than the #{MAX_SEGMENTS} segments the API numbers"
       end
+
+      # The size in bytes of the chunks media is uploaded in when it is given none
+      #
+      # It is a megabyte, or the size that uploads the media in MAX_SEGMENTS chunks, whichever is larger, but no more
+      # than MAX_CHUNK, which media too large for MAX_SEGMENTS chunks of it is then refused for.
+      #
+      # @api private
+      # @param file_size [Integer] the size of the media in bytes
+      # @return [Integer] the size of each chunk in bytes
+      # @example The chunk size of a video of two gigabytes
+      #   Uploader::Validator.derived_chunk_size(2 * 1024**3) # => 2147484
+      def derived_chunk_size(file_size) = (file_size.to_f / MAX_SEGMENTS).ceil.clamp(BYTES_PER_MB, MAX_CHUNK)
 
       # Validate a media category, and give it in the lowercase the API takes
       #

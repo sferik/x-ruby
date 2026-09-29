@@ -65,6 +65,19 @@ module X
       assert_not_requested :post, "#{BASE_URL}/initialize"
     end
 
+    def test_a_video_larger_than_the_largest_segments_the_api_numbers_uploads_nothing
+      error = assert_raises(ArgumentError) { with_video((1000 * 5 * Uploader::MediaUpload::BYTES_PER_MB) + 1) { |path| upload(path) } }
+
+      assert_match(/is 5242880001 bytes, more than the 1000 segments of 5242880 bytes the API takes\z/, error.message)
+      assert_not_requested :post, "#{BASE_URL}/initialize"
+    end
+
+    def test_a_chunk_size_larger_than_a_segment_the_api_takes_uploads_nothing
+      assert_raises(ArgumentError) { upload("test/sample_files/sample.mp4", chunk_size_mb: 6) }
+      assert_raises(ArgumentError) { chunked_upload("test/sample_files/sample.mp4", chunk_size_mb: 6) }
+      assert_not_requested :post, "#{BASE_URL}/initialize"
+    end
+
     private
 
     def chunked_upload(file_path, **)
