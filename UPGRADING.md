@@ -86,7 +86,7 @@ client.update_profile_image("avatar.png")
 
 `infer_media_type` is internal to x-uploader, where 0.19 documented it, since the rules it follows change as the types the API takes do; pass `media_type:` to `upload` or `chunked_upload` to send another type. An upload sends the type the category takes that the file's extension names, such as `video/quicktime` for `clip.mov` uploaded as `tweet_video`, where 0.19 sent `video/mp4` for every video, and `text/srt` for SubRip subtitles, where 0.19 sent `application/x-subrip`.
 
-`await_processing!` raises `X::Uploader::MediaProcessingFailed` rather than `RuntimeError`, and `await_processing` raises `X::Uploader::MediaProcessingTimeout` after ten minutes rather than waiting forever. Both are `X::Error`s. A file that does not exist raises `Errno::ENOENT`.
+`await_processing!` raises `X::Uploader::MediaProcessingFailed` rather than `RuntimeError`, and `await_processing` raises `X::Uploader::MediaProcessingTimeout` after ten minutes rather than waiting forever. Both are `X::Error`s. A file that does not exist raises `Errno::ENOENT`, where 0.19 raised a `RuntimeError` that said "File not found", from the uploaders of media and of a profile image or banner alike, so rescue `Errno::ENOENT`, or `SystemCallError`, where code rescued `RuntimeError` for a missing file.
 
 ### Streaming
 
