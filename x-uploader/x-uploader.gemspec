@@ -2,6 +2,8 @@
 
 # The version every gem in this repository is released at
 version = File.read(File.expand_path("../VERSION", __dir__)).strip
+# The requirement on the other gems of this repository, such as "~> 1.0" for 1.0.0, which any later 1.x satisfies
+sibling_requirement = Gem::Version.new(version).approximate_recommendation
 
 Gem::Specification.new do |spec|
   spec.name = "x-uploader"
@@ -34,5 +36,5 @@ Gem::Specification.new do |spec|
     "LICENSE.txt"
   ], base: __dir__)
   spec.require_paths = ["lib"]
-  spec.add_dependency("x-core", "~> #{version}")
+  spec.add_dependency("x-core", sibling_requirement)
 end
