@@ -30,9 +30,9 @@ module X
       # @param on_token_refresh [#call, nil] the callable passed the OAuth2Tokens of each refresh
       # @param load_tokens [#call, nil] the callable that returns the OAuth2Tokens in the store
       # @return [void]
-      # @raise [ArgumentError] if load_tokens is neither nil nor responds to call
+      # @raise [ArgumentError] if on_token_refresh or load_tokens is neither nil nor responds to call
       def initialize_token_hooks(on_token_refresh:, load_tokens:)
-        @on_token_refresh = on_token_refresh
+        @on_token_refresh = SettingValidator.callable!(:on_token_refresh, on_token_refresh)
         @load_tokens = SettingValidator.callable!(:load_tokens, load_tokens)
       end
 

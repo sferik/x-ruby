@@ -86,6 +86,21 @@ module X
       assert_equal [0, Float::INFINITY], [0, Float::INFINITY].map { |value| Client.new.streaming(max_reconnects: value).max_reconnects }
     end
 
+    def test_hooks_that_do_not_respond_to_call_are_refused_without_revealing_them
+      messages = %i[on_response on_token_refresh].map { |name| message_of { Client.new(name => "SECRET") } }
+
+      assert_equal %w[on_response on_token_refresh].map { |name| "#{name} must respond to call, as a Proc or a lambda does, or be nil, not a String" }, messages
+      assert_raises(ArgumentError) { Client.new.with(on_response: :log) }
+    end
+
+    def test_hooks_that_respond_to_call_are_kept
+      on_response = ->(_) {}
+      on_token_refresh = Object.new.tap { |hook| hook.define_singleton_method(:call) { |_| nil } }
+      client = Client.new(on_response:, on_token_refresh:)
+
+      assert_equal [on_response, on_token_refresh], [client.on_response, client.on_token_refresh]
+    end
+
     def test_the_validator_returns_what_it_checked
       validator = Core::SettingValidator
 

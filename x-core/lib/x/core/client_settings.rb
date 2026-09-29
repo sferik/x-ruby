@@ -102,6 +102,7 @@ module X
       # @param max_rate_limit_wait [Integer, Float] the maximum number of seconds to wait for a rate limit to reset
       # @param max_retries [Integer] the maximum number of times to send an idempotent request again after a failure
       # @return [void]
+      # @raise [ArgumentError] if on_response is neither nil nor responds to call
       def initialize_settings(base_url:, default_array_class:, default_object_class:, headers:, on_response:,
         max_redirects:, max_rate_limit_retries:, max_rate_limit_wait:, max_retries:)
         base_url = SettingValidator.base_url!(base_url)
@@ -109,7 +110,7 @@ module X
         @default_array_class = default_array_class
         @default_object_class = default_object_class
         @headers = SettingValidator.headers!(headers).dup.freeze
-        @on_response = on_response
+        @on_response = SettingValidator.callable!(:on_response, on_response)
         @redirect_handler = RedirectHandler.new(connection: @connection, request_builder: @request_builder, max_redirects:)
         @rate_limit_handler = RateLimitHandler.new(max_rate_limit_retries:, max_rate_limit_wait:)
         @retry_handler = RetryHandler.new(max_retries:)

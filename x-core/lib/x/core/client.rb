@@ -179,7 +179,7 @@ module X
     #   keep_alive_timeout, nil, or if a maximum is not a count or a number of seconds of at least 0
     # @raise [ArgumentError] if base_url is not an absolute http or https URL, or headers are not a Hash that names
     #   each header with a String or a Symbol and gives it a String
-    # @raise [ArgumentError] if load_tokens is neither nil nor responds to call
+    # @raise [ArgumentError] if on_response, on_token_refresh, or load_tokens is neither nil nor responds to call
     # @example Create a client with bearer token authentication
     #   client = X::Client.new(bearer_token: "your_bearer_token")
     # @example Create a client with OAuth 2.0 authentication that stores the tokens of each refresh
