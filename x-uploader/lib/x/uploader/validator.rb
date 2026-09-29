@@ -27,6 +27,9 @@ module X
       # segment at or below 5 MB, of the 8 MB the server takes at most, so a chunk is 5 megabytes at most, which is
       # below 8 MB whether a megabyte is read as 1,000,000 bytes or as 1,048,576
       MAX_CHUNK = 5 * BYTES_PER_MB
+      # Greatest number of bytes the API takes in a single upload request, above which an animated GIF, which it
+      # takes in chunks of up to 15 MB, uploads in chunks
+      MAX_SIMPLE_UPLOAD_BYTES = 5 * BYTES_PER_MB
       # Valid media category values
       MEDIA_CATEGORIES = %w[amplify_video dm_gif dm_image dm_video subtitles tweet_gif tweet_image tweet_video].map(&:freeze).freeze
       # Greatest number of bytes the API takes of media of each category that documents a size of its own for every
@@ -88,6 +91,27 @@ module X
         return if limit.nil? || source.size <= limit
 
         raise ArgumentError, "#{source.description} is #{source.size} bytes, more than the #{limit} bytes the API takes of #{media_category} media"
+      end
+
+      # Validate media to upload in a single request
+      #
+      # Media that holds nothing, or more than the API takes of its category or in a single request, would be refused,
+      # so it raises before the request. A GIF of more than a single request takes, which the API takes in chunks,
+      # raises too, naming the methods that upload it in chunks.
+      #
+      # @api private
+      # @param source [Source] the media to upload
+      # @param media_category [String] the media category, in lowercase
+      # @return [void]
+      # @raise [ArgumentError] if the media is empty, or larger than the API takes of its category or in a single request
+      # @example Validate an image to upload in a single request
+      #   Uploader::Validator.validate_single_request!(source, "tweet_image")
+      def validate_single_request!(source, media_category)
+        validate_source!(source)
+        validate_size!(source, media_category)
+        return if source.size <= MAX_SIMPLE_UPLOAD_BYTES
+
+        raise ArgumentError, "#{source.description} is #{source.size} bytes, more than the #{MAX_SIMPLE_UPLOAD_BYTES} bytes the API takes in a single request: pass it to upload or chunked_upload"
       end
 
       # Validate that the media exists, and that it holds something to upload

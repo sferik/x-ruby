@@ -35,7 +35,7 @@ module X
       BYTES_PER_MB = Validator::BYTES_PER_MB
       # Greatest number of bytes the API takes in a single upload request, above which an animated GIF, which it
       # takes in chunks of up to 15 MB, uploads in chunks
-      MAX_SIMPLE_UPLOAD_BYTES = 5 * BYTES_PER_MB
+      MAX_SIMPLE_UPLOAD_BYTES = Validator::MAX_SIMPLE_UPLOAD_BYTES
       # Media category constants
       AMPLIFY_VIDEO, DM_GIF, DM_IMAGE, DM_VIDEO, SUBTITLES, TWEET_GIF, TWEET_IMAGE, TWEET_VIDEO = Validator::MEDIA_CATEGORIES
       # Supported MIME types: every media type the API documents for an upload of a media category it documents. The
@@ -178,7 +178,8 @@ module X
       # @param media_category [String, Symbol] the media category, which content cannot be inferred from, in any case
       # @return [UploadedMedia] the uploaded media, which holds the upload response
       # @raise [ArgumentError] if the media category is invalid, or is that of a video or subtitles, which the API
-      #   takes in chunks alone, or the content is larger than the API takes of its category
+      #   takes in chunks alone, or the content is empty, or larger than the API takes of its category or in a single
+      #   request, which takes 5 megabytes, so that a larger GIF uploads with upload or chunked_upload
       # @raise [MissingMediaData] if the response holds no media, or carries no body at all
       # @example Upload binary content
       #   Uploader::MediaUpload.upload_binary(data, client: client, media_category: "tweet_image")
@@ -186,7 +187,7 @@ module X
         media_category = Validator.validate_media_category!(media_category)
         raise ArgumentError, "#{media_category} uploads in chunks alone: pass the file to upload or chunked_upload" if CHUNKED_CATEGORIES.include?(media_category)
 
-        Validator.validate_size!(Source::Buffer.new(content), media_category)
+        Validator.validate_single_request!(Source::Buffer.new(content), media_category)
 
         boundary = SecureRandom.hex
         upload_body = Multipart.body("media", content, boundary:, media_category:)
