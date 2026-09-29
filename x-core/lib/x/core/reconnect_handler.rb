@@ -16,7 +16,8 @@ module X
     # disconnects with an operational-disconnect, reconnects at once, then after a delay that grows by a quarter
     # second each attempt, up to 16 seconds. A server error, a 409
     # Conflict, or a line that is not JSON backs off from 5 seconds, doubling each attempt, up to 320 seconds. A rate
-    # limit waits until it resets, or from a minute, doubling each attempt. Delivering an object starts the count over.
+    # limit waits until it resets, or, when it names no reset, from a minute, doubling each attempt, up to 320 seconds.
+    # Delivering an object starts the count over.
     #
     # Internal to x-core: StreamingClient reconnects with it, and max_reconnects is set on the streaming client.
     #
