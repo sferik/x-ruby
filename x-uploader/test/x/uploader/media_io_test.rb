@@ -115,7 +115,7 @@ module X
     end
 
     def test_media_that_names_no_file_and_holds_nothing_is_refused
-      error = assert_raises(ArgumentError) { Uploader::MediaUpload.upload(StringIO.new(""), client: @client, media_category: "tweet_image") }
+      error = assert_raises(InvalidMedia) { Uploader::MediaUpload.upload(StringIO.new(""), client: @client, media_category: "tweet_image") }
 
       assert_equal "the media given is empty: there is nothing to upload", error.message
     end

@@ -11,7 +11,7 @@ module X
 
     def test_validate_source_refuses_an_empty_file
       Tempfile.create(["empty", ".png"]) do |file|
-        error = assert_raises(ArgumentError) { Uploader.const_get(:Validator).validate_source!(Uploader.const_get(:Source).for(file.path)) }
+        error = assert_raises(InvalidMedia) { Uploader.const_get(:Validator).validate_source!(Uploader.const_get(:Source).for(file.path)) }
 
         assert_equal "#{file.path} is empty: there is nothing to upload", error.message
       end

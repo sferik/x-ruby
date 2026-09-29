@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require_relative "invalid_media"
 require_relative "invalid_media_type"
 require_relative "signature"
 require_relative "source"
@@ -66,10 +67,10 @@ module X
       # @yieldreturn [String, Symbol] the media category inferred from the media, when none is given
       # @return [String] the media category in lowercase
       # @raise [Errno::ENOENT] if the file does not exist
-      # @raise [ArgumentError] if the media is empty
-      # @raise [ArgumentError] if the media category is invalid, the media is larger than the API takes of it, the
-      #   alt text is empty or too long, the chunk size is not a positive, finite number or is larger than a segment
-      #   the API takes, the concurrency is not 1 to MAX_CONCURRENCY, or the processing timeout is not a number of seconds
+      # @raise [InvalidMedia] if the media cannot be read, is empty, or is larger than the API takes of its category
+      # @raise [ArgumentError] if the media category is invalid, the alt text is empty or too long, the chunk size is
+      #   not a positive, finite number or is larger than a segment the API takes, the concurrency is not 1 to
+      #   MAX_CONCURRENCY, or the processing timeout is not a number of seconds
       # @example Validate the arguments of an upload
       #   Uploader::Validator.validate_upload!(source, :TWEET_IMAGE, alt_text: nil, chunk_size_mb: nil, concurrency: 4,
       #     processing_timeout: 300) # => "tweet_image"
@@ -91,14 +92,14 @@ module X
       # @param source [Source] the media to upload
       # @param media_category [String] the media category, in lowercase
       # @return [void]
-      # @raise [ArgumentError] if the media is larger than the API takes of its category
+      # @raise [InvalidMedia] if the media is larger than the API takes of its category
       # @example Validate the size of an image
       #   Uploader::Validator.validate_size!(source, "tweet_image")
       def validate_size!(source, media_category)
         limit = MAX_MEDIA_BYTES[media_category]
         return if limit.nil? || source.size <= limit
 
-        raise ArgumentError, "#{source.description} is #{source.size} bytes, more than the #{limit} bytes the API takes of #{media_category} media"
+        raise InvalidMedia, "#{source.description} is #{source.size} bytes, more than the #{limit} bytes the API takes of #{media_category} media"
       end
 
       # Validate media to upload in a single request
@@ -111,7 +112,7 @@ module X
       # @param source [Source] the media to upload
       # @param media_category [String] the media category, in lowercase
       # @return [void]
-      # @raise [ArgumentError] if the media is empty, or larger than the API takes of its category or in a single request
+      # @raise [InvalidMedia] if the media is empty, or larger than the API takes of its category or in a single request
       # @example Validate an image to upload in a single request
       #   Uploader::Validator.validate_single_request!(source, "tweet_image")
       def validate_single_request!(source, media_category)
@@ -119,7 +120,7 @@ module X
         validate_size!(source, media_category)
         return if source.size <= MAX_SIMPLE_UPLOAD_BYTES
 
-        raise ArgumentError, "#{source.description} is #{source.size} bytes, more than the #{MAX_SIMPLE_UPLOAD_BYTES} bytes the API takes in a single request: pass it to upload or chunked_upload"
+        raise InvalidMedia, "#{source.description} is #{source.size} bytes, more than the #{MAX_SIMPLE_UPLOAD_BYTES} bytes the API takes in a single request: pass it to upload or chunked_upload"
       end
 
       # Validate that the media exists, and that it holds something to upload
@@ -131,13 +132,13 @@ module X
       # @param source [Source] the media to validate
       # @return [void]
       # @raise [Errno::ENOENT] if the file does not exist
-      # @raise [ArgumentError] if the media cannot be read, or is empty
+      # @raise [InvalidMedia] if the media cannot be read, or is empty
       # @example Validate the media of an upload
       #   Uploader::Validator.validate_source!(source)
       def validate_source!(source)
         raise Errno::ENOENT, source.description unless source.exist?
-        raise ArgumentError, "#{source.description} cannot be read: it is not a file, or not one open for reading" unless source.readable?
-        raise ArgumentError, "#{source.description} is empty: there is nothing to upload" if source.size.zero?
+        raise InvalidMedia, "#{source.description} cannot be read: it is not a file, or not one open for reading" unless source.readable?
+        raise InvalidMedia, "#{source.description} is empty: there is nothing to upload" if source.size.zero?
       end
 
       # Validate an image to upload as a profile image or banner
@@ -150,7 +151,7 @@ module X
       # @param extensions [Array<String>] the supported extensions, in lowercase and without a dot
       # @return [void]
       # @raise [Errno::ENOENT] if the file does not exist
-      # @raise [ArgumentError] if the image cannot be read, or is empty
+      # @raise [InvalidMedia] if the image cannot be read, or is empty
       # @raise [InvalidMediaType] if the image is not a GIF, a JPEG, or a PNG
       # @example Validate a profile image held in memory
       #   Uploader::Validator.validate_profile_image!(source, %w[gif jpg jpeg png])
@@ -260,15 +261,15 @@ module X
       # @param chunk_size_mb [Float, Integer, nil] the size of each chunk in megabytes, or nil to derive one
       # @return [Integer] the size of each chunk in bytes, rounded up to a whole byte
       # @raise [Errno::ENOENT] if the file does not exist
-      # @raise [ArgumentError] if chunks of the size given, or of the largest size a segment can be, would be more
-      #   than the API numbers
+      # @raise [InvalidMedia] if chunks of the largest size a segment can be would be more than the API numbers
+      # @raise [ArgumentError] if chunks of the size given would be more than the API numbers
       # @example Derive the chunk size of a video
       #   Uploader::Validator.validate_segments!(source, nil) # => 1048576
       def validate_segments!(source, chunk_size_mb)
         file_size = source.size
         chunk_size = chunk_size_mb.nil? ? derived_chunk_size(file_size) : (chunk_size_mb * BYTES_PER_MB).ceil
         return chunk_size if file_size <= chunk_size * MAX_SEGMENTS
-        raise ArgumentError, "#{source.description} is #{file_size} bytes, more than the #{MAX_SEGMENTS} segments of #{MAX_CHUNK} bytes the API takes" if chunk_size_mb.nil?
+        raise InvalidMedia, "#{source.description} is #{file_size} bytes, more than the #{MAX_SEGMENTS} segments of #{MAX_CHUNK} bytes the API takes" if chunk_size_mb.nil?
 
         raise ArgumentError, "chunk_size_mb of #{chunk_size_mb} uploads #{file_size} bytes in more than the #{MAX_SEGMENTS} segments the API numbers"
       end

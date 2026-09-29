@@ -30,8 +30,8 @@ module X
       # @raise [ArgumentError] if the media is neither a path nor an IO, or is a String that holds a NUL byte or a
       #   line break, as the contents of media given in place of its path do
       # @raise [Errno::ENOENT] if the file does not exist
-      # @raise [ArgumentError] if the media is empty, which holds nothing to upload
-      # @raise [ArgumentError] if the media is larger than the API takes of its category, whatever the account: 5
+      # @raise [InvalidMedia] if the media cannot be read, or is empty, which holds nothing to upload
+      # @raise [InvalidMedia] if the media is larger than the API takes of its category, whatever the account: 5
       #   megabytes of an image, 15 of a GIF, and one of subtitles
       # @raise [InvalidMediaType] if no media category is given for media that names no file and no signature names one
       # @raise [MissingMediaData] if a response of the upload holds no media, or carries no body at all
@@ -123,7 +123,8 @@ module X
       # @return [Hash, nil] the user whose profile image was updated, as the Hash of the API v1.1 that
       #   {Account.update_profile_image} returns, or nil for a response with no body
       # @raise [Errno::ENOENT] if the file does not exist
-      # @raise [ArgumentError] if the media is neither a path nor an IO, or is empty, which holds nothing to upload
+      # @raise [ArgumentError] if the media is neither a path nor an IO
+      # @raise [InvalidMedia] if the media cannot be read, or is empty, which holds nothing to upload
       # @raise [InvalidMediaType] if the image is not a GIF, JPEG, or PNG image
       # @example Update the profile image
       #   client.update_profile_image("avatar.png")
@@ -138,7 +139,8 @@ module X
       # @param options [Hash] the options of {Account.update_profile_banner}: width, height, offset_left, and offset_top
       # @return [nil] nil once the banner is updated, which the API answers with no content
       # @raise [Errno::ENOENT] if the file does not exist
-      # @raise [ArgumentError] if the media is neither a path nor an IO, or is empty, which holds nothing to upload
+      # @raise [ArgumentError] if the media is neither a path nor an IO
+      # @raise [InvalidMedia] if the media cannot be read, or is empty, which holds nothing to upload
       # @raise [InvalidMediaType] if the image is not a GIF, JPEG, or PNG image
       # @example Update the profile banner
       #   client.update_profile_banner("banner.png", width: 1500, height: 500)

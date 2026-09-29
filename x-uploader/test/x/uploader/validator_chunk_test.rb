@@ -20,7 +20,7 @@ module X
 
     def test_a_file_larger_than_the_largest_segments_the_api_numbers_is_refused_for_the_chunk_size_derived
       with_file((10_000 * MAX_CHUNK) + 1) do |path|
-        error = assert_raises(ArgumentError) { Uploader.const_get(:Validator).validate_segments!(source(path), nil) }
+        error = assert_raises(InvalidMedia) { Uploader.const_get(:Validator).validate_segments!(source(path), nil) }
 
         assert_equal "#{path} is 52428800001 bytes, more than the 10000 segments of 5242880 bytes the API takes", error.message
       end

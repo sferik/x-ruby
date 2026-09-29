@@ -66,7 +66,7 @@ module X
     end
 
     def test_a_video_larger_than_the_largest_segments_the_api_numbers_uploads_nothing
-      error = assert_raises(ArgumentError) { with_video((10_000 * 5 * Uploader::MediaUpload.const_get(:BYTES_PER_MB)) + 1) { |path| upload(path) } }
+      error = assert_raises(InvalidMedia) { with_video((10_000 * 5 * Uploader::MediaUpload.const_get(:BYTES_PER_MB)) + 1) { |path| upload(path) } }
 
       assert_match(/is 52428800001 bytes, more than the 10000 segments of 5242880 bytes the API takes\z/, error.message)
       assert_not_requested :post, "#{BASE_URL}/initialize"

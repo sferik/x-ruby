@@ -103,7 +103,10 @@ module X
     def marshal_load: ([Integer, Hash[String, untyped]] state) -> void
   end
 
-  class InvalidMediaType < Uploader::Error
+  class InvalidMedia < Uploader::Error
+  end
+
+  class InvalidMediaType < InvalidMedia
   end
 
   class MissingMediaData < Uploader::Error

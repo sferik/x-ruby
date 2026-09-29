@@ -85,7 +85,7 @@ module X
         path = File.join(dir, "empty.mp4")
         File.binwrite(path, "")
 
-        assert_raises(ArgumentError) { Uploader::MediaUpload.chunked_upload(path, client: @client, media_category: "tweet_video") }
+        assert_raises(InvalidMedia) { Uploader::MediaUpload.chunked_upload(path, client: @client, media_category: "tweet_video") }
       end
       assert_not_requested(:post, INIT_URL)
     end

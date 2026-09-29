@@ -58,7 +58,7 @@ module X
     end
 
     def test_an_empty_io_is_refused
-      error = assert_raises(ArgumentError) { Uploader::Account.update_profile_image(StringIO.new, client: @client) }
+      error = assert_raises(InvalidMedia) { Uploader::Account.update_profile_image(StringIO.new, client: @client) }
 
       assert_equal "the media given is empty: there is nothing to upload", error.message
     end

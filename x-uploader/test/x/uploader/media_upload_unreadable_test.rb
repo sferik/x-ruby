@@ -18,7 +18,7 @@ module X
     end
 
     def assert_refused_before_any_request(description, &)
-      error = assert_raises(ArgumentError, &)
+      error = assert_raises(InvalidMedia, &)
 
       assert_equal "#{description} cannot be read: it is not a file, or not one open for reading", error.message
       assert_not_requested :post, "#{BASE_URL}/initialize"

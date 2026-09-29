@@ -46,7 +46,7 @@ module X
 
     def test_update_profile_image_raises_for_an_empty_file
       Tempfile.create(["empty", ".png"]) do |file|
-        assert_raises(ArgumentError) { update_profile_image(file.path) }
+        assert_raises(InvalidMedia) { update_profile_image(file.path) }
       end
       assert_not_requested :post, V1_PROFILE_IMAGE_URL
     end

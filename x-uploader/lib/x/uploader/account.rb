@@ -45,7 +45,8 @@ module X
       # @param client [Client] the X API client
       # @return [Hash, nil] the updated user, as the API v1.1 answers with it, or nil for a response with no body
       # @raise [Errno::ENOENT] if the file does not exist
-      # @raise [ArgumentError] if the media is neither a path nor an IO, or is empty, which holds nothing to upload
+      # @raise [ArgumentError] if the media is neither a path nor an IO
+      # @raise [InvalidMedia] if the media cannot be read, or is empty, which holds nothing to upload
       # @raise [InvalidMediaType] if the extension of the file, or the signature of media that names none, is not
       #   that of a GIF, a JPEG, or a PNG
       # @example Update profile image from a file
@@ -90,7 +91,8 @@ module X
       # @param offset_top [Integer, nil] the top offset of the banner
       # @return [nil] nil once the banner is updated, which the API answers with no content
       # @raise [Errno::ENOENT] if the file does not exist
-      # @raise [ArgumentError] if the media is neither a path nor an IO, or is empty, which holds nothing to upload
+      # @raise [ArgumentError] if the media is neither a path nor an IO
+      # @raise [InvalidMedia] if the media cannot be read, or is empty, which holds nothing to upload
       # @raise [InvalidMediaType] if the extension of the file, or the signature of media that names none, is not
       #   that of a GIF, a JPEG, or a PNG
       # @example Update profile banner from a file

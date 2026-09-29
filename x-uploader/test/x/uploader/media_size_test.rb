@@ -23,7 +23,7 @@ module X
       LIMITS.each do |category, limit|
         with_file("media.bin", limit) { |path| assert_nil validator.validate_size!(source(path), category) }
         with_file("media.bin", limit + 1) do |path|
-          error = assert_raises(ArgumentError, category) { validator.validate_size!(source(path), category) }
+          error = assert_raises(InvalidMedia, category) { validator.validate_size!(source(path), category) }
 
           assert_equal "#{path} is #{limit + 1} bytes, more than the #{limit} bytes the API takes of #{category} media", error.message
         end
@@ -38,23 +38,23 @@ module X
 
     def test_an_image_larger_than_the_api_takes_uploads_nothing
       with_file("cat.png", (5 * MB) + 1) do |path|
-        assert_raises(ArgumentError) { Uploader::MediaUpload.upload(path, client: @client) }
-        assert_raises(ArgumentError) { Uploader::MediaUpload.upload(path, client: @client, media_category: :dm_image) }
+        assert_raises(InvalidMedia) { Uploader::MediaUpload.upload(path, client: @client) }
+        assert_raises(InvalidMedia) { Uploader::MediaUpload.upload(path, client: @client, media_category: :dm_image) }
       end
-      assert_raises(ArgumentError) { Uploader::MediaUpload.upload_binary("\x00".b * ((5 * MB) + 1), client: @client, media_category: "tweet_image") }
+      assert_raises(InvalidMedia) { Uploader::MediaUpload.upload_binary("\x00".b * ((5 * MB) + 1), client: @client, media_category: "tweet_image") }
       assert_not_requested :any, /x\.com/
     end
 
     def test_binary_content_larger_than_a_single_request_takes_uploads_nothing
       gif = "GIF89a".b + ("\x00".b * ((5 * MB) - 5))
-      error = assert_raises(ArgumentError) { Uploader::MediaUpload.upload_binary(gif, client: @client, media_category: :tweet_gif) }
+      error = assert_raises(InvalidMedia) { Uploader::MediaUpload.upload_binary(gif, client: @client, media_category: :tweet_gif) }
 
       assert_equal "the media given is #{(5 * MB) + 1} bytes, more than the #{5 * MB} bytes the API takes in a single request: pass it to upload or chunked_upload", error.message
       assert_not_requested :any, /x\.com/
     end
 
     def test_binary_content_larger_than_the_api_takes_of_its_category_is_refused_for_that
-      error = assert_raises(ArgumentError) { Uploader::MediaUpload.upload_binary("\x00".b * ((15 * MB) + 1), client: @client, media_category: :dm_gif) }
+      error = assert_raises(InvalidMedia) { Uploader::MediaUpload.upload_binary("\x00".b * ((15 * MB) + 1), client: @client, media_category: :dm_gif) }
 
       assert_equal "the media given is #{(15 * MB) + 1} bytes, more than the #{15 * MB} bytes the API takes of dm_gif media", error.message
     end
@@ -66,7 +66,7 @@ module X
     end
 
     def test_empty_binary_content_uploads_nothing
-      error = assert_raises(ArgumentError) { Uploader::MediaUpload.upload_binary("", client: @client, media_category: :tweet_image) }
+      error = assert_raises(InvalidMedia) { Uploader::MediaUpload.upload_binary("", client: @client, media_category: :tweet_image) }
 
       assert_equal "the media given is empty: there is nothing to upload", error.message
       assert_not_requested :any, /x\.com/
@@ -74,17 +74,17 @@ module X
 
     def test_a_gif_or_subtitles_larger_than_the_api_takes_upload_nothing
       with_file("cat.gif", (15 * MB) + 1) do |path|
-        assert_raises(ArgumentError) { Uploader::MediaUpload.upload(path, client: @client, media_category: :tweet_gif) }
-        assert_raises(ArgumentError) { Uploader::MediaUpload.chunked_upload(path, client: @client, media_category: :dm_gif) }
+        assert_raises(InvalidMedia) { Uploader::MediaUpload.upload(path, client: @client, media_category: :tweet_gif) }
+        assert_raises(InvalidMedia) { Uploader::MediaUpload.chunked_upload(path, client: @client, media_category: :dm_gif) }
       end
-      with_file("cat.srt", MB + 1) { |path| assert_raises(ArgumentError) { Uploader::MediaUpload.chunked_upload(path, client: @client) } }
+      with_file("cat.srt", MB + 1) { |path| assert_raises(InvalidMedia) { Uploader::MediaUpload.chunked_upload(path, client: @client) } }
       assert_not_requested :any, /x\.com/
     end
 
     def test_a_gif_larger_than_any_the_api_takes_is_refused_without_being_read
       with_file("cat.gif", (15 * MB) + 1) do |path|
         error = Uploader.const_get(:Gif).stub(:animated?, ->(_media) { flunk "the GIF was read" }) do
-          assert_raises(ArgumentError) { Uploader::MediaUpload.upload(path, client: @client) }
+          assert_raises(InvalidMedia) { Uploader::MediaUpload.upload(path, client: @client) }
         end
 
         assert_equal "#{path} is #{(15 * MB) + 1} bytes, more than the #{15 * MB} bytes the API takes of tweet_gif media", error.message
@@ -93,7 +93,7 @@ module X
 
     def test_a_still_gif_the_api_takes_as_a_gif_is_read_and_refused_as_an_image
       with_file("cat.gif", 15 * MB) do |path|
-        error = assert_raises(ArgumentError) { Uploader::MediaUpload.upload(path, client: @client) }
+        error = assert_raises(InvalidMedia) { Uploader::MediaUpload.upload(path, client: @client) }
 
         assert_equal "#{path} is #{15 * MB} bytes, more than the #{5 * MB} bytes the API takes of tweet_image media", error.message
       end

@@ -134,13 +134,14 @@ module X
       # @raise [ArgumentError] if the media is neither a path nor an IO, or is a String that holds a NUL byte or a
       #   line break, as the contents of media given in place of its path do
       # @raise [Errno::ENOENT] if the file does not exist
-      # @raise [ArgumentError] if the media is empty, which holds nothing to upload
-      # @raise [ArgumentError] if the media is larger than the API takes of its category, whatever the account: 5
+      # @raise [InvalidMedia] if the media cannot be read, or is empty, which holds nothing to upload
+      # @raise [InvalidMedia] if the media is larger than the API takes of its category, whatever the account: 5
       #   megabytes of an image, 15 of a GIF, and one of subtitles
+      # @raise [InvalidMedia] if media uploaded in chunks is larger than 10,000 segments of 5 megabytes
       # @raise [ArgumentError] if the media category is invalid, the alt text is empty or longer than the API takes,
       #   the chunk size is not a positive, finite number, is larger than a segment the API takes, or would need more
-      #   segments than the API numbers, media uploaded in chunks is larger than 10,000 segments of 5 megabytes, the
-      #   concurrency is not 1 to MAX_CONCURRENCY, or the processing timeout is not a number of seconds of at least 0
+      #   segments than the API numbers, the concurrency is not 1 to MAX_CONCURRENCY, or the processing timeout is not
+      #   a number of seconds of at least 0
       # @raise [InvalidMediaType] if no media category is given for media that names no file and no signature names
       #   one, or if media uploaded in chunks is given no media type and none can be inferred
       # @raise [MissingMediaData] if a response of the upload holds no media, or carries no body at all
@@ -178,7 +179,8 @@ module X
       # @param media_category [String, Symbol] the media category, which content cannot be inferred from, in any case
       # @return [UploadedMedia] the uploaded media, which holds the upload response
       # @raise [ArgumentError] if the media category is invalid, or is that of a video or subtitles, which the API
-      #   takes in chunks alone, or the content is empty, or larger than the API takes of its category or in a single
+      #   takes in chunks alone
+      # @raise [InvalidMedia] if the content is empty, or larger than the API takes of its category or in a single
       #   request, which takes 5 megabytes, so that a larger GIF uploads with upload or chunked_upload
       # @raise [MissingMediaData] if the response holds no media, or carries no body at all
       # @example Upload binary content
@@ -209,12 +211,12 @@ module X
       # @raise [ArgumentError] if the media is neither a path nor an IO, or is a String that holds a NUL byte or a
       #   line break, as the contents of media given in place of its path do
       # @raise [Errno::ENOENT] if the file does not exist
-      # @raise [ArgumentError] if the media is empty, which holds nothing to upload
-      # @raise [ArgumentError] if the media is larger than the API takes of its category, which is 15 megabytes of a
-      #   GIF and one of subtitles
+      # @raise [InvalidMedia] if the media cannot be read, or is empty, which holds nothing to upload
+      # @raise [InvalidMedia] if the media is larger than the API takes of its category, which is 15 megabytes of a
+      #   GIF and one of subtitles, or larger than 10,000 segments of 5 megabytes
       # @raise [ArgumentError] if the media category is invalid, the chunk size is not a positive, finite number, is
-      #   larger than a segment the API takes, or would need more segments than the API numbers, the media is larger
-      #   than 10,000 segments of 5 megabytes, or the concurrency is not 1 to MAX_CONCURRENCY
+      #   larger than a segment the API takes, or would need more segments than the API numbers, or the concurrency is
+      #   not 1 to MAX_CONCURRENCY
       # @raise [InvalidMediaType] if no media type is given and none can be inferred
       # @raise [MissingMediaData] if the response that initializes the upload holds no media to append the chunks to, or
       #   the response that finalizes it holds no media or carries no body at all

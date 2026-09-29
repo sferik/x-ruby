@@ -100,7 +100,7 @@ module X
   class UploaderErrorNamesTest < Minitest::Test
     # Every class a caller names is under X, as the classes of x-core are, and X::Uploader::Error alone is left
     # under the gem's module, for the rescue that means the failure of an upload alone.
-    PROMOTED = %i[AltTextFailed InvalidMediaType MediaProcessingFailed MediaProcessingTimeout MissingMediaData UploadedMedia].freeze
+    PROMOTED = %i[AltTextFailed InvalidMedia InvalidMediaType MediaProcessingFailed MediaProcessingTimeout MissingMediaData UploadedMedia].freeze
 
     def test_each_is_named_under_x
       PROMOTED.each { |name| assert X.const_defined?(name, false), "X::#{name} is not defined" }
@@ -166,10 +166,14 @@ module X
     cover Uploader::Error
 
     def test_every_error_of_an_upload_is_an_uploader_error
-      errors = [AltTextFailed.new(media: UploadedMedia.new({"id" => "7"})), InvalidMediaType.new, MediaProcessingFailed.new, MediaProcessingTimeout.new]
+      errors = [AltTextFailed.new(media: UploadedMedia.new({"id" => "7"})), InvalidMedia.new, InvalidMediaType.new, MediaProcessingFailed.new, MediaProcessingTimeout.new]
 
       assert(errors.all? { |error| error.is_a?(Uploader::Error) })
       assert(errors.all? { |error| error.is_a?(Error) })
+    end
+
+    def test_media_of_a_type_the_api_does_not_take_is_media_the_api_would_refuse
+      assert_equal [InvalidMedia, Uploader::Error], InvalidMediaType.ancestors.grep(Class).drop(1).take(2)
     end
 
     def test_an_uploader_error_is_an_error_of_the_api

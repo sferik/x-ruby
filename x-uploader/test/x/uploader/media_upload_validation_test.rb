@@ -26,8 +26,8 @@ module X
     def test_upload_rejects_an_empty_file_before_any_request
       %w[.mp4 .png].each do |extension|
         Tempfile.create(["empty", extension]) do |file|
-          assert_raises(ArgumentError) { Uploader::MediaUpload.upload(file.path, client: @client) }
-          assert_raises(ArgumentError) { Uploader::MediaUpload.chunked_upload(file.path, client: @client, media_category: :tweet_video) }
+          assert_raises(InvalidMedia) { Uploader::MediaUpload.upload(file.path, client: @client) }
+          assert_raises(InvalidMedia) { Uploader::MediaUpload.chunked_upload(file.path, client: @client, media_category: :tweet_video) }
         end
       end
 
@@ -60,7 +60,7 @@ module X
     end
 
     def test_upload_of_empty_media_raises_for_the_empty_media_before_inferring_its_category
-      error = assert_raises(ArgumentError) { Uploader::MediaUpload.upload(StringIO.new(""), client: @client) }
+      error = assert_raises(InvalidMedia) { Uploader::MediaUpload.upload(StringIO.new(""), client: @client) }
 
       assert_match(/is empty: there is nothing to upload\z/, error.message)
       assert_not_requested :post, BASE_URL
