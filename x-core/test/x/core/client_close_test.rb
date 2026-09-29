@@ -43,12 +43,19 @@ module X
 
     def test_close_closes_the_connections_of_the_app_only_copy
       client = Client.new(**test_oauth_credentials)
-      http_clients = opened_by(client.app_only) do
+      http_clients = opened_by(client) do
         client.app_only.get("tweets")
         client.close
       end
 
       assert_equal [false], http_clients.map(&:started?)
+    end
+
+    def test_the_app_only_copy_reads_its_token_and_its_responses_over_one_connection
+      client = Client.new(**test_oauth_credentials)
+      http_clients = opened_by(client) { client.app_only.get("tweets") }
+
+      assert_equal 1, http_clients.size
     end
 
     def test_close_makes_no_app_only_copy

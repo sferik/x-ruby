@@ -76,6 +76,18 @@ module X
 
       private
 
+      # Share the connections kept open by the client this one was copied from
+      #
+      # They are shared when this client opens its connections as that one does; see Connection#share_pool_of.
+      # A copy that differs only in what it sends, such as its headers, base URL, or credentials, would otherwise
+      # open connections of its own, with a TCP and TLS handshake for each, and keep them open, idle, until it is
+      # collected, so a copy made for each request would leave connections to each host behind it.
+      #
+      # @api private
+      # @param connection [Connection] the connection of the client this one was copied from
+      # @return [void]
+      def share_connection(connection) = @connection.share_pool_of(connection)
+
       # The settings, as initialize accepts them
       # @api private
       # @return [Hash{Symbol => Object}] the settings

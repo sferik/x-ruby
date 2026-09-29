@@ -279,6 +279,7 @@ module X
       def max_retries: () -> Integer
 
       private
+      def share_connection: (Connection connection) -> void
       def settings: () -> Hash[Symbol, untyped]
       def proxy_url: () -> (URI::Generic | String)?
       def initialize_settings: (base_url: String, default_array_class: Class, default_object_class: object_class, headers: headers, on_response: _ResponseHook?, max_redirects: Integer, max_rate_limit_retries: Integer, max_rate_limit_wait: Float | Integer, max_retries: Integer) -> void
@@ -415,6 +416,7 @@ module X
       DEFAULT_READ_TIMEOUT: Integer
       DEFAULT_WRITE_TIMEOUT: Integer
       DEFAULT_KEEP_ALIVE_TIMEOUT: Integer
+      SETTINGS: Array[Symbol]
 
       include ConnectionProxy
       include ConnectionRequest
@@ -434,8 +436,10 @@ module X
       @pool: ConnectionPool
 
       def close: () -> void
+      def share_pool_of: (Connection other) -> void
 
       private
+      attr_reader pool: ConnectionPool
       def host_and_port: (URI::Generic uri) -> [String, Integer]
       def open_http_client: (URI::Generic uri, bool use_ssl) -> Net::HTTP
       def build_http_client: (URI::Generic uri) -> Net::HTTP

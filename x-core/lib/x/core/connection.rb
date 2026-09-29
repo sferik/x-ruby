@@ -45,6 +45,9 @@ module X
       # Default time to keep a connection open for the next request to the same host, in seconds; X holds an idle
       # connection open for more than five minutes, so a connection closed within this time was closed by a proxy
       DEFAULT_KEEP_ALIVE_TIMEOUT = 30 # seconds
+      # The settings a connection is opened under, which a connection that shares the pool of another holds the same of
+      SETTINGS = %i[open_timeout read_timeout write_timeout keep_alive_timeout debug_output proxy_url].freeze
+      private_constant :SETTINGS
       # The timeout for opening connections in seconds
       # @api private
       # @return [Integer, Float, nil] the timeout for opening connections in seconds, or nil for none
@@ -191,7 +194,28 @@ module X
         @pool.clear
       end
 
+      # Take connections from the pool of another connection that opens them alike
+      #
+      # Internal to x-core: Client#with gives a copy the connections of the client it was copied from with it. The
+      # two then take their connections from one pool, and close them together, so a copy made for each request opens
+      # none of its own. A connection whose timeouts, keep-alive timeout, debug output, or proxy differ keeps a pool
+      # of its own, since a connection is opened under those.
+      #
+      # @api private
+      # @param other [Connection] the connection whose pool to share
+      # @return [void]
+      # @example Share the connections of another connection
+      #   connection.share_pool_of(other)
+      def share_pool_of(other)
+        @pool = other.__send__(:pool) if SETTINGS.all? { |name| __send__(name) == other.__send__(name) }
+      end
+
       private
+
+      # The connections kept open between requests
+      # @api private
+      # @return [ConnectionPool] the pool
+      attr_reader :pool
 
       # The host and port to connect to for a URI
       #

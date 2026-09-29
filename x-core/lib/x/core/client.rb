@@ -259,6 +259,11 @@ module X
     # A copy of a client that was given its authenticator shares it, unless the copy is given a credential, which
     # replaces it, or an authenticator of its own, which also replaces the credentials of a client that holds them.
     #
+    # A copy that opens its connections as the client does, with the same timeouts, keep-alive timeout, debug output,
+    # and proxy, shares the connections the client keeps open, so that a copy made for each request, such as to send
+    # a header of its own, opens none of its own; {#close} on either closes them for both, and a later request of
+    # either opens them again.
+    #
     # @api public
     # @param options [Hash] the options to change, as accepted by initialize
     # @return [Client] a new client with the same credentials and settings, apart from the options given
@@ -269,7 +274,10 @@ module X
     # @example Derive a client that authenticates with another authenticator
     #   user_client = app_client.with(authenticator: X::OAuth2Authenticator.new(**stored_tokens))
     def with(**options) # steep:ignore DifferentMethodParameterKind
-      self.class.new(**settings, **with_credentials(options)).tap { |copy| copy.__send__(:share_authenticator, authenticator, options) }
+      self.class.new(**settings, **with_credentials(options)).tap do |copy|
+        copy.__send__(:share_authenticator, authenticator, options)
+        copy.__send__(:share_connection, @connection)
+      end
     end
 
     # Perform a GET request to the X API
@@ -384,8 +392,9 @@ module X
 
     # Close the connections the client keeps open between requests
     #
-    # A later request opens a connection again. The app-only copy of a client that signs with OAuth 1.0a keeps
-    # connections of its own, which close with the client's.
+    # A later request opens a connection again. A client and the copies made of it with {#with} that open their
+    # connections as it does share their connections, as the app-only copy of a client that signs with OAuth 1.0a
+    # does, so closing one closes them for all of them.
     #
     # @api public
     # @return [void]
@@ -393,7 +402,6 @@ module X
     #   client.close
     def close
       @connection.close
-      @app_only&.close
     end
 
     private
