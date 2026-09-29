@@ -16,7 +16,7 @@ module X
         when "p3" then {"data" => [{"id" => "4"}], "meta" => {"result_count" => 1}}
         end
       })
-      @cursor = Cursor.new(User, "users/1/followers", client: @client, params: {max_results: 1000})
+      @cursor = Cursor.__send__(:build, User, "users/1/followers", client: @client, params: {max_results: 1000})
     end
 
     def test_readers
@@ -35,13 +35,13 @@ module X
     end
 
     def test_params_default_to_resource_defaults
-      cursor = Cursor.new(User, "users/1/followers", client: @client)
+      cursor = Cursor.__send__(:build, User, "users/1/followers", client: @client)
 
       assert_equal Objects::Utils.query(User.default_params), cursor.params
     end
 
     def test_params_override_defaults
-      cursor = Cursor.new(User, "users/1/followers", client: @client, params: {"user.fields": "id", expansions: nil})
+      cursor = Cursor.__send__(:build, User, "users/1/followers", client: @client, params: {"user.fields": "id", expansions: nil})
 
       assert_equal "id", cursor.params["user.fields"]
       refute cursor.params.key?("expansions")

@@ -16,7 +16,7 @@ module X
         when "p3" then {"data" => [{"id" => "4"}], "meta" => {"result_count" => 1}}
         end
       })
-      @plain = Cursor.new(User, "users/1/followers", client: @client, params: {max_results: 1000})
+      @plain = Cursor.__send__(:build, User, "users/1/followers", client: @client, params: {max_results: 1000})
       @cursor = @plain.prefetch
     end
 

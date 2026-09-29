@@ -93,7 +93,7 @@ module X
       # @example Print the live spaces about Ruby
       #   X::Space.search("ruby", client: client, state: "live").each { |space| puts space.title }
       def search(query, client:, **params)
-        Cursor.new(self, "spaces/search", client:, params: {query:, max_results: MAX_RESULTS}.merge(params), app_only: true)
+        Cursor.__send__(:build, self, "spaces/search", client:, params: {query:, max_results: MAX_RESULTS}.merge(params), app_only: true)
       end
     end
 

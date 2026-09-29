@@ -654,10 +654,10 @@ module X
     @total: (^(?fresh: bool) -> Integer?)?
     @pages: Objects::Pages
 
-    private def self.build: [R < Resource] (singleton(Resource) resource_class, String path, client: Objects::_Client, params: Objects::params, min_results: Integer, app_only: bool, total: (^(?fresh: bool) -> Integer?)?, ?prefetch: bool, ?token_param: String, ?ids_only: bool) -> Cursor[R]
+    private def self.build: [R < Resource] (singleton(Resource) resource_class, String path, client: Objects::_Client, ?params: Objects::params, ?prefetch: bool, ?token_param: String, ?min_results: Integer, ?app_only: bool, ?total: (^(?fresh: bool) -> Integer?)?, ?ids_only: bool) -> Cursor[R]
 
     private
-    def setup: (singleton(Resource) resource_class, String path, client: Objects::_Client, params: Objects::params, prefetch: bool, token_param: String, min_results: Integer, app_only: bool, total: (^(?fresh: bool) -> Integer?)?, ?ids_only: bool) -> void
+    def setup: (singleton(Resource) resource_class, String path, client: Objects::_Client, params: Objects::params, prefetch: bool, token_param: String, min_results: Integer, app_only: bool, total: (^(?fresh: bool) -> Integer?)?, ids_only: bool) -> void
     def ids_only?: () -> bool
     def fresh_total: () -> (^(?fresh: bool) -> Integer?)?
     def own_params: () -> Objects::params

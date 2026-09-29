@@ -78,7 +78,7 @@ module X
     def test_any_other_cursor_fetches_as_the_user_and_so_do_the_cursors_derived_from_it
       followers = User.from_id(1, client: @client).followers
 
-      refute_predicate Cursor.new(User, "users/1/followers", client: @client), :app_only?
+      refute_predicate Cursor.__send__(:build, User, "users/1/followers", client: @client), :app_only?
       assert_equal [false, false, false, false], [followers, followers.refresh, followers.prefetch, followers.stubs].map(&:app_only?)
     end
 

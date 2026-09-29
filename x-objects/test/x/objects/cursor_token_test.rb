@@ -15,11 +15,11 @@ module X
         when "p2" then {"data" => [{"id" => "2"}], "meta" => {}}
         end
       })
-      @cursor = Cursor.new(User, "users/search", client: @client, params: {query: "ruby"}, token_param: "next_token")
+      @cursor = Cursor.__send__(:build, User, "users/search", client: @client, params: {query: "ruby"}, token_param: "next_token")
     end
 
     def test_default_token_param
-      cursor = Cursor.new(User, "users/1/followers", client: @client)
+      cursor = Cursor.__send__(:build, User, "users/1/followers", client: @client)
 
       assert_equal "pagination_token", cursor.token_param
       assert_equal Cursor::DEFAULT_TOKEN_PARAM, cursor.token_param
@@ -50,7 +50,7 @@ module X
         when "p2" then {"data" => [{"id" => "3"}], "meta" => {}}
         end
       })
-      cursor = Cursor.new(User, "users/1/followers", client: @client, params: {max_results: 1000})
+      cursor = Cursor.__send__(:build, User, "users/1/followers", client: @client, params: {max_results: 1000})
 
       assert_equal [1, 2, 3], cursor.ids
       assert_equal [{"max_results" => "1000", "user.fields" => "id"}, {"max_results" => "1000", "user.fields" => "id", "pagination_token" => "p2"}], @client.queries
@@ -60,8 +60,8 @@ module X
       @client.stub(:get, "tweets/1/liking_users", {"data" => [{"id" => "1"}]})
       @client.stub(:get, "users/1/tweets", {"data" => [{"id" => "1"}]})
 
-      assert_equal [1], Cursor.new(User, "tweets/1/liking_users", client: @client).ids
-      assert_equal [1], Cursor.new(Post, "users/1/tweets", client: @client).ids
+      assert_equal [1], Cursor.__send__(:build, User, "tweets/1/liking_users", client: @client).ids
+      assert_equal [1], Cursor.__send__(:build, Post, "users/1/tweets", client: @client).ids
       assert_equal [{"user.fields" => "id"}, {"post.fields" => "id"}], @client.queries
     end
 
@@ -72,7 +72,7 @@ module X
     end
 
     def test_ids_without_a_fields_parameter
-      error = assert_raises(UnsupportedOperation) { Cursor.new(Poll, "polls", client: @client).ids }
+      error = assert_raises(UnsupportedOperation) { Cursor.__send__(:build, Poll, "polls", client: @client).ids }
 
       assert_equal "X::Poll has no fields parameter", error.message
       assert_empty @client.requests

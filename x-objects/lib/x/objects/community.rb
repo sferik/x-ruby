@@ -56,7 +56,7 @@ module X
       # @example Print the communities matching a query
       #   X::Community.search("ruby", client: client).each { |community| puts community.name }
       def search(query, client:, **params)
-        Cursor.new(self, "communities/search", client:, params: {query:, max_results: MAX_RESULTS}.merge(params),
+        Cursor.__send__(:build, self, "communities/search", client:, params: {query:, max_results: MAX_RESULTS}.merge(params),
           token_param: "next_token", min_results: 10)
       end
     end

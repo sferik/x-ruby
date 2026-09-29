@@ -25,14 +25,14 @@ module X
 
     def test_a_page_after_the_first_asks_for_no_more_than_the_page_size
       stub_paging_followers
-      cursor = Cursor.new(User, "users/2/followers", client: @client, params: {max_results: 3})
+      cursor = Cursor.__send__(:build, User, "users/2/followers", client: @client, params: {max_results: 3})
 
       assert_equal 7, cursor.first(7).size
       assert_equal %w[3 3 1], @client.queries.map { |query| query["max_results"] }
     end
 
     def test_a_page_after_the_first_rises_to_the_minimum_of_the_endpoint
-      cursor = Cursor.new(User, "users/1/followers", client: @client, params: {max_results: 10}, min_results: 5)
+      cursor = Cursor.__send__(:build, User, "users/1/followers", client: @client, params: {max_results: 10}, min_results: 5)
 
       assert_equal 12, cursor.first(12).size
       assert_equal %w[10 5], @client.queries.map { |query| query["max_results"] }

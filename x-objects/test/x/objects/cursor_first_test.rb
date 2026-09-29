@@ -89,7 +89,7 @@ module X
 
     def test_first_of_a_cursor_without_a_page_size
       @client.stub(:get, "dm_events", {"data" => [{"id" => "1"}, {"id" => "2"}]})
-      cursor = Cursor.new(DirectMessage, "dm_events", client: @client)
+      cursor = Cursor.__send__(:build, DirectMessage, "dm_events", client: @client)
 
       assert_equal [1], cursor.first(1).map(&:id)
       refute_includes @client.queries.first, "max_results"
@@ -117,7 +117,7 @@ module X
     end
 
     def test_derived_cursors_keep_the_minimum_page_size
-      cursor = Cursor.new(User, "users/1/followers", client: @client, min_results: 7)
+      cursor = Cursor.__send__(:build, User, "users/1/followers", client: @client, min_results: 7)
 
       assert_equal [7, 7, 7], [cursor.refresh, cursor.prefetch, cursor.stubs].map(&:min_results)
     end

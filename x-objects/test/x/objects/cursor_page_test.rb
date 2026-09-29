@@ -16,7 +16,7 @@ module X
         when "p3" then {"data" => [{"id" => "4"}], "meta" => {"result_count" => 1}}
         end
       })
-      @cursor = Cursor.new(User, "users/1/followers", client: @client, params: {max_results: 1000})
+      @cursor = Cursor.__send__(:build, User, "users/1/followers", client: @client, params: {max_results: 1000})
     end
 
     def test_page_by_index

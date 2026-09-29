@@ -57,9 +57,13 @@ module X
     #   X::User.search("ruby", client: client).token_param # => "next_token"
     attr_reader :token_param
 
-    # Initialize a new cursor
+    # Build a cursor
     #
-    # @api public
+    # Internal to x-objects: a resource builds the cursors of its collections, and the searches and lookups build
+    # theirs, with it, and new is private, so that the settings a cursor pages with can change within 1.x. A cursor
+    # is made from another with refresh, prefetch, and stubs.
+    #
+    # @api private
     # @param resource_class [Class] the class of the resources in the collection
     # @param path [String] the endpoint path
     # @param client [Object] the client the resources hold, which fetches the pages unless the endpoint takes
@@ -70,41 +74,19 @@ module X
     # @param min_results [Integer] the smallest page the endpoint accepts, which first never asks below
     # @param app_only [Boolean] whether the pages are fetched with the app-only client of the client, for an endpoint
     #   that refuses the OAuth 1.0a of a user, while the resources hold the client, so that they act as the user
-    # @return [Cursor] a new cursor
-    # @example Create a cursor over a user's followers
-    #   X::Cursor.new(X::User, "users/7505382/followers", client: client, params: {max_results: 1000})
-    # @example Create a cursor over an endpoint that pages with next_token
-    #   X::Cursor.new(X::User, "users/search", client: client, params: {query: "ruby"}, token_param: "next_token")
-    def initialize(resource_class, path, client:, params: {}, prefetch: false, token_param: DEFAULT_TOKEN_PARAM, min_results: 1, app_only: false)
-      setup(resource_class, path, client:, params:, prefetch:, token_param:, min_results:, app_only:, total: nil)
-    end
-
-    # Build a cursor that reads the number the API publishes for its collection
-    #
-    # Internal to x-objects: a resource builds the cursors of the collections it publishes a number for with it,
-    # and the callable that reads the number takes a keyword of its own, so new takes none.
-    #
-    # @api private
-    # @param resource_class [Class] the class of the resources in the collection
-    # @param path [String] the endpoint path
-    # @param client [Object] the client the resources hold
     # @param total [Proc, nil] a block returning the number of resources the API publishes for the collection, which
     #   reads it again when given fresh: true
-    # @param params [Hash] query parameters merged over the resource class's default parameters
-    # @param prefetch [Boolean] whether to fetch the next page in a background thread
-    # @param token_param [String] the query parameter the token of the next page is sent in
-    # @param min_results [Integer] the smallest page the endpoint accepts
-    # @param app_only [Boolean] whether the pages are fetched with the app-only client of the client
     # @param ids_only [Boolean] whether the endpoint gives the resources by their identifiers alone, and takes none of
     #   their fields, so the pages ask for none of the default parameters, and read stubs that hydrate together
     # @return [Cursor] a new cursor
     # @example Build a cursor over the followers of a user, which counts them with followers_count
-    #   X::Cursor.__send__(:build, X::User, "users/7505382/followers", client: client, params: {}, min_results: 1, app_only: false,
-    #     total: ->(fresh: false) { 42 })
-    def self.build(resource_class, path, client:, params:, min_results:, app_only:, total:, prefetch: false, token_param: DEFAULT_TOKEN_PARAM, ids_only: false)
+    #   X::Cursor.__send__(:build, X::User, "users/7505382/followers", client: client, total: ->(fresh: false) { 42 })
+    # @example Build a cursor over an endpoint that pages with next_token
+    #   X::Cursor.__send__(:build, X::User, "users/search", client: client, params: {query: "ruby"}, token_param: "next_token")
+    def self.build(resource_class, path, client:, params: {}, prefetch: false, token_param: DEFAULT_TOKEN_PARAM, min_results: 1, app_only: false, total: nil, ids_only: false)
       allocate.tap { |cursor| cursor.__send__(:setup, resource_class, path, client:, params:, prefetch:, token_param:, min_results:, app_only:, total:, ids_only:) }
     end
-    private_class_method :build
+    private_class_method :new, :build
 
     # Check whether the next page is fetched in the background
     #
@@ -359,7 +341,7 @@ module X
     # Set the collection, requests, and pages of a new cursor, and freeze it
     # @api private
     # @return [void]
-    def setup(resource_class, path, client:, params:, prefetch:, token_param:, min_results:, app_only:, total:, ids_only: false)
+    def setup(resource_class, path, client:, params:, prefetch:, token_param:, min_results:, app_only:, total:, ids_only:)
       @resource_class = resource_class
       @client = client
       @path = path

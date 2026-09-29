@@ -70,7 +70,7 @@ module X
       #   X::DirectMessage.in(message, client: client).each { |event| puts event.text }
       def in(conversation, client:, **params)
         path = "dm_conversations/#{conversation_id_of(conversation)}/dm_events"
-        Cursor.new(DirectMessage, path, client:, params: {max_results: DirectMessage::MAX_RESULTS}.merge(params))
+        Cursor.__send__(:build, DirectMessage, path, client:, params: {max_results: DirectMessage::MAX_RESULTS}.merge(params))
       end
 
       private

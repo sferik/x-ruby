@@ -293,7 +293,6 @@ module X
     attr_reader token_param: String
     attr_reader min_results: Integer
 
-    def initialize: (singleton(Resource) resource_class, String path, client: Objects::_Client, ?params: Objects::params, ?prefetch: bool, ?token_param: String, ?min_results: Integer, ?app_only: bool) -> void
     def prefetch?: () -> bool
     def app_only?: () -> bool
     def each: () { (R) -> void } -> self

@@ -81,7 +81,7 @@ module X
 
     def test_a_cursor_that_asks_for_identifiers_alone_reads_stubs_that_hydrate_together
       @client.stub(:get, "users/1/liked_tweets", {"data" => [{"id" => "10"}, {"id" => "11"}]})
-      posts = Cursor.new(Post, "users/1/liked_tweets", client: @client, params: {"post.fields" => "id"}).to_a
+      posts = Cursor.__send__(:build, Post, "users/1/liked_tweets", client: @client, params: {"post.fields" => "id"}).to_a
 
       assert_equal ["post 10", "post 11"], posts.map { |post| post.hydrate.text }
       assert_equal ["users/1/liked_tweets", "tweets"], @client.paths

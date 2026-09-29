@@ -87,7 +87,7 @@ module X
       # @example Print the users matching a query
       #   X::User.search("ruby", client: client).each { |user| puts user.username }
       def search(query, client:, **params)
-        Cursor.new(self, "users/search", client:, params: {query:, max_results: MAX_SEARCH_RESULTS}.merge(params), token_param: "next_token")
+        Cursor.__send__(:build, self, "users/search", client:, params: {query:, max_results: MAX_SEARCH_RESULTS}.merge(params), token_param: "next_token")
       end
     end
 

@@ -67,7 +67,7 @@ module X
       # @example Print the most recent direct messages
       #   X::DirectMessage.all(client: client).first(10).each { |message| puts message.text }
       def all(client:, **params)
-        Cursor.new(self, "dm_events", client:, params: {max_results: MAX_RESULTS}.merge(params))
+        Cursor.__send__(:build, self, "dm_events", client:, params: {max_results: MAX_RESULTS}.merge(params))
       end
 
       # The direct message events in the one-to-one conversation with a user
@@ -81,7 +81,7 @@ module X
       #   X::DirectMessage.with(user, client: client).each { |message| puts message.text }
       def with(user, client:, **params)
         path = "dm_conversations/with/#{Objects::Utils.id_of(user, User)}/dm_events"
-        Cursor.new(self, path, client:, params: {max_results: MAX_RESULTS}.merge(params))
+        Cursor.__send__(:build, self, path, client:, params: {max_results: MAX_RESULTS}.merge(params))
       end
 
       # Send a direct message to a user as the authenticated user

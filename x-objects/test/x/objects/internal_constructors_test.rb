@@ -44,12 +44,19 @@ module X
       assert_same batch, stub.instance_variable_get(:@batch)
     end
 
-    def test_cursor_new_takes_no_total
-      assert_raises(ArgumentError) { Cursor.new(User, "users/1/followers", client: @client, total: -> { 1 }) }
+    def test_cursor_new_is_private
+      assert_raises(NoMethodError) { Cursor.new(User, "users/1/followers", client: @client) }
+      assert_raises(NoMethodError) { Cursor.build(User, "users/1/followers", client: @client) }
     end
 
-    def test_cursor_new_keeps_the_options_it_is_given
-      cursor = Cursor.new(User, "users/search", client: @client, prefetch: true, token_param: "next_token", app_only: true)
+    def test_cursor_build_pages_by_pagination_token_as_the_user_by_default
+      cursor = Cursor.__send__(:build, User, "users/1/followers", client: @client)
+
+      assert_equal [false, "pagination_token", 1, false, nil, false], [cursor.prefetch?, cursor.token_param, cursor.min_results, cursor.app_only?, cursor.published_count, cursor.__send__(:ids_only?)]
+    end
+
+    def test_cursor_build_keeps_the_options_it_is_given
+      cursor = Cursor.__send__(:build, User, "users/search", client: @client, prefetch: true, token_param: "next_token", app_only: true)
 
       assert_equal [true, "next_token", true, nil], [cursor.prefetch?, cursor.token_param, cursor.app_only?, cursor.published_count]
     end

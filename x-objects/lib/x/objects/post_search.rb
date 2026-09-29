@@ -23,7 +23,7 @@ module X
       #   X::Post.search("ruby -is:retweet", client: client).each { |post| puts post.text }
       def search(query, client:, **params)
         # @type self: singleton(Post)
-        Cursor.new(self, "tweets/search/recent", client:, params: {query:, max_results: Post::MAX_RESULTS}.merge(params), min_results: 10)
+        Cursor.__send__(:build, self, "tweets/search/recent", client:, params: {query:, max_results: Post::MAX_RESULTS}.merge(params), min_results: 10)
       end
 
       # Search the full archive of posts
@@ -42,7 +42,7 @@ module X
       def search_all(query, client:, **params)
         # @type self: singleton(Post)
         max_results = context_annotations?(params) ? Post::MAX_RESULTS : Post::MAX_ARCHIVE_RESULTS
-        Cursor.new(self, "tweets/search/all", client:, params: {query:, max_results:}.merge(params), min_results: 10)
+        Cursor.__send__(:build, self, "tweets/search/all", client:, params: {query:, max_results:}.merge(params), min_results: 10)
       end
 
       # The posts of the authenticated user that other users have reposted
@@ -57,7 +57,7 @@ module X
       #   X::Post.reposts_of_me(client: client).each { |post| puts post.text }
       def reposts_of_me(client:, **params)
         # @type self: singleton(Post)
-        Cursor.new(self, "users/reposts_of_me", client:, params: {max_results: Post::MAX_RESULTS}.merge(params))
+        Cursor.__send__(:build, self, "users/reposts_of_me", client:, params: {max_results: Post::MAX_RESULTS}.merge(params))
       end
 
       alias_method :retweets_of_me, :reposts_of_me
