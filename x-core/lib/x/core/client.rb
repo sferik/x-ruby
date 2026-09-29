@@ -132,7 +132,9 @@ module X
     # @param keep_alive_timeout [Integer, Float] the time to keep a connection open for the next request to the same
     #   host, in seconds, which a proxy that closes idle connections sooner than X does may need lowered
     # @param debug_output [IO, #<<, nil] the IO object for debug output, or anything else that takes a String with <<,
-    #   such as a StringIO or a Logger
+    #   such as a StringIO. It is written every request and response whole, in the clear: the Authorization header,
+    #   the client secret a token request sends, and the tokens a token response holds. Send it to a file you
+    #   control while debugging, never to a log that is shipped elsewhere, and leave it nil in production.
     # @param proxy_url [String, URI::Generic, nil] the proxy URL for requests
     # @param default_array_class [Class] the default class for parsing JSON arrays
     # @param default_object_class [Class, #from_response] the default class for parsing JSON objects, or one that

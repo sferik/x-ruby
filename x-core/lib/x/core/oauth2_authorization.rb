@@ -95,7 +95,9 @@ module X
     # @param read_timeout [Integer, Float, nil] the timeout for reading responses in seconds, or nil for none
     # @param write_timeout [Integer, Float, nil] the timeout for writing requests in seconds, or nil for none
     # @param debug_output [IO, #<<, nil] the IO object for debug output, or anything else that takes a String with <<,
-    #   such as a StringIO or a Logger
+    #   such as a StringIO. It is written every request and response whole, in the clear: the Authorization header,
+    #   the client secret a token request sends, and the tokens a token response holds. Send it to a file you
+    #   control while debugging, never to a log that is shipped elsewhere, and leave it nil in production.
     # @return [OAuth2Authorization] a new authorization
     # @raise [ArgumentError] if the state is nil or empty, which would accept the redirect of any authorization
     # @raise [ArgumentError] if the code verifier is not 43 to 128 unreserved characters
