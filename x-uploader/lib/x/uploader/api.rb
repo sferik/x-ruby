@@ -46,7 +46,7 @@ module X
       #   client.upload_media(StringIO.new(File.binread("cat.png")))
       # @example Upload media of a category no signature names
       #   client.upload_media(StringIO.new(subtitles), media_category: "subtitles")
-      def upload_media(media, **options)
+      def upload_media(media, **options) # steep:ignore DifferentMethodParameterKind
         MediaUpload.upload(media, client: self, **options)
       end
 
@@ -64,7 +64,7 @@ module X
       # @example Wait for a video uploaded with chunked_upload
       #   video = client.await_media_processing(video)
       #   warn video.processing_info.dig("error", "message") if video.failed?
-      def await_media_processing(media, **options)
+      def await_media_processing(media, **options) # steep:ignore DifferentMethodParameterKind
         MediaUpload.await_processing(media, client: self, **options)
       end
 
@@ -80,7 +80,7 @@ module X
       # @raise [MediaProcessingTimeout] if the media is still processing once the processing timeout would pass
       # @example Wait for a video uploaded with chunked_upload, raising if X could not process it
       #   client.await_media_processing!(video)
-      def await_media_processing!(media, **options)
+      def await_media_processing!(media, **options) # steep:ignore DifferentMethodParameterKind
         MediaUpload.await_processing!(media, client: self, **options)
       end
 
@@ -112,7 +112,7 @@ module X
       # @return [UploadedMedia] the video given, as uploaded media, which a call can be chained to
       # @example Subtitle a video in English
       #   client.add_subtitles(video, subtitles, "EN", display_name: "English")
-      def add_subtitles(video, subtitles, language_code, **options)
+      def add_subtitles(video, subtitles, language_code, **options) # steep:ignore DifferentMethodParameterKind
         Metadata.add_subtitles(video, subtitles, language_code, client: self, **options)
       end
 
@@ -142,7 +142,7 @@ module X
       # @raise [InvalidMediaType] if the image is not a GIF, JPEG, or PNG image
       # @example Update the profile banner
       #   client.update_profile_banner("banner.png", width: 1500, height: 500)
-      def update_profile_banner(media, **options)
+      def update_profile_banner(media, **options) # steep:ignore DifferentMethodParameterKind
         Account.update_profile_banner(media, client: self, **options)
       end
     end

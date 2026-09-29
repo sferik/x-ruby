@@ -22,13 +22,13 @@ module X
     end
 
     module API : _Client
-      def upload_media: (uploadable media, **untyped options) -> UploadedMedia
-      def await_media_processing: (media media, **untyped options) -> UploadedMedia
-      def await_media_processing!: (media media, **untyped options) -> UploadedMedia
+      def upload_media: (uploadable media, ?media_category: (String | Symbol)?, ?alt_text: String?, ?processing_timeout: Float | Integer, ?media_type: String?, ?chunk_size_mb: (Float | Integer)?, ?concurrency: Integer) -> UploadedMedia
+      def await_media_processing: (media media, ?processing_timeout: Float | Integer) -> UploadedMedia
+      def await_media_processing!: (media media, ?processing_timeout: Float | Integer) -> UploadedMedia
       def add_alt_text: (media media, String text) -> UploadedMedia
-      def add_subtitles: (media video, media subtitles, String language_code, **untyped options) -> UploadedMedia
+      def add_subtitles: (media video, media subtitles, String language_code, ?display_name: String?, ?media_category: String | Symbol) -> UploadedMedia
       def update_profile_image: (uploadable media) -> Hash[String, untyped]?
-      def update_profile_banner: (uploadable media, **untyped options) -> nil
+      def update_profile_banner: (uploadable media, ?width: Integer?, ?height: Integer?, ?offset_left: Integer?, ?offset_top: Integer?) -> nil
     end
 
     class Error < ::X::Error
