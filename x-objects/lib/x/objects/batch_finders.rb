@@ -67,10 +67,12 @@ module X
         resources.filter_map { |resource| settled?(resource) ? resource.hydrate : replace.call(resource) }.freeze
       end
 
-      # Look up many resources by identifier, in parallel batches, once each
+      # Look up many resources by identifier, in parallel batches
       #
-      # The resources come back in the order of the identifiers they were asked for by, each once, whatever order
-      # the batches were answered in.
+      # The resources come back in the order of the identifiers they were asked for by, whatever order the batches
+      # were answered in, one for each identifier that was found, so an identifier asked for twice comes back twice,
+      # as hydrate_all keeps a resource it is given twice. Each identifier is asked for once, however often it is
+      # given.
       #
       # @api public
       # @param ids [Array<String, Integer, Resource>] the identifiers, or resources of this class
@@ -79,7 +81,7 @@ module X
       #   request of up to MAX_BATCH_SIZE identifiers, so a lower number spends a rate limit more slowly
       # @param params [Hash] query parameters merged over the default parameters; one that overrides a default field
       #   or expansion parameter to leave some out builds resources that are not hydrated, so hydrate fetches the rest
-      # @return [Array<Resource>] the resources that were found, frozen
+      # @return [Array<Resource>] the resources that were found, one for each identifier that names one, frozen
       # @raise [ArgumentError] if the concurrency is less than one
       # @raise [ArgumentError] if an identifier is not one, or is a resource of another class, before a request
       # @yieldparam problem [Problem] each problem the API reported, such as an identifier that was not found
@@ -129,7 +131,7 @@ module X
         bodies.flat_map { |body| collection_from_response(reporting(body, &), client:, hydrated: fully_requested_by?(query), query:) }
       end
 
-      # Order resources as the identifiers they were asked for by, each once
+      # Order resources as the identifiers that name them, one for each identifier
       #
       # An identifier is read as the resource reads its own, so that one asked for as a String of digits matches the
       # Integer of the resource.
@@ -137,11 +139,11 @@ module X
       # @api private
       # @param resources [Array<Resource>] the resources found
       # @param ids [Array<String>] the identifiers asked for
-      # @return [Array<Resource>] the resources, in the order of the first identifier that matches each, frozen
+      # @return [Array<Resource>] the resource each identifier names, in the order of the identifiers, frozen
       def in_order_of(resources, ids)
         convert = Attributes::CONVERTERS.fetch(id_type)
         by_id = resources.to_h { |resource| [resource.id, resource] }
-        ids.filter_map { |id| by_id[convert.call(id)] }.uniq.freeze
+        ids.filter_map { |id| by_id[convert.call(id)] }.freeze
       end
 
       # Check whether hydrating a resource costs no request

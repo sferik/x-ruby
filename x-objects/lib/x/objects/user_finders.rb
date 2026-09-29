@@ -57,8 +57,9 @@ module X
       # Look up many users by identifier or username, in parallel batches
       #
       # Integers and users are looked up by identifier, and Strings by username. The users come back in the
-      # order they were asked for, each once, without the ones that were not found. Every username is checked before
-      # any request, so one that is not a username raises before the identifiers are looked up, and billed.
+      # order they were asked for, one for each value that was found, so a user asked for twice, by identifier or by
+      # username, comes back twice, without the ones that were not found. Every username is checked before any
+      # request, so one that is not a username raises before the identifiers are looked up, and billed.
       #
       # @api public
       # @param ids_or_usernames [Array<Integer, User, String>] identifiers or users, or usernames
@@ -66,7 +67,7 @@ module X
       # @param concurrency [Integer] the number of batches looked up at once, which must be at least one; the
       #   identifiers and the usernames are looked up one kind after the other, each kind that many batches at a time
       # @param params [Hash] query parameters merged over the default parameters
-      # @return [Array<User>] the users that were found, frozen
+      # @return [Array<User>] the users that were found, one for each value that names one, frozen
       # @raise [ArgumentError] if a String is not a username, or if the concurrency is less than one, before any request
       # @yieldparam problem [Problem] each problem the API reported, such as a user that was not found
       # @example Look up many users by username
@@ -78,18 +79,18 @@ module X
         in_order(found + find_all_by_username(usernames, client:, concurrency:, **params, &), ids_or_usernames)
       end
 
-      # Look up many users by identifier, in parallel batches, once each
+      # Look up many users by identifier, in parallel batches
       #
       # A String of digits is an identifier, as it is read from a response or an environment variable, so this looks
       # the accounts those numbers identify up, where find_all would take them for usernames. The users come back in
-      # the order they were asked for, each once.
+      # the order they were asked for, one for each identifier that was found, as find_all returns them.
       #
       # @api public
       # @param ids [Array<String, Integer, User>] the identifiers, or users
       # @param client [Object] the client used to make the requests
       # @param concurrency [Integer] the number of batches looked up at once, which must be at least one
       # @param params [Hash] query parameters merged over the default parameters
-      # @return [Array<User>] the users that were found, frozen
+      # @return [Array<User>] the users that were found, one for each identifier that names one, frozen
       # @raise [ArgumentError] if a value is not an identifier, or if the concurrency is less than one
       # @yieldparam problem [Problem] each problem the API reported, such as an identifier that was not found
       # @example Look up many users by identifier, read as Strings
@@ -133,16 +134,18 @@ module X
         find_by_id(id, client:, **params) { |problem| problems << problem } || raise(MissingResource.new("Could not find #{self} #{Utils.id_of(id, self)}", problems:))
       end
 
-      # Look up many users by username, in parallel batches, once each
+      # Look up many users by username, in parallel batches
       #
-      # The users come back in the order they were asked for, each once, whatever the case of each username.
+      # The users come back in the order they were asked for, one for each username that was found, whatever its
+      # case, as find_all returns them, and each username is asked for once, however often, and in whatever case, it
+      # is given.
       #
       # @api public
       # @param usernames [Array<String>] the usernames, with or without leading at signs
       # @param client [Object] the client used to make the requests
       # @param concurrency [Integer] the number of batches looked up at once, which must be at least one
       # @param params [Hash] query parameters merged over the default parameters
-      # @return [Array<User>] the users that were found, frozen
+      # @return [Array<User>] the users that were found, one for each username that names one, frozen
       # @raise [ArgumentError] if a value is not a username, or if the concurrency is less than one
       # @yieldparam problem [Problem] each problem the API reported, such as a username that was not found
       # @example Look up many users by username
@@ -216,14 +219,14 @@ module X
 
       private
 
-      # Order users as they were asked for, each once
+      # Order users as they were asked for, one for each value that names one
       # @api private
       # @param users [Array<User>] the users found
       # @param ids_or_usernames [Array<Integer, User, String>] the identifiers, users, and usernames asked for
-      # @return [Array<User>] the users, in the order of the first value that matches each, frozen
+      # @return [Array<User>] the user each value names, in the order of the values, frozen
       def in_order(users, ids_or_usernames)
         by_key = users.to_h { |user| [key_of(user), user] }.merge(users.to_h { |user| [key_of(user.username), user] })
-        ids_or_usernames.filter_map { |value| by_key[key_of(value)] }.uniq.freeze
+        ids_or_usernames.filter_map { |value| by_key[key_of(value)] }.freeze
       end
 
       # The key that matches a user to the identifier or username it was asked for by

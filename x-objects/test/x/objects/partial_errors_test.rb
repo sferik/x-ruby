@@ -77,7 +77,7 @@ module X
         @client.stub(:get, "tweets", ->(query, _) { {"data" => query["ids"].split(",").map { |id| {"id" => id} }} })
         posts = X::Post.find_all([1, "1", X::Post.from_id(1), *(6..105)], client: @client)
 
-        assert_equal [1, *(6..105)], posts.map(&:id)
+        assert_equal [1, 1, 1, *(6..105)], posts.map(&:id)
         assert_equal [100, 1], batch_sizes
       end
 
@@ -86,7 +86,7 @@ module X
         yielded = []
         users = User.find_all_by_username(["sferik", "@Sferik", "SFERIK", "nobody"], client: @client) { |problem| yielded << problem.to_h["value"] }
 
-        assert_equal [1], users.map(&:id)
+        assert_equal [1, 1, 1], users.map(&:id)
         assert_equal "sferik,nobody", @client.queries.first["usernames"]
         assert_equal ["nobody"], yielded
       end

@@ -28,8 +28,25 @@ module X
       assert_equal %w[b a], User.find_all_by_username(%w[B @a], client: @client).map(&:username)
     end
 
-    def test_a_resource_asked_for_twice_comes_back_once_where_it_was_first_asked_for
-      assert_equal [2, 1], Post.find_all([2, 1, 2], client: @client).map(&:id)
+    def test_a_resource_asked_for_twice_comes_back_twice_but_is_asked_for_once
+      assert_equal [2, 1, 2], Post.find_all([2, 1, "2"], client: @client).map(&:id)
+      assert_equal %w[b a b], Space.find_all(%w[b a b], client: @client).map(&:id)
+      assert_equal ["2,1", "b,a"], @client.queries.map { |query| query["ids"] }
+    end
+
+    def test_a_user_asked_for_twice_comes_back_twice_but_is_asked_for_once
+      assert_equal [2, 1, 2], User.find_all_by_id([2, 1, 2], client: @client).map(&:id)
+      assert_equal %w[b a b], User.find_all_by_username(%w[b a @B], client: @client).map(&:username)
+      assert_equal %w[b b], User.find_all(%w[b @B], client: @client).map(&:username)
+      assert_equal ["2,1", "b,a", "b"], @client.queries.map { |query| query["ids"] || query["usernames"] }
+    end
+
+    def test_find_all_keeps_what_was_asked_for_twice_as_hydrate_all_does
+      post = Post.from_id(2, client: @client)
+      found = Post.find_all([post, 3, post], client: @client)
+
+      assert_equal found, Post.hydrate_all([post, Post.from_id(3), post], client: @client)
+      assert_equal [2, 3, 2], found.map(&:id)
     end
 
     private
