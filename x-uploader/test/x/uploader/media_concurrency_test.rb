@@ -61,7 +61,7 @@ module X
     end
 
     def test_raises_the_error_of_the_chunk_that_failed_first
-      stub_failing_first_append(failure_wait: 0.01, success_wait: 0.05, success_status: 403)
+      stub_failing_first_append(failure_wait: 0, success_wait: 0.05, success_status: 403, after_failure: true)
 
       assert_raises(BadRequest) { upload(chunks: 2, concurrency: 2) }
     end
@@ -69,11 +69,17 @@ module X
     private
 
     # Fail the first chunk with 400 Bad Request, and answer every other after a longer wait
-    def stub_failing_first_append(failure_wait:, success_wait:, success_status: 204)
+    #
+    # A wait alone orders the answers only once both chunks are sent, which a slow runner may start in either order,
+    # so after_failure holds every other chunk until the first has been answered, and then for its wait.
+    def stub_failing_first_append(failure_wait:, success_wait:, success_status: 204, after_failure: false)
       @finished = []
+      answered = Thread::Queue.new
       stub_request(:post, APPEND_URL).to_return do |request|
         failed = request.body.b.include?("name=\"segment_index\"\r\n\r\n0\r\n")
+        answered.pop(timeout: 5).then { answered << true } if after_failure && !failed
         sleep(failed ? failure_wait : success_wait)
+        answered << true if failed
         @finished << request unless failed
         {status: failed ? 400 : success_status}
       end
