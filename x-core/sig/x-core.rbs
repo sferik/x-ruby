@@ -47,7 +47,7 @@ module X
     def inspect: () -> String
     def url: () -> String
     def credentials: (String | Hash[String | Symbol, String] callback) -> Hash[Symbol, String | Time | nil]
-    def client: (String | Hash[String | Symbol, String] callback, ?api_key: String?, ?api_key_secret: String?, ?access_token: String?, ?access_token_secret: String?, ?bearer_token: String?, ?client_id: String?, ?client_secret: String?, ?refresh_token: String?, ?expires_at: Time?, ?base_url: String, ?open_timeout: (Float | Integer)?, ?read_timeout: (Float | Integer)?, ?write_timeout: (Float | Integer)?, ?keep_alive_timeout: Float | Integer, ?debug_output: _DebugOutput?, ?proxy_url: (URI::Generic | String)?, ?default_array_class: Class, ?default_object_class: object_class, ?headers: headers, ?max_redirects: Integer, ?max_rate_limit_retries: Integer, ?max_rate_limit_wait: Float | Integer, ?max_retries: Integer, ?on_response: _ResponseHook?, ?on_token_refresh: _TokenRefreshHook?) -> Client
+    def client: (String | Hash[String | Symbol, String] callback, ?api_key: String?, ?api_key_secret: String?, ?access_token: String?, ?access_token_secret: String?, ?bearer_token: String?, ?client_id: String?, ?client_secret: String?, ?refresh_token: String?, ?expires_at: Time?, ?base_url: String, ?open_timeout: (Float | Integer)?, ?read_timeout: (Float | Integer)?, ?write_timeout: (Float | Integer)?, ?keep_alive_timeout: Float | Integer, ?debug_output: _DebugOutput?, ?proxy_url: (URI::Generic | String)?, ?default_array_class: Class, ?default_object_class: object_class, ?headers: headers, ?max_redirects: Integer, ?max_rate_limit_retries: Integer, ?max_rate_limit_wait: Float | Integer, ?max_retries: Integer, ?on_response: _ResponseHook?, ?on_token_refresh: _TokenRefreshHook?, ?load_tokens: _TokenLoader?) -> Client
   end
 
   class AuthorizationError < Error
@@ -285,7 +285,7 @@ module X
 
     attr_reader client_id: String
     attr_reader expires_at: Time?
-    def initialize: (client_id: String, access_token: String, ?refresh_token: String?, ?client_secret: String?, ?expires_at: Time?) -> void
+    def initialize: (client_id: String, access_token: String, ?refresh_token: String?, ?client_secret: String?, ?expires_at: Time?, ?load_tokens: _TokenLoader?) -> void
     def inspect: () -> String
     def token_expired?: -> bool
     def refresh!: -> OAuth2Tokens
@@ -306,6 +306,11 @@ module X
 
   interface _TokenRefreshHook
     def call: (OAuth2Tokens tokens) -> untyped
+  end
+
+  # What reads the OAuth2Tokens in the storage that the processes sharing the tokens of a user read, or nil for none
+  interface _TokenLoader
+    def call: () -> OAuth2Tokens?
   end
 
   # What builds the result of a request from the whole of its parsed body, as the object_class of a request, a
@@ -335,10 +340,11 @@ module X
     DEFAULT_MAX_RETRIES: Integer
 
     attr_reader on_token_refresh: _TokenRefreshHook?
+    attr_reader load_tokens: _TokenLoader?
     attr_reader authenticator: Authenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator
-    def initialize: (?api_key: String?, ?api_key_secret: String?, ?access_token: String?, ?access_token_secret: String?, ?bearer_token: String?, ?client_id: String?, ?client_secret: String?, ?refresh_token: String?, ?expires_at: Time?, ?authenticator: Authenticator?, ?base_url: String, ?open_timeout: (Float | Integer)?, ?read_timeout: (Float | Integer)?, ?write_timeout: (Float | Integer)?, ?keep_alive_timeout: Float | Integer, ?debug_output: _DebugOutput?, ?proxy_url: (URI::Generic | String)?, ?default_array_class: Class, ?default_object_class: object_class, ?headers: headers, ?max_redirects: Integer, ?max_rate_limit_retries: Integer, ?max_rate_limit_wait: Float | Integer, ?max_retries: Integer, ?on_response: _ResponseHook?, ?on_token_refresh: _TokenRefreshHook?) -> void
+    def initialize: (?api_key: String?, ?api_key_secret: String?, ?access_token: String?, ?access_token_secret: String?, ?bearer_token: String?, ?client_id: String?, ?client_secret: String?, ?refresh_token: String?, ?expires_at: Time?, ?authenticator: Authenticator?, ?base_url: String, ?open_timeout: (Float | Integer)?, ?read_timeout: (Float | Integer)?, ?write_timeout: (Float | Integer)?, ?keep_alive_timeout: Float | Integer, ?debug_output: _DebugOutput?, ?proxy_url: (URI::Generic | String)?, ?default_array_class: Class, ?default_object_class: object_class, ?headers: headers, ?max_redirects: Integer, ?max_rate_limit_retries: Integer, ?max_rate_limit_wait: Float | Integer, ?max_retries: Integer, ?on_response: _ResponseHook?, ?on_token_refresh: _TokenRefreshHook?, ?load_tokens: _TokenLoader?) -> void
     def inspect: () -> String
-    def with: (?api_key: String?, ?api_key_secret: String?, ?access_token: String?, ?access_token_secret: String?, ?bearer_token: String?, ?client_id: String?, ?client_secret: String?, ?refresh_token: String?, ?expires_at: Time?, ?authenticator: Authenticator?, ?base_url: String, ?open_timeout: (Float | Integer)?, ?read_timeout: (Float | Integer)?, ?write_timeout: (Float | Integer)?, ?keep_alive_timeout: Float | Integer, ?debug_output: _DebugOutput?, ?proxy_url: (URI::Generic | String)?, ?default_array_class: Class, ?default_object_class: object_class, ?headers: headers, ?max_redirects: Integer, ?max_rate_limit_retries: Integer, ?max_rate_limit_wait: Float | Integer, ?max_retries: Integer, ?on_response: _ResponseHook?, ?on_token_refresh: _TokenRefreshHook?) -> Client
+    def with: (?api_key: String?, ?api_key_secret: String?, ?access_token: String?, ?access_token_secret: String?, ?bearer_token: String?, ?client_id: String?, ?client_secret: String?, ?refresh_token: String?, ?expires_at: Time?, ?authenticator: Authenticator?, ?base_url: String, ?open_timeout: (Float | Integer)?, ?read_timeout: (Float | Integer)?, ?write_timeout: (Float | Integer)?, ?keep_alive_timeout: Float | Integer, ?debug_output: _DebugOutput?, ?proxy_url: (URI::Generic | String)?, ?default_array_class: Class, ?default_object_class: object_class, ?headers: headers, ?max_redirects: Integer, ?max_rate_limit_retries: Integer, ?max_rate_limit_wait: Float | Integer, ?max_retries: Integer, ?on_response: _ResponseHook?, ?on_token_refresh: _TokenRefreshHook?, ?load_tokens: _TokenLoader?) -> Client
     def app_only: () -> (Client | self)
     def api_key: () -> String?
     def client_id: () -> String?

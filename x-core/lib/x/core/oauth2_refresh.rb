@@ -5,11 +5,18 @@ require_relative "errors/authorization_error"
 require_relative "errors/unauthorized"
 require_relative "oauth2_tokens"
 require_relative "origin"
+require_relative "refresh_reporter"
+require_relative "setting_validator"
 require_relative "token_endpoint"
 
 module X
   module Core
     # How an OAuth2Authenticator refreshes its tokens, before a request and after a rejection, included into it
+    #
+    # Processes that share the tokens of a user read the store they share with load_tokens before a refresh, and take
+    # the tokens there in place of their own when those hold another refresh token, which another process issued
+    # by a refresh of its own. The tokens taken are copied, and never recorded as the latest a refresh issued, so the
+    # RefreshReporter passes them to no on_token_refresh: they came from the store.
     #
     # Internal to x-core: the methods are private, and a client calls retrying_rejected_token with __send__.
     #
@@ -21,8 +28,22 @@ module X
       # Seconds after a refresh in which a rejection of the access token it issued refreshes nothing
       FRESH_TOKEN_SECONDS = 60
       private_constant :FRESH_TOKEN_SECONDS
+      # The error codes of a refresh X refuses for a refresh token it no longer accepts, as one another process spent
+      REFUSED_REFRESH_TOKEN = %w[invalid_request invalid_grant].freeze
+      private_constant :REFUSED_REFRESH_TOKEN
 
       private
+
+      # Initialize the lock, the reporter, and the loader of the refreshes
+      # @api private
+      # @param load_tokens [#call, nil] the callable that returns the OAuth2Tokens in the store, or nil for none
+      # @return [void]
+      # @raise [ArgumentError] if load_tokens is neither nil nor responds to call
+      def initialize_refresh(load_tokens)
+        @load_tokens = SettingValidator.callable!(:load_tokens, load_tokens)
+        @mutex = Mutex.new
+        @reporter = RefreshReporter.new
+      end
 
       # Refresh the access token if it has expired, over a connection
       #
@@ -34,7 +55,7 @@ module X
       # @raise [AuthorizationError] if X refuses to refresh the token
       # @raise [TooManyRequests, ServerError] if the token endpoint limits the rate of the request or fails to answer
       def refresh_expired_token(connection)
-        tokens = @mutex.synchronize { refresh(connection) if refresh_token && token_expired? }
+        tokens = @mutex.synchronize { renew(connection) if refresh_token && token_expired? }
         report_refresh(tokens) if tokens
       end
 
@@ -54,7 +75,7 @@ module X
       # @raise [TooManyRequests, ServerError] if the token endpoint limits the rate of the request or fails to answer
       def refresh_rejected_token!(rejected_token, connection)
         tokens, replaced = @mutex.synchronize do
-          [(refresh(connection) if refresh_token && access_token.eql?(rejected_token) && !fresh?), !access_token.eql?(rejected_token)]
+          [(renew(connection) if refresh_token && access_token.eql?(rejected_token) && !fresh?), !access_token.eql?(rejected_token)]
         end
         report_refresh(tokens) if tokens
         replaced
@@ -94,22 +115,82 @@ module X
         end
       end
 
-      # Refresh the access token, holding the lock
+      # Take the tokens in the store, or else refresh, holding the lock
       #
-      # It is called for an authenticator that holds a refresh token alone, which a refresh never takes away.
+      # Tokens taken from the store whose access token has not expired are sent as they are, and the others refreshed
+      # with the refresh token there.
       #
       # @api private
       # @param connection [Core::Connection] the connection to send the refresh over
-      # @return [OAuth2Tokens] the tokens the refresh issued, once the authenticator holds them
+      # @return [OAuth2Tokens, nil] the tokens the refresh issued, or those it took from the store in place of a
+      #   refusal, or nil for tokens taken from the store that need no refresh
       # @raise [AuthorizationError] if X refuses to refresh the token
+      # @raise [TooManyRequests, ServerError] if the token endpoint limits the rate of the request or fails to answer
+      def renew(connection)
+        refresh(connection) unless adopt_stored_tokens && !token_expired?
+      end
+
+      # Refresh the access token, holding the lock
+      #
+      # It is called for an authenticator that holds a refresh token alone, which a refresh never takes away. A
+      # refresh X refuses for a refresh token it no longer accepts reads the store again, and takes the tokens there,
+      # if they hold another refresh token, in place of raising: another process spent the refresh token first.
+      #
+      # @api private
+      # @param connection [Core::Connection] the connection to send the refresh over
+      # @return [OAuth2Tokens] the tokens the refresh issued, once the authenticator holds them, or those it took from
+      #   the store in place of a refusal
+      # @raise [AuthorizationError] if X refuses to refresh the token, and the store holds no other
       # @raise [TooManyRequests, ServerError] if the token endpoint limits the rate of the request or fails to answer
       def refresh(connection)
         held = refresh_token #: String
         update_tokens(TokenEndpoint.fetch(oauth2_client.refresh_token_request(refresh_token: held), connection:))
+        @spent_refresh_token = held
         issued = refresh_token #: String
         @reporter.issued(OAuth2Tokens.new(access_token:, refresh_token: issued, expires_at:))
       rescue SimpleOAuth::OAuth2::Error => e
-        raise AuthorizationError.from(e, DEFAULT_ERROR_MESSAGE), cause: e.cause
+        adopt_in_place_of(e)
+      end
+
+      # Take the stored tokens in place of a refused refresh, or raise the refusal
+      # @api private
+      # @param error [SimpleOAuth::OAuth2::Error] the refusal
+      # @return [OAuth2Tokens] a copy of the tokens taken
+      # @raise [AuthorizationError] if X refused anything but the refresh token, or the store holds no other
+      def adopt_in_place_of(error)
+        adopted = adopt_stored_tokens if REFUSED_REFRESH_TOKEN.include?(error.code)
+        adopted or raise AuthorizationError.from(error, DEFAULT_ERROR_MESSAGE), cause: error.cause
+      end
+
+      # Take the stored tokens, if they hold another refresh token
+      #
+      # Tokens that hold the refresh token the authenticator holds, or the one its last refresh spent, are its own,
+      # as the store holds them until on_token_refresh has stored the tokens of that refresh, which it is passed once
+      # the lock is released, so they are not taken. The age of the access token taken is unknown, so it is not fresh.
+      #
+      # @api private
+      # @return [OAuth2Tokens, nil] a copy of the tokens taken, or nil if the store holds none, or none of another's
+      def adopt_stored_tokens
+        stored = stored_tokens or return
+        return if [refresh_token, @spent_refresh_token].include?(stored.refresh_token)
+
+        @refreshed_at = nil
+        @access_token = stored.access_token
+        @refresh_token = stored.refresh_token
+        @expires_at = stored.expires_at
+        OAuth2Tokens.new(**stored.to_h)
+      end
+
+      # The tokens in the store the tokens of the user are shared through
+      #
+      # They are read with the load_tokens of the authenticator, or else with the load_tokens of a client that
+      # authenticates with it.
+      #
+      # @api private
+      # @return [OAuth2Tokens, nil] the tokens, or nil for none in the store, or no load_tokens to read it with
+      def stored_tokens
+        load_tokens = @load_tokens || clients.keys.filter_map(&:load_tokens).first
+        load_tokens&.call
       end
 
       # Pass the tokens of a refresh to its callables, once the lock is released

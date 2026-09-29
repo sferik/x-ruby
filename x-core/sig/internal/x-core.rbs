@@ -231,9 +231,13 @@ module X
       @refresh_token: String?
       @expires_at: Time?
 
+      @on_token_refresh: _TokenRefreshHook?
+      @load_tokens: _TokenLoader?
+
       def expires_at: () -> Time?
 
       private
+      def initialize_token_hooks: (on_token_refresh: _TokenRefreshHook?, load_tokens: _TokenLoader?) -> void
       def share_authenticator: (Authenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator other, Hash[Symbol, untyped] options) -> void
       def take: (Authenticator authenticator) -> Authenticator
       def join: (OAuth2Authenticator authenticator) -> OAuth2Authenticator
@@ -360,6 +364,7 @@ module X
       INVALID_BASE_URL: String
       INVALID_HEADERS: String
       INVALID_HEADER: String
+      INVALID_CALLABLE: String
       extend SettingValidator
 
       def count!: (Symbol name, untyped value) -> untyped
@@ -369,6 +374,7 @@ module X
       def timeout!: (Symbol name, untyped value) -> untyped
       def base_url!: (untyped value) -> String
       def headers!: (untyped value) -> headers
+      def callable!: (Symbol name, untyped value) -> untyped
 
       private
       def invalid_header!: (untyped name, untyped header) -> bot
@@ -656,8 +662,11 @@ module X
     module OAuth2Refresh
       DEFAULT_ERROR_MESSAGE: String
       FRESH_TOKEN_SECONDS: Integer
+      REFUSED_REFRESH_TOKEN: Array[String]
 
       @mutex: Thread::Mutex
+      @load_tokens: _TokenLoader?
+      @spent_refresh_token: String?
       @reporter: RefreshReporter
       @refreshed_at: Float?
       @access_token: String
@@ -668,13 +677,19 @@ module X
       def token_expired?: () -> bool
 
       private
+      def initialize_refresh: (_TokenLoader? load_tokens) -> void
       def access_token: () -> String
       def refresh_token: () -> String?
       def oauth2_client: () -> SimpleOAuth::OAuth2::Client
+      def clients: () -> _ClientRegistry
       def refresh_expired_token: (Connection connection) -> void
       def refresh_rejected_token!: (String rejected_token, Connection connection) -> bool
       def retrying_rejected_token: [T] (URI::Generic origin, Connection connection) { () -> T } -> T
+      def renew: (Connection connection) -> OAuth2Tokens?
       def refresh: (Connection connection) -> OAuth2Tokens
+      def adopt_in_place_of: (SimpleOAuth::OAuth2::Error error) -> OAuth2Tokens
+      def adopt_stored_tokens: () -> OAuth2Tokens?
+      def stored_tokens: () -> OAuth2Tokens?
       def report_refresh: (OAuth2Tokens tokens) -> void
       def update_tokens: (SimpleOAuth::OAuth2::Token token) -> void
       def fresh?: () -> bool
@@ -699,6 +714,7 @@ module X
 
   interface _SettingsHost
     def on_token_refresh: () -> _TokenRefreshHook?
+    def load_tokens: () -> _TokenLoader?
   end
 
   class Client

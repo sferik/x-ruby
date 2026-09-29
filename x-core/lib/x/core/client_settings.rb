@@ -82,7 +82,7 @@ module X
       def settings
         {base_url:, open_timeout:, read_timeout:, write_timeout:, keep_alive_timeout:, debug_output:, proxy_url:,
          default_array_class:, default_object_class:, headers:, max_redirects:, max_rate_limit_retries:,
-         max_rate_limit_wait:, max_retries:, on_response:, on_token_refresh:}
+         max_rate_limit_wait:, max_retries:, on_response:, on_token_refresh:, load_tokens:}
       end
 
       # Initialize the settings, and the handlers of redirects, rate limits, and retries

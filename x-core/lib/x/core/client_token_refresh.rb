@@ -2,6 +2,7 @@
 
 require_relative "app_only_authenticator"
 require_relative "oauth2_authenticator"
+require_relative "setting_validator"
 
 module X
   module Core
@@ -23,6 +24,17 @@ module X
       end
 
       private
+
+      # Initialize the callables that store and load the tokens of a refresh
+      # @api private
+      # @param on_token_refresh [#call, nil] the callable passed the OAuth2Tokens of each refresh
+      # @param load_tokens [#call, nil] the callable that returns the OAuth2Tokens in the store
+      # @return [void]
+      # @raise [ArgumentError] if load_tokens is neither nil nor responds to call
+      def initialize_token_hooks(on_token_refresh:, load_tokens:)
+        @on_token_refresh = on_token_refresh
+        @load_tokens = SettingValidator.callable!(:load_tokens, load_tokens)
+      end
 
       # Share the OAuth 2.0 authenticator of the client this one was copied from
       #

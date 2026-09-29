@@ -44,8 +44,10 @@ module X
       # The message of the error raised for a header whose name or value is not what a header takes
       INVALID_HEADER = "headers must name each header with a String or a Symbol and give it a String, " \
         "not %<name>s with a %<value>s"
+      # The message of the error raised for a callable that does not respond to call
+      INVALID_CALLABLE = "%s must respond to call, as a Proc or a lambda does, or be nil, not a %s"
       private_constant :INVALID_COUNT, :INVALID_COUNT_OR_INFINITY, :INVALID_SECONDS, :INVALID_FINITE_SECONDS, :INVALID_TIMEOUT,
-        :INVALID_BASE_URL, :INVALID_HEADERS, :INVALID_HEADER
+        :INVALID_BASE_URL, :INVALID_HEADERS, :INVALID_HEADER, :INVALID_CALLABLE
 
       # Check that a count is an Integer of at least 0
       #
@@ -156,6 +158,25 @@ module X
 
         invalid = value.find { |name, header| !header_name?(name) || !header.is_a?(String) }
         invalid ? invalid_header!(*invalid) : value
+      end
+
+      # Check that a callable responds to call, or is nil
+      #
+      # A callable is called only once what it is called for happens, such as a refresh, so one that does not respond
+      # to call would raise NoMethodError from inside a request, long after the client was given it. The error names
+      # its class rather than inspect it, since a callable can close over credentials.
+      #
+      # @api private
+      # @param name [Symbol] the name of the setting, which the error names
+      # @param value [Object] the callable, or nil for none
+      # @return [#call, nil] the value
+      # @raise [ArgumentError] if the value is neither nil nor responds to call
+      # @example Check the loader of the tokens a client shares
+      #   X::Core::SettingValidator.callable!(:load_tokens, -> { store.load }) # => #<Proc (lambda)>
+      def callable!(name, value)
+        return value if value.nil? || value.respond_to?(:call)
+
+        raise ArgumentError, format(INVALID_CALLABLE, name, value.class)
       end
 
       private

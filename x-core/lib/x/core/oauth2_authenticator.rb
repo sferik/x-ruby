@@ -6,7 +6,6 @@ require_relative "connection"
 require_relative "credential_validator"
 require_relative "errors/unsupported_operation"
 require_relative "oauth2_refresh"
-require_relative "refresh_reporter"
 
 module X
   # Handles OAuth 2.0 authentication, refreshing the access token when it expires
@@ -15,6 +14,11 @@ module X
   # refreshes under a lock, and the authenticator of a client passes the tokens each refresh issued, as OAuth2Tokens,
   # to the on_token_refresh of that client and of each copy of it that shares the authenticator, so that they can be
   # stored.
+  #
+  # Processes that share the tokens of a user, storing each refresh with on_token_refresh, read the store with
+  # load_tokens, which a refresh calls under its lock before it refreshes: X accepts a refresh token once, and a
+  # process that refreshed with the one another had already spent would be refused. The tokens a refresh takes from
+  # the store are not passed to on_token_refresh, since they came from it.
   #
   # X issues no refresh token for an authorization without the offline.access scope, so an authenticator built
   # without one authenticates as the user until its access token expires, and refreshes nothing: a request sent
@@ -59,9 +63,13 @@ module X
     # @param refresh_token [String, nil] the OAuth 2.0 refresh token, or nil for an access token issued without the
     #   offline.access scope, which the authenticator cannot refresh
     # @param expires_at [Time, nil] the expiration time of the access token
+    # @param load_tokens [#call, nil] a callable that takes no arguments and returns the OAuth2Tokens in the storage
+    #   the tokens of the user are shared through, or nil for none there, which a refresh reads first, as the
+    #   load_tokens of X::Client#initialize describes; nil reads the load_tokens of a client that authenticates with
+    #   the authenticator instead
     # @return [OAuth2Authenticator] a new authenticator instance
     # @raise [ArgumentError] if the client ID or access token is nil or empty, the refresh token or client secret is
-    #   empty, or the expiration time is neither a Time nor nil
+    #   empty, the expiration time is neither a Time nor nil, or load_tokens is neither nil nor responds to call
     # @example Create an authenticator
     #   authenticator = X::OAuth2Authenticator.new(
     #     client_id: "id",
@@ -69,16 +77,19 @@ module X
     #     access_token: "token",
     #     refresh_token: "refresh"
     #   )
-    def initialize(client_id:, access_token:, refresh_token: nil, client_secret: nil, expires_at: nil)
+    # @example Share the tokens of a user among processes, storing each refresh and reading the store before one
+    #   authenticator = X::OAuth2Authenticator.new(client_id: "id", **store.load(user).to_h,
+    #     load_tokens: -> { store.load(user) })
+    #   client = X::Client.new(authenticator:, on_token_refresh: ->(tokens) { store.save(user, tokens) })
+    def initialize(client_id:, access_token:, refresh_token: nil, client_secret: nil, expires_at: nil, load_tokens: nil)
       Core::CredentialValidator.validate_required!({client_id:, access_token:}, {refresh_token:, client_secret:, expires_at:})
+      initialize_refresh(load_tokens)
       @client_id = client_id
       @client_secret = client_secret
       @access_token = access_token
       @refresh_token = refresh_token
       @expires_at = expires_at
       @connection = Core::Connection.new
-      @mutex = Mutex.new
-      @reporter = Core::RefreshReporter.new
       @clients = ObjectSpace::WeakMap.new
     end
 
@@ -125,8 +136,12 @@ module X
     # same object on_token_refresh is passed, so they are a set that belongs together, whatever refreshes follow on
     # other threads.
     #
+    # A refresh reads the tokens in storage first, with load_tokens, and refreshes with the refresh token there when it
+    # is another. When X refuses the refresh for a refresh token another process spent, and the storage holds
+    # another, the tokens there are returned in place of an error, and are not passed to on_token_refresh.
+    #
     # @api public
-    # @return [OAuth2Tokens] the tokens the refresh issued
+    # @return [OAuth2Tokens] the tokens the refresh issued, or those it took from storage in place of a refusal
     # @raise [UnsupportedOperation] if the authenticator holds no refresh token, before any request
     # @raise [AuthorizationError] if X refuses to refresh the token
     # @raise [TooManyRequests, ServerError] if the token endpoint limits the rate of the request or fails to answer
@@ -135,7 +150,10 @@ module X
     def refresh!
       raise UnsupportedOperation, NO_REFRESH_TOKEN unless refresh_token
 
-      tokens = @mutex.synchronize { refresh(connection) }
+      tokens = @mutex.synchronize do
+        adopt_stored_tokens
+        refresh(connection)
+      end
       report_refresh(tokens)
       tokens
     end
