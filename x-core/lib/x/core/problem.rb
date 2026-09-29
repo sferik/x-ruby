@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "json"
+require_relative "errors/unsupported_marshal_format"
 
 module X
   # A problem the API described, in a response that failed or in one that otherwise succeeded
@@ -15,6 +16,10 @@ module X
     # The kinds of resource whose identifiers are numbers, as the API names them
     INTEGER_ID_TYPES = %w[user tweet post list dm_event community poll].freeze
     private_constant :INTEGER_ID_TYPES
+
+    # The number of the format of the state Marshal writes, which a release that changes the format raises
+    MARSHAL_FORMAT = 1
+    private_constant :MARSHAL_FORMAT
 
     # The raw attributes of the problem
     # @api public
@@ -189,6 +194,32 @@ module X
     # @example Inspect a problem of a request the API refused
     #   problem.inspect # => #<X::Problem Could not authenticate you>
     def inspect = "#<#{self.class} #{[title, detail || message].compact.join(": ")}>"
+
+    # The state Marshal writes
+    #
+    # What is written is plain data, led by the number of its format, so that a problem written by one release of 1.x
+    # is read by a later one: its attributes, as the API described it.
+    #
+    # @api public
+    # @return [Array(Integer, Hash{String => Object})] the number of the format, then the attributes
+    # @example Cache the problems of a response
+    #   Rails.cache.write("problems", X::Problem.all_from(body))
+    def marshal_dump = [MARSHAL_FORMAT, attrs]
+
+    # Restore a problem Marshal read, frozen as the problem that was written was
+    #
+    # @api public
+    # @param state [Array] the state Marshal wrote
+    # @return [void]
+    # @raise [UnsupportedMarshalFormat] if the state is of a format this release does not read
+    # @example Read cached problems
+    #   Marshal.load(Marshal.dump(problem)).title
+    def marshal_load(state)
+      format, attrs = state
+      raise UnsupportedMarshalFormat, "#{self.class} reads format #{MARSHAL_FORMAT} of Marshal, not #{format.inspect}" unless MARSHAL_FORMAT.eql?(format)
+
+      initialize(attrs)
+    end
 
     private
 

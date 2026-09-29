@@ -117,6 +117,8 @@ module X
     def as_json: (*untyped) -> Hash[String, untyped]
     def to_json: (?JSON::State? state) -> String
     def inspect: () -> String
+    def marshal_dump: () -> [Integer, Hash[String, untyped]]
+    def marshal_load: ([Integer, Hash[String, untyped]] state) -> void
   end
 
   class HTTPError < Error
