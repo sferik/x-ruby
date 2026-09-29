@@ -75,6 +75,11 @@ module X
       assert_equal '{"trend_name":"#ruby","tweet_count":"1234"}', trend.to_json
     end
 
+    def test_a_trend_reads_the_number_of_posts_by_either_name
+      assert_equal [12, 12, 34], [{"post_count" => 12}, {"post_count" => "12", "tweet_count" => 34}, {"post_count" => nil, "tweet_count" => 34}].map { |attrs| Trend.new(attrs).post_count }
+      assert_equal 'X::Trend#post_count cannot be read from "many"', assert_raises(InvalidAttribute) { Trend.new({"post_count" => "many"}).post_count }.message
+    end
+
     def test_the_personalized_trends_ask_for_every_field
       trends = @client.personalized_trends
 

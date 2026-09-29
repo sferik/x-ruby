@@ -96,12 +96,15 @@ module X
 
     # The number of posts about the trend
     #
+    # It is read from post_count, or from tweet_count, the name the API gives it before it names tweets posts there,
+    # as the post count of a user is.
+    #
     # @api public
     # @return [Integer, nil] the number of posts, or nil if the API reported none
     # @raise [InvalidAttribute] if the response holds a number of posts that is not a number
     # @example Get the number of posts
     #   trend.post_count # => 1234
-    def post_count = Objects::Utils.read("#{self.class}#post_count", attrs["tweet_count"]) { |value| Objects::Utils.integer(value) }
+    def post_count = Objects::Utils.read("#{self.class}#post_count", attrs["post_count"] || attrs["tweet_count"]) { |value| Objects::Utils.integer(value) }
 
     alias_method :tweet_count, :post_count
 
