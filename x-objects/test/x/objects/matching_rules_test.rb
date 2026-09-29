@@ -7,6 +7,7 @@ module X
     cover Post
     cover Resource
     cover MatchingRule
+    cover Objects::ValueEquality
 
     LINE = {"data" => {"id" => "1", "text" => "hello", "author_id" => "2"},
             "includes" => {"users" => [{"id" => "2", "username" => "sferik"}]},
@@ -54,10 +55,26 @@ module X
       rule = MatchingRule.new(id: "1165037377523306498", tag: +"ruby")
 
       assert_equal [1_165_037_377_523_306_498, "ruby"], [rule.id, rule.tag]
-      assert_equal({id: 1_165_037_377_523_306_498, tag: "ruby"}, rule.to_h)
-      assert_equal rule.to_h, rule.deconstruct_keys(nil)
+      assert_equal({id: 1_165_037_377_523_306_498, tag: "ruby"}, rule.deconstruct_keys(nil))
       assert_equal '#<X::MatchingRule id=1165037377523306498 tag="ruby">', rule.inspect
       assert_nil MatchingRule.new(id: 1).tag
+    end
+
+    def test_a_rule_holds_its_attributes_as_the_stream_sent_them
+      rules = Post.from_response(LINE, client: nil).matching_rules
+
+      assert_equal LINE.fetch("matching_rules"), rules.map(&:attrs)
+      assert_equal({"id" => "1"}, MatchingRule.new(id: 1).to_h)
+      assert_same rules.first.attrs, rules.first.to_h
+      assert_predicate rules.first.attrs, :frozen?
+    end
+
+    def test_a_rule_is_serialized_by_its_attributes
+      rule = MatchingRule.new(id: 1, tag: "ruby")
+
+      assert_same rule.attrs, rule.as_json
+      assert_equal "[{\"id\":\"1\",\"tag\":\"ruby\"}]", [rule].to_json
+      assert_equal "{\"id\":\"2\"}", MatchingRule.new(id: 2).to_json
     end
 
     def test_a_rule_is_frozen_and_keeps_a_copy_of_its_tag

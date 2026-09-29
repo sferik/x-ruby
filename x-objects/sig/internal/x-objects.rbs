@@ -607,6 +607,11 @@ module X
     private def self.woeid_of: (untyped woeid) -> String
   end
 
+  class MatchingRule
+    include Objects::ValueEquality
+    include Objects::Serialization
+  end
+
   class PersonalizedTrend
     include Objects::ValueEquality
     include Objects::Serialization

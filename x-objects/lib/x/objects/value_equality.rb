@@ -4,11 +4,12 @@ module X
   module Objects
     # Equality of what an API response held that has no identifier, by its class and attributes
     #
-    # A trend or the usage of a project has no identifier to tell it by, so two are equal when they are of the same
-    # class and hold the same attributes, and equal ones share a hash, so that uniq and a Hash key tell them apart.
+    # A trend or the usage of a project has no identifier to tell it by, and a rule a post matched is told by its tag
+    # as well as its identifier, so two are equal when they are of the same class and hold the same attributes, and
+    # equal ones share a hash, so that uniq and a Hash key tell them apart.
     #
-    # Internal to x-objects: the methods it gives X::Trend, X::PersonalizedTrend, and X::Usage are public API, but the
-    # module is only how they are shared, and which classes include it can change within 1.x.
+    # Internal to x-objects: the methods it gives X::Trend, X::PersonalizedTrend, X::Usage, and X::MatchingRule are
+    # public API, but the module is only how they are shared, and which classes include it can change within 1.x.
     #
     # @api private
     module ValueEquality

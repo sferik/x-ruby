@@ -603,15 +603,18 @@ module X
   class Tweet = Post
 
   class MatchingRule
+    attr_reader attrs: Hash[String, String]
     attr_reader id: Integer
     attr_reader tag: String?
 
     def initialize: (id: Integer | String, ?tag: String?) -> void
-    def to_h: () -> {id: Integer, tag: String?}
+    def to_h: () -> Hash[String, String]
     def deconstruct_keys: (Array[Symbol]? _keys) -> {id: Integer, tag: String?}
     def ==: (untyped other) -> bool
     def eql?: (untyped other) -> bool
     def hash: () -> Integer
+    def as_json: (*untyped) -> Hash[String, untyped]
+    def to_json: (?JSON::State? state) -> String
     def inspect: () -> String
   end
 

@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+require_relative "serialization"
+require_relative "value_equality"
+
 module X
   # A rule of the filtered stream that a post the stream delivered matched: the identifier the API gave the rule, and
   # the tag it is labelled with
@@ -10,10 +13,32 @@ module X
   # the identifier they share.
   #
   # It is frozen, compares equal to a rule of the same identifier and tag, and matches a pattern of them, as in
-  # rule in {tag: "ruby"}.
+  # rule in {tag: "ruby"}. Its attributes are what the stream sent of the rule, as those of a resource are, so to_h,
+  # as_json, and to_json give them as the stream did.
   #
   # @api public
   class MatchingRule
+    include Objects::Serialization
+    include Objects::ValueEquality
+
+    # The attributes of the rule, as the stream sends them
+    #
+    # The identifier is a String, as the stream sends it, and a rule without a tag holds none.
+    #
+    # @api public
+    # @return [Hash{String => String}] the attributes, frozen
+    # @example Get the attributes
+    #   rule.attrs # => {"id" => "1165037377523306498", "tag" => "ruby"}
+    attr_reader :attrs
+
+    # @!method to_h
+    #   Alias for attrs, returns the attributes of the rule, which X::StreamingClient#delete_stream_rules takes
+    #   @api public
+    #   @return [Hash{String => String}] the attributes
+    #   @example Delete the rule a post matched
+    #     streaming_client.delete_stream_rules(post.matching_rules.first.to_h)
+    alias_method :to_h, :attrs
+
     # The identifier the API gave the rule
     #
     # The API sends it as a String, and it is read as an Integer, as the identifier of a stream rule is.
@@ -43,16 +68,9 @@ module X
     def initialize(id:, tag: nil)
       @id = Integer(id.to_s, 10)
       @tag = (String.try_convert(tag) || raise(ArgumentError, "tag must be a String, not #{tag.inspect}")).dup.freeze unless tag.nil?
+      @attrs = {"id" => @id.to_s, "tag" => @tag}.compact.freeze
       freeze
     end
-
-    # The rule as a Hash, which X::StreamingClient#delete_stream_rules takes
-    #
-    # @api public
-    # @return [Hash{Symbol => Integer, String, nil}] the identifier and tag
-    # @example Delete the rule a post matched
-    #   streaming_client.delete_stream_rules(post.matching_rules.first.to_h)
-    def to_h = {id:, tag:}
 
     # The identifier and tag of the rule, which a pattern matches against
     #
@@ -61,25 +79,7 @@ module X
     # @return [Hash{Symbol => Integer, String, nil}] the identifier and tag
     # @example Keep the posts that matched the rule tagged ruby
     #   post.matching_rules.any? { |rule| rule in {tag: "ruby"} }
-    def deconstruct_keys(_keys) = to_h
-
-    # Check whether another rule is the same rule
-    #
-    # @api public
-    # @param other [Object] the other rule
-    # @return [Boolean] true if the other rule is a MatchingRule of the same identifier and tag
-    # @example Check whether two posts matched the same rule
-    #   first.matching_rules.intersect?(second.matching_rules)
-    def ==(other) = other.instance_of?(self.class) && to_h.eql?(other.to_h)
-    alias_method :eql?, :==
-
-    # The hash of the rule, which equal rules share
-    #
-    # @api public
-    # @return [Integer] the hash
-    # @example Count the distinct rules some posts matched
-    #   posts.flat_map(&:matching_rules).uniq.size
-    def hash = [self.class, to_h].hash
+    def deconstruct_keys(_keys) = {id:, tag:}
 
     # Summarize the rule for the console
     #
