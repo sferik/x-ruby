@@ -11,6 +11,7 @@ module X
   #   │   ├── X::ClientError           4xx: the request was refused, and the same request is refused again
   #   │   │   ├── X::BadRequest                 400
   #   │   │   ├── X::Unauthorized               401
+  #   │   │   ├── X::PaymentRequired            402
   #   │   │   ├── X::Forbidden                  403
   #   │   │   ├── X::NotFound                   404
   #   │   │   ├── X::MethodNotAllowed           405

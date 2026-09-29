@@ -123,6 +123,9 @@ module X
     def retry_after: () -> Integer?
   end
 
+  class PaymentRequired < ClientError
+  end
+
   class Forbidden < ClientError
   end
 

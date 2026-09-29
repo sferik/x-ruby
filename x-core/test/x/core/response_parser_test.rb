@@ -74,7 +74,7 @@ module X
       assert_raises(Error) { @response_parser.parse(response:) }
     end
 
-    {402 => ClientError, 499 => ClientError, 501 => ServerError, 520 => ServerError, 599 => ServerError, 304 => HTTPError}.each do |status, error_class|
+    {418 => ClientError, 499 => ClientError, 501 => ServerError, 520 => ServerError, 599 => ServerError, 304 => HTTPError}.each do |status, error_class|
       define_method(:"test_unmapped_#{status}_raises_#{error_class.name.split("::").last.downcase}") do
         stub_request(:get, @uri.to_s).to_return(status:)
         exception = assert_raises(HTTPError) { @response_parser.parse(response:) }
@@ -83,7 +83,7 @@ module X
       end
     end
 
-    {405 => MethodNotAllowed, 408 => RequestTimeout, 415 => UnsupportedMediaType, 451 => UnavailableForLegalReasons}.each do |status, error_class|
+    {402 => PaymentRequired, 405 => MethodNotAllowed, 408 => RequestTimeout, 415 => UnsupportedMediaType, 451 => UnavailableForLegalReasons}.each do |status, error_class|
       define_method(:"test_#{status}_raises_#{error_class.name.split("::").last.downcase}") do
         stub_request(:get, @uri.to_s).to_return(status:)
 

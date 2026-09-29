@@ -15,6 +15,7 @@ require_relative "errors/method_not_allowed"
 require_relative "errors/not_acceptable"
 require_relative "errors/not_found"
 require_relative "errors/payload_too_large"
+require_relative "errors/payment_required"
 require_relative "errors/request_timeout"
 require_relative "errors/service_unavailable"
 require_relative "errors/too_many_requests"
@@ -35,6 +36,7 @@ module X
       ERROR_MAP = {
         400 => BadRequest,
         401 => Unauthorized,
+        402 => PaymentRequired,
         403 => Forbidden,
         404 => NotFound,
         405 => MethodNotAllowed,
