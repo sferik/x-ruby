@@ -109,7 +109,8 @@ module X
     # @param bearer_token [String, nil] the bearer token for authentication
     # @param client_id [String, nil] the OAuth 2.0 client ID
     # @param client_secret [String, nil] the OAuth 2.0 client secret
-    # @param refresh_token [String, nil] the OAuth 2.0 refresh token
+    # @param refresh_token [String, nil] the OAuth 2.0 refresh token, or nil beside a client ID and access token issued
+    #   without offline.access, which authenticate as the user until the access token expires, and cannot refresh
     # @param expires_at [Time, nil] the time the OAuth 2.0 access token expires, after which a request refreshes it
     # @param authenticator [Authenticator, nil] an authenticator to authenticate with in place of credentials, such as
     #   an OAuth2Authenticator built elsewhere, or nil to build one of the credentials; see {#authenticator}

@@ -4,12 +4,9 @@ require "simple_oauth"
 require_relative "authenticator"
 require_relative "connection"
 require_relative "credential_validator"
-require_relative "errors/authorization_error"
-require_relative "errors/unauthorized"
-require_relative "oauth2_tokens"
-require_relative "origin"
+require_relative "errors/unsupported_operation"
+require_relative "oauth2_refresh"
 require_relative "refresh_reporter"
-require_relative "token_endpoint"
 
 module X
   # Handles OAuth 2.0 authentication, refreshing the access token when it expires
@@ -19,19 +16,25 @@ module X
   # to the on_token_refresh of that client and of each copy of it that shares the authenticator, so that they can be
   # stored.
   #
+  # X issues no refresh token for an authorization without the offline.access scope, so an authenticator built
+  # without one authenticates as the user until its access token expires, and refreshes nothing: a request sent
+  # with an access token that expired is sent as it is, for the API to reject with Unauthorized, and one the API
+  # rejects is not sent again.
+  #
   # @api public
   class OAuth2Authenticator < Authenticator
+    include Core::OAuth2Refresh
+
     # The endpoint that refreshes an access token
     TOKEN_URL = "https://api.x.com/2/oauth2/token"
     # Buffer time in seconds to account for clock skew and network latency
     EXPIRATION_BUFFER = 30
     private_constant :EXPIRATION_BUFFER
-    # The message raised when the token endpoint describes no reason for the failure
-    DEFAULT_ERROR_MESSAGE = "Token refresh failed"
-    private_constant :DEFAULT_ERROR_MESSAGE
-    # Seconds after a refresh in which a rejection of the access token it issued refreshes nothing
-    FRESH_TOKEN_SECONDS = 60
-    private_constant :FRESH_TOKEN_SECONDS
+    # The message raised for a refresh of an authenticator that holds no refresh token
+    NO_REFRESH_TOKEN = "The authenticator holds no refresh token, which X issues only for an authorization with the " \
+      "offline.access scope, so its access token cannot be refreshed. Ask the user to authorize the app again, with " \
+      "offline.access to refresh the token that authorization issues"
+    private_constant :NO_REFRESH_TOKEN
 
     # The OAuth 2.0 client ID
     # @api public
@@ -53,10 +56,11 @@ module X
     # @param client_secret [String, nil] the OAuth 2.0 client secret, or nil for a public client, which sends its
     #   client ID in the body of a refresh instead of authenticating with a secret
     # @param access_token [String] the OAuth 2.0 access token
-    # @param refresh_token [String] the OAuth 2.0 refresh token
+    # @param refresh_token [String, nil] the OAuth 2.0 refresh token, or nil for an access token issued without the
+    #   offline.access scope, which the authenticator cannot refresh
     # @param expires_at [Time, nil] the expiration time of the access token
     # @return [OAuth2Authenticator] a new authenticator instance
-    # @raise [ArgumentError] if the client ID, access token, or refresh token is nil or empty, the client secret is
+    # @raise [ArgumentError] if the client ID or access token is nil or empty, the refresh token or client secret is
     #   empty, or the expiration time is neither a Time nor nil
     # @example Create an authenticator
     #   authenticator = X::OAuth2Authenticator.new(
@@ -65,8 +69,8 @@ module X
     #     access_token: "token",
     #     refresh_token: "refresh"
     #   )
-    def initialize(client_id:, access_token:, refresh_token:, client_secret: nil, expires_at: nil)
-      Core::CredentialValidator.validate_required!({client_id:, access_token:, refresh_token:}, {client_secret:, expires_at:})
+    def initialize(client_id:, access_token:, refresh_token: nil, client_secret: nil, expires_at: nil)
+      Core::CredentialValidator.validate_required!({client_id:, access_token:}, {refresh_token:, client_secret:, expires_at:})
       @client_id = client_id
       @client_secret = client_secret
       @access_token = access_token
@@ -79,6 +83,8 @@ module X
     end
 
     # Generate the authentication header, refreshing an expired token first
+    #
+    # An authenticator that holds no refresh token sends an access token that expired as it is, for the API to reject.
     #
     # @api public
     # @param _request [#method, #uri, #body, #[], nil] the request, which a bearer token does not sign
@@ -121,11 +127,14 @@ module X
     #
     # @api public
     # @return [OAuth2Tokens] the tokens the refresh issued
+    # @raise [UnsupportedOperation] if the authenticator holds no refresh token, before any request
     # @raise [AuthorizationError] if X refuses to refresh the token
     # @raise [TooManyRequests, ServerError] if the token endpoint limits the rate of the request or fails to answer
     # @example Refresh the tokens and store them
     #   store.save(**authenticator.refresh!.to_h)
     def refresh!
+      raise UnsupportedOperation, NO_REFRESH_TOKEN unless refresh_token
+
       tokens = @mutex.synchronize { refresh(connection) }
       report_refresh(tokens)
       tokens
@@ -148,7 +157,7 @@ module X
     # It is private for the reason {#access_token} is.
     #
     # @api private
-    # @return [String] the refresh token
+    # @return [String, nil] the refresh token, or nil for an authenticator that cannot refresh
     attr_reader :refresh_token
 
     # The OAuth 2.0 client secret, which authenticates a refresh
@@ -197,72 +206,6 @@ module X
       self
     end
 
-    # Refresh the access token if it has expired, over a connection
-    # @api private
-    # @param connection [Core::Connection] the connection to send the refresh over
-    # @return [void]
-    # @raise [AuthorizationError] if X refuses to refresh the token
-    # @raise [TooManyRequests, ServerError] if the token endpoint limits the rate of the request or fails to answer
-    def refresh_expired_token(connection)
-      tokens = @mutex.synchronize { refresh(connection) if token_expired? }
-      report_refresh(tokens) if tokens
-    end
-
-    # Refresh a rejected access token, unless it was already replaced or just issued
-    #
-    # Requests that were sent with the same token, and rejected together, refresh it once between them. A token
-    # issued by a refresh less than FRESH_TOKEN_SECONDS ago has not expired, so the API rejects it for another
-    # reason, which a refresh would not change: it is not refreshed, and the rejection is raised, rather than spend
-    # a refresh token on each request an endpoint that always rejects the token answers.
-    #
-    # @api private
-    # @param rejected_token [String] the access token the API rejected
-    # @param connection [Core::Connection] the connection to send the refresh over
-    # @return [Boolean] true if the access token is no longer the one rejected
-    # @raise [AuthorizationError] if X refuses to refresh the token
-    # @raise [TooManyRequests, ServerError] if the token endpoint limits the rate of the request or fails to answer
-    def refresh_rejected_token!(rejected_token, connection)
-      tokens, replaced = @mutex.synchronize do
-        [(refresh(connection) if access_token.eql?(rejected_token) && !fresh?), !access_token.eql?(rejected_token)]
-      end
-      report_refresh(tokens) if tokens
-      replaced
-    end
-
-    # Run a request, again if the API rejects a token that a refresh replaces
-    #
-    # X rejects an expired access token with 401 Unauthorized, which an authenticator that does not know when
-    # its token expires learns only from the rejection. A 401 from another origin than the one the token is sent to
-    # answers a request that carried no token, whether it named that origin or was redirected there, so it refreshes
-    # nothing: X accepts a refresh token once, and a refresh would replace the tokens for a rejection of no token.
-    #
-    # A token that has expired is refreshed before the request, and one the API rejects after it, over the
-    # connection given, which is the one of the client that sends the request: the copies of a client share its
-    # authenticator, and a copy given another proxy, other timeouts, or other debug output refreshes the tokens it
-    # shares with them, as it sends its requests with them.
-    #
-    # Internal to x-core: Client runs each request it sends with an OAuth 2.0 authenticator through it, and calls it
-    # with __send__, since it is private.
-    #
-    # @api private
-    # @param origin [URI::Generic] a URI of the origin the token is sent to, such as the base URL of a client
-    # @param connection [Core::Connection] the connection to send a refresh over
-    # @yield runs the request
-    # @return [Object] what the block returns
-    # @raise [Unauthorized] if the request is rejected again, or by another origin, or a refresh does not replace
-    #   the access token
-    def retrying_rejected_token(origin, connection)
-      refresh_expired_token(connection)
-      token = access_token
-      begin
-        yield
-      rescue Unauthorized => e
-        raise unless Core::Origin.answered?(e, origin) && refresh_rejected_token!(token, connection)
-
-        yield
-      end
-    end
-
     # Check whether the authenticator holds the credentials among some options
     #
     # The options are those of a client, and the credentials among them its OAuth 2.0 ones.
@@ -301,55 +244,9 @@ module X
     # @return [#call] the callable
     def report_refreshes_to(hooks) = @reporter.to(hooks)
 
-    # Refresh the access token, holding the lock
-    # @api private
-    # @param connection [Core::Connection] the connection to send the refresh over
-    # @return [OAuth2Tokens] the tokens the refresh issued, once the authenticator holds them
-    # @raise [AuthorizationError] if X refuses to refresh the token
-    # @raise [TooManyRequests, ServerError] if the token endpoint limits the rate of the request or fails to answer
-    def refresh(connection)
-      update_tokens(Core::TokenEndpoint.fetch(oauth2_client.refresh_token_request(refresh_token:), connection:))
-      @reporter.issued(OAuth2Tokens.new(access_token:, refresh_token:, expires_at:))
-    rescue SimpleOAuth::OAuth2::Error => e
-      raise AuthorizationError.from(e, DEFAULT_ERROR_MESSAGE), cause: e.cause
-    end
-
-    # Pass the tokens of a refresh to its callables, once the lock is released
-    #
-    # A callable can make a request of its own, such as looking up the user whose tokens it stores, which asks this
-    # authenticator for a header and so takes the lock again. The refreshes are reported in the order they were
-    # made, and one already replaced is not reported; see {Core::RefreshReporter}.
-    #
-    # @api private
-    # @param tokens [OAuth2Tokens] the tokens the refresh issued
-    # @return [void]
-    def report_refresh(tokens) = @reporter.report(tokens)
-
     # The client for the token endpoint
     # @api private
     # @return [SimpleOAuth::OAuth2::Client] the OAuth 2.0 client
     def oauth2_client = SimpleOAuth::OAuth2::Client.new(client_id:, client_secret:, token_endpoint: TOKEN_URL)
-
-    # Update tokens from the response
-    # @api private
-    # @param token [SimpleOAuth::OAuth2::Token] the token the endpoint returned
-    # @return [void]
-    def update_tokens(token)
-      @refreshed_at = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-      @access_token = token.access_token
-      @refresh_token = token.refresh_token if token.refresh_token
-      @expires_at = token.expires_at
-    end
-
-    # Check whether a refresh issued the access token within FRESH_TOKEN_SECONDS
-    #
-    # A token the authenticator was given, rather than refreshed, may be of any age, so it is not fresh.
-    #
-    # @api private
-    # @return [Boolean] true if a refresh issued the token less than FRESH_TOKEN_SECONDS ago
-    def fresh?
-      refreshed_at = @refreshed_at
-      !refreshed_at.nil? && Process.clock_gettime(Process::CLOCK_MONOTONIC) - refreshed_at < FRESH_TOKEN_SECONDS
-    end
   end
 end

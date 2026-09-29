@@ -9,6 +9,7 @@ module X
     cover AppOnlyAuthenticator
     cover OAuth1Authenticator
     cover OAuth2Authenticator
+    cover Core::OAuth2Refresh
 
     OAUTH2_CREDENTIALS = {client_id: TEST_CLIENT_ID, access_token: TEST_ACCESS_TOKEN, refresh_token: TEST_REFRESH_TOKEN}.freeze
     APP_CREDENTIALS = {api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET}.freeze
@@ -51,9 +52,14 @@ module X
     end
 
     def test_an_oauth2_authenticator_refuses_each_missing_credential
-      OAUTH2_CREDENTIALS.each_key do |name|
+      %i[client_id access_token].each do |name|
         assert_refused(missing(name)) { OAuth2Authenticator.new(**OAUTH2_CREDENTIALS, name => nil) }
       end
+    end
+
+    def test_an_oauth2_authenticator_takes_no_refresh_token_but_refuses_an_empty_one
+      assert_instance_of OAuth2Authenticator, OAuth2Authenticator.new(**OAUTH2_CREDENTIALS, refresh_token: nil)
+      assert_refused(empty(:refresh_token)) { OAuth2Authenticator.new(**OAUTH2_CREDENTIALS, refresh_token: " ") }
     end
 
     def test_an_oauth2_authenticator_refuses_an_empty_client_secret

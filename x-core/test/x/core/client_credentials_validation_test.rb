@@ -79,7 +79,7 @@ module X
     end
 
     def test_a_credential_of_an_incomplete_set_beside_a_complete_one_is_incomplete
-      assert_incomplete(**test_oauth_credentials, client_id: TEST_CLIENT_ID)
+      assert_incomplete(**test_oauth_credentials, refresh_token: TEST_REFRESH_TOKEN)
       assert_incomplete(**test_oauth2_credentials, api_key: TEST_API_KEY)
       assert_incomplete(**test_oauth2_credentials, access_token_secret: TEST_ACCESS_TOKEN_SECRET)
     end
@@ -90,6 +90,16 @@ module X
 
     def test_an_expiration_time_is_allowed_beside_any_credentials
       assert_instance_of BearerTokenAuthenticator, Client.new(bearer_token: TEST_BEARER_TOKEN, expires_at: Time.now).authenticator
+    end
+
+    def test_an_oauth2_access_token_needs_no_refresh_token
+      [test_oauth2_credentials, test_oauth2_credentials.except(:client_secret)].each do |credentials|
+        assert_instance_of OAuth2Authenticator, Client.new(**credentials.except(:refresh_token)).authenticator
+      end
+    end
+
+    def test_a_refresh_token_without_a_client_id_is_incomplete
+      assert_incomplete(**test_oauth2_credentials.except(:client_id))
     end
 
     def test_a_public_oauth2_client_needs_no_client_secret

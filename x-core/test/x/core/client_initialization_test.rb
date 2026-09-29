@@ -58,7 +58,7 @@ module X
     end
 
     def test_missing_oauth2_credentials
-      %i[client_id access_token refresh_token].each do |missing_credential|
+      %i[client_id access_token].each do |missing_credential|
         assert_raises(ArgumentError) { Client.new(**test_oauth2_credentials.except(missing_credential)) }
       end
     end

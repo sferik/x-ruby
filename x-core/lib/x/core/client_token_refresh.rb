@@ -84,17 +84,18 @@ module X
       # The OAuth 2.0 authenticator of the client's credentials, if they form a set
       #
       # A copy of a client shares the authenticator of the client it was copied from, rather than the one this
-      # builds, when the two hold the same credentials; see share_authenticator.
+      # builds, when the two hold the same credentials; see share_authenticator. A client ID and access token without
+      # a refresh token, as an authorization without offline.access issues them, build an authenticator that acts
+      # for the user and cannot refresh.
       #
       # @api private
       # @return [OAuth2Authenticator, nil] the OAuth 2.0 authenticator or nil
       def oauth2_authenticator
         client_id = @client_id
         access_token = @access_token
-        refresh_token = @refresh_token
-        return unless client_id && access_token && refresh_token
+        return unless client_id && access_token
 
-        new_oauth2_authenticator(client_id:, access_token:, refresh_token:)
+        new_oauth2_authenticator(client_id:, access_token:, refresh_token: @refresh_token)
       end
 
       # The OAuth 2.0 authenticator of the client's credentials, as last refreshed
@@ -138,7 +139,7 @@ module X
       # @api private
       # @param client_id [String] the OAuth 2.0 client ID
       # @param access_token [String] the OAuth 2.0 access token
-      # @param refresh_token [String] the OAuth 2.0 refresh token
+      # @param refresh_token [String, nil] the OAuth 2.0 refresh token, or nil for an access token that is not refreshed
       # @return [OAuth2Authenticator] the OAuth 2.0 authenticator
       def new_oauth2_authenticator(client_id:, access_token:, refresh_token:)
         authenticator = OAuth2Authenticator.new(client_id:, client_secret: @client_secret, access_token:, refresh_token:, expires_at: @expires_at)

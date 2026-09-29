@@ -62,10 +62,10 @@ TEST_CLIENT_SECRET = "TEST_CLIENT_SECRET"
 TEST_REFRESH_TOKEN = "TEST_REFRESH_TOKEN"
 # The messages of X::Core::CredentialValidator, which is private about the constants that hold them
 TEST_INCOMPLETE_CREDENTIALS = "The credentials given do not form a complete set. Pass api_key, api_key_secret, " \
-  "access_token, and access_token_secret for OAuth 1.0a; client_id, access_token, and refresh_token, with the " \
-  "client_secret of a confidential client, for OAuth 2.0; bearer_token for a bearer token, such as an OAuth 2.0 " \
-  "access token that is not refreshed; or api_key and api_key_secret to authenticate as the app. Leave out any " \
-  "credential of a set that is not complete"
+  "access_token, and access_token_secret for OAuth 1.0a; client_id and access_token, with the refresh_token that " \
+  "refreshes it and the client_secret of a confidential client, for OAuth 2.0; bearer_token for the app's bearer " \
+  "token; or api_key and api_key_secret to authenticate as the app. Leave out any credential of a set that is not " \
+  "complete"
 TEST_INVALID_EXPIRES_AT = "expires_at must be a Time, such as Time.at(seconds) for a time stored as seconds since " \
   "the epoch, or nil if it is not known"
 

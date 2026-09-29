@@ -6,6 +6,7 @@ module X
   class ClientTokenRefreshHookTest < Minitest::Test
     cover_client
     cover OAuth2Authenticator
+    cover Core::OAuth2Refresh
     cover Core::RefreshReporter
 
     def setup

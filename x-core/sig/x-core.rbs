@@ -278,7 +278,7 @@ module X
 
     attr_reader client_id: String
     attr_reader expires_at: Time?
-    def initialize: (client_id: String, access_token: String, refresh_token: String, ?client_secret: String?, ?expires_at: Time?) -> void
+    def initialize: (client_id: String, access_token: String, ?refresh_token: String?, ?client_secret: String?, ?expires_at: Time?) -> void
     def inspect: () -> String
     def token_expired?: -> bool
     def refresh!: -> OAuth2Tokens

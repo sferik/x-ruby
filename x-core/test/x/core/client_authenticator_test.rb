@@ -8,6 +8,7 @@ module X
     cover Core::CredentialValidator
     cover AppOnlyAuthenticator
     cover OAuth2Authenticator
+    cover Core::OAuth2Refresh
 
     def setup
       stub_request(:post, OAuth2Authenticator::TOKEN_URL)

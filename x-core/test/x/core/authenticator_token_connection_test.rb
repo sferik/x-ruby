@@ -7,6 +7,7 @@ module X
   class AuthenticatorTokenConnectionTest < Minitest::Test
     cover AppOnlyAuthenticator
     cover OAuth2Authenticator
+    cover Core::OAuth2Refresh
 
     def authenticators
       [AppOnlyAuthenticator.new(api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET), OAuth2Authenticator.new(**test_oauth2_credentials)]

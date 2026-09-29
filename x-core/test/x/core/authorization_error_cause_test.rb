@@ -8,6 +8,7 @@ module X
   class AuthorizationErrorCauseTest < Minitest::Test
     cover AppOnlyAuthenticator
     cover OAuth2Authenticator
+    cover Core::OAuth2Refresh
     cover OAuth2Authorization
 
     USERS_ME = "https://api.x.com/2/users/me"

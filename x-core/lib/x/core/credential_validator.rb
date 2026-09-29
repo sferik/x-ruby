@@ -20,18 +20,21 @@ module X
 
       # The message of the error raised for credentials that do not form a complete set
       INCOMPLETE_CREDENTIALS = "The credentials given do not form a complete set. Pass api_key, api_key_secret, " \
-        "access_token, and access_token_secret for OAuth 1.0a; client_id, access_token, and refresh_token, with the " \
-        "client_secret of a confidential client, for OAuth 2.0; bearer_token for a bearer token, such as an OAuth 2.0 " \
-        "access token that is not refreshed; or api_key and api_key_secret to authenticate as the app. Leave out any " \
-        "credential of a set that is not complete"
+        "access_token, and access_token_secret for OAuth 1.0a; client_id and access_token, with the refresh_token " \
+        "that refreshes it and the client_secret of a confidential client, for OAuth 2.0; bearer_token for the app's " \
+        "bearer token; or api_key and api_key_secret to authenticate as the app. Leave out any credential of a set " \
+        "that is not complete"
       private_constant :INCOMPLETE_CREDENTIALS
 
-      # The credentials of each set: OAuth 1.0a, OAuth 2.0 for a confidential and for a public client, a bearer token,
-      # and the app's API key and secret
+      # The credentials of each set: OAuth 1.0a, OAuth 2.0 for a confidential and for a public client, with a refresh
+      # token and without one, as an authorization without offline.access issues them, a bearer token, and the app's
+      # API key and secret
       CREDENTIAL_SETS = [
         %i[api_key api_key_secret access_token access_token_secret],
         %i[client_id client_secret access_token refresh_token],
         %i[client_id access_token refresh_token],
+        %i[client_id client_secret access_token],
+        %i[client_id access_token],
         %i[bearer_token],
         %i[api_key api_key_secret]
       ].freeze

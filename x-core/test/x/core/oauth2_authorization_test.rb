@@ -130,8 +130,8 @@ module X
       token = stub_token.with(body: "#{TOKEN_BODY}&client_id=#{TEST_CLIENT_ID}") { |request| !request.headers.key?("Authorization") }
       credentials = Time.stub(:now, Time.at(1_000)) { authorization.credentials("#{REDIRECT_URI}?state=STATE&code=CODE") }
 
-      assert_equal({client_id: TEST_CLIENT_ID, client_secret: nil, access_token: "ACCESS", refresh_token: "REFRESH",
-                    expires_at: Time.at(8_200)}, credentials)
+      assert_equal({client_id: TEST_CLIENT_ID, access_token: "ACCESS", refresh_token: "REFRESH", expires_at: Time.at(8_200)},
+        credentials)
       assert_requested token
     end
 
@@ -149,10 +149,18 @@ module X
       assert_equal "ACCESS", authorization.credentials({state: "STATE", code: "CODE"})[:access_token]
     end
 
-    def test_credentials_without_a_refresh_token_are_a_bearer_token
+    def test_credentials_without_a_refresh_token_are_those_of_the_user_without_one
       stub_token(body: {token_type: "bearer", access_token: "ACCESS", expires_in: 7200})
+      credentials = Time.stub(:now, Time.at(1_000)) { authorization.credentials("state=STATE&code=CODE") }
 
-      assert_equal({bearer_token: "ACCESS"}, authorization.credentials("state=STATE&code=CODE"))
+      assert_equal({client_id: TEST_CLIENT_ID, access_token: "ACCESS", expires_at: Time.at(8_200)}, credentials)
+    end
+
+    def test_credentials_of_a_confidential_client_without_a_refresh_token_hold_its_secret
+      stub_token(body: {token_type: "bearer", access_token: "ACCESS"})
+
+      assert_equal({client_id: TEST_CLIENT_ID, client_secret: TEST_CLIENT_SECRET, access_token: "ACCESS", expires_at: nil},
+        authorization(client_secret: TEST_CLIENT_SECRET).credentials("state=STATE&code=CODE"))
     end
 
     def test_credentials_are_exchanged_over_the_connection
@@ -263,13 +271,13 @@ module X
       assert_instance_of Client, client
     end
 
-    def test_on_token_refresh_is_passed_nothing_for_a_bearer_token
+    def test_on_token_refresh_is_passed_nothing_without_a_refresh_token
       stub_token(body: {token_type: "bearer", access_token: "ACCESS", expires_in: 7200})
       passed = []
       client = authorization.client("state=STATE&code=CODE", on_token_refresh: ->(tokens) { passed << tokens })
 
       assert_empty passed
-      assert_instance_of BearerTokenAuthenticator, client.authenticator
+      assert_instance_of OAuth2Authenticator, client.authenticator
     end
 
     def test_a_client_without_on_token_refresh_is_built_from_the_exchange

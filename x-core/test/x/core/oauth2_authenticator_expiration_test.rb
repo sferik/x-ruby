@@ -5,6 +5,7 @@ require_relative "../../test_helper"
 module X
   class OAuth2AuthenticatorExpirationTest < Minitest::Test
     cover OAuth2Authenticator
+    cover Core::OAuth2Refresh
 
     def setup
       @expires_at = Time.now + 60

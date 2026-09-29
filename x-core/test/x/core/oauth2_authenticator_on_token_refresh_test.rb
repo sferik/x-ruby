@@ -5,6 +5,7 @@ require_relative "../../test_helper"
 module X
   class OAuth2AuthenticatorOnTokenRefreshTest < Minitest::Test
     cover OAuth2Authenticator
+    cover Core::OAuth2Refresh
     cover Core::RefreshReporter
 
     def setup

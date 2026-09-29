@@ -241,7 +241,7 @@ module X
       def oauth2_authenticator: -> OAuth2Authenticator?
       def access_token: () -> String?
       def refresh_token: () -> String?
-      def new_oauth2_authenticator: (client_id: String, access_token: String, refresh_token: String) -> OAuth2Authenticator
+      def new_oauth2_authenticator: (client_id: String, access_token: String, refresh_token: String?) -> OAuth2Authenticator
       def refreshing_rejected_token: [T] () { () -> T } -> T
     end
 
@@ -619,9 +619,10 @@ module X
   end
 
   class OAuth2Authenticator < Authenticator
+    include Core::OAuth2Refresh
+
     EXPIRATION_BUFFER: Integer
-    DEFAULT_ERROR_MESSAGE: String
-    FRESH_TOKEN_SECONDS: Integer
+    NO_REFRESH_TOKEN: String
 
     @mutex: Thread::Mutex
     @reporter: Core::RefreshReporter
@@ -630,22 +631,45 @@ module X
 
     private
     attr_reader access_token: String
-    attr_reader refresh_token: String
+    attr_reader refresh_token: String?
     attr_reader connection: Core::Connection
     attr_reader clients: _ClientRegistry
     def token_requests_over: (Core::Connection connection) -> self
-    def refresh_expired_token: (Core::Connection connection) -> void
-    def refresh_rejected_token!: (String rejected_token, Core::Connection connection) -> bool
     def holds?: (Hash[Symbol, untyped] options) -> bool
-    def retrying_rejected_token: [T] (URI::Generic origin, Core::Connection connection) { () -> T } -> T
     def update_expires_at: (Time? expires_at) -> void
     def report_refreshes_to: (^() -> Array[_TokenRefreshHook] hooks) -> ^() -> Array[_TokenRefreshHook]
     attr_reader client_secret: String?
-    def refresh: (Core::Connection connection) -> OAuth2Tokens
-    def report_refresh: (OAuth2Tokens tokens) -> void
     def oauth2_client: -> SimpleOAuth::OAuth2::Client
-    def update_tokens: (SimpleOAuth::OAuth2::Token token) -> void
-    def fresh?: () -> bool
+  end
+
+  module Core
+    # Declares what an OAuth2Authenticator, which includes it, reads of itself as it refreshes
+    module OAuth2Refresh
+      DEFAULT_ERROR_MESSAGE: String
+      FRESH_TOKEN_SECONDS: Integer
+
+      @mutex: Thread::Mutex
+      @reporter: RefreshReporter
+      @refreshed_at: Float?
+      @access_token: String
+      @refresh_token: String?
+      @expires_at: Time?
+
+      def expires_at: () -> Time?
+      def token_expired?: () -> bool
+
+      private
+      def access_token: () -> String
+      def refresh_token: () -> String?
+      def oauth2_client: () -> SimpleOAuth::OAuth2::Client
+      def refresh_expired_token: (Connection connection) -> void
+      def refresh_rejected_token!: (String rejected_token, Connection connection) -> bool
+      def retrying_rejected_token: [T] (URI::Generic origin, Connection connection) { () -> T } -> T
+      def refresh: (Connection connection) -> OAuth2Tokens
+      def report_refresh: (OAuth2Tokens tokens) -> void
+      def update_tokens: (SimpleOAuth::OAuth2::Token token) -> void
+      def fresh?: () -> bool
+    end
   end
 
   interface _ClientRegistry

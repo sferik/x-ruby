@@ -19,9 +19,13 @@ module X
     end
 
     def test_oauth2_takes_none_of_its_credentials_unless_the_set_is_whole
-      %i[client_id access_token refresh_token].each do |missing|
+      %i[client_id access_token].each do |missing|
         assert_instance_of Authenticator, authenticator_for(test_oauth2_credentials.except(missing))
       end
+    end
+
+    def test_oauth2_takes_a_client_id_and_access_token_without_a_refresh_token
+      assert_instance_of OAuth2Authenticator, authenticator_for(test_oauth2_credentials.except(:refresh_token))
     end
 
     def test_the_app_takes_neither_its_api_key_nor_the_secret_alone
