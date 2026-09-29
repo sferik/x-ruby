@@ -22,7 +22,7 @@ module X
     end
 
     def test_the_default_concurrency_is_a_constant_of_media
-      assert_equal 4, Uploader::MediaUpload::DEFAULT_CONCURRENCY
+      assert_equal [4, 16], [Uploader::MediaUpload::DEFAULT_CONCURRENCY, Uploader::MediaUpload::MAX_CONCURRENCY]
     end
 
     def test_the_limits_of_an_upload_are_constants
@@ -31,7 +31,7 @@ module X
     end
 
     def test_media_holds_none_of_the_constants_of_the_chunked_upload
-      assert_equal %i[AMPLIFY_VIDEO DEFAULT_CONCURRENCY DEFAULT_PROCESSING_TIMEOUT DM_GIF DM_IMAGE DM_VIDEO SUBTITLES
+      assert_equal %i[AMPLIFY_VIDEO DEFAULT_CONCURRENCY DEFAULT_PROCESSING_TIMEOUT DM_GIF DM_IMAGE DM_VIDEO MAX_CONCURRENCY SUBTITLES
         TWEET_GIF TWEET_IMAGE TWEET_VIDEO], Uploader::MediaUpload.constants.sort
       assert_empty Uploader.const_get(:Chunks).constants
     end

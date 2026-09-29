@@ -188,6 +188,7 @@ module X
       MAX_ALT_TEXT_LENGTH: Integer
       MAX_SEGMENTS: Integer
       MAX_CHUNK: Integer
+      MAX_CONCURRENCY: Integer
       MEDIA_CATEGORIES: Array[String]
       MAX_MEDIA_BYTES: Hash[String, Integer]
       PROFILE_IMAGE_TYPES: Array[String]

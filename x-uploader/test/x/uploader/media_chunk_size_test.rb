@@ -48,7 +48,7 @@ module X
       concurrency = assert_raises(ArgumentError) { chunked_upload("test/sample_files/sample.mp4", concurrency: 0) }
 
       assert_equal "chunk_size_mb must be a positive, finite number, not 0", size.message
-      assert_equal "concurrency must be an Integer of at least 1, not 0", concurrency.message
+      assert_equal "concurrency must be an Integer of 1 to 16, not 0", concurrency.message
       assert_not_requested :post, "#{BASE_URL}/initialize"
     end
 

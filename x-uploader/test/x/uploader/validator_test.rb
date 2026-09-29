@@ -69,14 +69,24 @@ module X
     def test_validate_chunks_raises_for_a_concurrency_less_than_one
       error = assert_raises(ArgumentError) { Uploader.const_get(:Validator).validate_chunks!(chunk_size_mb: 1, concurrency: 0) }
 
-      assert_equal "concurrency must be an Integer of at least 1, not 0", error.message
+      assert_equal "concurrency must be an Integer of 1 to 16, not 0", error.message
       assert_raises(ArgumentError) { Uploader.const_get(:Validator).validate_chunks!(chunk_size_mb: 1, concurrency: -1) }
+    end
+
+    def test_validate_chunks_takes_a_concurrency_of_up_to_the_most_chunks_uploaded_at_once
+      assert_nil Uploader.const_get(:Validator).validate_chunks!(chunk_size_mb: 1, concurrency: 16)
+    end
+
+    def test_validate_chunks_raises_for_a_concurrency_above_the_most_chunks_uploaded_at_once
+      messages = [17, 1000].map { |concurrency| assert_raises(ArgumentError) { Uploader.const_get(:Validator).validate_chunks!(chunk_size_mb: 1, concurrency:) }.message }
+
+      assert_equal ["17", "1000"].map { |value| "concurrency must be an Integer of 1 to 16, not #{value}" }, messages
     end
 
     def test_validate_chunks_raises_for_a_concurrency_that_is_not_an_integer
       messages = [2.5, "4", nil].map { |concurrency| assert_raises(ArgumentError) { Uploader.const_get(:Validator).validate_chunks!(chunk_size_mb: 1, concurrency:) }.message }
 
-      assert_equal ["2.5", '"4"', "nil"].map { |value| "concurrency must be an Integer of at least 1, not #{value}" }, messages
+      assert_equal ["2.5", '"4"', "nil"].map { |value| "concurrency must be an Integer of 1 to 16, not #{value}" }, messages
     end
 
     def test_validate_chunks_raises_for_a_chunk_size_that_is_not_a_real_number
