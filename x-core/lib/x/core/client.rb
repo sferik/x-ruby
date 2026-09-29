@@ -12,6 +12,7 @@ require_relative "client_token_refresh"
 require_relative "connection"
 require_relative "credential_holder"
 require_relative "credential_validator"
+require_relative "errors/callback_error"
 require_relative "oauth1_authenticator"
 require_relative "oauth2_authenticator"
 require_relative "origin"
@@ -423,6 +424,10 @@ module X
     private
 
     # Execute an HTTP request to the X API
+    #
+    # An error a callback raised, which the request tags as a CallbackError so that no handler sends the request
+    # again, waits out a rate limit, or refreshes a token for it, is raised as it was, once the handlers are left.
+    #
     # @api private
     # @return [Object, nil] the parsed response body, or what an object_class that responds to from_response builds
     def execute_request(http_method, endpoint, body: nil, params: nil, form: nil, headers: {}, array_class: default_array_class, object_class: default_object_class, &block)
@@ -430,18 +435,17 @@ module X
       uri = uri_for(base_url, endpoint, params)
       headers = headers_for(form.nil? ? headers : Core::RequestBuilder.merge_headers({"Content-Type" => FORM_CONTENT_TYPE}, headers))
       @retry_handler.handle(idempotent: Core::RequestBuilder.idempotent?(http_method)) do
-        @rate_limit_handler.handle do
-          refreshing_rejected_token do
-            perform(http_method, uri, body: encode_body(body, form), headers:, array_class:, object_class:, &block)
-          end
-        end
+        @rate_limit_handler.handle { refreshing_rejected_token { perform(http_method, uri, body: encode_body(body, form), headers:, array_class:, object_class:, &block) } }
       end
+    rescue Core::CallbackError => e
+      raise e.error
     end
 
     # Perform a request once, following redirects and parsing the response
     #
     # A request to another origin than the base URL carries none of the client's credentials, as a redirect to one
-    # carries none of them.
+    # carries none of them. The error on_response or the block of the request raises, as the error from_response
+    # raises, is tagged as a CallbackError, so that it is not taken for an error of the response.
     #
     # @api private
     # @return [Object, nil] the parsed response body, or what an object_class that responds to from_response builds
@@ -449,7 +453,7 @@ module X
       authenticator, headers = Core::Origin.credentials_for(from: URI(base_url), to: uri, authenticator: self.authenticator, headers:)
       request = @request_builder.build(http_method:, uri:, body:, headers:, authenticator:)
       response = @redirect_handler.handle(response: @connection.perform(request:), request:, headers:, authenticator:)
-      report(http_method, uri, response, &)
+      Core::CallbackError.tagging { report(http_method, uri, response, &) }
       @response_parser.parse(response:, array_class:, object_class:, client: self, request:)
     end
   end

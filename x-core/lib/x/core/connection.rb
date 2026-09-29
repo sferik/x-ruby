@@ -10,7 +10,7 @@ require_relative "connection_request"
 require_relative "proxy_setting"
 require_relative "setting_validator"
 require_relative "errors/network_error"
-require_relative "errors/stream_callback_error"
+require_relative "errors/callback_error"
 
 module X
   module Core
@@ -155,7 +155,7 @@ module X
       # The connection is opened for this request and closed once the block returns, rather than taken from the
       # connections kept open and given back, since a stream holds its connection for as long as it reads.
       #
-      # An error the block raises, which StreamParser tags as a StreamCallbackError, is raised as it was, rather than
+      # An error the block raises, which StreamParser tags as a CallbackError, is raised as it was, rather than
       # reported as a network error: the callbacks of a stream run inside the request that reads it, and the errors a
       # socket raises are the ones a stream reconnects after.
       #
@@ -174,7 +174,7 @@ module X
         http_client = build_http_client(request.uri)
         http_client.use_ssl = request.uri.scheme.eql?("https")
         http_client.request(request, &)
-      rescue StreamCallbackError => e
+      rescue CallbackError => e
         raise e.error
       rescue *NETWORK_ERRORS => e
         raise NetworkError.new("Network error: #{e}", request:)

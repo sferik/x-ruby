@@ -4,6 +4,7 @@ require "json"
 require "net/http"
 require_relative "errors/bad_gateway"
 require_relative "errors/bad_request"
+require_relative "errors/callback_error"
 require_relative "errors/conflict"
 require_relative "errors/http_error"
 require_relative "errors/invalid_response"
@@ -92,7 +93,8 @@ module X
       # JSON gives every object in a document the same object_class, at every depth. A class that
       # models a whole response instead responds to from_response, which receives the document
       # parsed into Hashes and Arrays along with the client, and whatever it returns is the result;
-      # see {Client} for the protocol, which later versions of 1.x may pass other keywords to.
+      # see {Client} for the protocol, which later versions of 1.x may pass other keywords to. An error from_response
+      # raises is tagged as a CallbackError, so that the handlers of a request do not take it for the request's own.
       #
       # @api private
       # @param json [String] the JSON document
@@ -102,12 +104,14 @@ module X
       # @param client [Client, nil] the client that made the request, passed to from_response
       # @return [Object] the decoded document
       # @raise [JSON::ParserError] if the document is not valid JSON
+      # @raise [CallbackError] if from_response raises
       # @example Decode a document into the default classes
       #   parser.decode('{"data": {"id": "1"}}') # => {"data" => {"id" => "1"}}
       def decode(json, array_class: nil, object_class: nil, client: nil)
         return JSON.parse(json, array_class:, object_class:) unless object_class.respond_to?(:from_response)
 
-        object_class.from_response(JSON.parse(json), client:)
+        document = JSON.parse(json)
+        CallbackError.tagging { object_class.from_response(document, client:) }
       end
 
       # Create the error of a response that is not successful

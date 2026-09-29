@@ -16,9 +16,10 @@ module X
       def post: (SimpleOAuth::OAuth2::Request token_request) -> Net::HTTP::Post
     end
 
-    class StreamCallbackError < StandardError
+    class CallbackError < StandardError
       attr_reader error: StandardError
 
+      def self.tagging: [T] () { () -> T } -> T
       def initialize: (StandardError error) -> void
     end
 

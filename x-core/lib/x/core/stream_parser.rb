@@ -2,7 +2,7 @@
 
 require "json"
 require "net/http"
-require_relative "errors/stream_callback_error"
+require_relative "errors/callback_error"
 require_relative "errors/stream_error"
 require_relative "problem"
 require_relative "response_parser"
@@ -35,7 +35,7 @@ module X
       # @raise [HTTPError] if the response is not successful
       # @raise [InvalidResponse] if a line of the stream is not JSON, which the error holds as its body
       # @raise [StreamError] if a line holds errors and no data
-      # @raise [StreamCallbackError] if on_body, or the object_class that builds each object, raises, so that the
+      # @raise [CallbackError] if on_body, or the object_class that builds each object, raises, so that the
       #   connection raises that error rather than take it for a network error and reconnect
       # @example Process a streaming response
       #   handler.process(response: response, response_parser: parser) { |json| puts json }
@@ -66,7 +66,7 @@ module X
       # @param request [Net::HTTPRequest, nil] the request the response answers, which the error names
       # @return [void]
       # @raise [HTTPError] if the response is not successful
-      # @raise [StreamCallbackError] if on_body raises
+      # @raise [CallbackError] if on_body raises
       def raise_unless_successful(response:, response_parser:, on_body:, request:)
         return if response.is_a?(Net::HTTPSuccess)
 
@@ -114,13 +114,13 @@ module X
       # @return [Object] what the callbacks returned
       # @raise [JSON::ParserError] if the line is not JSON
       # @raise [StreamError] if the line holds errors alone
-      # @raise [StreamCallbackError] if a callback raised any other error
+      # @raise [CallbackError] if a callback raised any other error
       def tagging_callback_errors
         yield
       rescue JSON::ParserError, StreamError
         raise
       rescue => e
-        raise StreamCallbackError, e
+        raise CallbackError, e
       end
 
       # Read the body in chunks and yield each line as it completes
