@@ -494,6 +494,7 @@ module X
     def scopes: () -> Hash[String, untyped]?
     def card_uri: () -> String?
     def article: () -> Hash[String, untyped]?
+    def article_title: () -> Hash[String, untyped]?
     def media_metadata: () -> Array[Hash[String, untyped]]
     def paid_partnership: () -> bool?
     def paid_partnership?: () -> bool

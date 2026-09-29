@@ -8,6 +8,7 @@ module X
 
     ATTRS = {"id" => "1", "text" => "@sferik hi https://t.co/a", "display_text_range" => [8, 10],
              "scopes" => {"followers" => true}, "card_uri" => "card://1", "article" => {"title" => "On Ruby"},
+             "article_title" => {"text" => "On Ruby"},
              "media_metadata" => [{"media_key" => "3_1", "alt_text" => "a cat"}], "paid_partnership" => true}.freeze
 
     def setup
@@ -19,6 +20,7 @@ module X
       assert_equal [[8, 10], {"followers" => true}, "card://1", {"title" => "On Ruby"}],
         [@post.display_text_range, @post.scopes, @post.card_uri, @post.article]
       assert_equal [{"media_key" => "3_1", "alt_text" => "a cat"}], @post.media_metadata
+      assert_equal({"text" => "On Ruby"}, @post.article_title)
     end
 
     def test_a_paid_partnership
@@ -26,11 +28,12 @@ module X
     end
 
     def test_fields_a_response_left_out
-      assert_equal [[], nil, nil, nil, []], [@bare.display_text_range, @bare.scopes, @bare.card_uri, @bare.article, @bare.media_metadata]
+      assert_equal [[], nil, nil, nil, nil, []],
+        [@bare.display_text_range, @bare.scopes, @bare.card_uri, @bare.article, @bare.article_title, @bare.media_metadata]
     end
 
     def test_a_lookup_requests_them
-      assert_empty %w[article card_uri display_text_range media_metadata paid_partnership scopes] - Post::FIELDS
+      assert_empty %w[article article_title card_uri display_text_range media_metadata paid_partnership scopes] - Post::FIELDS
     end
   end
 end

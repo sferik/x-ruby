@@ -22,8 +22,8 @@ module X
     # promoted_metrics, are left out, since a field that depends on who is authenticated would make every request
     # fail for a client that cannot read it, as are the fields of Community Notes and of suggested sources, which the
     # API gives to the programs they belong to.
-    FIELDS = %w[article attachments card_uri community_id context_annotations conversation_id created_at
-      display_text_range edit_controls entities geo id lang media_metadata note_post paid_partnership
+    FIELDS = %w[article article_title attachments card_uri community_id context_annotations conversation_id
+      created_at display_text_range edit_controls entities geo id lang media_metadata note_post paid_partnership
       possibly_sensitive public_metrics reply_settings scopes source text withheld].freeze
     # The expansions of the resources a post refers to that the object layer resolves
     #
@@ -231,6 +231,14 @@ module X
     #   @example Get the title of an article
     #     post.article&.fetch("title")
     attribute :article
+
+    # @!attribute [r] article_title
+    #   What the API describes of the title of the article the post publishes
+    #   @api public
+    #   @return [Hash, nil] the metadata of the article, or nil for a post that publishes none
+    #   @example Get the metadata of the title of an article
+    #     post.article_title
+    attribute :article_title
 
     # @!attribute [r] media_metadata
     #   What the post describes of the media it attaches
