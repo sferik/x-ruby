@@ -32,6 +32,7 @@ module X
   #   ├── X::NetworkError              the request never reached the API, or its response never arrived
   #   ├── X::InvalidResponse           a response that succeeded, whose body is not the JSON it claims
   #   ├── X::AuthorizationError        X refused to issue a token, or the user did not authorize the app
+  #   ├── X::TokenReportFailed         on_token_refresh raised for the tokens an authorization code was exchanged for
   #   ├── X::TooManyRedirects          a response redirected more times than max_redirects allows
   #   ├── X::StreamError               a line of a stream held errors and no data
   #   ├── X::UnsupportedOperation      the API offers no way to do what was asked

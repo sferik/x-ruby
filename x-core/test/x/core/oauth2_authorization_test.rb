@@ -287,11 +287,20 @@ module X
       assert_instance_of OAuth2Authenticator, authorization.client("state=STATE&code=CODE").authenticator
     end
 
-    def test_an_error_of_on_token_refresh_for_the_tokens_of_the_exchange_is_raised
+    def test_an_error_of_on_token_refresh_for_the_tokens_of_the_exchange_keeps_the_client_and_tokens
       stub_token
-      error = assert_raises(RuntimeError) { authorization.client("state=STATE&code=CODE", on_token_refresh: ->(_) { raise "unstored" }) }
+      error = assert_raises(TokenReportFailed) { authorization.client("state=STATE&code=CODE", on_token_refresh: ->(_) { raise "unstored" }) }
 
-      assert_equal "unstored", error.message
+      assert_equal ["ACCESS", "REFRESH"], [error.tokens.access_token, error.tokens.refresh_token]
+      assert_equal ["unstored", "The code was exchanged for tokens, but on_token_refresh raised for them: unstored"], [error.cause.message, error.message]
+    end
+
+    def test_the_client_an_error_of_on_token_refresh_holds_acts_for_the_user
+      stub_token
+      stub_request(:get, "https://api.x.com/2/users/me").with(headers: {"Authorization" => "Bearer ACCESS"}).to_return(status: 200, body: "{}", headers: {"Content-Type" => "application/json"})
+      error = assert_raises(TokenReportFailed) { authorization.client("state=STATE&code=CODE", on_token_refresh: ->(_) { raise "unstored" }) }
+
+      assert_equal({}, error.client.get("users/me"))
     end
 
     def test_an_option_the_client_refuses_raises_before_the_code_is_exchanged

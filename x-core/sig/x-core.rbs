@@ -57,6 +57,14 @@ module X
     def initialize: (String message, ?error_code: String?, ?status: Integer?) -> void
   end
 
+  class TokenReportFailed < Error
+    attr_reader client: Client?
+    attr_reader tokens: OAuth2Tokens?
+
+    def initialize: (?String? message, ?client: Client?, ?tokens: OAuth2Tokens?) -> void
+    def to_s: () -> String
+  end
+
   class AppOnlyAuthenticator < Authenticator
     TOKEN_URL: String
 

@@ -6,6 +6,7 @@ require "uri"
 require_relative "client"
 require_relative "connection"
 require_relative "errors/authorization_error"
+require_relative "errors/token_report_failed"
 require_relative "oauth2_authenticator"
 require_relative "oauth2_tokens"
 require_relative "token_endpoint"
@@ -171,7 +172,9 @@ module X
     # The on_token_refresh of the client is passed the OAuth2Tokens of the exchange before the client is returned, as
     # it is passed those of each refresh after, so that a callable that stores them stores every refresh token X
     # issues, the first among them; a refresh token held by the client alone would be lost with it, and the user would
-    # have to authorize the app again. It is passed nothing without offline.access, which issues no refresh token.
+    # have to authorize the app again. It is passed nothing without offline.access, which issues no refresh token. A
+    # callable that raises, as one whose storage is briefly down may, raises TokenReportFailed, which holds the client
+    # and the tokens, so neither is lost with the code.
     #
     # @api public
     # @param callback [String, Hash] the redirect back from X: its URL, its query string, or its query parameters
@@ -183,7 +186,7 @@ module X
     # @raise [AuthorizationError] if the user denied the app, the state does not match, X refuses the code, or the
     #   redirect is not a valid URL
     # @raise [TooManyRequests, ServerError] if the token endpoint limits the rate of the request or fails to answer
-    # @raise [StandardError] if on_token_refresh raises for the tokens of the exchange
+    # @raise [TokenReportFailed] if on_token_refresh raises for the tokens of the exchange, with the client and tokens
     # @example Act for the user who authorized the app, storing the refresh token of the exchange and of each refresh
     #   client = authorization.client(request.url, on_token_refresh: ->(tokens) { store.save(tokens.refresh_token) })
     def client(callback, **options) # steep:ignore DifferentMethodParameterKind
@@ -248,12 +251,18 @@ module X
     # @param client [Client] the client
     # @param token [SimpleOAuth::OAuth2::Token] the token of the exchange
     # @return [void]
+    # @raise [TokenReportFailed] if on_token_refresh raises, with the client and tokens
     def report_exchange(client, token)
       refresh_token = token.refresh_token
       hook = client.on_token_refresh
       return unless refresh_token && hook
 
-      hook.call(OAuth2Tokens.new(access_token: token.access_token, refresh_token:, expires_at: token.expires_at))
+      tokens = OAuth2Tokens.new(access_token: token.access_token, refresh_token:, expires_at: token.expires_at)
+      begin
+        hook.call(tokens)
+      rescue
+        raise TokenReportFailed.new(client:, tokens:)
+      end
     end
 
     # The credentials of a client from the token X returned
