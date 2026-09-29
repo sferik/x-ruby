@@ -122,7 +122,7 @@ module X
   class HTTPError < Error
     attr_reader http_response : Net::HTTPResponse
     attr_reader problems: Array[Problem]
-    def problem: () -> Problem?
+    attr_reader problem: Problem?
 
     def http_method: () -> Symbol?
     def uri: () -> URI::Generic?

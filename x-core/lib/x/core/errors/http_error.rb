@@ -12,8 +12,8 @@ module X
   #
   # The message is what the API said went wrong, read from the body of the response, behind the method and path of
   # the request it answered. {#body} holds that body as it arrived, {#headers} the headers it came with, and
-  # {#problems} the JSON objects within it that describe the failure, the first of which is {#problem}, for code that
-  # acts on the reason rather than logging it. {#http_method} and {#uri} are the request the API refused.
+  # {#problem} the problem it describes the failure with as a whole, and {#problems} each problem it names, for code
+  # that acts on the reason rather than logging it. {#http_method} and {#uri} are the request the API refused.
   #
   # @api public
   class HTTPError < Error
@@ -44,10 +44,10 @@ module X
     #   error.http_response.message # => "Too Many Requests"
     attr_reader :http_response
 
-    # The problems the API described in the body of the response
+    # The problems the API named in the body of the response
     #
     # They are the errors the body names, such as each parameter of the request the API refused, or else the
-    # problem the body describes itself.
+    # problem the body describes itself, which is {#problem}.
     #
     # @api public
     # @return [Array<Problem>] the problems, frozen, empty for a response that describes none in JSON
@@ -55,18 +55,21 @@ module X
     #   error.problems.map(&:parameter) # => ["ids", "user.fields"]
     attr_reader :problems
 
-    # The first of {#problems}
+    # The problem the API described the failure with as a whole
     #
-    # It is the first error the body names, which is the most specific thing the API said about the request, or
-    # else the problem the body describes itself.
+    # It is the problem the body of the response describes itself, by its title, detail, type, and status, whether
+    # or not the body names errors of its own, which are {#problems}, so its type reads the kind of failure alike
+    # for a request the API refused a parameter of and for one it refused to authorize; its attributes are the whole
+    # body. A body that describes no problem of its own, but names errors, as the responses of v1.1 do, is described
+    # by the first of them.
     #
     # @api public
     # @return [Problem, nil] the problem, or nil for a response that describes none in JSON
-    # @example Tell a parameter the API refused from one it did not understand
-    #   error.problem&.parameter # => "ids"
+    # @example Tell a request the API found invalid from one it refused to authorize
+    #   error.problem&.type # => "https://api.twitter.com/2/problems/invalid-request"
     # @example Act on the reason rather than the status
-    #   retry_without(error.problem.value) if error.problem&.not_found?
-    def problem = problems.first
+    #   wait_for_the_next_month if error.problem&.type&.end_with?("/usage-capped")
+    attr_reader :problem
 
     # Initialize a new HTTPError
     #
@@ -83,7 +86,10 @@ module X
       @http_response = http_response
       name_request(request)
       parsed = parsed_body
-      @problems = problems_from(parsed).map { |attrs| Problem.new(attrs) }.freeze
+      errors = errors_from(parsed)
+      described = (Problem.new(parsed) if describes_problem?(parsed))
+      @problems = (errors.empty? ? [described].compact : errors).freeze
+      @problem = described || errors.first
       super(message_naming_request(message_from(parsed) || http_response.message))
     end
 
@@ -152,18 +158,21 @@ module X
       {}
     end
 
-    # The problems a body describes
+    # The problems of the errors a body names
     #
     # @api private
     # @param body [Hash{String => Object}] the parsed body
-    # @return [Array<Hash{String => Object}>] the errors the body names, or else the body itself if it describes the
-    #   failure, or none if it describes none
-    def problems_from(body)
-      errors = Array(body["errors"]).filter_map { |error| Hash.try_convert(error) }
-      return errors unless errors.empty?
-
-      (PROBLEM_KEYS.any? { |key| body.key?(key) }) ? [body] : []
+    # @return [Array<Problem>] a problem for each error the body names that is a JSON object, none if it names none
+    def errors_from(body)
+      Array(body["errors"]).filter_map { |error| Problem.from(Hash.try_convert(error)) }
     end
+
+    # Check whether a body describes a problem itself, rather than only naming errors
+    #
+    # @api private
+    # @param body [Hash{String => Object}] the parsed body
+    # @return [Boolean] true if the body holds a title, detail, type, or error of its own
+    def describes_problem?(body) = PROBLEM_KEYS.any? { |key| body.key?(key) }
 
     # The message a body describes the failure with
     #

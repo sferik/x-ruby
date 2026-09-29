@@ -38,12 +38,22 @@ module X
       assert_nil BadRequest.new(http_response: response).body
     end
 
-    def test_the_problem_is_the_first_error_the_body_names
-      body = {title: "Invalid Request", errors: [{parameters: {ids: ["abc"]}, message: "The ids query parameter is invalid"}, {message: "Second"}]}
+    def test_the_problem_is_the_problem_the_body_describes_beside_the_errors_it_names
+      body = {errors: [{parameters: {ids: ["abc"]}, message: "The ids query parameter is invalid"}], title: "Invalid Request",
+              detail: "One or more parameters to your request was invalid.", type: "https://api.twitter.com/2/problems/invalid-request"}
       problem = error_for(body.to_json).problem
 
-      assert_equal "The ids query parameter is invalid", problem.message
-      assert_equal({"ids" => ["abc"]}, problem.to_h["parameters"])
+      assert_equal ["Invalid Request", "One or more parameters to your request was invalid.", "https://api.twitter.com/2/problems/invalid-request"],
+        [problem.title, problem.detail, problem.type]
+      assert_equal JSON.parse(body.to_json), problem.to_h
+    end
+
+    def test_the_problem_of_a_body_that_names_errors_alone_is_the_first_of_them
+      body = {errors: [{parameters: {ids: ["abc"]}, message: "The ids query parameter is invalid"}, {message: "Second"}]}
+      error = error_for(body.to_json)
+
+      assert_equal "The ids query parameter is invalid", error.problem.message
+      assert_same error.problems.first, error.problem
     end
 
     def test_the_problem_is_the_body_of_a_response_that_describes_the_failure_itself
