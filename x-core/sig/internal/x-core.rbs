@@ -613,9 +613,15 @@ module X
   end
 
   class RateLimit
+    FIELDS: Array[String]
+    COUNT: Regexp
+
     def initialize: (type: String, http_response: Net::HTTPResponse) -> void
     def self.all_from: (Net::HTTPResponse http_response) -> Array[RateLimit]
     def self.reported?: (String type, Net::HTTPResponse http_response) -> bool
+
+    private
+    def field: (String name) -> Integer
   end
 
   class StreamRule

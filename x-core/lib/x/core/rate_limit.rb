@@ -12,6 +12,12 @@ module X
     USER_LIMIT_TYPE = "user-limit-24hour"
     # All supported rate limit types
     TYPES = [RATE_LIMIT_TYPE, APP_LIMIT_TYPE, USER_LIMIT_TYPE].freeze
+    # The fields of a rate limit, each of which a response reports in a header of its own
+    FIELDS = %w[limit remaining reset].freeze
+    private_constant :FIELDS
+    # The value of a header of a rate limit, which counts requests, or the seconds since the epoch, in base 10
+    COUNT = /\A\d+\z/
+    private_constant :COUNT
 
     # The type of rate limit
     # @api public
@@ -46,16 +52,20 @@ module X
 
     # Check whether a response has the limit, remaining, and reset of a rate limit
     #
+    # Each is a count in base 10, and a limit whose header holds anything else, such as a proxy that mangled it, is
+    # not reported, rather than read as another number or raise once it is read, which would raise from a refusal
+    # in place of the TooManyRequests the refusal is.
+    #
     # Internal to x-core: it takes the Net::HTTP response of a request, so that it can change within 1.x, as that
     # response may.
     #
     # @api private
     # @param type [String] the type of rate limit
     # @param http_response [Net::HTTPResponse] the HTTP response
-    # @return [Boolean] true if the response has every header of the rate limit
+    # @return [Boolean] true if the response has every header of the rate limit, each a count in base 10
     # @example Check for the 15-minute rate limit
     #   X::RateLimit.reported?("rate-limit", response)
-    def self.reported?(type, http_response) = %w[limit remaining reset].all? { |field| http_response.key?("x-#{type}-#{field}") }
+    def self.reported?(type, http_response) = FIELDS.all? { |field| http_response["x-#{type}-#{field}"].to_s.match?(COUNT) }
 
     # Initialize a new RateLimit
     #
@@ -79,9 +89,7 @@ module X
     # @return [Integer] the maximum number of requests allowed
     # @example Get the rate limit
     #   rate_limit.limit
-    def limit
-      Integer(http_response.fetch("x-#{type}-limit"))
-    end
+    def limit = field("limit")
 
     # Get the remaining requests
     #
@@ -89,9 +97,7 @@ module X
     # @return [Integer] the number of requests remaining
     # @example Get the remaining requests
     #   rate_limit.remaining
-    def remaining
-      Integer(http_response.fetch("x-#{type}-remaining"))
-    end
+    def remaining = field("remaining")
 
     # Check whether the limit has no requests left
     #
@@ -107,9 +113,7 @@ module X
     # @return [Time] the time when the rate limit resets
     # @example Get the reset time
     #   rate_limit.reset_at
-    def reset_at
-      Time.at(Integer(http_response.fetch("x-#{type}-reset")))
-    end
+    def reset_at = Time.at(field("reset"))
 
     # Get the seconds until the rate limit resets
     #
@@ -120,5 +124,13 @@ module X
     def reset_in
       [(reset_at - Time.now).ceil, 0].max
     end
+
+    private
+
+    # Read a field of the rate limit from its header, in base 10
+    # @api private
+    # @param name [String] the name of the field: limit, remaining, or reset
+    # @return [Integer] the value of the field
+    def field(name) = Integer(http_response.fetch("x-#{type}-#{name}"), 10)
   end
 end
