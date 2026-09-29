@@ -19,6 +19,7 @@ module X
       REPOSTED = "reposted"
       # Referenced post type for reposts, as the API documentation labels them
       RETWEETED = "retweeted"
+      private_constant :REPLIED_TO, :QUOTED, :REPOSTED, :RETWEETED
 
       # The referenced posts, resolved from the includes or built as stubs
       #

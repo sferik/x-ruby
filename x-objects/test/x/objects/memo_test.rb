@@ -89,7 +89,7 @@ module X
       end
 
       def test_unset_is_frozen
-        assert_predicate Memo::UNSET, :frozen?
+        assert_predicate Memo.const_get(:UNSET), :frozen?
       end
 
       private

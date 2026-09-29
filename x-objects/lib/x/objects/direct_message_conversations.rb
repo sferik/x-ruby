@@ -15,6 +15,7 @@ module X
     module DirectMessageConversations
       # The pattern of a conversation identifier: two user identifiers joined with a hyphen, or a group's own number
       CONVERSATION_ID = /\A\d+(-\d+)?\z/
+      private_constant :CONVERSATION_ID
 
       # Start a group conversation, sending its first message as the authenticated user
       #

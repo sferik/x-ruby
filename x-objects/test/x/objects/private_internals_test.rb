@@ -34,5 +34,36 @@ module X
       assert_raises(NameError) { PersonalizedTrend::ENDPOINT }
       assert_raises(NameError) { Usage::ENDPOINT }
     end
+
+    def test_a_resource_and_a_page_name_the_format_marshal_writes_privately
+      assert_raises(NameError) { Resource::MARSHAL_FORMAT }
+      assert_raises(NameError) { User::MARSHAL_FORMAT }
+      assert_raises(NameError) { Page::MARSHAL_FORMAT }
+    end
+
+    def test_a_post_names_the_types_of_its_references_privately
+      assert_raises(NameError) { Post::REPLIED_TO }
+      assert_raises(NameError) { Post::QUOTED }
+      assert_raises(NameError) { Post::REPOSTED }
+      assert_raises(NameError) { Post::RETWEETED }
+    end
+
+    def test_the_counts_of_posts_name_their_endpoints_and_granularity_privately
+      assert_raises(NameError) { Objects::PostCounts::RECENT_ENDPOINT }
+      assert_raises(NameError) { Objects::PostCounts::ALL_ENDPOINT }
+      assert_raises(NameError) { Objects::PostCounts::DEFAULT_GRANULARITY }
+    end
+
+    def test_the_helpers_name_the_patterns_they_read_alone_privately
+      assert_raises(NameError) { Objects::Utils::RAW_ID }
+      assert_raises(NameError) { Objects::Utils::USERNAME }
+      assert_raises(NameError) { Objects::DirectMessageConversations::CONVERSATION_ID }
+    end
+
+    def test_the_internals_of_a_resource_name_their_constants_privately
+      assert_raises(NameError) { Objects::Memo::UNSET }
+      assert_raises(NameError) { Objects::Includes::TWEET_KEYS }
+      assert_raises(NameError) { Objects::Attributes::EMPTY_LIST }
+    end
   end
 end

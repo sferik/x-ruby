@@ -11,6 +11,7 @@ module X
       # The value of a list the response omitted, which reads as empty, as a list of references does, rather than nil
       EMPTY_LIST = [] #: Array[untyped]
       EMPTY_LIST.freeze
+      private_constant :EMPTY_LIST
       # Converters keyed by attribute type
       CONVERTERS = {
         raw: ->(value) { value },

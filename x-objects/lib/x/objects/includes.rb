@@ -11,6 +11,8 @@ module X
       # The keys the API gave the includes of a class before it named tweets posts, which it still gives them where it
       # has not renamed them, such as in a stream
       TWEET_KEYS = {"posts" => "tweets"}.freeze
+      private_constant :TWEET_KEYS
+
       # Initialize a new identity map
       #
       # @api private

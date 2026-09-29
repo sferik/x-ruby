@@ -9,6 +9,7 @@ module X
     class Memo
       # Marker for a slot that holds no value yet
       UNSET = Object.new.freeze
+      private_constant :UNSET
 
       # Initialize an empty memo
       #

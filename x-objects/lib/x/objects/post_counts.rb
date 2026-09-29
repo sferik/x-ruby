@@ -25,6 +25,7 @@ module X
       ALL_ENDPOINT = "tweets/counts/all"
       # The granularity that makes the fewest periods, and so the least data
       DEFAULT_GRANULARITY = "day"
+      private_constant :RECENT_ENDPOINT, :ALL_ENDPOINT, :DEFAULT_GRANULARITY
 
       # Count the recent posts that match a query, without reading them
       #

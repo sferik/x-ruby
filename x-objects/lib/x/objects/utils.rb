@@ -22,6 +22,7 @@ module X
       # The pattern of a username: one to fifteen word characters, which the at sign a handle is often written with
       # may precede
       USERNAME = /\A@?\w{1,15}\z/
+      private_constant :RAW_ID, :USERNAME
 
       # The message of the error raised for a resource of another class than the one an identifier was expected of
       FOREIGN_RESOURCE = "%<given>s %<id>s is not %<expected>s: pass %<expected>s or its identifier"

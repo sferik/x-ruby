@@ -12,7 +12,8 @@ module X
     # @api private
     module Marshalling
       # The number of the format of the state Marshal writes, which a release that changes the format raises
-      FORMAT = 1
+      MARSHAL_FORMAT = 1
+      private_constant :MARSHAL_FORMAT
 
       # The state Marshal writes, which leaves out the client
       #
@@ -27,7 +28,7 @@ module X
       #   Rails.cache.write("user", user)
       def marshal_dump
         data, problems, query = includes.state # steep:ignore NoMethod
-        [FORMAT, attrs, hydrated?, data, problems, query]
+        [MARSHAL_FORMAT, attrs, hydrated?, data, problems, query]
       end
 
       # Restore a resource Marshal read, which has no client and so makes no request
@@ -44,7 +45,7 @@ module X
       #   Marshal.load(Marshal.dump(user)).username # => "sferik"
       def marshal_load(state)
         format, attrs, hydrated, data, problems, query = state
-        raise ArgumentError, "#{self.class} reads format #{FORMAT} of Marshal, not #{format.inspect}" unless FORMAT.eql?(format)
+        raise ArgumentError, "#{self.class} reads format #{MARSHAL_FORMAT} of Marshal, not #{format.inspect}" unless MARSHAL_FORMAT.eql?(format)
 
         setup(attrs, client: nil, hydrated:, includes: Includes.new(data, problems: problems.map { |problem| Problem.new(problem) }, query:)) # steep:ignore NoMethod
       end

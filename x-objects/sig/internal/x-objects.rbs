@@ -41,7 +41,7 @@ module X
     end
 
     module Marshalling : _Marshalled
-      FORMAT: Integer
+      MARSHAL_FORMAT: Integer
 
       def marshal_dump: () -> [Integer, attrs, bool, Hash[untyped, untyped], Array[Hash[String, untyped]], Hash[String, untyped]?]
       def marshal_load: ([Integer, attrs, bool, Hash[untyped, untyped]?, Array[Hash[String, untyped]], Hash[String, untyped]?] state) -> void
