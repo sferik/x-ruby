@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative "error"
+require_relative "uploaded_media"
 
 module X
   # Error raised when uploaded media is still processing after the time await_processing may wait
@@ -8,7 +9,7 @@ module X
   class MediaProcessingTimeout < Uploader::Error
     # The last processing status X reported, with the state and progress
     # @api public
-    # @return [UploadedMedia, Hash{String => Object}, nil] the status, which reads as a Hash, or nil if none was given
+    # @return [UploadedMedia, nil] the status, which reads as a Hash, or nil if none was given
     # @example Read how far processing got
     #   error.status.dig("processing_info", "progress_percent") # => 42
     attr_reader :status
@@ -26,7 +27,8 @@ module X
     #
     # @api public
     # @param message [String, nil] the message, or nil for one that names the time allowed
-    # @param status [UploadedMedia, Hash{String => Object}, nil] the last processing status X reported
+    # @param status [UploadedMedia, Hash{String => Object}, nil] the last processing status X reported, a Hash of
+    #   which is held as the uploaded media it describes
     # @param timeout [Integer, Float, nil] the seconds await_processing was allowed to wait
     # @return [MediaProcessingTimeout] a new error
     # @example Raise the error after ten minutes
@@ -34,7 +36,7 @@ module X
     # @example Raise the error with a message of its own, as a test stub may
     #   raise X::MediaProcessingTimeout, "Still processing"
     def initialize(message = nil, status: nil, timeout: nil)
-      @status = status
+      @status = status.is_a?(Hash) ? UploadedMedia.new(status) : status
       @timeout = timeout
       super(message || (timeout ? "Media processing did not finish within #{timeout} seconds" : "Media processing did not finish"))
     end

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative "error"
+require_relative "uploaded_media"
 
 module X
   # Error raised when X fails to process uploaded media, such as a video it cannot decode
@@ -12,7 +13,7 @@ module X
 
     # The processing status X reported, whose processing_info holds the error
     # @api public
-    # @return [UploadedMedia, Hash{String => Object}, nil] the status, which reads as a Hash, or nil if none was given
+    # @return [UploadedMedia, nil] the status, which reads as a Hash, or nil if none was given
     # @example Read the error X reported
     #   error.status.dig("processing_info", "error", "name") # => "InvalidMedia"
     attr_reader :status
@@ -23,14 +24,15 @@ module X
     #
     # @api public
     # @param message [String, nil] the message, or nil for the reason the status holds
-    # @param status [UploadedMedia, Hash{String => Object}, nil] the processing status X reported
+    # @param status [UploadedMedia, Hash{String => Object}, nil] the processing status X reported, a Hash of which is
+    #   held as the uploaded media it describes
     # @return [MediaProcessingFailed] a new error
     # @example Raise the error for a failed status
     #   raise X::MediaProcessingFailed.new(status: status)
     # @example Raise the error with a message of its own, as a test stub may
     #   raise X::MediaProcessingFailed, "Unsupported video format"
     def initialize(message = nil, status: nil)
-      @status = status
+      @status = status.is_a?(Hash) ? UploadedMedia.new(status) : status
       super(message || status&.dig("processing_info", "error", "message") || DEFAULT_MESSAGE)
     end
   end

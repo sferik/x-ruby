@@ -10,8 +10,14 @@ module X
       status = {"processing_info" => {"state" => "failed", "error" => {"code" => 1, "name" => "InvalidMedia", "message" => "Unsupported video format"}}}
       error = MediaProcessingFailed.new(status:)
 
-      assert_equal ["Unsupported video format", status], [error.message, error.status]
+      assert_equal ["Unsupported video format", UploadedMedia.new(status)], [error.message, error.status]
       assert_kind_of Error, error
+    end
+
+    def test_holds_uploaded_media_given_as_it_was_given
+      status = UploadedMedia.new({"id" => "7", "processing_info" => {"state" => "failed"}})
+
+      assert_same status, MediaProcessingFailed.new(status:).status
     end
 
     def test_the_message_without_a_reason
@@ -26,7 +32,7 @@ module X
     def test_a_message_given_is_the_message_whatever_the_status
       status = {"processing_info" => {"error" => {"message" => "Unsupported video format"}}}
 
-      assert_equal ["Stubbed", status], MediaProcessingFailed.new("Stubbed", status:).then { |error| [error.message, error.status] }
+      assert_equal ["Stubbed", UploadedMedia.new(status)], MediaProcessingFailed.new("Stubbed", status:).then { |error| [error.message, error.status] }
     end
 
     def test_it_is_raised_with_a_message_alone
@@ -43,8 +49,14 @@ module X
       status = {"processing_info" => {"state" => "in_progress"}}
       error = MediaProcessingTimeout.new(status:, timeout: 600)
 
-      assert_equal [status, 600, "Media processing did not finish within 600 seconds"], [error.status, error.timeout, error.message]
+      assert_equal [UploadedMedia.new(status), 600, "Media processing did not finish within 600 seconds"], [error.status, error.timeout, error.message]
       assert_kind_of Error, error
+    end
+
+    def test_holds_uploaded_media_given_as_it_was_given
+      status = UploadedMedia.new({"id" => "7", "processing_info" => {"state" => "in_progress"}})
+
+      assert_same status, MediaProcessingTimeout.new(status:).status
     end
 
     def test_a_message_given_is_the_message_whatever_the_timeout
