@@ -94,6 +94,28 @@ module X
 
       assert_kind_of Uploader::Error, error
       assert_kind_of Error, error
+      assert_equal [[], true], [error.problems, error.problems.frozen?]
+    end
+
+    def test_it_names_the_reason_the_first_problem_gives_and_holds_the_problems
+      problems = [Problem.new({"title" => "Not Found Error", "detail" => "Could not find media"}), Problem.new({"title" => "Other"})]
+      error = MissingMediaData.new("The response holds no media", problems:)
+
+      assert_equal ["The response holds no media: Could not find media", problems, true], [error.message, error.problems, error.problems.frozen?]
+      refute_predicate problems, :frozen?
+    end
+
+    def test_it_names_the_message_or_else_the_title_of_a_problem_without_a_detail
+      messages = [{"message" => "Invalid media_id", "title" => "Bad"}, {"title" => "Not Found Error"}].map do |attrs|
+        MissingMediaData.new("No media", problems: [Problem.new(attrs)]).message
+      end
+
+      assert_equal ["No media: Invalid media_id", "No media: Not Found Error"], messages
+    end
+
+    def test_it_names_the_reason_alone_without_a_message_and_its_class_without_either
+      assert_equal "Could not find media", MissingMediaData.new(problems: [Problem.new({"detail" => "Could not find media"})]).message
+      assert_equal "X::MissingMediaData", MissingMediaData.new.message
     end
   end
 

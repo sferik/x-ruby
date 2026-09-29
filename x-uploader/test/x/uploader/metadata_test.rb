@@ -78,5 +78,12 @@ module X
 
       assert_equal "The response that adds the metadata holds none", error.message
     end
+
+    def test_add_alt_text_names_the_problems_a_response_holds_in_place_of_metadata
+      stub_request(:post, METADATA_URL).to_return(headers: JSON_HEADERS, body: {errors: [{detail: "Could not find media"}]}.to_json)
+      error = assert_raises(MissingMediaData) { Uploader::Metadata.add_alt_text(7, "A cat", client: @client) }
+
+      assert_equal ["The response that adds the metadata holds none: Could not find media", 1], [error.message, error.problems.size]
+    end
   end
 end

@@ -117,6 +117,15 @@ module X
       assert_equal "The response of the status check holds no media", error.message
     end
 
+    def test_a_status_response_that_holds_problems_in_place_of_media_names_them
+      body = {errors: [{title: "Not Found Error", detail: "Could not find media with id: 7", type: "https://api.twitter.com/2/problems/resource-not-found"}]}
+      stub_request(:get, STATUS_URL).to_return(headers: {"content-type" => "application/json"}, body: body.to_json)
+      error = assert_raises(MissingMediaData) { await }
+
+      assert_equal "The response of the status check holds no media: Could not find media with id: 7", error.message
+      assert(error.problems.all?(&:not_found?))
+    end
+
     private
 
     def await(**)

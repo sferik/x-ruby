@@ -129,7 +129,7 @@ module X
       # @example The media alt text was added to
       #   Uploader::Utils.described({"data" => {"id" => "7"}}, media) # => media
       def described(response, media)
-        raise MissingMediaData, NO_METADATA unless Hash.try_convert(response.to_h["data"])
+        raise MissingMediaData.new(NO_METADATA, problems: Problem.all_from(response)) unless Hash.try_convert(response.to_h["data"])
 
         uploaded_media(media)
       end
@@ -149,7 +149,7 @@ module X
       # @example The media an upload returned
       #   Uploader::Utils.media_data({"data" => {"id" => 7}}, "of the upload") # => {"id" => 7}
       def media_data(response, description)
-        Hash.try_convert(response.to_h["data"]) || raise(MissingMediaData, format(NO_MEDIA, description))
+        Hash.try_convert(response.to_h["data"]) || raise(MissingMediaData.new(format(NO_MEDIA, description), problems: Problem.all_from(response)))
       end
 
       # Send a request again after a server or network error, as an idempotent one is

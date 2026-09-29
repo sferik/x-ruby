@@ -37,8 +37,9 @@ module X
       #   Uploader::Chunks.init(client:, source:, media_type: "video/mp4", media_category: "tweet_video")
       def init(client:, source:, media_type:, media_category:)
         body = {media_type:, media_category:, total_bytes: source.size}
-        media = Hash.try_convert(client.post("media/upload/initialize", body, **JSON_CLASSES).to_h["data"])
-        raise MissingMediaData, NO_MEDIA unless media&.key?("id")
+        response = client.post("media/upload/initialize", body, **JSON_CLASSES)
+        media = Hash.try_convert(response.to_h["data"])
+        raise MissingMediaData.new(NO_MEDIA, problems: Problem.all_from(response)) unless media&.key?("id")
 
         media
       end

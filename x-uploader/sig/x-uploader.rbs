@@ -110,6 +110,8 @@ module X
   end
 
   class MissingMediaData < Uploader::Error
+    attr_reader problems: Array[Problem]
+    def initialize: (?String? message, ?problems: Array[Problem]) -> void
   end
 
   class MediaProcessingTimeout < Uploader::Error
