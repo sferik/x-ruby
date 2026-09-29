@@ -1,4 +1,6 @@
-# The libraries the signatures of x-uploader refer to, which rbs collection loads for code that depends on it
+# The standard libraries the signatures of x-uploader refer to, which rbs collection loads for code that depends on it
+#
+# rbs collection reads every library named here as a standard library, so the gems x-uploader depends on are left to its
+# gemspec, from which it installs their signatures.
 dependencies:
   - name: json
-  - name: x-core

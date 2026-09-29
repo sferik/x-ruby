@@ -1,5 +1,5 @@
-# The libraries the signatures of x refer to, which rbs collection loads for code that depends on it
-dependencies:
-  - name: x-core
-  - name: x-objects
-  - name: x-uploader
+# The standard libraries the signatures of x refer to, which rbs collection loads for code that depends on it
+#
+# rbs collection reads every library named here as a standard library, so the gems x depends on are left to their
+# gemspecs, from which it installs their signatures.
+dependencies: []

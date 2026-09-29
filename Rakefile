@@ -185,24 +185,29 @@ def shipped_signatures(name)
   Dir.glob("#{SIGNATURE_DIRS.fetch(name)}/*.rbs").sort
 end
 
-# The libraries a gem's manifest declares, which rbs collection loads with its signatures
+# The standard libraries a gem's manifest declares, which rbs collection loads with its signatures
 def manifest_dependencies(name)
   YAML.load_file(File.join(SIGNATURE_DIRS.fetch(name), "manifest.yaml")).fetch("dependencies").map { |dependency| dependency.fetch("name") }
 end
 
+# The gems of this repository a gem depends on at runtime, whose signatures rbs collection installs from its gemspec
+def gem_dependencies(name)
+  Gem::Specification.load(File.expand_path("#{GEMS.fetch(name)}/#{name}.gemspec", __dir__)).runtime_dependencies
+    .map(&:name).select { |dependency| GEMS.key?(dependency) }
+end
+
 # The signatures to load for a gem, and the libraries to load them with
 #
-# A gem of this repository contributes the signatures it ships, and the libraries its own manifest declares, as
-# rbs collection reads the manifest of each gem it installs.
+# A gem of this repository contributes the signatures it ships, and the standard libraries its own manifest declares,
+# and the gems of this repository it depends on contribute theirs, as rbs collection installs the signatures of each
+# gem a gemspec depends on and reads the manifest of each.
 #
 # @return [Array(Array<String>, Array<String>)] the signature files and the library names
 def signature_sources(name, seen = [])
   return [[], []] if seen.include?(name)
 
   seen << name
-  manifest_dependencies(name).each_with_object([shipped_signatures(name), []]) do |dependency, (files, libraries)|
-    next libraries << dependency unless SIGNATURE_DIRS.key?(dependency)
-
+  gem_dependencies(name).each_with_object([shipped_signatures(name), manifest_dependencies(name)]) do |dependency, (files, libraries)|
     dependency_files, dependency_libraries = signature_sources(dependency, seen)
     files.concat(dependency_files)
     libraries.concat(dependency_libraries)
@@ -218,7 +223,7 @@ end
 # @return [Boolean] true if every type the signatures refer to resolves
 def signatures_resolve?(name)
   files, libraries = signature_sources(name)
-  arguments = files.flat_map { |file| ["-I", file] } + libraries.flat_map { |library| ["-r", library] }
+  arguments = files.flat_map { |file| ["-I", file] } + libraries.uniq.flat_map { |library| ["-r", library] }
   output = IO.popen(["rbs", *arguments, "validate"], err: %i[child out], &:read)
   errors = output.lines.grep(/#{Regexp.escape(SIGNATURE_DIRS.fetch(name))}/)
   errors.each { |error| warn error }

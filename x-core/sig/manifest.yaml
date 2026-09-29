@@ -1,4 +1,7 @@
-# The libraries the signatures of x-core refer to, which rbs collection loads for code that depends on it
+# The standard libraries the signatures of x-core refer to, which rbs collection loads for code that depends on it
+#
+# rbs collection reads every library named here as a standard library, so the gems x-core depends on are left to its
+# gemspec, from which it installs their signatures.
 dependencies:
   - name: json
   - name: net-http
