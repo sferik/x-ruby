@@ -28,6 +28,16 @@ module X
       def hash: () -> Integer
     end
 
+    module ValueMarshalling : _Attributed
+      MARSHAL_FORMAT: Integer
+
+      def marshal_dump: () -> [Integer, Hash[String, untyped]]
+      def marshal_load: ([Integer, Hash[String, untyped]] state) -> void
+
+      private
+      def restore: (Hash[String, untyped] attrs) -> void
+    end
+
     module Serialization : _Attributed
       def as_json: (*untyped) -> Hash[String, untyped]
       def to_json: (?JSON::State? state) -> String
@@ -604,6 +614,7 @@ module X
 
   class Trend
     include Objects::ValueEquality
+    include Objects::ValueMarshalling
     include Objects::Serialization
 
     private def self.woeid_of: (untyped woeid) -> String
@@ -611,11 +622,16 @@ module X
 
   class MatchingRule
     include Objects::ValueEquality
+    include Objects::ValueMarshalling
     include Objects::Serialization
+
+    private
+    def restore: (Hash[String, untyped] attrs) -> void
   end
 
   class PersonalizedTrend
     include Objects::ValueEquality
+    include Objects::ValueMarshalling
     include Objects::Serialization
 
     ENDPOINT: String
@@ -623,6 +639,7 @@ module X
 
   class Usage
     include Objects::ValueEquality
+    include Objects::ValueMarshalling
     include Objects::Serialization
 
     ENDPOINT: String

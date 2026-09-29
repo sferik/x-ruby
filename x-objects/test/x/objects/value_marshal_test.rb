@@ -1,0 +1,54 @@
+# frozen_string_literal: true
+
+require_relative "../../test_helper"
+
+module X
+  # Marshal writes a trend, the usage of a project, and a rule a post matched as plain data, led by the number of their
+  # format, and reads each back deep-frozen, as it was built
+  class ValueMarshalTest < Minitest::Test
+    cover Objects::ValueMarshalling
+    cover Trend
+    cover PersonalizedTrend
+    cover Usage
+    cover MatchingRule
+
+    def setup
+      @values = [Trend.new({"trend_name" => "#ruby", "tweet_count" => 1234}),
+        PersonalizedTrend.new({"trend_name" => "#ruby", "category" => "Technology", "post_count" => "12.3K posts"}),
+        Usage.new({"project_usage" => "1234", "daily_project_usage" => {"usage" => [{"date" => "2026-09-28T00:00:00.000Z", "usage" => "5"}]}}),
+        MatchingRule.new(id: 1_165_037_377_523_306_498, tag: "ruby"), MatchingRule.new(id: 1)]
+    end
+
+    def test_marshal_dump_is_plain_data_led_by_its_format
+      assert_equal(@values.map { |value| [1, value.attrs] }, @values.map(&:marshal_dump))
+    end
+
+    def test_a_marshalled_value_reads_back_as_it_was
+      loaded = Marshal.load(Marshal.dump(@values))
+
+      assert_equal @values, loaded
+      assert_equal @values.map(&:attrs), loaded.map(&:attrs)
+      assert_equal [1_165_037_377_523_306_498, "ruby", 1, nil], loaded.last(2).flat_map { |rule| [rule.id, rule.tag] }
+    end
+
+    def test_a_marshalled_value_reads_back_deep_frozen
+      Marshal.load(Marshal.dump(@values)).each do |value|
+        assert_predicate value, :frozen?
+        assert_predicate value.attrs, :frozen?
+        assert value.attrs.values.all?(&:frozen?), "Expected the attributes of #{value.inspect} to be frozen"
+      end
+    end
+
+    def test_a_value_of_another_format_is_refused
+      @values.each do |value|
+        error = assert_raises(UnsupportedMarshalFormat) { value.class.allocate.marshal_load(["1", value.attrs]) }
+
+        assert_equal "#{value.class} reads format 1 of Marshal, not \"1\"", error.message
+      end
+    end
+
+    def test_the_format_is_named_privately
+      [Trend, PersonalizedTrend, Usage, MatchingRule].each { |klass| assert_raises(NameError) { klass::MARSHAL_FORMAT } }
+    end
+  end
+end

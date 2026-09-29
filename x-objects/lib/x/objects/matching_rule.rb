@@ -2,6 +2,7 @@
 
 require_relative "serialization"
 require_relative "value_equality"
+require_relative "value_marshalling"
 
 module X
   # A rule of the filtered stream that a post the stream delivered matched: the identifier the API gave the rule, and
@@ -20,6 +21,7 @@ module X
   class MatchingRule
     include Objects::Serialization
     include Objects::ValueEquality
+    include Objects::ValueMarshalling
 
     # The attributes of the rule, as the stream sends them
     #
@@ -68,7 +70,7 @@ module X
     def initialize(id:, tag: nil)
       @id = Integer(id.to_s, 10)
       @tag = (String.try_convert(tag) || raise(ArgumentError, "tag must be a String, not #{tag.inspect}")).dup.freeze unless tag.nil?
-      @attrs = {"id" => @id.to_s, "tag" => @tag}.compact.freeze
+      @attrs = {"id" => @id.to_s.freeze, "tag" => @tag}.compact.freeze
       freeze
     end
 
@@ -88,5 +90,13 @@ module X
     # @example Inspect a rule
     #   rule.inspect # => #<X::MatchingRule id=1165037377523306498 tag="ruby">
     def inspect = "#<#{self.class} id=#{id} tag=#{tag.inspect}>"
+
+    private
+
+    # Build the rule of the attributes Marshal read, as the constructor builds it
+    # @api private
+    # @param attrs [Hash{String => String}] the attributes
+    # @return [void]
+    def restore(attrs) = initialize(id: attrs.fetch("id"), tag: attrs["tag"])
   end
 end

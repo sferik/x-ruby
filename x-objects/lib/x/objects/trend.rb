@@ -4,6 +4,7 @@ require_relative "serialization"
 require_relative "shape"
 require_relative "utils"
 require_relative "value_equality"
+require_relative "value_marshalling"
 
 module X
   # A topic trending in a place, as the trends of the place report it
@@ -15,6 +16,7 @@ module X
   class Trend
     include Objects::Serialization
     include Objects::ValueEquality
+    include Objects::ValueMarshalling
 
     # Every trend field
     #

@@ -4,6 +4,7 @@ require_relative "serialization"
 require_relative "shape"
 require_relative "utils"
 require_relative "value_equality"
+require_relative "value_marshalling"
 
 module X
   # A topic trending for the authenticated user, as the trends X picks for them report it
@@ -16,6 +17,7 @@ module X
   class PersonalizedTrend
     include Objects::Serialization
     include Objects::ValueEquality
+    include Objects::ValueMarshalling
 
     # The endpoint that reports the trends of the authenticated user
     ENDPOINT = "users/personalized_trends"

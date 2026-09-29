@@ -4,6 +4,7 @@ require_relative "serialization"
 require_relative "shape"
 require_relative "utils"
 require_relative "value_equality"
+require_relative "value_marshalling"
 
 module X
   # How many posts the app's project has read, as the usage endpoint reports it
@@ -15,6 +16,7 @@ module X
   class Usage
     include Objects::Serialization
     include Objects::ValueEquality
+    include Objects::ValueMarshalling
 
     # The endpoint that reports the post usage of the project
     ENDPOINT = "usage/tweets"
