@@ -15,36 +15,44 @@ module X
 
       # The media category the subtitles endpoint takes for a video attached to a post, which subtitles default to
       SUBTITLED_MEDIA_CATEGORY = "TweetVideo"
-      # The message of the error raised for a metadata response that holds no metadata
-      NO_METADATA = "The response that adds the metadata holds none"
-      private_constant :SUBTITLED_MEDIA_CATEGORY, :NO_METADATA
+      private_constant :SUBTITLED_MEDIA_CATEGORY
 
       # Describe uploaded media with alt text, for people who cannot see it
       #
       # Alt text added twice is added once, so it is sent again after a server or network error, as a client sends
       # an idempotent request again, up to the max_retries of the client.
       #
+      # It returns the media it described, as uploaded media, so that a call can be chained to the upload it
+      # describes. The response holds nothing more than the media identifier and the alt text that was sent.
+      #
       # @api public
       # @param media [UploadedMedia, Hash, #media_key, String, Integer] the uploaded media, media that has a media key,
       #   such as X::Media, or the media identifier
       # @param text [String] the alt text, of 1 to 1,000 characters
       # @param client [Client] the X API client
-      # @return [Hash] the media identifier and the metadata now associated with it
+      # @return [UploadedMedia] the media given, if it is uploaded media, or else uploaded media built from the upload
+      #   response, the media key, or the media identifier given
       # @raise [ArgumentError] if the alt text is empty or longer than the API takes, before a request
       # @raise [ArgumentError] if the media given is neither media nor a media identifier, or its media key names none
       # @raise [MissingMediaData] if the media given holds no identifier, or the response holds no metadata or carries no body at all
       # @example Describe an uploaded image
       #   Uploader::Metadata.add_alt_text(media, "A cat asleep on a keyboard", client: client)
+      # @example Describe an image as it is uploaded, and attach it to a post
+      #   media = Uploader::Metadata.add_alt_text(Uploader::MediaUpload.upload("cat.jpg", client:), "A cat", client:)
+      #   client.post("tweets", {text: "Look at this cat", media: {media_ids: [media.media_id.to_s]}})
       def add_alt_text(media, text, client:)
         Validator.validate_alt_text!(text)
         body = {id: Utils.media_id(media), metadata: {alt_text: {text:}}}
-        Utils.sending_again(client) { client.post("media/metadata", body, **JSON_CLASSES) }.to_h["data"].then { |data| Hash.try_convert(data) || raise(MissingMediaData, NO_METADATA) }
+        Utils.described(Utils.sending_again(client) { client.post("media/metadata", body, **JSON_CLASSES) }, media)
       end
 
       # Attach uploaded subtitles to an uploaded video
       #
       # Subtitles attached twice are attached once, as the track of their language, so they are sent again after a
       # server or network error, as alt text is, up to the max_retries of the client.
+      #
+      # It returns the video it subtitled, as uploaded media, so that a call can be chained to the upload of the
+      # video. The response holds nothing more than the identifiers, the category, and the track that were sent.
       #
       # @api public
       # @param video [UploadedMedia, Hash, #media_key, String, Integer] the uploaded video, media that has a media
@@ -56,7 +64,8 @@ module X
       # @param display_name [String, nil] the name of the language shown to viewers, such as English
       # @param media_category [String, Symbol] the category the video was uploaded as, tweet_video or amplify_video,
       #   in any case, as the uploaders take it, or as the subtitles endpoint names it, TweetVideo or AmplifyVideo
-      # @return [Hash] the video identifier and the subtitles now associated with it
+      # @return [UploadedMedia] the video given, if it is uploaded media, or else uploaded media built from the upload
+      #   response, the media key, or the media identifier given
       # @raise [ArgumentError] if the media category is neither tweet_video nor amplify_video
       # @raise [ArgumentError] if the video or the subtitles are neither media nor a media identifier, or have a media
       #   key that names none
@@ -71,7 +80,7 @@ module X
       def add_subtitles(video, subtitles, language_code, client:, display_name: nil, media_category: SUBTITLED_MEDIA_CATEGORY)
         track = {id: Utils.media_id(subtitles), language_code: language_code.upcase, display_name:}.compact
         body = {id: Utils.media_id(video), media_category: Utils.subtitled_media_category(media_category), subtitles: track}
-        Utils.sending_again(client) { client.post("media/subtitles", body, **JSON_CLASSES) }.to_h["data"].then { |data| Hash.try_convert(data) || raise(MissingMediaData, NO_METADATA) }
+        Utils.described(Utils.sending_again(client) { client.post("media/subtitles", body, **JSON_CLASSES) }, video)
       end
     end
   end

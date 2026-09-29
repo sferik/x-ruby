@@ -22,6 +22,8 @@ module X
       NO_MEDIA_ID = "The media given holds no identifier"
       # The message of the error raised for a response of an upload that holds no media
       NO_MEDIA = "The response %s holds no media"
+      # The message of the error raised for a metadata response that holds no metadata
+      NO_METADATA = "The response that adds the metadata holds none"
       # The message of the error raised for something that is neither media nor the identifier of media
       NOT_MEDIA = "%s is not media: pass uploaded media, the Hash of an upload response, media that has a media key, " \
         "such as X::Media, or a media identifier"
@@ -29,7 +31,7 @@ module X
       NOT_MEDIA_KEY = "The media key %s names no media identifier"
       # The pattern of a media key, which names the media identifier after the number of its type and an underscore
       MEDIA_KEY = /\A\d+_(\d+)\z/
-      private_constant :NO_MEDIA_ID, :NO_MEDIA, :NOT_MEDIA, :NOT_MEDIA_KEY, :MEDIA_KEY
+      private_constant :NO_MEDIA_ID, :NO_MEDIA, :NO_METADATA, :NOT_MEDIA, :NOT_MEDIA_KEY, :MEDIA_KEY
 
       # The lowercase extension of a file, without its dot
       #
@@ -83,6 +85,47 @@ module X
 
         key = media.media_key
         key && (key.to_s[MEDIA_KEY, 1] || raise(ArgumentError, format(NOT_MEDIA_KEY, key.inspect)))
+      end
+
+      # Media as uploaded media, which what an upload returned already is
+      #
+      # The Hash of an upload response is built into the uploaded media it describes, and media known by a media key or
+      # by a media identifier into uploaded media that holds its identifier, and its media key if it has one.
+      #
+      # @api private
+      # @param media [UploadedMedia, Hash, #media_key, String, Integer] the uploaded media, the upload response, media
+      #   that has a media key, or the media identifier
+      # @return [UploadedMedia] the uploaded media
+      # @raise [ArgumentError] if the media is neither media nor a media identifier, or its media key names none
+      # @raise [MissingMediaData] if the media is nil or empty, or holds no identifier
+      # @example Uploaded media known by its identifier
+      #   Uploader::Utils.uploaded_media(7) # => #<X::UploadedMedia id=7 media_key=nil state=nil>
+      def uploaded_media(media)
+        case media
+        when UploadedMedia then media
+        when Hash then UploadedMedia.new(media)
+        else
+          keyed = media #: untyped
+          UploadedMedia.new({"id" => media_id(media), "media_key" => (keyed.media_key if keyed.respond_to?(:media_key))}.compact)
+        end
+      end
+
+      # The media metadata was added to, once the response says it was added
+      #
+      # The API answers a change of metadata with the media identifier and the metadata it now holds, under the data
+      # of the response, which a response that succeeded without it does not say were added.
+      #
+      # @api private
+      # @param response [Hash, nil] the parsed response body, or nil for a response without one
+      # @param media [UploadedMedia, Hash, #media_key, String, Integer] the media the metadata was added to
+      # @return [UploadedMedia] the media, as uploaded media
+      # @raise [MissingMediaData] if the response holds no metadata
+      # @example The media alt text was added to
+      #   Uploader::Utils.described({"data" => {"id" => "7"}}, media) # => media
+      def described(response, media)
+        raise MissingMediaData, NO_METADATA unless Hash.try_convert(response.to_h["data"])
+
+        uploaded_media(media)
       end
 
       # The media a response of an upload describes

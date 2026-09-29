@@ -42,8 +42,8 @@ module X
       stub_request(:post, "https://api.x.com/2/media/metadata").to_return(JSON_RESPONSE)
       stub_request(:post, "https://api.x.com/2/media/subtitles").to_return(JSON_RESPONSE)
 
-      assert_equal({"id" => TEST_MEDIA_ID}, Uploader::Metadata.add_alt_text(TEST_MEDIA_ID, "A cat", client: @client))
-      assert_equal({"id" => TEST_MEDIA_ID}, Uploader::Metadata.add_subtitles(TEST_MEDIA_ID, "1", "EN", client: @client))
+      assert_equal UploadedMedia.new({"id" => TEST_MEDIA_ID}), Uploader::Metadata.add_alt_text(TEST_MEDIA_ID, "A cat", client: @client)
+      assert_equal UploadedMedia.new({"id" => TEST_MEDIA_ID}), Uploader::Metadata.add_subtitles(TEST_MEDIA_ID, "1", "EN", client: @client)
     end
 
     def test_update_profile_image_and_banner

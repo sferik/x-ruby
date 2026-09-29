@@ -85,10 +85,12 @@ module X
       # @param media [UploadedMedia, Hash, #media_key, String, Integer] the uploaded media, media that has a media key,
       #   such as X::Media, or the media identifier
       # @param text [String] the alt text, of 1 to 1,000 characters
-      # @return [Hash] the media identifier and the metadata now associated with it
+      # @return [UploadedMedia] the media given, as uploaded media, which a call can be chained to
       # @raise [ArgumentError] if the alt text is empty or longer than the API takes, before a request
       # @example Describe an image
       #   client.add_alt_text(media, "A cat asleep on a keyboard")
+      # @example Describe an image as it is uploaded
+      #   media = client.add_alt_text(client.upload_media("cat.jpg"), "A cat asleep on a keyboard")
       def add_alt_text(media, text)
         Metadata.add_alt_text(media, text, client: self)
       end
@@ -102,7 +104,7 @@ module X
       #   media key, or their media identifier
       # @param language_code [String] the language of the subtitles, such as EN
       # @param options [Hash] the options of {Metadata.add_subtitles}: display_name and media_category
-      # @return [Hash] the video identifier and the subtitles now associated with it
+      # @return [UploadedMedia] the video given, as uploaded media, which a call can be chained to
       # @example Subtitle a video in English
       #   client.add_subtitles(video, subtitles, "EN", display_name: "English")
       def add_subtitles(video, subtitles, language_code, **options)

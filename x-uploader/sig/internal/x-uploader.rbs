@@ -78,6 +78,7 @@ module X
       SUBTITLED_MEDIA_CATEGORIES: Hash[String, String]
       NO_MEDIA_ID: String
       NO_MEDIA: String
+      NO_METADATA: String
       NOT_MEDIA: String
       NOT_MEDIA_KEY: String
       MEDIA_KEY: Regexp
@@ -85,6 +86,8 @@ module X
       def extension: (path file_path) -> String
       def media_id: (media media) -> String
       def media_key_id: (untyped media) -> String?
+      def uploaded_media: (media media) -> UploadedMedia
+      def described: (Hash[String, untyped]? response, media media) -> UploadedMedia
       def media_data: (Hash[String, untyped]? response, String description) -> Hash[String, untyped]
       def subtitled_media_category: (String | Symbol media_category) -> String
       def sending_again: [T] (_Client client) { () -> T } -> T
@@ -172,7 +175,6 @@ module X
 
     module Metadata
       SUBTITLED_MEDIA_CATEGORY: String
-      NO_METADATA: String
     end
 
     module Validator

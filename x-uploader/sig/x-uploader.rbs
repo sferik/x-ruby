@@ -25,8 +25,8 @@ module X
       def upload_media: (uploadable media, **untyped options) -> UploadedMedia
       def await_media_processing: (media media, **untyped options) -> UploadedMedia
       def await_media_processing!: (media media, **untyped options) -> UploadedMedia
-      def add_alt_text: (media media, String text) -> Hash[String, untyped]
-      def add_subtitles: (media video, media subtitles, String language_code, **untyped options) -> Hash[String, untyped]
+      def add_alt_text: (media media, String text) -> UploadedMedia
+      def add_subtitles: (media video, media subtitles, String language_code, **untyped options) -> UploadedMedia
       def update_profile_image: (path file_path) -> Hash[String, untyped]?
       def update_profile_banner: (path file_path, **untyped options) -> nil
     end
@@ -59,8 +59,8 @@ module X
     module Metadata
       extend Metadata
 
-      def add_alt_text: (media media, String text, client: _Client) -> Hash[String, untyped]
-      def add_subtitles: (media video, media subtitles, String language_code, client: _Client, ?display_name: String?, ?media_category: String | Symbol) -> Hash[String, untyped]
+      def add_alt_text: (media media, String text, client: _Client) -> UploadedMedia
+      def add_subtitles: (media video, media subtitles, String language_code, client: _Client, ?display_name: String?, ?media_category: String | Symbol) -> UploadedMedia
     end
 
     module Account
