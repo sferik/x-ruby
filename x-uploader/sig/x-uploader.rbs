@@ -80,6 +80,7 @@ module X
     def self.from: (Hash[String, untyped]? attrs) -> UploadedMedia?
     def initialize: (Hash[String, untyped] attrs) -> void
     def id: () -> Integer
+    def media_id: () -> Integer
     def media_key: () -> String?
     def bytesize: () -> Integer?
     def expires_after_secs: () -> Integer?

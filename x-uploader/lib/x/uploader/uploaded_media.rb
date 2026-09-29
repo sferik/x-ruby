@@ -53,20 +53,36 @@ module X
       freeze
     end
 
-    # The media identifier, which a post attaches the media by
+    # The numeric media ID, which a post attaches the media by
+    #
+    # It is the media ID the upload endpoints and a new post take, which {media_id} reads too. The X::Media of
+    # x-objects, the media of a post as the object layer reads it, is identified by its media key instead, so its id
+    # is the media key, which {media_key} reads here; both classes answer media_id and media_key alike.
     #
     # @api public
-    # @return [Integer] the identifier, whether the response held it as a String or an Integer
+    # @return [Integer] the media ID, whether the response held it as a String or an Integer
     # @raise [MissingMediaData] if the response held no id
     # @raise [ArgumentError] if the response held an id that names no number
-    # @example Get the identifier
+    # @example Get the media ID
     #   media.id # => 1880028106020515840
     def id = Integer(fetch("id") { raise MissingMediaData, NO_MEDIA_ID }.to_s, 10)
 
-    # The media key
+    # The numeric media ID, as the X::Media of x-objects names it
+    #
+    # It is the same as {id}, under the name that reads the same on uploaded media and on the media of a post.
     #
     # @api public
-    # @return [String, nil] the media key
+    # @return [Integer] the media ID, whether the response held it as a String or an Integer
+    # @raise [MissingMediaData] if the response held no id
+    # @raise [ArgumentError] if the response held an id that names no number
+    # @example Get the media ID
+    #   media.media_id # => 1880028106020515840
+    def media_id = id
+
+    # The media key, which names the type of the media and its media ID
+    #
+    # @api public
+    # @return [String, nil] the media key, if the response holds one
     # @example Get the media key
     #   media.media_key # => "3_1880028106020515840"
     def media_key = self["media_key"]

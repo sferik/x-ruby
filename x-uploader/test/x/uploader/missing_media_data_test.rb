@@ -67,6 +67,7 @@ module X
       error = assert_raises(MissingMediaData) { UploadedMedia.new({}).id }
 
       assert_equal "The media holds no identifier", error.message
+      assert_raises(MissingMediaData) { UploadedMedia.new({"media_key" => "3_7"}).media_id }
     end
 
     private

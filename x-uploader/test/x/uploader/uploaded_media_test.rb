@@ -18,10 +18,11 @@ module X
 
     def test_reads_the_identifier_as_an_integer_and_the_rest_as_given
       assert_equal [1_880_028_106_020_515_840, "3_1880028106020515840", 1024], [@media.id, @media.media_key, @media.bytesize]
+      assert_equal 1_880_028_106_020_515_840, @media.media_id
     end
 
     def test_reads_an_identifier_held_as_an_integer
-      assert_equal 1_880_028_106_020_515_840, UploadedMedia.new({"id" => 1_880_028_106_020_515_840}).id
+      assert_equal [1_880_028_106_020_515_840] * 2, UploadedMedia.new({"id" => 1_880_028_106_020_515_840}).then { |media| [media.id, media.media_id] }
     end
 
     def test_the_bytes_of_the_media_are_its_bytesize_and_its_size_is_the_hash_it_reads_as
