@@ -19,8 +19,6 @@ jobs:
       actions: read
       contents: read
       id-token: write
-    # The job holds credentials that push the gems, so every action and tool it runs is pinned, to a commit or a
-    # version, rather than taken at whatever release is latest when it runs
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ruby/setup-ruby@14594264cd68ce8a2345dd349bc3d138a4ef85c8 # v1.327.0
