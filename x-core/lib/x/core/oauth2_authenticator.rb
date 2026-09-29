@@ -39,18 +39,6 @@ module X
     # @example Get the client ID
     #   authenticator.client_id
     attr_reader :client_id
-    # The OAuth 2.0 access token
-    # @api public
-    # @return [String] the access token
-    # @example Get the access token
-    #   authenticator.access_token
-    attr_reader :access_token
-    # The OAuth 2.0 refresh token
-    # @api public
-    # @return [String] the refresh token
-    # @example Get the refresh token
-    #   authenticator.refresh_token
-    attr_reader :refresh_token
     # The expiration time of the access token
     # @api public
     # @return [Time, nil] the expiration time
@@ -127,20 +115,41 @@ module X
     # Refresh the access token using the refresh token
     #
     # The authenticator holds the new tokens once it returns, and the authenticator of a client has passed them to the
-    # on_token_refresh of the clients that share it.
+    # on_token_refresh of the clients that share it. The tokens it returns are those of this refresh, frozen, the
+    # same object on_token_refresh is passed, so they are a set that belongs together, whatever refreshes follow on
+    # other threads.
     #
     # @api public
-    # @return [OAuth2Authenticator] the authenticator, which holds the new tokens
+    # @return [OAuth2Tokens] the tokens the refresh issued
     # @raise [AuthorizationError] if X refuses to refresh the token
     # @raise [TooManyRequests, ServerError] if the token endpoint limits the rate of the request or fails to answer
     # @example Refresh the tokens and store them
-    #   store(authenticator.refresh!.refresh_token)
+    #   store.save(**authenticator.refresh!.to_h)
     def refresh!
-      report_refresh(@mutex.synchronize { refresh(connection) })
-      self
+      tokens = @mutex.synchronize { refresh(connection) }
+      report_refresh(tokens)
+      tokens
     end
 
     private
+
+    # The OAuth 2.0 access token, as last refreshed
+    #
+    # It is a secret, so it is private, as the access token of a client is, since a client hands out its
+    # authenticator. The tokens of a refresh are passed to on_token_refresh, and returned by {#refresh!}. Internal to
+    # x-core: a client reads it with __send__.
+    #
+    # @api private
+    # @return [String] the access token
+    attr_reader :access_token
+
+    # The OAuth 2.0 refresh token, as last refreshed
+    #
+    # It is private for the reason {#access_token} is.
+    #
+    # @api private
+    # @return [String] the refresh token
+    attr_reader :refresh_token
 
     # The OAuth 2.0 client secret, which authenticates a refresh
     # @api private

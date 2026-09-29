@@ -72,9 +72,9 @@ module X
 
     def test_a_copy_given_other_credentials_does_not_hear_of_the_refreshes_of_the_client
       refreshed = []
-      client = Client.new(**test_oauth2_credentials, on_token_refresh: ->(authenticator) { refreshed << [:client, authenticator.refresh_token] })
+      client = Client.new(**test_oauth2_credentials, on_token_refresh: ->(tokens) { refreshed << [:client, tokens.refresh_token] })
       client.with(access_token: "OTHER_ACCESS_TOKEN", refresh_token: "OTHER_REFRESH_TOKEN",
-        on_token_refresh: ->(authenticator) { refreshed << [:copy, authenticator.refresh_token] })
+        on_token_refresh: ->(tokens) { refreshed << [:copy, tokens.refresh_token] })
       client.authenticator.refresh!
 
       assert_equal [[:client, "NEW_REFRESH_TOKEN"]], refreshed

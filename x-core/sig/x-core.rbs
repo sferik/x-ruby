@@ -277,13 +277,11 @@ module X
     TOKEN_URL: String
 
     attr_reader client_id: String
-    attr_reader access_token: String
-    attr_reader refresh_token: String
     attr_reader expires_at: Time?
     def initialize: (client_id: String, access_token: String, refresh_token: String, ?client_secret: String?, ?expires_at: Time?) -> void
     def inspect: () -> String
     def token_expired?: -> bool
-    def refresh!: -> OAuth2Authenticator
+    def refresh!: -> OAuth2Tokens
     def header: (_AuthenticatorRequest? request) -> Hash[String, String]
   end
 

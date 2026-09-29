@@ -629,6 +629,8 @@ module X
     @taken: bool
 
     private
+    attr_reader access_token: String
+    attr_reader refresh_token: String
     attr_reader connection: Core::Connection
     attr_reader clients: _ClientRegistry
     def token_requests_over: (Core::Connection connection) -> self

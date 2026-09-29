@@ -20,7 +20,7 @@ module X
 
       assert_raises(Unauthorized) { client.get("https://other.example.com/users/me") }
       assert_not_requested @refresh
-      assert_equal TEST_ACCESS_TOKEN, client.authenticator.access_token
+      assert_equal TEST_ACCESS_TOKEN, client.authenticator.__send__(:access_token)
     end
 
     def test_a_rejection_after_a_redirect_to_another_origin_refreshes_nothing

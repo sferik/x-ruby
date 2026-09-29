@@ -74,7 +74,7 @@ module X
       copy = client.with(access_token: "OTHER_ACCESS_TOKEN")
 
       refute_same client.authenticator, copy.authenticator
-      assert_equal ["OTHER_ACCESS_TOKEN", TEST_ACCESS_TOKEN], [copy.authenticator.access_token, client.authenticator.access_token]
+      assert_equal ["OTHER_ACCESS_TOKEN", TEST_ACCESS_TOKEN], [copy.authenticator.__send__(:access_token), client.authenticator.__send__(:access_token)]
     end
 
     def test_a_copy_given_another_client_secret_builds_an_authenticator_of_its_own

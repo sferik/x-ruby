@@ -109,14 +109,14 @@ module X
 
       # The access token for OAuth authentication, as last refreshed
       #
-      # It is private, as {ClientCredentials#api_key_secret} is. A hook given to on_token_refresh is passed the
-      # OAuth2Tokens of the refresh it reports.
+      # It is private, as {ClientCredentials#api_key_secret} is, and as the access token of the authenticator is. A
+      # hook given to on_token_refresh is passed the OAuth2Tokens of the refresh it reports.
       #
       # @api private
       # @return [String, nil] the access token for OAuth authentication
       def access_token
         current = oauth2_credentials_in_use
-        current ? current.access_token : @access_token
+        current ? current.__send__(:access_token) : @access_token
       end
 
       # The OAuth 2.0 refresh token, as last refreshed
@@ -127,7 +127,7 @@ module X
       # @return [String, nil] the OAuth 2.0 refresh token
       def refresh_token
         current = oauth2_credentials_in_use
-        current ? current.refresh_token : @refresh_token
+        current ? current.__send__(:refresh_token) : @refresh_token
       end
 
       # Build an OAuth 2.0 authenticator whose refreshes reach the clients that share it

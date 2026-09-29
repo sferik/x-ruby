@@ -14,7 +14,7 @@ module X
 
       assert_instance_of OAuth1Authenticator, authenticator
       assert_equal TEST_API_KEY, authenticator.api_key
-      assert_equal TEST_ACCESS_TOKEN, authenticator.access_token
+      assert_equal TEST_ACCESS_TOKEN, authenticator.__send__(:access_token)
     end
 
     def test_inspect_hides_the_credentials
@@ -46,15 +46,15 @@ module X
 
       assert_instance_of OAuth2Authenticator, authenticator
       assert_equal TEST_CLIENT_ID, authenticator.client_id
-      assert_equal TEST_ACCESS_TOKEN, authenticator.access_token
-      assert_equal TEST_REFRESH_TOKEN, authenticator.refresh_token
+      assert_equal TEST_ACCESS_TOKEN, authenticator.__send__(:access_token)
+      assert_equal TEST_REFRESH_TOKEN, authenticator.__send__(:refresh_token)
     end
 
     def test_initialize_a_public_oauth2_client_without_a_client_secret
       authenticator = Client.new(**test_oauth2_credentials.except(:client_secret)).authenticator
 
       assert_instance_of OAuth2Authenticator, authenticator
-      assert_equal TEST_REFRESH_TOKEN, authenticator.refresh_token
+      assert_equal TEST_REFRESH_TOKEN, authenticator.__send__(:refresh_token)
     end
 
     def test_missing_oauth2_credentials
