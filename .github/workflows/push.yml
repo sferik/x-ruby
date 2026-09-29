@@ -17,16 +17,18 @@ jobs:
       url: https://rubygems.org/gems/x
     permissions:
       actions: read
-      contents: write
+      contents: read
       id-token: write
+    # The job holds credentials that push the gems, so every action and tool it runs is pinned, to a commit or a
+    # version, rather than taken at whatever release is latest when it runs
     steps:
-      - uses: actions/checkout@v7
-      - uses: ruby/setup-ruby@v1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ruby/setup-ruby@14594264cd68ce8a2345dd349bc3d138a4ef85c8 # v1.327.0
         with:
           ruby-version: ruby
           bundler-cache: true
       - name: Update RubyGems
-        run: gem update --system
+        run: gem update --system 4.0.21
       - name: Check that the tag and each gem version.rb hold the version in VERSION
         run: |
           version=$(cat VERSION)
@@ -89,7 +91,7 @@ jobs:
       - name: Build gems
         run: bundle exec rake build
       # The credentials are short-lived, so they are fetched once CI has passed and the gems are built
-      - uses: rubygems/configure-rubygems-credentials@v2.1.0
+      - uses: rubygems/configure-rubygems-credentials@dc5a8d8553e6ee01fc26761a49e99e733d17954a # v2.1.0
       - name: Sign, push, and await each gem in dependency order
         run: |
           version=$(cat VERSION)
@@ -100,7 +102,7 @@ jobs:
               echo "$name $version is already published"
               continue
             fi
-            gem exec sigstore-cli sign "$file" --bundle "pkg/$name.gem.sigstore.json"
+            gem exec --version 0.2.3 sigstore-cli sign "$file" --bundle "pkg/$name.gem.sigstore.json"
             gem push "$file" --attestation "pkg/$name.gem.sigstore.json"
-            gem exec rubygems-await "$file"
+            gem exec --version 0.5.4 rubygems-await "$file"
           done
