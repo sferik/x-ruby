@@ -13,6 +13,9 @@ module X
   # @api public
   class Poll < Resource
     # Every public poll field
+    #
+    # A minor release may add to it the fields the API adds, so that a lookup asks for them too; see
+    # {Resource#hydrated?} for what that means for a resource looked up with a list of fields of its own.
     FIELDS = %w[duration_minutes end_datetime id options voting_status].freeze
 
     # The default query parameters, which request every field
@@ -23,7 +26,7 @@ module X
     # @api public
     # @return [Hash{String => Array<String>}] the default query parameters
     # @example Get the default parameters
-    #   X::<built-in method capitalize of str object at 0x107c96f70>.default_params # => {"poll.fields" => [...]}
+    #   X::Poll.default_params # => {"poll.fields" => [...]}
     def self.default_params = {"poll.fields" => FIELDS}
 
     # The key under which polls appear in the includes of a response

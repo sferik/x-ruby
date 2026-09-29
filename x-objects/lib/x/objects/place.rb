@@ -13,6 +13,9 @@ module X
   # @api public
   class Place < Resource
     # Every public place field
+    #
+    # A minor release may add to it the fields the API adds, so that a lookup asks for them too; see
+    # {Resource#hydrated?} for what that means for a resource looked up with a list of fields of its own.
     FIELDS = %w[contained_within country country_code full_name geo id name place_type].freeze
 
     # The type of the identifier, which is not a number
@@ -31,7 +34,7 @@ module X
     # @api public
     # @return [Hash{String => Array<String>}] the default query parameters
     # @example Get the default parameters
-    #   X::<built-in method capitalize of str object at 0x107c97030>.default_params # => {"place.fields" => [...]}
+    #   X::Place.default_params # => {"place.fields" => [...]}
     def self.default_params = {"place.fields" => FIELDS}
 
     # The key under which places appear in the includes of a response

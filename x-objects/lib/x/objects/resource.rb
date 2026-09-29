@@ -141,6 +141,9 @@ module X
 
       # The default query parameters requesting every field and expansion
       #
+      # They are built from the FIELDS and EXPANSIONS of the classes they name, which a minor release may add to; see
+      # {Resource#hydrated?}.
+      #
       # @api public
       # @return [Hash{String => String}] the default query parameters
       # @example Get the default parameters
@@ -286,6 +289,12 @@ module X
     # A resource is hydrated when it was the subject of a response to a request that asked for every default field
     # and expansion, whether or not it asked for more. A stub, a reference a response included, and a resource looked
     # up with parameters that leave out some of those defaults are not, so hydrate fetches the full resource.
+    #
+    # The defaults are the FIELDS and EXPANSIONS of each class, which a minor release may add to as the API adds
+    # fields and expansions, so that a lookup with the defaults asks for them too. A resource looked up with a list
+    # of its own, even one that named every field of the release it was written for, then leaves out what was added,
+    # so it is no longer hydrated, and hydrate costs a lookup of the full resource that the same code did not pay
+    # before. To ask for more than the defaults, add to what default_params gives rather than list every value.
     #
     # @api public
     # @return [Boolean] true if the resource holds every field the object layer requests

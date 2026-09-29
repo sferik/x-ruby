@@ -10,6 +10,9 @@ module X
     extend Objects::BatchFinders
 
     # Every public media field
+    #
+    # A minor release may add to it the fields the API adds, so that a lookup asks for them too; see
+    # {Resource#hydrated?} for what that means for a resource looked up with a list of fields of its own.
     FIELDS = %w[alt_text duration_ms height media_key preview_image_url public_metrics type url variants width].freeze
 
     # The attribute holding the identifier

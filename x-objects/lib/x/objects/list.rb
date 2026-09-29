@@ -12,8 +12,14 @@ module X
     extend Objects::Finders
 
     # Every public list field
+    #
+    # A minor release may add to it the fields the API adds, so that a lookup asks for them too; see
+    # {Resource#hydrated?} for what that means for a resource looked up with a list of fields of its own.
     FIELDS = %w[created_at description follower_count id member_count name private].freeze
     # Every expansion available on list endpoints
+    #
+    # A minor release may add to it the expansions the API adds, so that a lookup asks for them too; see
+    # {Resource#hydrated?} for what that means for a resource looked up with a list of expansions of its own.
     EXPANSIONS = %w[owner_id].freeze
     # Maximum number of users or posts per page
     MAX_RESULTS = 100

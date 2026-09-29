@@ -16,6 +16,9 @@ module X
     # The user fields the object layer requests: every one that does not depend on who is authenticated, since a
     # field that does, such as connection_status, would make every request fail for a client that cannot read it;
     # the identifiers of referenced posts, and the affiliation, come with their expansions
+    #
+    # A minor release may add to it the fields the API adds, so that a lookup asks for them too; see
+    # {Resource#hydrated?} for what that means for a resource looked up with a list of fields of its own.
     FIELDS = %w[created_at description entities id is_identity_verified location name parody profile_banner_url
       profile_image_url protected public_metrics subscriber_count subscription_type url username verified
       verified_followers_count verified_type withheld].freeze
@@ -24,6 +27,9 @@ module X
     # The API gives a user its affiliation when a request asks for the affiliation expansion, which it takes only
     # at the endpoints whose data is users, so the users a post, a list, a space, or a direct message includes hold
     # none, and hydrate looks them up with it.
+    #
+    # A minor release may add to it the expansions the API adds, so that a lookup asks for them too; see
+    # {Resource#hydrated?} for what that means for a resource looked up with a list of expansions of its own.
     EXPANSIONS = %w[affiliation most_recent_post_id pinned_post_id].freeze
     # Maximum number of followers or followed users per page
     MAX_FOLLOW_RESULTS = 1000

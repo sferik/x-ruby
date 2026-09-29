@@ -16,9 +16,15 @@ module X
     extend Objects::BatchFinders
 
     # Every public space field
+    #
+    # A minor release may add to it the fields the API adds, so that a lookup asks for them too; see
+    # {Resource#hydrated?} for what that means for a resource looked up with a list of fields of its own.
     FIELDS = %w[created_at ended_at id is_ticketed lang participant_count scheduled_start started_at state
       subscriber_count title updated_at].freeze
     # Every expansion available on space endpoints
+    #
+    # A minor release may add to it the expansions the API adds, so that a lookup asks for them too; see
+    # {Resource#hydrated?} for what that means for a resource looked up with a list of expansions of its own.
     EXPANSIONS = %w[creator_id host_ids invited_user_ids speaker_ids topic_ids].freeze
     # Maximum number of posts, or of spaces a search returns, per page
     MAX_RESULTS = 100

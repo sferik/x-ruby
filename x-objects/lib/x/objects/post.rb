@@ -22,6 +22,9 @@ module X
     # promoted_metrics, are left out, since a field that depends on who is authenticated would make every request
     # fail for a client that cannot read it, as are the fields of Community Notes and of suggested sources, which the
     # API gives to the programs they belong to.
+    #
+    # A minor release may add to it the fields the API adds, so that a lookup asks for them too; see
+    # {Resource#hydrated?} for what that means for a resource looked up with a list of fields of its own.
     FIELDS = %w[article article_title attachments card_uri community_id context_annotations conversation_id
       created_at display_text_range edit_controls entities geo id lang media_metadata note_post paid_partnership
       possibly_sensitive public_metrics reply_settings scopes source text withheld].freeze
@@ -30,6 +33,9 @@ module X
     # The identifiers of a post's edit history come with every post, so the edit_history_post_ids expansion, which
     # would include each version of the post again, including the post itself, is left out, as is
     # entities.mentions.username, which would include each user the post mentions, since nothing reads them.
+    #
+    # A minor release may add to it the expansions the API adds, so that a lookup asks for them too; see
+    # {Resource#hydrated?} for what that means for a resource looked up with a list of expansions of its own.
     EXPANSIONS = %w[attachments.media_keys attachments.poll_ids author_id geo.place_id in_reply_to_user_id
       referenced_posts].freeze
     # Maximum number of posts or users per page

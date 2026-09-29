@@ -14,8 +14,14 @@ module X
 
     # The direct message event fields the object layer requests; the sender, the participants, and the posts a
     # message refers to come with their expansions
+    #
+    # A minor release may add to it the fields the API adds, so that a lookup asks for them too; see
+    # {Resource#hydrated?} for what that means for a resource looked up with a list of fields of its own.
     FIELDS = %w[attachments created_at dm_conversation_id entities event_type id text].freeze
     # Every expansion available on direct message endpoints
+    #
+    # A minor release may add to it the expansions the API adds, so that a lookup asks for them too; see
+    # {Resource#hydrated?} for what that means for a resource looked up with a list of expansions of its own.
     EXPANSIONS = %w[attachments.media_keys participant_ids referenced_posts sender_id].freeze
     # Maximum number of events per page
     MAX_RESULTS = 100
