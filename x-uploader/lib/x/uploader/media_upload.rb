@@ -73,6 +73,8 @@ module X
       CHUNKED_CATEGORIES = [*VIDEO_CATEGORIES, SUBTITLES].freeze
       # Media categories of animated GIFs, which upload in chunks only when a single request cannot take them
       GIF_CATEGORIES = [DM_GIF, TWEET_GIF].freeze
+      # Greatest number of bytes the API takes of a GIF, which one is read no further than
+      MAX_GIF_BYTES = Validator::MAX_MEDIA_BYTES.fetch(TWEET_GIF)
       # Mapping of file extensions to the media categories of posts; any other extension is an image
       CATEGORY_MAP = {
         "gif" => TWEET_GIF, "m2ts" => TWEET_VIDEO, "m4v" => TWEET_VIDEO, "mov" => TWEET_VIDEO, "mp4" => TWEET_VIDEO,
@@ -97,7 +99,7 @@ module X
         :TIFF_MIME_TYPE, :WEBP_MIME_TYPE, :SUBRIP_MIME_TYPE, :WEBVTT_MIME_TYPE, :MPEG_TS_MIME_TYPE, :MP4_MIME_TYPE,
         :QUICKTIME_MIME_TYPE, :WEBM_MIME_TYPE, :MIME_TYPE_MAP, :VIDEO_MIME_TYPES, :SUBTITLES_MIME_TYPES, :MIN_CHECK_AFTER_SECS,
         :STATUS_COMMAND, :VIDEO_CATEGORIES, :CHUNKED_CATEGORIES, :GIF_CATEGORIES, :CATEGORY_MAP, :CATEGORY_MIME_TYPES,
-        :UNDOCUMENTED_VIDEOS, :UNDOCUMENTED_MODELS
+        :MAX_GIF_BYTES, :UNDOCUMENTED_VIDEOS, :UNDOCUMENTED_MODELS
 
       # Upload media, in chunks when the API needs them, awaiting any processing
       #
@@ -132,6 +134,8 @@ module X
       # @raise [ArgumentError] if the media is neither a path nor an IO
       # @raise [Errno::ENOENT] if the file does not exist
       # @raise [ArgumentError] if the media is empty, which holds nothing to upload
+      # @raise [ArgumentError] if the media is larger than the API takes of its category, whatever the account: 5
+      #   megabytes of an image, 15 of a GIF, and one of subtitles
       # @raise [ArgumentError] if the media category is invalid, the alt text is empty or longer than the API takes,
       #   the chunk size is not a positive, finite number, is larger than a segment the API takes, or would need more
       #   segments than the API numbers, media uploaded in chunks is larger than 1,000 segments of 5 megabytes, the
@@ -173,13 +177,15 @@ module X
       # @param media_category [String, Symbol] the media category, which content cannot be inferred from, in any case
       # @return [UploadedMedia] the uploaded media, which holds the upload response
       # @raise [ArgumentError] if the media category is invalid, or is that of a video or subtitles, which the API
-      #   takes in chunks alone
+      #   takes in chunks alone, or the content is larger than the API takes of its category
       # @raise [MissingMediaData] if the response holds no media, or carries no body at all
       # @example Upload binary content
       #   Uploader::MediaUpload.upload_binary(data, client: client, media_category: "tweet_image")
       def upload_binary(content, client:, media_category:)
         media_category = Validator.validate_media_category!(media_category)
         raise ArgumentError, "#{media_category} uploads in chunks alone: pass the file to upload or chunked_upload" if CHUNKED_CATEGORIES.include?(media_category)
+
+        Validator.validate_size!(Source::Buffer.new(content), media_category)
 
         boundary = SecureRandom.hex
         upload_body = Multipart.body("media", content, boundary:, media_category:)
@@ -201,6 +207,8 @@ module X
       # @raise [ArgumentError] if the media is neither a path nor an IO
       # @raise [Errno::ENOENT] if the file does not exist
       # @raise [ArgumentError] if the media is empty, which holds nothing to upload
+      # @raise [ArgumentError] if the media is larger than the API takes of its category, which is 15 megabytes of a
+      #   GIF and one of subtitles
       # @raise [ArgumentError] if the media category is invalid, the chunk size is not a positive, finite number, is
       #   larger than a segment the API takes, or would need more segments than the API numbers, the media is larger
       #   than 1,000 segments of 5 megabytes, or the concurrency is less than one
@@ -213,6 +221,7 @@ module X
         source = Source.for(media)
         Validator.validate_source!(source)
         media_category = Validator.validate_media_category!(media_category || Inference.infer_media_category(source))
+        Validator.validate_size!(source, media_category)
         Validator.validate_chunks!(chunk_size_mb:, concurrency:)
         chunk_size = Validator.validate_segments!(source, chunk_size_mb)
         media_type ||= Inference.infer_media_type(source, media_category)
@@ -334,8 +343,10 @@ module X
           source = Source.for(media)
           documented!(source)
           category = CATEGORY_MAP.fetch(source.extension) { MIME_TYPE_MAP.key?(source.extension) ? TWEET_IMAGE : Signature.media_category(source) }
-          # A GIF of a single frame is an image, which its category is read again as
-          (category.eql?(TWEET_GIF) && source.readable? && !Gif.animated?(source)) ? TWEET_IMAGE : category
+          # A GIF of a single frame is an image, which its category is read again as. A GIF larger than the API takes
+          # of any GIF is not read, since it is refused whether it is animated or not, and reading it would hold it all
+          still = category.eql?(TWEET_GIF) && source.readable? && source.size <= MAX_GIF_BYTES && !Gif.animated?(source)
+          still ? TWEET_IMAGE : category
         end
 
         # Infer the media type from file path and category

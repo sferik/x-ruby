@@ -29,6 +29,14 @@ module X
       MAX_CHUNK = 5 * BYTES_PER_MB
       # Valid media category values
       MEDIA_CATEGORIES = %w[amplify_video dm_gif dm_image dm_video subtitles tweet_gif tweet_image tweet_video].map(&:freeze).freeze
+      # Greatest number of bytes the API takes of media of each category that documents a size of its own for every
+      # account: the guides to media on docs.x.com give 5 MB for an image and 15 MB for a GIF, whether or not the
+      # user has X Premium, and 1 MB for subtitles, and the API has refused an image of more than 5,242,880 bytes,
+      # so a megabyte is 1,048,576 bytes. The size of a video depends on the account, so none is checked.
+      MAX_MEDIA_BYTES = {
+        "dm_image" => 5 * BYTES_PER_MB, "tweet_image" => 5 * BYTES_PER_MB, "dm_gif" => 15 * BYTES_PER_MB,
+        "tweet_gif" => 15 * BYTES_PER_MB, "subtitles" => BYTES_PER_MB
+      }.freeze
 
       # Validate the arguments of an upload, and give its media category in lowercase
       #
@@ -48,9 +56,9 @@ module X
       # @return [String] the media category in lowercase
       # @raise [Errno::ENOENT] if the file does not exist
       # @raise [ArgumentError] if the media is empty
-      # @raise [ArgumentError] if the media category is invalid, the alt text is empty or too long, the chunk size is
-      #   not a positive, finite number or is larger than a segment the API takes, the concurrency is less than one, or
-      #   the processing timeout is not a number of seconds
+      # @raise [ArgumentError] if the media category is invalid, the media is larger than the API takes of it, the
+      #   alt text is empty or too long, the chunk size is not a positive, finite number or is larger than a segment
+      #   the API takes, the concurrency is less than one, or the processing timeout is not a number of seconds
       # @example Validate the arguments of an upload
       #   Uploader::Validator.validate_upload!(source, :TWEET_IMAGE, alt_text: nil, chunk_size_mb: nil, concurrency: 4,
       #     processing_timeout: 300) # => "tweet_image"
@@ -59,7 +67,27 @@ module X
         validate_alt_text!(alt_text)
         validate_chunks!(chunk_size_mb:, concurrency:)
         validate_processing_timeout!(processing_timeout)
-        validate_media_category!(media_category || yield)
+        validate_media_category!(media_category || yield).tap { |category| validate_size!(source, category) }
+      end
+
+      # Validate that media is no larger than the API takes of its category
+      #
+      # An image, a GIF, or subtitles larger than the MAX_MEDIA_BYTES of its category would be refused once it had
+      # been uploaded, and billed, so it raises before a request. A video, whose size depends on the account, is left
+      # to the API.
+      #
+      # @api private
+      # @param source [Source] the media to upload
+      # @param media_category [String] the media category, in lowercase
+      # @return [void]
+      # @raise [ArgumentError] if the media is larger than the API takes of its category
+      # @example Validate the size of an image
+      #   Uploader::Validator.validate_size!(source, "tweet_image")
+      def validate_size!(source, media_category)
+        limit = MAX_MEDIA_BYTES[media_category]
+        return if limit.nil? || source.size <= limit
+
+        raise ArgumentError, "#{source.description} is #{source.size} bytes, more than the #{limit} bytes the API takes of #{media_category} media"
       end
 
       # Validate that the media exists, and that it holds something to upload

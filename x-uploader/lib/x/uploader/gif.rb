@@ -25,6 +25,8 @@ module X
 
       # Check whether a GIF holds more than one frame
       #
+      # The GIF is read whole, so an upload asks it only of a GIF no larger than the API takes, which is 15 megabytes.
+      #
       # @api private
       # @param media [String, Pathname, IO, StringIO] the path to the GIF, or an IO open on it
       # @return [Boolean] true if the GIF has a second frame
