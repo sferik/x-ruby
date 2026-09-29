@@ -192,6 +192,7 @@ module X
       MAX_CONCURRENCY: Integer
       MEDIA_CATEGORIES: Array[String]
       MAX_MEDIA_BYTES: Hash[String, Integer]
+      MAX_UPLOAD_BYTES: Integer
       PROFILE_IMAGE_TYPES: Array[String]
       MAX_SIMPLE_UPLOAD_BYTES: Integer
       extend Validator

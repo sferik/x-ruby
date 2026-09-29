@@ -32,7 +32,7 @@ module X
       # @raise [Errno::ENOENT] if the file does not exist
       # @raise [InvalidMedia] if the media cannot be read, or is empty, which holds nothing to upload
       # @raise [InvalidMedia] if the media is larger than the API takes of its category, whatever the account: 5
-      #   megabytes of an image, 15 of a GIF, and one of subtitles
+      #   megabytes of an image, 15 of a GIF, and one of subtitles, or larger than the 16 gigabytes it takes of any
       # @raise [InvalidMediaType] if no media category is given for media that names no file and no signature names one
       # @raise [MissingMediaData] if a response of the upload holds no media, or carries no body at all
       # @raise [MediaProcessingFailed] if media processing failed, or ended in no state X documents, with the status X

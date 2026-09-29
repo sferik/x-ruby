@@ -127,7 +127,7 @@ module X
       #   one given for an image is not sent
       # @param chunk_size_mb [Float, Integer, nil] the size of each chunk of media uploaded in chunks, in megabytes, of
       #   at most 5, the most the API takes in a segment, derived from the size of the media when nil, so that an
-      #   upload of up to 10,000 chunks of 5 megabytes fits the segments the API numbers
+      #   upload of up to the 16 gigabytes the API takes fits the segments it numbers
       # @param concurrency [Integer] the number of chunks uploaded at once, of 1 to MAX_CONCURRENCY
       # @return [UploadedMedia] the uploaded media, which holds the upload response, or the processing status of
       #   media that X processes
@@ -136,8 +136,7 @@ module X
       # @raise [Errno::ENOENT] if the file does not exist
       # @raise [InvalidMedia] if the media cannot be read, or is empty, which holds nothing to upload
       # @raise [InvalidMedia] if the media is larger than the API takes of its category, whatever the account: 5
-      #   megabytes of an image, 15 of a GIF, and one of subtitles
-      # @raise [InvalidMedia] if media uploaded in chunks is larger than 10,000 segments of 5 megabytes
+      #   megabytes of an image, 15 of a GIF, and one of subtitles, or larger than the 16 gigabytes it takes of any
       # @raise [ArgumentError] if the media category is invalid, the alt text is empty or longer than the API takes,
       #   the chunk size is not a positive, finite number, is larger than a segment the API takes, or would need more
       #   segments than the API numbers, the concurrency is not 1 to MAX_CONCURRENCY, or the processing timeout is not
@@ -213,7 +212,7 @@ module X
       # @raise [Errno::ENOENT] if the file does not exist
       # @raise [InvalidMedia] if the media cannot be read, or is empty, which holds nothing to upload
       # @raise [InvalidMedia] if the media is larger than the API takes of its category, which is 15 megabytes of a
-      #   GIF and one of subtitles, or larger than 10,000 segments of 5 megabytes
+      #   GIF and one of subtitles, or larger than the 16 gigabytes it takes of any
       # @raise [ArgumentError] if the media category is invalid, the chunk size is not a positive, finite number, is
       #   larger than a segment the API takes, or would need more segments than the API numbers, or the concurrency is
       #   not 1 to MAX_CONCURRENCY

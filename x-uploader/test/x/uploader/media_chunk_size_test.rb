@@ -65,10 +65,16 @@ module X
       assert_not_requested :post, "#{BASE_URL}/initialize"
     end
 
-    def test_a_video_larger_than_the_largest_segments_the_api_numbers_uploads_nothing
-      error = assert_raises(InvalidMedia) { with_video((10_000 * 5 * Uploader::MediaUpload.const_get(:BYTES_PER_MB)) + 1) { |path| upload(path) } }
+    def test_a_video_of_the_most_the_api_takes_of_an_upload_uploads_in_the_segments_it_numbers
+      assert_equal 1_717_987, with_video(16 * 1024**3) { |path| upload(path) }
+    end
 
-      assert_match(/is 52428800001 bytes, more than the 10000 segments of 5242880 bytes the API takes\z/, error.message)
+    def test_a_video_larger_than_the_api_takes_of_an_upload_uploads_nothing
+      [:upload, :chunked_upload].each do |method|
+        error = assert_raises(InvalidMedia) { with_video((16 * 1024**3) + 1) { |path| __send__(method, path) } }
+
+        assert_match(/is 17179869185 bytes, more than the 17179869184 bytes the API takes of tweet_video media\z/, error.message)
+      end
       assert_not_requested :post, "#{BASE_URL}/initialize"
     end
 

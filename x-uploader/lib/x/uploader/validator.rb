@@ -22,8 +22,8 @@ module X
       MAX_ALT_TEXT_LENGTH = 1000
       # Greatest number of segments an upload in chunks can have: the OpenAPI specification of the API v2 takes a
       # segment_index of 0 to 9999, so an upload in more chunks than these would fail partway, once the media uploaded
-      # so far had been billed. Chunks of MAX_CHUNK bytes upload 52 GB of media in them, more than the 16 GB of video
-      # the API takes of an account with X Premium
+      # so far had been billed. Chunks of MAX_CHUNK bytes upload 52 GB of media in them, more than the MAX_UPLOAD_BYTES
+      # the API takes of any upload
       MAX_SEGMENTS = 10_000
       # Greatest number of bytes in a segment of an upload in chunks: the guide to chunked uploads says to keep each
       # segment at or below 5 MB, of the 8 MB the server takes at most, so a chunk is 5 megabytes at most, which is
@@ -44,11 +44,15 @@ module X
       # Greatest number of bytes the API takes of media of each category that documents a size of its own for every
       # account: the guides to media on docs.x.com give 5 MB for an image and 15 MB for a GIF, whether or not the
       # user has X Premium, and 1 MB for subtitles, and the API has refused an image of more than 5,242,880 bytes,
-      # so a megabyte is 1,048,576 bytes. The size of a video depends on the account, so none is checked.
+      # so a megabyte is 1,048,576 bytes. The size of a video depends on the account, so none is checked but the
+      # MAX_UPLOAD_BYTES of any upload.
       MAX_MEDIA_BYTES = {
         "dm_image" => 5 * BYTES_PER_MB, "tweet_image" => 5 * BYTES_PER_MB, "dm_gif" => 15 * BYTES_PER_MB,
         "tweet_gif" => 15 * BYTES_PER_MB, "subtitles" => BYTES_PER_MB
       }.freeze
+      # Greatest number of bytes the API takes of any upload: the OpenAPI specification of the API v2 takes a
+      # total_bytes of at most 17,179,869,184, 16 gigabytes of 1,073,741,824 bytes, to initialize an upload with
+      MAX_UPLOAD_BYTES = 16 * 1024 * BYTES_PER_MB
 
       # Validate the arguments of an upload, and give its media category in lowercase
       #
@@ -86,7 +90,8 @@ module X
       #
       # An image, a GIF, or subtitles larger than the MAX_MEDIA_BYTES of its category would be refused once it had
       # been uploaded, and billed, so it raises before a request. A video, whose size depends on the account, is left
-      # to the API.
+      # to the API, unless it is larger than the MAX_UPLOAD_BYTES the API takes of any upload, which it would refuse
+      # to initialize.
       #
       # @api private
       # @param source [Source] the media to upload
@@ -96,8 +101,8 @@ module X
       # @example Validate the size of an image
       #   Uploader::Validator.validate_size!(source, "tweet_image")
       def validate_size!(source, media_category)
-        limit = MAX_MEDIA_BYTES[media_category]
-        return if limit.nil? || source.size <= limit
+        limit = MAX_MEDIA_BYTES.fetch(media_category, MAX_UPLOAD_BYTES)
+        return if source.size <= limit
 
         raise InvalidMedia, "#{source.description} is #{source.size} bytes, more than the #{limit} bytes the API takes of #{media_category} media"
       end
@@ -252,16 +257,14 @@ module X
       # more chunks, or in larger ones, would fail partway of.
       #
       # A chunk size of nil is derived from the size of the media: a megabyte, as every upload in chunks used, or the
-      # size that uploads the media in MAX_SEGMENTS chunks, whichever is larger, but no larger than MAX_CHUNK, so that
-      # media of any size up to MAX_SEGMENTS chunks of MAX_CHUNK bytes uploads, and larger media raises before a
-      # request.
+      # size that uploads the media in MAX_SEGMENTS chunks, whichever is larger, which media no larger than the
+      # MAX_UPLOAD_BYTES validate_size! takes uploads in chunks of less than MAX_CHUNK bytes.
       #
       # @api private
       # @param source [Source] the media to upload
       # @param chunk_size_mb [Float, Integer, nil] the size of each chunk in megabytes, or nil to derive one
       # @return [Integer] the size of each chunk in bytes, rounded up to a whole byte
       # @raise [Errno::ENOENT] if the file does not exist
-      # @raise [InvalidMedia] if chunks of the largest size a segment can be would be more than the API numbers
       # @raise [ArgumentError] if chunks of the size given would be more than the API numbers
       # @example Derive the chunk size of a video
       #   Uploader::Validator.validate_segments!(source, nil) # => 1048576
@@ -269,22 +272,20 @@ module X
         file_size = source.size
         chunk_size = chunk_size_mb.nil? ? derived_chunk_size(file_size) : (chunk_size_mb * BYTES_PER_MB).ceil
         return chunk_size if file_size <= chunk_size * MAX_SEGMENTS
-        raise InvalidMedia, "#{source.description} is #{file_size} bytes, more than the #{MAX_SEGMENTS} segments of #{MAX_CHUNK} bytes the API takes" if chunk_size_mb.nil?
 
         raise ArgumentError, "chunk_size_mb of #{chunk_size_mb} uploads #{file_size} bytes in more than the #{MAX_SEGMENTS} segments the API numbers"
       end
 
       # The size in bytes of the chunks media is uploaded in when it is given none
       #
-      # It is a megabyte, or the size that uploads the media in MAX_SEGMENTS chunks, whichever is larger, but no more
-      # than MAX_CHUNK, which media too large for MAX_SEGMENTS chunks of it is then refused for.
+      # It is a megabyte, or the size that uploads the media in MAX_SEGMENTS chunks, whichever is larger.
       #
       # @api private
       # @param file_size [Integer] the size of the media in bytes
       # @return [Integer] the size of each chunk in bytes
-      # @example The chunk size of a video of twenty gigabytes
-      #   Uploader::Validator.derived_chunk_size(20 * 1024**3) # => 2147484
-      def derived_chunk_size(file_size) = (file_size.to_f / MAX_SEGMENTS).ceil.clamp(BYTES_PER_MB, MAX_CHUNK)
+      # @example The chunk size of a video of sixteen gigabytes
+      #   Uploader::Validator.derived_chunk_size(16 * 1024**3) # => 1717987
+      def derived_chunk_size(file_size) = [(file_size.to_f / MAX_SEGMENTS).ceil, BYTES_PER_MB].max
 
       # Validate a media category, and give it in the lowercase the API takes
       #
