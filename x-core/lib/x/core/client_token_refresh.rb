@@ -199,7 +199,7 @@ module X
       # @return [Object] what the block returns
       def refreshing_rejected_token(&)
         case (current = @authenticator)
-        when OAuth2Authenticator then current.__send__(:retrying_rejected_token, URI(base_url), @connection, &)
+        when OAuth2Authenticator then current.__send__(:retrying_rejected_token, URI(base_url), @connection, self, &)
         when AppOnlyAuthenticator then current.__send__(:retrying_rejected_token, URI(base_url), &)
         else yield
         end

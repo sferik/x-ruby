@@ -102,6 +102,7 @@ module X
     # @return [Hash{String => String}] the authentication header
     # @raise [AuthorizationError] if the token has expired and X refuses to refresh it
     # @raise [TooManyRequests, ServerError] if the token endpoint limits the rate of the request or fails to answer
+    # @raise [TokenReportFailed] if on_token_refresh raises for the tokens of a refresh, with the tokens
     # @example Get the header
     #   authenticator.header(request)
     def header(_request)
@@ -140,11 +141,16 @@ module X
     # is another. When X refuses the refresh for a refresh token another process spent, and the storage holds
     # another, the tokens there are returned in place of an error, and are not passed to on_token_refresh.
     #
+    # An on_token_refresh that raises, as one whose storage is briefly down may, raises TokenReportFailed once each
+    # has been passed the tokens, which holds them, since the refresh token they replaced is spent and the
+    # authenticator holds them alone, with the error on_token_refresh raised as its cause.
+    #
     # @api public
     # @return [OAuth2Tokens] the tokens the refresh issued, or those it took from storage in place of a refusal
     # @raise [UnsupportedOperation] if the authenticator holds no refresh token, before any request
     # @raise [AuthorizationError] if X refuses to refresh the token
     # @raise [TooManyRequests, ServerError] if the token endpoint limits the rate of the request or fails to answer
+    # @raise [TokenReportFailed] if on_token_refresh raises for the tokens of the refresh, with the tokens
     # @example Refresh the tokens and store them
     #   store.save(**authenticator.refresh!.to_h)
     def refresh!
@@ -154,7 +160,7 @@ module X
         adopt_stored_tokens
         refresh(connection)
       end
-      report_refresh(tokens)
+      report_refresh(tokens, nil)
       tokens
     end
 

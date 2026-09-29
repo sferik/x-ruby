@@ -162,7 +162,10 @@ module X
     #   every object a stream delivers; a block passed to a single request receives the same summary, after this
     # @param on_token_refresh [#call, nil] a callable passed the OAuth2Tokens of each refresh, to store them; the
     #   refreshes are reported one at a time, in the order they were made, and one already replaced is not reported;
-    #   the client of OAuth2Authorization#client passes it the tokens of the exchange of the code as well
+    #   the client of OAuth2Authorization#client passes it the tokens of the exchange of the code as well; a callable
+    #   that raises, as one whose storage is briefly down may, raises TokenReportFailed from the request that
+    #   refreshed, which holds the tokens, since the refresh token they replaced is spent, and the client, with the
+    #   error of the callable as its cause
     # @param load_tokens [#call, nil] a callable that takes no arguments and returns the OAuth2Tokens in the storage
     #   that on_token_refresh writes to, or nil for none there, for processes that share the tokens of a user: X
     #   accepts a refresh token once, so a refresh reads the storage first, under its lock, and takes the tokens there

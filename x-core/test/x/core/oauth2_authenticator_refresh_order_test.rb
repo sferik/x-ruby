@@ -20,8 +20,8 @@ module X
       authenticator = oauth2_authenticator_reporting_to(->(tokens) { @stored << tokens.refresh_token })
       first = authenticator.__send__(:refresh, authenticator.send(:connection))
       second = authenticator.__send__(:refresh, authenticator.send(:connection))
-      authenticator.__send__(:report_refresh, second)
-      authenticator.__send__(:report_refresh, first)
+      authenticator.__send__(:report_refresh, second, nil)
+      authenticator.__send__(:report_refresh, first, nil)
 
       assert_equal ["SECOND_REFRESH_TOKEN"], @stored
     end
@@ -43,9 +43,9 @@ module X
     def test_a_hook_that_raises_keeps_no_other_from_the_tokens
       authenticator = oauth2_authenticator_reporting_to(->(_) { raise ArgumentError, "store is down" },
         ->(tokens) { @stored << tokens.refresh_token }, ->(_) { raise KeyError })
-      error = assert_raises(ArgumentError) { authenticator.refresh! }
+      error = assert_raises(TokenReportFailed) { authenticator.refresh! }
 
-      assert_equal ["store is down", ["FIRST_REFRESH_TOKEN"]], [error.message, @stored]
+      assert_equal [ArgumentError, "store is down", ["FIRST_REFRESH_TOKEN"]], [error.cause.class, error.cause.message, @stored]
     end
 
     private

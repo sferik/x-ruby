@@ -454,10 +454,12 @@ module X
       def initialize: () -> void
       def issued: (OAuth2Tokens tokens) -> OAuth2Tokens
       def to: (^() -> Array[_TokenRefreshHook] hooks) -> ^() -> Array[_TokenRefreshHook]
-      def report: (OAuth2Tokens tokens) -> void
+      REPORT_FAILED: String
+
+      def report: (OAuth2Tokens tokens, Client? client) -> void
 
       private
-      def pass: (OAuth2Tokens tokens) -> void
+      def pass: (OAuth2Tokens tokens, Client? client) -> void
     end
   end
 
@@ -693,15 +695,15 @@ module X
       def refresh_token: () -> String?
       def oauth2_client: () -> SimpleOAuth::OAuth2::Client
       def clients: () -> _ClientRegistry
-      def refresh_expired_token: (Connection connection) -> void
-      def refresh_rejected_token!: (String rejected_token, Connection connection) -> bool
-      def retrying_rejected_token: [T] (URI::Generic origin, Connection connection) { () -> T } -> T
+      def refresh_expired_token: (Connection connection, ?Client? client) -> void
+      def refresh_rejected_token!: (String rejected_token, Connection connection, ?Client? client) -> bool
+      def retrying_rejected_token: [T] (URI::Generic origin, Connection connection, ?Client? client) { () -> T } -> T
       def renew: (Connection connection) -> OAuth2Tokens?
       def refresh: (Connection connection) -> OAuth2Tokens
       def adopt_in_place_of: (SimpleOAuth::OAuth2::Error error) -> OAuth2Tokens
       def adopt_stored_tokens: () -> OAuth2Tokens?
       def stored_tokens: () -> OAuth2Tokens?
-      def report_refresh: (OAuth2Tokens tokens) -> void
+      def report_refresh: (OAuth2Tokens tokens, Client? client) -> void
       def update_tokens: (SimpleOAuth::OAuth2::Token token) -> void
       def fresh?: () -> bool
     end

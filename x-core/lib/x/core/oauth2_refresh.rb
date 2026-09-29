@@ -51,12 +51,14 @@ module X
       #
       # @api private
       # @param connection [Core::Connection] the connection to send the refresh over
+      # @param client [Client, nil] the client whose request refreshes, or nil for none
       # @return [void]
       # @raise [AuthorizationError] if X refuses to refresh the token
       # @raise [TooManyRequests, ServerError] if the token endpoint limits the rate of the request or fails to answer
-      def refresh_expired_token(connection)
+      # @raise [TokenReportFailed] if on_token_refresh raises for the tokens of the refresh
+      def refresh_expired_token(connection, client = nil)
         tokens = @mutex.synchronize { renew(connection) if refresh_token && token_expired? }
-        report_refresh(tokens) if tokens
+        report_refresh(tokens, client) if tokens
       end
 
       # Refresh a rejected access token, unless it was already replaced or just issued
@@ -70,14 +72,16 @@ module X
       # @api private
       # @param rejected_token [String] the access token the API rejected
       # @param connection [Core::Connection] the connection to send the refresh over
+      # @param client [Client, nil] the client whose request the API rejected, or nil for none
       # @return [Boolean] true if the access token is no longer the one rejected
       # @raise [AuthorizationError] if X refuses to refresh the token
       # @raise [TooManyRequests, ServerError] if the token endpoint limits the rate of the request or fails to answer
-      def refresh_rejected_token!(rejected_token, connection)
+      # @raise [TokenReportFailed] if on_token_refresh raises for the tokens of the refresh
+      def refresh_rejected_token!(rejected_token, connection, client = nil)
         tokens, replaced = @mutex.synchronize do
           [(renew(connection) if refresh_token && access_token.eql?(rejected_token) && !fresh?), !access_token.eql?(rejected_token)]
         end
-        report_refresh(tokens) if tokens
+        report_refresh(tokens, client) if tokens
         replaced
       end
 
@@ -99,17 +103,19 @@ module X
       # @api private
       # @param origin [URI::Generic] a URI of the origin the token is sent to, such as the base URL of a client
       # @param connection [Core::Connection] the connection to send a refresh over
+      # @param client [Client, nil] the client that sends the request, which TokenReportFailed holds, or nil for none
       # @yield runs the request
       # @return [Object] what the block returns
       # @raise [Unauthorized] if the request is rejected again, or by another origin, or a refresh does not replace
       #   the access token
-      def retrying_rejected_token(origin, connection)
-        refresh_expired_token(connection)
+      # @raise [TokenReportFailed] if on_token_refresh raises for the tokens of a refresh, with the tokens and client
+      def retrying_rejected_token(origin, connection, client = nil)
+        refresh_expired_token(connection, client)
         token = access_token
         begin
           yield
         rescue Unauthorized => e
-          raise unless Origin.answered?(e, origin) && refresh_rejected_token!(token, connection)
+          raise unless Origin.answered?(e, origin) && refresh_rejected_token!(token, connection, client)
 
           yield
         end
@@ -201,8 +207,10 @@ module X
       #
       # @api private
       # @param tokens [OAuth2Tokens] the tokens the refresh issued
+      # @param client [Client, nil] the client whose request refreshed, which TokenReportFailed holds, or nil for none
       # @return [void]
-      def report_refresh(tokens) = @reporter.report(tokens)
+      # @raise [TokenReportFailed] if on_token_refresh raises for the tokens, with the tokens and client
+      def report_refresh(tokens, client) = @reporter.report(tokens, client)
 
       # Update tokens from the response
       # @api private

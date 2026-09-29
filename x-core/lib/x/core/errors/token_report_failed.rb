@@ -3,25 +3,27 @@
 require_relative "error"
 
 module X
-  # Error raised when X::OAuth2Authorization#client exchanged the code for tokens, but on_token_refresh raised for them
+  # Error raised when on_token_refresh raised for the tokens of an exchange of a code or of a refresh
   #
-  # An authorization code works once, and the first refresh token X issues for it is held by the client alone, so the
-  # client and the tokens are not lost to a failure to store them, such as a database that is briefly down: the error
-  # holds both, so the tokens can be stored again and the client used. The error on_token_refresh raised is the
-  # cause, whose message the message ends with.
+  # An authorization code works once, and so does a refresh token, so the tokens X issues for either are held in
+  # memory alone until on_token_refresh stores them: the first refresh token of X::OAuth2Authorization#client by the
+  # client it builds, and the one a refresh issued by the authenticator that refreshed, since the one it replaced is
+  # spent. They are not lost to a failure to store them, such as a database that is briefly down: the error holds
+  # them, so they can be stored again, and the client, which the exchange builds, or whose request refreshed. The
+  # error on_token_refresh raised is the cause, whose message the message ends with.
   #
   # @api public
   class TokenReportFailed < Error
-    # The client the authorization built, which acts for the user
+    # The client the authorization built, or whose request refreshed the tokens
     # @api public
-    # @return [Client, nil] the client, or nil if none was given
+    # @return [Client, nil] the client, or nil for a refresh made by an authenticator alone, as its refresh! makes one
     # @example Act for the user once the tokens are stored
     #   rescue X::TokenReportFailed => e
     #     store(e.tokens.refresh_token)
     #     e.client.get("users/me")
     attr_reader :client
 
-    # The tokens of the exchange, which on_token_refresh raised for
+    # The tokens of the exchange or the refresh, which on_token_refresh raised for
     # @api public
     # @return [OAuth2Tokens, nil] the tokens, or nil if none were given
     # @example Store the tokens again
@@ -29,12 +31,12 @@ module X
     #     store(e.tokens.refresh_token)
     attr_reader :tokens
 
-    # Initialize the error with the client and the tokens of the exchange
+    # Initialize the error with the client and the tokens it failed to report
     #
     # @api public
-    # @param message [String, nil] the message, or nil for one that says the tokens were not stored
-    # @param client [Client, nil] the client the authorization built
-    # @param tokens [OAuth2Tokens, nil] the tokens of the exchange
+    # @param message [String, nil] the message, or nil for one that says the tokens of an exchange were not stored
+    # @param client [Client, nil] the client the authorization built, or whose request refreshed the tokens
+    # @param tokens [OAuth2Tokens, nil] the tokens of the exchange or the refresh
     # @return [TokenReportFailed] a new error
     # @example Raise the error for tokens on_token_refresh raised for
     #   raise X::TokenReportFailed.new(client:, tokens:)
