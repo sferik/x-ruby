@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative "batch_finders"
+require_relative "media_ids"
 require_relative "resource"
 
 module X
@@ -152,6 +153,18 @@ module X
     end
     private_class_method :id_key, :endpoint, :batch_key, :fields_key, :id_type, :key_of, :from_id_in_batch, :includes_key
 
+    # @!method id
+    #   The identifier of the media, which is its media key
+    #
+    #   Media is looked up by its media key, so that is what identifies it here, where the identifier of uploaded
+    #   media, and the one a post or a direct message attaches media by, is the number media_id reads. Both X::Media
+    #   and the uploaded media of x-uploader answer media_key and media_id alike.
+    #
+    #   @api public
+    #   @return [String] the media key
+    #   @example Get the media key
+    #     media.id # => "3_1880028106020515840"
+
     # @!attribute [r] media_key
     #   The media key
     #   @api public
@@ -159,6 +172,18 @@ module X
     #   @example Get the media key
     #     media.media_key
     attribute :media_key
+
+    # The numeric identifier of the media, which its media key names
+    #
+    # A media key names the identifier after the number of the type of the media and an underscore. It is the
+    # identifier an upload returns, and the one a post or a direct message attaches media by.
+    #
+    # @api public
+    # @return [Integer] the media identifier
+    # @raise [InvalidAttribute] if the media key names no identifier
+    # @example Get the identifier the media key names
+    #   X::Media.from_id("3_1880028106020515840").media_id # => 1880028106020515840
+    def media_id = Objects::Utils.read("#{self.class}#media_id", media_key) { Integer(Objects::MediaIds.media_key_id(self), 10) }
 
     # @!attribute [r] type
     #   The media type: photo, video, or animated_gif

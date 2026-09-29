@@ -301,6 +301,7 @@ module X
                     | ...
     def self.default_params: () -> Hash[String, Array[String]]
     def media_key: () -> String
+    def media_id: () -> Integer
     def type: () -> String?
     def url: () -> String?
     def preview_image_url: () -> String?
