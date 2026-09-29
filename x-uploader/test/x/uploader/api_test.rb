@@ -7,6 +7,11 @@ module X
   class UploaderAPITest < Minitest::Test
     cover Uploader::API
 
+    # Each method of a client that takes options, the uploader it calls, and the arguments it is given before them
+    REFUSING = {upload_media: [Uploader::MediaUpload, :upload, ["cat.jpg"]], await_media_processing: [Uploader::MediaUpload, :await_processing, [7]],
+                await_media_processing!: [Uploader::MediaUpload, :await_processing!, [7]], add_subtitles: [Uploader::Metadata, :add_subtitles, [1, 2, "en"]],
+                update_profile_banner: [Uploader::Account, :update_profile_banner, ["banner.png"]]}.freeze
+
     def setup
       @client = Class.new(Client) { include Uploader::API }.new(**test_oauth_credentials)
       @called = ->(*arguments, **options) { [arguments, options] }
@@ -51,6 +56,15 @@ module X
     def test_update_profile_banner_updates_it_with_the_client_and_its_options
       Uploader::Account.stub(:update_profile_banner, @called) do
         assert_equal [["banner.png"], {client: @client, width: 1500}], @client.update_profile_banner("banner.png", width: 1500)
+      end
+    end
+
+    def test_a_method_of_a_client_refuses_another_client_before_calling_an_uploader
+      other = Client.new(bearer_token: "OTHER")
+      REFUSING.each do |method, (uploader, name, arguments)|
+        uploader.stub(name, ->(*, **) { flunk "#{name} was called" }) do
+          assert_equal "unknown keyword: :client", assert_raises(ArgumentError) { @client.public_send(method, *arguments, client: other) }.message
+        end
       end
     end
 

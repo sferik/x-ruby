@@ -4,6 +4,11 @@
 # to what the code hides, and these can change within 1.x.
 module X
   module Uploader
+    module API : _Client
+      private
+      def without_client: (Hash[Symbol, untyped] options) -> Hash[Symbol, untyped]
+    end
+
     JSON_CLASSES: Hash[Symbol, singleton(Array) | singleton(Hash)]
 
     # Media to upload, or the Source an upload has resolved it to, which the internals of the uploaders pass on

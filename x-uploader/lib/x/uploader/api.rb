@@ -47,7 +47,7 @@ module X
       # @example Upload media of a category no signature names
       #   client.upload_media(StringIO.new(subtitles), media_category: "subtitles")
       def upload_media(media, **options) # steep:ignore DifferentMethodParameterKind
-        MediaUpload.upload(media, client: self, **options)
+        MediaUpload.upload(media, client: self, **without_client(options))
       end
 
       # Wait until media has been processed, whether its processing succeeded or failed
@@ -65,7 +65,7 @@ module X
       #   video = client.await_media_processing(video)
       #   warn video.processing_info.dig("error", "message") if video.failed?
       def await_media_processing(media, **options) # steep:ignore DifferentMethodParameterKind
-        MediaUpload.await_processing(media, client: self, **options)
+        MediaUpload.await_processing(media, client: self, **without_client(options))
       end
 
       # Wait until media has been processed, raising if its processing failed
@@ -81,7 +81,7 @@ module X
       # @example Wait for a video uploaded with chunked_upload, raising if X could not process it
       #   client.await_media_processing!(video)
       def await_media_processing!(media, **options) # steep:ignore DifferentMethodParameterKind
-        MediaUpload.await_processing!(media, client: self, **options)
+        MediaUpload.await_processing!(media, client: self, **without_client(options))
       end
 
       # Describe uploaded media with alt text, for people who cannot see it
@@ -113,7 +113,7 @@ module X
       # @example Subtitle a video in English
       #   client.add_subtitles(video, subtitles, "EN", display_name: "English")
       def add_subtitles(video, subtitles, language_code, **options) # steep:ignore DifferentMethodParameterKind
-        Metadata.add_subtitles(video, subtitles, language_code, client: self, **options)
+        Metadata.add_subtitles(video, subtitles, language_code, client: self, **without_client(options))
       end
 
       # Update the profile image of the authenticated user from a file
@@ -145,7 +145,24 @@ module X
       # @example Update the profile banner
       #   client.update_profile_banner("banner.png", width: 1500, height: 500)
       def update_profile_banner(media, **options) # steep:ignore DifferentMethodParameterKind
-        Account.update_profile_banner(media, client: self, **options)
+        Account.update_profile_banner(media, client: self, **without_client(options))
+      end
+
+      private
+
+      # The options of an uploader, which name no client
+      #
+      # A method of a client uploads with that client, so a client among the options, which would upload with the
+      # credentials of another, raises as a keyword the method does not take raises, rather than take its place.
+      #
+      # @api private
+      # @param options [Hash{Symbol => Object}] the options the method was given
+      # @return [Hash{Symbol => Object}] the options
+      # @raise [ArgumentError] if the options name a client
+      def without_client(options)
+        raise ArgumentError, "unknown keyword: :client" if options.key?(:client)
+
+        options
       end
     end
   end
