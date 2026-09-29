@@ -20,6 +20,12 @@ module X
       assert_same status, MediaProcessingFailed.new(status:).status
     end
 
+    def test_holds_a_status_given_as_a_subclass_of_hash_as_uploaded_media
+      status = Class.new(Hash).new.merge!("processing_info" => {"state" => "failed"})
+
+      assert_instance_of UploadedMedia, MediaProcessingFailed.new(status:).status
+    end
+
     def test_the_message_without_a_reason
       assert_equal ["Media processing failed"] * 3,
         [MediaProcessingFailed.new(status: {"processing_info" => {"state" => "failed"}}), MediaProcessingFailed.new(status: {}), MediaProcessingFailed.new].map(&:message)
@@ -57,6 +63,12 @@ module X
       status = UploadedMedia.new({"id" => "7", "processing_info" => {"state" => "in_progress"}})
 
       assert_same status, MediaProcessingTimeout.new(status:).status
+    end
+
+    def test_holds_a_status_given_as_a_subclass_of_hash_as_uploaded_media
+      status = Class.new(Hash).new.merge!("processing_info" => {"state" => "in_progress"})
+
+      assert_instance_of UploadedMedia, MediaProcessingTimeout.new(status:).status
     end
 
     def test_a_message_given_is_the_message_whatever_the_timeout

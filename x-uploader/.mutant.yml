@@ -7,9 +7,16 @@ includes:
 integration:
   name: minitest
 matcher:
-  # x-core is loaded too, and is mutated in its own suite
+  # x-core is loaded too, and is mutated in its own suite, so the classes x-uploader declares directly under X are named
+  # one by one rather than matched by X*
   subjects:
   - X::Uploader*
+  - X::UploadedMedia
+  - X::AltTextFailed
+  - X::InvalidMediaType
+  - X::MediaProcessingFailed
+  - X::MediaProcessingTimeout
+  - X::MissingMediaData
 mutation:
   operators: full
   timeout: 10.0
