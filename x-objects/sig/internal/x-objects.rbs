@@ -27,6 +27,20 @@ module X
       def to_json: (?JSON::State? state) -> String
     end
 
+    # A resource, whose state Marshal writes and reads
+    interface _Marshalled
+      def attrs: () -> attrs
+      def hydrated?: () -> bool
+      def class: () -> singleton(Resource)
+    end
+
+    module Marshalling : _Marshalled
+      FORMAT: Integer
+
+      def marshal_dump: () -> [Integer, attrs, bool, Hash[untyped, untyped], Array[Hash[String, untyped]], Hash[String, untyped]?]
+      def marshal_load: ([Integer, attrs, bool, Hash[untyped, untyped]?, Array[Hash[String, untyped]], Hash[String, untyped]?] state) -> void
+    end
+
     # Anything the object layer built from an API response, which holds its attributes
     interface _Attributed
       def attrs: () -> Hash[String, untyped]
@@ -161,6 +175,7 @@ module X
       def initialize: (?Hash[untyped, untyped]? data, ?problems: Array[Problem], ?query: Hash[String, untyped]?) -> void
       def resolve: (singleton(Resource) klass, untyped id, client: _Client? client) -> Resource
       def problems_about: (Array[untyped] ids) -> Array[Problem]
+      def state: () -> [Hash[untyped, untyped], Array[Hash[String, untyped]], Hash[String, untyped]?]
 
       private
       def build: (singleton(Resource) klass, untyped id, _Client? client) -> Resource
@@ -600,6 +615,7 @@ module X
     include Objects::PublishedCount
     include Objects::Identity
     include Objects::Serialization
+    include Objects::Marshalling
 
     private attr_reader includes: Objects::Includes
 

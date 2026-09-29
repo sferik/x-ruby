@@ -260,8 +260,8 @@ module X
     def deconstruct_keys: (Array[Symbol]? keys) -> Hash[Symbol, untyped]
     def as_json: (*untyped) -> Hash[String, untyped]
     def to_json: (?JSON::State? state) -> String
-    def marshal_dump: () -> Objects::attrs
-    def marshal_load: (Objects::attrs attrs) -> void
+    def marshal_dump: () -> [Integer, Objects::attrs, bool, Hash[untyped, untyped], Array[Hash[String, untyped]], Hash[String, untyped]?]
+    def marshal_load: ([Integer, Objects::attrs, bool, Hash[untyped, untyped]?, Array[Hash[String, untyped]], Hash[String, untyped]?] state) -> void
     def inspect: () -> String
   end
 

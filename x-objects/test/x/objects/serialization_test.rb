@@ -58,33 +58,6 @@ module X
       assert_equal "{\"post\":{\"id\":\"1\",\"text\":\"Hello\",\"author_id\":\"9\"}}", JSON.generate({post: @post})
     end
 
-    def test_marshal_round_trip
-      loaded = Marshal.load(Marshal.dump(@post))
-
-      assert_equal @post, loaded
-      assert_equal "Hello", loaded.text
-      assert_equal @post.attrs, loaded.attrs
-    end
-
-    def test_a_marshalled_resource_carries_no_client
-      loaded = Marshal.load(Marshal.dump(@post))
-
-      assert_nil loaded.client
-      assert_raises(MissingClient) { loaded.hydrate }
-      refute_predicate loaded, :hydrated?
-    end
-
-    def test_marshal_dump_is_the_attributes
-      assert_equal @post.attrs, @post.marshal_dump
-    end
-
-    def test_a_marshalled_resource_keeps_no_reference
-      loaded = Marshal.load(Marshal.dump(@post))
-
-      assert_predicate loaded.author, :stub?
-      assert_empty loaded.problems
-    end
-
     def test_a_problem_serializes_its_attributes
       problem = Problem.new({"title" => "Not Found Error", "detail" => "Gone"})
 

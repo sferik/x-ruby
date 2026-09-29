@@ -34,6 +34,14 @@ module X
       # @return [Array<Problem>] the problems
       attr_reader :problems
 
+      # What the identity map was built of, as plain data
+      #
+      # A resource that Marshal writes holds it. The problems are written as their attributes, so that what Marshal wrote names no class but those of Ruby.
+      #
+      # @api private
+      # @return [Array(Hash, Array<Hash>, Hash, nil)] the includes, the attributes of each problem, and the query
+      def state = [@data, problems.map(&:to_h), @query]
+
       # The problems the response reported about any of some identifiers
       #
       # A problem that names no resource is about any of them, too. A problem names the resource it is about by its resource_id, or by its value, and one that names neither

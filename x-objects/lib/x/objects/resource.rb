@@ -6,6 +6,7 @@ require_relative "published_count"
 require_relative "errors"
 require_relative "identity"
 require_relative "includes"
+require_relative "marshalling"
 require_relative "memo"
 require "x/core/problem"
 require_relative "serialization"
@@ -19,6 +20,7 @@ module X
     include Objects::PublishedCount
     include Objects::Identity
     include Objects::Serialization
+    include Objects::Marshalling
 
     # The frozen attributes returned by the API
     # @api public
@@ -357,26 +359,6 @@ module X
     def refresh
       @memo.store(look_up)
     end
-
-    # The state Marshal writes: the attributes alone, without the client
-    #
-    # @api public
-    # @return [Hash{String => Object}] the attributes
-    # @example Cache a user
-    #   Rails.cache.write("user", user)
-    def marshal_dump = attrs
-
-    # Restore a resource Marshal read, which has no client and so cannot hydrate
-    #
-    # The client is left out of what Marshal writes, since it holds credentials and a connection, so what Marshal
-    # reads is a client-less resource that answers its readers and raises from hydrate, refresh, and its collections.
-    #
-    # @api public
-    # @param attrs [Hash{String => Object}] the attributes Marshal wrote
-    # @return [void]
-    # @example Read a cached user
-    #   Marshal.load(Marshal.dump(user)).username # => "sferik"
-    def marshal_load(attrs) = initialize(attrs)
 
     # Summarize the resource for the console
     #
