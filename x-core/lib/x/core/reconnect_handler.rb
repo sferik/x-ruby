@@ -4,6 +4,7 @@ require_relative "errors/conflict"
 require_relative "errors/invalid_response"
 require_relative "errors/network_error"
 require_relative "errors/server_error"
+require_relative "errors/stream_error"
 require_relative "errors/too_many_requests"
 require_relative "setting_validator"
 
@@ -11,8 +12,9 @@ module X
   module Core
     # Reconnects a stream that drops, backing off as X recommends
     #
-    # A stream that ends, loses its connection, or cannot open one, as when the connection is refused, reconnects at
-    # once, then after a delay that grows by a quarter second each attempt, up to 16 seconds. A server error, a 409
+    # A stream that ends, loses its connection, or cannot open one, as when the connection is refused, or that X
+    # disconnects with an operational-disconnect, reconnects at once, then after a delay that grows by a quarter
+    # second each attempt, up to 16 seconds. A server error, a 409
     # Conflict, or a line that is not JSON backs off from 5 seconds, doubling each attempt, up to 320 seconds. A rate
     # limit waits until it resets, or from a minute, doubling each attempt. Delivering an object starts the count over.
     #
@@ -63,7 +65,8 @@ module X
       #
       # An error raised by the consumer stops the stream, even one that would otherwise reconnect, and reaches the
       # caller, as does any error that is not one a stream reconnects after, such as one raised by the on_response
-      # of the client or by the class an object is parsed into, or the StreamError of a line that holds errors alone.
+      # of the client or by the class an object is parsed into, or the StreamError of a line that holds errors other
+      # than a disconnect.
       # The stream is run again with while rather than Kernel#loop, which rescues StopIteration, so that a
       # StopIteration raised from an Enumerator that has run out, wherever it is raised, reaches the caller too,
       # rather than end the stream without a word.
@@ -73,8 +76,8 @@ module X
       # @yield [deliver] runs the stream once
       # @yieldparam deliver [Proc] the block to pass each object to, which passes it on to the consumer
       # @return [nil] once the stream ends with no reconnects left
-      # @raise [NetworkError, ServerError, Conflict, TooManyRequests, InvalidResponse] if the stream fails with no
-      #   reconnects left
+      # @raise [NetworkError, ServerError, Conflict, TooManyRequests, InvalidResponse, StreamError] if the stream
+      #   fails with no reconnects left
       # @example Reconnect a stream
       #   handler.handle(->(post) { puts post }) { |deliver| read_stream(&deliver) }
       def handle(consumer, &stream)
@@ -93,15 +96,27 @@ module X
       # @param deliver [Proc] the block to pass each object to
       # @param state [Hash] the count of reconnects, for one call to handle
       # @return [Boolean] true to run the stream again, or false once it ends with no reconnects left
-      # @raise [NetworkError, ServerError, Conflict, TooManyRequests, InvalidResponse] if the stream fails with no
-      #   reconnects left
+      # @raise [NetworkError, ServerError, Conflict, TooManyRequests, InvalidResponse, StreamError] if the stream
+      #   fails with no reconnects left
       def run_once(stream, deliver, state)
         stream.call(deliver)
         !out_of_reconnects?(nil, state)
-      rescue *RECONNECTABLE_ERRORS => e
+      rescue *RECONNECTABLE_ERRORS, StreamError => e
+        raise unless reconnectable?(e)
         raise if out_of_reconnects?(e, state)
 
         true
+      end
+
+      # Check whether a stream reconnects after an error
+      #
+      # A stream reconnects after a StreamError only when each of its problems is an operational-disconnect.
+      #
+      # @api private
+      # @param error [StandardError] the error that dropped the stream
+      # @return [Boolean] true unless the error is a StreamError of any problem but a disconnect
+      def reconnectable?(error)
+        !error.is_a?(StreamError) || error.problems.all?(&:disconnect?)
       end
 
       # The error a consumer raised, which a consumer error stands in for
@@ -146,7 +161,7 @@ module X
       # @return [Float, Integer] the seconds to wait
       def backoff(error, reconnects)
         case error
-        when NetworkError then network_backoff(reconnects)
+        when NetworkError, StreamError then network_backoff(reconnects)
         when TooManyRequests then rate_limit_backoff(error, reconnects)
         else http_backoff(reconnects)
         end

@@ -59,6 +59,13 @@ module X
       refute_predicate Problem.new({}), :not_found?
     end
 
+    def test_disconnect
+      assert_predicate Problem.new({"type" => "https://api.twitter.com/2/problems/operational-disconnect"}), :disconnect?
+      refute_predicate Problem.new({"type" => "https://api.x.com/2/problems/operational-disconnect-soon"}), :disconnect?
+      refute_predicate Problem.new({"type" => "https://api.x.com/2/problems/streaming-connection"}), :disconnect?
+      refute_predicate Problem.new({"title" => "operational-disconnect"}), :disconnect?
+    end
+
     def test_inspect
       assert_equal "#<X::Problem Not Found Error: Could not find tweet with pinned_tweet_id: [1].>", Problem.new(NOT_FOUND).inspect
       assert_equal "#<X::Problem Not Found Error>", Problem.new({"title" => "Not Found Error"}).inspect

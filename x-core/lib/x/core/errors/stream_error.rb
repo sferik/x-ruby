@@ -5,26 +5,24 @@ require_relative "../problem"
 require_relative "../request_context"
 
 module X
-  # Raised for a line of a stream that holds errors and no data, when the stream builds its objects with an
-  # object_class
+  # Raised for a line of a stream that holds errors and no data
   #
   # A stream sends the problems it has in a line of their own, such as the operational-disconnect X sends before it
-  # closes a stream. An object_class that builds an object from the data of each line, as the resource classes of
-  # x-objects do, would build nothing of it, and the problems would be lost, so the stream raises this error in
-  # place of passing its block nil. A stream that yields each line as a Hash yields that line too, errors and all.
+  # closes a stream. The line is not an object the stream delivers, so the stream raises this error in place of
+  # passing it to its block, whether the objects are Hashes or are built by an object_class.
   #
-  # The stream does not reconnect after it: it stops, and the error reaches the caller, who decides whether to open
-  # the stream again. The message names the request, and each problem, and {#problems} holds them, as
-  # {HTTPError#problem} holds the one of a response the API refused. {#http_method} and {#uri} are the request of
-  # the stream.
+  # A stream reconnects after a line that holds operational-disconnects alone, as it does after a connection that
+  # dropped, and raises this error once it has no reconnects left. After any other problems it stops, and the error
+  # reaches the caller, who decides whether to open the stream again. The message names the request, and each
+  # problem, and {#problems} holds them, as {HTTPError#problem} holds the one of a response the API refused.
+  # {#http_method} and {#uri} are the request of the stream.
   #
   # @api public
-  # @example Open a stream again after X disconnected it
+  # @example Report the problems that stopped a stream
   #   begin
-  #     client.streaming.stream("tweets/search/stream", object_class: X::Post) { |post| handle(post) }
+  #     client.streaming.stream("tweets/search/stream") { |post| handle(post) }
   #   rescue X::StreamError => e
-  #     retry if e.problems.any? { |problem| problem.title.eql?("operational-disconnect") }
-  #     raise
+  #     warn e.problems.map(&:title).join(", ")
   #   end
   class StreamError < Error
     include Core::RequestContext

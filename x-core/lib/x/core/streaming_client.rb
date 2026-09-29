@@ -145,8 +145,8 @@ module X
     # the app's bearer token nor its API key and secret raises UnsupportedOperation before it connects, rather than
     # open a stream X would refuse with 403 Forbidden. A bearer token X rejects with 401 Unauthorized, as it does one
     # that was invalidated, is fetched again with the API key and secret the app_only client holds, as it is for a
-    # request, and the stream is opened once more with it. A stream that drops reconnects, backing off as X
-    # recommends, up to max_reconnects times in a row. The API bills
+    # request, and the stream is opened once more with it. A stream that drops, or that X disconnects with an
+    # operational-disconnect, reconnects, backing off as X recommends, up to max_reconnects times in a row. The API bills
     # each object a stream delivers, so the client's on_response receives each one, as well as a failed response.
     #
     # A stream runs until its block stops it: break out of the block to stop the stream and return a value, throw to
@@ -168,8 +168,8 @@ module X
     # @raise [UnsupportedOperation] if the client authenticates with OAuth 2.0 as a user and holds no credentials of
     #   the app, before the stream is opened
     # @raise [HTTPError] if the response is not successful and the stream may not reconnect
-    # @raise [StreamError] if a line holds errors and no data, and an object_class that responds to from_response
-    #   builds the objects; the stream does not reconnect after it
+    # @raise [StreamError] if a line holds errors and no data, which the stream reconnects after only when each is an
+    #   operational-disconnect, and then raises once it has no reconnects left
     # @example Stream filtered posts
     #   streaming_client.stream("tweets/search/stream") { |post| puts post }
     # @example Stop the stream from its block

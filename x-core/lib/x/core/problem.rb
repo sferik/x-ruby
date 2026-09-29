@@ -147,6 +147,16 @@ module X
     #   problems.reject(&:not_found?)
     def not_found? = type.to_s.end_with?("/resource-not-found")
 
+    # Check whether the problem is an operational-disconnect of a stream
+    #
+    # X sends one before it closes a stream for its own reasons. A stream reconnects after a line that holds such problems alone, as it does after a connection that dropped.
+    #
+    # @api public
+    # @return [Boolean] true for an operational-disconnect problem
+    # @example Tell a disconnect apart from another error of a stream
+    #   error.problems.all?(&:disconnect?)
+    def disconnect? = type.to_s.end_with?("/operational-disconnect")
+
     # The attributes, as a JSON encoder and ActiveSupport read them
     #
     # ActiveSupport's Object#as_json would otherwise read the instance variables, which is the same Hash under
