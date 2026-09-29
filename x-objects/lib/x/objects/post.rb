@@ -184,7 +184,7 @@ module X
     #   @return [Array<Integer>] the edit history identifiers, empty if there are none
     #   @example Get the edit history identifiers
     #     post.edit_history_post_ids
-    attribute :edit_history_post_ids, :integers
+    attribute :edit_history_post_ids, :integers, tweet_key: %w[edit_history_tweet_ids]
 
     # @!attribute [r] edit_controls
     #   The edit controls
@@ -293,7 +293,7 @@ module X
     #   @return [Array<Hash>] the referenced posts, empty if there are none
     #   @example Get the referenced posts
     #     post.referenced_posts
-    attribute :referenced_posts, :list
+    attribute :referenced_posts, :list, tweet_key: %w[referenced_tweets]
 
     # @!attribute [r] attachments
     #   The attachment keys and identifiers
@@ -333,7 +333,7 @@ module X
     #   @return [Hash, nil] the note details
     #   @example Get the note details
     #     post.note_post
-    attribute :note_post
+    attribute :note_post, tweet_key: %w[note_tweet]
 
     # @!attribute [r] public_metrics
     #   The public metrics
@@ -349,7 +349,7 @@ module X
     #   @return [Integer, nil] the repost count
     #   @example Get the repost count
     #     post.repost_count
-    attribute :repost_count, key: %w[public_metrics repost_count]
+    attribute :repost_count, key: %w[public_metrics repost_count], tweet_key: %w[public_metrics retweet_count]
 
     # @!attribute [r] reply_count
     #   The number of replies

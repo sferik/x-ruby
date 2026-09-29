@@ -8,6 +8,9 @@ module X
     # The context of one API response: its identity map of expanded objects and stubs, and the problems it reported
     # @api private
     class Includes
+      # The keys the API gave the includes of a class before it named tweets posts, which it still gives them where it
+      # has not renamed them, such as in a stream
+      TWEET_KEYS = {"posts" => "tweets"}.freeze
       # Initialize a new identity map
       #
       # @api private
@@ -85,7 +88,7 @@ module X
       # @return [Hash{String => Hash}] the expanded objects keyed by identifier
       def index(klass)
         key = klass.__send__(:includes_key)
-        entries = @data.fetch(key, []) #: Array[Hash[String, untyped]]
+        entries = @data.fetch(key) { @data.fetch(TWEET_KEYS[key], []) } #: Array[Hash[String, untyped]]
         @index[key] ||= entries.group_by { |attrs| attrs[klass.__send__(:id_key)] }.transform_values(&:first)
       end
     end

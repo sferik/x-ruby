@@ -65,15 +65,18 @@ module X
       # @param type [Symbol] the attribute type: raw, boolean, time, integer, integers, or list, of which integers and
       #   list read a list the response omitted as empty
       # @param key [Array<String>] the key path
+      # @param tweet_key [Array<String>, nil] the key path of the name the API gave the attribute before it named
+      #   tweets posts, which it still gives it where it has not renamed it, such as in a stream, read when the
+      #   response holds nothing at the key path
       # @return [void]
       # @raise [InvalidAttribute] from the reader, if the response holds a value the type cannot be read from
-      def attribute(name, type = :raw, key: [name.to_s])
+      def attribute(name, type = :raw, key: [name.to_s], tweet_key: nil)
         attribute_names << name
-        path = key_path(key)
+        paths = key_paths(key, tweet_key)
         converter = CONVERTERS.fetch(type)
         define_method(name) do
           # @type self: Resource
-          Utils.read("#{self.class}##{name}", Shape.dig("#{self.class}##{name}", attrs, path)) { |value| converter.call(value) }
+          Utils.read("#{self.class}##{name}", Shape.dig_first("#{self.class}##{name}", attrs, paths)) { |value| converter.call(value) }
         end
         return unless type.eql?(:boolean)
 
@@ -89,14 +92,16 @@ module X
       # @param name [Symbol] the reader name
       # @param klass_name [Symbol] the referenced resource class name under X
       # @param key [Array<String>] the key path holding the identifier
+      # @param tweet_key [Array<String>, nil] the key path of the name the API gave it before it named tweets posts,
+      #   read when the response holds nothing at the key path
       # @return [void]
       # @raise [InvalidAttribute] from the reader, if the response holds an identifier that is not one, or a key path
       #   that passes through something other than an object
-      def reference(name, klass_name, key:)
-        path = key_path(key)
+      def reference(name, klass_name, key:, tweet_key: nil)
+        paths = key_paths(key, tweet_key)
         define_method(name) do
           # @type self: Resource
-          resolve(X.const_get(klass_name), Shape.dig("#{self.class}##{name}", attrs, path))
+          resolve(X.const_get(klass_name), Shape.dig_first("#{self.class}##{name}", attrs, paths))
         end
       end
 
@@ -129,6 +134,15 @@ module X
 
         key
       end
+
+      # The key paths an attribute is read at, in the order they are tried
+      #
+      # @api private
+      # @param key [Object] the key path
+      # @param tweet_key [Object, nil] the key path of the name the API gave it before it named tweets posts, if any
+      # @return [Array<Array<String>>] the key paths
+      # @raise [ArgumentError] if a key path is not an array
+      def key_paths(key, tweet_key) = [key, tweet_key].compact.each { |path| key_path(path) }
     end
   end
 end

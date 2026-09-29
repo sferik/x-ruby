@@ -167,7 +167,7 @@ module X
     #   @return [Array<Hash>] the referenced posts, empty if there are none
     #   @example Get the referenced posts
     #     message.referenced_posts
-    attribute :referenced_posts, :list
+    attribute :referenced_posts, :list, tweet_key: %w[referenced_tweets]
 
     # @!attribute [r] attachments
     #   The attachment keys

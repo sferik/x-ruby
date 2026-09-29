@@ -78,6 +78,7 @@ module X
       extend Shape
 
       def dig: (String name, untyped value, Array[String] path) -> untyped
+      def dig_first: (String name, untyped value, Array[Array[String]] paths) -> untyped
       def read_object: (String name, untyped value) -> Hash[untyped, untyped]?
       def objects: (String name, untyped value) -> Array[Hash[String, untyped]]
       def object: (untyped value) -> Hash[untyped, untyped]?
@@ -142,6 +143,8 @@ module X
     end
 
     class Includes
+      TWEET_KEYS: Hash[String, String]
+
       @data: Hash[String?, untyped]
       @monitor: Monitor
       @index: Hash[String?, Hash[untyped, attrs]]
@@ -172,10 +175,11 @@ module X
       def attribute_names: () -> Array[Symbol]
       def attribute_aliases: () -> Array[Symbol]
       def attribute_alias: (Symbol name, Symbol original) -> void
-      def attribute: (Symbol name, ?Symbol type, ?key: key) -> void
-      def reference: (Symbol name, Symbol klass_name, key: key) -> void
+      def attribute: (Symbol name, ?Symbol type, ?key: key, ?tweet_key: key?) -> void
+      def reference: (Symbol name, Symbol klass_name, key: key, ?tweet_key: key?) -> void
       def references: (Symbol name, Symbol klass_name, key: key) -> void
       def key_path: (untyped key) -> key
+      def key_paths: (untyped key, untyped tweet_key) -> Array[key]
     end
 
     interface _Identifiable

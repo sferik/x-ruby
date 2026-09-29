@@ -257,7 +257,7 @@ module X
     #   @return [Integer, nil] the pinned post identifier
     #   @example Get the pinned post identifier
     #     user.pinned_post_id
-    attribute :pinned_post_id, :integer
+    attribute :pinned_post_id, :integer, tweet_key: %w[pinned_tweet_id]
 
     # @!attribute [r] most_recent_post_id
     #   The identifier of the most recent post
@@ -265,7 +265,7 @@ module X
     #   @return [Integer, nil] the most recent post identifier
     #   @example Get the most recent post identifier
     #     user.most_recent_post_id
-    attribute :most_recent_post_id, :integer
+    attribute :most_recent_post_id, :integer, tweet_key: %w[most_recent_tweet_id]
 
     # @!attribute [r] entities
     #   The entities found in the description and URL
@@ -313,7 +313,7 @@ module X
     #   @return [Integer, nil] the post count
     #   @example Get the post count
     #     user.post_count
-    attribute :post_count, key: %w[public_metrics post_count]
+    attribute :post_count, key: %w[public_metrics post_count], tweet_key: %w[public_metrics tweet_count]
 
     # @!attribute [r] listed_count
     #   The number of lists the user is a member of
@@ -345,7 +345,7 @@ module X
     #   @return [Post, nil] the pinned post
     #   @example Get the pinned post
     #     user.pinned_post
-    reference :pinned_post, :Post, key: %w[pinned_post_id]
+    reference :pinned_post, :Post, key: %w[pinned_post_id], tweet_key: %w[pinned_tweet_id]
 
     # @!method most_recent_post
     #   The most recent post, from the includes or as a stub holding only its identifier
@@ -353,7 +353,7 @@ module X
     #   @return [Post, nil] the most recent post
     #   @example Get the most recent post
     #     user.most_recent_post
-    reference :most_recent_post, :Post, key: %w[most_recent_post_id]
+    reference :most_recent_post, :Post, key: %w[most_recent_post_id], tweet_key: %w[most_recent_tweet_id]
 
     attribute_alias :tweet_count, :post_count
     attribute_alias :pinned_tweet_id, :pinned_post_id

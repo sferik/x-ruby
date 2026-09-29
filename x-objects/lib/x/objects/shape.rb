@@ -29,6 +29,24 @@ module X
       #   X::Objects::Shape.dig("X::Post#like_count", attrs, %w[public_metrics like_count])
       def dig(name, value, path) = path.reduce(value) { |current, key| read_object(name, current)&.[](key) }
 
+      # Read the value at the first of several paths of keys that names one
+      #
+      # @api private
+      # @param name [String] what the value is, such as the reader that reads it
+      # @param value [Hash, nil] the object the paths start at
+      # @param paths [Array<Array<String>>] the paths, in the order they are tried
+      # @return [Object, nil] the value, or nil if no path names one
+      # @raise [InvalidAttribute] if a path passes through something other than an object
+      # @example Read the number of times a post was reposted, by either name
+      #   X::Objects::Shape.dig_first("X::Post#repost_count", attrs, [%w[public_metrics repost_count], %w[public_metrics retweet_count]])
+      def dig_first(name, value, paths)
+        paths.each do |path|
+          found = dig(name, value, path)
+          return found unless found.nil?
+        end
+        nil
+      end
+
       # Read an object, which the response may leave out
       #
       # @api private
