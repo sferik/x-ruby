@@ -3,8 +3,9 @@
 ## Supported versions
 
 `x`, `x-core`, `x-uploader`, and `x-objects` are released from this repository in lockstep, at the version in
-[VERSION](VERSION). Security fixes are released for the latest 1.x version of each gem. Versions before 1.0 are not
-supported; [UPGRADING.md](UPGRADING.md) covers what code written for 0.19 needs.
+[VERSION](https://github.com/sferik/x-ruby/blob/main/VERSION). Security fixes are released for the latest 1.x
+version of each gem. Versions before 1.0 are not supported;
+[UPGRADING.md](https://github.com/sferik/x-ruby/blob/main/UPGRADING.md) covers what code written for 0.19 needs.
 
 | Version | Supported |
 | --- | --- |
