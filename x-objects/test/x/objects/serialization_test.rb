@@ -104,10 +104,10 @@ module X
       cursor = paged_followers
       cursor.first
 
-      error = assert_raises(UnsupportedOperation) { Marshal.dump(cursor) }
+      error = assert_raises(TypeError) { Marshal.dump(cursor) }
       assert_equal "Serializing a cursor would read every page of its collection, a billed request per page; " \
         "serialize cursor.first(n), or cursor.to_a to read every page", error.message
-      assert_raises(UnsupportedOperation) { Marshal.dump({"followers" => cursor}) }
+      assert_raises(TypeError) { Marshal.dump({"followers" => cursor}) }
     end
 
     def test_a_cursor_refuses_to_serialize_through_an_encoder

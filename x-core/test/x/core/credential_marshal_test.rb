@@ -18,7 +18,7 @@ module X
 
     def test_what_holds_credentials_refuses_marshal
       holders.each do |holder|
-        error = assert_raises(UnsupportedOperation) { Marshal.dump(holder) }
+        error = assert_raises(TypeError) { Marshal.dump(holder) }
 
         assert_equal "#{holder.class} holds credentials, which Marshal would write in the clear wherever it is kept; keep the credentials " \
           "in a secret store, and the X::OAuth2Tokens on_token_refresh is passed, and build it again from them", error.message
@@ -26,7 +26,7 @@ module X
     end
 
     def test_what_holds_credentials_refuses_marshal_within_what_is_marshalled
-      assert_raises(UnsupportedOperation) { Marshal.dump({"client" => Client.new(bearer_token: "BEARER")}) }
+      assert_raises(TypeError) { Marshal.dump({"client" => Client.new(bearer_token: "BEARER")}) }
     end
 
     def test_the_tokens_of_a_refresh_still_marshal

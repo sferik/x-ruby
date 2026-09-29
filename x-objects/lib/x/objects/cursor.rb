@@ -326,16 +326,16 @@ module X
     # Refuse to write the cursor with Marshal, as it refuses to write it as JSON
     #
     # A cursor holds its client, and the threads and locks that fetch its pages, none of which Marshal can write, and
-    # caching the collection it names would mean reading every page of it, as {#as_json} says. It raises as that does,
-    # rather than with the TypeError Marshal would raise from within the cursor. Marshal what first(n) or to_a reads,
-    # or a page, instead.
+    # caching the collection it names would mean reading every page of it, as {#as_json} says. It raises the
+    # TypeError Marshal raises for what it cannot write, with the message of {#as_json}, rather than the one Marshal
+    # would raise from within the cursor. Marshal what first(n) or to_a reads, or a page, instead.
     #
     # @api public
     # @return [void]
-    # @raise [UnsupportedOperation] always
+    # @raise [TypeError] always
     # @example Cache the first page of the followers of a user rather than the cursor
     #   Rails.cache.write("followers", user.followers.page(0))
-    def marshal_dump = raise(UnsupportedOperation, SERIALIZATION_MESSAGE)
+    def marshal_dump = raise(TypeError, SERIALIZATION_MESSAGE)
 
     # Summarize the cursor for the console
     #
