@@ -214,6 +214,9 @@ module X
 
       # Build a resource from a response with a single data object
       #
+      # A line of the filtered stream holds the rules its post matched beside its data, as matching_rules, which the
+      # resource keeps among its attributes, where X::Post#matching_rules reads them.
+      #
       # @api public
       # @param body [Hash, nil] the parsed response body
       # @param client [Object] the client used to make the request
@@ -229,7 +232,7 @@ module X
         data = body["data"]
         return unless data.is_a?(Hash)
 
-        built(data, client:, includes: Objects::Includes.new(body["includes"], problems: Problem.all_from(body), query:), hydrated:)
+        built(data.merge(body.slice("matching_rules")), client:, includes: Objects::Includes.new(body["includes"], problems: Problem.all_from(body), query:), hydrated:)
       end
 
       # Build resources from a response with a data array

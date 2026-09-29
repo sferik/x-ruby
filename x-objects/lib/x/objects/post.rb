@@ -4,6 +4,7 @@ require "json"
 require "uri"
 require_relative "batch_finders"
 require_relative "community"
+require_relative "matching_rule"
 require_relative "cursor"
 require_relative "post_collections"
 require_relative "post_counts"
@@ -291,7 +292,22 @@ module X
     #   post.urls # => [{"url" => "https://t.co/...", "expanded_url" => "https://github.com/sferik/x-ruby", ...}]
     def urls = Objects::Shape.objects("#{self.class}#urls", entities&.[]("urls"))
 
-    attribute_names.push(:text, :entities, :urls)
+    # The rules of the filtered stream this post matched
+    #
+    # A post the filtered stream delivers names the rules it matched, and any other post names none.
+    #
+    # @api public
+    # @return [Array<MatchingRule>] the rules, empty for a post that did not come from the filtered stream
+    # @raise [InvalidAttribute] if the response holds the rules as something other than a list of objects, or a rule
+    #   without an identifier that is a number, or with a tag that is not a String
+    # @example Print the tags of the rules each post of the filtered stream matched
+    #   streaming_client.stream("tweets/search/stream", object_class: X::Post) { |post| p post.matching_rules.map(&:tag) }
+    def matching_rules
+      reader = "#{self.class}#matching_rules"
+      Objects::Shape.objects(reader, attrs["matching_rules"]).map { |rule| Objects::Utils.read(reader, rule) { MatchingRule.new(id: rule["id"], tag: rule["tag"]) } }.freeze
+    end
+
+    attribute_names.push(:text, :entities, :urls, :matching_rules)
 
     # @!attribute [r] context_annotations
     #   The context annotations

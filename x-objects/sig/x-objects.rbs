@@ -517,6 +517,7 @@ module X
     def quote_count: () -> Integer?
     def bookmark_count: () -> Integer?
     def impression_count: () -> Integer?
+    def matching_rules: () -> Array[MatchingRule]
     def author: () -> User?
     def in_reply_to_user: () -> User?
     def community: () -> Community?
@@ -548,6 +549,19 @@ module X
   end
 
   class Tweet = Post
+
+  class MatchingRule
+    attr_reader id: Integer
+    attr_reader tag: String?
+
+    def initialize: (id: Integer | String, ?tag: String?) -> void
+    def to_h: () -> {id: Integer, tag: String?}
+    def deconstruct_keys: (Array[Symbol]? _keys) -> {id: Integer, tag: String?}
+    def ==: (untyped other) -> bool
+    def eql?: (untyped other) -> bool
+    def hash: () -> Integer
+    def inspect: () -> String
+  end
 
   class Community < Resource
     extend Objects::_ResourceClass[Community]
