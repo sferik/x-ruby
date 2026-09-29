@@ -21,6 +21,17 @@ module X
       stub_request(method, url).to_return(body: body.to_json, headers: {"Content-Type" => "application/json"})
     end
 
+    def test_deleting_rules_some_of_which_the_api_does_not_delete
+      missing = {"errors" => [{"parameters" => {}, "message" => "Rule does not exist"}], "title" => "Invalid Request",
+                 "detail" => "One or more parameters to your request was invalid.", "type" => "https://api.x.com/2/problems/invalid-request"}
+      stub_rules({"errors" => [missing], "meta" => {"summary" => {"deleted" => 1, "not_deleted" => 1}}}, method: :post)
+      problems = []
+
+      assert_equal 1, @streaming_client.delete_stream_rules([RUBY_RULE, {"id" => "2"}]) { |problem| problems << problem }
+      assert_equal [missing], problems.map(&:to_h)
+      assert_equal 1, @streaming_client.delete_stream_rules([RUBY_RULE, {"id" => "2"}])
+    end
+
     def test_deleting_the_rules_that_were_read
       stub_rules({"meta" => {"summary" => {"deleted" => 2}}}, method: :post)
 

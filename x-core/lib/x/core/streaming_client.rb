@@ -234,10 +234,9 @@ module X
     #   streaming_client.add_stream_rules(["ruby", "crystal"], dry_run: true)
     # @example Report the rules that were not added
     #   streaming_client.add_stream_rules(%w[ruby crystal]) { |problem| warn "#{problem.value}: #{problem.title}" }
-    def add_stream_rules(rules, dry_run: false)
+    def add_stream_rules(rules, dry_run: false, &)
       rules = each_rule(rules)
-      body = change_rules({add: rules.map { |rule| rule_to_add(rule) }}, dry_run:) unless rules.empty?
-      Problem.all_from(body).each { |problem| yield problem } if block_given?
+      body = change_rules({add: rules.map { |rule| rule_to_add(rule) }}, dry_run:, &) unless rules.empty?
       rules_of(body)
     end
 
@@ -249,10 +248,15 @@ module X
     # given deletes what it added. No rules delete none, and send no request, since the API refuses a deletion that
     # names no rule.
     #
+    # The API deletes the rules it can and reports the rest, such as a rule the app does not have, as errors of a
+    # response that otherwise succeeds. The number of rules that were deleted is returned, and each problem the API
+    # reported is yielded, as add_stream_rules yields the rules it did not add.
+    #
     # @api public
     # @param rules [Array<StreamRule, Hash, String, Integer>, StreamRule, Hash, String, Integer] the rules to delete,
     #   the values they match, or their identifiers
     # @param dry_run [Boolean] true to have the API check the rules and delete none of them
+    # @yieldparam problem [Problem] each problem the API reported of the rules it did not delete
     # @return [Integer] the number of rules deleted, or that a dry run would delete, 0 if none were given
     # @raise [ArgumentError] if something is neither a rule nor the identifier of one
     # @raise [UnsupportedOperation] if the client authenticates with OAuth 2.0 as a user and holds no credentials of
@@ -264,12 +268,14 @@ module X
     #   streaming_client.delete_stream_rules(["ruby", "crystal"])
     # @example Delete a rule by the identifier the API gave it
     #   streaming_client.delete_stream_rules(1165037377523306498)
-    def delete_stream_rules(rules, dry_run: false)
+    # @example Report the rules that were not deleted
+    #   streaming_client.delete_stream_rules([1, 2]) { |problem| warn problem.detail }
+    def delete_stream_rules(rules, dry_run: false, &)
       rules = each_rule(rules)
       return 0 if rules.empty?
 
       ids, values = rules.partition { |rule| identifier_of(rule) }
-      change_rules({delete: deletion(ids, values)}, dry_run:).to_h.dig("meta", "summary", "deleted").to_i
+      change_rules({delete: deletion(ids, values)}, dry_run:, &).to_h.dig("meta", "summary", "deleted").to_i
     end
 
     private
@@ -288,11 +294,15 @@ module X
     end
 
     # Send a change of the rules, as the app
+    #
+    # Each problem the API reported of a rule it did not change is yielded, and dropped without a block.
+    #
     # @api private
     # @param body [Hash] the rules to add or delete
     # @param dry_run [Boolean] true to have the API check the rules and change none of them
+    # @yieldparam problem [Problem] each problem the API reported
     # @return [Hash, nil] the parsed response body
-    def change_rules(body, dry_run:) = app_client.post(RULES_ENDPOINT, body, params: {dry_run: (true if dry_run)}, **JSON_CLASSES)
+    def change_rules(body, dry_run:) = app_client.post(RULES_ENDPOINT, body, params: {dry_run: (true if dry_run)}, **JSON_CLASSES).tap { |response| Problem.all_from(response).each { |problem| yield problem } if block_given? }
 
     # The rules given, which may be one rule rather than a list of them
     #

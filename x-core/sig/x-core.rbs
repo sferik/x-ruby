@@ -278,7 +278,7 @@ module X
     def max_reconnects: () -> (Integer | Float)
     def stream_rules: (?params: params?) -> Array[StreamRule]
     def add_stream_rules: (Array[addable_rule] | addable_rule rules, ?dry_run: bool) ?{ (Problem problem) -> void } -> Array[StreamRule]
-    def delete_stream_rules: (Array[rule] | rule rules, ?dry_run: bool) -> Integer
+    def delete_stream_rules: (Array[rule] | rule rules, ?dry_run: bool) ?{ (Problem problem) -> void } -> Integer
   end
 
   class OAuth2Authenticator < Authenticator

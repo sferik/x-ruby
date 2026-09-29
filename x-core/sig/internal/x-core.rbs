@@ -622,7 +622,7 @@ module X
 
     private
     def deletion: (Array[untyped] ids, Array[untyped] values) -> Hash[Symbol, Array[untyped]]
-    def change_rules: (Hash[Symbol, untyped] body, dry_run: bool) -> Hash[String, untyped]?
+    def change_rules: (Hash[Symbol, untyped] body, dry_run: bool) ?{ (Problem problem) -> void } -> Hash[String, untyped]?
     def each_rule: (untyped rules) -> Array[untyped]
     def rules_of: (Hash[String, untyped]? body) -> Array[StreamRule]
     def rule_to_add: (addable_rule rule) -> Hash[untyped, untyped]
