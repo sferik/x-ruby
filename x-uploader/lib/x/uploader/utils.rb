@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require "x/core/retry_handler"
+require "x/core"
 require_relative "media_processing_failed"
 require_relative "media_processing_timeout"
 require_relative "missing_media_data"
@@ -168,7 +168,7 @@ module X
       # @example Append a chunk, again after a failure
       #   Uploader::Utils.sending_again(client) { client.post("media/upload/1/append", body, headers:) }
       def sending_again(client, &)
-        Core::RetryHandler.new(max_retries: max_retries_of(client)).handle(idempotent: true, resend_unanswered: true, &)
+        Core.with_retries(max_retries: max_retries_of(client), &)
       end
 
       # The number of times a request of an upload is sent again
@@ -182,7 +182,7 @@ module X
       #   Uploader::Utils.max_retries_of(X::Client.new(max_retries: 5)) # => 5
       def max_retries_of(client)
         retrying = client #: untyped
-        retrying.respond_to?(:max_retries) ? retrying.max_retries : Core::RetryHandler::DEFAULT_MAX_RETRIES
+        retrying.respond_to?(:max_retries) ? retrying.max_retries : Client::DEFAULT_MAX_RETRIES
       end
 
       # The processing status of media, unless the media failed to process

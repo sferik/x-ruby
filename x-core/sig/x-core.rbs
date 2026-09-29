@@ -8,6 +8,7 @@ module X
     VERSION: String
 
     def self.gem_version: () -> Gem::Version
+    def self.with_retries: [T] (?max_retries: Integer) { () -> T } -> T
   end
 
   # What an authenticator is guaranteed to read of the request it authenticates, which is all the authenticators of
