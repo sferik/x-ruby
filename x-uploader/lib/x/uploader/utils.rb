@@ -2,6 +2,7 @@
 
 require "x/core/retry_handler"
 require_relative "media_processing_failed"
+require_relative "media_processing_timeout"
 require_relative "missing_media_data"
 require_relative "uploaded_media"
 
@@ -31,7 +32,9 @@ module X
       NOT_MEDIA_KEY = "The media key %s names no media identifier"
       # The pattern of a media key, which names the media identifier after the number of its type and an underscore
       MEDIA_KEY = /\A\d+_(\d+)\z/
-      private_constant :NO_MEDIA_ID, :NO_MEDIA, :NO_METADATA, :NOT_MEDIA, :NOT_MEDIA_KEY, :MEDIA_KEY
+      # Fewest seconds to wait before a check of processing, for a status that asks for no wait
+      MIN_CHECK_AFTER_SECS = 1
+      private_constant :NO_MEDIA_ID, :NO_MEDIA, :NO_METADATA, :NOT_MEDIA, :NOT_MEDIA_KEY, :MEDIA_KEY, :MIN_CHECK_AFTER_SECS
 
       # The lowercase extension of a file, without its dot
       #
@@ -187,6 +190,25 @@ module X
       # @example The status of media that has processed
       #   Uploader::Utils.processed!(status) # => status
       def processed!(status) = status.tap { raise MediaProcessingFailed.new(status:) if status.failed? }
+
+      # Wait as long as the status of media still processing asks
+      #
+      # It waits at least a second, and gives up, rather than sleep, when the check would come after the deadline.
+      #
+      # @api private
+      # @param status [UploadedMedia] the status of the media, which is still processing
+      # @param deadline [Float] the time on the monotonic clock to give up at
+      # @param timeout [Integer, Float] the seconds the deadline was set from, which the error names
+      # @return [void]
+      # @raise [MediaProcessingTimeout] if the check would come after the deadline
+      # @example Wait before checking the status of media again
+      #   Uploader::Utils.wait_to_check(status, deadline: Uploader::Utils.seconds_from_now(600), timeout: 600)
+      def wait_to_check(status, deadline:, timeout:)
+        wait = [status.check_after_secs.to_i, MIN_CHECK_AFTER_SECS].max
+        raise MediaProcessingTimeout.new(status:, timeout:) if seconds_from_now(wait) > deadline
+
+        sleep wait
+      end
 
       # The time on the monotonic clock some seconds from now, which keeps a deadline
       #

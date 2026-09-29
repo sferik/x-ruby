@@ -83,6 +83,7 @@ module X
       NO_METADATA: String
       NOT_MEDIA: String
       NOT_MEDIA_KEY: String
+      MIN_CHECK_AFTER_SECS: Integer
       MEDIA_KEY: Regexp
 
       def extension: (path file_path) -> String
@@ -96,6 +97,7 @@ module X
       def max_retries_of: (_Client client) -> Integer
       def processed!: (UploadedMedia status) -> UploadedMedia
       def seconds_from_now: (Float | Integer seconds) -> Float
+      def wait_to_check: (UploadedMedia status, deadline: Float, timeout: Float | Integer) -> void
     end
 
     module Multipart
@@ -140,7 +142,6 @@ module X
       MIME_TYPE_MAP: Hash[String, String]
       VIDEO_MIME_TYPES: Array[String]
       SUBTITLES_MIME_TYPES: Array[String]
-      MIN_CHECK_AFTER_SECS: Integer
       STATUS_COMMAND: String
       VIDEO_CATEGORIES: Array[String]
       CHUNKED_CATEGORIES: Array[String]

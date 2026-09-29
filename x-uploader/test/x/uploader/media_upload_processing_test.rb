@@ -35,7 +35,7 @@ module X
     def test_upload_waits_the_processing_timeout_for_an_animated_gif
       stub_pending_upload
       stub_status(state: "in_progress", check_after_secs: 5)
-      error = Uploader::MediaUpload.stub(:sleep, nil) do
+      error = Uploader.const_get(:Utils).stub(:sleep, nil) do
         assert_raises(MediaProcessingTimeout) { Uploader::MediaUpload.upload(ANIMATED_GIF, client: @client, processing_timeout: 4) }
       end
 

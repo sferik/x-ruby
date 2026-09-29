@@ -76,7 +76,7 @@ module X
         assert_raises(MediaProcessingTimeout) { Uploader::MediaUpload.upload("test/sample_files/sample.mp4", client: @client) }
       end
 
-      assert_equal [300, 300], waits
+      assert_equal [1, 300], waits
     end
 
     private

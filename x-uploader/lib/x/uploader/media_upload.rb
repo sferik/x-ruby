@@ -63,8 +63,6 @@ module X
       DEFAULT_PROCESSING_TIMEOUT = 600
       # Default number of chunks uploaded at once
       DEFAULT_CONCURRENCY = 4
-      # Fewest seconds to wait between checks, for a status that asks for no wait
-      MIN_CHECK_AFTER_SECS = 1
       # The command that asks the upload endpoint how far the processing of media has got
       STATUS_COMMAND = "STATUS"
       # Media categories that are uploaded in chunks and processed after the upload
@@ -97,7 +95,7 @@ module X
       }.freeze
       private_constant :MIME_TYPES, :BMP_MIME_TYPE, :GIF_MIME_TYPE, :JPEG_MIME_TYPE, :PJPEG_MIME_TYPE, :PNG_MIME_TYPE,
         :TIFF_MIME_TYPE, :WEBP_MIME_TYPE, :SUBRIP_MIME_TYPE, :WEBVTT_MIME_TYPE, :MPEG_TS_MIME_TYPE, :MP4_MIME_TYPE,
-        :QUICKTIME_MIME_TYPE, :WEBM_MIME_TYPE, :MIME_TYPE_MAP, :VIDEO_MIME_TYPES, :SUBTITLES_MIME_TYPES, :MIN_CHECK_AFTER_SECS,
+        :QUICKTIME_MIME_TYPE, :WEBM_MIME_TYPE, :MIME_TYPE_MAP, :VIDEO_MIME_TYPES, :SUBTITLES_MIME_TYPES,
         :STATUS_COMMAND, :VIDEO_CATEGORIES, :CHUNKED_CATEGORIES, :GIF_CATEGORIES, :CATEGORY_MAP, :CATEGORY_MIME_TYPES,
         :MAX_GIF_BYTES, :UNDOCUMENTED_VIDEOS, :UNDOCUMENTED_MODELS, :BYTES_PER_MB, :MAX_SIMPLE_UPLOAD_BYTES
 
@@ -235,7 +233,9 @@ module X
 
       # Wait for media processing to complete
       #
-      # It checks the status of the media at once, and between checks waits as long as X asks, and at least a second.
+      # Before each check it waits as long as X asked, and at least a second: media an upload returned, which says
+      # how long to wait before the first check, is not checked until then, and media given as its identifier, or as
+      # media that says nothing of its processing, is checked at once.
       #
       # The processing timeout is a deadline, the seconds from when it is called, measured on the monotonic clock, so
       # that it counts the time each check takes, with any wait for a rate limit and any retry the client makes, as
@@ -263,14 +263,13 @@ module X
       def await_processing(media, client:, processing_timeout: DEFAULT_PROCESSING_TIMEOUT)
         Validator.validate_processing_timeout!(processing_timeout)
         deadline, media_id = Utils.seconds_from_now(processing_timeout), Utils.media_id(media)
+        pending = media if UploadedMedia === media && media.processing?
         loop do
+          Utils.wait_to_check(pending, deadline:, timeout: processing_timeout) if pending
           status = UploadedMedia.new(Utils.media_data(client.get("media/upload", params: {command: STATUS_COMMAND, media_id:}, **JSON_CLASSES), "of the status check"))
           return status unless status.processing?
 
-          wait = [status.check_after_secs.to_i, MIN_CHECK_AFTER_SECS].max
-          raise MediaProcessingTimeout.new(status:, timeout: processing_timeout) if Utils.seconds_from_now(wait) > deadline
-
-          sleep wait
+          pending = status
         end
       end
 
