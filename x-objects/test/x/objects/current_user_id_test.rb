@@ -34,13 +34,46 @@ module X
       end
     end
 
-    def test_the_user_is_kept_apart_from_a_current_user_of_the_class_that_includes_the_api
+    # A client whose credentials can be replaced, as those of X::Client are when it is given new ones
+    class ReplaceableClient < FakeClient
+      attr_accessor :authenticator
+    end
+
+    def test_the_identifier_is_kept_apart_from_a_current_user_id_of_the_class_that_includes_the_api
       client = FakeClient.new
-      client.instance_variable_set(:@current_user, :the_application_user)
+      client.instance_variable_set(:@current_user_id, :the_application_user)
       client.stub(:get, "users/me", {"data" => {"id" => "9"}})
 
-      assert_equal 9, client.current_user!.id
-      assert_equal :the_application_user, client.instance_variable_get(:@current_user)
+      assert_equal 9, client.current_user_id
+      assert_equal :the_application_user, client.instance_variable_get(:@current_user_id)
+    end
+
+    def test_a_lookup_of_the_user_spares_current_user_id_a_request
+      [:current_user, :current_user!].each do |lookup|
+        client = FakeClient.new.stub(:get, "users/me", {"data" => {"id" => "9"}})
+        client.public_send(lookup)
+
+        assert_equal 9, client.current_user_id
+        assert_equal ["users/me"], client.paths
+      end
+    end
+
+    def test_a_client_given_other_credentials_looks_the_user_up_again
+      client = ReplaceableClient.new.stub(:get, "users/me", {"data" => {"id" => "9"}})
+      client.authenticator = AnonymousAuthenticator.new("first")
+      client.current_user_id
+      client.authenticator = AnonymousAuthenticator.new("second")
+      client.stub(:get, "users/me", {"data" => {"id" => "10"}})
+
+      assert_equal 10, client.current_user_id
+      assert_equal ["users/me", "users/me"], client.paths
+    end
+
+    def test_a_frozen_client_looks_the_user_up_each_time
+      client = FakeClient.new.stub(:get, "users/me", {"data" => {"id" => "9"}}).freeze
+
+      assert_equal [9, 9], [client.current_user_id, client.current_user_id]
+      assert_equal ["users/me", "users/me"], client.paths
     end
 
     def test_credentials_that_name_a_user_need_no_request

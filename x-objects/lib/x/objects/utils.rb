@@ -181,6 +181,31 @@ module X
         authenticator.user_id if authenticator.respond_to?(:user_id)
       end
 
+      # The identifier of the user a lookup found for a client's credentials
+      #
+      # It is kept on the client in an instance variable named for this gem, since any class can include
+      # X::Objects::API, and one named @current_user_id, as an application often names its own, would be overwritten.
+      #
+      # @api private
+      # @param client [Object] the client
+      # @return [Integer, nil] the identifier, or nil if none was found for the authenticator the client holds
+      def remembered_user_id(client)
+        owner, id = client.instance_variable_get(:@x_objects_current_user_id)
+        id if owner.equal?(authenticator_of(client))
+      end
+
+      # Keep the identifier of the authenticated user, with the authenticator
+      #
+      # A frozen client keeps nothing.
+      #
+      # @api private
+      # @param client [Object] the client
+      # @param id [Integer] the identifier
+      # @return [void]
+      def remember_user_id(client, id)
+        client.instance_variable_set(:@x_objects_current_user_id, [authenticator_of(client), id]) unless client.frozen?
+      end
+
       # The authenticator of a client, which is replaced whenever its credentials change
       #
       # @api private

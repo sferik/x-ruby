@@ -160,38 +160,50 @@ module X
             User.find_all_by_id(ids, client: self, concurrency:, **params, &)
           end
 
-          # The authenticated user, fetched once per client and credentials
+          # Look up the authenticated user
           #
-          # A client whose credentials change authenticates as someone else, so a client that has an authenticator
-          # fetches the user again once the authenticator is replaced. The user is kept in an instance variable named
-          # for this gem, since any class can include X::Objects::API, and one named @current_user, as an application
-          # often names its own, would be overwritten.
+          # Each call looks the user up, as X::User.current does, so its counts and profile are as they are now. Keep
+          # the user it returns to read them again without a request.
           #
           # @api public
+          # @param params [Hash] query parameters merged over the default parameters
+          # @return [User, nil] the authenticated user, or nil if the API returns none
+          # @yieldparam problem [Problem] each problem the API reported
+          # @example Print the name of the authenticated user
+          #   puts client.current_user&.name
+          def current_user(**params, &)
+            User.current(client: self, **params, &)&.tap { |user| Utils.remember_user_id(self, user.id) }
+          end
+
+          # Look up the authenticated user, who must be found
+          #
+          # Each call looks the user up, as X::User.current! does, so its counts and profile are as they are now. Keep
+          # the user it returns to read them again without a request.
+          #
+          # @api public
+          # @param params [Hash] query parameters merged over the default parameters
           # @return [User] the authenticated user
           # @raise [MissingResource] if the API returns no user
           # @example Print the home timeline of the authenticated user
           #   client.current_user!.home_timeline.each { |post| puts post.text }
-          def current_user!
-            authenticator = Utils.authenticator_of(self)
-            owner, user = @x_objects_current_user
-            return user if user && owner.equal?(authenticator)
-
-            user = User.current!(client: self)
-            @x_objects_current_user = [authenticator, user]
-            user
+          def current_user!(**params)
+            User.current!(client: self, **params).tap { |user| Utils.remember_user_id(self, user.id) }
           end
 
           # The identifier of the authenticated user, from an OAuth 1.0a token if possible
           #
           # An OAuth 1.0a access token begins with the identifier of its user, so a client that holds one needs no
-          # lookup. Any other client looks the user up once, as current_user! does.
+          # lookup. Any other client looks the user up the first time, unless current_user or current_user! already
+          # has, and keeps the identifier, which never changes, for as long as it holds the same authenticator, since
+          # a client whose credentials change authenticates as someone else. A frozen client keeps nothing, and looks
+          # the user up each time.
           #
           # @api public
           # @return [Integer] the identifier
+          # @raise [MissingResource] if the user is looked up and the API returns none
           # @example Get the identifier of the authenticated user
           #   client.current_user_id # => 7505382
-          def current_user_id = Utils.authenticated_user_id(self) || current_user!.id
+          def current_user_id = Utils.authenticated_user_id(self) || Utils.remembered_user_id(self) || current_user!.id
 
           # Search users
           #

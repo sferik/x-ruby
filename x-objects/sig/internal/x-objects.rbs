@@ -55,6 +55,8 @@ module X
       def authenticated_user_id: (untyped client) -> Integer?
       def app_client: (untyped client) -> untyped
       def space_client: (untyped client) -> untyped
+      def remembered_user_id: (untyped client) -> Integer?
+      def remember_user_id: (untyped client, Integer id) -> void
       def authenticator_of: (untyped client) -> untyped
       def id?: (untyped value) -> bool
       def time: (String? value) -> Time?
@@ -363,7 +365,7 @@ module X
     end
 
     interface _CurrentUser
-      def current_user!: () -> User
+      def current_user!: (**untyped params) -> User
       def current_user_id: () -> Integer
     end
 
@@ -381,8 +383,6 @@ module X
         include Lookups::DirectMessages
 
         module Users : _Client
-          @x_objects_current_user: [untyped, User]?
-
           def find_user: (id | String id_or_username, **untyped params) ?{ (Problem problem) -> void } -> User?
           def find_user!: (id | String id_or_username, **untyped params) -> User
           def find_user_by_username: (String username, **untyped params) ?{ (Problem problem) -> void } -> User?
@@ -392,7 +392,8 @@ module X
           def find_user_by_id: (id id, **untyped params) ?{ (Problem problem) -> void } -> User?
           def find_user_by_id!: (id id, **untyped params) -> User
           def find_all_users_by_id: (Array[id] ids, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[User]
-          def current_user!: () -> User
+          def current_user: (**untyped params) ?{ (Problem problem) -> void } -> User?
+          def current_user!: (**untyped params) -> User
           def current_user_id: () -> Integer
           def search_users: (String query, **untyped params) -> Cursor[User]
         end
