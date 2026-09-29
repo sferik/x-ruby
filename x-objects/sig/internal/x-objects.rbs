@@ -120,6 +120,7 @@ module X
       @cursor: Cursor[untyped]
       @monitor: Monitor
       @pages: Array[Page[untyped]?]
+      @prefetching: Set[Integer]
 
       def initialize: (Cursor[untyped] cursor) -> void
       def at: (Integer index) -> Page[untyped]?
@@ -137,7 +138,9 @@ module X
       def params_for: (Integer index) -> query?
       def next_token: (Integer index) -> String?
       def sized: (query params, Integer wanted) -> query
-      def prefetch: (Integer index) -> Thread
+      def prefetch: (Integer index) -> Thread?
+      def claim: (Integer index) -> bool
+      def let_go: (Integer index) -> void
     end
 
     class Batch

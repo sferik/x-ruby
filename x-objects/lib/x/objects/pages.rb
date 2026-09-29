@@ -26,6 +26,7 @@ module X
         @cursor = cursor
         @monitor = Monitor.new
         @pages = []
+        @prefetching = Set.new
         freeze
       end
 
@@ -206,15 +207,39 @@ module X
       end
 
       # Fetch a page in a background thread; errors resurface when the page is requested
+      #
+      # A page already fetched, or being fetched by another thread, starts no thread, so reading the pages a cursor
+      # holds, or reading one page again, starts none.
+      #
       # @api private
       # @param index [Integer] the zero-based page index
-      # @return [Thread] the background thread
+      # @return [Thread, nil] the background thread, or nil if the page needs none
       def prefetch(index)
+        return unless claim(index)
+
         Thread.new do
           cached(index)
         rescue
           nil
+        ensure
+          let_go(index)
         end
+      end
+
+      # Claim a page for a background thread to fetch
+      # @api private
+      # @param index [Integer] the zero-based page index
+      # @return [Boolean] true if the page was claimed, which no other thread fetches until it is let go
+      def claim(index)
+        @monitor.synchronize { !@pages.at(index) && !@prefetching.add?(index).nil? }
+      end
+
+      # Let go of a page a background thread claimed, once it is done
+      # @api private
+      # @param index [Integer] the zero-based page index
+      # @return [void]
+      def let_go(index)
+        @monitor.synchronize { @prefetching.delete(index) }
       end
     end
   end
