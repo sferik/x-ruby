@@ -46,7 +46,7 @@ module X
       in {**attributes} then attributes
       end
 
-      assert_equal({id: 7505382, username: "sferik", created_at: Time.utc(2007, 7, 16, 12, 59, 1), connection_status: []}, matched.compact)
+      assert_equal({id: 7505382, username: "sferik", created_at: Time.utc(2007, 7, 16, 12, 59, 1), affiliated_user_ids: [], connection_status: []}, matched.compact)
       assert_equal User.__send__(:attribute_names).size, matched.size
     end
 

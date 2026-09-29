@@ -15,12 +15,16 @@ module X
 
     # The user fields the object layer requests: every one that does not depend on who is authenticated, since a
     # field that does, such as connection_status, would make every request fail for a client that cannot read it;
-    # the identifiers of referenced posts come with their expansions
-    FIELDS = %w[affiliation created_at description entities id is_identity_verified location name parody
-      profile_banner_url profile_image_url protected public_metrics subscriber_count subscription_type url username
-      verified verified_followers_count verified_type withheld].freeze
-    # Every expansion available on user endpoints that refers to a modeled resource
-    EXPANSIONS = %w[most_recent_post_id pinned_post_id].freeze
+    # the identifiers of referenced posts, and the affiliation, come with their expansions
+    FIELDS = %w[created_at description entities id is_identity_verified location name parody profile_banner_url
+      profile_image_url protected public_metrics subscriber_count subscription_type url username verified
+      verified_followers_count verified_type withheld].freeze
+    # Every expansion available on user endpoints
+    #
+    # The API gives a user its affiliation when a request asks for the affiliation expansion, which it takes only
+    # at the endpoints whose data is users, so the users a post, a list, a space, or a direct message includes hold
+    # none, and hydrate looks them up with it.
+    EXPANSIONS = %w[affiliation most_recent_post_id pinned_post_id].freeze
     # Maximum number of followers or followed users per page
     MAX_FOLLOW_RESULTS = 1000
     # Maximum number of posts or lists per page
@@ -221,11 +225,23 @@ module X
 
     # @!attribute [r] affiliation
     #   The organization the account is affiliated with, with its badge
+    #
+    #   The API gives it for the affiliation expansion, which only the endpoints whose data is users take, so a user
+    #   a post, a list, a space, or a direct message includes holds none until it is hydrated.
+    #
     #   @api public
-    #   @return [Hash, nil] the affiliation
+    #   @return [Hash, nil] the affiliation, with its description, url, badge_url, and user_id
     #   @example Get the affiliated organization
     #     user.affiliation&.fetch("description")
     attribute :affiliation
+
+    # @!attribute [r] affiliated_user_ids
+    #   The identifiers of the accounts this account is affiliated with
+    #   @api public
+    #   @return [Array<Integer>] the identifiers, empty if there are none
+    #   @example Get the identifiers of the affiliated accounts
+    #     user.affiliated_user_ids
+    attribute :affiliated_user_ids, :integers, key: %w[affiliation user_id]
 
     # @!attribute [r] verified_followers_count
     #   The number of verified followers
@@ -354,6 +370,14 @@ module X
     #   @example Get the most recent post
     #     user.most_recent_post
     reference :most_recent_post, :Post, key: %w[most_recent_post_id], tweet_key: %w[most_recent_tweet_id]
+
+    # @!method affiliated_users
+    #   The affiliated accounts, from the includes or as stubs holding their identifiers
+    #   @api public
+    #   @return [Array<User>] the affiliated users
+    #   @example Get the username of the affiliated organization
+    #     user.affiliated_users.first&.hydrate&.username
+    references :affiliated_users, :User, key: %w[affiliation user_id]
 
     attribute_alias :tweet_count, :post_count
     attribute_alias :pinned_tweet_id, :pinned_post_id

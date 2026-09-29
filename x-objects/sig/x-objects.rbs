@@ -389,6 +389,7 @@ module X
     def identity_verified?: () -> bool
     def subscription_type: () -> String?
     def affiliation: () -> Hash[String, untyped]?
+    def affiliated_user_ids: () -> Array[Integer]
     def verified_followers_count: () -> Integer?
     def subscriber_count: () -> Integer?
     def connection_status: () -> Array[String]
@@ -410,6 +411,7 @@ module X
     def pinned_tweet: () -> Post?
     def most_recent_post: () -> Post?
     def most_recent_tweet: () -> Post?
+    def affiliated_users: () -> Array[User]
     def permalink: () -> String
     def uri: () -> URI::Generic
     def followers: (**untyped params) -> Cursor[User]
