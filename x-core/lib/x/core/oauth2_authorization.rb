@@ -81,7 +81,8 @@ module X
     # Initialize an authorization
     #
     # A new state and code verifier are generated unless they are given. The authorization code is exchanged for
-    # tokens with the proxy, timeouts, and debug output given, which a client built with {#client} is given too.
+    # tokens with the proxy, timeouts, keep-alive timeout, and debug output given, which a client built with {#client}
+    # is given too.
     #
     # @api public
     # @param client_id [String] the OAuth 2.0 client ID of the app
@@ -94,6 +95,8 @@ module X
     # @param open_timeout [Integer, Float, nil] the timeout for opening connections in seconds, or nil for none
     # @param read_timeout [Integer, Float, nil] the timeout for reading responses in seconds, or nil for none
     # @param write_timeout [Integer, Float, nil] the timeout for writing requests in seconds, or nil for none
+    # @param keep_alive_timeout [Integer, Float] the time to keep a connection open for the next request to the same
+    #   host, in seconds, which a proxy that closes idle connections sooner than X does may need lowered
     # @param debug_output [IO, #<<, nil] the IO object for debug output, or anything else that takes a String with <<,
     #   such as a StringIO. It is written every request and response whole, in the clear: the Authorization header,
     #   the client secret a token request sends, and the tokens a token response holds. Send it to a file you
@@ -101,12 +104,14 @@ module X
     # @return [OAuth2Authorization] a new authorization
     # @raise [ArgumentError] if the state is nil or empty, which would accept the redirect of any authorization
     # @raise [ArgumentError] if the code verifier is not 43 to 128 unreserved characters
-    # @raise [ArgumentError] if a timeout is neither a finite number of seconds of at least 0 nor nil
+    # @raise [ArgumentError] if a timeout is neither a finite number of seconds of at least 0 nor nil, or the
+    #   keep-alive timeout is not a finite number of seconds of at least 0
     # @example Start an authorization
     #   authorization = X::OAuth2Authorization.new(client_id: "id", redirect_uri: "https://example.com/callback")
     def initialize(client_id:, redirect_uri:, client_secret: nil, scopes: DEFAULT_SCOPES, state: SecureRandom.urlsafe_base64(STATE_BYTES),
       code_verifier: SimpleOAuth::OAuth2::PKCE.generate.verifier, proxy_url: nil, open_timeout: Client::DEFAULT_OPEN_TIMEOUT,
-      read_timeout: Client::DEFAULT_READ_TIMEOUT, write_timeout: Client::DEFAULT_WRITE_TIMEOUT, debug_output: nil)
+      read_timeout: Client::DEFAULT_READ_TIMEOUT, write_timeout: Client::DEFAULT_WRITE_TIMEOUT,
+      keep_alive_timeout: Client::DEFAULT_KEEP_ALIVE_TIMEOUT, debug_output: nil)
       raise ArgumentError, "state must not be nil or empty; pass the state stored when the user was sent to X" if state.to_s.empty?
 
       @client_id = client_id
@@ -116,7 +121,7 @@ module X
       @state = state
       @pkce = SimpleOAuth::OAuth2::PKCE.new(verifier: code_verifier)
       @code_verifier = code_verifier
-      @settings = {proxy_url:, open_timeout:, read_timeout:, write_timeout:, debug_output:}
+      @settings = {proxy_url:, open_timeout:, read_timeout:, write_timeout:, keep_alive_timeout:, debug_output:}
       @connection = Core::Connection.new(**@settings)
     end
 
@@ -171,7 +176,7 @@ module X
     # @api public
     # @param callback [String, Hash] the redirect back from X: its URL, its query string, or its query parameters
     # @param options [Hash] other options of Client#initialize, such as on_token_refresh, which it is built with
-    #   beside the proxy, timeouts, and debug output of the authorization, and in place of them
+    #   beside the proxy, timeouts, keep-alive timeout, and debug output of the authorization, and in place of them
     # @return [Client] a client with the user's credentials
     # @raise [ArgumentError] if an option is one Client#initialize refuses, or a credential or an authenticator,
     #   which the client is given by the exchange of the code

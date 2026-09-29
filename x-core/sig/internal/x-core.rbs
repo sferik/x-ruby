@@ -468,7 +468,7 @@ module X
     CREDENTIALS_GIVEN_MESSAGE: String
 
     @pkce: SimpleOAuth::OAuth2::PKCE
-    @settings: {proxy_url: (URI::Generic | String)?, open_timeout: (Float | Integer)?, read_timeout: (Float | Integer)?, write_timeout: (Float | Integer)?, debug_output: _DebugOutput?}
+    @settings: {proxy_url: (URI::Generic | String)?, open_timeout: (Float | Integer)?, read_timeout: (Float | Integer)?, write_timeout: (Float | Integer)?, keep_alive_timeout: Float | Integer, debug_output: _DebugOutput?}
 
     private
     attr_reader client_secret: String?

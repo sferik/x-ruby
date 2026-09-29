@@ -59,10 +59,10 @@ module X
     def test_the_connection_is_built_with_the_settings_given
       output = StringIO.new
       connection = authorization(proxy_url: "http://proxy.example.com:8080", open_timeout: 1, read_timeout: 2, write_timeout: 3,
-        debug_output: output).send(:connection)
+        keep_alive_timeout: 4, debug_output: output).send(:connection)
 
-      assert_equal ["http://proxy.example.com:8080", 1, 2, 3, output],
-        [connection.send(:proxy_url), connection.open_timeout, connection.read_timeout, connection.write_timeout, connection.debug_output]
+      assert_equal ["http://proxy.example.com:8080", 1, 2, 3, 4, output],
+        [connection.send(:proxy_url), connection.open_timeout, connection.read_timeout, connection.write_timeout, connection.keep_alive_timeout, connection.debug_output]
     end
 
     def test_the_connection_is_private
@@ -83,8 +83,8 @@ module X
       assert_equal OAuth2Authorization::DEFAULT_SCOPES, authorization.scopes
       connection = authorization.send(:connection)
 
-      assert_equal [nil, Client::DEFAULT_OPEN_TIMEOUT, Client::DEFAULT_READ_TIMEOUT, Client::DEFAULT_WRITE_TIMEOUT, nil],
-        [connection.send(:proxy_url), connection.open_timeout, connection.read_timeout, connection.write_timeout, connection.debug_output]
+      assert_equal [nil, Client::DEFAULT_OPEN_TIMEOUT, Client::DEFAULT_READ_TIMEOUT, Client::DEFAULT_WRITE_TIMEOUT, Client::DEFAULT_KEEP_ALIVE_TIMEOUT, nil],
+        [connection.send(:proxy_url), connection.open_timeout, connection.read_timeout, connection.write_timeout, connection.keep_alive_timeout, connection.debug_output]
     end
 
     def test_a_nil_state_is_refused
@@ -250,9 +250,10 @@ module X
 
     def test_the_client_reaches_the_api_as_the_authorization_did
       stub_token
-      client = authorization(proxy_url: "http://proxy.example.com:8080", read_timeout: 2).client("state=STATE&code=CODE")
+      client = authorization(proxy_url: "http://proxy.example.com:8080", read_timeout: 2, keep_alive_timeout: 4).client("state=STATE&code=CODE")
 
-      assert_equal ["http://proxy.example.com:8080", 2, Client::DEFAULT_OPEN_TIMEOUT], [client.send(:proxy_url), client.read_timeout, client.open_timeout]
+      assert_equal ["http://proxy.example.com:8080", 2, Client::DEFAULT_OPEN_TIMEOUT, 4],
+        [client.send(:proxy_url), client.read_timeout, client.open_timeout, client.keep_alive_timeout]
     end
 
     def test_the_options_of_the_client_replace_the_settings_of_the_authorization
