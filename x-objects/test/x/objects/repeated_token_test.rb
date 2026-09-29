@@ -1,0 +1,62 @@
+# frozen_string_literal: true
+
+require_relative "../../test_helper"
+
+module X
+  class RepeatedTokenTest < Minitest::Test
+    cover Cursor
+    cover Objects::Pages
+    cover Objects::PostCounts
+
+    # An API that names the tokens of its pages in turn, from none for the first page
+    def paging(path, tokens)
+      FakeClient.new.stub(:get, path, lambda { |query, _|
+        token = query["pagination_token"] || query["next_token"]
+        index = token ? tokens.index(token).succ : 0
+        {"data" => [{"id" => index.succ.to_s}], "meta" => {"next_token" => tokens[index]}.compact}
+      })
+    end
+
+    def test_a_cursor_stops_at_a_page_that_names_its_own_token_as_the_next
+      client = paging("users/1/followers", %w[a a])
+      error = assert_raises(InvalidAttribute) { User.from_id(1, client:).followers.to_a }
+
+      assert_equal 'Page 1 of users/1/followers names the next_token "a", which fetched an earlier page', error.message
+      assert_equal [nil, "a"], client.queries.map { |query| query["pagination_token"] }
+    end
+
+    def test_a_cursor_stops_at_a_page_that_names_the_token_of_any_earlier_page
+      client = paging("users/1/followers", %w[a b a])
+      error = assert_raises(InvalidAttribute) { User.from_id(1, client:).followers.each_page.to_a }
+
+      assert_equal 'Page 2 of users/1/followers names the next_token "a", which fetched an earlier page', error.message
+      assert_equal 3, client.requests.size
+    end
+
+    def test_first_stops_at_a_repeated_token_as_well
+      client = paging("users/1/followers", %w[a a])
+
+      assert_raises(InvalidAttribute) { User.from_id(1, client:).followers.first(3) }
+      assert_equal 2, client.requests.size
+    end
+
+    def test_a_cursor_whose_tokens_differ_reads_every_page
+      assert_equal [1, 2, 3], User.from_id(1, client: paging("users/1/followers", %w[a b])).followers.map(&:id)
+    end
+
+    def test_a_count_stops_at_a_page_that_names_the_token_of_an_earlier_page
+      client = paging("tweets/counts/recent", %w[a b b])
+      error = assert_raises(InvalidAttribute) { Post.count("ruby", client:) }
+
+      assert_equal 'The counts of X::Post name the next_token "b", which fetched an earlier page', error.message
+      assert_equal [nil, "a", "b"], client.queries.map { |query| query["next_token"] }
+    end
+
+    def test_a_count_whose_tokens_differ_reads_every_page
+      client = paging("tweets/counts/recent", %w[a b])
+      Post.count("ruby", client:)
+
+      assert_equal [nil, "a", "b"], client.queries.map { |query| query["next_token"] }
+    end
+  end
+end

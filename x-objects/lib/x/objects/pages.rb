@@ -3,6 +3,7 @@
 require "monitor"
 require_relative "batch"
 require_relative "batch_finders"
+require_relative "errors"
 require_relative "page"
 require "x/core/problem"
 require_relative "utils"
@@ -12,6 +13,10 @@ module X
     # The pages of a cursor, fetched when they are asked for and kept
     # @api private
     class Pages
+      # The message of the error raised for a page whose next token fetched an earlier page
+      REPEATED_TOKEN = "Page %<index>d of %<path>s names the next_token %<token>p, which fetched an earlier page"
+      private_constant :REPEATED_TOKEN
+
       # Initialize the pages of a cursor
       #
       # @api private
@@ -102,6 +107,7 @@ module X
       # @param index [Integer] the zero-based page index
       # @param wanted [Integer, nil] the number of resources wanted from the page, or nil for the page size
       # @return [Page, nil] the page or nil if the previous page was the last
+      # @raise [InvalidAttribute] if the previous page names the token of a page before it as the next
       def fetch(index, wanted = nil)
         params = params_for(index)
         return if params.nil?
@@ -157,12 +163,29 @@ module X
       # @api private
       # @param index [Integer] the zero-based page index
       # @return [Hash{String => Object}, nil] the parameters or nil if the previous page was the last
+      # @raise [InvalidAttribute] if the previous page names the token of a page before it as the next
       def params_for(index)
         return @cursor.params if index.zero?
 
-        previous = @pages.fetch(index - 1) #: Page
-        token = previous.next_token
-        @cursor.params.merge(@cursor.token_param => token) unless token.nil?
+        token = next_token(index - 1) or return
+        @cursor.params.merge(@cursor.token_param => token)
+      end
+
+      # The token of the page after a page, which fetched no page before it
+      #
+      # A page that names the token of a page before it as the next would have the pages fetched again for good, and
+      # the API bill each of them, so it raises instead.
+      #
+      # @api private
+      # @param index [Integer] the zero-based index of the page, which is fetched
+      # @return [String, nil] the token, or nil if the page is the last
+      # @raise [InvalidAttribute] if the page names the token of a page before it as the next
+      def next_token(index)
+        pages = fetched
+        token = pages.fetch(index).next_token
+        raise InvalidAttribute, format(REPEATED_TOKEN, index:, path: @cursor.path, token:) if pages.take(index).map(&:next_token).include?(token)
+
+        token
       end
 
       # The query parameters of a page, asking for no more than the resources wanted

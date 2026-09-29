@@ -81,17 +81,36 @@ module X
       # @param client [Object] the client used to make the requests
       # @param params [Hash] query parameters
       # @return [Array<Hash>] the response bodies
-      # @raise [InvalidAttribute] if a response holds a meta that is not an object
+      # @raise [InvalidAttribute] if a response holds a meta that is not an object, or names the token of a page
+      #   before it as the next
       def pages(path, query, client:, **params)
         params = {query:, granularity: DEFAULT_GRANULARITY}.merge(params)
         client = Utils.app_client(client)
         bodies = [] #: Array[Hash[String, untyped]]
         loop do
           bodies << client.get(Utils.path(path, params), **Utils::JSON_CLASSES).to_h
-          token = Shape.dig("The next page of the counts of #{self}", bodies.last, %w[meta next_token]) or break
+          token = next_token(bodies) or break
           params = params.merge(next_token: token)
         end
         bodies
+      end
+
+      # The token of the page of counts after the last, which fetched no page before it
+      #
+      # A page that names the token of a page before it as the next would have the pages requested again for good,
+      # and the API bill each request, so it raises instead.
+      #
+      # @api private
+      # @param bodies [Array<Hash>] the response bodies so far
+      # @return [String, nil] the token, or nil if the last page is the last of the counts
+      # @raise [InvalidAttribute] if the last response holds a meta that is not an object, or names the token of a
+      #   page before it as the next
+      def next_token(bodies)
+        tokens = bodies.map { |body| Shape.dig("The next page of the counts of #{self}", body, %w[meta next_token]) }
+        token = tokens.last
+        raise InvalidAttribute, "The counts of #{self} name the next_token #{token.inspect}, which fetched an earlier page" if tokens.count(token) > 1
+
+        token
       end
 
       # The total count of every page, which the API names for tweets or for posts

@@ -95,6 +95,8 @@ module X
     end
 
     class Pages
+      REPEATED_TOKEN: String
+
       @cursor: Cursor[untyped]
       @monitor: Monitor
       @pages: Array[Page[untyped]?]
@@ -113,6 +115,7 @@ module X
       def stubs_from: (Array[Resource] resources) -> Array[Resource]
       def id_only?: () -> bool
       def params_for: (Integer index) -> query?
+      def next_token: (Integer index) -> String?
       def sized: (query params, Integer wanted) -> query
       def prefetch: (Integer index) -> Thread
     end
@@ -339,6 +342,7 @@ module X
 
       private
       def pages: (String path, String query, client: _Client, **untyped params) -> Array[Hash[String, untyped]]
+      def next_token: (Array[Hash[String, untyped]] bodies) -> untyped
       def total: (Array[Hash[String, untyped]] bodies) -> Integer
       def page_total: (Integer | String | nil value) -> Integer
       def periods: (Array[Hash[String, untyped]] bodies) -> Hash[Time, Integer]
