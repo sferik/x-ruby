@@ -28,7 +28,10 @@ module X
       # The message of the error raised for the contents of media given where its path belongs
       NOT_A_PATH = "media must be a path to the media, or an IO that reads it, such as a StringIO, not the contents " \
         "of the media: a String that holds a NUL byte or a line break names no file"
-      private_constant :SNIFF_BYTES, :CONTENT_BYTES, :NOT_A_PATH
+      # The paths Ruby gives the standard streams, which name no file, even when a stream reads one, as $stdin
+      # redirected from a file does
+      STREAM_PATHS = %w[<STDIN> <STDOUT> <STDERR>].freeze
+      private_constant :SNIFF_BYTES, :CONTENT_BYTES, :NOT_A_PATH, :STREAM_PATHS
 
       # The source of media given as a path or as an IO
       #
@@ -58,10 +61,10 @@ module X
       # The source of media given as a path that is not a String, or as an IO
       #
       # A path, such as a Pathname, which cannot seek, is read from the file it names, as is a File or a Tempfile that
-      # was closed, which can no longer be read through, and an IO open on a file, which can, through that IO. Any
-      # other IO is read to its end, such as a StringIO, or a pipe, whose path is nil, or $stdin, whose path is
-      # "<STDIN>" whether it reads a pipe, a terminal, or a file: an IO whose path names something that is not a file
-      # or a directory, such as a pipe, cannot be read by position, as a file is.
+      # was closed, which can no longer be read through, and an IO open on a file, which can, through that IO, as
+      # $stdin is when it is redirected from a file. Any other IO is read to its end, such as a StringIO, or a pipe,
+      # whose path is nil, or $stdin reading a pipe or a terminal: an IO open on something that is not a file or a
+      # directory, such as a pipe, cannot be read by position, as a file is.
       #
       # @api private
       # @param media [Pathname, IO, StringIO, Object] the path or the IO
@@ -227,8 +230,10 @@ module X
       # Media read through an IO open on a file, a chunk at a time
       #
       # The IO is read by position, from the start of the file, whatever position it holds, and is left at that
-      # position. Seeking flushes what the IO has written, as reading its size does, so that is read with the rest. The file need not be named by the path the IO holds: an unlinked Tempfile is read, as is one
-      # created anonymous, whose path is its directory, and which so names no file.
+      # position. Seeking flushes what the IO has written, as reading its size does, so that is read with the rest.
+      # The file need not be named by the path the IO holds: an unlinked Tempfile is read, as is one created anonymous,
+      # whose path is its directory, and $stdin redirected from a file, whose path is "<STDIN>", neither of which so
+      # names a file.
       #
       # @api private
       class Handle < Source
@@ -241,7 +246,7 @@ module X
         def initialize(io)
           @io = io
           path = File.path(io)
-          @name = path unless File.directory?(path)
+          @name = path unless STREAM_PATHS.include?(path) || File.directory?(path)
           @mutex = Mutex.new
         end
 
@@ -256,9 +261,13 @@ module X
         def readable? = @io.stat.file? && open_for_reading?
 
         # The size of the media in bytes
+        #
+        # A File or a Tempfile reads it with size, which flushes what it has written first, and an IO that answers no
+        # size, as $stdin does, from the file it is open on.
+        #
         # @api private
         # @return [Integer] the size in bytes
-        def size = @io.size
+        def size = @io.respond_to?(:size) ? @io.size : @io.stat.size
 
         # The whole of the media
         # @api private

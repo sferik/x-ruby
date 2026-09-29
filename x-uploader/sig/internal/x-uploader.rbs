@@ -13,6 +13,7 @@ module X
       SNIFF_BYTES: Integer
       CONTENT_BYTES: Regexp
       NOT_A_PATH: String
+      STREAM_PATHS: Array[String]
 
       def self.for: (resolvable media) -> Source
       def self.named_or_read: (untyped media) -> Source

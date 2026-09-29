@@ -39,6 +39,15 @@ module X
       assert_requested(:post, PROFILE_BANNER_URL) { |request| request.body.b.include?(File.binread("test/sample_files/sample.png")) }
     end
 
+    def test_a_profile_image_read_from_stdin_redirected_from_a_file_uploads_as_the_image_its_signature_names
+      File.open("test/sample_files/sample.png", "rb") do |file|
+        stdin = IO.new(file.fileno, "rb", autoclose: false, path: "<STDIN>")
+
+        assert_equal({"id_str" => "1"}, Uploader::Account.update_profile_image(stdin, client: @client))
+      end
+      assert_requested(:post, PROFILE_IMAGE_URL) { |request| request.body.b.include?(File.binread("test/sample_files/sample.png")) }
+    end
+
     def test_media_held_in_memory_that_is_not_an_image_is_refused
       [File.binread("test/sample_files/sample.webp"), "not an image"].each do |content|
         error = assert_raises(InvalidMediaType) { Uploader::Account.update_profile_banner(StringIO.new(content), client: @client) }
