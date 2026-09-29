@@ -213,6 +213,7 @@ module X
 
       private
       def raise_unless_successful: (response: Net::HTTPResponse, response_parser: ResponseParser, on_body: _BodyHook?, request: Net::HTTPRequest?) -> void
+      def decode_line: (String line, response_parser: ResponseParser, array_class: Class?, object_class: untyped, client: Client?, request: Net::HTTPRequest?) -> untyped
       def tagging_callback_errors: [T] () { () -> T } -> T
       def read_lines: (response: Net::HTTPResponse, decode: ^(String) -> untyped) { (untyped) -> void } -> void
       def process_buffer: (buffer: String, decode: ^(String) -> untyped) { (untyped) -> void } -> void
@@ -538,6 +539,14 @@ module X
     include Core::RequestContext
 
     def initialize: (String message, ?request: Net::HTTPRequest?) -> void
+  end
+
+  class StreamError < Error
+    include Core::RequestContext
+
+    @problems: Array[Problem]
+
+    def initialize: (Array[Problem] problems, ?request: Net::HTTPRequest?) -> void
   end
 
   class TooManyRedirects < Error

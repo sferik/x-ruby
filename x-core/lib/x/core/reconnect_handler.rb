@@ -63,9 +63,10 @@ module X
       #
       # An error raised by the consumer stops the stream, even one that would otherwise reconnect, and reaches the
       # caller, as does any error that is not one a stream reconnects after, such as one raised by the on_response
-      # of the client or by the class an object is parsed into. The stream is run again with while rather than
-      # Kernel#loop, which rescues StopIteration, so that a StopIteration raised from an Enumerator that has run
-      # out, wherever it is raised, reaches the caller too, rather than end the stream without a word.
+      # of the client or by the class an object is parsed into, or the StreamError of a line that holds errors alone.
+      # The stream is run again with while rather than Kernel#loop, which rescues StopIteration, so that a
+      # StopIteration raised from an Enumerator that has run out, wherever it is raised, reaches the caller too,
+      # rather than end the stream without a word.
       #
       # @api private
       # @param consumer [Proc] the block that receives each object

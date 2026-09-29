@@ -32,6 +32,7 @@ module X
   #   ├── X::InvalidResponse           a response that succeeded, whose body is not the JSON it claims
   #   ├── X::AuthorizationError        X refused to issue a token, or the user did not authorize the app
   #   ├── X::TooManyRedirects          a response redirected more times than max_redirects allows
+  #   ├── X::StreamError               a line of a stream held errors and no data for its object_class to build
   #   ├── X::UnsupportedOperation      the API offers no way to do what was asked
   #   ├── X::Objects::Error            the failures of the object layer, from x-objects
   #   │   ├── X::MissingResource               a resource that was asked for does not exist

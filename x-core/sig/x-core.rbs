@@ -159,6 +159,13 @@ module X
   class ServiceUnavailable < ServerError
   end
 
+  class StreamError < Error
+    attr_reader problems: Array[Problem]
+
+    def http_method: () -> Symbol?
+    def uri: () -> URI::Generic?
+  end
+
   class TooManyRedirects < Error
     def http_method: () -> Symbol?
     def uri: () -> URI::Generic?

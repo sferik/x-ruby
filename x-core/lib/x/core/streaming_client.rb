@@ -168,6 +168,8 @@ module X
     # @raise [UnsupportedOperation] if the client authenticates with OAuth 2.0 as a user and holds no credentials of
     #   the app, before the stream is opened
     # @raise [HTTPError] if the response is not successful and the stream may not reconnect
+    # @raise [StreamError] if a line holds errors and no data, and an object_class that responds to from_response
+    #   builds the objects; the stream does not reconnect after it
     # @example Stream filtered posts
     #   streaming_client.stream("tweets/search/stream") { |post| puts post }
     # @example Stop the stream from its block
