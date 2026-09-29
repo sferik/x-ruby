@@ -157,10 +157,12 @@ module X
 
       def initialize: (?Hash[untyped, untyped]? data, ?problems: Array[Problem], ?query: Hash[String, untyped]?) -> void
       def resolve: (singleton(Resource) klass, untyped id, client: _Client? client) -> Resource
+      def problems_about: (Array[untyped] ids) -> Array[Problem]
 
       private
       def build: (singleton(Resource) klass, untyped id, _Client? client) -> Resource
       def fully_requested?: (singleton(Resource) klass) -> bool
+      def about?: (Problem problem, Array[String] ids) -> bool
       def index: (singleton(Resource) klass) -> Hash[untyped, attrs]
     end
 
@@ -170,10 +172,14 @@ module X
 
       @attribute_names: Array[Symbol]?
       @attribute_aliases: Array[Symbol]?
+      @reference_keys: Array[key]?
 
       private
       def attribute_names: () -> Array[Symbol]
       def attribute_aliases: () -> Array[Symbol]
+      def reference_keys: () -> Array[key]
+      def referenced_ids: (Hash[String, untyped] attrs) -> Array[untyped]
+      def ids_at: (Hash[String, untyped] attrs, key path) -> Array[untyped]
       def attribute_alias: (Symbol name, Symbol original) -> void
       def attribute: (Symbol name, ?Symbol type, ?key: key, ?tweet_key: key?) -> void
       def reference: (Symbol name, Symbol klass_name, key: key, ?tweet_key: key?) -> void

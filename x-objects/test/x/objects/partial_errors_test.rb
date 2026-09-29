@@ -16,7 +16,7 @@ module X
       cover X::Objects::UserFinders
       cover X::Page
 
-      PINNED_MISSING = {"title" => "Not Found Error", "detail" => "Could not find tweet with pinned_tweet_id: [9].", "type" => "https://api.x.com/2/problems/resource-not-found", "parameter" => "pinned_tweet_id"}.freeze
+      PINNED_MISSING = {"title" => "Not Found Error", "detail" => "Could not find tweet with pinned_tweet_id: [9].", "type" => "https://api.x.com/2/problems/resource-not-found", "resource_type" => "tweet", "resource_id" => "9", "parameter" => "pinned_tweet_id", "value" => "9"}.freeze
       USER_MISSING = {"title" => "Not Found Error", "detail" => "Could not find user with ids: [5].", "resource_type" => "user", "resource_id" => "5", "parameter" => "ids"}.freeze
 
       def setup
@@ -30,7 +30,7 @@ module X
         user = @client.current_user!
 
         assert_equal [PINNED_MISSING], user.problems.map(&:to_h)
-        assert_same user.problems, user.pinned_post.problems
+        assert_equal user.problems, user.pinned_post.problems
         assert_predicate user.problems, :frozen?
       end
 
@@ -40,10 +40,10 @@ module X
         assert_empty User.resource_from_response({"data" => {"id" => "1"}}, client: @client).problems
       end
 
-      def test_every_resource_of_a_collection_shares_the_problems
-        users = User.collection_from_response({"data" => [{"id" => "1"}, {"id" => "2"}], "errors" => [USER_MISSING]}, client: @client)
+      def test_a_resource_of_a_collection_reports_the_problems_about_it_alone
+        users = User.collection_from_response({"data" => [{"id" => "1"}, {"id" => "2", "pinned_post_id" => "9"}], "errors" => [USER_MISSING, PINNED_MISSING]}, client: @client)
 
-        assert_equal [["Could not find user with ids: [5]."]] * 2, users.map { |user| user.problems.map(&:detail) }
+        assert_equal [[], ["Could not find tweet with pinned_tweet_id: [9]."]], users.map { |user| user.problems.map(&:detail) }
       end
 
       def test_find_yields_the_problems_and_find_bang_explains_itself
@@ -130,6 +130,7 @@ module X
         page = User.from_id(1, client: @client).followers.page(0)
 
         assert_equal ["ids"], page.problems.map(&:parameter)
+        assert_empty page.first.problems
         assert_empty X::Page.new([], {}).problems
         assert_predicate page.problems, :frozen?
       end

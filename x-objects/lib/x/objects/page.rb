@@ -16,6 +16,10 @@ module X
     attr_reader :items
 
     # The problems the response of this page reported
+    #
+    # They are every problem of the response, where each resource of the page reports only those about it, or about
+    # a resource it refers to.
+    #
     # @api public
     # @return [Array<Problem>] the problems
     # @example Collect every problem a cursor's pages reported

@@ -304,13 +304,19 @@ module X
       @hydrated
     end
 
-    # The problems the API reported in the response this resource came from
+    # The problems the API reported about this resource in the response it came from
+    #
+    # A problem is about the resource when the identifier it names, as its resource_id or its value, is the
+    # identifier of the resource or of one the resource refers to directly, such as the author of a post, or the
+    # pinned post of a user, so each post of a page reports that its own author no longer exists, and none reports
+    # it of another. A problem that names no identifier could be about any resource of the response, so every one
+    # of them reports it. The page of a cursor reports every problem of its response, as a finder yields them.
     #
     # @api public
     # @return [Array<Problem>] the problems, such as expansions whose resources no longer exist
     # @example Check whether a user's pinned post still exists
     #   client.current_user!.problems.select(&:not_found?)
-    def problems = includes.problems
+    def problems = includes.problems_about([id, *self.class.__send__(:referenced_ids, attrs)])
 
     # Check whether the resource holds nothing but its identifier
     #

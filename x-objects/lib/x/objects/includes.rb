@@ -34,6 +34,19 @@ module X
       # @return [Array<Problem>] the problems
       attr_reader :problems
 
+      # The problems the response reported about any of some identifiers
+      #
+      # A problem that names no resource is about any of them, too. A problem names the resource it is about by its resource_id, or by its value, and one that names neither
+      # could be about any resource of the response.
+      #
+      # @api private
+      # @param ids [Array<Object>] the identifiers of a resource and of the resources it refers to
+      # @return [Array<Problem>] the problems, frozen
+      def problems_about(ids)
+        ids = ids.map(&:to_s)
+        problems.select { |problem| about?(problem, ids) }.freeze
+      end
+
       # Resolve a reference to the included resource or a stub holding its identifier
       #
       # Every reference to the same resource within one response resolves to the same object,
@@ -68,6 +81,16 @@ module X
         return klass.__send__(:build, {klass.__send__(:id_key) => id}, client:, includes: self) if attrs.nil?
 
         klass.__send__(:build, attrs, client:, includes: self, hydrated: fully_requested?(klass))
+      end
+
+      # Check whether a problem names one of some identifiers, or names none
+      # @api private
+      # @param problem [Problem] the problem
+      # @param ids [Array<String>] the identifiers
+      # @return [Boolean] true if the problem names one of the identifiers, or names no resource
+      def about?(problem, ids)
+        named = [problem.resource_id, problem.value].compact
+        named.empty? || named.any? { |value| ids.include?(value.to_s) }
       end
 
       # Check whether the request asked for every field of a class that expands nothing

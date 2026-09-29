@@ -174,6 +174,7 @@ module X
     #   @example Get the referenced posts
     #     message.referenced_posts
     attribute :referenced_posts, :list, tweet_key: %w[referenced_tweets]
+    reference_keys.push(%w[referenced_posts], %w[referenced_tweets])
 
     # @!attribute [r] attachments
     #   The attachment keys
