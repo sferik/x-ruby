@@ -27,13 +27,6 @@ module X
       assert_equal(UploadedMedia.new({"processing_info" => nil}), await)
     end
 
-    def test_status_without_state_keeps_polling
-      stub_statuses({"processing_info" => {"check_after_secs" => 1}}, {"processing_info" => {"state" => "succeeded"}})
-
-      assert_equal "succeeded", await.dig("processing_info", "state")
-      assert_equal [1], @sleeps
-    end
-
     def test_sleeps_for_check_after_secs_between_polls
       stub_statuses({"processing_info" => {"state" => "pending", "check_after_secs" => 2}},
         {"processing_info" => {"state" => "in_progress", "check_after_secs" => 3}},

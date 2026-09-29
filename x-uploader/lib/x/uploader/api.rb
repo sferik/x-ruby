@@ -35,7 +35,8 @@ module X
       #   megabytes of an image, 15 of a GIF, and one of subtitles
       # @raise [InvalidMediaType] if no media category is given for media that names no file and no signature names one
       # @raise [MissingMediaData] if a response of the upload holds no media, or carries no body at all
-      # @raise [MediaProcessingFailed] if media processing failed, with the status X reported
+      # @raise [MediaProcessingFailed] if media processing failed, or ended in no state X documents, with the status X
+      #   reported
       # @raise [MediaProcessingTimeout] if the media is still processing once the processing timeout would pass
       # @raise [AltTextFailed] if the media is uploaded, but its alt text cannot be added, with the media it uploaded
       # @example Upload an image with alt text and post it
@@ -51,8 +52,8 @@ module X
 
       # Wait until media has been processed, whether its processing succeeded or failed
       #
-      # It returns the status X reported, which failed? tells a failure by; await_media_processing! raises for one
-      # instead.
+      # It returns the status X reported, which failed? tells a failure by, and ready? a success by, since a status
+      # in no state X documents is neither; await_media_processing! raises for either instead.
       #
       # @api public
       # @param media [UploadedMedia, Hash, #media_key, String, Integer] the uploaded media, media that has a media key,
@@ -74,7 +75,8 @@ module X
       #   such as X::Media, or the media identifier
       # @param options [Hash] the options of {MediaUpload.await_processing!}, such as processing_timeout
       # @return [UploadedMedia] the uploaded media, which holds the processing status
-      # @raise [MediaProcessingFailed] if media processing failed, with the status X reported
+      # @raise [MediaProcessingFailed] if media processing failed, or ended in no state X documents, with the status X
+      #   reported
       # @raise [MediaProcessingTimeout] if the media is still processing once the processing timeout would pass
       # @example Wait for a video uploaded with chunked_upload, raising if X could not process it
       #   client.await_media_processing!(video)

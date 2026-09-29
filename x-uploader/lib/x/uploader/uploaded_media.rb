@@ -16,11 +16,11 @@ module X
   #
   # @api public
   class UploadedMedia
-    # The states of processing that has ended
-    FINAL_STATES = %w[failed succeeded].freeze
+    # The states of processing that has not ended, which X asks to be checked again
+    PROCESSING_STATES = %w[pending in_progress].freeze
     # The message of the error raised for media that holds no identifier
     NO_MEDIA_ID = "The media holds no identifier"
-    private_constant :FINAL_STATES, :NO_MEDIA_ID
+    private_constant :PROCESSING_STATES, :NO_MEDIA_ID
 
     # The response data the media was built from
     # @api public
@@ -133,11 +133,15 @@ module X
 
     # Check whether X is still processing the media
     #
+    # Media is still processing in the states X asks to be checked again in, pending and in_progress, alone. Media
+    # whose processing information names no state, or a state X does not document, is not, since X gives no time to
+    # check it again at, and it is not ready either.
+    #
     # @api public
-    # @return [Boolean] true if the media is processed and its processing has neither succeeded nor failed
+    # @return [Boolean] true if the processing of the media is pending or in progress
     # @example Check whether a video is still processing
     #   media.processing?
-    def processing? = !processing_info.nil? && !FINAL_STATES.include?(state)
+    def processing? = PROCESSING_STATES.include?(state)
 
     # Check whether the processing of the media failed
     #
@@ -149,11 +153,14 @@ module X
 
     # Check whether the media can be attached to a post
     #
+    # Media whose processing information names no state, or a state X does not document, is not ready, since X has
+    # not said that its processing succeeded.
+    #
     # @api public
-    # @return [Boolean] true if X does not process the media, or has processed it
+    # @return [Boolean] true if X does not process the media, or its processing succeeded
     # @example Check whether a video can be posted
     #   media.ready?
-    def ready? = !processing? && !failed?
+    def ready? = processing_info.nil? || state.eql?("succeeded")
 
     # Read an attribute of the response, as from the Hash an upload used to return
     #

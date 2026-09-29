@@ -34,7 +34,10 @@ module X
       MEDIA_KEY = /\A\d+_(\d+)\z/
       # Fewest seconds to wait before a check of processing, for a status that asks for no wait
       MIN_CHECK_AFTER_SECS = 1
-      private_constant :NO_MEDIA_ID, :NO_MEDIA, :NO_METADATA, :NOT_MEDIA, :NOT_MEDIA_KEY, :MEDIA_KEY, :MIN_CHECK_AFTER_SECS
+      # The message of the error raised for media whose processing is in no state X documents
+      UNKNOWN_STATE = "Media processing is in no state X documents: %s"
+      private_constant :NO_MEDIA_ID, :NO_MEDIA, :NO_METADATA, :NOT_MEDIA, :NOT_MEDIA_KEY, :MEDIA_KEY, :MIN_CHECK_AFTER_SECS,
+        :UNKNOWN_STATE
 
       # The lowercase extension of a file, without its dot
       #
@@ -184,13 +187,22 @@ module X
 
       # The processing status of media, unless the media failed to process
       #
+      # Media whose processing names no state, or a state X does not document, is neither processing nor ready, and
+      # X gives no time to check it again at, so it raises too, naming the state, rather than be returned as media a
+      # post can attach.
+      #
       # @api private
       # @param status [UploadedMedia] the processing status X reported, or the response of an upload
       # @return [UploadedMedia] the status, of media that has processed, is still processing, or needs no processing
-      # @raise [MediaProcessingFailed] if the media failed to process, with the status
+      # @raise [MediaProcessingFailed] if the media failed to process, or is in no state X documents, with the status
       # @example The status of media that has processed
       #   Uploader::Utils.processed!(status) # => status
-      def processed!(status) = status.tap { raise MediaProcessingFailed.new(status:) if status.failed? }
+      def processed!(status)
+        raise MediaProcessingFailed.new(status:) if status.failed?
+        raise MediaProcessingFailed.new(format(UNKNOWN_STATE, status.state.inspect), status:) unless status.ready? || status.processing?
+
+        status
+      end
 
       # Wait as long as the status of media still processing asks
       #

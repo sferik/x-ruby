@@ -85,6 +85,7 @@ module X
       NOT_MEDIA: String
       NOT_MEDIA_KEY: String
       MIN_CHECK_AFTER_SECS: Integer
+      UNKNOWN_STATE: String
       MEDIA_KEY: Regexp
 
       def extension: (path file_path) -> String
@@ -219,7 +220,7 @@ module X
   end
 
   class UploadedMedia
-    FINAL_STATES: Array[String]
+    PROCESSING_STATES: Array[String]
     NO_MEDIA_ID: String
 
     private

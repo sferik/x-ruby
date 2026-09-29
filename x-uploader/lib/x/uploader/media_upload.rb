@@ -144,7 +144,7 @@ module X
       # @raise [InvalidMediaType] if no media category is given for media that names no file and no signature names
       #   one, or if media uploaded in chunks is given no media type and none can be inferred
       # @raise [MissingMediaData] if a response of the upload holds no media, or carries no body at all
-      # @raise [MediaProcessingFailed] if the media fails to process
+      # @raise [MediaProcessingFailed] if the media fails to process, or its processing ends in no state X documents
       # @raise [MediaProcessingTimeout] if the media is still processing once processing_timeout seconds would pass
       # @raise [AltTextFailed] if the media is uploaded, but its alt text cannot be added, with the media it uploaded
       # @example Upload an image
@@ -245,6 +245,10 @@ module X
       # rather than sleep past it, or check before X asks. A check under way at the deadline is let finish, and its
       # status returned if processing has finished, so it can return that much after the deadline.
       #
+      # It waits while the processing is pending or in progress alone, so a status whose processing names no state, or
+      # a state X does not document, is returned as it is, neither processing nor ready, rather than checked until the
+      # deadline, since X gives no time to check it again at; await_processing! raises for it.
+      #
       # @api public
       # @param media [UploadedMedia, Hash, #media_key, String, Integer] the uploaded media, media that has a media key,
       #   such as X::Media, or the media identifier
@@ -289,7 +293,8 @@ module X
       # @raise [ArgumentError] if the processing timeout is not a number of seconds of at least 0
       # @raise [ArgumentError] if the media given is neither media nor a media identifier, or its media key names none
       # @raise [MissingMediaData] if the media given holds no identifier, or a status response holds no media or carries no body at all
-      # @raise [MediaProcessingFailed] if media processing failed, with the status X reported
+      # @raise [MediaProcessingFailed] if media processing failed, or ended in no state X documents, with the status X
+      #   reported
       # @raise [MediaProcessingTimeout] if the media is still processing once the next check would pass the deadline
       # @example Wait for processing with error handling
       #   Uploader::MediaUpload.await_processing!(media, client: client)

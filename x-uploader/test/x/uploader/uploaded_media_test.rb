@@ -71,10 +71,10 @@ module X
       end
     end
 
-    def test_media_in_a_state_without_a_name_is_processing
-      media = UploadedMedia.new({"id" => "7", "processing_info" => {}})
+    def test_media_in_no_state_x_documents_is_neither_processing_nor_ready
+      states = [UploadedMedia.new({"id" => "7", "processing_info" => {}}), media_in("queued")].map { |media| [media.processing?, media.failed?, media.ready?] }
 
-      assert_equal [true, false, false], [media.processing?, media.failed?, media.ready?]
+      assert_equal [[false, false, false]] * 2, states
     end
 
     def test_media_that_succeeded_is_ready_and_media_that_failed_is_not
