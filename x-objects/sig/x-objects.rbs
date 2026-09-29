@@ -101,6 +101,10 @@ module X
     type body = Hash[String, untyped]?
     type id = String | Integer | Resource
 
+    # What Marshal writes of the response some resources came from: the objects it included that they refer to, the
+    # problems about them, and the query of the request
+    type included = [Hash[String, Array[attrs]], Array[Problem], Hash[String, untyped]?]
+
     # What an upload returned, holding the identifier of the media: a Hash, or the uploaded media of x-uploader
     interface _UploadedMedia
       def fetch: (String key) -> untyped
@@ -276,8 +280,8 @@ module X
     def deconstruct_keys: (Array[Symbol]? keys) -> Hash[Symbol, untyped]
     def as_json: (*untyped) -> Hash[String, untyped]
     def to_json: (?JSON::State? state) -> String
-    def marshal_dump: () -> [Integer, Objects::attrs, bool, Hash[untyped, untyped], Array[Hash[String, untyped]], Hash[String, untyped]?]
-    def marshal_load: ([Integer, Objects::attrs, bool, Hash[untyped, untyped]?, Array[Hash[String, untyped]], Hash[String, untyped]?] state) -> void
+    def marshal_dump: () -> [Integer, Objects::attrs, bool, Hash[String, Array[Objects::attrs]], Array[Problem], Hash[String, untyped]?]
+    def marshal_load: ([Integer, Objects::attrs, bool, Hash[String, Array[Objects::attrs]], Array[Problem], Hash[String, untyped]?] state) -> void
     def inspect: () -> String
   end
 
@@ -295,8 +299,8 @@ module X
     def result_count: () -> Integer?
     def as_json: (*untyped) -> Array[Hash[String, untyped]]
     def to_json: (?JSON::State? state) -> String
-    def marshal_dump: () -> [Integer, Array[R], Hash[String, untyped], Array[Hash[String, untyped]]]
-    def marshal_load: ([Integer, Array[R], Hash[String, untyped], Array[Hash[String, untyped]]] state) -> void
+    def marshal_dump: () -> [Integer, Array[[singleton(Resource), Objects::attrs, bool, Integer]], Hash[String, untyped], Array[Problem], Array[Objects::included]]
+    def marshal_load: ([Integer, Array[[singleton(Resource), Objects::attrs, bool, Integer]], Hash[String, untyped], Array[Problem], Array[Objects::included]] state) -> void
   end
 
   class Cursor[R < Resource = Resource]

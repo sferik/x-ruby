@@ -107,16 +107,24 @@ module X
     # The state Marshal writes
     #
     # What is written is plain data, led by the number of its format, so that a page written by one release of 1.x is
-    # read by a later one: its resources, which Marshal writes as a resource writes itself, without its client, its
-    # metadata, and the attributes of its problems.
+    # read by a later one: each resource, as its class, its attributes, and whether it is hydrated, without its client;
+    # the included objects the resources refer to, once for the resources that came from one response, as a resource
+    # writes those it refers to, so that the resources that resolved a reference to the same object still do; its
+    # metadata; and its problems.
     #
     # @api public
     # @return [Array] the number of the format, then the state of the page
     # @example Cache a page
     #   Rails.cache.write("followers", user.followers.page(0))
-    def marshal_dump = [MARSHAL_FORMAT, items, meta, problems.map(&:attrs)]
+    def marshal_dump
+      responses = group_by { |item| response_of(item) }
+      [MARSHAL_FORMAT, resource_states(responses.keys), meta, problems, responses.map { |includes, members| includes.state_of(members) }]
+    end
 
     # Restore a page Marshal read, frozen as the page that was written was
+    #
+    # The resources that came from one response are built over one identity map again, so a reference they share
+    # resolves to the same object, as it did before the page was written.
     #
     # @api public
     # @param state [Array] the state Marshal wrote
@@ -125,13 +133,32 @@ module X
     # @example Read a cached page
     #   Marshal.load(Marshal.dump(page)).next_token
     def marshal_load(state)
-      format, items, meta, problems = state
+      format, resources, meta, problems, responses = state
       raise UnsupportedMarshalFormat, "#{self.class} reads format #{MARSHAL_FORMAT} of Marshal, not #{format.inspect}" unless MARSHAL_FORMAT.eql?(format)
 
-      initialize(items, meta, problems: problems.map { |problem| Problem.new(problem) })
+      responses = responses.map { |data, about, query| Objects::Includes.new(data, problems: about, query:) }
+      initialize(resources.map { |klass, attrs, hydrated, response| klass.__send__(:build, attrs, includes: responses.fetch(response), hydrated:) }, meta, problems:)
     end
 
     private
+
+    # The identity map of the response a resource came from
+    # @api private
+    # @param resource [Resource] the resource
+    # @return [Objects::Includes] the identity map
+    def response_of(resource) = resource.__send__(:includes)
+
+    # What Marshal writes of each resource of the page
+    #
+    # It is the class of the resource, its attributes, whether it is hydrated, and which response it came from.
+    #
+    # @api private
+    # @param responses [Array<Objects::Includes>] the identity map of each response the resources came from
+    # @return [Array<Array(Class, Hash, Boolean, Integer)>] the state of each resource
+    def resource_states(responses)
+      indexes = responses.each_with_index.to_h
+      map { |item| [item.class, item.attrs, item.hydrated?, indexes.fetch(response_of(item))] } #: Array[[singleton(Resource), Objects::attrs, bool, Integer]]
+    end
 
     # The resources a page is given, which must be an Array of them
     #

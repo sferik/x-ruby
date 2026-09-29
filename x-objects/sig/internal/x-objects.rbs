@@ -53,8 +53,8 @@ module X
     module Marshalling : _Marshalled
       MARSHAL_FORMAT: Integer
 
-      def marshal_dump: () -> [Integer, attrs, bool, Hash[untyped, untyped], Array[Hash[String, untyped]], Hash[String, untyped]?]
-      def marshal_load: ([Integer, attrs, bool, Hash[untyped, untyped]?, Array[Hash[String, untyped]], Hash[String, untyped]?] state) -> void
+      def marshal_dump: () -> [Integer, attrs, bool, Hash[String, Array[attrs]], Array[Problem], Hash[String, untyped]?]
+      def marshal_load: ([Integer, attrs, bool, Hash[String, Array[attrs]], Array[Problem], Hash[String, untyped]?] state) -> void
     end
 
     # Anything the object layer built from an API response, which holds its attributes
@@ -196,9 +196,14 @@ module X
       def initialize: (?Hash[untyped, untyped]? data, ?problems: Array[Problem], ?query: Hash[String, untyped]?) -> void
       def resolve: (singleton(Resource) klass, untyped id, client: _Client? client) -> Resource
       def problems_about: (Array[untyped] ids) -> Array[Problem]
-      def state: () -> [Hash[untyped, untyped], Array[Hash[String, untyped]], Hash[String, untyped]?]
+      def state_of: (Array[Resource] resources) -> Objects::included
 
       private
+      def keep: (Hash[String, Array[attrs]] kept, Array[untyped] ids) -> Array[[singleton(Resource), attrs]]
+      def referenced_by: (singleton(Resource) klass, attrs attrs) -> Array[untyped]
+      def named: (singleton(Resource) klass, String key, Array[untyped] ids) -> Array[attrs]
+      def collections: () -> Array[[singleton(Resource), String]]
+      def entries_of: (singleton(Resource) klass) -> Array[attrs]
       def build: (singleton(Resource) klass, untyped id, _Client? client) -> Resource
       def fully_requested?: (singleton(Resource) klass) -> bool
       def about?: (Problem problem, Array[String] ids) -> bool
@@ -691,6 +696,8 @@ module X
     MARSHAL_FORMAT: Integer
 
     private
+    def response_of: (Resource resource) -> Objects::Includes
+    def resource_states: (Array[Objects::Includes] responses) -> Array[[singleton(Resource), Objects::attrs, bool, Integer]]
     def resources!: (untyped items) -> Array[R]
   end
 

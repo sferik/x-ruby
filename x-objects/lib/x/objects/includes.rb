@@ -36,13 +36,29 @@ module X
       # @return [Array<Problem>] the problems
       attr_reader :problems
 
-      # What the identity map was built of, as plain data
+      # What some resources built over the identity map refer to of it, as plain data
       #
-      # A resource that Marshal writes holds it. The problems are written as their attributes, so that what Marshal wrote names no class but those of Ruby.
+      # A resource that Marshal writes holds it, and a page holds it once for the resources that share it. It is the
+      # included objects the resources refer to, and the ones those refer to in turn, so that every reference that
+      # resolves to an included object still does, with none of the rest of the response; the problems about any of
+      # them, or about none; and the query, which tells whether an included object is hydrated. The problems are
+      # written as themselves, which Marshal writes as their attributes.
       #
       # @api private
-      # @return [Array(Hash, Array<Hash>, Hash, nil)] the includes, the attributes of each problem, and the query
-      def state = [@data, problems.map(&:to_h), @query]
+      # @param resources [Array<Resource>] the resources, each built over this identity map
+      # @return [Array(Hash, Array<Problem>, Hash, nil)] the included objects, the problems, and the query
+      def state_of(resources)
+        kept = {} #: Hash[String, Array[attrs]]
+        ids = resources.map(&:id)
+        pending = resources.map { |resource| [resource.class, resource.attrs] } #: Array[[singleton(Resource), attrs]]
+        # Each object kept joins the objects whose references are read, which each reaches once it comes to them
+        pending.each do |klass, attrs|
+          referenced = referenced_by(klass, attrs)
+          ids.concat(referenced)
+          pending.concat(keep(kept, referenced))
+        end
+        [kept, problems_about(ids), @query]
+      end
 
       # The problems the response reported about any of some identifiers
       #
@@ -114,15 +130,69 @@ module X
         klass.__send__(:fully_requested_by?, query)
       end
 
+      # Keep the included objects some identifiers name that are not kept yet
+      #
+      # An object is kept under the key the response included it by, in the order the response included it, so that
+      # what is kept resolves as the response did.
+      #
+      # @api private
+      # @param kept [Hash{String => Array<Hash>}] the included objects kept so far, which this adds to
+      # @param ids [Array<Object>] the identifiers, as the objects that refer to them hold them
+      # @return [Array(Class, Hash)] the class and attributes of each object this kept, whose references are kept next
+      def keep(kept, ids)
+        collections.flat_map do |klass, key|
+          found = named(klass, key, ids) - kept[key].to_a
+          kept[key] = @data.fetch(key) & (kept[key].to_a + found) unless found.empty?
+          found.map { |attrs| [klass, attrs] }
+        end
+      end
+
+      # The included objects of a resource class that some identifiers name
+      # @api private
+      # @param klass [Class] the resource class
+      # @param key [String] the key the response included the objects of the class under
+      # @param ids [Array<Object>] the identifiers
+      # @return [Array<Hash>] the objects, in the order the response included them
+      def named(klass, key, ids) = @data.fetch(key).select { |attrs| ids.include?(attrs[klass.__send__(:id_key)]) }
+
+      # The identifiers of what an object refers to, as the object holds them
+      #
+      # A reference resolves an identifier as the object holds it, so it is kept as that too.
+      #
+      # @api private
+      # @param klass [Class] the resource class of the object
+      # @param attrs [Hash{String => Object}] the attributes of the object
+      # @return [Array<Object>] the identifiers
+      def referenced_by(klass, attrs) = klass.__send__(:referenced_ids, attrs).compact
+
+      # The key the response included each resource class under, of those it included
+      # @api private
+      # @return [Array<Array(Class, String)>] each class, and the key the response included it under
+      def collections
+        classes = Resource.subclasses #: Array[singleton(Resource)]
+        classes.filter_map do |klass|
+          name = klass.__send__(:includes_key)
+          key = [name, TWEET_KEYS[name]].find { |candidate| @data.key?(candidate) } #: String?
+          [klass, key] unless key.nil?
+        end
+      end
+
+      # The included objects of one resource class, under the key the API gave them
+      # @api private
+      # @param klass [Class] the resource class
+      # @return [Array<Hash>] the included objects, empty if the response included none
+      def entries_of(klass)
+        key = klass.__send__(:includes_key)
+        @data.fetch(key) { @data.fetch(TWEET_KEYS[key], []) }
+      end
+
       # Build or fetch the identifier index for one type of expanded object
       #
       # @api private
       # @param klass [Class] the resource class
       # @return [Hash{String => Hash}] the expanded objects keyed by identifier
       def index(klass)
-        key = klass.__send__(:includes_key)
-        entries = @data.fetch(key) { @data.fetch(TWEET_KEYS[key], []) } #: Array[Hash[String, untyped]]
-        @index[key] ||= entries.group_by { |attrs| attrs[klass.__send__(:id_key)] }.transform_values(&:first)
+        @index[klass.__send__(:includes_key)] ||= entries_of(klass).group_by { |attrs| attrs[klass.__send__(:id_key)] }.transform_values(&:first)
       end
     end
   end

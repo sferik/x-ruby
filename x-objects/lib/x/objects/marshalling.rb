@@ -20,15 +20,17 @@ module X
       #
       # The client is left out, since it holds credentials and a connection. What is written is plain data, led by
       # the number of its format, so that a resource written by one release of 1.x is read by a later one: its
-      # attributes, whether it is hydrated, and the includes, problems, and query of the response it came from, so
-      # that the references it resolves, and the problems it reports, are what they were.
+      # attributes, whether it is hydrated, and, of the response it came from, the included objects it refers to, and
+      # those they refer to in turn, the problems about any of them, and the query, so that the references it
+      # resolves, and the problems it and they report, are what they were, while the rest of the response is left
+      # out, however many other resources it held.
       #
       # @api public
       # @return [Array] the number of the format, then the state of the resource
       # @example Cache a user
       #   Rails.cache.write("user", user)
       def marshal_dump
-        data, problems, query = includes.state # steep:ignore NoMethod
+        data, problems, query = includes.state_of([self]) # steep:ignore NoMethod
         [MARSHAL_FORMAT, attrs, hydrated?, data, problems, query]
       end
 
@@ -48,7 +50,7 @@ module X
         format, attrs, hydrated, data, problems, query = state
         raise UnsupportedMarshalFormat, "#{self.class} reads format #{MARSHAL_FORMAT} of Marshal, not #{format.inspect}" unless MARSHAL_FORMAT.eql?(format)
 
-        setup(attrs, client: nil, hydrated:, includes: Includes.new(data, problems: problems.map { |problem| Problem.new(problem) }, query:)) # steep:ignore NoMethod
+        setup(attrs, client: nil, hydrated:, includes: Includes.new(data, problems:, query:)) # steep:ignore NoMethod
       end
     end
   end
