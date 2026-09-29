@@ -169,7 +169,7 @@ module X
         return @cursor.params if index.zero?
 
         token = next_token(index - 1) or return
-        @cursor.params.merge(@cursor.token_param => token)
+        @cursor.params.merge(@cursor.__send__(:token_param) => token)
       end
 
       # The token of the page after a page, which fetched no page before it
@@ -203,7 +203,7 @@ module X
         maximum = params["max_results"]
         return params if maximum.nil?
 
-        params.merge("max_results" => [wanted, @cursor.min_results].max.clamp(..Integer(maximum)))
+        params.merge("max_results" => [wanted, @cursor.__send__(:min_results)].max.clamp(..Integer(maximum)))
       end
 
       # Fetch a page in a background thread; errors resurface when the page is requested

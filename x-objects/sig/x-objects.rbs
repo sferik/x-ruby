@@ -42,7 +42,6 @@ module X
   end
 
   class PersonalizedTrend
-    ENDPOINT: String
     FIELDS: Array[String]
 
     attr_reader attrs: Hash[String, untyped]
@@ -62,7 +61,6 @@ module X
   end
 
   class Usage
-    ENDPOINT: String
     FIELDS: Array[String]
 
     attr_reader attrs: Hash[String, untyped]
@@ -293,14 +291,10 @@ module X
   class Cursor[R < Resource = Resource]
     include Enumerable[R]
 
-    DEFAULT_TOKEN_PARAM: String
-
     attr_reader resource_class: singleton(Resource)
     attr_reader client: Objects::_Client
     attr_reader path: String
     attr_reader params: Objects::query
-    attr_reader token_param: String
-    attr_reader min_results: Integer
 
     def prefetch?: () -> bool
     def app_only?: () -> bool

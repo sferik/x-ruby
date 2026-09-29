@@ -19,6 +19,7 @@ module X
 
     # The endpoint that reports the trends of the authenticated user
     ENDPOINT = "users/personalized_trends"
+    private_constant :ENDPOINT
     # Every personalized trend field
     #
     # A minor release may add to it the fields the API adds, so that the trends ask for them too.

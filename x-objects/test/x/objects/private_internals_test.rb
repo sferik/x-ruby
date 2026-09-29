@@ -21,5 +21,18 @@ module X
     def test_a_cursor_is_built_privately
       refute_respond_to Cursor, :build
     end
+
+    def test_a_cursor_reads_the_settings_it_pages_with_privately
+      cursor = User.new({"id" => "1"}, client: FakeClient.new).followers
+
+      refute_respond_to cursor, :token_param
+      refute_respond_to cursor, :min_results
+      assert_raises(NameError) { Cursor::DEFAULT_TOKEN_PARAM }
+    end
+
+    def test_the_trends_of_a_user_and_the_usage_name_their_endpoints_privately
+      assert_raises(NameError) { PersonalizedTrend::ENDPOINT }
+      assert_raises(NameError) { Usage::ENDPOINT }
+    end
   end
 end

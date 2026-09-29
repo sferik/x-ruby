@@ -13,6 +13,7 @@ module X
 
     # The query parameter most endpoints take the token of the next page in
     DEFAULT_TOKEN_PARAM = "pagination_token"
+    private_constant :DEFAULT_TOKEN_PARAM
     # The message raised for a cursor serialized whole, which would read every page of its collection
     SERIALIZATION_MESSAGE = "Serializing a cursor would read every page of its collection, a billed request per " \
       "page; serialize cursor.first(n), or cursor.to_a to read every page"
@@ -46,24 +47,11 @@ module X
     #   user.followers.params["max_results"] # => 1000
     attr_reader :params
 
-    # The smallest page the endpoint accepts
-    # @api public
-    # @return [Integer] the minimum page size
-    # @example Get the minimum page size of a search
-    #   X::Post.search("ruby", client: client).min_results # => 10
-    attr_reader :min_results
-
-    # The query parameter the token of the next page is sent in
-    # @api public
-    # @return [String] the parameter name
-    # @example Get the token parameter
-    #   X::User.search("ruby", client: client).token_param # => "next_token"
-    attr_reader :token_param
-
     # Build a cursor
     #
     # Internal to x-objects: a resource builds the cursors of its collections, and the searches and lookups build
-    # theirs, with it, and new is private, so that the settings a cursor pages with can change within 1.x. A cursor
+    # theirs, with it, and new is private, so that the settings a cursor pages with can change within 1.x, as the
+    # readers of the token parameter and the smallest page are private for the same reason. A cursor
     # is made from another with refresh, prefetch, and stubs.
     #
     # @api private
@@ -362,6 +350,22 @@ module X
       @pages = Objects::Pages.new(self)
       freeze
     end
+
+    # The smallest page the endpoint accepts
+    #
+    # Internal to x-objects: Pages never asks for a smaller page than this.
+    #
+    # @api private
+    # @return [Integer] the minimum page size
+    attr_reader :min_results
+
+    # The query parameter the token of the next page is sent in
+    #
+    # Internal to x-objects: Pages sends the token of each page after the first in it.
+    #
+    # @api private
+    # @return [String] the parameter name
+    attr_reader :token_param
 
     # Check whether the endpoint gives the resources by their identifiers alone
     #

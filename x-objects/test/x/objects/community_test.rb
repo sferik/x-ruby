@@ -52,7 +52,7 @@ module X
       cursor = Community.search("ruby", client: @client, max_results: 10)
 
       assert_equal "communities/search", cursor.path
-      assert_equal ["ruby", 10, "next_token"], [cursor.params["query"], cursor.params["max_results"], cursor.token_param]
+      assert_equal ["ruby", 10, "next_token"], [cursor.params["query"], cursor.params["max_results"], cursor.__send__(:token_param)]
       assert_equal Community, cursor.resource_class
       assert_same @client, cursor.client
     end

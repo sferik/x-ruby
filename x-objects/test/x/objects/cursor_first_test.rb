@@ -48,7 +48,7 @@ module X
 
       assert_equal [1, 2], @user.posts.first(2).map(&:id)
       assert_equal "5", @client.queries.first["max_results"]
-      assert_equal 5, @user.posts.min_results
+      assert_equal 5, @user.posts.__send__(:min_results)
     end
 
     def test_first_rises_no_higher_than_the_max_results_the_cursor_was_given
@@ -62,13 +62,13 @@ module X
     def test_the_minimum_page_size_of_searches
       searches = [Post.search("ruby", client: @client), Post.search_all("ruby", client: @client), Community.search("ruby", client: @client)]
 
-      assert_equal [10, 10, 10, 10], (searches + [Post.new({"id" => "2"}, client: @client).quotes]).map(&:min_results)
-      assert_equal 1, User.search("ruby", client: @client).min_results
+      assert_equal [10, 10, 10, 10], (searches + [Post.new({"id" => "2"}, client: @client).quotes]).map { |cursor| cursor.__send__(:min_results) }
+      assert_equal 1, User.search("ruby", client: @client).__send__(:min_results)
     end
 
     def test_the_minimum_page_size_of_timelines
-      assert_equal [5, 5, 5], [@user.posts, @user.mentions, @user.liked_posts].map(&:min_results)
-      assert_equal [1, 1, 1], [@user.followers, @user.home_timeline, Post.new({"id" => "2"}, client: @client).liked_by].map(&:min_results)
+      assert_equal [5, 5, 5], [@user.posts, @user.mentions, @user.liked_posts].map { |cursor| cursor.__send__(:min_results) }
+      assert_equal [1, 1, 1], [@user.followers, @user.home_timeline, Post.new({"id" => "2"}, client: @client).liked_by].map { |cursor| cursor.__send__(:min_results) }
     end
 
     def test_first_of_the_page_size_sizes_its_own_pages
@@ -119,7 +119,7 @@ module X
     def test_derived_cursors_keep_the_minimum_page_size
       cursor = Cursor.__send__(:build, User, "users/1/followers", client: @client, min_results: 7)
 
-      assert_equal [7, 7, 7], [cursor.refresh, cursor.prefetch, cursor.stubs].map(&:min_results)
+      assert_equal [7, 7, 7], [cursor.refresh, cursor.prefetch, cursor.stubs].map { |cursor| cursor.__send__(:min_results) }
     end
   end
 end

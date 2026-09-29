@@ -21,12 +21,11 @@ module X
     def test_default_token_param
       cursor = Cursor.__send__(:build, User, "users/1/followers", client: @client)
 
-      assert_equal "pagination_token", cursor.token_param
-      assert_equal Cursor::DEFAULT_TOKEN_PARAM, cursor.token_param
+      assert_equal "pagination_token", cursor.__send__(:token_param)
     end
 
     def test_token_param
-      assert_equal "next_token", @cursor.token_param
+      assert_equal "next_token", @cursor.__send__(:token_param)
     end
 
     def test_pages_with_the_token_param
@@ -36,11 +35,11 @@ module X
     end
 
     def test_refresh_keeps_the_token_param
-      assert_equal "next_token", @cursor.refresh.token_param
+      assert_equal "next_token", @cursor.refresh.__send__(:token_param)
     end
 
     def test_prefetch_keeps_the_token_param
-      assert_equal "next_token", @cursor.prefetch.token_param
+      assert_equal "next_token", @cursor.prefetch.__send__(:token_param)
     end
 
     def test_ids

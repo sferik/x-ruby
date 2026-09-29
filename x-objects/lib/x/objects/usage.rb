@@ -18,6 +18,7 @@ module X
 
     # The endpoint that reports the post usage of the project
     ENDPOINT = "usage/tweets"
+    private_constant :ENDPOINT
     # Every field of the usage
     FIELDS = %w[cap_reset_day daily_client_app_usage daily_project_usage project_cap project_id project_usage].freeze
 

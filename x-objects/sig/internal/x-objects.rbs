@@ -610,11 +610,15 @@ module X
   class PersonalizedTrend
     include Objects::ValueEquality
     include Objects::Serialization
+
+    ENDPOINT: String
   end
 
   class Usage
     include Objects::ValueEquality
     include Objects::Serialization
+
+    ENDPOINT: String
 
     private
     def days: (String reader, untyped entries) -> Hash[Time, Integer]
@@ -660,6 +664,7 @@ module X
   end
 
   class Cursor[R < Resource = Resource]
+    DEFAULT_TOKEN_PARAM: String
     SERIALIZATION_MESSAGE: String
 
     @prefetch: bool
@@ -671,6 +676,8 @@ module X
     private def self.build: [R < Resource] (singleton(Resource) resource_class, String path, client: Objects::_Client, ?params: Objects::params, ?prefetch: bool, ?token_param: String, ?min_results: Integer, ?app_only: bool, ?total: (^(?fresh: bool) -> Integer?)?, ?ids_only: bool) -> Cursor[R]
 
     private
+    attr_reader min_results: Integer
+    attr_reader token_param: String
     def setup: (singleton(Resource) resource_class, String path, client: Objects::_Client, params: Objects::params, prefetch: bool, token_param: String, min_results: Integer, app_only: bool, total: (^(?fresh: bool) -> Integer?)?, ids_only: bool) -> void
     def ids_only?: () -> bool
     def fresh_total: () -> (^(?fresh: bool) -> Integer?)?

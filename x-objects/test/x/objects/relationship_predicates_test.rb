@@ -59,7 +59,7 @@ module X
       assert_kind_of Cursor, stubs
       assert_equal({"max_results" => 1000, "user.fields" => "id"}, stubs.params)
       assert_equal "users/1/following", stubs.path
-      assert_equal "pagination_token", stubs.token_param
+      assert_equal "pagination_token", stubs.__send__(:token_param)
     end
 
     def test_stubs_yield_stubs
@@ -105,7 +105,7 @@ module X
     end
 
     def test_stubs_keep_the_token_param
-      assert_equal "next_token", User.search("ruby", client: @client).stubs.token_param
+      assert_equal "next_token", User.search("ruby", client: @client).stubs.__send__(:token_param)
     end
   end
 end
