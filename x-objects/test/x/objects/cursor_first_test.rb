@@ -7,6 +7,7 @@ module X
     cover Cursor
     cover Objects::Pages
     cover Community
+    cover Objects::PostSearch
     cover Post
     cover Objects::PostCollections
     cover User

@@ -335,6 +335,16 @@ module X
       def period: (Hash[String, untyped] entry) -> [Time, Integer]
     end
 
+    module PostSearch : _ResourceClass[Post]
+      def search: (String query, client: _Client, **untyped params) -> Cursor[Post]
+      def search_all: (String query, client: _Client, **untyped params) -> Cursor[Post]
+      def reposts_of_me: (client: _Client, **untyped params) -> Cursor[Post]
+      def retweets_of_me: (client: _Client, **untyped params) -> Cursor[Post]
+
+      private
+      def context_annotations?: (Hash[Symbol, untyped] params) -> bool
+    end
+
     module PostCollections : Resource
       def liked_by: (**untyped params) -> Cursor[User]
       def reposted_by: (**untyped params) -> Cursor[User]
@@ -620,6 +630,7 @@ module X
   class Post < Resource
     extend Objects::BatchFinders
     extend Objects::PostCounts
+    extend Objects::PostSearch
     extend Objects::PostWrites
     include Objects::References
     include Objects::PostCollections
@@ -627,7 +638,6 @@ module X
     private def self.endpoint: () -> String
     private def self.includes_key: () -> String
     private def self.fields_key: () -> String
-    private def self.context_annotations?: (Hash[Symbol, untyped] params) -> bool
 
     private
     def full: () -> Hash[String, untyped]

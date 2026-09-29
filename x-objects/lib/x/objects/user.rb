@@ -17,8 +17,8 @@ module X
     # field that does, such as connection_status, would make every request fail for a client that cannot read it;
     # the identifiers of referenced posts come with their expansions
     FIELDS = %w[affiliation created_at description entities id is_identity_verified location name parody
-      profile_banner_url profile_image_url protected public_metrics subscription_type url username verified
-      verified_followers_count verified_type withheld].freeze
+      profile_banner_url profile_image_url protected public_metrics subscriber_count subscription_type url username
+      verified verified_followers_count verified_type withheld].freeze
     # Every expansion available on user endpoints that refers to a modeled resource
     EXPANSIONS = %w[most_recent_post_id pinned_post_id].freeze
     # Maximum number of followers or followed users per page
@@ -234,6 +234,14 @@ module X
     #   @example Get the verified follower count
     #     user.verified_followers_count
     attribute :verified_followers_count
+
+    # @!attribute [r] subscriber_count
+    #   The number of users who subscribe to the user
+    #   @api public
+    #   @return [Integer, nil] the subscriber count
+    #   @example Get the subscriber count
+    #     user.subscriber_count
+    attribute :subscriber_count
 
     # @!attribute [r] connection_status
     #   How the authenticated user and this user are connected

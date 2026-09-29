@@ -7,6 +7,7 @@ module X
     class APITimelinesTest < Minitest::Test
       cover API::Lookups
       cover Post
+      cover Objects::PostSearch
 
       def setup
         @client = FakeClient.new

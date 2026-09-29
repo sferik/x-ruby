@@ -7,6 +7,7 @@ require_relative "community"
 require_relative "cursor"
 require_relative "post_collections"
 require_relative "post_counts"
+require_relative "post_search"
 require_relative "post_writes"
 require_relative "references"
 require_relative "resource"
@@ -16,8 +17,14 @@ module X
   # @api public
   class Post < Resource
     # Every public post field; the identifiers of referenced resources come with their expansions
-    FIELDS = %w[attachments community_id context_annotations conversation_id created_at edit_controls entities geo id
-      lang note_post possibly_sensitive public_metrics reply_settings source text withheld].freeze
+    #
+    # The metrics that only the author, or an advertiser, may read, non_public_metrics, organic_metrics, and
+    # promoted_metrics, are left out, since a field that depends on who is authenticated would make every request
+    # fail for a client that cannot read it, as are the fields of Community Notes and of suggested sources, which the
+    # API gives to the programs they belong to.
+    FIELDS = %w[article attachments card_uri community_id context_annotations conversation_id created_at
+      display_text_range edit_controls entities geo id lang media_metadata note_post paid_partnership
+      possibly_sensitive public_metrics reply_settings scopes source text withheld].freeze
     # The expansions of the resources a post refers to that the object layer resolves
     #
     # The identifiers of a post's edit history come with every post, so the edit_history_post_ids expansion, which
@@ -34,6 +41,7 @@ module X
     include Objects::PostCollections
     extend Objects::BatchFinders
     extend Objects::PostCounts
+    extend Objects::PostSearch
     extend Objects::PostWrites
 
     class << self
@@ -76,63 +84,6 @@ module X
       def default_params
         {"post.fields" => FIELDS, "user.fields" => User::FIELDS, "media.fields" => Media::FIELDS,
          "poll.fields" => Poll::FIELDS, "place.fields" => Place::FIELDS, "expansions" => EXPANSIONS}
-      end
-
-      # Search recent posts
-      #
-      # @api public
-      # @param query [String] the search query
-      # @param client [Object] the client used to make the requests
-      # @param params [Hash] query parameters merged over the default parameters
-      # @return [Cursor] a cursor over the matching posts
-      # @example Print posts about Ruby
-      #   X::Post.search("ruby -is:retweet", client: client).each { |post| puts post.text }
-      def search(query, client:, **params)
-        Cursor.new(self, "tweets/search/recent", client:, params: {query:, max_results: MAX_RESULTS}.merge(params), min_results: 10)
-      end
-
-      # Search the full archive of posts
-      #
-      # A page holds up to 500 posts, or 100 when the request asks for context annotations, as the default fields do.
-      #
-      # @api public
-      # @param query [String] the search query
-      # @param client [Object] the client used to make the requests
-      # @param params [Hash] query parameters merged over the default parameters
-      # @return [Cursor] a cursor over the matching posts
-      # @example Print every post about Ruby
-      #   X::Post.search_all("ruby -is:retweet", client: client).each { |post| puts post.text }
-      # @example Page through every post about Ruby 500 at a time, without context annotations
-      #   X::Post.search_all("ruby", client: client, "post.fields": %w[author_id created_at text])
-      def search_all(query, client:, **params)
-        max_results = context_annotations?(params) ? MAX_RESULTS : MAX_ARCHIVE_RESULTS
-        Cursor.new(self, "tweets/search/all", client:, params: {query:, max_results:}.merge(params), min_results: 10)
-      end
-
-      # The posts of the authenticated user that other users have reposted
-      #
-      # The endpoint names no user, so these are always the posts of the user the client authenticates as.
-      #
-      # @api public
-      # @param client [Object] the client used to make the requests
-      # @param params [Hash] query parameters merged over the default parameters
-      # @return [Cursor] a cursor over the reposted posts
-      # @example Print the reposted posts
-      #   X::Post.reposts_of_me(client: client).each { |post| puts post.text }
-      def reposts_of_me(client:, **params)
-        Cursor.new(self, "users/reposts_of_me", client:, params: {max_results: MAX_RESULTS}.merge(params))
-      end
-
-      alias_method :retweets_of_me, :reposts_of_me
-
-      private
-
-      # Check whether a request asks for the context annotations of its posts
-      # @api private
-      # @param params [Hash] query parameters merged over the default parameters
-      # @return [Boolean] true if the post fields include context_annotations
-      def context_annotations?(params)
-        Objects::Utils.merge_params(default_params, params)["post.fields"].to_s.split(",").include?("context_annotations")
       end
     end
 
@@ -242,6 +193,67 @@ module X
     #   @example Get the edit controls
     #     post.edit_controls
     attribute :edit_controls
+
+    # @!attribute [r] display_text_range
+    #   The range of characters of the text that is shown
+    #
+    #   It leaves out the mentions a reply begins with and the link to media it ends with.
+    #
+    #   @api public
+    #   @return [Array<Integer>] the start and end of the range, empty if the response holds none
+    #   @example Read the text that is shown
+    #     post.text[Range.new(*post.display_text_range, true)]
+    attribute :display_text_range, :list
+
+    # @!attribute [r] scopes
+    #   Who may see the post
+    #
+    #   A post its author shared with followers alone holds {"followers" => true}.
+    #
+    #   @api public
+    #   @return [Hash, nil] the scopes
+    #   @example Check whether the post is shared with followers alone
+    #     post.scopes&.fetch("followers", false)
+    attribute :scopes
+
+    # @!attribute [r] card_uri
+    #   The URI of the card the post shows
+    #   @api public
+    #   @return [String, nil] the card URI
+    #   @example Get the card URI
+    #     post.card_uri
+    attribute :card_uri
+
+    # @!attribute [r] article
+    #   The article the post publishes, with its title
+    #   @api public
+    #   @return [Hash, nil] the article
+    #   @example Get the title of an article
+    #     post.article&.fetch("title")
+    attribute :article
+
+    # @!attribute [r] media_metadata
+    #   What the post describes of the media it attaches
+    #   @api public
+    #   @return [Array<Hash>] the metadata of each medium, empty if there is none
+    #   @example Get the metadata of the media
+    #     post.media_metadata
+    attribute :media_metadata, :list
+
+    # @!attribute [r] paid_partnership
+    #   Whether the post is a paid partnership
+    #   @api public
+    #   @return [Boolean, nil] true if the post is a paid partnership
+    #   @example Check whether a post is a paid partnership
+    #     post.paid_partnership?
+    attribute :paid_partnership, :boolean
+
+    # @!method paid_partnership?
+    #   Check whether the post is a paid partnership
+    #   @api public
+    #   @return [Boolean] true if the post is a paid partnership
+    #   @example Check whether the post is a paid partnership
+    #     post.paid_partnership?
 
     # The entities found in the full text
     #

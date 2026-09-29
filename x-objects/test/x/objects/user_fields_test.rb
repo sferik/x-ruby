@@ -19,6 +19,11 @@ module X
       assert_equal({"description" => "Anthropic"}, @user.affiliation)
     end
 
+    def test_the_subscriber_count
+      assert_equal [12, nil], [User.new({"id" => "1", "subscriber_count" => 12}).subscriber_count, @user.subscriber_count]
+      assert_includes User::FIELDS, "subscriber_count"
+    end
+
     def test_parody_and_identity_verified
       assert_predicate @user, :parody?
       assert @user.parody

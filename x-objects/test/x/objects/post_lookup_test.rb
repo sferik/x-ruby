@@ -5,6 +5,7 @@ require_relative "../../test_helper"
 module X
   class PostLookupTest < Minitest::Test
     cover Post
+    cover Objects::PostSearch
 
     def setup
       @client = FakeClient.new

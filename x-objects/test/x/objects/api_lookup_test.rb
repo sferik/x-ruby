@@ -6,6 +6,7 @@ module X
   module Objects
     class APILookupTest < Minitest::Test
       cover API::Lookups
+      cover Objects::PostSearch
 
       def setup
         @client = FakeClient.new

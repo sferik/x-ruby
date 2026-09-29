@@ -390,6 +390,7 @@ module X
     def subscription_type: () -> String?
     def affiliation: () -> Hash[String, untyped]?
     def verified_followers_count: () -> Integer?
+    def subscriber_count: () -> Integer?
     def connection_status: () -> Array[String]
     def pinned_post_id: () -> Integer?
     def pinned_tweet_id: () -> Integer?
@@ -487,6 +488,13 @@ module X
     def edit_history_post_ids: () -> Array[Integer]
     def edit_history_tweet_ids: () -> Array[Integer]
     def edit_controls: () -> Hash[String, untyped]?
+    def display_text_range: () -> Array[Integer]
+    def scopes: () -> Hash[String, untyped]?
+    def card_uri: () -> String?
+    def article: () -> Hash[String, untyped]?
+    def media_metadata: () -> Array[Hash[String, untyped]]
+    def paid_partnership: () -> bool?
+    def paid_partnership?: () -> bool
     def entities: () -> Hash[String, untyped]?
     def urls: () -> Array[Hash[String, untyped]]
     def context_annotations: () -> Array[Hash[String, untyped]]
