@@ -226,7 +226,7 @@ module X
 
       # The client for an endpoint that refuses OAuth 1.0a, as a space endpoint does
       #
-      # The endpoint takes app-only or OAuth 2.0 user authentication.
+      # The endpoint takes app-only or OAuth 2.0 user authentication, as the count of recent posts does too.
       # A client that signs with OAuth 1.0a requests as the app, with a copy that reuses its bearer token, as one
       # signed in with OAuth 2.0 as a user that holds the app's credentials does. One that holds none, and so has no
       # app-only client, requests as the user.

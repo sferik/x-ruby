@@ -41,6 +41,22 @@ module X
       assert_equal 1, client.app_only_calls
     end
 
+    def test_a_client_that_cannot_authenticate_as_the_app_counts_recent_posts_as_the_user
+      client = FakeClient.new.stub(:get, "tweets/counts/recent", {"meta" => {"total_tweet_count" => 5}})
+      def client.app_only = raise(UnsupportedOperation, "no app credentials")
+
+      assert_equal [5, {}], [client.count_posts("ruby"), client.count_posts_by_period("ruby")]
+      assert_equal ["tweets/counts/recent"] * 2, client.paths
+    end
+
+    def test_a_client_that_cannot_authenticate_as_the_app_cannot_count_the_full_archive
+      client = FakeClient.new
+      def client.app_only = raise(UnsupportedOperation, "no app credentials")
+
+      assert_raises(UnsupportedOperation) { client.count_all_posts("ruby") }
+      assert_empty client.paths
+    end
+
     def test_a_client_without_an_app_only_client_is_used_as_it_is
       client = FakeClient.new.stub(:get, "usage/tweets", {"data" => {"project_cap" => "9"}})
 
