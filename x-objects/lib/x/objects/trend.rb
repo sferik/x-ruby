@@ -79,10 +79,11 @@ module X
     # @api public
     # @param attrs [Hash{String => Object}] the attributes
     # @return [Trend] a new trend
+    # @raise [ArgumentError] if the attributes are not a Hash
     # @example Build a trend
     #   X::Trend.new({"trend_name" => "#ruby", "tweet_count" => 1234})
     def initialize(attrs)
-      @attrs = Objects::Utils.deep_freeze(attrs)
+      @attrs = Objects::Utils.deep_freeze(Objects::Utils.attributes!(attrs))
       freeze
     end
 

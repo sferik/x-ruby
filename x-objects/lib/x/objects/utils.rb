@@ -44,6 +44,19 @@ module X
         end
       end
 
+      # The attributes a public constructor is given, which must be a Hash
+      #
+      # Attributes that are not one, such as nil, would otherwise be taken, and raise NoMethodError from a reader, far
+      # from where they were given.
+      #
+      # @api private
+      # @param attrs [Hash] the attributes
+      # @return [Hash] the attributes
+      # @raise [ArgumentError] if the attributes are not a Hash
+      # @example Refuse attributes that are not a Hash
+      #   X::Objects::Utils.attributes!(nil) # raises ArgumentError
+      def attributes!(attrs) = Hash.try_convert(attrs) || raise(ArgumentError, "attrs must be a Hash, not #{attrs.inspect}")
+
       # Build an endpoint path with an encoded query string
       #
       # @api private

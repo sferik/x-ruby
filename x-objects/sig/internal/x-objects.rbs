@@ -62,6 +62,7 @@ module X
       FOREIGN_RESOURCE: String
 
       def deep_freeze: (untyped value) -> untyped
+      def attributes!: (untyped attrs) -> Hash[untyped, untyped]
       def path: (String base, params params) -> String
       def query: (params params) -> query
       def query_value: (untyped value) -> untyped

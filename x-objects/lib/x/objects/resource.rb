@@ -274,10 +274,11 @@ module X
     # @param client [Object, nil] the client used to fetch references
     # @param hydrated [Boolean] whether the resource holds every requested field
     # @return [Resource] a new resource
-    # @raise [ArgumentError] if the attributes do not include the identifier, or the identifier is not one
+    # @raise [ArgumentError] if the attributes are not a Hash, do not include the identifier, or hold an identifier that
+    #   is not one
     # @example Create a user from attributes
     #   X::User.new({"id" => "7505382", "username" => "sferik"}, client: client)
-    def initialize(attrs, client: nil, hydrated: false) = setup(attrs, client:, hydrated:)
+    def initialize(attrs, client: nil, hydrated: false) = setup(Objects::Utils.attributes!(attrs), client:, hydrated:)
 
     # The identifier
     #

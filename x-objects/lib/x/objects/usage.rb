@@ -59,10 +59,11 @@ module X
     # @api public
     # @param attrs [Hash{String => Object}] the attributes
     # @return [Usage] a new usage
+    # @raise [ArgumentError] if the attributes are not a Hash
     # @example Build a usage
     #   X::Usage.new({"project_usage" => "1234"})
     def initialize(attrs)
-      @attrs = Objects::Utils.deep_freeze(attrs)
+      @attrs = Objects::Utils.deep_freeze(Objects::Utils.attributes!(attrs))
       freeze
     end
 
