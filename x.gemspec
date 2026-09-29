@@ -26,13 +26,14 @@ Gem::Specification.new do |spec|
     "source_code_uri" => "https://github.com/sferik/x-ruby"
   }
 
+  # CONTRIBUTING.md is for working on the repository, not for using the gem
   spec.files = Dir.glob([
     "lib/**/*.rb",
     "sig/*.rbs",
     "sig/manifest.yaml",
     "*.md",
     "LICENSE.txt"
-  ], base: __dir__)
+  ], base: __dir__) - ["CONTRIBUTING.md"]
   spec.require_paths = ["lib"]
   spec.add_dependency("x-core", "~> #{version}")
   spec.add_dependency("x-uploader", "~> #{version}")
