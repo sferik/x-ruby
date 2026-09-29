@@ -127,7 +127,7 @@ module X
       #   one given for an image is not sent
       # @param chunk_size_mb [Float, Integer, nil] the size of each chunk of media uploaded in chunks, in megabytes, of
       #   at most 5, the most the API takes in a segment, derived from the size of the media when nil, so that an
-      #   upload of up to 1,000 chunks of 5 megabytes fits the segments the API numbers
+      #   upload of up to 10,000 chunks of 5 megabytes fits the segments the API numbers
       # @param concurrency [Integer] the number of chunks uploaded at once
       # @return [UploadedMedia] the uploaded media, which holds the upload response, or the processing status of
       #   media that X processes
@@ -139,7 +139,7 @@ module X
       #   megabytes of an image, 15 of a GIF, and one of subtitles
       # @raise [ArgumentError] if the media category is invalid, the alt text is empty or longer than the API takes,
       #   the chunk size is not a positive, finite number, is larger than a segment the API takes, or would need more
-      #   segments than the API numbers, media uploaded in chunks is larger than 1,000 segments of 5 megabytes, the
+      #   segments than the API numbers, media uploaded in chunks is larger than 10,000 segments of 5 megabytes, the
       #   concurrency is less than one, or the processing timeout is not a number of seconds of at least 0
       # @raise [InvalidMediaType] if no media category is given for media that names no file and no signature names
       #   one, or if media uploaded in chunks is given no media type and none can be inferred
@@ -213,7 +213,7 @@ module X
       #   GIF and one of subtitles
       # @raise [ArgumentError] if the media category is invalid, the chunk size is not a positive, finite number, is
       #   larger than a segment the API takes, or would need more segments than the API numbers, the media is larger
-      #   than 1,000 segments of 5 megabytes, or the concurrency is less than one
+      #   than 10,000 segments of 5 megabytes, or the concurrency is less than one
       # @raise [InvalidMediaType] if no media type is given and none can be inferred
       # @raise [MissingMediaData] if the response that initializes the upload holds no media to append the chunks to, or
       #   the response that finalizes it holds no media or carries no body at all

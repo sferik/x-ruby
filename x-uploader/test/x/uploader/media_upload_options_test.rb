@@ -27,7 +27,7 @@ module X
 
     def test_the_limits_of_an_upload_are_constants
       assert_equal [1_048_576, 5_242_880], [Uploader::MediaUpload::BYTES_PER_MB, Uploader::MediaUpload::MAX_SIMPLE_UPLOAD_BYTES]
-      assert_equal [1000, 1000], [Uploader.const_get(:Validator)::MAX_SEGMENTS, Uploader.const_get(:Validator)::MAX_ALT_TEXT_LENGTH]
+      assert_equal [10_000, 1000], [Uploader.const_get(:Validator)::MAX_SEGMENTS, Uploader.const_get(:Validator)::MAX_ALT_TEXT_LENGTH]
     end
 
     def test_media_holds_none_of_the_constants_of_the_chunked_upload

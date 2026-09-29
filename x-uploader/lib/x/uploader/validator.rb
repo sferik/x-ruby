@@ -18,11 +18,11 @@ module X
       BYTES_PER_MB = 1_048_576
       # Greatest number of characters of alt text the API takes
       MAX_ALT_TEXT_LENGTH = 1000
-      # Greatest number of segments an upload in chunks can have: the API has taken a segment_index of 0 to 999, so
-      # an upload in more chunks than these would fail partway, once the media uploaded so far had been billed. The
-      # OpenAPI specification of the API v2 now allows one of up to 9999, but the guides document no number of
-      # segments, so the fewer are kept to, which a chunk of MAX_CHUNK bytes uploads 5 GB of media in
-      MAX_SEGMENTS = 1000
+      # Greatest number of segments an upload in chunks can have: the OpenAPI specification of the API v2 takes a
+      # segment_index of 0 to 9999, so an upload in more chunks than these would fail partway, once the media uploaded
+      # so far had been billed. Chunks of MAX_CHUNK bytes upload 52 GB of media in them, more than the 16 GB of video
+      # the API takes of an account with X Premium
+      MAX_SEGMENTS = 10_000
       # Greatest number of bytes in a segment of an upload in chunks: the guide to chunked uploads says to keep each
       # segment at or below 5 MB, of the 8 MB the server takes at most, so a chunk is 5 megabytes at most, which is
       # below 8 MB whether a megabyte is read as 1,000,000 bytes or as 1,048,576
@@ -236,8 +236,8 @@ module X
       # @api private
       # @param file_size [Integer] the size of the media in bytes
       # @return [Integer] the size of each chunk in bytes
-      # @example The chunk size of a video of two gigabytes
-      #   Uploader::Validator.derived_chunk_size(2 * 1024**3) # => 2147484
+      # @example The chunk size of a video of twenty gigabytes
+      #   Uploader::Validator.derived_chunk_size(20 * 1024**3) # => 2147484
       def derived_chunk_size(file_size) = (file_size.to_f / MAX_SEGMENTS).ceil.clamp(BYTES_PER_MB, MAX_CHUNK)
 
       # Validate a media category, and give it in the lowercase the API takes

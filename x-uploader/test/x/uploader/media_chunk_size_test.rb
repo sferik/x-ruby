@@ -10,8 +10,8 @@ module X
 
     BASE_URL = "https://api.x.com/2/media/upload"
     JSON_HEADERS = {"content-type" => "application/json"}.freeze
-    # A video larger than the 1,000 chunks of a megabyte the API numbers the segments of
-    LARGE_VIDEO_BYTES = 1100 * Uploader::MediaUpload::BYTES_PER_MB
+    # A video larger than the 10,000 chunks of a megabyte the API numbers the segments of
+    LARGE_VIDEO_BYTES = 11_000 * Uploader::MediaUpload::BYTES_PER_MB
 
     def setup
       @client = Client.new
@@ -19,11 +19,11 @@ module X
       stub_request(:post, "#{BASE_URL}/#{TEST_MEDIA_ID}/finalize").to_return(headers: JSON_HEADERS, body: {data: {id: TEST_MEDIA_ID}}.to_json)
     end
 
-    def test_a_video_larger_than_a_thousand_megabytes_uploads_in_the_segments_the_api_numbers
+    def test_a_video_larger_than_ten_thousand_megabytes_uploads_in_the_segments_the_api_numbers
       chunk_size = with_large_video { |path| upload(path) }
 
       assert_equal 1_153_434, chunk_size
-      assert_operator (LARGE_VIDEO_BYTES.to_f / chunk_size).ceil, :<=, 1000
+      assert_operator (LARGE_VIDEO_BYTES.to_f / chunk_size).ceil, :<=, 10_000
     end
 
     def test_a_video_of_a_megabyte_uploads_in_chunks_of_a_megabyte
@@ -39,7 +39,7 @@ module X
     def test_a_chunk_size_that_would_need_more_segments_than_the_api_numbers_uploads_nothing
       error = assert_raises(ArgumentError) { with_large_video { |path| upload(path, chunk_size_mb: 1) } }
 
-      assert_equal "chunk_size_mb of 1 uploads #{LARGE_VIDEO_BYTES} bytes in more than the 1000 segments the API numbers", error.message
+      assert_equal "chunk_size_mb of 1 uploads #{LARGE_VIDEO_BYTES} bytes in more than the 10000 segments the API numbers", error.message
       assert_not_requested :post, "#{BASE_URL}/initialize"
     end
 
@@ -66,9 +66,9 @@ module X
     end
 
     def test_a_video_larger_than_the_largest_segments_the_api_numbers_uploads_nothing
-      error = assert_raises(ArgumentError) { with_video((1000 * 5 * Uploader::MediaUpload::BYTES_PER_MB) + 1) { |path| upload(path) } }
+      error = assert_raises(ArgumentError) { with_video((10_000 * 5 * Uploader::MediaUpload::BYTES_PER_MB) + 1) { |path| upload(path) } }
 
-      assert_match(/is 5242880001 bytes, more than the 1000 segments of 5242880 bytes the API takes\z/, error.message)
+      assert_match(/is 52428800001 bytes, more than the 10000 segments of 5242880 bytes the API takes\z/, error.message)
       assert_not_requested :post, "#{BASE_URL}/initialize"
     end
 
@@ -95,13 +95,12 @@ module X
 
     def with_large_video(&) = with_video(LARGE_VIDEO_BYTES, &)
 
-    # A sparse file of a size, which costs no disk of its own
+    # An empty file read as a size, which costs no disk, as a file of tens of gigabytes would
     def with_video(size)
       Dir.mktmpdir do |dir|
         path = File.join(dir, "video.mp4")
         File.write(path, "")
-        File.truncate(path, size)
-        yield path
+        File.stub(:size, size) { yield path }
       end
     end
   end
