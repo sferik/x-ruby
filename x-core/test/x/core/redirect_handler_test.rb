@@ -108,7 +108,7 @@ module X
         @redirect_handler.handle(response:, request:)
       end
 
-      assert_equal "Too many redirects", e.message
+      assert_equal "GET /some_path: Too many redirects", e.message
       assert_requested :get, "http://example.com/some_path", times: Core::RedirectHandler::DEFAULT_MAX_REDIRECTS
     end
 

@@ -72,7 +72,8 @@ module X
       # A redirect that cannot be followed, such as 304 Not Modified or one whose location is missing, is not a
       # valid URL, or is not an HTTP or HTTPS URL, is returned as it is, so that the client raises an HTTPError for it,
       # however many redirects were followed before it. A redirect that can be followed once max_redirects have been
-      # raises TooManyRedirects, so a max_redirects of 0 follows none, and raises for every one that could be.
+      # raises TooManyRedirects, which names the request that redirect answered, so a max_redirects of 0 follows none,
+      # and raises for every one that could be.
       #
       # @api private
       # @param response [Net::HTTPResponse] the HTTP response to handle
@@ -90,7 +91,7 @@ module X
         uri = request.uri #: URI::Generic
         new_uri = build_new_uri(response, uri)
         return response if new_uri.nil?
-        raise TooManyRedirects, "Too many redirects" if redirect_count >= max_redirects
+        check_redirect_count(request, redirect_count)
 
         code = Integer(response.code)
         authenticator, headers = Origin.credentials_for(from: uri, to: new_uri, authenticator:, headers: headers_for(code, headers))
@@ -100,6 +101,16 @@ module X
       end
 
       private
+
+      # Raise for a redirect that would be one more than max_redirects allows
+      # @api private
+      # @param request [Net::HTTPRequest] the request the redirect answered, which the error names
+      # @param redirect_count [Integer] the redirects followed so far
+      # @return [void]
+      # @raise [TooManyRedirects] if max_redirects have been followed
+      def check_redirect_count(request, redirect_count)
+        raise TooManyRedirects.new("Too many redirects", request:) if redirect_count >= max_redirects
+      end
 
       # Build a new URI from the redirect response
       #

@@ -187,6 +187,7 @@ module X
       def handle: (response: Net::HTTPResponse, request: Net::HTTPRequest, ?headers: headers, ?authenticator: Authenticator, ?redirect_count: Integer) -> Net::HTTPResponse
 
       private
+      def check_redirect_count: (Net::HTTPRequest request, Integer redirect_count) -> void
       def build_new_uri: (Net::HTTPResponse response, URI::Generic uri) -> URI::Generic?
       def headers_for: (Integer response_code, headers headers) -> headers
       def build_request: (Net::HTTPRequest request, URI::Generic new_uri, Integer response_code, headers headers, Authenticator authenticator) -> Net::HTTPRequest
@@ -532,6 +533,12 @@ module X
   end
 
   class NetworkError < Error
+    include Core::RequestContext
+
+    def initialize: (String message, ?request: Net::HTTPRequest?) -> void
+  end
+
+  class TooManyRedirects < Error
     include Core::RequestContext
 
     def initialize: (String message, ?request: Net::HTTPRequest?) -> void

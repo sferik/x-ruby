@@ -14,6 +14,8 @@ module X
     cover HTTPError
     cover InvalidResponse
     cover NetworkError
+    cover TooManyRedirects
+    cover Core::RedirectHandler
     cover StreamingClient
 
     def setup
@@ -81,6 +83,23 @@ module X
 
       assert_equal "GET /2/tweets/search/stream: The body of the 200 response is not JSON (no content type)", error.message
       assert_equal [:get, URI("https://api.x.com/2/tweets/search/stream?expansions=author_id")], [error.http_method, error.uri]
+    end
+
+    def test_the_error_of_too_many_redirects_names_the_request_redirected_last
+      stub_request(:get, "https://api.x.com/2/users/1").to_return(status: 302, headers: {"Location" => "https://api.x.com/2/users/2"})
+      stub_request(:get, "https://api.x.com/2/users/2").to_return(status: 302, headers: {"Location" => "https://api.x.com/2/users/1"})
+      error = assert_raises(TooManyRedirects) { Client.new(bearer_token: TEST_BEARER_TOKEN, max_redirects: 1).get("users/1") }
+
+      assert_equal "GET /2/users/2: Too many redirects", error.message
+      assert_equal [:get, URI("https://api.x.com/2/users/2")], [error.http_method, error.uri]
+    end
+
+    def test_too_many_redirects_built_without_a_request_names_none
+      error = TooManyRedirects.new("Too many redirects")
+
+      assert_equal "Too many redirects", error.message
+      assert_nil error.http_method
+      assert_nil error.uri
     end
 
     def test_an_error_built_without_a_request_names_none

@@ -151,6 +151,8 @@ module X
   end
 
   class TooManyRedirects < Error
+    def http_method: () -> Symbol?
+    def uri: () -> URI::Generic?
   end
 
   class UnavailableForLegalReasons < ClientError
