@@ -22,6 +22,39 @@ module X
   class MissingClient < Objects::Error
   end
 
+  class Trend
+    FIELDS: Array[String]
+    MAX_TRENDS: Integer
+
+    attr_reader attrs: Hash[String, untyped]
+
+    def self.at: (Integer | String woeid, client: Objects::_Client, **untyped params) -> Array[Trend]
+    def initialize: (Hash[String, untyped] attrs) -> void
+    def to_h: () -> Hash[String, untyped]
+    def name: () -> String?
+    def post_count: () -> Integer?
+    def tweet_count: () -> Integer?
+    def as_json: (*untyped) -> Hash[String, untyped]
+    def to_json: (?JSON::State? state) -> String
+  end
+
+  class PersonalizedTrend
+    ENDPOINT: String
+    FIELDS: Array[String]
+
+    attr_reader attrs: Hash[String, untyped]
+
+    def self.all: (client: Objects::_Client, **untyped params) -> Array[PersonalizedTrend]
+    def initialize: (Hash[String, untyped] attrs) -> void
+    def to_h: () -> Hash[String, untyped]
+    def name: () -> String?
+    def category: () -> String?
+    def post_count: () -> String?
+    def trending_since: () -> String?
+    def as_json: (*untyped) -> Hash[String, untyped]
+    def to_json: (?JSON::State? state) -> String
+  end
+
   class Usage
     ENDPOINT: String
     FIELDS: Array[String]
@@ -150,6 +183,8 @@ module X
       def find_community: (id id, **untyped params) ?{ (Problem problem) -> void } -> Community?
       def find_community!: (id id, **untyped params) -> Community
       def search_communities: (String query, **untyped params) -> Cursor[Community]
+      def trends: (Integer | String woeid, **untyped params) -> Array[Trend]
+      def personalized_trends: (**untyped params) -> Array[PersonalizedTrend]
       def find_direct_message: (id id, **untyped params) ?{ (Problem problem) -> void } -> DirectMessage?
       def find_dm: (id id, **untyped params) ?{ (Problem problem) -> void } -> DirectMessage?
       def find_direct_message!: (id id, **untyped params) -> DirectMessage

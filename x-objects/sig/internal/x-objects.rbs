@@ -408,6 +408,7 @@ module X
         include Lookups::Media
         include Lookups::Communities
         include Lookups::DirectMessages
+        include Lookups::Trends
 
         module Users : _Client
           def find_user: (id | String id_or_username, **untyped params) ?{ (Problem problem) -> void } -> User?
@@ -471,6 +472,11 @@ module X
           def find_community: (id id, **untyped params) ?{ (Problem problem) -> void } -> Community?
           def find_community!: (id id, **untyped params) -> Community
           def search_communities: (String query, **untyped params) -> Cursor[Community]
+        end
+
+        module Trends : _Client
+          def trends: (Integer | String woeid, **untyped params) -> Array[Trend]
+          def personalized_trends: (**untyped params) -> Array[PersonalizedTrend]
         end
 
         module DirectMessages : _Client
@@ -547,6 +553,16 @@ module X
         end
       end
     end
+  end
+
+  class Trend
+    include Objects::Serialization
+
+    private def self.woeid_of: (untyped woeid) -> String
+  end
+
+  class PersonalizedTrend
+    include Objects::Serialization
   end
 
   class Usage

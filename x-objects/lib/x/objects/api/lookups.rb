@@ -6,6 +6,7 @@ require_relative "lookups/lists"
 require_relative "lookups/media"
 require_relative "lookups/posts"
 require_relative "lookups/spaces"
+require_relative "lookups/trends"
 require_relative "lookups/users"
 
 module X
@@ -25,6 +26,7 @@ module X
         include Spaces
         include Communities
         include DirectMessages
+        include Trends
       end
     end
   end
