@@ -47,7 +47,7 @@ module X
     def inspect: () -> String
     def url: () -> String
     def credentials: (String | Hash[String | Symbol, String] callback) -> Hash[Symbol, String | Time | nil]
-    def client: (String | Hash[String | Symbol, String] callback, ?api_key: String?, ?api_key_secret: String?, ?access_token: String?, ?access_token_secret: String?, ?bearer_token: String?, ?client_id: String?, ?client_secret: String?, ?refresh_token: String?, ?expires_at: Time?, ?base_url: String, ?open_timeout: (Float | Integer)?, ?read_timeout: (Float | Integer)?, ?write_timeout: (Float | Integer)?, ?keep_alive_timeout: Float | Integer, ?debug_output: _DebugOutput?, ?proxy_url: (URI::Generic | String)?, ?default_array_class: Class, ?default_object_class: object_class, ?headers: headers, ?max_redirects: Integer, ?max_rate_limit_retries: Integer, ?max_rate_limit_wait: Float | Integer, ?max_retries: Integer, ?on_response: _ResponseHook?, ?on_token_refresh: _TokenRefreshHook?, ?load_tokens: _TokenLoader?) -> Client
+    def client: (String | Hash[String | Symbol, String] callback, ?base_url: String, ?open_timeout: (Float | Integer)?, ?read_timeout: (Float | Integer)?, ?write_timeout: (Float | Integer)?, ?keep_alive_timeout: Float | Integer, ?debug_output: _DebugOutput?, ?proxy_url: (URI::Generic | String)?, ?default_array_class: Class, ?default_object_class: object_class, ?headers: headers, ?max_redirects: Integer, ?max_rate_limit_retries: Integer, ?max_rate_limit_wait: Float | Integer, ?max_retries: Integer, ?on_response: _ResponseHook?, ?on_token_refresh: _TokenRefreshHook?, ?load_tokens: _TokenLoader?) -> Client
   end
 
   class AuthorizationError < Error
