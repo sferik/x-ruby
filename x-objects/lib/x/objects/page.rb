@@ -44,11 +44,12 @@ module X
     # @param meta [Hash] the pagination metadata
     # @param problems [Array<Problem>] the problems the page's response reported
     # @return [Page] a new page
+    # @raise [ArgumentError] if the items are not an Array of resources, or the metadata is not a Hash
     # @example Create a page
     #   X::Page.new([user], {"result_count" => 1})
     def initialize(items, meta, problems: [])
-      @items = items.freeze
-      @meta = Objects::Utils.deep_freeze(meta)
+      @items = resources!(items).freeze
+      @meta = Objects::Utils.deep_freeze(Hash.try_convert(meta) || raise(ArgumentError, "meta must be a Hash, not #{meta.inspect}"))
       @problems = problems.freeze
       freeze
     end
@@ -127,6 +128,23 @@ module X
       raise ArgumentError, "#{self.class} reads format #{MARSHAL_FORMAT} of Marshal, not #{format.inspect}" unless MARSHAL_FORMAT.eql?(format)
 
       initialize(items, meta, problems: problems.map { |problem| Problem.new(problem) })
+    end
+
+    private
+
+    # The resources a page is given, which must be an Array of them
+    #
+    # Items that are not, such as nil, would otherwise be taken, and raise NoMethodError when the page is read.
+    #
+    # @api private
+    # @param items [Array<Resource>] the resources
+    # @return [Array<Resource>] the resources
+    # @raise [ArgumentError] if the items are not an Array of resources
+    def resources!(items)
+      resources = Array.try_convert(items)
+      return resources if resources&.all?(Resource)
+
+      raise ArgumentError, "items must be an Array of resources, not #{items.inspect}"
     end
   end
 end

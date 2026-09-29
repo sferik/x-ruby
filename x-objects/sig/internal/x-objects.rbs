@@ -672,6 +672,9 @@ module X
 
   class Page[R < Resource = Resource]
     MARSHAL_FORMAT: Integer
+
+    private
+    def resources!: (untyped items) -> Array[R]
   end
 
   class Cursor[R < Resource = Resource]

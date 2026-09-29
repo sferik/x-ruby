@@ -21,6 +21,26 @@ module X
       assert_predicate @page.meta, :frozen?
     end
 
+    def test_items_that_are_not_resources_are_refused
+      [nil, @users.first, [1], [@users.first, nil]].each do |items|
+        error = assert_raises(ArgumentError) { Page.new(items, {}) }
+
+        assert_equal "items must be an Array of resources, not #{items.inspect}", error.message
+      end
+    end
+
+    def test_metadata_that_is_not_a_hash_is_refused
+      error = assert_raises(ArgumentError) { Page.new(@users, nil) }
+
+      assert_equal "meta must be a Hash, not nil", error.message
+    end
+
+    def test_what_converts_to_an_array_or_a_hash_is_taken_as_one
+      page = Page.new(Struct.new(:to_ary).new(@users), Struct.new(:to_hash).new({"result_count" => 2}))
+
+      assert_equal [@users, 2], [page.items, page.result_count]
+    end
+
     def test_frozen
       assert_predicate @page, :frozen?
     end
