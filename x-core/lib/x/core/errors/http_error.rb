@@ -200,13 +200,20 @@ module X
     end
 
     # The title and detail of a problem, joined
+    #
+    # A detail that says no more than the title, as the Unauthorized of a 401 does, is left out, rather than
+    # repeated behind it.
+    #
     # @api private
     # @param body [Hash{String => untyped}] the body
-    # @return [String, nil] the title and detail, or nil unless the body has both
+    # @return [String, nil] the title and detail, the title alone if the detail is the same, or nil unless the body
+    #   has both
     def message_from_problem(body)
       title = body["title"]
       detail = body["detail"]
-      "#{title}: #{detail}" if title && detail
+      return unless title && detail
+
+      title.eql?(detail) ? title : "#{title}: #{detail}"
     end
 
     # Check whether the response carries JSON
