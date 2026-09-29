@@ -328,6 +328,7 @@ module X
     def published_count: () -> Integer?
     def as_json: (*untyped) -> bot
     def to_json: (?JSON::State? state) -> bot
+    def marshal_dump: () -> bot
     def inspect: () -> String
   end
 

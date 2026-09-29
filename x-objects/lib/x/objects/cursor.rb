@@ -323,6 +323,20 @@ module X
     #   list.members.to_a.to_json # => "[{\"id\":\"7505382\"}]"
     def to_json(_state = nil) = raise(UnsupportedOperation, SERIALIZATION_MESSAGE)
 
+    # Refuse to write the cursor with Marshal, as it refuses to write it as JSON
+    #
+    # A cursor holds its client, and the threads and locks that fetch its pages, none of which Marshal can write, and
+    # caching the collection it names would mean reading every page of it, as {#as_json} says. It raises as that does,
+    # rather than with the TypeError Marshal would raise from within the cursor. Marshal what first(n) or to_a reads,
+    # or a page, instead.
+    #
+    # @api public
+    # @return [void]
+    # @raise [UnsupportedOperation] always
+    # @example Cache the first page of the followers of a user rather than the cursor
+    #   Rails.cache.write("followers", user.followers.page(0))
+    def marshal_dump = raise(UnsupportedOperation, SERIALIZATION_MESSAGE)
+
     # Summarize the cursor for the console
     #
     # @api public
