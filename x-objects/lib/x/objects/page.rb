@@ -8,6 +8,10 @@ module X
   class Page
     include Enumerable
 
+    # The number of the format of the state Marshal writes, which a release that changes the format raises
+    MARSHAL_FORMAT = 1
+    private_constant :MARSHAL_FORMAT
+
     # The resources on this page
     # @api public
     # @return [Array<Resource>] the resources
@@ -94,5 +98,32 @@ module X
     # @example Serialize a page
     #   page.to_json # => "[{\"id\":\"7505382\"}]"
     def to_json(state = nil) = as_json.to_json(state)
+
+    # The state Marshal writes
+    #
+    # What is written is plain data, led by the number of its format, so that a page written by one release of 1.x is
+    # read by a later one: its resources, which Marshal writes as a resource writes itself, without its client, its
+    # metadata, and the attributes of its problems.
+    #
+    # @api public
+    # @return [Array] the number of the format, then the state of the page
+    # @example Cache a page
+    #   Rails.cache.write("followers", user.followers.page(0))
+    def marshal_dump = [MARSHAL_FORMAT, items, meta, problems.map(&:attrs)]
+
+    # Restore a page Marshal read, frozen as the page that was written was
+    #
+    # @api public
+    # @param state [Array] the state Marshal wrote
+    # @return [void]
+    # @raise [ArgumentError] if the state is of a format this release does not read
+    # @example Read a cached page
+    #   Marshal.load(Marshal.dump(page)).next_token
+    def marshal_load(state)
+      format, items, meta, problems = state
+      raise ArgumentError, "#{self.class} reads format #{MARSHAL_FORMAT} of Marshal, not #{format.inspect}" unless MARSHAL_FORMAT.eql?(format)
+
+      initialize(items, meta, problems: problems.map { |problem| Problem.new(problem) })
+    end
   end
 end

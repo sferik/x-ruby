@@ -286,6 +286,8 @@ module X
     def result_count: () -> Integer?
     def as_json: (*untyped) -> Array[R]
     def to_json: (?JSON::State? state) -> String
+    def marshal_dump: () -> [Integer, Array[R], Hash[String, untyped], Array[Hash[String, untyped]]]
+    def marshal_load: ([Integer, Array[R], Hash[String, untyped], Array[Hash[String, untyped]]] state) -> void
   end
 
   class Cursor[R < Resource = Resource]

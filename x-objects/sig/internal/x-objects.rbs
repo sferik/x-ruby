@@ -663,6 +663,10 @@ module X
     def cursor: (singleton(Resource) klass, String path, max_results: Integer?, ?min_results: Integer, ?total: Symbol?, ?app_only: bool, ?ids_only: bool, **untyped params) -> Cursor[untyped]
   end
 
+  class Page[R < Resource = Resource]
+    MARSHAL_FORMAT: Integer
+  end
+
   class Cursor[R < Resource = Resource]
     DEFAULT_TOKEN_PARAM: String
     SERIALIZATION_MESSAGE: String
