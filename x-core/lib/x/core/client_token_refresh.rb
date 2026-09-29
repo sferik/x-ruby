@@ -36,6 +36,25 @@ module X
         @load_tokens = SettingValidator.callable!(:load_tokens, load_tokens)
       end
 
+      # Share the authenticator of the client this one was copied from
+      #
+      # A copy that holds the credentials of the client shares its OAuth 2.0 or app-only authenticator, so that the
+      # copy refreshes the tokens of the client, or sends the bearer token it fetched, rather than hold tokens of its
+      # own. A copy given an authenticator of its own keeps it.
+      #
+      # @api private
+      # @param other [Authenticator] the authenticator of the client this one was copied from
+      # @param options [Hash] the options the copy was given in place of the client's
+      # @return [void]
+      def share_authenticator(other, options)
+        return if options[:authenticator]
+
+        case other
+        when AppOnlyAuthenticator then share_app_only(other, options)
+        when OAuth2Authenticator then share_oauth2(other, options)
+        end
+      end
+
       # Share the OAuth 2.0 authenticator of the client this one was copied from
       #
       # A refresh by either client then reaches both. X accepts a refresh token once, so a copy that refreshed with
@@ -44,18 +63,30 @@ module X
       # Whether the two share it is decided by the options the copy was given, not by the tokens it was built with:
       # a refresh on another thread may replace them while it is built, and a copy that held on to the ones replaced
       # could never refresh again. The expiration time is a fact about the access token the two hold, so a copy given
-      # another sets it for both. A copy given an authenticator of its own keeps it.
+      # another sets it for both.
       #
       # @api private
-      # @param other [Authenticator] the authenticator of the client this one was copied from
+      # @param other [OAuth2Authenticator] the authenticator of the client this one was copied from
       # @param options [Hash] the options the copy was given in place of the client's
       # @return [void]
-      def share_authenticator(other, options)
-        return if options[:authenticator]
-        return unless oauth2_authenticator_in_use && other.is_a?(OAuth2Authenticator) && other.__send__(:holds?, options)
+      def share_oauth2(other, options)
+        return unless oauth2_authenticator_in_use && other.__send__(:holds?, options)
 
         other.__send__(:update_expires_at, options.fetch(:expires_at)) if options.key?(:expires_at)
         @authenticator = join(other)
+      end
+
+      # Share the app-only authenticator of the client this one was copied from
+      #
+      # It is shared by a copy that authenticates as the app with the API key and secret the authenticator holds,
+      # and was given no bearer token of its own, so the bearer token the client fetched, or fetches, is fetched once.
+      #
+      # @api private
+      # @param other [AppOnlyAuthenticator] the authenticator of the client this one was copied from
+      # @param options [Hash] the options the copy was given in place of the client's
+      # @return [void]
+      def share_app_only(other, options)
+        @authenticator = other if AppOnlyAuthenticator === @authenticator && other.__send__(:holds?, options)
       end
 
       # Take an authenticator the client was given, as it would one it built

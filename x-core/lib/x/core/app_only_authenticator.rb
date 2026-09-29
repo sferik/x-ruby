@@ -109,6 +109,18 @@ module X
     #   api_key_secret
     attr_reader :api_key_secret
 
+    # Check whether a copy of a client, given these options, holds these credentials
+    #
+    # Internal to x-core: Client shares the authenticator with a copy that holds its API key and secret and was given
+    # no bearer token, and calls it with __send__, since it is private.
+    #
+    # @api private
+    # @param options [Hash] the options the copy was given in place of the client's
+    # @return [Boolean] true if the options name no bearer token, and no API key or secret but the ones held
+    def holds?(options)
+      !options.key?(:bearer_token) && options.slice(:api_key, :api_key_secret) <= {api_key:, api_key_secret:}
+    end
+
     # Run a request, again with a bearer token fetched in place of one the API rejects
     #
     # Only a rejection by the origin the token is sent to drops it; see {Core::Origin}. A token fetched for the
