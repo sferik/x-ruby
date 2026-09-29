@@ -126,7 +126,7 @@ module X
         validate_concurrency!(concurrency)
         query = Utils.merge_params(default_params, params)
         bodies = Parallel.map(values.uniq.each_slice(MAX_BATCH_SIZE), concurrency:) { |batch| get(path, client:, query: query.merge(Utils.query(key => batch))) }
-        bodies.flat_map { |body| collection_from_response(reporting(body, &), client:, hydrated: fully_requested_by?(query)) }
+        bodies.flat_map { |body| collection_from_response(reporting(body, &), client:, hydrated: fully_requested_by?(query), query:) }
       end
 
       # Order resources as the identifiers they were asked for by, each once

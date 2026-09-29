@@ -148,13 +148,16 @@ module X
       @resources: Hash[[singleton(Resource), untyped], Resource]
 
       @problems: Array[Problem]
+      @query: Hash[String, untyped]?
 
       attr_reader problems: Array[Problem]
 
-      def initialize: (?Hash[untyped, untyped]? data, ?problems: Array[Problem]) -> void
+      def initialize: (?Hash[untyped, untyped]? data, ?problems: Array[Problem], ?query: Hash[String, untyped]?) -> void
       def resolve: (singleton(Resource) klass, untyped id, client: _Client? client) -> Resource
 
       private
+      def build: (singleton(Resource) klass, untyped id, _Client? client) -> Resource
+      def fully_requested?: (singleton(Resource) klass) -> bool
       def index: (singleton(Resource) klass) -> Hash[untyped, attrs]
     end
 
@@ -221,8 +224,8 @@ module X
 
     interface _FinderHost
       def default_params: () -> Hash[String, Array[String]]
-      def resource_from_response: (body body, client: _Client?, ?hydrated: bool) -> Resource?
-      def collection_from_response: (body body, client: _Client?, ?hydrated: bool) -> Array[Resource]
+      def resource_from_response: (body body, client: _Client?, ?hydrated: bool, ?query: Hash[String, untyped]?) -> Resource?
+      def collection_from_response: (body body, client: _Client?, ?hydrated: bool, ?query: Hash[String, untyped]?) -> Array[Resource]
     end
 
     module UserFinders : Class, BatchFinders
@@ -298,7 +301,7 @@ module X
 
     # The class side of DirectMessage, which builds its messages
     interface _DirectMessageClass
-      def resource_from_response: (body body, client: _Client?, ?hydrated: bool) -> DirectMessage?
+      def resource_from_response: (body body, client: _Client?, ?hydrated: bool, ?query: Hash[String, untyped]?) -> DirectMessage?
     end
 
     module DirectMessageConversations : _DirectMessageClass

@@ -81,7 +81,7 @@ module X
     end
 
     def test_a_resource_without_default_parameters_is_fully_requested_by_any_request
-      assert Poll.__send__(:fully_requested_by?, {"poll.fields" => "id"})
+      assert Class.new(Resource).__send__(:fully_requested_by?, {"poll.fields" => "id"})
     end
   end
 end

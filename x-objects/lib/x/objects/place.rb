@@ -23,6 +23,17 @@ module X
     #   X::Place.__send__(:id_type) # => :raw
     def self.id_type = :raw
 
+    # The default query parameters, which request every field
+    #
+    # The API offers no lookup of places, so they are requested by the posts that expand them, which ask for these
+    # fields, and a place a response included with all of them is hydrated.
+    #
+    # @api public
+    # @return [Hash{String => Array<String>}] the default query parameters
+    # @example Get the default parameters
+    #   X::<built-in method capitalize of str object at 0x107c97030>.default_params # => {"place.fields" => [...]}
+    def self.default_params = {"place.fields" => FIELDS}
+
     # The key under which places appear in the includes of a response
     #
     # @api private

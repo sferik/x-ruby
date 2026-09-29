@@ -15,6 +15,17 @@ module X
     # Every public poll field
     FIELDS = %w[duration_minutes end_datetime id options voting_status].freeze
 
+    # The default query parameters, which request every field
+    #
+    # The API offers no lookup of polls, so they are requested by the posts that expand them, which ask for these
+    # fields, and a poll a response included with all of them is hydrated.
+    #
+    # @api public
+    # @return [Hash{String => Array<String>}] the default query parameters
+    # @example Get the default parameters
+    #   X::<built-in method capitalize of str object at 0x107c96f70>.default_params # => {"poll.fields" => [...]}
+    def self.default_params = {"poll.fields" => FIELDS}
+
     # The key under which polls appear in the includes of a response
     #
     # @api private

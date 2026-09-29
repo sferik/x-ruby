@@ -215,16 +215,18 @@ module X
       # @param body [Hash, nil] the parsed response body
       # @param client [Object] the client used to make the request
       # @param hydrated [Boolean] whether the response holds every field the object layer requests
+      # @param query [Hash{String => Object}, nil] the query parameters of the request, merged over the defaults,
+      #   which tell whether the resources it included are hydrated, or nil if they are not known
       # @return [Resource, nil] the resource or nil if the response has no data
       # @raise [InvalidAttribute] if the response holds a resource without an identifier, or with one that is not one
       # @example Build a user from a response
       #   X::User.resource_from_response({"data" => {"id" => "7505382"}}, client: client)
-      def resource_from_response(body, client:, hydrated: false)
+      def resource_from_response(body, client:, hydrated: false, query: nil)
         body = body.to_h
         data = body["data"]
         return unless data.is_a?(Hash)
 
-        built(data, client:, includes: Objects::Includes.new(body["includes"], problems: Problem.all_from(body)), hydrated:)
+        built(data, client:, includes: Objects::Includes.new(body["includes"], problems: Problem.all_from(body), query:), hydrated:)
       end
 
       # Build resources from a response with a data array
@@ -233,14 +235,16 @@ module X
       # @param body [Hash, nil] the parsed response body
       # @param client [Object] the client used to make the request
       # @param hydrated [Boolean] whether the response holds every field the object layer requests
+      # @param query [Hash{String => Object}, nil] the query parameters of the request, merged over the defaults,
+      #   which tell whether the resources it included are hydrated, or nil if they are not known
       # @return [Array<Resource>] the resources
       # @raise [InvalidAttribute] if the response holds a resource without an identifier, or with one that is not one
       # @example Build users from a response
       #   X::User.collection_from_response({"data" => [{"id" => "7505382"}]}, client: client)
-      def collection_from_response(body, client:, hydrated: false)
+      def collection_from_response(body, client:, hydrated: false, query: nil)
         body = body.to_h
         data = Array.try_convert(body["data"])
-        includes = Objects::Includes.new(body["includes"], problems: Problem.all_from(body))
+        includes = Objects::Includes.new(body["includes"], problems: Problem.all_from(body), query:)
         Array(data).map { |attrs| built(attrs, client:, includes:, hydrated:) }.freeze
       end
 
