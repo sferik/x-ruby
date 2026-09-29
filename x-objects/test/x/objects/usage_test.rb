@@ -36,6 +36,11 @@ module X
       assert_predicate usage.attrs, :frozen?
     end
 
+    def test_the_reset_day_is_read_as_an_integer_whether_it_is_a_number_or_a_string
+      assert_equal [16, 16], [Usage.new({"cap_reset_day" => 16}).cap_reset_day, Usage.new({"cap_reset_day" => "16"}).cap_reset_day]
+      assert_equal 'X::Usage#cap_reset_day cannot be read from "soon"', assert_raises(InvalidAttribute) { Usage.new({"cap_reset_day" => "soon"}).cap_reset_day }.message
+    end
+
     def test_daily_usage_counts_a_day_without_a_number_as_zero
       daily = Usage.new(DATA).daily
 

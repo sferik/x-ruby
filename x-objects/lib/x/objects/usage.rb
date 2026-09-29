@@ -92,11 +92,14 @@ module X
 
     # The day of the month the billing cycle, and so the usage, starts over
     #
+    # It is an Integer whether the response holds it as a number or as a String, as it holds the other counts.
+    #
     # @api public
     # @return [Integer, nil] the day of the month
+    # @raise [InvalidAttribute] if the response holds a value that is not a number
     # @example Get the reset day
     #   usage.cap_reset_day # => 16
-    def cap_reset_day = attrs["cap_reset_day"]
+    def cap_reset_day = integer("cap_reset_day", attrs["cap_reset_day"])
 
     # The number of posts the project read each day
     #
