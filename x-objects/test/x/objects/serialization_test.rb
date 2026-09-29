@@ -82,15 +82,26 @@ module X
       assert_equal JSON.pretty_generate([@post.attrs]), JSON.pretty_generate(page)
     end
 
-    def test_a_cursor_serializes_every_resource_it_pages
+    def test_a_cursor_refuses_to_serialize_every_resource_it_would_page
       cursor = paged_followers
 
-      assert_equal %w[1 2], cursor.as_json.map { |user| user.attrs.fetch("id") }
-      assert_equal [{"id" => "1"}, {"id" => "2"}], JSON.parse(cursor.to_json)
+      [-> { cursor.as_json }, -> { cursor.to_json }, -> { cursor.to_json(JSON::State.new) }].each do |serialize|
+        error = assert_raises(UnsupportedOperation, &serialize)
+        assert_equal "Serializing a cursor would read every page of its collection, a billed request per page; " \
+          "serialize cursor.first(n), or cursor.to_a to read every page", error.message
+      end
+      assert_empty @client.requests
     end
 
-    def test_a_cursor_serializes_through_an_encoder
-      assert_equal JSON.pretty_generate([{"id" => "1"}, {"id" => "2"}]), JSON.pretty_generate(paged_followers)
+    def test_a_cursor_refuses_to_serialize_through_an_encoder
+      cursor = paged_followers
+
+      assert_raises(UnsupportedOperation) { JSON.generate({"followers" => cursor}) }
+      assert_empty @client.requests
+    end
+
+    def test_what_a_cursor_reads_serializes
+      assert_equal [{"id" => "1"}, {"id" => "2"}], JSON.parse(paged_followers.to_a.to_json)
     end
 
     private

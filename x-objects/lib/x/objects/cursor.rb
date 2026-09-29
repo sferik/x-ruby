@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require "json"
 require_relative "memo"
 require_relative "page"
 require_relative "pages"
@@ -14,6 +13,10 @@ module X
 
     # The query parameter most endpoints take the token of the next page in
     DEFAULT_TOKEN_PARAM = "pagination_token"
+    # The message raised for a cursor serialized whole, which would read every page of its collection
+    SERIALIZATION_MESSAGE = "Serializing a cursor would read every page of its collection, a billed request per " \
+      "page; serialize cursor.first(n), or cursor.to_a to read every page"
+    private_constant :SERIALIZATION_MESSAGE
 
     # The class of the resources in this collection
     # @api public
@@ -306,25 +309,31 @@ module X
     #   user.followers.ids
     def ids = stubs.map(&:id).freeze
 
-    # Every resource of the collection, as a JSON encoder and ActiveSupport read them
+    # Refuse to write the collection as JSON, which would read every page of it
     #
-    # Serializing a cursor reads every page of the collection, a request per page, and the API bills each resource
-    # it returns, so serialize what first or take read instead when the whole collection is not wanted.
+    # Serializing a cursor would read every page of the collection, a request per page, and the API bills each
+    # resource it returns, from a call that says nothing of it, such as a cursor in a Hash that a log or a render
+    # writes. It raises instead, as ActiveSupport would otherwise read a cursor as the Enumerable it is. Serialize what
+    # first(n) or to_a reads instead, each of which says at the call how much it reads.
     #
     # @api public
-    # @return [Array<Resource>] the resources
+    # @return [void]
+    # @raise [UnsupportedOperation] always
     # @example Serialize the first ten followers rather than every one of them
     #   user.followers.first(10).as_json
-    def as_json(*) = to_a
+    def as_json(*) = raise(UnsupportedOperation, SERIALIZATION_MESSAGE)
 
-    # The collection as a JSON array of attributes, reading every page
+    # Refuse to write the collection as a JSON array, which would read every page
+    #
+    # It raises as {#as_json} does, for the reason that says.
     #
     # @api public
-    # @param state [JSON::State, nil] the state a JSON encoder passes, which the attributes are given
-    # @return [String] the resources as a JSON array
-    # @example Serialize a whole collection
-    #   list.members.to_json # => "[{\"id\":\"7505382\"}]"
-    def to_json(state = nil) = as_json.to_json(state)
+    # @param _state [JSON::State, nil] the state a JSON encoder passes
+    # @return [void]
+    # @raise [UnsupportedOperation] always
+    # @example Serialize a whole collection, reading every page of it
+    #   list.members.to_a.to_json # => "[{\"id\":\"7505382\"}]"
+    def to_json(_state = nil) = raise(UnsupportedOperation, SERIALIZATION_MESSAGE)
 
     # Summarize the cursor for the console
     #

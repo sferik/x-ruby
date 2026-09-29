@@ -321,8 +321,8 @@ module X
     def empty?: () -> bool
     def one?: (*untyped pattern) ?{ (R) -> boolish } -> bool
     def published_count: () -> Integer?
-    def as_json: (*untyped) -> Array[R]
-    def to_json: (?JSON::State? state) -> String
+    def as_json: (*untyped) -> bot
+    def to_json: (?JSON::State? state) -> bot
     def inspect: () -> String
   end
 

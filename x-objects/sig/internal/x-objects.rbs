@@ -660,6 +660,8 @@ module X
   end
 
   class Cursor[R < Resource = Resource]
+    SERIALIZATION_MESSAGE: String
+
     @prefetch: bool
     @app_only: bool
     @ids_only: bool
