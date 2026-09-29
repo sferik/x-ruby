@@ -45,7 +45,7 @@ module X
     end
 
     def test_a_marshalled_resource_stays_hydrated
-      query = User.default_params
+      query = Objects::Utils.query(Post.default_params)
       includes = Objects::Includes.new({"users" => [{"id" => "9", "username" => "sferik"}]}, query:)
       post = Post.__send__(:build, {"id" => "1", "author_id" => "9"}, client: @client, includes:, hydrated: true)
       loaded = Marshal.load(Marshal.dump(post))
@@ -53,6 +53,26 @@ module X
       assert_predicate loaded, :hydrated?
       assert_same loaded, loaded.hydrate
       assert_equal post.marshal_dump, loaded.marshal_dump
+    end
+
+    def test_a_marshalled_resource_whose_request_lacks_a_field_this_release_requests_is_not_hydrated
+      query = Objects::Utils.query(Post.default_params).merge("post.fields" => "id,text")
+      post = Post.__send__(:build, {"id" => "1", "text" => "Hello"}, client: @client, includes: Objects::Includes.new(nil, query:), hydrated: true)
+
+      refute_predicate Marshal.load(Marshal.dump(post)), :hydrated?
+    end
+
+    def test_a_marshalled_resource_built_without_a_query_stays_as_hydrated_as_it_was
+      post = Post.__send__(:build, {"id" => "1"}, client: @client, hydrated: true)
+
+      assert_predicate Marshal.load(Marshal.dump(post)), :hydrated?
+      refute_predicate Marshal.load(Marshal.dump(@post)), :hydrated?
+    end
+
+    def test_a_marshalled_resource_that_was_not_hydrated_is_not_hydrated_by_its_query
+      post = Post.__send__(:build, {"id" => "1"}, client: @client, includes: Objects::Includes.new(nil, query: Objects::Utils.query(Post.default_params)))
+
+      refute_predicate Marshal.load(Marshal.dump(post)), :hydrated?
     end
 
     def test_a_marshalled_resource_reports_the_problems_of_its_response

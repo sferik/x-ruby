@@ -40,7 +40,8 @@ module X
       #
       # What Marshal reads is a client-less resource that answers its readers, resolves the references its response
       # included, and reports its problems, as the resource that was written did, and raises from a hydrate, refresh,
-      # or collection that would make a request.
+      # or collection that would make a request. It is hydrated if it was, and the query of its request asks for every
+      # field this release requests, so that one written before a minor release added to the fields is not.
       #
       # @api public
       # @param state [Array] the state Marshal wrote
@@ -52,7 +53,8 @@ module X
         format, attrs, hydrated, data, problems, query = state
         raise UnsupportedMarshalFormat, "#{self.class} reads format #{MARSHAL_FORMAT} of Marshal, not #{format.inspect}" unless MARSHAL_FORMAT.eql?(format)
 
-        setup(attrs, client: nil, hydrated:, includes: Includes.new(data, problems:, query:)) # steep:ignore NoMethod
+        includes = Includes.new(data, problems:, query:)
+        setup(attrs, client: nil, hydrated: includes.hydrated_as_read?(self.class, hydrated), includes:) # steep:ignore NoMethod
       end
 
       # Write the state Marshal writes as YAML, which leaves out the client

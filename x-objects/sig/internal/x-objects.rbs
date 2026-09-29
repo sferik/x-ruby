@@ -200,6 +200,7 @@ module X
       def resolve: (singleton(Resource) klass, untyped id, client: _Client? client) -> Resource
       def problems_about: (Array[untyped] ids) -> Array[Problem]
       def state_of: (Array[Resource] resources) -> Objects::included
+      def hydrated_as_read?: (singleton(Resource) klass, bool hydrated) -> bool
 
       private
       def keep: (Hash[String, Array[attrs]] kept, Array[untyped] ids) -> Array[[singleton(Resource), attrs]]
@@ -703,6 +704,7 @@ module X
 
     private
     def response_of: (Resource resource) -> Objects::Includes
+    def read: (singleton(Resource) klass, Objects::attrs attrs, bool hydrated, Objects::Includes includes) -> R
     def resource_states: (Array[Objects::Includes] responses) -> Array[[singleton(Resource), Objects::attrs, bool, Integer]]
     def resources!: (untyped items) -> Array[R]
   end

@@ -136,7 +136,8 @@ module X
     # Restore a page Marshal read, frozen as the page that was written was
     #
     # The resources that came from one response are built over one identity map again, so a reference they share
-    # resolves to the same object, as it did before the page was written.
+    # resolves to the same object, as it did before the page was written. Each is hydrated if it was, and the query of
+    # its request asks for every field this release requests, as a resource Marshal reads is.
     #
     # @api public
     # @param state [Array] the state Marshal wrote
@@ -149,7 +150,7 @@ module X
       raise UnsupportedMarshalFormat, "#{self.class} reads format #{MARSHAL_FORMAT} of Marshal, not #{format.inspect}" unless MARSHAL_FORMAT.eql?(format)
 
       responses = responses.map { |data, about, query| Objects::Includes.new(data, problems: about, query:) }
-      initialize(resources.map { |klass, attrs, hydrated, response| klass.__send__(:build, attrs, includes: responses.fetch(response), hydrated:) }, meta, problems:)
+      initialize(resources.map { |klass, attrs, hydrated, response| read(klass, attrs, hydrated, responses.fetch(response)) }, meta, problems:)
     end
 
     # Write the state Marshal writes as YAML, without the clients of the resources
@@ -182,6 +183,15 @@ module X
     # @param resource [Resource] the resource
     # @return [Objects::Includes] the identity map
     def response_of(resource) = resource.__send__(:includes)
+
+    # Build a resource Marshal read of the page, over the identity map of its response
+    # @api private
+    # @param klass [Class] the resource class
+    # @param attrs [Hash] the attributes
+    # @param hydrated [Boolean] whether the resource was hydrated as it was written
+    # @param includes [Objects::Includes] the identity map of its response
+    # @return [Resource] the resource
+    def read(klass, attrs, hydrated, includes) = klass.__send__(:build, attrs, includes:, hydrated: includes.hydrated_as_read?(klass, hydrated))
 
     # What Marshal writes of each resource of the page
     #

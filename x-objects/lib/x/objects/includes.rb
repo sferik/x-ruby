@@ -60,6 +60,22 @@ module X
         [kept, problems_about(ids), @query]
       end
 
+      # Check whether a resource of the response is hydrated as it is read back
+      #
+      # A resource written with the query of its request is hydrated only if that query asks for every field and
+      # expansion this release requests of its class, since a minor release may add to them, so that a resource an
+      # earlier release wrote as hydrated is not, once it lacks what was added, and hydrate fetches it. One written
+      # without a query, as one a caller built from a response is, is hydrated as it was written.
+      #
+      # @api private
+      # @param klass [Class] the resource class
+      # @param hydrated [Boolean] whether the resource was hydrated as it was written
+      # @return [Boolean] true if the resource holds every field this release requests
+      def hydrated_as_read?(klass, hydrated)
+        query = @query
+        hydrated && (query.nil? || klass.__send__(:fully_requested_by?, query))
+      end
+
       # The problems the response reported about any of some identifiers
       #
       # A problem that names no resource is about any of them, too. A problem names the resource it is about by its resource_id, or by its value, and one that names neither
