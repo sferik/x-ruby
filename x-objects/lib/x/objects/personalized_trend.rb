@@ -50,7 +50,7 @@ module X
     # @return [Array<PersonalizedTrend>] the trends, frozen
     # @raise [InvalidAttribute] if the response holds the trends as something other than a list of objects
     # @example Print the topics trending for the authenticated user
-    #   X::PersonalizedTrend.all(client: client).each { |trend| puts "#{trend.name}: #{trend.post_count}" }
+    #   X::PersonalizedTrend.all(client: client).each { |trend| puts "#{trend.name}: #{trend.post_count_text}" }
     def self.all(client:, **params)
       body = client.get(Objects::Utils.path(ENDPOINT, {"personalized_trend.fields" => FIELDS}.merge(params)), **Objects::Utils::JSON_CLASSES)
       Objects::Shape.objects("#{self}.all", body.to_h["data"]).map { |attrs| new(attrs) }.freeze
@@ -86,11 +86,14 @@ module X
 
     # The number of posts about the trend, as the text X shows it
     #
+    # It is named for the text it is, apart from the post_count of X::Trend, which is an Integer, so that code that
+    # reads both trends never takes one for the other.
+    #
     # @api public
     # @return [String, nil] the number of posts, as text
     # @example Get the number of posts
-    #   trend.post_count # => "12.3K posts"
-    def post_count = attrs["post_count"]
+    #   trend.post_count_text # => "12.3K posts"
+    def post_count_text = attrs["post_count"]
 
     # How long the topic has trended, as the text X shows it
     #

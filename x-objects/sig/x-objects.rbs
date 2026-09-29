@@ -52,7 +52,7 @@ module X
     def to_h: () -> Hash[String, untyped]
     def name: () -> String?
     def category: () -> String?
-    def post_count: () -> String?
+    def post_count_text: () -> String?
     def trending_since: () -> String?
     def ==: (untyped other) -> bool
     def eql?: (untyped other) -> bool
