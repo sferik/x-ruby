@@ -5,16 +5,18 @@ require_relative "includes"
 
 module X
   module Objects
-    # The state of a resource Marshal writes and reads
+    # The state of a resource Marshal and YAML write and read
     #
-    # Internal to x-objects: the methods it gives a resource, marshal_dump and marshal_load, are public API, but the
-    # module is only how they are given, and which classes include it can change within 1.x.
+    # Internal to x-objects: the methods it gives a resource, marshal_dump, marshal_load, encode_with, and init_with,
+    # are public API, but the module is only how they are given, and which classes include it can change within 1.x.
     #
     # @api private
     module Marshalling
       # The number of the format of the state Marshal writes, which a release that changes the format raises
       MARSHAL_FORMAT = 1
-      private_constant :MARSHAL_FORMAT
+      # The name YAML writes each part of the state under, in the order Marshal writes them
+      YAML_KEYS = %w[format attrs hydrated includes problems query].freeze
+      private_constant :MARSHAL_FORMAT, :YAML_KEYS
 
       # The state Marshal writes, which leaves out the client
       #
@@ -52,6 +54,31 @@ module X
 
         setup(attrs, client: nil, hydrated:, includes: Includes.new(data, problems:, query:)) # steep:ignore NoMethod
       end
+
+      # Write the state Marshal writes as YAML, which leaves out the client
+      #
+      # YAML reads no marshal_dump, and would write every instance variable, the client and its credentials among
+      # them, so a resource says how it is written: each part of the state Marshal writes, under its name.
+      #
+      # @api public
+      # @param coder [Psych::Coder] the coder YAML writes the resource with
+      # @return [void]
+      # @example Write a user as YAML, as a queue writes the arguments of a job
+      #   YAML.dump(user)
+      def encode_with(coder) = YAML_KEYS.zip(marshal_dump) { |key, value| coder[key] = value }
+
+      # Restore a resource YAML read, as Marshal restores one
+      #
+      # It has no client, and so makes no request.
+      #
+      #
+      # @api public
+      # @param coder [Psych::Coder] the coder YAML read the resource with
+      # @return [void]
+      # @raise [UnsupportedMarshalFormat] if the state is of a format this release does not read
+      # @example Read a user written as YAML
+      #   YAML.unsafe_load(YAML.dump(user)).username # => "sferik"
+      def init_with(coder) = marshal_load(coder.map.values_at(*YAML_KEYS))
     end
   end
 end

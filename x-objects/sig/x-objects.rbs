@@ -282,6 +282,8 @@ module X
     def to_json: (?JSON::State? state) -> String
     def marshal_dump: () -> [Integer, Objects::attrs, bool, Hash[String, Array[Objects::attrs]], Array[Problem], Hash[String, untyped]?]
     def marshal_load: ([Integer, Objects::attrs, bool, Hash[String, Array[Objects::attrs]], Array[Problem], Hash[String, untyped]?] state) -> void
+    def encode_with: (untyped coder) -> void
+    def init_with: (untyped coder) -> void
     def inspect: () -> String
   end
 
@@ -301,6 +303,8 @@ module X
     def to_json: (?JSON::State? state) -> String
     def marshal_dump: () -> [Integer, Array[[singleton(Resource), Objects::attrs, bool, Integer]], Hash[String, untyped], Array[Problem], Array[Objects::included]]
     def marshal_load: ([Integer, Array[[singleton(Resource), Objects::attrs, bool, Integer]], Hash[String, untyped], Array[Problem], Array[Objects::included]] state) -> void
+    def encode_with: (untyped coder) -> void
+    def init_with: (untyped coder) -> void
   end
 
   class Cursor[R < Resource = Resource]
@@ -333,6 +337,7 @@ module X
     def as_json: (*untyped) -> bot
     def to_json: (?JSON::State? state) -> bot
     def marshal_dump: () -> bot
+    def encode_with: (untyped coder) -> bot
     def inspect: () -> String
   end
 

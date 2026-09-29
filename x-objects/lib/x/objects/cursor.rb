@@ -337,6 +337,20 @@ module X
     #   Rails.cache.write("followers", user.followers.page(0))
     def marshal_dump = raise(TypeError, SERIALIZATION_MESSAGE)
 
+    # Refuse to write the cursor as YAML, as it refuses Marshal
+    #
+    # YAML reads no marshal_dump, and would write every instance variable of the cursor, its client and the
+    # credentials it holds among them, so it raises as {#marshal_dump} does. Write what first(n) or to_a reads, or a
+    # page, instead.
+    #
+    # @api public
+    # @param _coder [Psych::Coder] the coder YAML would write the cursor with
+    # @return [void]
+    # @raise [TypeError] always
+    # @example Write the first page of the followers of a user as YAML rather than the cursor
+    #   YAML.dump(user.followers.page(0))
+    def encode_with(_coder) = raise(TypeError, SERIALIZATION_MESSAGE)
+
     # Summarize the cursor for the console
     #
     # @api public

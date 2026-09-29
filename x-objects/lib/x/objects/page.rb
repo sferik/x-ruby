@@ -11,7 +11,9 @@ module X
 
     # The number of the format of the state Marshal writes, which a release that changes the format raises
     MARSHAL_FORMAT = 1
-    private_constant :MARSHAL_FORMAT
+    # The name YAML writes each part of the state under, in the order Marshal writes them
+    YAML_KEYS = %w[format resources meta problems includes].freeze
+    private_constant :MARSHAL_FORMAT, :YAML_KEYS
 
     # The resources on this page
     # @api public
@@ -139,6 +141,29 @@ module X
       responses = responses.map { |data, about, query| Objects::Includes.new(data, problems: about, query:) }
       initialize(resources.map { |klass, attrs, hydrated, response| klass.__send__(:build, attrs, includes: responses.fetch(response), hydrated:) }, meta, problems:)
     end
+
+    # Write the state Marshal writes as YAML, without the clients of the resources
+    #
+    # YAML reads no marshal_dump, and would write every instance variable of each resource, its client and the
+    # credentials it holds among them, so a page says how it is written: each part of the state Marshal writes, under
+    # its name.
+    #
+    # @api public
+    # @param coder [Psych::Coder] the coder YAML writes the page with
+    # @return [void]
+    # @example Write a page as YAML
+    #   YAML.dump(user.followers.page(0))
+    def encode_with(coder) = YAML_KEYS.zip(marshal_dump) { |key, value| coder[key] = value }
+
+    # Restore a page YAML read, frozen, as Marshal restores one
+    #
+    # @api public
+    # @param coder [Psych::Coder] the coder YAML read the page with
+    # @return [void]
+    # @raise [UnsupportedMarshalFormat] if the state is of a format this release does not read
+    # @example Read a page written as YAML
+    #   YAML.unsafe_load(YAML.dump(page)).next_token
+    def init_with(coder) = marshal_load(coder.map.values_at(*YAML_KEYS))
 
     private
 

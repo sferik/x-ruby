@@ -52,9 +52,12 @@ module X
 
     module Marshalling : _Marshalled
       MARSHAL_FORMAT: Integer
+      YAML_KEYS: Array[String]
 
       def marshal_dump: () -> [Integer, attrs, bool, Hash[String, Array[attrs]], Array[Problem], Hash[String, untyped]?]
       def marshal_load: ([Integer, attrs, bool, Hash[String, Array[attrs]], Array[Problem], Hash[String, untyped]?] state) -> void
+      def encode_with: (untyped coder) -> void
+      def init_with: (untyped coder) -> void
     end
 
     # Anything the object layer built from an API response, which holds its attributes
@@ -694,6 +697,7 @@ module X
 
   class Page[R < Resource = Resource]
     MARSHAL_FORMAT: Integer
+    YAML_KEYS: Array[String]
 
     private
     def response_of: (Resource resource) -> Objects::Includes
