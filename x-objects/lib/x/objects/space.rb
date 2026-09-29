@@ -26,7 +26,7 @@ module X
     # A minor release may add to it the expansions the API adds, so that a lookup asks for them too; see
     # {Resource#hydrated?} for what that means for a resource looked up with a list of expansions of its own.
     EXPANSIONS = %w[creator_id host_ids invited_user_ids speaker_ids topic_ids].freeze
-    # Maximum number of posts, or of spaces a search returns, per page
+    # Maximum number of posts or buyers per page, or of spaces a search returns
     MAX_RESULTS = 100
 
     class << self
@@ -95,6 +95,28 @@ module X
       def search(query, client:, **params)
         Cursor.new(self, "spaces/search", client:, params: {query:, max_results: MAX_RESULTS}.merge(params), app_only: true)
       end
+    end
+
+    # Look up the live and scheduled spaces many users created, in parallel batches
+    #
+    # The API returns the spaces of up to 100 users at a time, in one response without pages, so the users are
+    # looked up that many at a time.
+    #
+    # @api public
+    # @param users [Array<User, String, Integer>] the users who created the spaces, or their identifiers
+    # @param client [Object] the client used to make the requests
+    # @param concurrency [Integer] the number of batches looked up at once, which must be at least one
+    # @param params [Hash] query parameters merged over the default parameters
+    # @return [Array<Space>] the spaces, frozen, empty if the users created none
+    # @raise [ArgumentError] if a user is not a user or the identifier of one, or the concurrency is less than one,
+    #   before a request
+    # @yieldparam problem [Problem] each problem the API reported
+    # @example Print the spaces two users created
+    #   X::Space.find_all_by_creator([7505382, 783214], client: client).each { |space| puts space.title }
+    def self.find_all_by_creator(users, client:, concurrency: Objects::BatchFinders::DEFAULT_CONCURRENCY, **params, &)
+      ids = users.map { |user| Objects::Utils.id_of(user, User) }
+      spaces = lookup_in_batches("spaces/by/creator_ids", :user_ids, ids, client:, concurrency:, **params, &) #: Array[Space]
+      spaces.freeze
     end
 
     # @!attribute [r] title
@@ -274,6 +296,18 @@ module X
     def posts(**params)
       cursor(Post, "spaces/#{id}/tweets", max_results: MAX_RESULTS, app_only: true, **params)
     end
+
+    # The users who bought a ticket to this space
+    #
+    # The authenticated user must have created the space. The endpoint takes only OAuth 2.0 user context, which the object layer cannot route around, so a client that
+    # signs with OAuth 1.0a, or authenticates as the app, is refused.
+    #
+    # @api public
+    # @param params [Hash] query parameters merged over the default parameters
+    # @return [Cursor] a cursor over the buyers
+    # @example Print the buyers of a ticketed space
+    #   space.buyers.each { |user| puts user.username }
+    def buyers(**params) = cursor(User, "spaces/#{id}/buyers", max_results: MAX_RESULTS, **params)
 
     alias_method :tweets, :posts
   end

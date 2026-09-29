@@ -55,6 +55,22 @@ module X
             Space.find_all(ids, client: self, concurrency:, **params, &)
           end
 
+          # Look up the live and scheduled spaces many users created, in parallel batches
+          #
+          # @api public
+          # @param users [Array<User, String, Integer>] the users who created the spaces, or their identifiers
+          # @param concurrency [Integer] the number of batches looked up at once, which must be at least one
+          # @param params [Hash] query parameters merged over the default parameters
+          # @return [Array<Space>] the spaces, frozen, empty if the users created none
+          # @raise [ArgumentError] if a user is not a user or the identifier of one, or the concurrency is less than
+          #   one, before a request
+          # @yieldparam problem [Problem] each problem the API reported
+          # @example Print the live spaces a user created
+          #   client.find_all_spaces_by_creator([7505382], state: "live").map(&:title)
+          def find_all_spaces_by_creator(users, concurrency: BatchFinders::DEFAULT_CONCURRENCY, **params, &)
+            Space.find_all_by_creator(users, client: self, concurrency:, **params, &)
+          end
+
           # Search spaces by their titles
           #
           # @api public
