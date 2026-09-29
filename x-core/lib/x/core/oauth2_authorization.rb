@@ -5,6 +5,7 @@ require "simple_oauth"
 require "uri"
 require_relative "client"
 require_relative "connection"
+require_relative "credential_validator"
 require_relative "errors/authorization_error"
 require_relative "errors/token_report_failed"
 require_relative "oauth2_authenticator"
@@ -43,6 +44,16 @@ module X
     CREDENTIALS_GIVEN_MESSAGE = "The client of an authorization authenticates with the tokens X exchanges the code " \
       "for, so it cannot be given %s"
     private_constant :CREDENTIALS_GIVEN_MESSAGE
+    # The message raised for a redirect URI that is not a String of more than whitespace
+    INVALID_REDIRECT_URI = "redirect_uri must not be nil or empty; pass the URL X redirects the user back to, as " \
+      "registered for the app"
+    private_constant :INVALID_REDIRECT_URI
+    # The message raised for scopes that are not an Array of Strings
+    INVALID_SCOPES = "scopes must be an Array of Strings, such as %%w[tweet.read users.read offline.access], not %s"
+    private_constant :INVALID_SCOPES
+    # The message raised for a state that is nil or empty
+    MISSING_STATE = "state must not be nil or empty; pass the state stored when the user was sent to X"
+    private_constant :MISSING_STATE
 
     # The OAuth 2.0 client ID of the app
     # @api public
@@ -103,6 +114,9 @@ module X
     #   the client secret a token request sends, and the tokens a token response holds. Send it to a file you
     #   control while debugging, never to a log that is shipped elsewhere, and leave it nil in production.
     # @return [OAuth2Authorization] a new authorization
+    # @raise [ArgumentError] if the client ID or redirect URI is nil or empty, or the client secret is empty, which
+    #   would send the user to X with a URL it refuses
+    # @raise [ArgumentError] if the scopes are not an Array of Strings
     # @raise [ArgumentError] if the state is nil or empty, which would accept the redirect of any authorization
     # @raise [ArgumentError] if the code verifier is not 43 to 128 unreserved characters
     # @raise [ArgumentError] if a timeout is neither a finite number of seconds of at least 0 nor nil, or the
@@ -113,8 +127,7 @@ module X
       code_verifier: SimpleOAuth::OAuth2::PKCE.generate.verifier, proxy_url: nil, open_timeout: Client::DEFAULT_OPEN_TIMEOUT,
       read_timeout: Client::DEFAULT_READ_TIMEOUT, write_timeout: Client::DEFAULT_WRITE_TIMEOUT,
       keep_alive_timeout: Client::DEFAULT_KEEP_ALIVE_TIMEOUT, debug_output: nil)
-      raise ArgumentError, "state must not be nil or empty; pass the state stored when the user was sent to X" if state.to_s.empty?
-
+      validate!(client_id:, redirect_uri:, client_secret:, scopes:, state:)
       @client_id = client_id
       @client_secret = client_secret
       @redirect_uri = redirect_uri
@@ -199,6 +212,26 @@ module X
     end
 
     private
+
+    # Raise for arguments an authorization cannot be started or finished with
+    #
+    # They are read only once the URL is built, or the code exchanged, where a client ID or redirect URI that is nil
+    # or empty would build a URL X refuses, rather than raise where the authorization was given them.
+    #
+    # @api private
+    # @param client_id [Object] the OAuth 2.0 client ID of the app
+    # @param redirect_uri [Object] the URL X redirects the user back to
+    # @param client_secret [Object] the client secret of a confidential app, or nil for a public client
+    # @param scopes [Object] the scopes to ask the user for
+    # @param state [Object] the state
+    # @return [void]
+    # @raise [ArgumentError] if an argument is not one the authorization takes
+    def validate!(client_id:, redirect_uri:, client_secret:, scopes:, state:)
+      Core::CredentialValidator.validate_required!({client_id:}, {client_secret:})
+      raise ArgumentError, INVALID_REDIRECT_URI unless String.try_convert(redirect_uri)&.match?(/\S/)
+      raise ArgumentError, format(INVALID_SCOPES, scopes.inspect) unless scopes.is_a?(Array) && scopes.all?(String)
+      raise ArgumentError, MISSING_STATE if state.to_s.empty?
+    end
 
     # The OAuth 2.0 client secret of a confidential app
     #

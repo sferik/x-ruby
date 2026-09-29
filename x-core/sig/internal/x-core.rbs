@@ -474,11 +474,15 @@ module X
     INVALID_CALLBACK_MESSAGE: String
     CREDENTIALS: Array[Symbol]
     CREDENTIALS_GIVEN_MESSAGE: String
+    INVALID_REDIRECT_URI: String
+    INVALID_SCOPES: String
+    MISSING_STATE: String
 
     @pkce: SimpleOAuth::OAuth2::PKCE
     @settings: {proxy_url: (URI::Generic | String)?, open_timeout: (Float | Integer)?, read_timeout: (Float | Integer)?, write_timeout: (Float | Integer)?, keep_alive_timeout: Float | Integer, debug_output: _DebugOutput?}
 
     private
+    def validate!: (client_id: String, redirect_uri: String, client_secret: String?, scopes: Array[String], state: String) -> void
     attr_reader client_secret: String?
     attr_reader connection: Core::Connection
     def oauth2_client: () -> SimpleOAuth::OAuth2::Client
