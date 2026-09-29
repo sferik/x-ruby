@@ -20,6 +20,10 @@ module X
     # or headers that are not a Hash of names to values, raised from the first request, rather than where the client
     # was given them, so each is checked when the client is built.
     #
+    # The classes a response is parsed into are read only once a response has arrived, so a class that cannot parse
+    # one, such as the String "Hash", raised once the API had answered, and billed, the request. So the default
+    # classes of a client are checked when the client is built, and the classes of a request before it is sent.
+    #
     # Internal to x-core: the handlers of redirects, rate limits, retries, and reconnects, a connection, and a client
     # check their settings with it.
     #
@@ -46,8 +50,13 @@ module X
         "not %<name>s with a %<value>s"
       # The message of the error raised for a callable that does not respond to call
       INVALID_CALLABLE = "%s must respond to call, as a Proc or a lambda does, or be nil, not a %s"
+      # The message of the error raised for a class to parse JSON arrays into that is not a Class
+      INVALID_ARRAY_CLASS = "%s must be a Class that JSON.parse builds each array into, such as Array, not %s"
+      # The message of the error raised for a class to parse JSON objects into that is not a Class, nor builds a result
+      INVALID_OBJECT_CLASS = "%s must be a Class that JSON.parse builds each object into, such as Hash, or respond to " \
+        "from_response, as the resource classes of x-objects do, not %s"
       private_constant :INVALID_COUNT, :INVALID_COUNT_OR_INFINITY, :INVALID_SECONDS, :INVALID_FINITE_SECONDS, :INVALID_TIMEOUT,
-        :INVALID_BASE_URL, :INVALID_HEADERS, :INVALID_HEADER, :INVALID_CALLABLE
+        :INVALID_BASE_URL, :INVALID_HEADERS, :INVALID_HEADER, :INVALID_CALLABLE, :INVALID_ARRAY_CLASS, :INVALID_OBJECT_CLASS
 
       # Check that a count is an Integer of at least 0
       #
@@ -177,6 +186,56 @@ module X
         return value if value.nil? || value.respond_to?(:call)
 
         raise ArgumentError, format(INVALID_CALLABLE, name, value.class)
+      end
+
+      # Check that the class to parse JSON arrays into is a Class
+      #
+      # JSON.parse builds each array of a body with the new of the class, and appends each element with <<.
+      #
+      # @api private
+      # @param name [Symbol] the name of the setting, which the error names
+      # @param value [Object] the class
+      # @return [Class] the value
+      # @raise [ArgumentError] if the value is not a Class
+      # @example Check the class a client parses arrays into
+      #   X::Core::SettingValidator.array_class!(:default_array_class, Array) # => Array
+      def array_class!(name, value)
+        return value if value.instance_of?(Class)
+
+        raise ArgumentError, format(INVALID_ARRAY_CLASS, name, value.inspect)
+      end
+
+      # Check that the class to parse JSON objects into is a Class, or builds a result
+      #
+      # JSON.parse builds each object of a body with the new of a class, and sets each member with []=, unless it
+      # responds to from_response, which builds the result from the whole body instead; see {Client}.
+      #
+      # @api private
+      # @param name [Symbol] the name of the setting, which the error names
+      # @param value [Object] the class, or what builds the result of a request
+      # @return [Class, #from_response] the value
+      # @raise [ArgumentError] if the value is neither a Class nor responds to from_response
+      # @example Check the class a client parses objects into
+      #   X::Core::SettingValidator.object_class!(:default_object_class, Hash) # => Hash
+      def object_class!(name, value)
+        return value if value.instance_of?(Class) || value.respond_to?(:from_response)
+
+        raise ArgumentError, format(INVALID_OBJECT_CLASS, name, value.inspect)
+      end
+
+      # Check the classes a request parses its response into, before the request is sent
+      #
+      # @api private
+      # @param array_class [Object] the class to parse JSON arrays into
+      # @param object_class [Object] the class to parse JSON objects into, or what builds the result of the request
+      # @return [void]
+      # @raise [ArgumentError] if the array class is not a Class, or the object class is neither a Class nor responds
+      #   to from_response
+      # @example Check the classes of a request
+      #   X::Core::SettingValidator.parsing_classes!(array_class: Array, object_class: X::User)
+      def parsing_classes!(array_class:, object_class:)
+        array_class!(:array_class, array_class)
+        object_class!(:object_class, object_class)
       end
 
       private

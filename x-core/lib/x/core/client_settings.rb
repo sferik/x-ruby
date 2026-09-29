@@ -115,12 +115,14 @@ module X
       # @param max_retries [Integer] the maximum number of times to send an idempotent request again after a failure
       # @return [void]
       # @raise [ArgumentError] if on_response is neither nil nor responds to call
+      # @raise [ArgumentError] if default_array_class is not a Class, or default_object_class is neither a Class nor
+      #   responds to from_response
       def initialize_settings(base_url:, default_array_class:, default_object_class:, headers:, on_response:,
         max_redirects:, max_rate_limit_retries:, max_rate_limit_wait:, max_retries:)
         base_url = SettingValidator.base_url!(base_url)
         @base_url = base_url.end_with?("/") ? base_url : "#{base_url}/"
-        @default_array_class = default_array_class
-        @default_object_class = default_object_class
+        @default_array_class = SettingValidator.array_class!(:default_array_class, default_array_class)
+        @default_object_class = SettingValidator.object_class!(:default_object_class, default_object_class)
         @headers = SettingValidator.headers!(headers).dup.freeze
         @on_response = SettingValidator.callable!(:on_response, on_response)
         @redirect_handler = RedirectHandler.new(connection: @connection, request_builder: @request_builder, max_redirects:)

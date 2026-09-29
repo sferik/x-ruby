@@ -22,6 +22,7 @@ require_relative "request_encoding"
 require_relative "response"
 require_relative "response_parser"
 require_relative "retry_handler"
+require_relative "setting_validator"
 require_relative "streaming_client"
 
 module X
@@ -187,6 +188,8 @@ module X
     # @raise [ArgumentError] if base_url is not an absolute http or https URL, or headers are not a Hash that names
     #   each header with a String or a Symbol and gives it a String
     # @raise [ArgumentError] if on_response, on_token_refresh, or load_tokens is neither nil nor responds to call
+    # @raise [ArgumentError] if default_array_class is not a Class, or default_object_class is neither a Class nor
+    #   responds to from_response, which a response would be parsed with once the API had answered the request
     # @example Create a client with bearer token authentication
     #   client = X::Client.new(bearer_token: "your_bearer_token")
     # @example Create a client with OAuth 2.0 authentication that stores the tokens of each refresh
@@ -296,6 +299,8 @@ module X
     # @return [Object, nil] the parsed response body, or what an object_class that responds to from_response builds
     # @raise [ArgumentError] if the endpoint is not a valid URL, or does not resolve to an http or https URL, before
     #   the request is sent
+    # @raise [ArgumentError] if array_class is not a Class, or object_class is neither a Class nor responds to
+    #   from_response, before the request is sent
     # @yieldparam response [Response] the summary of each response the request got, as {#on_response} receives it
     # @example Get a user by username
     #   client.get("users/by/username/sferik")
@@ -324,6 +329,8 @@ module X
     # @raise [ArgumentError] if both a body and form fields are given
     # @raise [ArgumentError] if the endpoint is not a valid URL, or does not resolve to an http or https URL, before
     #   the request is sent
+    # @raise [ArgumentError] if array_class is not a Class, or object_class is neither a Class nor responds to
+    #   from_response, before the request is sent
     # @yieldparam response [Response] the summary of each response the request got, as {#on_response} receives it
     # @example Create a post
     #   client.post("tweets", {text: "Hello, World!"})
@@ -350,6 +357,8 @@ module X
     # @raise [ArgumentError] if both a body and form fields are given
     # @raise [ArgumentError] if the endpoint is not a valid URL, or does not resolve to an http or https URL, before
     #   the request is sent
+    # @raise [ArgumentError] if array_class is not a Class, or object_class is neither a Class nor responds to
+    #   from_response, before the request is sent
     # @yieldparam response [Response] the summary of each response the request got, as {#on_response} receives it
     # @example Update a resource
     #   client.put("some/endpoint", {key: "value"})
@@ -370,6 +379,8 @@ module X
     # @return [Object, nil] the parsed response body, or what an object_class that responds to from_response builds
     # @raise [ArgumentError] if the endpoint is not a valid URL, or does not resolve to an http or https URL, before
     #   the request is sent
+    # @raise [ArgumentError] if array_class is not a Class, or object_class is neither a Class nor responds to
+    #   from_response, before the request is sent
     # @yieldparam response [Response] the summary of each response the request got, as {#on_response} receives it
     # @example Delete a post
     #   client.delete("tweets/1234567890")
@@ -413,9 +424,9 @@ module X
     # @api private
     # @return [Object, nil] the parsed response body, or what an object_class that responds to from_response builds
     def execute_request(http_method, endpoint, body: nil, params: nil, form: nil, headers: {}, array_class: default_array_class, object_class: default_object_class, &block)
+      Core::SettingValidator.parsing_classes!(array_class:, object_class:)
       uri = uri_for(base_url, endpoint, params)
-      headers = Core::RequestBuilder.merge_headers({"Content-Type" => FORM_CONTENT_TYPE}, headers) unless form.nil?
-      headers = headers_for(headers)
+      headers = headers_for(form.nil? ? headers : Core::RequestBuilder.merge_headers({"Content-Type" => FORM_CONTENT_TYPE}, headers))
       @retry_handler.handle(idempotent: Core::RequestBuilder.idempotent?(http_method)) do
         @rate_limit_handler.handle do
           refreshing_rejected_token do

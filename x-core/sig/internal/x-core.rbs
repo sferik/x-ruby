@@ -371,6 +371,8 @@ module X
       INVALID_HEADERS: String
       INVALID_HEADER: String
       INVALID_CALLABLE: String
+      INVALID_ARRAY_CLASS: String
+      INVALID_OBJECT_CLASS: String
       extend SettingValidator
 
       def count!: (Symbol name, untyped value) -> untyped
@@ -381,6 +383,9 @@ module X
       def base_url!: (untyped value) -> String
       def headers!: (untyped value) -> headers
       def callable!: (Symbol name, untyped value) -> untyped
+      def array_class!: (Symbol name, untyped value) -> Class
+      def object_class!: (Symbol name, untyped value) -> object_class
+      def parsing_classes!: (array_class: untyped, object_class: untyped) -> void
 
       private
       def invalid_header!: (untyped name, untyped header) -> bot
