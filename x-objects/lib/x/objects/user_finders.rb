@@ -57,7 +57,8 @@ module X
       # Look up many users by identifier or username, in parallel batches
       #
       # Integers and users are looked up by identifier, and Strings by username. The users come back in the
-      # order they were asked for, each once, without the ones that were not found.
+      # order they were asked for, each once, without the ones that were not found. Every username is checked before
+      # any request, so one that is not a username raises before the identifiers are looked up, and billed.
       #
       # @api public
       # @param ids_or_usernames [Array<Integer, User, String>] identifiers or users, or usernames
@@ -66,12 +67,13 @@ module X
       #   identifiers and the usernames are looked up one kind after the other, each kind that many batches at a time
       # @param params [Hash] query parameters merged over the default parameters
       # @return [Array<User>] the users that were found, frozen
-      # @raise [ArgumentError] if the concurrency is less than one
+      # @raise [ArgumentError] if a String is not a username, or if the concurrency is less than one, before any request
       # @yieldparam problem [Problem] each problem the API reported, such as a user that was not found
       # @example Look up many users by username
       #   X::User.find_all(["sferik", "gem"], client: client)
       def find_all(ids_or_usernames, client:, concurrency: DEFAULT_CONCURRENCY, **params, &)
         ids, usernames = ids_or_usernames.partition { |value| Utils.id?(value) }
+        usernames.each { |username| Utils.username!(username) }
         found = super(ids, client:, concurrency:, **params) #: Array[User]
         in_order(found + find_all_by_username(usernames, client:, concurrency:, **params, &), ids_or_usernames)
       end
