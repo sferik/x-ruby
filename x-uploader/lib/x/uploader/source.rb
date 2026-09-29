@@ -9,9 +9,10 @@ module X
     # Media given as a String, a Pathname, or any other path to a file is read from that file, and media given as an
     # IO open on a file, such as a File or a Tempfile, is read through that IO, whether or not its name still leads
     # to the file, as it no longer does once a Tempfile is unlinked: either is read a chunk at a time, so that media of
-    # any size uploads without being held in memory. Media given as any other IO, such as a StringIO, is read to its
-    # end once, and held, since an IO that is not open on a file cannot be read again by position; it is given back
-    # at the position it held when it can seek, so that the media can be checked and then uploaded.
+    # any size uploads without being held in memory. Media given as any other IO, such as a StringIO, is read once,
+    # and held, since an IO that is not open on a file cannot be read again by position. An IO that can seek, as a
+    # File and a StringIO can, is read from its start, whatever position it holds, and given back at that position,
+    # so that the media can be checked and then uploaded, and a pipe, which cannot, is read from where it is.
     #
     # Internal to x-uploader: the uploaders resolve what they were given to one of these, rather than read a path
     # themselves, so that a path and an IO upload the same way.
@@ -99,10 +100,11 @@ module X
 
       # The source of media given as an IO that is not open on a file
       #
-      # The IO is read from its position to its end, and given back at that position when it can seek, as a StringIO
-      # can and a pipe cannot, so that what infers the type of the media leaves it to be uploaded. An IO is put in
-      # binary mode first, since media is bytes, and a pipe or $stdin reads in text mode on Windows, which would turn
-      # each CRLF of the media, such as the one in the signature of a PNG, into a line feed.
+      # An IO that can seek, as a StringIO can, is read from its start, as a File is, whatever position it holds, such
+      # as the end it is left at once it has been written to, and is given back at that position, so that what infers
+      # the type of the media leaves it to be uploaded. One that cannot, as a pipe cannot, is read from where it is to
+      # its end. An IO is put in binary mode first, since media is bytes, and a pipe or $stdin reads in text mode on
+      # Windows, which would turn each CRLF of the media, such as the one in the signature of a PNG, into a line feed.
       #
       # @api private
       # @param media [StringIO, IO, Object] the IO
@@ -110,6 +112,7 @@ module X
       def self.buffered(media)
         position = position_of(media)
         media.binmode if media.is_a?(IO)
+        media.seek(0) if position
         content = media.read.to_s.b
         media.seek(position) if position
         Buffer.new(content)
