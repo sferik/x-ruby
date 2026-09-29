@@ -53,7 +53,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           # Every workflow that must have passed before the gems are pushed. A release commit triggers each of them,
           # since `rake update_versions` writes the version into a version.rb of every gem, and the linter runs on any
-          # Ruby file. This workflow is left out, since it is the one running.
+          # Ruby file; a commit after it that changes documentation alone triggers none, and each is run on it by hand,
+          # as CONTRIBUTING.md says. This workflow is left out, since it is the one running.
           REQUIRED_WORKFLOWS: x-core x-uploader x-objects x linter
         run: |
           deadline=$((SECONDS + 1800))

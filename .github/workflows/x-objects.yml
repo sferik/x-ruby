@@ -12,6 +12,9 @@ on:
       - "x-core/x-core.gemspec"
       - "VERSION"
       - ".github/workflows/x-objects.yml"
+  # Run on a commit that changes none of the paths above, such as documentation alone, before it is tagged, since the
+  # workflow that pushes the gems waits for this one to pass on the tagged commit: gh workflow run <file> --ref main
+  workflow_dispatch:
   pull_request:
     paths:
       - "x-objects/**"
