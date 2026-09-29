@@ -25,12 +25,13 @@ module X
       # an idempotent request again, up to the max_retries of the client.
       #
       # @api public
-      # @param media [UploadedMedia, Hash, String, Integer] the uploaded media, or the media identifier
+      # @param media [UploadedMedia, Hash, #media_key, String, Integer] the uploaded media, media that has a media key,
+      #   such as X::Media, or the media identifier
       # @param text [String] the alt text, of 1 to 1,000 characters
       # @param client [Client] the X API client
       # @return [Hash] the media identifier and the metadata now associated with it
       # @raise [ArgumentError] if the alt text is empty or longer than the API takes, before a request
-      # @raise [ArgumentError] if the media given is neither media nor a media identifier
+      # @raise [ArgumentError] if the media given is neither media nor a media identifier, or its media key names none
       # @raise [MissingMediaData] if the media given holds no identifier, or the response holds no metadata or carries no body at all
       # @example Describe an uploaded image
       #   Uploader::Metadata.add_alt_text(media, "A cat asleep on a keyboard", client: client)
@@ -46,8 +47,10 @@ module X
       # server or network error, as alt text is, up to the max_retries of the client.
       #
       # @api public
-      # @param video [UploadedMedia, Hash, String, Integer] the uploaded video, or its media identifier
-      # @param subtitles [UploadedMedia, Hash, String, Integer] the uploaded .srt file, or its media identifier
+      # @param video [UploadedMedia, Hash, #media_key, String, Integer] the uploaded video, media that has a media
+      #   key, such as X::Media, or its media identifier
+      # @param subtitles [UploadedMedia, Hash, #media_key, String, Integer] the uploaded .srt file, media that has a
+      #   media key, or its media identifier
       # @param language_code [String] the two-letter language code of the subtitles, such as EN
       # @param client [Client] the X API client
       # @param display_name [String, nil] the name of the language shown to viewers, such as English
@@ -55,7 +58,8 @@ module X
       #   in any case, as the uploaders take it, or as the subtitles endpoint names it, TweetVideo or AmplifyVideo
       # @return [Hash] the video identifier and the subtitles now associated with it
       # @raise [ArgumentError] if the media category is neither tweet_video nor amplify_video
-      # @raise [ArgumentError] if the video or the subtitles are neither media nor a media identifier
+      # @raise [ArgumentError] if the video or the subtitles are neither media nor a media identifier, or have a media
+      #   key that names none
       # @raise [MissingMediaData] if the video or the subtitles hold no identifier, or the response holds no metadata or carries no body at all
       # @example Upload a video and its English subtitles
       #   video = Uploader::MediaUpload.upload("cat.mp4", client: client)

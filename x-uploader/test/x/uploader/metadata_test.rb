@@ -30,6 +30,13 @@ module X
       assert_requested :post, METADATA_URL, body: {id: "7", metadata: {alt_text: {text: "A cat"}}}.to_json
     end
 
+    def test_add_alt_text_to_media_that_has_a_media_key
+      stub_request(:post, METADATA_URL).to_return(headers: JSON_HEADERS, body: {data: {id: "7"}}.to_json)
+      Uploader::Metadata.add_alt_text(Struct.new(:media_key).new("3_7"), "A cat", client: @client)
+
+      assert_requested :post, METADATA_URL, body: {id: "7", metadata: {alt_text: {text: "A cat"}}}.to_json
+    end
+
     def test_add_alt_text_to_a_response_parsed_into_a_hash_subclass
       stub_request(:post, METADATA_URL).to_return(headers: JSON_HEADERS, body: {data: {id: "7"}}.to_json)
       response = Class.new(Hash).new

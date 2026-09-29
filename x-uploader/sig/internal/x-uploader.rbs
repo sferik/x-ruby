@@ -79,9 +79,12 @@ module X
       NO_MEDIA_ID: String
       NO_MEDIA: String
       NOT_MEDIA: String
+      NOT_MEDIA_KEY: String
+      MEDIA_KEY: Regexp
 
       def extension: (path file_path) -> String
       def media_id: (media media) -> String
+      def media_key_id: (untyped media) -> String?
       def media_data: (Hash[String, untyped]? response, String description) -> Hash[String, untyped]
       def subtitled_media_category: (String | Symbol media_category) -> String
       def sending_again: [T] (_Client client) { () -> T } -> T

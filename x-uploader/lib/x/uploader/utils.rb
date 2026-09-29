@@ -23,8 +23,13 @@ module X
       # The message of the error raised for a response of an upload that holds no media
       NO_MEDIA = "The response %s holds no media"
       # The message of the error raised for something that is neither media nor the identifier of media
-      NOT_MEDIA = "%s is not media: pass uploaded media, the Hash of an upload response, or a media identifier"
-      private_constant :NO_MEDIA_ID, :NO_MEDIA, :NOT_MEDIA
+      NOT_MEDIA = "%s is not media: pass uploaded media, the Hash of an upload response, media that has a media key, " \
+        "such as X::Media, or a media identifier"
+      # The message of the error raised for a media key that names no media identifier
+      NOT_MEDIA_KEY = "The media key %s names no media identifier"
+      # The pattern of a media key, which names the media identifier after the number of its type and an underscore
+      MEDIA_KEY = /\A\d+_(\d+)\z/
+      private_constant :NO_MEDIA_ID, :NO_MEDIA, :NOT_MEDIA, :NOT_MEDIA_KEY, :MEDIA_KEY
 
       # The lowercase extension of a file, without its dot
       #
@@ -35,27 +40,49 @@ module X
       #   Uploader::Utils.extension("cat.JPG") # => "jpg"
       def extension(file_path) = File.extname(file_path).delete(".").downcase
 
-      # The media identifier of an upload response or of an identifier
+      # The media identifier of an upload response, of media, or of an identifier
+      #
+      # Media that is not what an upload returned, such as the X::Media of x-objects, which this gem does not depend
+      # on, is read from its media key, which names the identifier after the number of its type, as 3_7 names 7.
       #
       # Nil, or an empty identifier, names no media, and would reach the API as an identifier that is not there.
       # Anything else raises rather than reach the API as whatever its to_s reads, such as the inspection of an
       # object.
       #
       # @api private
-      # @param media [UploadedMedia, Hash, String, Integer] the uploaded media, the upload response, or the media
-      #   identifier
+      # @param media [UploadedMedia, Hash, #media_key, String, Integer] the uploaded media, the upload response, media
+      #   that has a media key, or the media identifier
       # @return [String] the media identifier
-      # @raise [ArgumentError] if the media is neither media nor a media identifier
-      # @raise [MissingMediaData] if the media is nil or empty, or an upload response holds no identifier
+      # @raise [ArgumentError] if the media is neither media nor a media identifier, or its media key names no
+      #   identifier
+      # @raise [MissingMediaData] if the media is nil or empty, an upload response holds no identifier, or media
+      #   has no media key
       # @example The identifier of uploaded media
       #   Uploader::Utils.media_id({"id" => "1880028106020515840"}) # => "1880028106020515840"
+      # @example The identifier of media of a post
+      #   Uploader::Utils.media_id(X::Media.new(media_key: "3_1880028106020515840")) # => "1880028106020515840"
       def media_id(media)
         id = case media
         when Hash, UploadedMedia then media.fetch("id", nil)
         when String, Integer, nil then media
-        else raise ArgumentError, format(NOT_MEDIA, media.inspect)
+        else media_key_id(media)
         end
         id.to_s.then { |text| text.empty? ? raise(MissingMediaData, NO_MEDIA_ID) : text }
+      end
+
+      # The media identifier the media key of media names
+      #
+      # @api private
+      # @param media [#media_key, Object] the media
+      # @return [String, nil] the media identifier, or nil for media that has no media key
+      # @raise [ArgumentError] if the media has no media_key, or its media key names no identifier
+      # @example The identifier of media of a post
+      #   Uploader::Utils.media_key_id(X::Media.new(media_key: "3_7")) # => "7"
+      def media_key_id(media)
+        raise ArgumentError, format(NOT_MEDIA, media.inspect) unless media.respond_to?(:media_key)
+
+        key = media.media_key
+        key && (key.to_s[MEDIA_KEY, 1] || raise(ArgumentError, format(NOT_MEDIA_KEY, key.inspect)))
       end
 
       # The media a response of an upload describes

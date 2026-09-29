@@ -94,8 +94,27 @@ module X
       [Object.new, 1.5e18, :media].each do |media|
         error = assert_raises(ArgumentError, media.inspect) { Uploader.const_get(:Utils).media_id(media) }
 
-        assert_equal "#{media.inspect} is not media: pass uploaded media, the Hash of an upload response, or a media identifier", error.message
+        assert_equal "#{media.inspect} is not media: pass uploaded media, the Hash of an upload response, media that has a " \
+          "media key, such as X::Media, or a media identifier", error.message
       end
+    end
+
+    def test_media_id_of_media_that_has_a_media_key
+      assert_equal "1880028106020515840", Uploader.const_get(:Utils).media_id(Struct.new(:media_key).new("3_1880028106020515840"))
+    end
+
+    def test_media_id_of_media_whose_media_key_names_no_identifier
+      ["3_", "_7", "3_7x", "x3_7", "3-7", "3_7\n", 37].each do |key|
+        error = assert_raises(ArgumentError, key.inspect) { Uploader.const_get(:Utils).media_id(Struct.new(:media_key).new(key)) }
+
+        assert_equal "The media key #{key.inspect} names no media identifier", error.message
+      end
+    end
+
+    def test_media_id_of_media_that_has_no_media_key
+      error = assert_raises(MissingMediaData) { Uploader.const_get(:Utils).media_id(Struct.new(:media_key).new(nil)) }
+
+      assert_equal "The media given holds no identifier", error.message
     end
 
     def test_media_id_of_nothing

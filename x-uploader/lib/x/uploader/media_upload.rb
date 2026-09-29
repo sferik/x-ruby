@@ -226,13 +226,14 @@ module X
       # status returned if processing has finished, so it can return that much after the deadline.
       #
       # @api public
-      # @param media [UploadedMedia, Hash, String, Integer] the uploaded media, or the media identifier
+      # @param media [UploadedMedia, Hash, #media_key, String, Integer] the uploaded media, media that has a media key,
+      #   such as X::Media, or the media identifier
       # @param client [Client] the X API client
       # @param processing_timeout [Integer, Float] the seconds from now to wait for processing to finish, checks and
       #   all, before giving up, or Float::INFINITY to wait for as long as processing takes
       # @return [UploadedMedia] the uploaded media, which holds the processing status
       # @raise [ArgumentError] if the processing timeout is not a number of seconds of at least 0
-      # @raise [ArgumentError] if the media given is neither media nor a media identifier
+      # @raise [ArgumentError] if the media given is neither media nor a media identifier, or its media key names none
       # @raise [MissingMediaData] if the media given holds no identifier, or a status response holds no media or carries no body at all
       # @raise [MediaProcessingTimeout] if the media is still processing once the next check would pass the deadline
       # @example Wait for processing
@@ -258,14 +259,15 @@ module X
       # Wait for media processing and raise on failure
       #
       # @api public
-      # @param media [UploadedMedia, Hash, String, Integer] the uploaded media, or the media identifier
+      # @param media [UploadedMedia, Hash, #media_key, String, Integer] the uploaded media, media that has a media key,
+      #   such as X::Media, or the media identifier
       # @param client [Client] the X API client
       # @param processing_timeout [Integer, Float] the seconds from now to wait for processing to finish, checks and
       #   all, before giving up, as {await_processing} counts them, or Float::INFINITY to wait for as long as
       #   processing takes
       # @return [UploadedMedia] the uploaded media, which holds the processing status
       # @raise [ArgumentError] if the processing timeout is not a number of seconds of at least 0
-      # @raise [ArgumentError] if the media given is neither media nor a media identifier
+      # @raise [ArgumentError] if the media given is neither media nor a media identifier, or its media key names none
       # @raise [MissingMediaData] if the media given holds no identifier, or a status response holds no media or carries no body at all
       # @raise [MediaProcessingFailed] if media processing failed, with the status X reported
       # @raise [MediaProcessingTimeout] if the media is still processing once the next check would pass the deadline

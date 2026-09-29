@@ -4,8 +4,13 @@ module X
 
     def self.gem_version: () -> Gem::Version
 
-    # Media to act on: what an upload returned, or the identifier of media
-    type media = UploadedMedia | Hash[String, untyped] | String | Integer
+    # Media that has a media key, which names its media identifier, such as the X::Media of x-objects
+    interface _MediaKeyed
+      def media_key: () -> String?
+    end
+
+    # Media to act on: what an upload returned, media that has a media key, or the identifier of media
+    type media = UploadedMedia | Hash[String, untyped] | _MediaKeyed | String | Integer
 
     # Media to upload: a path to it, or an IO open on it
     type uploadable = path | _Reader

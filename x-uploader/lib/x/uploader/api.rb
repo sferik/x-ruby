@@ -52,7 +52,8 @@ module X
       # instead.
       #
       # @api public
-      # @param media [UploadedMedia, Hash, String, Integer] the uploaded media, or the media identifier
+      # @param media [UploadedMedia, Hash, #media_key, String, Integer] the uploaded media, media that has a media key,
+      #   such as X::Media, or the media identifier
       # @param options [Hash] the options of {MediaUpload.await_processing}, such as processing_timeout
       # @return [UploadedMedia] the uploaded media, which holds the processing status, failed or not
       # @raise [MediaProcessingTimeout] if the media is still processing once the processing timeout would pass
@@ -66,7 +67,8 @@ module X
       # Wait until media has been processed, raising if its processing failed
       #
       # @api public
-      # @param media [UploadedMedia, Hash, String, Integer] the uploaded media, or the media identifier
+      # @param media [UploadedMedia, Hash, #media_key, String, Integer] the uploaded media, media that has a media key,
+      #   such as X::Media, or the media identifier
       # @param options [Hash] the options of {MediaUpload.await_processing!}, such as processing_timeout
       # @return [UploadedMedia] the uploaded media, which holds the processing status
       # @raise [MediaProcessingFailed] if media processing failed, with the status X reported
@@ -80,7 +82,8 @@ module X
       # Describe uploaded media with alt text, for people who cannot see it
       #
       # @api public
-      # @param media [UploadedMedia, Hash, String, Integer] the uploaded media, or the media identifier
+      # @param media [UploadedMedia, Hash, #media_key, String, Integer] the uploaded media, media that has a media key,
+      #   such as X::Media, or the media identifier
       # @param text [String] the alt text, of 1 to 1,000 characters
       # @return [Hash] the media identifier and the metadata now associated with it
       # @raise [ArgumentError] if the alt text is empty or longer than the API takes, before a request
@@ -93,8 +96,10 @@ module X
       # Attach uploaded subtitles to an uploaded video
       #
       # @api public
-      # @param video [UploadedMedia, Hash, String, Integer] the uploaded video, or its media identifier
-      # @param subtitles [UploadedMedia, Hash, String, Integer] the uploaded subtitles, or their media identifier
+      # @param video [UploadedMedia, Hash, #media_key, String, Integer] the uploaded video, media that has a media
+      #   key, such as X::Media, or its media identifier
+      # @param subtitles [UploadedMedia, Hash, #media_key, String, Integer] the uploaded subtitles, media that has a
+      #   media key, or their media identifier
       # @param language_code [String] the language of the subtitles, such as EN
       # @param options [Hash] the options of {Metadata.add_subtitles}: display_name and media_category
       # @return [Hash] the video identifier and the subtitles now associated with it
