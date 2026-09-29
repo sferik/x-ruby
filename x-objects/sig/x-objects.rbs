@@ -349,6 +349,15 @@ module X
     def view_count: () -> Integer?
   end
 
+  class BookmarkFolder < Resource
+    extend Objects::_ResourceClass[BookmarkFolder]
+    include Objects::_Hydration[BookmarkFolder]
+
+    def id: () -> Integer
+
+    def name: () -> String?
+  end
+
   class Poll < Resource
     extend Objects::_ResourceClass[Poll]
     include Objects::_Hydration[Poll]
@@ -460,7 +469,8 @@ module X
     def mentions: (**untyped params) -> Cursor[Post]
     def liked_posts: (**untyped params) -> Cursor[Post]
     def liked_tweets: (**untyped params) -> Cursor[Post]
-    def bookmarks: (**untyped params) -> Cursor[Post]
+    def bookmarks: (?folder: Objects::id?, **untyped params) -> Cursor[Post]
+    def bookmark_folders: (**untyped params) -> Cursor[BookmarkFolder]
     def owned_lists: (**untyped params) -> Cursor[List]
     def list_memberships: (**untyped params) -> Cursor[List]
     def followed_lists: (**untyped params) -> Cursor[List]

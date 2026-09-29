@@ -95,12 +95,14 @@ module X
     # @param token_param [String] the query parameter the token of the next page is sent in
     # @param min_results [Integer] the smallest page the endpoint accepts
     # @param app_only [Boolean] whether the pages are fetched with the app-only client of the client
+    # @param ids_only [Boolean] whether the endpoint gives the resources by their identifiers alone, and takes none of
+    #   their fields, so the pages ask for none of the default parameters, and read stubs that hydrate together
     # @return [Cursor] a new cursor
     # @example Build a cursor over the followers of a user, which counts them with followers_count
     #   X::Cursor.__send__(:build, X::User, "users/7505382/followers", client: client, params: {}, min_results: 1, app_only: false,
     #     total: ->(fresh: false) { 42 })
-    def self.build(resource_class, path, client:, params:, min_results:, app_only:, total:, prefetch: false, token_param: DEFAULT_TOKEN_PARAM)
-      allocate.tap { |cursor| cursor.__send__(:setup, resource_class, path, client:, params:, prefetch:, token_param:, min_results:, app_only:, total:) }
+    def self.build(resource_class, path, client:, params:, min_results:, app_only:, total:, prefetch: false, token_param: DEFAULT_TOKEN_PARAM, ids_only: false)
+      allocate.tap { |cursor| cursor.__send__(:setup, resource_class, path, client:, params:, prefetch:, token_param:, min_results:, app_only:, total:, ids_only:) }
     end
     private_class_method :build
 
@@ -183,7 +185,7 @@ module X
     # @return [Cursor] a new cursor
     # @example Iterate again with fresh data
     #   followers = user.followers.refresh
-    def refresh = self.class.__send__(:build, resource_class, path, client:, params: own_params, prefetch: prefetch?, token_param:, min_results:, app_only: app_only?, total: fresh_total)
+    def refresh = self.class.__send__(:build, resource_class, path, client:, params: own_params, prefetch: prefetch?, token_param:, min_results:, app_only: app_only?, total: fresh_total, ids_only: ids_only?)
 
     # Return a new cursor over the same collection with prefetching enabled
     #
@@ -191,7 +193,7 @@ module X
     # @return [Cursor] a new cursor
     # @example Fetch every follower while overlapping requests with processing
     #   user.followers.prefetch.each { |follower| process(follower) }
-    def prefetch = self.class.__send__(:build, resource_class, path, client:, params: own_params, prefetch: true, token_param:, min_results:, app_only: app_only?, total: @total)
+    def prefetch = self.class.__send__(:build, resource_class, path, client:, params: own_params, prefetch: true, token_param:, min_results:, app_only: app_only?, total: @total, ids_only: ids_only?)
 
     # Return a new cursor over the same collection that yields stubs
     #
@@ -203,7 +205,7 @@ module X
     # @raise [UnsupportedOperation] if the resource class has no fields parameter
     # @example Check whether a user is among thousands of followers without fetching their fields
     #   user.followers.stubs.any?(other)
-    def stubs = self.class.__send__(:build, resource_class, path, client:, params: id_only_params, prefetch: prefetch?, token_param:, min_results:, app_only: app_only?, total: @total)
+    def stubs = self.class.__send__(:build, resource_class, path, client:, params: id_only_params, prefetch: prefetch?, token_param:, min_results:, app_only: app_only?, total: @total, ids_only: true)
 
     # The first resource, or the first few, requesting pages no larger than needed
     #
@@ -357,18 +359,26 @@ module X
     # Set the collection, requests, and pages of a new cursor, and freeze it
     # @api private
     # @return [void]
-    def setup(resource_class, path, client:, params:, prefetch:, token_param:, min_results:, app_only:, total:)
+    def setup(resource_class, path, client:, params:, prefetch:, token_param:, min_results:, app_only:, total:, ids_only: false)
       @resource_class = resource_class
       @client = client
       @path = path
-      @params = Objects::Utils.merge_params(resource_class.default_params, params).freeze
-      @prefetch, @app_only = prefetch, app_only
+      @params = Objects::Utils.merge_params(ids_only ? {} : resource_class.default_params, params).freeze
+      @prefetch, @app_only, @ids_only = prefetch, app_only, ids_only
       @token_param = token_param
       @min_results = min_results
       @total = total
       @pages = Objects::Pages.new(self)
       freeze
     end
+
+    # Check whether the endpoint gives the resources by their identifiers alone
+    #
+    # Such an endpoint takes none of their fields either. Internal to x-objects: the pages of such a cursor read stubs, which is what Pages asks it for this.
+    #
+    # @api private
+    # @return [Boolean] true if the pages ask for none of the default parameters, and read stubs
+    def ids_only? = @ids_only
 
     # The block of a refreshed cursor, which reads the published number again once
     # @api private
@@ -396,6 +406,8 @@ module X
     # @return [Hash{String => Object}] the query parameters
     # @raise [UnsupportedOperation] if the resource class has no fields parameter
     def id_only_params
+      return params if ids_only?
+
       fields_key = resource_class.__send__(:fields_key) || raise(UnsupportedOperation, "#{resource_class} has no fields parameter") #: String
       id_key = resource_class.__send__(:id_key) #: String
       dropped = {} #: Hash[String, nil]

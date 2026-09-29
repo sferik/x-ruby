@@ -153,8 +153,8 @@ module X
 
       # Check whether the cursor requests nothing but identifiers
       # @api private
-      # @return [Boolean] true if the fields parameter selects only the identifier
-      def id_only? = @cursor.params[@cursor.resource_class.__send__(:fields_key)].eql?(@cursor.resource_class.__send__(:id_key))
+      # @return [Boolean] true if the fields parameter selects only the identifier, or the endpoint gives nothing else
+      def id_only? = @cursor.__send__(:ids_only?) || @cursor.params[@cursor.resource_class.__send__(:fields_key)].eql?(@cursor.resource_class.__send__(:id_key))
 
       # Build the query parameters for a page, including the previous page token
       #

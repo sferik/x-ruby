@@ -7,6 +7,7 @@ module X
     cover Cursor
     cover Objects::Pages
     cover User
+    cover Objects::UserCollections
 
     def setup
       @client = FakeClient.new

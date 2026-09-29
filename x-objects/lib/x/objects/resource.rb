@@ -482,11 +482,13 @@ module X
     # @param total [Symbol, nil] the attribute holding the number of resources the API publishes
     # @param app_only [Boolean] whether the endpoint takes app-only authentication, as a space endpoint does, so
     #   the pages are fetched with the app-only client of this resource's client
+    # @param ids_only [Boolean] whether the endpoint gives the resources by their identifiers alone, and takes none of
+    #   their fields, so the pages ask for none, and read stubs
     # @param params [Hash] query parameters merged over the default parameters
     # @return [Cursor] the cursor
-    def cursor(klass, path, max_results:, min_results: 1, total: nil, app_only: false, **params)
+    def cursor(klass, path, max_results:, min_results: 1, total: nil, app_only: false, ids_only: false, **params)
       defaults = {max_results:} #: Hash[Symbol, untyped]
-      Cursor.__send__(:build, klass, path, client: client!, params: defaults.merge(params), min_results:, app_only:, total: counter(total))
+      Cursor.__send__(:build, klass, path, client: client!, params: defaults.merge(params), min_results:, app_only:, total: counter(total), ids_only:)
     end
   end
 end

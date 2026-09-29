@@ -4,6 +4,7 @@ require "uri"
 require_relative "relationships"
 require_relative "cursor"
 require_relative "resource"
+require_relative "user_collections"
 require_relative "user_finders"
 
 module X
@@ -11,6 +12,7 @@ module X
   # @api public
   class User < Resource
     include Objects::Relationships
+    include Objects::UserCollections
     extend Objects::UserFinders
 
     # The user fields the object layer requests: every one that does not depend on who is authenticated, since a
@@ -406,154 +408,5 @@ module X
     # @example Get the address as a URI
     #   user.uri # => #<URI::HTTPS https://x.com/sferik>
     def uri = URI(permalink)
-
-    # The users following this user
-    #
-    # @api public
-    # @param params [Hash] query parameters merged over the default parameters
-    # @return [Cursor] a cursor over the followers
-    # @example Print every follower
-    #   user.followers.each { |follower| puts follower.username }
-    def followers(**params)
-      cursor(User, "users/#{id}/followers", max_results: MAX_FOLLOW_RESULTS, total: :followers_count, **params)
-    end
-
-    # The users this user follows
-    #
-    # @api public
-    # @param params [Hash] query parameters merged over the default parameters
-    # @return [Cursor] a cursor over the followed users
-    # @example Count the followed users
-    #   user.following.count
-    def following(**params)
-      cursor(User, "users/#{id}/following", max_results: MAX_FOLLOW_RESULTS, total: :following_count, **params)
-    end
-
-    # The users this user blocks, which must be the authenticated user
-    #
-    # @api public
-    # @param params [Hash] query parameters merged over the default parameters
-    # @return [Cursor] a cursor over the blocked users
-    # @example Print every blocked user
-    #   client.current_user!.blocking.each { |user| puts user.username }
-    def blocking(**params)
-      cursor(User, "users/#{id}/blocking", max_results: MAX_FOLLOW_RESULTS, **params)
-    end
-
-    # The users this user mutes, which must be the authenticated user
-    #
-    # @api public
-    # @param params [Hash] query parameters merged over the default parameters
-    # @return [Cursor] a cursor over the muted users
-    # @example Print every muted user
-    #   client.current_user!.muting.each { |user| puts user.username }
-    def muting(**params)
-      cursor(User, "users/#{id}/muting", max_results: MAX_FOLLOW_RESULTS, **params)
-    end
-
-    # The posts by this user
-    #
-    # @api public
-    # @param params [Hash] query parameters merged over the default parameters
-    # @return [Cursor] a cursor over the posts
-    # @example Print the most recent posts
-    #   user.posts.first(10).each { |post| puts post.text }
-    def posts(**params)
-      cursor(Post, "users/#{id}/tweets", max_results: MAX_RESULTS, min_results: 5, **params)
-    end
-
-    # The home timeline of this user, which must be the authenticated user
-    #
-    # @api public
-    # @param params [Hash] query parameters merged over the default parameters
-    # @return [Cursor] a cursor over the posts by the users this user follows, newest first
-    # @example Print the home timeline
-    #   client.current_user!.home_timeline.first(10).each { |post| puts post.text }
-    def home_timeline(**params)
-      cursor(Post, "users/#{id}/timelines/reverse_chronological", max_results: MAX_RESULTS, **params)
-    end
-
-    # The posts mentioning this user
-    #
-    # @api public
-    # @param params [Hash] query parameters merged over the default parameters
-    # @return [Cursor] a cursor over the mentions
-    # @example Print the most recent mentions
-    #   user.mentions.first(10).each { |post| puts post.text }
-    def mentions(**params)
-      cursor(Post, "users/#{id}/mentions", max_results: MAX_RESULTS, min_results: 5, **params)
-    end
-
-    # The posts liked by this user
-    #
-    # @api public
-    # @param params [Hash] query parameters merged over the default parameters
-    # @return [Cursor] a cursor over the liked posts
-    # @example Print the most recently liked posts
-    #   user.liked_posts.first(10).each { |post| puts post.text }
-    def liked_posts(**params)
-      cursor(Post, "users/#{id}/liked_tweets", max_results: MAX_RESULTS, min_results: 5, **params)
-    end
-
-    # The posts bookmarked by the authenticated user
-    #
-    # The bookmark endpoints take only OAuth 2.0 user context, which the object layer cannot route around, so a
-    # client that signs with OAuth 1.0a is refused.
-    #
-    # @api public
-    # @param params [Hash] query parameters merged over the default parameters
-    # @return [Cursor] a cursor over the bookmarked posts
-    # @example Print the bookmarked posts
-    #   client.current_user!.bookmarks.each { |post| puts post.text }
-    def bookmarks(**params) = cursor(Post, "users/#{id}/bookmarks", max_results: MAX_RESULTS, **params)
-
-    # The lists owned by this user
-    #
-    # @api public
-    # @param params [Hash] query parameters merged over the default parameters
-    # @return [Cursor] a cursor over the owned lists
-    # @example Print the owned lists
-    #   user.owned_lists.each { |list| puts list.name }
-    def owned_lists(**params)
-      cursor(List, "users/#{id}/owned_lists", max_results: MAX_RESULTS, **params)
-    end
-
-    # The lists this user is a member of
-    #
-    # @api public
-    # @param params [Hash] query parameters merged over the default parameters
-    # @return [Cursor] a cursor over the list memberships
-    # @example Print the list memberships
-    #   user.list_memberships.each { |list| puts list.name }
-    def list_memberships(**params)
-      cursor(List, "users/#{id}/list_memberships", max_results: MAX_RESULTS, total: :listed_count, **params)
-    end
-
-    # The lists this user follows
-    #
-    # @api public
-    # @param params [Hash] query parameters merged over the default parameters
-    # @return [Cursor] a cursor over the followed lists
-    # @example Print the followed lists
-    #   user.followed_lists.each { |list| puts list.name }
-    def followed_lists(**params)
-      cursor(List, "users/#{id}/followed_lists", max_results: MAX_RESULTS, **params)
-    end
-
-    # The lists this user has pinned
-    #
-    # The API returns them in one response, without pages.
-    #
-    # @api public
-    # @param params [Hash] query parameters merged over the default parameters
-    # @return [Cursor] a cursor over the pinned lists
-    # @example Print the pinned lists
-    #   client.current_user!.pinned_lists.each { |list| puts list.name }
-    def pinned_lists(**params)
-      cursor(List, "users/#{id}/pinned_lists", max_results: nil, **params)
-    end
-
-    alias_method :tweets, :posts
-    alias_method :liked_tweets, :liked_posts
   end
 end

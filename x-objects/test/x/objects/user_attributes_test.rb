@@ -5,6 +5,7 @@ require_relative "../../test_helper"
 module X
   class UserAttributesTest < Minitest::Test
     cover User
+    cover Objects::UserCollections
     cover X::Objects::UserFinders
 
     ATTRS = {"id" => "1", "name" => "Erik Berlin", "username" => "sferik", "description" => "d",

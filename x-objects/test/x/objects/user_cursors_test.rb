@@ -5,6 +5,7 @@ require_relative "../../test_helper"
 module X
   class UserCursorsTest < Minitest::Test
     cover User
+    cover Objects::UserCollections
     cover X::Objects::UserFinders
 
     PATHS = {followers: "users/1/followers", following: "users/1/following", blocking: "users/1/blocking",

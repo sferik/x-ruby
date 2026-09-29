@@ -5,6 +5,7 @@ require_relative "../../test_helper"
 module X
   class UserFieldsTest < Minitest::Test
     cover User
+    cover Objects::UserCollections
 
     def setup
       @user = User.new({"id" => "1", "profile_banner_url" => "https://pbs.twimg.com/b.jpg", "parody" => true,

@@ -60,6 +60,7 @@ module X
 
       assert_equal [1, 2, true], [cursor.published_count, cursor.refresh.published_count, cursor.frozen?]
       assert_equal [User, "users/1/followers", @client, 2], [cursor.resource_class, cursor.path, cursor.client, cursor.min_results]
+      assert_equal User::FIELDS.join(","), cursor.params["user.fields"]
     end
   end
 end

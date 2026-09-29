@@ -11,6 +11,7 @@ module X
     cover List
     cover Post
     cover User
+    cover Objects::UserCollections
 
     def setup
       @client = FakeClient.new

@@ -11,6 +11,7 @@ module X
     cover Post
     cover Objects::PostCollections
     cover User
+    cover Objects::UserCollections
     cover X::Objects::UserFinders
     cover Resource
     cover Objects::Finders

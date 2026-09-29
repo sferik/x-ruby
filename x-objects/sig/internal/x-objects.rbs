@@ -359,6 +359,25 @@ module X
       def context_annotations?: (Hash[Symbol, untyped] params) -> bool
     end
 
+    module UserCollections : Resource
+      def followers: (**untyped params) -> Cursor[User]
+      def following: (**untyped params) -> Cursor[User]
+      def blocking: (**untyped params) -> Cursor[User]
+      def muting: (**untyped params) -> Cursor[User]
+      def posts: (**untyped params) -> Cursor[Post]
+      def tweets: (**untyped params) -> Cursor[Post]
+      def home_timeline: (**untyped params) -> Cursor[Post]
+      def mentions: (**untyped params) -> Cursor[Post]
+      def liked_posts: (**untyped params) -> Cursor[Post]
+      def liked_tweets: (**untyped params) -> Cursor[Post]
+      def bookmarks: (?folder: id?, **untyped params) -> Cursor[Post]
+      def bookmark_folders: (**untyped params) -> Cursor[BookmarkFolder]
+      def owned_lists: (**untyped params) -> Cursor[List]
+      def list_memberships: (**untyped params) -> Cursor[List]
+      def followed_lists: (**untyped params) -> Cursor[List]
+      def pinned_lists: (**untyped params) -> Cursor[List]
+    end
+
     module PostCollections : Resource
       def liked_by: (**untyped params) -> Cursor[User]
       def reposted_by: (**untyped params) -> Cursor[User]
@@ -607,19 +626,21 @@ module X
     def look_up: () -> Resource?
     def client!: () -> Objects::_Client
     def resolve: (singleton(Resource) klass, untyped id) -> Resource?
-    def cursor: (singleton(Resource) klass, String path, max_results: Integer?, ?min_results: Integer, ?total: Symbol?, ?app_only: bool, **untyped params) -> Cursor[untyped]
+    def cursor: (singleton(Resource) klass, String path, max_results: Integer?, ?min_results: Integer, ?total: Symbol?, ?app_only: bool, ?ids_only: bool, **untyped params) -> Cursor[untyped]
   end
 
   class Cursor[R < Resource = Resource]
     @prefetch: bool
     @app_only: bool
+    @ids_only: bool
     @total: (^(?fresh: bool) -> Integer?)?
     @pages: Objects::Pages
 
-    private def self.build: [R < Resource] (singleton(Resource) resource_class, String path, client: Objects::_Client, params: Objects::params, min_results: Integer, app_only: bool, total: (^(?fresh: bool) -> Integer?)?, ?prefetch: bool, ?token_param: String) -> Cursor[R]
+    private def self.build: [R < Resource] (singleton(Resource) resource_class, String path, client: Objects::_Client, params: Objects::params, min_results: Integer, app_only: bool, total: (^(?fresh: bool) -> Integer?)?, ?prefetch: bool, ?token_param: String, ?ids_only: bool) -> Cursor[R]
 
     private
-    def setup: (singleton(Resource) resource_class, String path, client: Objects::_Client, params: Objects::params, prefetch: bool, token_param: String, min_results: Integer, app_only: bool, total: (^(?fresh: bool) -> Integer?)?) -> void
+    def setup: (singleton(Resource) resource_class, String path, client: Objects::_Client, params: Objects::params, prefetch: bool, token_param: String, min_results: Integer, app_only: bool, total: (^(?fresh: bool) -> Integer?)?, ?ids_only: bool) -> void
+    def ids_only?: () -> bool
     def fresh_total: () -> (^(?fresh: bool) -> Integer?)?
     def own_params: () -> Objects::params
     def id_only_params: () -> Objects::params
@@ -650,6 +671,7 @@ module X
 
   class User < Resource
     include Objects::Relationships
+    include Objects::UserCollections
     extend Objects::UserFinders
 
     private def self.endpoint: () -> String

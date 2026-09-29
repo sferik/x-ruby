@@ -9,6 +9,7 @@ module X
     cover Objects::Includes
     cover Post
     cover User
+    cover Objects::UserCollections
     cover DirectMessage
 
     POST = {"id" => "1", "text" => "short…", "author_id" => "9", "edit_history_tweet_ids" => ["1"],

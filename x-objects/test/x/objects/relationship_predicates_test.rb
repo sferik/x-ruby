@@ -5,6 +5,7 @@ require_relative "../../test_helper"
 module X
   class RelationshipPredicatesTest < Minitest::Test
     cover User
+    cover Objects::UserCollections
     cover X::Objects::UserFinders
     cover Objects::Relationships
     cover List

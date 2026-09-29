@@ -5,6 +5,7 @@ require_relative "../../test_helper"
 module X
   class PermalinksTest < Minitest::Test
     cover User
+    cover Objects::UserCollections
     cover X::Objects::UserFinders
     cover Post
     cover List

@@ -66,6 +66,7 @@ module X
 
   class PinnedListsTest < Minitest::Test
     cover User
+    cover Objects::UserCollections
 
     def setup
       @client = FakeClient.new

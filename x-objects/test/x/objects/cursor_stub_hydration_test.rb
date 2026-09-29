@@ -9,6 +9,7 @@ module X
     cover Objects::Batch
     cover Resource
     cover User
+    cover Objects::UserCollections
     cover List
     cover Community
     cover DirectMessage

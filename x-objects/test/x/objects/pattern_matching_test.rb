@@ -9,6 +9,7 @@ module X
     cover Resource
     cover Post
     cover User
+    cover Objects::UserCollections
 
     def setup
       @user = User.new({"id" => "7505382", "username" => "sferik", "created_at" => "2007-07-16T12:59:01.000Z"})

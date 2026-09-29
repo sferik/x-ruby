@@ -5,6 +5,7 @@ require_relative "../../test_helper"
 module X
   class UserSearchTest < Minitest::Test
     cover User
+    cover Objects::UserCollections
     cover X::Objects::UserFinders
 
     def setup
