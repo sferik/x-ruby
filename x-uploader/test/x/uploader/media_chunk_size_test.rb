@@ -11,7 +11,7 @@ module X
     BASE_URL = "https://api.x.com/2/media/upload"
     JSON_HEADERS = {"content-type" => "application/json"}.freeze
     # A video larger than the 10,000 chunks of a megabyte the API numbers the segments of
-    LARGE_VIDEO_BYTES = 11_000 * Uploader::MediaUpload::BYTES_PER_MB
+    LARGE_VIDEO_BYTES = 11_000 * Uploader::MediaUpload.const_get(:BYTES_PER_MB)
 
     def setup
       @client = Client.new
@@ -27,13 +27,13 @@ module X
     end
 
     def test_a_video_of_a_megabyte_uploads_in_chunks_of_a_megabyte
-      chunk_size = with_video(Uploader::MediaUpload::BYTES_PER_MB) { |path| upload(path) }
+      chunk_size = with_video(Uploader::MediaUpload.const_get(:BYTES_PER_MB)) { |path| upload(path) }
 
-      assert_equal Uploader::MediaUpload::BYTES_PER_MB, chunk_size
+      assert_equal Uploader::MediaUpload.const_get(:BYTES_PER_MB), chunk_size
     end
 
     def test_a_chunk_size_given_is_taken_whole_megabytes_or_not
-      assert_equal [2_097_152, 524_288], [2, 0.5].map { |mb| with_video(Uploader::MediaUpload::BYTES_PER_MB) { |path| upload(path, chunk_size_mb: mb) } }
+      assert_equal [2_097_152, 524_288], [2, 0.5].map { |mb| with_video(Uploader::MediaUpload.const_get(:BYTES_PER_MB)) { |path| upload(path, chunk_size_mb: mb) } }
     end
 
     def test_a_chunk_size_that_would_need_more_segments_than_the_api_numbers_uploads_nothing
@@ -66,7 +66,7 @@ module X
     end
 
     def test_a_video_larger_than_the_largest_segments_the_api_numbers_uploads_nothing
-      error = assert_raises(ArgumentError) { with_video((10_000 * 5 * Uploader::MediaUpload::BYTES_PER_MB) + 1) { |path| upload(path) } }
+      error = assert_raises(ArgumentError) { with_video((10_000 * 5 * Uploader::MediaUpload.const_get(:BYTES_PER_MB)) + 1) { |path| upload(path) } }
 
       assert_match(/is 52428800001 bytes, more than the 10000 segments of 5242880 bytes the API takes\z/, error.message)
       assert_not_requested :post, "#{BASE_URL}/initialize"

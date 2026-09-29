@@ -103,7 +103,7 @@ module X
         path = File.join(dir, "video.mp4")
         File.binwrite(path, "\x01".b * (chunks * CHUNK_BYTES))
         Uploader::MediaUpload.chunked_upload(path, client: @client, media_category: "tweet_video",
-          chunk_size_mb: CHUNK_BYTES / Uploader::MediaUpload::BYTES_PER_MB.to_f, **)
+          chunk_size_mb: CHUNK_BYTES / Uploader::MediaUpload.const_get(:BYTES_PER_MB).to_f, **)
       end
     end
   end

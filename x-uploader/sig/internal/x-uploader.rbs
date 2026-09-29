@@ -121,6 +121,8 @@ module X
     end
 
     module MediaUpload
+      BYTES_PER_MB: Integer
+      MAX_SIMPLE_UPLOAD_BYTES: Integer
       MIME_TYPES: Array[String]
       BMP_MIME_TYPE: String
       GIF_MIME_TYPE: String

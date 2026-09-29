@@ -46,20 +46,20 @@ module X
     end
 
     def test_default_chunk_size_is_one_megabyte
-      with_file(Uploader::MediaUpload::BYTES_PER_MB + 1) { |path| upload(path) }
+      with_file(Uploader::MediaUpload.const_get(:BYTES_PER_MB) + 1) { |path| upload(path) }
 
       assert_equal 2, append_requests.size
     end
 
     def test_chunk_size_scales_with_megabytes
-      with_file((2 * Uploader::MediaUpload::BYTES_PER_MB) + 1) { |path| upload(path, chunk_size_mb: 2) }
+      with_file((2 * Uploader::MediaUpload.const_get(:BYTES_PER_MB)) + 1) { |path| upload(path, chunk_size_mb: 2) }
 
       assert_equal 2, append_requests.size
     end
 
     private
 
-    def chunk_size_mb = CHUNK_BYTES / Uploader::MediaUpload::BYTES_PER_MB.to_f
+    def chunk_size_mb = CHUNK_BYTES / Uploader::MediaUpload.const_get(:BYTES_PER_MB).to_f
 
     def upload(file_path, **)
       Uploader::MediaUpload.chunked_upload(file_path, client: @client, media_category: "tweet_video", **)

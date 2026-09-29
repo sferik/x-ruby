@@ -29,7 +29,7 @@ module X
       Dir.mktmpdir do |dir|
         path = File.join(dir, "video.mp4")
         File.binwrite(path, CONTENT)
-        Uploader::MediaUpload.chunked_upload(path, client: @client, media_category: "tweet_video", chunk_size_mb: 1000.5 / Uploader::MediaUpload::BYTES_PER_MB)
+        Uploader::MediaUpload.chunked_upload(path, client: @client, media_category: "tweet_video", chunk_size_mb: 1000.5 / Uploader::MediaUpload.const_get(:BYTES_PER_MB))
       end
       chunks = Array.new(@chunks.size) { @chunks.pop }.sort.map(&:last)
 

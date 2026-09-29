@@ -12,7 +12,7 @@ module X
 
     BASE_URL = "https://api.x.com/2/media/upload"
     JSON_HEADERS = {"content-type" => "application/json"}.freeze
-    MB = Uploader::MediaUpload::BYTES_PER_MB
+    MB = Uploader::MediaUpload.const_get(:BYTES_PER_MB)
     LIMITS = {"tweet_image" => 5 * MB, "dm_image" => 5 * MB, "tweet_gif" => 15 * MB, "dm_gif" => 15 * MB, "subtitles" => MB}.freeze
 
     def setup

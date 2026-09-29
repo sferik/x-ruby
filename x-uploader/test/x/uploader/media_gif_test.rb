@@ -10,7 +10,7 @@ module X
 
     BASE_URL = "https://api.x.com/2/media/upload"
     JSON_HEADERS = {"content-type" => "application/json"}.freeze
-    MAX_SIMPLE = Uploader::MediaUpload::MAX_SIMPLE_UPLOAD_BYTES
+    MAX_SIMPLE = Uploader::MediaUpload.const_get(:MAX_SIMPLE_UPLOAD_BYTES)
 
     def setup
       @client = Client.new

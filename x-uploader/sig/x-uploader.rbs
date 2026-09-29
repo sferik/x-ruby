@@ -35,7 +35,6 @@ module X
     end
 
     module MediaUpload
-      BYTES_PER_MB: Integer
       AMPLIFY_VIDEO: String
       DM_GIF: String
       DM_IMAGE: String
@@ -46,7 +45,6 @@ module X
       TWEET_VIDEO: String
       DEFAULT_PROCESSING_TIMEOUT: Integer
       DEFAULT_CONCURRENCY: Integer
-      MAX_SIMPLE_UPLOAD_BYTES: Integer
       extend MediaUpload
 
       def upload: (uploadable media, client: _Client, ?media_category: (String | Symbol)?, ?alt_text: String?, ?processing_timeout: Float | Integer, ?media_type: String?, ?chunk_size_mb: (Float | Integer)?, ?concurrency: Integer) -> UploadedMedia

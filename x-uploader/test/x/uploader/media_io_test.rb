@@ -121,7 +121,7 @@ module X
     end
 
     def test_a_large_animated_gif_held_in_memory_uploads_in_chunks
-      gif = StringIO.new("GIF89a".b + ("\x00".b * (5 * Uploader::MediaUpload::BYTES_PER_MB)))
+      gif = StringIO.new("GIF89a".b + ("\x00".b * (5 * Uploader::MediaUpload.const_get(:BYTES_PER_MB))))
 
       assert inference.chunked_upload?(gif, "tweet_gif")
     end
