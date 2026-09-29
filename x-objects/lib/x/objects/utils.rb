@@ -278,6 +278,24 @@ module X
         raise InvalidAttribute, "#{name} cannot be read from #{value.inspect}"
       end
 
+      # Deconstruct a value into what its readers read, so it matches a hash pattern
+      #
+      # A pattern that asks for every key gets each reader by the name it is declared by, and one that names keys
+      # gets those of them it names, by any name they are read by, as a resource matches a pattern.
+      #
+      # @api private
+      # @param value [Object] the value, which answers each reader
+      # @param keys [Array<Symbol>, nil] the keys the pattern asks for, or nil for every reader
+      # @param names [Array<Symbol>] the readers
+      # @param aliases [Array<Symbol>] the other names some of the readers are read by
+      # @return [Hash{Symbol => Object}] what the readers the pattern asks for read
+      # @example Deconstruct a trend
+      #   X::Objects::Utils.deconstruct(trend, [:name], %i[name post_count], %i[tweet_count]) # => {name: "#ruby"}
+      def deconstruct(value, keys, names, aliases = [])
+        names = (names + aliases) & keys unless keys.nil?
+        names.to_h { |name| [name, value.public_send(name)] }
+      end
+
       # Parse an ISO 8601 timestamp
       #
       # A value that is not a String, such as a number, is not ISO 8601 either, and raises ArgumentError as one.

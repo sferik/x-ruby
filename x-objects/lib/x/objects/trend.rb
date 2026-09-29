@@ -104,5 +104,18 @@ module X
     def post_count = Objects::Utils.read("#{self.class}#post_count", attrs["tweet_count"]) { |value| Objects::Utils.integer(value) }
 
     alias_method :tweet_count, :post_count
+
+    # Deconstruct the trend into what its readers read, so it matches a hash pattern
+    #
+    # A pattern that asks for every key gets name and post_count, and one can ask for the number of posts as
+    # tweet_count too, as it can of a user.
+    #
+    # @api public
+    # @param keys [Array<Symbol>, nil] the keys the pattern asks for, or nil for every reader
+    # @return [Hash{Symbol => Object}] what the readers read
+    # @raise [InvalidAttribute] if the pattern asks for a number of posts the response holds as something else
+    # @example Keep the topics of more than 10,000 posts
+    #   X::Trend.at(1, client: client).select { |trend| trend in {post_count: 10_000..} }
+    def deconstruct_keys(keys) = Objects::Utils.deconstruct(self, keys, %i[name post_count], %i[tweet_count])
   end
 end

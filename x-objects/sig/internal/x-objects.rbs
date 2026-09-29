@@ -81,6 +81,7 @@ module X
       def id?: (untyped value) -> bool
       def time: (String? value) -> Time?
       def read: [T] (String name, untyped value) { (untyped value) -> T } -> T
+      def deconstruct: (untyped value, Array[Symbol]? keys, Array[Symbol] names, ?Array[Symbol] aliases) -> Hash[Symbol, untyped]
     end
 
     module MediaIds

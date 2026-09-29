@@ -127,6 +127,20 @@ module X
       by_app.freeze
     end
 
+    # Deconstruct the usage into what its readers read, so it matches a hash pattern
+    #
+    # Only the readers a pattern names are read, so one that names the counts of the project matches a usage whose
+    # days cannot be read.
+    #
+    # @api public
+    # @param keys [Array<Symbol>, nil] the keys the pattern asks for, or nil for every reader
+    # @return [Hash{Symbol => Object}] what the readers read
+    # @raise [InvalidAttribute] if the pattern asks for what the response holds as something that cannot be read
+    # @example Warn when the project has read nine tenths of its cap
+    #   case usage in {project_usage: Integer => used, project_cap: Integer => cap} if used * 10 >= cap * 9 then warn "near the cap"
+    #   end
+    def deconstruct_keys(keys) = Objects::Utils.deconstruct(self, keys, %i[project_id project_usage project_cap cap_reset_day daily daily_by_app])
+
     private
 
     # Read daily usage entries, counting a day without a number as zero
