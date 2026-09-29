@@ -34,6 +34,9 @@ module X
     def name: () -> String?
     def post_count: () -> Integer?
     def tweet_count: () -> Integer?
+    def ==: (untyped other) -> bool
+    def eql?: (untyped other) -> bool
+    def hash: () -> Integer
     def as_json: (*untyped) -> Hash[String, untyped]
     def to_json: (?JSON::State? state) -> String
   end
@@ -51,6 +54,9 @@ module X
     def category: () -> String?
     def post_count: () -> String?
     def trending_since: () -> String?
+    def ==: (untyped other) -> bool
+    def eql?: (untyped other) -> bool
+    def hash: () -> Integer
     def as_json: (*untyped) -> Hash[String, untyped]
     def to_json: (?JSON::State? state) -> String
   end
@@ -70,6 +76,9 @@ module X
     def cap_reset_day: () -> Integer?
     def daily: () -> Hash[Time, Integer]
     def daily_by_app: () -> Hash[Integer?, Hash[Time, Integer]]
+    def ==: (untyped other) -> bool
+    def eql?: (untyped other) -> bool
+    def hash: () -> Integer
     def as_json: (*untyped) -> Hash[String, untyped]
     def to_json: (?JSON::State? state) -> String
   end

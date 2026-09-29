@@ -22,6 +22,12 @@ module X
     end
 
     # Serialization of what an API response held, by its attributes alone
+    module ValueEquality : _Attributed
+      def ==: (untyped other) -> bool
+      def eql?: (untyped other) -> bool
+      def hash: () -> Integer
+    end
+
     module Serialization : _Attributed
       def as_json: (*untyped) -> Hash[String, untyped]
       def to_json: (?JSON::State? state) -> String
@@ -592,16 +598,19 @@ module X
   end
 
   class Trend
+    include Objects::ValueEquality
     include Objects::Serialization
 
     private def self.woeid_of: (untyped woeid) -> String
   end
 
   class PersonalizedTrend
+    include Objects::ValueEquality
     include Objects::Serialization
   end
 
   class Usage
+    include Objects::ValueEquality
     include Objects::Serialization
 
     private
