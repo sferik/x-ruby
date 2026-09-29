@@ -52,6 +52,25 @@ module X
       assert_requested(:get, status_url, times: 1)
     end
 
+    def test_the_hash_of_an_upload_response_is_first_checked_as_long_as_it_asks
+      stub_processing_status_sequence("succeeded")
+      response = {"id" => TEST_MEDIA_ID, "processing_info" => {"state" => "pending", "check_after_secs" => 5}}
+      waits = []
+      status = on_fake_clock(waits) { Uploader::MediaUpload.await_processing(response, client: @client) }
+
+      assert_equal [[5], "succeeded"], [waits, status.state]
+      assert_requested(:get, status_url, times: 1)
+    end
+
+    def test_the_hash_of_an_upload_response_that_says_nothing_of_processing_is_checked_at_once
+      stub_processing_status_sequence("succeeded")
+      waits = []
+      on_fake_clock(waits) { Uploader::MediaUpload.await_processing({"id" => TEST_MEDIA_ID}, client: @client) }
+
+      assert_empty waits
+      assert_requested(:get, status_url, times: 1)
+    end
+
     def test_media_that_is_not_processing_is_checked_at_once
       stub_processing_status_sequence("succeeded")
       waits = []

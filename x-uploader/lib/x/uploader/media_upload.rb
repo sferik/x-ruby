@@ -233,9 +233,9 @@ module X
 
       # Wait for media processing to complete
       #
-      # Before each check it waits as long as X asked, and at least a second: media an upload returned, which says
-      # how long to wait before the first check, is not checked until then, and media given as its identifier, or as
-      # media that says nothing of its processing, is checked at once.
+      # Before each check it waits as long as X asked, and at least a second: media an upload returned, or the Hash
+      # of its response, which says how long to wait before the first check, is not checked until then, and media
+      # given as its identifier, or as media that says nothing of its processing, is checked at once.
       #
       # The processing timeout is a deadline, the seconds from when it is called, measured on the monotonic clock, so
       # that it counts the time each check takes, with any wait for a rate limit and any retry the client makes, as
@@ -262,8 +262,9 @@ module X
       #   Uploader::MediaUpload.await_processing(media, client: client, processing_timeout: 1800)
       def await_processing(media, client:, processing_timeout: DEFAULT_PROCESSING_TIMEOUT)
         Validator.validate_processing_timeout!(processing_timeout)
-        deadline, media_id = Utils.seconds_from_now(processing_timeout), Utils.media_id(media)
-        pending = media if UploadedMedia === media && media.processing?
+        uploaded = Utils.uploaded_media(media)
+        deadline, media_id = Utils.seconds_from_now(processing_timeout), Utils.media_id(uploaded)
+        pending = uploaded if uploaded.processing?
         loop do
           Utils.wait_to_check(pending, deadline:, timeout: processing_timeout) if pending
           status = UploadedMedia.new(Utils.media_data(client.get("media/upload", params: {command: STATUS_COMMAND, media_id:}, **JSON_CLASSES), "of the status check"))
