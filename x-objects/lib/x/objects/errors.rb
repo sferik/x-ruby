@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "x/core/errors/error"
+require "x/core/errors/unsupported_marshal_format"
 require "x/core/errors/unsupported_operation"
 
 module X

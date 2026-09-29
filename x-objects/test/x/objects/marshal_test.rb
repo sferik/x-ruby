@@ -78,13 +78,13 @@ module X
     end
 
     def test_a_resource_of_another_format_is_refused
-      error = assert_raises(ArgumentError) { Post.allocate.marshal_load([2, {"id" => "1"}, false, {}, [], nil]) }
+      error = assert_raises(UnsupportedMarshalFormat) { Post.allocate.marshal_load([2, {"id" => "1"}, false, {}, [], nil]) }
 
       assert_equal "X::Post reads format 1 of Marshal, not 2", error.message
-      error = assert_raises(ArgumentError) { Post.allocate.marshal_load(["1", {"id" => "1"}, false, {}, [], nil]) }
+      error = assert_raises(UnsupportedMarshalFormat) { Post.allocate.marshal_load(["1", {"id" => "1"}, false, {}, [], nil]) }
 
       assert_equal 'X::Post reads format 1 of Marshal, not "1"', error.message
-      assert_raises(ArgumentError) { Post.allocate.marshal_load({"id" => "1"}) }
+      assert_raises(UnsupportedMarshalFormat) { Post.allocate.marshal_load({"id" => "1"}) }
     end
   end
 end

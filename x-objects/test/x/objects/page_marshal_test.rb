@@ -32,7 +32,7 @@ module X
     end
 
     def test_a_page_of_another_format_is_refused
-      error = assert_raises(ArgumentError) { Page.allocate.marshal_load(["2", [], {}, []]) }
+      error = assert_raises(UnsupportedMarshalFormat) { Page.allocate.marshal_load(["2", [], {}, []]) }
 
       assert_equal "X::Page reads format 1 of Marshal, not \"2\"", error.message
     end

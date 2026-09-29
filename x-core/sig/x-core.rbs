@@ -194,6 +194,9 @@ module X
   class UnsupportedOperation < Error
   end
 
+  class UnsupportedMarshalFormat < Error
+  end
+
   class InvalidResponse < Error
     attr_reader http_response: Net::HTTPResponse
     attr_reader body: String?

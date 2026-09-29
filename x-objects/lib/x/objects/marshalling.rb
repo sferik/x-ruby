@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require_relative "errors"
 require_relative "includes"
 
 module X
@@ -40,12 +41,12 @@ module X
       # @api public
       # @param state [Array] the state Marshal wrote
       # @return [void]
-      # @raise [ArgumentError] if the state is of a format this release does not read
+      # @raise [UnsupportedMarshalFormat] if the state is of a format this release does not read
       # @example Read a cached user
       #   Marshal.load(Marshal.dump(user)).username # => "sferik"
       def marshal_load(state)
         format, attrs, hydrated, data, problems, query = state
-        raise ArgumentError, "#{self.class} reads format #{MARSHAL_FORMAT} of Marshal, not #{format.inspect}" unless MARSHAL_FORMAT.eql?(format)
+        raise UnsupportedMarshalFormat, "#{self.class} reads format #{MARSHAL_FORMAT} of Marshal, not #{format.inspect}" unless MARSHAL_FORMAT.eql?(format)
 
         setup(attrs, client: nil, hydrated:, includes: Includes.new(data, problems: problems.map { |problem| Problem.new(problem) }, query:)) # steep:ignore NoMethod
       end

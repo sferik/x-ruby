@@ -36,6 +36,7 @@ module X
   #   ├── X::TooManyRedirects          a response redirected more times than max_redirects allows
   #   ├── X::StreamError               a line of a stream held errors and no data
   #   ├── X::UnsupportedOperation      the API offers no way to do what was asked
+  #   ├── X::UnsupportedMarshalFormat  Marshal read what a release that wrote another format wrote
   #   ├── X::Objects::Error            the failures of the object layer, from x-objects
   #   │   ├── X::MissingResource               a resource that was asked for does not exist
   #   │   ├── X::InvalidAttribute              a response holds a value that is not what the API documents it to be

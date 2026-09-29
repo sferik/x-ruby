@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "json"
+require_relative "errors"
 
 module X
   # One page of results from a paginated endpoint
@@ -120,12 +121,12 @@ module X
     # @api public
     # @param state [Array] the state Marshal wrote
     # @return [void]
-    # @raise [ArgumentError] if the state is of a format this release does not read
+    # @raise [UnsupportedMarshalFormat] if the state is of a format this release does not read
     # @example Read a cached page
     #   Marshal.load(Marshal.dump(page)).next_token
     def marshal_load(state)
       format, items, meta, problems = state
-      raise ArgumentError, "#{self.class} reads format #{MARSHAL_FORMAT} of Marshal, not #{format.inspect}" unless MARSHAL_FORMAT.eql?(format)
+      raise UnsupportedMarshalFormat, "#{self.class} reads format #{MARSHAL_FORMAT} of Marshal, not #{format.inspect}" unless MARSHAL_FORMAT.eql?(format)
 
       initialize(items, meta, problems: problems.map { |problem| Problem.new(problem) })
     end

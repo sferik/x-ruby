@@ -46,6 +46,12 @@ module X
       assert_raises(NetworkError) { @client.get("tweets") }
     end
 
+    def test_an_unsupported_marshal_format_is_no_http_error
+      require "x/core/errors/unsupported_marshal_format"
+
+      assert_equal [UnsupportedMarshalFormat, Error, StandardError], UnsupportedMarshalFormat.ancestors.take_while { |ancestor| !ancestor.eql?(Exception) }
+    end
+
     def test_connection_exception_is_gone
       refute X.const_defined?(:ConnectionException)
     end

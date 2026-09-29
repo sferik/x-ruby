@@ -14,6 +14,7 @@ module X
       assert_operator HTTPError, :<, Error
       assert_operator MissingResource, :<, Error
       assert_operator Uploader::Error, :<, Error
+      assert_operator UnsupportedMarshalFormat, :<, Error
     end
   end
 end
