@@ -35,6 +35,17 @@ module X
         cursor(User, "users/#{id}/following", max_results: User::MAX_FOLLOW_RESULTS, total: :following_count, **params)
       end
 
+      # The users affiliated with this user, such as the people of an organization
+      #
+      # They are the accounts whose affiliation names this user, which affiliated_users reads of each of them.
+      #
+      # @api public
+      # @param params [Hash] query parameters merged over the default parameters
+      # @return [Cursor] a cursor over the affiliated users
+      # @example Print the users affiliated with an organization
+      #   client.find_user!("X").affiliates.each { |user| puts user.username }
+      def affiliates(**params) = cursor(User, "users/#{id}/affiliates", max_results: User::MAX_FOLLOW_RESULTS, **params)
+
       # The users this user blocks, which must be the authenticated user
       #
       # @api public

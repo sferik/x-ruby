@@ -12,8 +12,8 @@ module X
              muting: "users/1/muting", posts: "users/1/tweets", home_timeline: "users/1/timelines/reverse_chronological",
              mentions: "users/1/mentions", liked_posts: "users/1/liked_tweets", bookmarks: "users/1/bookmarks",
              owned_lists: "users/1/owned_lists", list_memberships: "users/1/list_memberships",
-             followed_lists: "users/1/followed_lists"}.freeze
-    THOUSANDS = %i[followers following blocking muting].freeze
+             followed_lists: "users/1/followed_lists", affiliates: "users/1/affiliates"}.freeze
+    THOUSANDS = %i[followers following blocking muting affiliates].freeze
 
     def setup
       @client = FakeClient.new
@@ -36,6 +36,10 @@ module X
       THOUSANDS.each do |method|
         assert_equal [User, 1000], [@user.public_send(method).resource_class, @user.public_send(method).params["max_results"]], method
       end
+    end
+
+    def test_the_affiliates_take_parameters
+      assert_equal 5, @user.affiliates(max_results: 5).params["max_results"]
     end
 
     def test_post_cursor_classes

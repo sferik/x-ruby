@@ -364,6 +364,7 @@ module X
       def following: (**untyped params) -> Cursor[User]
       def blocking: (**untyped params) -> Cursor[User]
       def muting: (**untyped params) -> Cursor[User]
+      def affiliates: (**untyped params) -> Cursor[User]
       def posts: (**untyped params) -> Cursor[Post]
       def tweets: (**untyped params) -> Cursor[Post]
       def home_timeline: (**untyped params) -> Cursor[Post]
