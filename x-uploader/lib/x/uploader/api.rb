@@ -27,7 +27,8 @@ module X
       # @param options [Hash] the options of {MediaUpload.upload}, such as media_category, alt_text, and processing_timeout
       # @return [UploadedMedia] the uploaded media, which holds the upload response, or the processing status of
       #   media that X processes
-      # @raise [ArgumentError] if the media is neither a path nor an IO
+      # @raise [ArgumentError] if the media is neither a path nor an IO, or is a String that holds a NUL byte or a
+      #   line break, as the contents of media given in place of its path do
       # @raise [Errno::ENOENT] if the file does not exist
       # @raise [ArgumentError] if the media is empty, which holds nothing to upload
       # @raise [ArgumentError] if the media is larger than the API takes of its category, whatever the account: 5

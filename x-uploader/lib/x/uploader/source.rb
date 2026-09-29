@@ -20,16 +20,28 @@ module X
     class Source
       # Bytes read from the start of media that names no file, enough for every signature {Signature} reads
       SNIFF_BYTES = 512
-      private_constant :SNIFF_BYTES
+      # The bytes a path of media is not written with, but its contents may be: a path holds no NUL byte, and names
+      # no file with a line break in any use an upload is meant for, while an image read with File.binread holds a
+      # NUL byte, and subtitles a line break
+      CONTENT_BYTES = /[\0\n]/
+      # The message of the error raised for the contents of media given where its path belongs
+      NOT_A_PATH = "media must be a path to the media, or an IO that reads it, such as a StringIO, not the contents " \
+        "of the media: a String that holds a NUL byte or a line break names no file"
+      private_constant :SNIFF_BYTES, :CONTENT_BYTES, :NOT_A_PATH
 
       # The source of media given as a path or as an IO
       #
       # An IO that names a file is flushed first, so that what it has written reaches the file the upload reads.
       #
+      # A String is a path, so one that holds a NUL byte or a line break, as the contents of media given in its place
+      # do, such as the bytes of an image or the text of subtitles, raises, rather than be looked for as a file named
+      # by all of it.
+      #
       # @api private
       # @param media [String, Pathname, IO, StringIO, Source] the path to the media, or an IO open on it
       # @return [Source] the source, which is what was given if that is already one
-      # @raise [ArgumentError] if the media is neither a path nor an IO
+      # @raise [ArgumentError] if the media is neither a path nor an IO, or is a String that holds the contents of
+      #   media rather than a path
       # @example The source of a file
       #   Uploader::Source.for("cat.jpg")
       # @example The source of media held in memory
@@ -37,7 +49,7 @@ module X
       def self.for(media)
         case media
         when Source then media
-        when String then Path.new(media)
+        when String then media.b.match?(CONTENT_BYTES) ? raise(ArgumentError, NOT_A_PATH) : Path.new(media)
         else named_or_read(media)
         end
       end
