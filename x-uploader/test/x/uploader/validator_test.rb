@@ -9,30 +9,30 @@ module X
   class ValidatorTest < Minitest::Test
     cover Uploader.const_get(:Validator)
 
-    def test_validate_file_path_refuses_an_empty_file
+    def test_validate_source_refuses_an_empty_file
       Tempfile.create(["empty", ".png"]) do |file|
-        error = assert_raises(ArgumentError) { Uploader.const_get(:Validator).validate_file_path!(file.path) }
+        error = assert_raises(ArgumentError) { Uploader.const_get(:Validator).validate_source!(Uploader.const_get(:Source).for(file.path)) }
 
         assert_equal "#{file.path} is empty: there is nothing to upload", error.message
       end
     end
 
-    def test_validate_file_path
-      assert_nil Uploader.const_get(:Validator).validate_file_path!("test/sample_files/sample.jpg")
+    def test_validate_source
+      assert_nil Uploader.const_get(:Validator).validate_source!(Uploader.const_get(:Source).for("test/sample_files/sample.jpg"))
     end
 
-    def test_validate_file_path_raises_for_missing_file
-      error = assert_raises(Errno::ENOENT) { Uploader.const_get(:Validator).validate_file_path!("bad/path") }
+    def test_validate_source_raises_for_missing_file
+      error = assert_raises(Errno::ENOENT) { Uploader.const_get(:Validator).validate_source!(Uploader.const_get(:Source).for("bad/path")) }
 
       assert_equal "No such file or directory - bad/path", error.message
     end
 
-    def test_validate_file_path_of_a_pathname
-      assert_nil Uploader.const_get(:Validator).validate_file_path!(Pathname("test/sample_files/sample.jpg"))
+    def test_validate_source_of_a_pathname
+      assert_nil Uploader.const_get(:Validator).validate_source!(Uploader.const_get(:Source).for(Pathname("test/sample_files/sample.jpg")))
     end
 
-    def test_validate_file_path_raises_for_a_missing_pathname
-      error = assert_raises(Errno::ENOENT) { Uploader.const_get(:Validator).validate_file_path!(Pathname("bad/path")) }
+    def test_validate_source_raises_for_a_missing_pathname
+      error = assert_raises(Errno::ENOENT) { Uploader.const_get(:Validator).validate_source!(Uploader.const_get(:Source).for(Pathname("bad/path"))) }
 
       assert_equal "No such file or directory - bad/path", error.message
     end

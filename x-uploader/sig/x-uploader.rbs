@@ -27,8 +27,8 @@ module X
       def await_media_processing!: (media media, **untyped options) -> UploadedMedia
       def add_alt_text: (media media, String text) -> UploadedMedia
       def add_subtitles: (media video, media subtitles, String language_code, **untyped options) -> UploadedMedia
-      def update_profile_image: (path file_path) -> Hash[String, untyped]?
-      def update_profile_banner: (path file_path, **untyped options) -> nil
+      def update_profile_image: (uploadable media) -> Hash[String, untyped]?
+      def update_profile_banner: (uploadable media, **untyped options) -> nil
     end
 
     class Error < ::X::Error
@@ -64,9 +64,9 @@ module X
     module Account
       extend Account
 
-      def update_profile_image: (path file_path, client: _Client) -> Hash[String, untyped]?
+      def update_profile_image: (uploadable media, client: _Client) -> Hash[String, untyped]?
       def update_profile_image_binary: (String content, client: _Client) -> Hash[String, untyped]?
-      def update_profile_banner: (path file_path, client: _Client, ?width: Integer?, ?height: Integer?, ?offset_left: Integer?, ?offset_top: Integer?) -> nil
+      def update_profile_banner: (uploadable media, client: _Client, ?width: Integer?, ?height: Integer?, ?offset_left: Integer?, ?offset_top: Integer?) -> nil
       def update_profile_banner_binary: (String content, client: _Client, ?width: Integer?, ?height: Integer?, ?offset_left: Integer?, ?offset_top: Integer?) -> nil
     end
   end

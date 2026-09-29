@@ -117,31 +117,31 @@ module X
       # Update the profile image of the authenticated user from a file
       #
       # @api public
-      # @param file_path [String, Pathname] the path to the image file
+      # @param media [String, Pathname, IO, StringIO] the path to the image, or an IO that reads it
       # @return [Hash, nil] the user whose profile image was updated, as the Hash of the API v1.1 that
       #   {Account.update_profile_image} returns, or nil for a response with no body
       # @raise [Errno::ENOENT] if the file does not exist
-      # @raise [ArgumentError] if the file is empty, which holds nothing to upload
-      # @raise [InvalidMediaType] if the file is not a GIF, JPEG, or PNG image
+      # @raise [ArgumentError] if the media is neither a path nor an IO, or is empty, which holds nothing to upload
+      # @raise [InvalidMediaType] if the image is not a GIF, JPEG, or PNG image
       # @example Update the profile image
       #   client.update_profile_image("avatar.png")
-      def update_profile_image(file_path)
-        Account.update_profile_image(file_path, client: self)
+      def update_profile_image(media)
+        Account.update_profile_image(media, client: self)
       end
 
       # Update the profile banner of the authenticated user from a file
       #
       # @api public
-      # @param file_path [String, Pathname] the path to the image file
+      # @param media [String, Pathname, IO, StringIO] the path to the image, or an IO that reads it
       # @param options [Hash] the options of {Account.update_profile_banner}: width, height, offset_left, and offset_top
       # @return [nil] nil once the banner is updated, which the API answers with no content
       # @raise [Errno::ENOENT] if the file does not exist
-      # @raise [ArgumentError] if the file is empty, which holds nothing to upload
-      # @raise [InvalidMediaType] if the file is not a GIF, JPEG, or PNG image
+      # @raise [ArgumentError] if the media is neither a path nor an IO, or is empty, which holds nothing to upload
+      # @raise [InvalidMediaType] if the image is not a GIF, JPEG, or PNG image
       # @example Update the profile banner
       #   client.update_profile_banner("banner.png", width: 1500, height: 500)
-      def update_profile_banner(file_path, **options)
-        Account.update_profile_banner(file_path, client: self, **options)
+      def update_profile_banner(media, **options)
+        Account.update_profile_banner(media, client: self, **options)
       end
     end
   end

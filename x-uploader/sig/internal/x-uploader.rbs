@@ -188,12 +188,12 @@ module X
       MAX_CHUNK: Integer
       MEDIA_CATEGORIES: Array[String]
       MAX_MEDIA_BYTES: Hash[String, Integer]
+      PROFILE_IMAGE_TYPES: Array[String]
       MAX_SIMPLE_UPLOAD_BYTES: Integer
       extend Validator
 
       def validate_upload!: (Source source, (String | Symbol)? media_category, alt_text: String?, chunk_size_mb: (Float | Integer)?, concurrency: Integer, processing_timeout: Float | Integer) ?{ () -> (String | Symbol) } -> String
       def validate_source!: (Source source) -> nil
-      def validate_file_path!: (path file_path) -> nil
       def validate_extension!: (path file_path, Array[String] extensions) -> nil
       def validate_alt_text!: (String? alt_text) -> nil
       def validate_media_category!: (String | Symbol media_category) -> String
@@ -203,6 +203,7 @@ module X
       def validate_segments!: (Source source, (Float | Integer)? chunk_size_mb) -> Integer
       def validate_size!: (Source source, String media_category) -> nil
       def validate_single_request!: (Source source, String media_category) -> nil
+      def validate_profile_image!: (Source source, Array[String] extensions) -> nil
       def derived_chunk_size: (Integer file_size) -> Integer
     end
 

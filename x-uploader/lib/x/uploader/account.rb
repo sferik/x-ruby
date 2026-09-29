@@ -5,6 +5,7 @@ require "x/core"
 require_relative "invalid_media_type"
 require_relative "json_classes"
 require_relative "multipart"
+require_relative "source"
 require_relative "validator"
 
 module X
@@ -39,18 +40,22 @@ module X
       # X::User of x-objects, which x-uploader does not load, reads the users of the API v2 alone.
       #
       # @api public
-      # @param file_path [String, Pathname] the path to the image file
+      # @param media [String, Pathname, IO, StringIO] the path to the image, or an IO that reads it, which is read from
+      #   its start, as the media of an upload is
       # @param client [Client] the X API client
       # @return [Hash, nil] the updated user, as the API v1.1 answers with it, or nil for a response with no body
       # @raise [Errno::ENOENT] if the file does not exist
-      # @raise [ArgumentError] if the file is empty, which holds nothing to upload
-      # @raise [InvalidMediaType] if the file type is not supported
+      # @raise [ArgumentError] if the media is neither a path nor an IO, or is empty, which holds nothing to upload
+      # @raise [InvalidMediaType] if the extension of the file, or the signature of media that names none, is not
+      #   that of a GIF, a JPEG, or a PNG
       # @example Update profile image from a file
       #   Uploader::Account.update_profile_image("avatar.png", client: client)
-      def update_profile_image(file_path, client:)
-        Validator.validate_file_path!(file_path)
-        Validator.validate_extension!(file_path, SUPPORTED_EXTENSIONS)
-        update_profile_image_binary(File.binread(file_path), client:)
+      # @example Update profile image from an image held in memory
+      #   Uploader::Account.update_profile_image(StringIO.new(png), client: client)
+      def update_profile_image(media, client:)
+        source = Source.for(media)
+        Validator.validate_profile_image!(source, SUPPORTED_EXTENSIONS)
+        update_profile_image_binary(source.content, client:)
       end
 
       # Update the authenticating user's profile image from binary content
@@ -76,7 +81,8 @@ module X
       # is updated.
       #
       # @api public
-      # @param file_path [String, Pathname] the path to the image file
+      # @param media [String, Pathname, IO, StringIO] the path to the image, or an IO that reads it, which is read from
+      #   its start, as the media of an upload is
       # @param client [Client] the X API client
       # @param width [Integer, nil] the width of the banner
       # @param height [Integer, nil] the height of the banner
@@ -84,16 +90,17 @@ module X
       # @param offset_top [Integer, nil] the top offset of the banner
       # @return [nil] nil once the banner is updated, which the API answers with no content
       # @raise [Errno::ENOENT] if the file does not exist
-      # @raise [ArgumentError] if the file is empty, which holds nothing to upload
-      # @raise [InvalidMediaType] if the file type is not supported
+      # @raise [ArgumentError] if the media is neither a path nor an IO, or is empty, which holds nothing to upload
+      # @raise [InvalidMediaType] if the extension of the file, or the signature of media that names none, is not
+      #   that of a GIF, a JPEG, or a PNG
       # @example Update profile banner from a file
       #   Uploader::Account.update_profile_banner("banner.png", client: client)
       # @example Update profile banner with dimensions
       #   Uploader::Account.update_profile_banner("banner.png", client: client, width: 1500, height: 500)
-      def update_profile_banner(file_path, client:, width: nil, height: nil, offset_left: nil, offset_top: nil)
-        Validator.validate_file_path!(file_path)
-        Validator.validate_extension!(file_path, SUPPORTED_EXTENSIONS)
-        update_profile_banner_binary(File.binread(file_path), client:, width:, height:, offset_left:, offset_top:)
+      def update_profile_banner(media, client:, width: nil, height: nil, offset_left: nil, offset_top: nil)
+        source = Source.for(media)
+        Validator.validate_profile_image!(source, SUPPORTED_EXTENSIONS)
+        update_profile_banner_binary(source.content, client:, width:, height:, offset_left:, offset_top:)
       end
 
       # Update the authenticating user's profile banner from binary content

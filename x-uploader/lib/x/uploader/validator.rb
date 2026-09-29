@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative "invalid_media_type"
+require_relative "signature"
 require_relative "source"
 require_relative "utils"
 
@@ -30,6 +31,8 @@ module X
       # Greatest number of bytes the API takes in a single upload request, above which an animated GIF, which it
       # takes in chunks of up to 15 MB, uploads in chunks
       MAX_SIMPLE_UPLOAD_BYTES = 5 * BYTES_PER_MB
+      # The media types of the images a profile image or banner takes
+      PROFILE_IMAGE_TYPES = %w[image/gif image/jpeg image/png].freeze
       # Valid media category values
       MEDIA_CATEGORIES = %w[amplify_video dm_gif dm_image dm_video subtitles tweet_gif tweet_image tweet_video].map(&:freeze).freeze
       # Greatest number of bytes the API takes of media of each category that documents a size of its own for every
@@ -132,16 +135,28 @@ module X
         raise ArgumentError, "#{source.description} is empty: there is nothing to upload" if source.size.zero?
       end
 
-      # Validate that a file path exists, and that the file holds something to upload
+      # Validate an image to upload as a profile image or banner
+      #
+      # Media that names a file must have one of the extensions given, as a path must. Media that names none, such as
+      # a StringIO, must begin with the signature of a GIF, a JPEG, or a PNG image, which are the types those take.
       #
       # @api private
-      # @param file_path [String, Pathname] the file path to validate
+      # @param source [Source] the image to upload
+      # @param extensions [Array<String>] the supported extensions, in lowercase and without a dot
       # @return [void]
       # @raise [Errno::ENOENT] if the file does not exist
-      # @raise [ArgumentError] if the file cannot be read, or is empty
-      # @example Validate a file path
-      #   Uploader::Validator.validate_file_path!("image.png")
-      def validate_file_path!(file_path) = validate_source!(Source::Path.new(file_path))
+      # @raise [ArgumentError] if the image cannot be read, or is empty
+      # @raise [InvalidMediaType] if the image is not a GIF, a JPEG, or a PNG
+      # @example Validate a profile image held in memory
+      #   Uploader::Validator.validate_profile_image!(source, %w[gif jpg jpeg png])
+      def validate_profile_image!(source, extensions)
+        validate_source!(source)
+        name = source.name
+        return validate_extension!(name, extensions) if name
+        return if PROFILE_IMAGE_TYPES.include?(Signature.media_type(source.sniff))
+
+        raise InvalidMediaType, "#{source.description} is not a GIF, JPEG, or PNG image, which a profile image or banner must be"
+      end
 
       # Validate that a file has one of the extensions an upload supports
       #
