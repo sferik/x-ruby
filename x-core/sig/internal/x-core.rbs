@@ -99,6 +99,7 @@ module X
       def add_authentication: (request: Net::HTTPRequest, authenticator: Authenticator) -> void
       def add_headers: (request: Net::HTTPRequest, headers: headers, body: String?) -> void
       def escape_query_params: (URI::Generic uri) -> URI::Generic
+      def query_pairs: (String query) -> Array[[String, String?]]
     end
 
     class RateLimitHandler

@@ -124,6 +124,14 @@ module X
       assert_equal "media_type=video%2Fmp4", request.uri.query
     end
 
+    def test_escape_query_params_keeps_a_parameter_without_a_value_without_one_and_an_empty_one_empty
+      queries = ["flag&empty=&query=a%20b+c&sum=1%2B1&equation=a=b&user%20fields=id", "&a=1&&b"].map do |query|
+        @request_builder.build(http_method: :get, uri: "https://api.x.com/2/users?#{query}", authenticator: @authenticator).uri.query
+      end
+
+      assert_equal ["flag&empty=&query=a+b+c&sum=1%2B1&equation=a%3Db&user+fields=id", "&a=1&&b"], queries
+    end
+
     def test_escape_query_params_with_commas
       uri = "https://api.x.com/2/tweets/search/recent?query=%23ruby&expansions=author_id&user.fields=id,name,username"
       request = @request_builder.build(http_method: :post, uri:, authenticator: @authenticator)

@@ -123,12 +123,29 @@ module X
       end
 
       # Escape query parameters in a URI
+      #
+      # A parameter without a value, as the flag of "?flag" is, is sent without one, rather than with the empty value
+      # of "?flag=", which an endpoint may read otherwise.
+      #
       # @api private
       # @param uri [URI] the URI
       # @return [URI] the URI with escaped query parameters
       def escape_query_params(uri)
         URI(uri).tap do |u|
-          u.query = URI.encode_www_form(URI.decode_www_form(u.query)).gsub("%2C", ",") if u.query
+          u.query = URI.encode_www_form(query_pairs(u.query)).gsub("%2C", ",") if u.query
+        end
+      end
+
+      # Decode the name and value of each parameter of a query
+      #
+      # A parameter without a value is given nil for one.
+      # @api private
+      # @param query [String] the query
+      # @return [Array<Array(String, String), Array(String, nil)>] the name and value of each parameter
+      def query_pairs(query)
+        query.split("&").map do |pair|
+          name, value = pair.split("=", 2)
+          [URI.decode_www_form_component(name.to_s), value&.then { |escaped| URI.decode_www_form_component(escaped) }]
         end
       end
     end
