@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "json"
+require "x/core/errors/unsupported_marshal_format"
 require_relative "missing_media_data"
 
 module X
@@ -20,7 +21,9 @@ module X
     PROCESSING_STATES = %w[pending in_progress].freeze
     # The message of the error raised for media that holds no identifier
     NO_MEDIA_ID = "The media holds no identifier"
-    private_constant :PROCESSING_STATES, :NO_MEDIA_ID
+    # The number of the format of the state Marshal writes, which a release that changes the format raises
+    MARSHAL_FORMAT = 1
+    private_constant :PROCESSING_STATES, :NO_MEDIA_ID, :MARSHAL_FORMAT
 
     # The response data the media was built from
     # @api public
@@ -248,6 +251,32 @@ module X
     # @example Inspect media
     #   media.inspect # => #<X::UploadedMedia id=1880028106020515840 media_key="3_1880028106020515840" state=nil>
     def inspect = "#<#{self.class} id=#{self["id"] || "nil"} media_key=#{media_key.inspect} state=#{state.inspect}>"
+
+    # The state Marshal writes
+    #
+    # What is written is plain data, led by the number of its format, so that media written by one release of 1.x is
+    # read by a later one: its attributes, as the response held them.
+    #
+    # @api public
+    # @return [Array(Integer, Hash{String => Object})] the number of the format, then the attributes
+    # @example Cache what an upload returned, to attach it later
+    #   Rails.cache.write("upload", client.upload_media("image.png"))
+    def marshal_dump = [MARSHAL_FORMAT, attrs]
+
+    # Restore media Marshal read, built as the constructor builds it, deep-frozen
+    #
+    # @api public
+    # @param state [Array] the state Marshal wrote
+    # @return [void]
+    # @raise [UnsupportedMarshalFormat] if the state is of a format this release does not read
+    # @example Read what an upload returned from a cache
+    #   Marshal.load(Marshal.dump(media)).media_key
+    def marshal_load(state)
+      format, attrs = state
+      raise UnsupportedMarshalFormat, "#{self.class} reads format #{MARSHAL_FORMAT} of Marshal, not #{format.inspect}" unless MARSHAL_FORMAT.eql?(format)
+
+      initialize(attrs)
+    end
 
     private
 

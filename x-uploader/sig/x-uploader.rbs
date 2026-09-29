@@ -99,6 +99,8 @@ module X
     alias eql? ==
     def hash: () -> Integer
     def inspect: () -> String
+    def marshal_dump: () -> [Integer, Hash[String, untyped]]
+    def marshal_load: ([Integer, Hash[String, untyped]] state) -> void
   end
 
   class InvalidMediaType < Uploader::Error

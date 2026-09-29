@@ -222,6 +222,7 @@ module X
   class UploadedMedia
     PROCESSING_STATES: Array[String]
     NO_MEDIA_ID: String
+    MARSHAL_FORMAT: Integer
 
     private
     def deep_freeze: (untyped value) -> untyped
