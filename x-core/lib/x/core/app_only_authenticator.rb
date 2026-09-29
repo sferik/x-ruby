@@ -52,7 +52,7 @@ module X
     # Generate the authentication header, fetching the bearer token first if needed
     #
     # @api public
-    # @param _request [Net::HTTPRequest, nil] the request, which app-only authentication does not sign
+    # @param _request [#method, #uri, #body, #[], nil] the request, which app-only authentication does not sign
     # @return [Hash{String => String}] the authorization header
     # @raise [AuthorizationError] if X refuses to issue the bearer token
     # @raise [TooManyRequests, ServerError] if the token endpoint limits the rate of the request or fails to answer

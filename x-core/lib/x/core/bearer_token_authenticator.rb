@@ -23,7 +23,7 @@ module X
     # Generate the authentication header for a request
     #
     # @api public
-    # @param _request [Net::HTTPRequest] the HTTP request
+    # @param _request [#method, #uri, #body, #[], nil] the request, which a bearer token does not sign
     # @return [Hash{String => String}] the authentication header with bearer token
     # @example Generate a bearer authentication header
     #   authenticator.header(request)

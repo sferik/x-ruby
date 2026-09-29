@@ -140,6 +140,19 @@ module X
       end
     end
 
+    def test_signs_a_request_that_answers_method_uri_body_and_a_header_alone
+      request = Class.new do
+        def method = "POST"
+        def uri = URI(URL)
+        def body = BODY
+        def [](name) = ("application/x-www-form-urlencoded" if name.casecmp?("Content-Type"))
+      end
+
+      with_fixed_oauth_params(nonce: NONCE, time: Time.at(TIMESTAMP)) do
+        assert_includes @authenticator.header(request.new)["Authorization"], "oauth_signature=\"#{SIGNATURE}\""
+      end
+    end
+
     private
 
     def authorization

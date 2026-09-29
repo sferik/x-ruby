@@ -72,7 +72,7 @@ module X
     # bodies the X API takes, are not signed.
     #
     # @api public
-    # @param request [Net::HTTPRequest] the HTTP request
+    # @param request [#method, #uri, #body, #[]] the request, whose method, uri, body, and Content-Type the signature reads
     # @return [Hash{String => String}] the authentication header with OAuth signature
     # @example Generate an OAuth authentication header
     #   authenticator.header(request)
@@ -111,7 +111,7 @@ module X
     # which the key-value pairs preserve.
     #
     # @api private
-    # @param request [Net::HTTPRequest] the HTTP request
+    # @param request [#method, #uri, #body, #[]] the request
     # @return [Array<Array(String, String)>] the body parameters, empty unless the body is form-encoded
     def form_params(request)
       URI.decode_www_form(form_body(request))
@@ -120,7 +120,7 @@ module X
     # The body whose parameters take part in the signature
     #
     # @api private
-    # @param request [Net::HTTPRequest] the HTTP request
+    # @param request [#method, #uri, #body, #[]] the request
     # @return [String] the body, or an empty String when it is not form-encoded
     def form_body(request)
       form_encoded?(request) ? request.body.to_s : ""
@@ -128,7 +128,7 @@ module X
 
     # Check whether a request carries a form-encoded body
     # @api private
-    # @param request [Net::HTTPRequest] the HTTP request
+    # @param request [#method, #uri, #body, #[]] the request
     # @return [Boolean] true if the body is form-encoded
     def form_encoded?(request)
       request["Content-Type"].to_s.split(";").first.to_s.strip.downcase.eql?(FORM_CONTENT_TYPE)

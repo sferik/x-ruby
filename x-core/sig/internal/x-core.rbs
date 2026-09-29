@@ -499,9 +499,9 @@ module X
     attr_reader api_key_secret: String
     attr_reader access_token_secret: String
     def credentials: -> Hash[Symbol, String]
-    def form_params: (Net::HTTPRequest request) -> Array[[String, String]]
-    def form_body: (Net::HTTPRequest request) -> String
-    def form_encoded?: (Net::HTTPRequest request) -> bool
+    def form_params: (_AuthenticatorRequest request) -> Array[[String, String]]
+    def form_body: (_AuthenticatorRequest request) -> String
+    def form_encoded?: (_AuthenticatorRequest request) -> bool
   end
 
   class Problem

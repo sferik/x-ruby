@@ -93,7 +93,7 @@ module X
     # Generate the authentication header, refreshing an expired token first
     #
     # @api public
-    # @param _request [Net::HTTPRequest, nil] the HTTP request (unused)
+    # @param _request [#method, #uri, #body, #[], nil] the request, which a bearer token does not sign
     # @return [Hash{String => String}] the authentication header
     # @raise [AuthorizationError] if the token has expired and X refuses to refresh it
     # @raise [TooManyRequests, ServerError] if the token endpoint limits the rate of the request or fails to answer

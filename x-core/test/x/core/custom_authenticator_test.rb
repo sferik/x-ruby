@@ -21,7 +21,7 @@ module X
 
       def header(request)
         @signed << [request.method, request.uri.to_s, request.body]
-        {AUTHENTICATION_HEADER => "Signed #{request.method} #{request.path}", "X-Signature" => "sig"}
+        {AUTHENTICATION_HEADER => "Signed #{request.method} #{request.uri.path}", "X-Signature" => "sig"}
       end
     end
 

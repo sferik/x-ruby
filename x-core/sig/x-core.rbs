@@ -10,17 +10,26 @@ module X
     def self.gem_version: () -> Gem::Version
   end
 
+  # What an authenticator is guaranteed to read of the request it authenticates, which is all the authenticators of
+  # x-core read of it: its method, as an uppercase String, the URI it is sent to, its body, and a header by its name
+  interface _AuthenticatorRequest
+    def method: () -> String
+    def uri: () -> URI::Generic
+    def body: () -> String?
+    def []: (String name) -> String?
+  end
+
   class Authenticator
     AUTHENTICATION_HEADER: String
 
     def user_id: () -> Integer?
     def inspect: () -> String
-    def header: (Net::HTTPRequest request) -> Hash[String, String]
+    def header: (_AuthenticatorRequest request) -> Hash[String, String]
   end
 
   class BearerTokenAuthenticator < Authenticator
     def initialize: (bearer_token: String) -> void
-    def header: (Net::HTTPRequest? request) -> Hash[String, String]
+    def header: (_AuthenticatorRequest? request) -> Hash[String, String]
   end
 
   class OAuth2Authorization
@@ -53,7 +62,7 @@ module X
 
     attr_reader api_key: String
     def initialize: (api_key: String, api_key_secret: String, ?bearer_token: String?) -> void
-    def header: (Net::HTTPRequest? request) -> Hash[String, String]
+    def header: (_AuthenticatorRequest? request) -> Hash[String, String]
   end
 
   class OAuth1Authenticator < Authenticator
@@ -61,7 +70,7 @@ module X
     attr_reader access_token: String
     def initialize: (api_key: String, api_key_secret: String, access_token: String, access_token_secret: String) -> void
     def user_id: () -> Integer?
-    def header: (Net::HTTPRequest request) -> Hash[String, String]
+    def header: (_AuthenticatorRequest request) -> Hash[String, String]
   end
 
   class Error < StandardError
@@ -275,7 +284,7 @@ module X
     def inspect: () -> String
     def token_expired?: -> bool
     def refresh!: -> OAuth2Authenticator
-    def header: (Net::HTTPRequest? request) -> Hash[String, String]
+    def header: (_AuthenticatorRequest? request) -> Hash[String, String]
   end
 
   class OAuth2Tokens
