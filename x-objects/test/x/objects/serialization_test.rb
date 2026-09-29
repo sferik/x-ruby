@@ -77,9 +77,16 @@ module X
     def test_a_page_serializes_its_resources
       page = Page.new([@post], {"result_count" => 1})
 
-      assert_equal [@post], page.as_json
+      assert_equal [@post.attrs], page.as_json
       assert_equal [@post.attrs], JSON.parse(page.to_json)
       assert_equal JSON.pretty_generate([@post.attrs]), JSON.pretty_generate(page)
+    end
+
+    def test_a_page_is_serialized_as_plain_data
+      as_json = Page.new([@post], {"result_count" => 1}).as_json
+
+      assert_same @post.attrs, as_json.first
+      assert_predicate as_json, :frozen?
     end
 
     def test_a_cursor_refuses_to_serialize_every_resource_it_would_page

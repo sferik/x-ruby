@@ -284,7 +284,7 @@ module X
             | () -> Enumerator[R, Array[R]]
     def next_token: () -> String?
     def result_count: () -> Integer?
-    def as_json: (*untyped) -> Array[R]
+    def as_json: (*untyped) -> Array[Hash[String, untyped]]
     def to_json: (?JSON::State? state) -> String
     def marshal_dump: () -> [Integer, Array[R], Hash[String, untyped], Array[Hash[String, untyped]]]
     def marshal_load: ([Integer, Array[R], Hash[String, untyped], Array[Hash[String, untyped]]] state) -> void

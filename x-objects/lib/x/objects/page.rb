@@ -82,13 +82,16 @@ module X
       meta["result_count"]
     end
 
-    # The resources of this page, as a JSON encoder and ActiveSupport read them
+    # The attributes of the resources of this page, as a JSON encoder reads them
+    #
+    # Each resource is given as its own as_json gives it, so what this returns is plain data, as the as_json of a
+    # resource is, which ActiveSupport reads too.
     #
     # @api public
-    # @return [Array<Resource>] the resources
+    # @return [Array<Hash{String => Object}>] the attributes of each resource, frozen
     # @example Serialize a page
-    #   page.as_json
-    def as_json(*) = items
+    #   page.as_json # => [{"id" => "7505382"}]
+    def as_json(*) = map(&:as_json).freeze
 
     # The resources of this page as a JSON array of their attributes
     #
