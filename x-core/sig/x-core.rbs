@@ -27,6 +27,7 @@ module X
     def inspect: () -> String
     def header: (_AuthenticatorRequest request) -> Hash[String, String]
     def marshal_dump: () -> bot
+    def encode_with: (untyped coder) -> bot
   end
 
   class BearerTokenAuthenticator < Authenticator
@@ -51,6 +52,7 @@ module X
     def credentials: (String | Hash[String | Symbol, String] callback) -> Hash[Symbol, String | Time | nil]
     def client: (String | Hash[String | Symbol, String] callback, ?base_url: String, ?open_timeout: (Float | Integer)?, ?read_timeout: (Float | Integer)?, ?write_timeout: (Float | Integer)?, ?keep_alive_timeout: Float | Integer, ?debug_output: _DebugOutput?, ?proxy_url: (URI::Generic | String)?, ?default_array_class: Class, ?default_object_class: object_class, ?headers: headers, ?max_redirects: Integer, ?max_rate_limit_retries: Integer, ?max_rate_limit_wait: Float | Integer, ?max_retries: Integer, ?on_response: _ResponseHook?, ?on_token_refresh: _TokenRefreshHook?, ?load_tokens: _TokenLoader?) -> Client
     def marshal_dump: () -> bot
+    def encode_with: (untyped coder) -> bot
   end
 
   class AuthorizationError < Error
@@ -302,6 +304,7 @@ module X
     def add_stream_rules: (Array[addable_rule] | addable_rule rules, ?dry_run: bool) ?{ (Problem problem) -> void } -> Array[StreamRule]
     def delete_stream_rules: (Array[rule] | rule rules, ?dry_run: bool) ?{ (Problem problem) -> void } -> Integer
     def marshal_dump: () -> bot
+    def encode_with: (untyped coder) -> bot
   end
 
   class OAuth2Authenticator < Authenticator
@@ -396,5 +399,6 @@ module X
     def streaming: (?read_timeout: (Float | Integer)?, ?max_reconnects: Float | Integer) -> StreamingClient
     def close: () -> void
     def marshal_dump: () -> bot
+    def encode_with: (untyped coder) -> bot
   end
 end

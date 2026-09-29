@@ -23,9 +23,10 @@ module X
     end
 
     module CredentialHolder
-      MARSHAL_MESSAGE: String
+      REFUSAL_MESSAGE: String
 
       def marshal_dump: () -> bot
+      def encode_with: (untyped _coder) -> bot
     end
 
     module ProxySetting
