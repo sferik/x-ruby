@@ -12,6 +12,10 @@ module X
         access_token: TEST_ACCESS_TOKEN, access_token_secret: TEST_ACCESS_TOKEN_SECRET)
     end
 
+    def test_the_access_token_is_private
+      refute_respond_to OAuth1Authenticator.new(**test_oauth_credentials), :access_token
+    end
+
     def test_old_name_is_gone
       refute X.const_defined?(:OAuthAuthenticator)
     end
@@ -22,7 +26,7 @@ module X
 
     def test_initialization
       assert_equal TEST_API_KEY, @authenticator.api_key
-      assert_equal TEST_ACCESS_TOKEN, @authenticator.access_token
+      assert_equal TEST_ACCESS_TOKEN, @authenticator.__send__(:access_token)
     end
 
     def test_the_access_token_names_the_user_it_acts_for

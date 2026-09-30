@@ -542,6 +542,7 @@ module X
 
     private
     attr_reader api_key_secret: String
+    attr_reader access_token: String
     attr_reader access_token_secret: String
     def credentials: -> Hash[Symbol, String]
     def form_params: (_AuthenticatorRequest request) -> Array[[String, String]]

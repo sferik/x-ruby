@@ -80,7 +80,6 @@ module X
 
   class OAuth1Authenticator < Authenticator
     attr_reader api_key: String
-    attr_reader access_token: String
     def initialize: (api_key: String, api_key_secret: String, access_token: String, access_token_secret: String) -> void
     def user_id: () -> Integer?
     def header: (_AuthenticatorRequest request) -> Hash[String, String]

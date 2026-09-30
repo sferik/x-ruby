@@ -20,13 +20,6 @@ module X
     #   authenticator.api_key
     attr_reader :api_key
 
-    # The access token
-    # @api public
-    # @return [String] the access token
-    # @example Get the access token
-    #   authenticator.access_token
-    attr_reader :access_token
-
     # Initialize a new OAuth1Authenticator
     #
     # @api public
@@ -89,6 +82,17 @@ module X
     # @example Sign with the API key secret
     #   api_key_secret
     attr_reader :api_key_secret
+
+    # The access token, which signs each request and names the user it acts for
+    #
+    # It is a credential, so it is private, as the access token of a client is: the user it acts for is read with
+    # {#user_id}.
+    #
+    # @api private
+    # @return [String] the access token
+    # @example Sign with the access token
+    #   access_token
+    attr_reader :access_token
 
     # The access token secret, which signs a request
     # @api private

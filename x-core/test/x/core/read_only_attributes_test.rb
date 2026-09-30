@@ -5,7 +5,7 @@ require_relative "../../test_helper"
 module X
   class ReadOnlyAttributesTest < Minitest::Test
     {
-      OAuth1Authenticator.new(**test_oauth_credentials) => %i[api_key access_token],
+      OAuth1Authenticator.new(**test_oauth_credentials) => %i[api_key],
       OAuth2Authenticator.new(**test_oauth2_credentials) => %i[client_id expires_at],
       RateLimit.new(type: RateLimit::RATE_LIMIT_TYPE, http_response: Net::HTTPOK.new("1.1", "200", "OK")) => %i[type http_response]
     }.each do |object, attributes|
