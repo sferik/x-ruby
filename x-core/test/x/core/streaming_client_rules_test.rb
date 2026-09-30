@@ -9,6 +9,7 @@ module X
   # which authenticates as the app for them as it does for the stream itself.
   class StreamingClientRulesTest < Minitest::Test
     cover StreamingClient
+    cover Core::StreamRules
 
     RULES_URL = "https://api.x.com/2/tweets/search/stream/rules"
     RUBY_RULE = {"id" => "1", "value" => "ruby -is:retweet", "tag" => "ruby"}.freeze
@@ -105,7 +106,6 @@ module X
 
       assert_equal [RUBY_STREAM_RULE], @streaming_client.add_rules(%w[ruby crystal]) { |problem| problems << problem }
       assert_equal [["crystal", "DuplicateRule"]], problems.map { |problem| [problem.value, problem.title] }
-      assert_equal [RUBY_STREAM_RULE], @streaming_client.add_rules(%w[ruby crystal])
     end
 
     def test_adding_rules_the_api_reports_nothing_for

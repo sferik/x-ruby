@@ -9,6 +9,7 @@ module X
   # it matches, so the rules that were added delete what they added.
   class StreamingClientRuleDeletionTest < Minitest::Test
     cover StreamingClient
+    cover Core::StreamRules
 
     RULES_URL = "https://api.x.com/2/tweets/search/stream/rules"
     RUBY_RULE = {"id" => "1", "value" => "ruby -is:retweet", "tag" => "ruby"}.freeze
@@ -29,7 +30,6 @@ module X
 
       assert_equal 1, @streaming_client.delete_rules([RUBY_RULE, {"id" => "2"}]) { |problem| problems << problem }
       assert_equal [missing], problems.map(&:to_h)
-      assert_equal 1, @streaming_client.delete_rules([RUBY_RULE, {"id" => "2"}])
     end
 
     def test_deleting_the_rules_that_were_read

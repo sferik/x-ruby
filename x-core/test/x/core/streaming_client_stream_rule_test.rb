@@ -8,6 +8,7 @@ module X
   # identifier the API gave it, or by its value when it holds none
   class StreamingClientStreamRuleTest < Minitest::Test
     cover StreamingClient
+    cover Core::StreamRules
 
     RULES_URL = "https://api.x.com/2/tweets/search/stream/rules"
     RUBY_RULE = {"id" => "1", "value" => "ruby -is:retweet", "tag" => "ruby"}.freeze

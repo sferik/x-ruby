@@ -175,6 +175,11 @@ module X
   class RequestTimeout < ClientError
   end
 
+  class RulesRejected < Error
+    attr_reader problems: Array[Problem]
+    attr_reader result: Array[StreamRule] | Integer
+  end
+
   class ServerError < HTTPError
   end
 
