@@ -8,27 +8,27 @@ module X
 
     def test_the_message_is_the_reason_x_gives
       status = {"processing_info" => {"state" => "failed", "error" => {"code" => 1, "name" => "InvalidMedia", "message" => "Unsupported video format"}}}
-      error = MediaProcessingFailed.new(status:)
+      error = MediaProcessingFailed.new(media: status)
 
-      assert_equal ["Unsupported video format", UploadedMedia.new(status)], [error.message, error.status]
+      assert_equal ["Unsupported video format", UploadedMedia.new(status)], [error.message, error.media]
       assert_kind_of Error, error
     end
 
     def test_holds_uploaded_media_given_as_it_was_given
       status = UploadedMedia.new({"id" => "7", "processing_info" => {"state" => "failed"}})
 
-      assert_same status, MediaProcessingFailed.new(status:).status
+      assert_same status, MediaProcessingFailed.new(media: status).media
     end
 
     def test_holds_a_status_given_as_a_subclass_of_hash_as_uploaded_media
       status = Class.new(Hash).new.merge!("processing_info" => {"state" => "failed"})
 
-      assert_instance_of UploadedMedia, MediaProcessingFailed.new(status:).status
+      assert_instance_of UploadedMedia, MediaProcessingFailed.new(media: status).media
     end
 
     def test_the_message_without_a_reason
       assert_equal ["Media processing failed"] * 3,
-        [MediaProcessingFailed.new(status: {"processing_info" => {"state" => "failed"}}), MediaProcessingFailed.new(status: {}), MediaProcessingFailed.new].map(&:message)
+        [MediaProcessingFailed.new(media: {"processing_info" => {"state" => "failed"}}), MediaProcessingFailed.new(media: {}), MediaProcessingFailed.new].map(&:message)
     end
 
     def test_the_default_message_is_private
@@ -38,13 +38,13 @@ module X
     def test_a_message_given_is_the_message_whatever_the_status
       status = {"processing_info" => {"error" => {"message" => "Unsupported video format"}}}
 
-      assert_equal ["Stubbed", UploadedMedia.new(status)], MediaProcessingFailed.new("Stubbed", status:).then { |error| [error.message, error.status] }
+      assert_equal ["Stubbed", UploadedMedia.new(status)], MediaProcessingFailed.new("Stubbed", media: status).then { |error| [error.message, error.media] }
     end
 
     def test_it_is_raised_with_a_message_alone
       error = assert_raises(MediaProcessingFailed) { raise MediaProcessingFailed, "Stubbed" }
 
-      assert_equal ["Stubbed", nil], [error.message, error.status]
+      assert_equal ["Stubbed", nil], [error.message, error.media]
     end
   end
 
@@ -53,22 +53,22 @@ module X
 
     def test_holds_the_last_status_and_names_the_timeout
       status = {"processing_info" => {"state" => "in_progress"}}
-      error = MediaProcessingTimeout.new(status:, timeout: 600)
+      error = MediaProcessingTimeout.new(media: status, timeout: 600)
 
-      assert_equal [UploadedMedia.new(status), 600, "Media processing did not finish within 600 seconds"], [error.status, error.timeout, error.message]
+      assert_equal [UploadedMedia.new(status), 600, "Media processing did not finish within 600 seconds"], [error.media, error.timeout, error.message]
       assert_kind_of Error, error
     end
 
     def test_holds_uploaded_media_given_as_it_was_given
       status = UploadedMedia.new({"id" => "7", "processing_info" => {"state" => "in_progress"}})
 
-      assert_same status, MediaProcessingTimeout.new(status:).status
+      assert_same status, MediaProcessingTimeout.new(media: status).media
     end
 
     def test_holds_a_status_given_as_a_subclass_of_hash_as_uploaded_media
       status = Class.new(Hash).new.merge!("processing_info" => {"state" => "in_progress"})
 
-      assert_instance_of UploadedMedia, MediaProcessingTimeout.new(status:).status
+      assert_instance_of UploadedMedia, MediaProcessingTimeout.new(media: status).media
     end
 
     def test_a_message_given_is_the_message_whatever_the_timeout
@@ -78,7 +78,7 @@ module X
     def test_it_is_raised_with_a_message_alone
       error = assert_raises(MediaProcessingTimeout) { raise MediaProcessingTimeout, "Stubbed" }
 
-      assert_equal ["Stubbed", nil, nil], [error.message, error.status, error.timeout]
+      assert_equal ["Stubbed", nil, nil], [error.message, error.media, error.timeout]
     end
 
     def test_the_message_without_a_timeout

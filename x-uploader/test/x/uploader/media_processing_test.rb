@@ -43,7 +43,7 @@ module X
         await(:await_processing!)
       end
 
-      assert_equal ["Media processing failed", "failed"], [error.message, error.status.dig("processing_info", "state")]
+      assert_equal ["Media processing failed", "failed"], [error.message, error.media.dig("processing_info", "state")]
       assert_requested(:get, status_url, times: 2)
     end
 

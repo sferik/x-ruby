@@ -55,7 +55,7 @@ module X
       stub_request(:post, BASE_URL).to_return(headers: JSON_HEADERS, body: {data: failed}.to_json)
       error = assert_raises(MediaProcessingFailed) { Uploader::MediaUpload.upload(ANIMATED_GIF, client: @client) }
 
-      assert_equal UploadedMedia.new(failed), error.status
+      assert_equal UploadedMedia.new(failed), error.media
       assert_not_requested :get, STATUS_URL
     end
 

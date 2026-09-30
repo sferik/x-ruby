@@ -20,14 +20,14 @@ module X
       status = UploadedMedia.new({"processing_info" => {"state" => "failed"}})
       error = assert_raises(MediaProcessingFailed) { Uploader.const_get(:Utils).processed!(status) }
 
-      assert_same status, error.status
+      assert_same status, error.media
       assert_equal "Media processing failed", error.message
     end
 
     def test_processed_raises_for_media_in_no_state_x_documents
       errors = [{}, {"state" => "queued"}].map do |processing_info|
         status = UploadedMedia.new({"processing_info" => processing_info})
-        assert_raises(MediaProcessingFailed) { Uploader.const_get(:Utils).processed!(status) }.then { |error| [error.message, error.status.equal?(status)] }
+        assert_raises(MediaProcessingFailed) { Uploader.const_get(:Utils).processed!(status) }.then { |error| [error.message, error.media.equal?(status)] }
       end
 
       assert_equal [["Media processing is in no state X documents: nil", true], ["Media processing is in no state X documents: \"queued\"", true]], errors

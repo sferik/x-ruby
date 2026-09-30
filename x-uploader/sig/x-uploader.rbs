@@ -115,9 +115,9 @@ module X
   end
 
   class MediaProcessingTimeout < Uploader::Error
-    attr_reader status: UploadedMedia?
+    attr_reader media: UploadedMedia?
     attr_reader timeout: (Float | Integer)?
-    def initialize: (?String? message, ?status: UploadedMedia | Hash[String, untyped] | nil, ?timeout: (Float | Integer)?) -> void
+    def initialize: (?String? message, ?media: UploadedMedia | Hash[String, untyped] | nil, ?timeout: (Float | Integer)?) -> void
   end
 
   class AltTextFailed < Uploader::Error
@@ -127,7 +127,7 @@ module X
   end
 
   class MediaProcessingFailed < Uploader::Error
-    attr_reader status: UploadedMedia?
-    def initialize: (?String? message, ?status: UploadedMedia | Hash[String, untyped] | nil) -> void
+    attr_reader media: UploadedMedia?
+    def initialize: (?String? message, ?media: UploadedMedia | Hash[String, untyped] | nil) -> void
   end
 end

@@ -30,7 +30,7 @@ module X
       stub_statuses({"processing_info" => {"state" => "queued"}})
       error = assert_raises(MediaProcessingFailed) { Uploader::MediaUpload.await_processing!(TEST_MEDIA_ID, client: @client) }
 
-      assert_equal ["Media processing is in no state X documents: \"queued\"", "queued"], [error.message, error.status.state]
+      assert_equal ["Media processing is in no state X documents: \"queued\"", "queued"], [error.message, error.media.state]
     end
 
     private

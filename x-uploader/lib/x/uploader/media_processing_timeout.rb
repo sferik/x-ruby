@@ -7,12 +7,18 @@ module X
   # Error raised when uploaded media is still processing after the time await_processing may wait
   # @api public
   class MediaProcessingTimeout < Uploader::Error
-    # The last processing status X reported, with the state and progress
+    # The uploaded media, as the last processing status X reported describes it
+    #
+    # Its processing_info holds the state and progress of the processing.
+    #
     # @api public
-    # @return [UploadedMedia, nil] the status, which reads as a Hash, or nil if none was given
+    # @return [UploadedMedia, nil] the media, which reads as a Hash, or nil if none was given
     # @example Read how far processing got
-    #   error.status.dig("processing_info", "progress_percent") # => 42
-    attr_reader :status
+    #   error.media.dig("processing_info", "progress_percent") # => 42
+    # @example Wait for the media again later
+    #   rescue X::MediaProcessingTimeout => e
+    #     client.await_processing(e.media)
+    attr_reader :media
 
     # The seconds await_processing was allowed to wait
     # @api public
@@ -27,16 +33,16 @@ module X
     #
     # @api public
     # @param message [String, nil] the message, or nil for one that names the time allowed
-    # @param status [UploadedMedia, Hash{String => Object}, nil] the last processing status X reported, a Hash of
-    #   which is held as the uploaded media it describes
+    # @param media [UploadedMedia, Hash{String => Object}, nil] the media, as the last processing status X reported
+    #   describes it, a Hash of which is held as uploaded media
     # @param timeout [Integer, Float, nil] the seconds await_processing was allowed to wait
     # @return [MediaProcessingTimeout] a new error
     # @example Raise the error after ten minutes
-    #   raise X::MediaProcessingTimeout.new(status: status, timeout: 600)
+    #   raise X::MediaProcessingTimeout.new(media: status, timeout: 600)
     # @example Raise the error with a message of its own, as a test stub may
     #   raise X::MediaProcessingTimeout, "Still processing"
-    def initialize(message = nil, status: nil, timeout: nil)
-      @status = status.is_a?(Hash) ? UploadedMedia.new(status) : status
+    def initialize(message = nil, media: nil, timeout: nil)
+      @media = media.is_a?(Hash) ? UploadedMedia.new(media) : media
       @timeout = timeout
       super(message || (timeout ? "Media processing did not finish within #{timeout} seconds" : "Media processing did not finish"))
     end

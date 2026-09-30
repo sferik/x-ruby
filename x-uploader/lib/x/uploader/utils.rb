@@ -198,8 +198,8 @@ module X
       # @example The status of media that has processed
       #   Uploader::Utils.processed!(status) # => status
       def processed!(status)
-        raise MediaProcessingFailed.new(status:) if status.failed?
-        raise MediaProcessingFailed.new(format(UNKNOWN_STATE, status.state.inspect), status:) unless status.ready? || status.processing?
+        raise MediaProcessingFailed.new(media: status) if status.failed?
+        raise MediaProcessingFailed.new(format(UNKNOWN_STATE, status.state.inspect), media: status) unless status.ready? || status.processing?
 
         status
       end
@@ -218,7 +218,7 @@ module X
       #   Uploader::Utils.wait_to_check(status, deadline: Uploader::Utils.seconds_from_now(600), timeout: 600)
       def wait_to_check(status, deadline:, timeout:)
         wait = [status.check_after_secs.to_i, MIN_CHECK_AFTER_SECS].max
-        raise MediaProcessingTimeout.new(status:, timeout:) if seconds_from_now(wait) > deadline
+        raise MediaProcessingTimeout.new(media: status, timeout:) if seconds_from_now(wait) > deadline
 
         sleep wait
       end
