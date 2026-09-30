@@ -37,14 +37,18 @@ module X
   #   ├── X::StreamError               a line of a stream held errors and no data
   #   ├── X::RulesRejected             the API left rules of the filtered stream unchanged, and no block took them
   #   ├── X::UnsupportedOperation      the API offers no way to do what was asked
-  #   ├── X::UnsupportedMarshalFormat  Marshal read what a release that wrote another format wrote
+  #   ├── X::UnsupportedMarshalFormat  Marshal or YAML read a state written in a format this release does not read
   #   ├── X::Objects::Error            the failures of the object layer, from x-objects
   #   │   ├── X::MissingResource               a resource that was asked for does not exist
-  #   │   ├── X::InvalidAttribute              a response holds a value that is not what the API documents it to be
+  #   │   ├── X::UnreadableResponse            a response that succeeded says what the API does not document
+  #   │   │   └── X::InvalidAttribute          a response holds a value that is not what the API documents it to be
   #   │   └── X::MissingClient                 a resource that holds no client was asked to make a request
   #   └── X::Uploader::Error           the failures of an upload, from x-uploader
+  #       ├── X::InvalidMedia                  the media does not exist, cannot be read, is empty, or is too large
+  #       │   └── X::InvalidMediaType          the media is of a type the API does not take
+  #       ├── X::ChunkedUploadFailed           a chunk or the finalize of an initialized upload failed
   #       ├── X::AltTextFailed                 the media was uploaded, but its alt text could not be added
-  #       ├── X::InvalidMediaType              the media is of a type the API does not take
+  #       ├── X::MediaProcessingCheckFailed    the media was uploaded, but a check of its processing failed
   #       ├── X::MediaProcessingFailed         X could not process the media that was uploaded
   #       ├── X::MediaProcessingTimeout        the media was still processing when the wait ran out
   #       └── X::MissingMediaData              a response of an upload describes no media
