@@ -34,14 +34,6 @@ The `x` gem is a thin meta-gem that combines three gems, which are released from
 
 `require "x"` loads all three, and mixes the object methods (`find_user`, `find_posts`, `search`, …) and the upload methods (`upload_media`, `add_alt_text`, `update_profile_image`, …) into `X::Client`. Any other request can return objects too, given a resource class as its `object_class`. If you only want raw JSON, depend on `x-core` alone. If you want the objects with an HTTP client of your own, depend on `x-objects` alone: it takes `x-core` for the errors the X gems share, and asks whatever client you give it to make the requests.
 
-## Versioning
-
-The gems follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html), and 1.x promises their public interface: every class, module, constant, method, and keyword argument whose documentation says `@api public`, with the types the RBS signatures in each gem's `sig` directory give them. A minor release may add to that interface and a patch release may fix it, but only a major release removes or changes what it promises.
-
-Anything documented `@api private` is internal to the gem that declares it, even where Ruby lets you call it, as is every private constant, and either may change or go away in any release. Most of it sits in the module of its gem, such as `X::Core`, beside mixins that are public, such as `X::Objects::API` and `X::Uploader::MediaUpload`, so it is the documentation, not the namespace, that says which is which.
-
-The four gems are released together at the same version, and each depends on the others with a pessimistic constraint on that version, such as `~> 1.0.0` for 1.0.0, since they are built and tested together, and `x-uploader` calls internals of `x-core`. A patch release of one installs beside the others of the same minor version, but a minor release of one needs the others of that minor version, so upgrade them together, as depending on `x` does.
-
 ## Usage
 
 > [!NOTE]
@@ -452,6 +444,14 @@ If this entire library is implemented in under 3,000 lines of code, why should y
 * Parallel uploading of large media files in chunks
 * Parallel batch lookups
 * Partial errors reported by a response that otherwise succeeded
+
+## Versioning
+
+The gems follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html), and 1.x promises their public interface: every class, module, constant, method, and keyword argument whose documentation says `@api public`, with the types the RBS signatures each gem ships give them, which declare that interface alone; the signatures of its internals, in `sig/internal`, are not shipped. A minor release may add to that interface and a patch release may fix it, but only a major release removes or changes what it promises.
+
+Anything documented `@api private` is internal to the gem that declares it, even where Ruby lets you call it, as is every private constant, and either may change or go away in any release. Most of it sits in the module of its gem, such as `X::Core`, beside mixins that are public, such as `X::Objects::API` and `X::Uploader::MediaUpload`, so it is the documentation, not the namespace, that says which is which.
+
+The four gems are released together at the same version, and each depends on the ones it needs, `x-uploader` and `x-objects` on `x-core` and `x` on all three, with a pessimistic constraint on that version, such as `~> 1.0` for 1.0.0, so a later release of 1.x of one installs beside the others. They are built and tested together at each version, so upgrade them together, as depending on `x` does.
 
 ## Sponsorship
 
