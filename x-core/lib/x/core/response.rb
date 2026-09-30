@@ -43,14 +43,14 @@ module X
       # builds one for each response it reads.
       #
       # @api public
+      # @param http_response [Net::HTTPResponse] the HTTP response
       # @param http_method [Symbol] the HTTP method of the request
       # @param uri [URI::Generic] the URI of the request
-      # @param http_response [Net::HTTPResponse] the HTTP response
       # @param body [String, nil] the part of the body summarized, such as one object of a stream, or nil for all of it
       # @return [Response] a new summary
       # @example Summarize a response
-      #   X::Response.new(:get, URI("https://api.x.com/2/users/me"), http_response)
-      def initialize(http_method, uri, http_response, body: nil)
+      #   X::Response.new(http_response:, http_method: :get, uri: URI("https://api.x.com/2/users/me"))
+      def initialize(http_response:, http_method:, uri:, body: nil)
         @http_method = http_method
         @uri = uri
         @http_response = http_response

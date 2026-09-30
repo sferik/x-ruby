@@ -69,7 +69,7 @@ module X
     end
 
     def test_a_response_is_built_from_a_response
-      response = Response.new(:get, URI("https://api.x.com/2/users/1"), not_found)
+      response = Response.new(http_response: not_found, http_method: :get, uri: URI("https://api.x.com/2/users/1"))
 
       assert_equal [:get, 404], [response.http_method, response.status]
     end

@@ -156,7 +156,7 @@ module X
       def report(http_method, uri, response, &block)
         return unless on_response || block
 
-        summary = Response.new(http_method, uri, response)
+        summary = Response.new(http_response: response, http_method:, uri:)
         on_response&.call(summary)
         block&.call(summary)
       end

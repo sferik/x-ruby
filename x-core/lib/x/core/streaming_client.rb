@@ -371,7 +371,7 @@ module X
       # @param response [Net::HTTPResponse] the HTTP response
       # @param body [String, nil] the object the stream delivered, or nil for the whole body
       # @return [void]
-      def report(uri, response, body) = client.on_response&.call(Response.new(:get, uri, response, body:))
+      def report(uri, response, body) = client.on_response&.call(Response.new(http_response: response, http_method: :get, uri:, body:))
     end
   end
 end

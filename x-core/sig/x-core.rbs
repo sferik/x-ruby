@@ -254,7 +254,7 @@ module X
     attr_reader uri: URI::Generic
     attr_reader http_response: Net::HTTPResponse
 
-    def initialize: (Symbol http_method, URI::Generic uri, Net::HTTPResponse http_response, ?body: String?) -> void
+    def initialize: (http_response: Net::HTTPResponse, http_method: Symbol, uri: URI::Generic, ?body: String?) -> void
     def headers: () -> Hash[String, String]
     def body: () -> String?
     def status: () -> Integer

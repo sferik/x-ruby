@@ -59,7 +59,7 @@ module X
 
     def test_the_headers_are_frozen_and_a_response_without_any_has_none
       assert_predicate summarize(Net::HTTPOK).headers, :frozen?
-      assert_empty Response.new(:get, URI_ME, Net::HTTPOK.new("1.1", "200", "")).headers
+      assert_empty Response.new(http_response: Net::HTTPOK.new("1.1", "200", ""), http_method: :get, uri: URI_ME).headers
     end
 
     def test_resource_counts_of_an_object_with_includes
@@ -99,11 +99,11 @@ module X
 
     def test_a_part_of_the_body
       http_response = summarize(Net::HTTPOK, body: '{"data":[{"id":"1"},{"id":"2"}]}').http_response
-      response = Response.new(:get, URI_ME, http_response, body: '{"data":{"id":"1"}}')
+      response = Response.new(http_response:, http_method: :get, uri: URI_ME, body: '{"data":{"id":"1"}}')
 
       assert_equal '{"data":{"id":"1"}}', response.body
       assert_equal 1, response.resource_count
-      assert_equal '{"data":[{"id":"1"},{"id":"2"}]}', Response.new(:get, URI_ME, http_response).body
+      assert_equal '{"data":[{"id":"1"},{"id":"2"}]}', Response.new(http_response:, http_method: :get, uri: URI_ME).body
     end
 
     private
@@ -113,7 +113,7 @@ module X
       headers.each { |name, value| http_response[name] = value }
       http_response.instance_variable_set(:@body, body)
       http_response.instance_variable_set(:@read, true)
-      Response.new(:get, URI_ME, http_response)
+      Response.new(http_response:, http_method: :get, uri: URI_ME)
     end
   end
 end

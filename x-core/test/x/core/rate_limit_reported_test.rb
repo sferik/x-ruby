@@ -35,7 +35,7 @@ module X
     def test_a_summary_leaves_out_a_limit_without_every_header
       http_response = response(FULL.except("x-rate-limit-limit"))
 
-      assert_empty Response.new(:get, URI("https://api.x.com/2/users/me"), http_response).rate_limits
+      assert_empty Response.new(http_response:, http_method: :get, uri: URI("https://api.x.com/2/users/me")).rate_limits
     end
 
     def test_a_rate_limit_is_read_in_base_10
