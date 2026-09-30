@@ -23,13 +23,14 @@ module X
       # The metrics that only the author, or an advertiser, may read, non_public_metrics, organic_metrics, and
       # promoted_metrics, are left out, since a field that depends on who is authenticated would make every request
       # fail for a client that cannot read it, as are the fields of Community Notes and of suggested sources, which the
-      # API gives to the programs they belong to.
+      # API gives to the programs they belong to. So is source, which the API has deprecated: a field it stops taking
+      # would make every request that asks for it fail.
       #
       # A minor release may add to it the fields the API adds, so that a lookup asks for them too; see
       # {Resource#hydrated?} for what that means for a resource looked up with a list of fields of its own.
       FIELDS = %w[article article_title attachments card_uri community_id context_annotations conversation_id
         created_at display_text_range edit_controls entities geo id lang media_metadata note_post paid_partnership
-        possibly_sensitive public_metrics reply_settings scopes source text withheld].freeze
+        possibly_sensitive public_metrics reply_settings scopes text withheld].freeze
       # The expansions of the resources a post refers to that the object layer resolves
       #
       # The identifiers of a post's edit history come with every post, so the edit_history_post_ids expansion, which
@@ -113,6 +114,10 @@ module X
 
       # @!attribute [r] source
       #   The name of the app used to create the post
+      #
+      #   The API has deprecated the field, so a lookup does not ask for it, and it is nil unless a request names it
+      #   in its post.fields and the API still sends it.
+      #
       #   @api public
       #   @return [String, nil] the source
       #   @example Get the source

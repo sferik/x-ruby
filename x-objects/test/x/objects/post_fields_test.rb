@@ -35,5 +35,9 @@ module X
     def test_a_lookup_requests_them
       assert_empty %w[article article_title card_uri display_text_range media_metadata paid_partnership scopes] - Post::FIELDS
     end
+
+    def test_a_lookup_does_not_request_the_deprecated_source
+      refute_includes Post::FIELDS, "source"
+    end
   end
 end
