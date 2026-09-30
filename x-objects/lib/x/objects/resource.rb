@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "json"
+require "x/core"
 require_relative "attributes"
 require_relative "published_count"
 require_relative "errors"
@@ -8,7 +9,6 @@ require_relative "identity"
 require_relative "includes"
 require_relative "marshalling"
 require_relative "memo"
-require "x/core/problem"
 require_relative "serialization"
 require_relative "utils"
 

@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
-require "x/core/errors/forbidden"
-require "x/core/errors/unauthorized"
+require "x/core"
 require_relative "utils"
 
 module X

@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
+require "x/core"
 require_relative "objects/version"
 require_relative "objects/errors"
-require "x/core/problem"
 require_relative "objects/api"
 require_relative "objects/relationships"
 require_relative "objects/bookmark_folder"

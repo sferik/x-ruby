@@ -1,10 +1,8 @@
 # frozen_string_literal: true
 
 require "net/http"
+require "x/core"
 require_relative "../../test_helper"
-require "x/core/errors/network_error"
-require "x/core/errors/service_unavailable"
-require "x/core/errors/too_many_requests"
 
 module X
   class FollowsConnectionStatusTest < Minitest::Test

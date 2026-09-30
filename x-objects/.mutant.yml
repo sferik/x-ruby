@@ -7,17 +7,30 @@ includes:
 integration:
   name: minitest
 matcher:
-  # X::Problem and the errors follows? rescues belong to x-core, which x-objects requires the files of; its own
-  # suite mutates them
-  ignore:
-  - X::Problem*
-  - X::Core*
-  - X::HTTPError*
-  - X::ClientError*
-  - X::Forbidden*
-  - X::Unauthorized*
+  # x-core is loaded too, and is mutated in its own suite, so the classes x-objects declares directly under X are named
+  # one by one rather than matched by X*
   subjects:
-  - X*
+  - X::Objects*
+  - X::BookmarkFolder*
+  - X::Community*
+  - X::Cursor*
+  - X::DirectMessage*
+  - X::InvalidAttribute*
+  - X::List*
+  - X::MatchingRule*
+  - X::Media*
+  - X::MissingClient*
+  - X::MissingResource*
+  - X::Page*
+  - X::PersonalizedTrend*
+  - X::Place*
+  - X::Poll*
+  - X::Post*
+  - X::Resource*
+  - X::Space*
+  - X::Trend*
+  - X::Usage*
+  - X::User*
 mutation:
   operators: full
   timeout: 10.0

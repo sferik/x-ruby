@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
 require "monitor"
+require "x/core"
 require_relative "batch"
 require_relative "batch_finders"
 require_relative "errors"
 require_relative "page"
-require "x/core/problem"
 require_relative "utils"
 
 module X

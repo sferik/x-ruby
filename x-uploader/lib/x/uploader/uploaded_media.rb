@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require "json"
-require "x/core/errors/unsupported_marshal_format"
+require "x/core"
 require_relative "missing_media_data"
 
 module X

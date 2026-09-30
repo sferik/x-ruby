@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
+require "x/core"
 require_relative "errors"
-require "x/core/problem"
 require_relative "utils"
 
 module X

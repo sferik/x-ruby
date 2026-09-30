@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require "x/core/errors/error"
+require "x/core"
 
 module X
   module Uploader
