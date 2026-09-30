@@ -139,7 +139,7 @@ module X
       basic = "Basic #{Base64.strict_encode64("#{TEST_CLIENT_ID}:#{TEST_CLIENT_SECRET}")}"
       token = stub_token.with(body: TOKEN_BODY, headers: {"Authorization" => basic})
 
-      assert_equal TEST_CLIENT_SECRET, authorization(client_secret: TEST_CLIENT_SECRET).credentials("state=STATE&code=CODE")[:client_secret]
+      refute authorization(client_secret: TEST_CLIENT_SECRET).credentials("state=STATE&code=CODE").key?(:client_secret)
       assert_requested token
     end
 
@@ -156,10 +156,10 @@ module X
       assert_equal({client_id: TEST_CLIENT_ID, access_token: "ACCESS", expires_at: Time.at(8_200)}, credentials)
     end
 
-    def test_credentials_of_a_confidential_client_without_a_refresh_token_hold_its_secret
+    def test_credentials_of_a_confidential_client_without_a_refresh_token_leave_out_its_secret
       stub_token(body: {token_type: "bearer", access_token: "ACCESS"})
 
-      assert_equal({client_id: TEST_CLIENT_ID, client_secret: TEST_CLIENT_SECRET, access_token: "ACCESS", expires_at: nil},
+      assert_equal({client_id: TEST_CLIENT_ID, access_token: "ACCESS", expires_at: nil},
         authorization(client_secret: TEST_CLIENT_SECRET).credentials("state=STATE&code=CODE"))
     end
 
@@ -246,6 +246,13 @@ module X
 
       assert_instance_of OAuth2Authenticator, client.authenticator
       assert_equal ["ACCESS", "REFRESH", "https://api.x.com/3/"], [client.send(:access_token), client.send(:refresh_token), client.base_url]
+    end
+
+    def test_the_client_of_a_confidential_app_holds_its_secret
+      stub_token
+      client = authorization(client_secret: TEST_CLIENT_SECRET).client("state=STATE&code=CODE")
+
+      assert_equal TEST_CLIENT_SECRET, client.send(:client_secret)
     end
 
     def test_the_client_reaches_the_api_as_the_authorization_did

@@ -166,17 +166,23 @@ module X
     #
     # An authorization code works once, so call this, or {#client}, once for each redirect.
     #
+    # The credentials are those of the user, which are stored for each user, so they leave out the client secret of a
+    # confidential client, which is the app's and kept once, apart from them; pass it beside them to a client built of
+    # them, which refreshes the access token with it.
+    #
     # @api public
     # @param callback [String, Hash] the redirect back from X: its URL, its query string, or its query parameters
     # @return [Hash{Symbol => String, Time, nil}] the credentials, as Client#initialize accepts them: the client ID,
-    #   the client secret of a confidential client, the access token, the refresh token, and the expiration time; an
-    #   authorization without offline.access issues no refresh token, so its credentials hold none, and a client built
-    #   of them acts for the user until the access token expires, and cannot authenticate as the app
+    #   the access token, the refresh token, and the expiration time; an authorization without offline.access issues
+    #   no refresh token, so its credentials hold none, and a client built of them acts for the user until the access
+    #   token expires, and cannot authenticate as the app
     # @raise [AuthorizationError] if the user denied the app, the state does not match, X refuses the code, or the
     #   redirect is not a valid URL
     # @raise [TooManyRequests, ServerError] if the token endpoint limits the rate of the request or fails to answer
     # @example Store the credentials of the user
     #   store.save(authorization.credentials(request.url))
+    # @example Build the client of a confidential app from the credentials it stored
+    #   X::Client.new(**store.load, client_secret: ENV.fetch("X_CLIENT_SECRET"))
     def credentials(callback) = credentials_from(exchange(callback))
 
     # Exchange the code of the redirect back from X for a client
@@ -211,7 +217,7 @@ module X
 
       Client.new(**options) # refuses an option before the code, which X accepts once, is spent
       token = exchange(callback)
-      Client.new(**credentials_from(token), **@settings, **options).tap { |client| report_exchange(client, token) }
+      Client.new(**credentials_from(token), client_secret:, **@settings, **options).tap { |client| report_exchange(client, token) }
     end
 
     private
@@ -305,14 +311,14 @@ module X
     #
     # They are OAuth 2.0 credentials whether or not X issued a refresh token, since the access token acts for the
     # user either way: one given as a bearer token would be taken for the app's, and sent to the endpoints that take
-    # app-only authentication, which refuse it. A public client has no client secret, and a token issued without
-    # offline.access no refresh token, so the credentials leave out either one that is missing.
+    # app-only authentication, which refuse it. A token issued without offline.access has no refresh token, so the
+    # credentials leave it out. They leave out the client secret, which is the app's rather than the user's.
     #
     # @api private
     # @param token [SimpleOAuth::OAuth2::Token] the token
     # @return [Hash{Symbol => String, Time, nil}] the credentials, as Client#initialize accepts them
     def credentials_from(token)
-      {client_id:, client_secret:, access_token: token.access_token, refresh_token: token.refresh_token}.compact
+      {client_id:, access_token: token.access_token, refresh_token: token.refresh_token}.compact
         .merge(expires_at: token.expires_at)
     end
   end
