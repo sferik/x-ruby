@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "yaml"
 require_relative "../../test_helper"
 
 module X
@@ -45,6 +46,25 @@ module X
 
     def test_media_whose_attributes_are_not_a_hash_is_refused
       assert_raises(ArgumentError) { UploadedMedia.allocate.marshal_load([1, "x"]) }
+    end
+
+    def test_yaml_writes_the_state_marshal_writes_under_its_names
+      assert_equal({"format" => 1, "attrs" => ATTRS}, YAML.unsafe_load(YAML.dump(@media).sub("!ruby/object:X::UploadedMedia", "")))
+    end
+
+    def test_media_written_as_yaml_reads_back_deep_frozen
+      loaded = YAML.unsafe_load(YAML.dump(@media))
+
+      assert_equal @media, loaded
+      assert_equal [true] * 4, [loaded, loaded.attrs, loaded.attrs["id"], loaded.processing_info].map(&:frozen?)
+      assert_equal @media, YAML.unsafe_load("#{YAML.dump(@media)}added: true\n")
+    end
+
+    def test_media_written_as_yaml_of_another_format_is_refused
+      error = assert_raises(UnsupportedMarshalFormat) { YAML.unsafe_load(YAML.dump(@media).sub("format: 1", "format: 2")) }
+
+      assert_equal "X::UploadedMedia reads format 1 of Marshal, not 2", error.message
+      assert_raises(UnsupportedMarshalFormat) { YAML.unsafe_load("--- !ruby/object:X::UploadedMedia\nformat: 2\n") }
     end
 
     def test_the_format_is_named_privately

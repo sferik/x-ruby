@@ -34,9 +34,12 @@ module X
 
     module ValueMarshalling : _Attributed
       MARSHAL_FORMAT: Integer
+      YAML_KEYS: Array[String]
 
       def marshal_dump: () -> [Integer, Hash[String, untyped]]
       def marshal_load: ([Integer, Hash[String, untyped]] state) -> void
+      def encode_with: (untyped coder) -> void
+      def init_with: (untyped coder) -> void
 
       private
       def restore: (Hash[String, untyped] attrs) -> void

@@ -44,6 +44,8 @@ module X
     def to_json: (?JSON::State? state) -> String
     def marshal_dump: () -> untyped
     def marshal_load: (untyped state) -> void
+    def encode_with: (untyped coder) -> void
+    def init_with: (untyped coder) -> void
   end
 
   class PersonalizedTrend
@@ -66,6 +68,8 @@ module X
     def to_json: (?JSON::State? state) -> String
     def marshal_dump: () -> untyped
     def marshal_load: (untyped state) -> void
+    def encode_with: (untyped coder) -> void
+    def init_with: (untyped coder) -> void
   end
 
   class PostUsage
@@ -90,6 +94,8 @@ module X
     def to_json: (?JSON::State? state) -> String
     def marshal_dump: () -> untyped
     def marshal_load: (untyped state) -> void
+    def encode_with: (untyped coder) -> void
+    def init_with: (untyped coder) -> void
   end
 
   module Objects
@@ -636,6 +642,8 @@ module X
     def to_json: (?JSON::State? state) -> String
     def marshal_dump: () -> untyped
     def marshal_load: (untyped state) -> void
+    def encode_with: (untyped coder) -> void
+    def init_with: (untyped coder) -> void
     def inspect: () -> String
   end
 

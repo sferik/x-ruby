@@ -124,6 +124,8 @@ module X
     def inspect: () -> String
     def marshal_dump: () -> untyped
     def marshal_load: (untyped state) -> void
+    def encode_with: (untyped coder) -> void
+    def init_with: (untyped coder) -> void
   end
 
   class HTTPError < Error
@@ -290,6 +292,8 @@ module X
     def inspect: () -> String
     def marshal_dump: () -> untyped
     def marshal_load: (untyped state) -> void
+    def encode_with: (untyped coder) -> void
+    def init_with: (untyped coder) -> void
   end
 
   class StreamingClient
@@ -339,6 +343,8 @@ module X
     def inspect: () -> String
     def marshal_dump: () -> untyped
     def marshal_load: (untyped state) -> void
+    def encode_with: (untyped coder) -> void
+    def init_with: (untyped coder) -> void
   end
 
   interface _TokenRefreshHook

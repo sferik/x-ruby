@@ -139,6 +139,31 @@ module X
       initialize(**rule.slice(:id, :value, :tag)) # steep:ignore InsufficientKeywordArguments
     end
 
+    # Write the state Marshal writes as YAML
+    #
+    # YAML would write the instance variables of the rule, and read them back into a rule that is not frozen, so
+    # it says how it is written: the number of its format, then each of its parts, under the name to_h gives it.
+    #
+    # @api public
+    # @param coder [Psych::Coder] the coder YAML writes the rule with
+    # @return [void]
+    # @example Write a rule as YAML
+    #   YAML.dump(rule)
+    def encode_with(coder)
+      coder["format"] = MARSHAL_FORMAT
+      to_h.each { |key, value| coder[key.to_s] = value }
+    end
+
+    # Restore a rule YAML read, frozen, as Marshal restores one
+    #
+    # @api public
+    # @param coder [Psych::Coder] the coder YAML read the rule with
+    # @return [void]
+    # @raise [UnsupportedMarshalFormat] if the state is of a format this release does not read
+    # @example Read a rule written as YAML
+    #   YAML.unsafe_load(YAML.dump(rule)).value
+    def init_with(coder) = marshal_load([coder["format"], coder.map.transform_keys(&:to_sym)])
+
     private
 
     # A frozen copy of a String a rule holds

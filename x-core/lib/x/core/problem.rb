@@ -18,7 +18,9 @@ module X
     # A later release of 1.x adds to the state only what an earlier one ignores, parts after those it reads and keys of a
     # Hash it does not read, so that the state one release of 1.x writes is read by every other, earlier or later.
     MARSHAL_FORMAT = 1
-    private_constant :MARSHAL_FORMAT
+    # The name YAML writes each part of the state under, in the order Marshal writes them
+    YAML_KEYS = %w[format attrs].freeze
+    private_constant :MARSHAL_FORMAT, :YAML_KEYS
 
     # The raw attributes of the problem
     # @api public
@@ -239,6 +241,28 @@ module X
 
       initialize(attrs)
     end
+
+    # Write the state Marshal writes as YAML
+    #
+    # YAML would write the instance variables of the problem, and read them back into one that is not frozen, so it says
+    # how it is written: each part of the state Marshal writes, under its name.
+    #
+    # @api public
+    # @param coder [Psych::Coder] the coder YAML writes the problem with
+    # @return [void]
+    # @example Write a problem as YAML
+    #   YAML.dump(problem)
+    def encode_with(coder) = YAML_KEYS.zip(marshal_dump) { |key, value| coder[key] = value }
+
+    # Restore a problem YAML read, frozen, as Marshal restores one
+    #
+    # @api public
+    # @param coder [Psych::Coder] the coder YAML read the problem with
+    # @return [void]
+    # @raise [UnsupportedMarshalFormat] if the state is of a format this release does not read
+    # @example Read a problem written as YAML
+    #   YAML.unsafe_load(YAML.dump(problem)).title
+    def init_with(coder) = marshal_load(coder.map.values_at(*YAML_KEYS))
 
     private
 

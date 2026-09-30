@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "yaml"
 require_relative "../../test_helper"
 
 module X
@@ -50,6 +51,31 @@ module X
         error = assert_raises(UnsupportedMarshalFormat) { value.class.allocate.marshal_load(["1", value.attrs]) }
 
         assert_equal "#{value.class} reads format 1 of Marshal, not \"1\"", error.message
+      end
+    end
+
+    def test_yaml_writes_the_state_marshal_writes_under_its_names
+      @values.each do |value|
+        assert_equal({"format" => 1, "attrs" => value.attrs}, YAML.unsafe_load(YAML.dump(value).sub("!ruby/object:#{value.class}", "")))
+      end
+    end
+
+    def test_a_value_written_as_yaml_reads_back_deep_frozen
+      @values.each do |value|
+        loaded = YAML.unsafe_load(YAML.dump(value))
+
+        assert_equal [value, value.attrs], [loaded, loaded.attrs]
+        assert_equal [true, true], [loaded.frozen?, loaded.attrs.frozen?]
+        assert_equal value, YAML.unsafe_load("#{YAML.dump(value)}added: true\n")
+      end
+    end
+
+    def test_a_value_written_as_yaml_of_another_format_is_refused
+      @values.each do |value|
+        error = assert_raises(UnsupportedMarshalFormat) { YAML.unsafe_load(YAML.dump(value).sub("format: 1", "format: 2")) }
+
+        assert_equal "#{value.class} reads format 1 of Marshal, not 2", error.message
+        assert_raises(UnsupportedMarshalFormat) { YAML.unsafe_load("--- !ruby/object:#{value.class}\nformat: 2\n") }
       end
     end
 

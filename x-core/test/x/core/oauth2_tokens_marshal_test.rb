@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "yaml"
 require_relative "../../test_helper"
 
 module X
@@ -43,6 +44,25 @@ module X
 
       assert_equal 'X::OAuth2Tokens reads format 1 of Marshal, not "1"', error.message
       assert_raises(UnsupportedMarshalFormat) { OAuth2Tokens.allocate.marshal_load({access_token: "A"}) }
+    end
+
+    def test_yaml_writes_the_format_and_each_token_under_its_name
+      assert_equal({"format" => 1, "access_token" => "ACCESS", "refresh_token" => "REFRESH", "expires_at" => @expires_at},
+        YAML.unsafe_load(YAML.dump(@tokens).sub("!ruby/object:X::OAuth2Tokens", "")))
+    end
+
+    def test_tokens_written_as_yaml_read_back_frozen
+      loaded = YAML.unsafe_load(YAML.dump(@tokens))
+
+      assert_equal [@tokens, true], [loaded, loaded.frozen?]
+      assert_equal @tokens, YAML.unsafe_load("#{YAML.dump(@tokens)}scope: tweet.read\n")
+    end
+
+    def test_tokens_written_as_yaml_of_another_format_are_refused
+      error = assert_raises(UnsupportedMarshalFormat) { YAML.unsafe_load(YAML.dump(@tokens).sub("format: 1", "format: 2")) }
+
+      assert_equal "X::OAuth2Tokens reads format 1 of Marshal, not 2", error.message
+      assert_raises(UnsupportedMarshalFormat) { YAML.unsafe_load("--- !ruby/object:X::OAuth2Tokens\nformat: 2\n") }
     end
 
     def test_the_format_is_named_privately

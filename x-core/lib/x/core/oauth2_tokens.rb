@@ -136,6 +136,31 @@ module X
 
         initialize(**tokens.slice(:access_token, :refresh_token, :expires_at)) # steep:ignore InsufficientKeywordArguments
       end
+
+      # Write the state Marshal writes as YAML
+      #
+      # YAML would write the instance variables of the tokens, and read them back into tokens that are not frozen, so
+      # they say how they are written: the number of their format, then each of them, under the name to_h gives it.
+      #
+      # @api public
+      # @param coder [Psych::Coder] the coder YAML writes the tokens with
+      # @return [void]
+      # @example Write tokens as YAML
+      #   YAML.dump(tokens)
+      def encode_with(coder)
+        coder["format"] = MARSHAL_FORMAT
+        to_h.each { |key, value| coder[key.to_s] = value }
+      end
+
+      # Restore tokens YAML read, frozen, as Marshal restores them
+      #
+      # @api public
+      # @param coder [Psych::Coder] the coder YAML read the tokens with
+      # @return [void]
+      # @raise [UnsupportedMarshalFormat] if the state is of a format this release does not read
+      # @example Read tokens written as YAML
+      #   YAML.unsafe_load(File.read("tokens.yml")).expires_at
+      def init_with(coder) = marshal_load([coder["format"], coder.map.transform_keys(&:to_sym)])
     end
   end
 end

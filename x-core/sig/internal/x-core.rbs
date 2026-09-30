@@ -634,6 +634,7 @@ module X
 
   class Problem
     MARSHAL_FORMAT: Integer
+    YAML_KEYS: Array[String]
 
     private
     def deep_freeze: (untyped value) -> untyped

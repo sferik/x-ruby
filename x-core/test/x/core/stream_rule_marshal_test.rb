@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "yaml"
 require_relative "../../test_helper"
 
 module X
@@ -41,6 +42,26 @@ module X
 
       assert_equal 'X::StreamRule reads format 1 of Marshal, not "1"', error.message
       assert_raises(UnsupportedMarshalFormat) { StreamRule.allocate.marshal_load({value: "ruby"}) }
+    end
+
+    def test_yaml_writes_the_format_and_each_part_under_its_name
+      assert_equal({"format" => 1, "id" => 1_165_037_377_523_306_498, "value" => "ruby -is:retweet", "tag" => "ruby"},
+        YAML.unsafe_load(YAML.dump(@rules.first).sub("!ruby/object:X::StreamRule", "")))
+    end
+
+    def test_a_rule_written_as_yaml_reads_back_frozen
+      loaded = YAML.unsafe_load(YAML.dump(@rules))
+
+      assert_equal @rules, loaded
+      assert_equal [true] * 3, [loaded.first, loaded.first.value, loaded.first.tag].map(&:frozen?)
+      assert_equal @rules.first, YAML.unsafe_load("#{YAML.dump(@rules.first)}added: true\n")
+    end
+
+    def test_a_rule_written_as_yaml_of_another_format_is_refused
+      error = assert_raises(UnsupportedMarshalFormat) { YAML.unsafe_load(YAML.dump(@rules.first).sub("format: 1", "format: 2")) }
+
+      assert_equal "X::StreamRule reads format 1 of Marshal, not 2", error.message
+      assert_raises(UnsupportedMarshalFormat) { YAML.unsafe_load("--- !ruby/object:X::StreamRule\nformat: 2\n") }
     end
 
     def test_the_format_is_named_privately
