@@ -188,8 +188,8 @@ module X
     #   expires_at, which it would leave unused
     # @raise [ArgumentError] if a timeout is neither a finite number of seconds of at least 0 nor, for any but
     #   keep_alive_timeout, nil, or if a maximum is not a count or a number of seconds of at least 0
-    # @raise [ArgumentError] if base_url is not an absolute http or https URL with no query or fragment, or headers
-    #   are not a Hash that names each header with a String or a Symbol and gives it a String
+    # @raise [ArgumentError] if base_url is not an absolute http or https URL with no user, password, query, or
+    #   fragment, or headers are not a Hash that names each header with a String or a Symbol and gives it a String
     # @raise [ArgumentError] if on_response, on_token_refresh, or load_tokens is neither nil nor responds to call
     # @raise [ArgumentError] if default_array_class is not a Class, or default_object_class is neither a Class nor
     #   responds to from_response, which a response would be parsed with once the API had answered the request

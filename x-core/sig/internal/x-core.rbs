@@ -407,6 +407,8 @@ module X
       INVALID_FINITE_SECONDS: String
       INVALID_TIMEOUT: String
       INVALID_BASE_URL: String
+      BASE_URL_WITH_USERINFO: String
+      USERINFO: Regexp
       INVALID_HEADERS: String
       INVALID_HEADER: String
       INVALID_CALLABLE: String

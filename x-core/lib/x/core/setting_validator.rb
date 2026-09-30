@@ -43,6 +43,11 @@ module X
       INVALID_TIMEOUT = "%s must be a finite number of seconds of at least 0, or nil for no timeout, not %s"
       # The message of the error raised for a base URL that is not an absolute HTTP or HTTPS URL
       INVALID_BASE_URL = "base_url must be an absolute http or https URL with no query or fragment, such as \"https://api.x.com/2/\", not %s"
+      # The message of the error raised for a base URL that holds a user or a password, which it leaves out, since
+      # either may be a secret
+      BASE_URL_WITH_USERINFO = "base_url must hold no user or password, which no request sends"
+      # The scheme and authority of a URL whose authority holds a user or a password, before the at sign of the host
+      USERINFO = %r{\A[^:/?#]+://[^/?#]*@}
       # The message of the error raised for headers that are not a Hash
       INVALID_HEADERS = "headers must be a Hash of header names to values, not a %s"
       # The message of the error raised for a header whose name or value is not what a header takes
@@ -142,16 +147,19 @@ module X
       # Check that a base URL is an absolute HTTP or HTTPS URL, with a host
       #
       # An endpoint is appended to the path of the base URL, so a query or a fragment, which would come before the
-      # endpoint rather than after it, is refused.
+      # endpoint rather than after it, is refused. So is a user or a password, which Net::HTTP sends with no request,
+      # and which the client would reveal in its inspect and in the URI of every error; the error that refuses one
+      # leaves the URL out, since the password is a secret.
       #
       # @api private
       # @param value [Object] the base URL
       # @return [String] the base URL
       # @raise [ArgumentError] if the base URL is not a String that is an absolute http or https URL with a host, and
-      #   no query or fragment
+      #   no user, password, query, or fragment
       # @example Check the base URL of the v1.1 API
       #   X::Core::SettingValidator.base_url!("https://api.x.com/1.1/") # => "https://api.x.com/1.1/"
       def base_url!(value)
+        raise ArgumentError, BASE_URL_WITH_USERINFO if value.is_a?(String) && value.match?(USERINFO)
         return value if value.is_a?(String) && http_url?(value)
 
         raise ArgumentError, format(INVALID_BASE_URL, value.inspect)

@@ -30,6 +30,22 @@ module X
       assert_raises(ArgumentError) { Client.new.with(base_url: "api.x.com") }
     end
 
+    def test_a_base_url_that_holds_a_user_or_a_password_is_refused_without_revealing_it
+      values = %w[https://user:SECRET@api.x.com/2/ https://SECRET@api.x.com/2/ https://@api.x.com/2/ http://user:SECRET@localhost:3000/2/]
+      messages = values.map { |base_url| message_of { Client.new(base_url:) } }
+
+      assert_equal ["base_url must hold no user or password, which no request sends"] * values.size, messages
+      assert_equal messages.first, message_of { Client.new(base_url: Class.new(String).new(values.first)) }
+      assert_raises(ArgumentError) { Client.new.with(base_url: "https://user:SECRET@api.x.com/2/") }
+    end
+
+    def test_a_base_url_with_an_at_sign_after_its_host_is_not_read_as_holding_a_user
+      assert_equal "https://api.x.com/2/@x/", Client.new(base_url: "https://api.x.com/2/@x/").base_url
+      %w[api.x.com/@x //user@api.x.com/2/ https://api.x.com/2/?at=@x https://api.x.com/2/#@x].each do |base_url|
+        assert_includes message_of { Client.new(base_url:) }, "not #{base_url.inspect}"
+      end
+    end
+
     def test_a_base_url_that_is_an_absolute_http_or_https_url_is_allowed
       assert_equal %w[https://api.x.com/1.1/ http://localhost:3000/2/], %w[https://api.x.com/1.1/ http://localhost:3000/2].map { |base_url| Client.new(base_url:).base_url }
       assert_equal "https://api.x.com/2/", Client.new(base_url: Class.new(String).new("https://api.x.com/2/")).base_url
