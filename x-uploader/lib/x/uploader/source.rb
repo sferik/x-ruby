@@ -210,9 +210,13 @@ module X
         def readable? = File.file?(name) && File.readable?(name)
 
         # The size of the media in bytes
+        #
+        # It is read once, when first asked, so that an upload checks, declares, and appends the same number of bytes,
+        # whatever the file does meanwhile.
+        #
         # @api private
         # @return [Integer] the size in bytes
-        def size = File.size(name)
+        def size = @size ||= File.size(name)
 
         # The whole of the media
         # @api private
@@ -263,11 +267,12 @@ module X
         # The size of the media in bytes
         #
         # A File or a Tempfile reads it with size, which flushes what it has written first, and an IO that answers no
-        # size, as $stdin does, from the file it is open on.
+        # size, as $stdin does, from the file it is open on. It is read once, when first asked, so that an upload
+        # checks, declares, and appends the same number of bytes, whatever the file does meanwhile.
         #
         # @api private
         # @return [Integer] the size in bytes
-        def size = @io.respond_to?(:size) ? @io.size : @io.stat.size
+        def size = @size ||= @io.respond_to?(:size) ? @io.size : @io.stat.size
 
         # The whole of the media
         # @api private

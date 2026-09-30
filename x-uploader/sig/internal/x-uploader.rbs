@@ -34,6 +34,8 @@ module X
       def read: (Integer length, Integer offset) -> String
 
       class Path < Source
+        @size: Integer?
+
         def initialize: (path path) -> void
         def name: () -> String
       end
@@ -41,6 +43,7 @@ module X
       class Handle < Source
         @io: untyped
         @mutex: Thread::Mutex
+        @size: Integer?
 
         def initialize: (untyped io) -> void
 
@@ -113,6 +116,7 @@ module X
 
     module Chunks
       NO_MEDIA: String
+      CHANGED: String
       extend Chunks
 
       def init: (client: ::X::Client, source: Source, media_type: String, media_category: String) -> Hash[String, untyped]
@@ -124,6 +128,7 @@ module X
       def await: (Array[Thread] workers) -> void
       def chunk_queue: (Source source, Integer chunk_size) -> Thread::Queue
       def append_worker: (Thread::Queue queue, Thread::Queue errors, client: ::X::Client, source: Source, chunk_size: Integer, media_id: String, boundary: String) -> Thread
+      def chunk: (Source source, Integer chunk_size, Integer index, Integer offset) -> String
       def upload_chunk: (client: ::X::Client, media_id: String, upload_body: String, headers: Hash[String, String]) -> untyped
     end
 

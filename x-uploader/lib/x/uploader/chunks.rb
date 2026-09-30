@@ -20,7 +20,10 @@ module X
 
       # The message of the error raised for an initialize response that holds no media to append the chunks to
       NO_MEDIA = "The response that initializes the upload holds no media to append the chunks to"
-      private_constant :NO_MEDIA
+      # The message of the error raised for a chunk that reads fewer bytes than the media held when it was measured
+      CHANGED = "%s held %d bytes when the upload was initialized, but chunk %d read %d of the %d it began with at " \
+        "byte %d: the media changed while it was uploaded"
+      private_constant :NO_MEDIA, :CHANGED
 
       # Initialize a chunked upload
       #
@@ -146,13 +149,35 @@ module X
       def append_worker(queue, errors, client:, source:, chunk_size:, media_id:, boundary:)
         Thread.new do
           while (index, offset = queue.deq)
-            upload_body = Multipart.body("media", source.read(chunk_size, offset), boundary:, segment_index: index)
+            upload_body = Multipart.body("media", chunk(source, chunk_size, index, offset), boundary:, segment_index: index)
             upload_chunk(client:, media_id:, upload_body:, headers: Multipart.headers(boundary))
           end
         rescue => e
           errors << e
           queue.clear
         end
+      end
+
+      # Read a chunk of the media, of the bytes the upload declared it holds
+      #
+      # The size of the media is read once, so every chunk is read within the bytes the upload was initialized with,
+      # and a file that grows while it is uploaded appends none of what it grew by. A file that shrinks cannot fill
+      # the chunks it was measured for, so a chunk that reads short raises, rather than append fewer bytes than the
+      # upload declared.
+      #
+      # @api private
+      # @param source [Source] the media
+      # @param chunk_size [Integer] the chunk size in bytes
+      # @param index [Integer] the index of the chunk
+      # @param offset [Integer] the byte the chunk begins at
+      # @return [String] the bytes of the chunk
+      # @raise [EOFError] if the media holds fewer bytes than it did when it was measured
+      def chunk(source, chunk_size, index, offset)
+        length = [chunk_size, source.size - offset].min
+        bytes = source.read(length, offset).to_s
+        return bytes if bytes.bytesize.eql?(length)
+
+        raise EOFError, format(CHANGED, source.description, source.size, index, bytes.bytesize, length, offset)
       end
 
       # Upload a single chunk, sending it again after a server or network error
