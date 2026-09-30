@@ -119,7 +119,7 @@ module X
       def test_hydrating_a_shared_reference_hydrates_it_everywhere
         body = {"data" => [{"id" => "1", "author_id" => "9"}, {"id" => "2", "author_id" => "9"}]}
         @client.stub(:get, "users/9", {"data" => {"id" => "9", "name" => "Erik Berlin"}})
-        first, second = Post.__send__(:collection_from_response, body, client: @client)
+        first, second = Post.__send__(:collection_from_response, body, client: @client).to_a
         first.author.hydrate
 
         assert_equal "Erik Berlin", second.author.hydrate.name
@@ -136,6 +136,24 @@ module X
         data = Class.new(Array).new([{"id" => "1"}])
 
         assert_equal [1], User.__send__(:collection_from_response, {"data" => data}, client: @client).map(&:id)
+      end
+    end
+
+    # A response whose data is a list builds a page, which keeps what the response says of the page
+    class ResourceResponsePageTest < Minitest::Test
+      cover Resource
+
+      def setup
+        @client = FakeClient.new
+      end
+
+      def test_from_response_with_array_data_builds_a_page_with_the_meta_and_problems_of_the_response
+        problem = {"title" => "Not Found Error", "resource_type" => "user", "resource_id" => "3"}
+        page = User.from_response({"data" => [{"id" => "1"}], "meta" => {"next_token" => "abc", "result_count" => 1}, "errors" => [problem]}, client: @client)
+
+        assert_instance_of Page, page
+        assert_equal ["abc", 1, [problem]], [page.next_token, page.result_count, page.problems.map(&:to_h)]
+        assert_equal({}, User.from_response({"data" => [], "meta" => "unreadable"}, client: @client).meta)
       end
     end
   end

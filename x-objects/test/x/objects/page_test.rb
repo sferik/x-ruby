@@ -47,6 +47,20 @@ module X
       assert_same @page.items, @page.entries
     end
 
+    def test_a_page_is_sized_as_an_array_is
+      assert_equal [2, 2, false, true], [@page.size, @page.length, @page.empty?, Page.new([], {}).empty?]
+    end
+
+    def test_a_page_is_indexed_as_an_array_is
+      assert_equal [@users.first, @users.last, nil, @users, [@users.last], []], [@page[0], @page[-1], @page[2], @page[0..], @page[1, 1], @page[2, 1]]
+    end
+
+    def test_the_last_resources_of_a_page_are_read_as_an_array_reads_them
+      empty = Page.new([], {})
+
+      assert_equal [@users.last, [@users.last], @users, nil, []], [@page.last, @page.last(1), @page.last(5), empty.last, empty.last(1)]
+    end
+
     def test_meta_is_deep_frozen_with_string_keys
       assert_equal({"next_token" => "abc", "result_count" => 2}, @page.meta)
       assert_predicate @page.meta, :frozen?
@@ -86,7 +100,7 @@ module X
       yielded = []
       @page.each { |user| yielded << user }
 
-      assert_equal [@users, 2], [yielded, @page.each.size]
+      assert_equal [@users, Enumerator, 2], [yielded, @page.each.class, @page.each.size]
     end
 
     def test_the_class_publishes_no_delegation_methods

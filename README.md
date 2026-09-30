@@ -75,14 +75,16 @@ post.text                              # the full text, even of a post longer th
 post.created_at                        # => 2026-09-11 12:00:00 UTC
 ```
 
-**Any endpoint.** For an endpoint without a method, pass a resource class as the `object_class` of a request. A response that holds one resource comes back as an object, and one that holds a list comes back as an array of the page you requested. The object holds only the fields you asked for, so `hydrate` fetches the rest.
+**Any endpoint.** For an endpoint without a method, pass a resource class as the `object_class` of a request. A response that holds one resource comes back as an object, and one that holds a list comes back as an `X::Page` of the page you requested, which reads as an array does, and holds the `next_token` of the page after it. The object holds only the fields you asked for, so `hydrate` fetches the rest.
 
 ```ruby
 user = x_client.get("users/by/username/sferik", object_class: X::User)
 user.followers_count                   # => nil, since the request didn't ask for it
 user.hydrate.followers_count           # => 12345
 
-x_client.get("users/#{user.id}/blocking", object_class: X::User) # => [#<X::User ...>, ...]
+blocked = x_client.get("users/#{user.id}/blocking", object_class: X::User) # => #<X::Page ...>
+blocked.first                          # => #<X::User ...>
+x_client.get("users/#{user.id}/blocking", params: {pagination_token: blocked.next_token}, object_class: X::User)
 ```
 
 **Identity.** Resources with the same class and ID are equal (`==`, `eql?`, and `hash`), even when they come from different requests.

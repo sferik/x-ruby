@@ -131,9 +131,9 @@ module X
     end
 
     # The class side of every concrete resource class, typed with that class
-    interface _ResourceClass[R]
+    interface _ResourceClass[R < Resource]
       def from_id: (id id, ?client: _Client?) -> R
-      def from_response: (body body, client: _Client?, ?hydrated: bool, **untyped) -> (R | Array[R])?
+      def from_response: (body body, client: _Client?, ?hydrated: bool, **untyped) -> (R | Page[R])?
     end
 
     # The class-side lookups of a concrete resource class the API looks up by identifier, typed with that class
@@ -260,7 +260,7 @@ module X
 
     def self.default_params: () -> Hash[String, Array[String]]
     def self.from_id: (Objects::id id, ?client: Objects::_Client?) -> Resource
-    def self.from_response: (Objects::body body, client: Objects::_Client?, ?hydrated: bool, **untyped) -> (Resource | Array[Resource])?
+    def self.from_response: (Objects::body body, client: Objects::_Client?, ?hydrated: bool, **untyped) -> (Resource | Page[Resource])?
 
     def initialize: (Hash[untyped, untyped] attrs, ?client: Objects::_Client?, ?hydrated: bool) -> void
     def id: () -> (Integer | String)
@@ -295,6 +295,14 @@ module X
             | () -> Enumerator[R, self]
     def to_a: () -> Array[R]
     def entries: () -> Array[R]
+    def size: () -> Integer
+    def length: () -> Integer
+    def empty?: () -> bool
+    def []: (Integer index) -> R?
+          | (Integer start, Integer length) -> Array[R]?
+          | (Range[Integer?] range) -> Array[R]?
+    def last: () -> R?
+            | (Integer count) -> Array[R]
     def next_token: () -> String?
     def result_count: () -> Integer?
     def ==: (untyped other) -> bool
@@ -353,7 +361,7 @@ module X
     def self.find_all: (Array[String | Objects::_MediaKeyHolder] media, client: Objects::_Client, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[Media]
     def self.find!: (String | Objects::_MediaKeyHolder media, client: Objects::_Client, **untyped params) -> Media
     def self.from_id: (String | Objects::_MediaKeyHolder media, ?client: Objects::_Client?) -> Media
-    def self.from_response: (Objects::body body, client: Objects::_Client?, ?hydrated: bool, **untyped) -> (Media | Array[Media])?
+    def self.from_response: (Objects::body body, client: Objects::_Client?, ?hydrated: bool, **untyped) -> (Media | Page[Media])?
     def self.hydrate_all: (Array[Media?] resources, client: Objects::_Client, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[Media]
     def self.default_params: () -> Hash[String, Array[String]]
     def media_key: () -> String

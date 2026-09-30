@@ -22,7 +22,7 @@ module X
               "includes" => {"users" => [{"id" => "9", "username" => "sferik"}, {"id" => "8"}, {"id" => "7"}]}}.freeze
 
     def test_the_resources_of_one_response_share_what_they_refer_to_after_a_round_trip
-      loaded = Marshal.load(Marshal.dump(Page.new(Post.__send__(:collection_from_response, SHARED, client: nil, hydrated: true), {})))
+      loaded = Marshal.load(Marshal.dump(Post.__send__(:collection_from_response, SHARED, client: nil, hydrated: true)))
 
       first, second, third = loaded.items
 
@@ -31,7 +31,7 @@ module X
     end
 
     def test_the_resources_of_one_response_write_what_they_refer_to_once
-      page = Page.new(Post.__send__(:collection_from_response, SHARED, client: nil), {})
+      page = Post.__send__(:collection_from_response, SHARED, client: nil)
 
       assert_equal [[{"users" => [{"id" => "9", "username" => "sferik"}, {"id" => "8"}]}, [], nil]], page.marshal_dump.last
     end

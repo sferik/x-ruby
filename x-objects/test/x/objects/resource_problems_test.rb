@@ -16,7 +16,7 @@ module X
     GENERAL = {"title" => "Something went wrong"}.freeze
 
     def posts(*data, errors: [AUTHOR_MISSING])
-      Post.__send__(:collection_from_response, {"data" => data, "errors" => errors}, client: nil)
+      Post.__send__(:collection_from_response, {"data" => data, "errors" => errors}, client: nil).to_a
     end
 
     def details(resources) = resources.map { |resource| resource.problems.map(&:title) }
@@ -139,7 +139,7 @@ module X
     def details(resources) = resources.map { |resource| resource.problems.map(&:title) }
 
     def posts(*data, errors:)
-      Post.__send__(:collection_from_response, {"data" => data, "errors" => errors}, client: nil)
+      Post.__send__(:collection_from_response, {"data" => data, "errors" => errors}, client: nil).to_a
     end
 
     def test_a_problem_named_by_its_value_alone

@@ -191,8 +191,9 @@ module X
 
         # Build the resource or resources a response holds
         #
-        # A response whose data is an object builds one resource, and one whose data is an array builds
-        # one for each element. A client calls this when a resource class is the object_class of a request.
+        # A response whose data is an object builds one resource, and one whose data is an array builds a Page of one
+        # for each element, which holds the meta of the response, such as its next_token, and the problems it
+        # reported. A client calls this when a resource class is the object_class of a request.
         # A later version of x-core may pass it keywords of its own, which are ignored, as X::Client asks of
         # what it calls from_response on.
         #
@@ -203,12 +204,12 @@ module X
         # @param body [Hash, nil] the parsed response body
         # @param client [Object] the client used to make the request
         # @param hydrated [Boolean] whether the response holds every field the object layer requests
-        # @return [Resource, Array<Resource>, nil] the resource or resources, or nil if the response has no data
+        # @return [Resource, Page, nil] the resource, or the page of resources, or nil if the response has no data
         # @raise [InvalidAttribute] if the response holds a resource without an identifier, or with one that is not one
         # @example Build a user from a response
         #   X::User.from_response({"data" => {"id" => "7505382"}}, client: client)
-        # @example Build users from a client request
-        #   client.get("users/by?usernames=sferik,gem", object_class: X::User)
+        # @example Build users from a client request, and read the token of the next page
+        #   client.get("users/7505382/blocking", object_class: X::User).next_token
         def from_response(body, client:, hydrated: false, **)
           return collection_from_response(body, client:, hydrated:) if body.to_h["data"].is_a?(Array)
 
@@ -241,11 +242,11 @@ module X
         # @param body [Hash, nil] the parsed response body
         # @param client [Object] the client used to make the request
         # @param hydrated [Boolean] whether the response holds every field the object layer requests
-        # @return [Array<Resource>] the resources
+        # @return [Page] the page of resources, with the meta and problems of the response
         # @raise [InvalidAttribute] if the response holds a resource without an identifier, or with one that is not one
         # @example Build users from a response
         #   X::User.__send__(:collection_from_response, {"data" => [{"id" => "7505382"}]}, client: client)
-        private def collection_from_response(body, client:, hydrated: false) = collection_built_from(body, client:, hydrated:, query: nil)
+        private def collection_from_response(body, client:, hydrated: false) = Page.new(collection_built_from(body, client:, hydrated:, query: nil), Hash.try_convert(body.to_h["meta"]) || {}, problems: Problem.all_from(body))
 
         # Build a resource from a response, knowing the query of its request
         #

@@ -67,7 +67,7 @@ module X
       # @example Iterate over a page
       #   page.each { |user| puts user.username }
       def each(&block)
-        return to_enum { items.size } unless block
+        return to_enum { size } unless block
 
         items.each(&block)
         self
@@ -82,6 +82,42 @@ module X
       def to_a = items
 
       alias_method :entries, :to_a
+
+      # The number of resources on this page
+      #
+      # @api public
+      # @return [Integer] the number of resources
+      # @example Count the resources on a page
+      #   page.size # => 100
+      def size = items.size
+
+      alias_method :length, :size
+
+      # Check whether this page holds no resources
+      #
+      # @api public
+      # @return [Boolean] true if the page holds none
+      # @example Stop at an empty page
+      #   break if page.empty?
+      def empty? = items.empty?
+
+      # The resource at an index, or the resources of a range, as Array#[] reads them
+      #
+      # @api public
+      # @param args [Array<Integer, Range>] an index, a start and a length, or a range
+      # @return [Resource, Array<Resource>, nil] the resource, or the resources, or nil for an index past the end
+      # @example Get the first resource on a page
+      #   page[0]
+      def [](*args) = items[*args] # steep:ignore DifferentMethodParameterKind, UnresolvedOverloading
+
+      # The last resource on this page, or the last few
+      #
+      # @api public
+      # @param args [Array<Integer>] nothing for the last resource, or the number of resources to take from the end
+      # @return [Resource, Array<Resource>, nil] the last resource, or the last resources, or nil for an empty page
+      # @example Get the last resource on a page
+      #   page.last
+      def last(*args) = items.last(*args) # steep:ignore DifferentMethodParameterKind, UnresolvedOverloading
 
       # Check whether another page is the same page
       #
