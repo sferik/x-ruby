@@ -192,6 +192,7 @@ module X
     class RedirectHandler
       DEFAULT_MAX_REDIRECTS: Integer
       METHOD_PRESERVING_CODES: Array[Integer]
+      MOVED_CODES: Array[Integer]
 
       attr_reader connection: Connection
       attr_reader request_builder: RequestBuilder
@@ -202,8 +203,9 @@ module X
       private
       def check_redirect_count: (Net::HTTPRequest request, Integer redirect_count) -> void
       def build_new_uri: (Net::HTTPResponse response, URI::Generic uri) -> URI::Generic?
-      def headers_for: (Integer response_code, headers headers) -> headers
-      def build_request: (Net::HTTPRequest request, URI::Generic new_uri, Integer response_code, headers headers, Authenticator authenticator) -> Net::HTTPRequest
+      def preserves_method?: (Net::HTTPRequest request, Integer response_code) -> bool
+      def headers_for: (bool preserve, headers headers) -> headers
+      def build_request: (Net::HTTPRequest request, URI::Generic new_uri, bool preserve, headers headers, Authenticator authenticator) -> Net::HTTPRequest
     end
 
     class ResponseParser

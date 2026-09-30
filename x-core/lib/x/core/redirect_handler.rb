@@ -19,9 +19,11 @@ module X
     class RedirectHandler
       # Default maximum number of redirects to follow
       DEFAULT_MAX_REDIRECTS = 10
-      # The redirects that keep the method and the body of the request; every other one is followed with a GET
+      # The redirects that keep the method and the body of the request, whatever the method
       METHOD_PRESERVING_CODES = [307, 308].freeze
-      private_constant :METHOD_PRESERVING_CODES
+      # The redirects that keep the method and the body of a request other than a POST, which is followed with a GET
+      MOVED_CODES = [301, 302].freeze
+      private_constant :METHOD_PRESERVING_CODES, :MOVED_CODES
 
       # The maximum number of redirects to follow
       # @api private
@@ -66,7 +68,9 @@ module X
       # A redirect to another scheme, host, or port drops the credentials, the authenticator's and any Authorization,
       # Cookie, or Proxy-Authorization header among the headers, as Origin decides; see {Origin}. A 307 or 308 keeps
       # the method and the body of the request, so a request whose body holds something private replays it to the
-      # host it is redirected to, whatever its origin. Any other is followed with a GET, which sends no body, so it
+      # host it is redirected to, whatever its origin. A 301 or 302 keeps them too, as RFC 9110 Section 15.4 has it,
+      # but for a POST, which it lets a client follow with a GET, so a PUT or a DELETE is not answered by a GET that
+      # reads as its success. Any other, such as 303 See Other, is followed with a GET, which sends no body, so it
       # sends no Content-Type either, such as the form type of a request given form:.
       #
       # A redirect that cannot be followed, such as 304 Not Modified or one whose location is missing, is not a
@@ -93,9 +97,9 @@ module X
         return response if new_uri.nil?
         check_redirect_count(request, redirect_count)
 
-        code = Integer(response.code)
-        authenticator, headers = Origin.credentials_for(from: uri, to: new_uri, authenticator:, headers: headers_for(code, headers))
-        new_request = build_request(request, new_uri, code, headers, authenticator)
+        preserve = preserves_method?(request, Integer(response.code))
+        authenticator, headers = Origin.credentials_for(from: uri, to: new_uri, authenticator:, headers: headers_for(preserve, headers))
+        new_request = build_request(request, new_uri, preserve, headers, authenticator)
         handle(response: connection.perform(request: new_request), request: new_request, headers:, authenticator:,
           redirect_count: redirect_count + 1)
       end
@@ -129,13 +133,23 @@ module X
         nil
       end
 
+      # Whether a redirect keeps the method and the body of the request it answers
+      # @api private
+      # @param request [Net::HTTPRequest] the request that was redirected
+      # @param response_code [Integer] the status code of the redirect
+      # @return [Boolean] true for a 307 or 308, and for a 301 or 302 of any method but POST
+      def preserves_method?(request, response_code)
+        METHOD_PRESERVING_CODES.include?(response_code) ||
+          (MOVED_CODES.include?(response_code) && !request.method.eql?("POST"))
+      end
+
       # The headers of a redirected request, without a Content-Type a GET does not send
       # @api private
-      # @param response_code [Integer] the status code of the redirect
+      # @param preserve [Boolean] whether the redirected request keeps the method and the body
       # @param headers [Hash] the headers of the request that was redirected
       # @return [Hash] the headers to send with the redirected request
-      def headers_for(response_code, headers)
-        return headers if METHOD_PRESERVING_CODES.include?(response_code)
+      def headers_for(preserve, headers)
+        return headers if preserve
 
         headers.reject { |name, _| name.to_s.casecmp?("Content-Type") }
       end
@@ -144,13 +158,13 @@ module X
       # @api private
       # @param request [Net::HTTPRequest] the original request
       # @param uri [URI] the new URI
-      # @param response_code [Integer] the HTTP response code
+      # @param preserve [Boolean] whether the new request keeps the method and the body, or is a GET
       # @param headers [Hash] additional headers for the request
       # @param authenticator [Authenticator] the authenticator
       # @return [Net::HTTPRequest] the new request
-      def build_request(request, uri, response_code, headers, authenticator)
+      def build_request(request, uri, preserve, headers, authenticator)
         http_method = :get
-        if METHOD_PRESERVING_CODES.include?(response_code)
+        if preserve
           http_method = request.method.downcase.to_sym
           body = request.body
         end
