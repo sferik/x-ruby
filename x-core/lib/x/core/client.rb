@@ -329,7 +329,8 @@ module X
     # @param object_class [Class, #from_response] the class for parsing JSON objects, or one that responds to
     #   from_response and builds the result from the whole body; see {Client}
     # @return [Object, nil] the parsed response body, or what an object_class that responds to from_response builds
-    # @raise [ArgumentError] if both a body and form fields are given
+    # @raise [ArgumentError] if both a body and form fields are given, or a keyword is given that the method takes
+    #   none of, as the fields of a body given without the braces of a Hash are, before the request is sent
     # @raise [ArgumentError] if the endpoint is not a valid URL, or does not resolve to an http or https URL, before
     #   the request is sent
     # @raise [ArgumentError] if array_class is not a Class, or object_class is neither a Class nor responds to
@@ -339,7 +340,8 @@ module X
     #   client.post("tweets", {text: "Hello, World!"})
     # @example Post a form to the v1.1 API
     #   v1_client.post("account/settings.json", form: {lang: "en"})
-    def post(endpoint, body = nil, params: nil, form: nil, headers: {}, array_class: default_array_class, object_class: default_object_class, &)
+    def post(endpoint, body = nil, params: nil, form: nil, headers: {}, array_class: default_array_class, object_class: default_object_class, **unknown, &) # steep:ignore DifferentMethodParameterKind
+      Core::SettingValidator.no_unknown_keywords!(:post, endpoint, unknown)
       execute_request(:post, endpoint, body:, params:, form:, headers:, array_class:, object_class:, &)
     end
 
@@ -357,7 +359,8 @@ module X
     # @param object_class [Class, #from_response] the class for parsing JSON objects, or one that responds to
     #   from_response and builds the result from the whole body; see {Client}
     # @return [Object, nil] the parsed response body, or what an object_class that responds to from_response builds
-    # @raise [ArgumentError] if both a body and form fields are given
+    # @raise [ArgumentError] if both a body and form fields are given, or a keyword is given that the method takes
+    #   none of, as the fields of a body given without the braces of a Hash are, before the request is sent
     # @raise [ArgumentError] if the endpoint is not a valid URL, or does not resolve to an http or https URL, before
     #   the request is sent
     # @raise [ArgumentError] if array_class is not a Class, or object_class is neither a Class nor responds to
@@ -365,7 +368,8 @@ module X
     # @yieldparam response [Response] the summary of each response the request got, as {#on_response} receives it
     # @example Update a resource
     #   client.put("some/endpoint", {key: "value"})
-    def put(endpoint, body = nil, params: nil, form: nil, headers: {}, array_class: default_array_class, object_class: default_object_class, &)
+    def put(endpoint, body = nil, params: nil, form: nil, headers: {}, array_class: default_array_class, object_class: default_object_class, **unknown, &) # steep:ignore DifferentMethodParameterKind
+      Core::SettingValidator.no_unknown_keywords!(:put, endpoint, unknown)
       execute_request(:put, endpoint, body:, params:, form:, headers:, array_class:, object_class:, &)
     end
 

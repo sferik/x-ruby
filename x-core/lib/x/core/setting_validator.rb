@@ -55,8 +55,12 @@ module X
       # The message of the error raised for a class to parse JSON objects into that is not a Class, nor builds a result
       INVALID_OBJECT_CLASS = "%s must be a Class that JSON.parse builds each object into, such as Hash, or respond to " \
         "from_response, as the resource classes of x-objects do, not %s"
+      # The message of the error raised for keywords a request takes none of, as the fields of a body given without
+      # the braces of a Hash are read
+      UNKNOWN_KEYWORDS = "unknown keyword%s: %s; pass a body as a Hash in braces, as %s(%s, %s)"
       private_constant :INVALID_COUNT, :INVALID_COUNT_OR_INFINITY, :INVALID_SECONDS, :INVALID_FINITE_SECONDS, :INVALID_TIMEOUT,
-        :INVALID_BASE_URL, :INVALID_HEADERS, :INVALID_HEADER, :INVALID_CALLABLE, :INVALID_ARRAY_CLASS, :INVALID_OBJECT_CLASS
+        :INVALID_BASE_URL, :INVALID_HEADERS, :INVALID_HEADER, :INVALID_CALLABLE, :INVALID_ARRAY_CLASS, :INVALID_OBJECT_CLASS,
+        :UNKNOWN_KEYWORDS
 
       # Check that a count is an Integer of at least 0
       #
@@ -221,6 +225,28 @@ module X
         return value if value.instance_of?(Class) || value.respond_to?(:from_response)
 
         raise ArgumentError, format(INVALID_OBJECT_CLASS, name, value.inspect)
+      end
+
+      # Refuse the keywords a request takes none of, saying how to pass them as its body
+      #
+      # A body is a positional argument, so its fields given without the braces of a Hash, as in
+      # post("tweets", text: "Hello"), are read as keywords, which Ruby would refuse as unknown without saying that
+      # the body is passed in braces.
+      #
+      # @api private
+      # @param http_method [Symbol] the method of the request, such as :post
+      # @param endpoint [String] the endpoint of the request
+      # @param keywords [Hash{Symbol, String => Object}] the keywords the request takes none of
+      # @return [void]
+      # @raise [ArgumentError] if there are any such keywords
+      # @example Refuse the fields of a body given without braces
+      #   X::Core::SettingValidator.no_unknown_keywords!(:post, "tweets", {text: "Hello"})
+      #   # raises ArgumentError: unknown keyword: :text; pass a body as a Hash in braces, as post("tweets", {text: "Hello"})
+      def no_unknown_keywords!(http_method, endpoint, keywords)
+        return if keywords.empty?
+
+        names = keywords.keys.map(&:inspect).join(", ")
+        raise ArgumentError, format(UNKNOWN_KEYWORDS, ("s" if keywords.size > 1), names, http_method, endpoint.inspect, keywords)
       end
 
       # Check the classes a request parses its response into, before the request is sent

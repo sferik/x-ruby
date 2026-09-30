@@ -383,6 +383,7 @@ module X
       INVALID_CALLABLE: String
       INVALID_ARRAY_CLASS: String
       INVALID_OBJECT_CLASS: String
+      UNKNOWN_KEYWORDS: String
       extend SettingValidator
 
       def count!: (Symbol name, untyped value) -> untyped
@@ -396,6 +397,7 @@ module X
       def array_class!: (Symbol name, untyped value) -> Class
       def object_class!: (Symbol name, untyped value) -> object_class
       def parsing_classes!: (array_class: untyped, object_class: untyped) -> void
+      def no_unknown_keywords!: (Symbol http_method, String endpoint, Hash[Symbol | String, untyped] keywords) -> void
 
       private
       def invalid_header!: (untyped name, untyped header) -> bot
