@@ -449,15 +449,17 @@ module X
     #
     # A request to another origin than the base URL carries none of the client's credentials, as a redirect to one
     # carries none of them. The error on_response or the block of the request raises, as the error from_response
-    # raises, is tagged as a CallbackError, so that it is not taken for an error of the response.
+    # raises, is tagged as a CallbackError, so that it is not taken for an error of the response. The response is
+    # reported, and its error named, for the request it answers, which a redirect may have sent to another URI with
+    # another method than the request was made with.
     #
     # @api private
     # @return [Object, nil] the parsed response body, or what an object_class that responds to from_response builds
     def perform(http_method, uri, body:, headers:, array_class:, object_class:, &)
       authenticator, headers = Core::Origin.credentials_for(from: URI(base_url), to: uri, authenticator: self.authenticator, headers:)
       request = @request_builder.build(http_method:, uri:, body:, headers:, authenticator:)
-      response = @redirect_handler.handle(response: @connection.perform(request:), request:, headers:, authenticator:)
-      Core::CallbackError.tagging { report(http_method, uri, response, &) }
+      response, request = @redirect_handler.follow(response: @connection.perform(request:), request:, headers:, authenticator:)
+      Core::CallbackError.tagging { report(request.method.downcase.to_sym, request.uri, response, &) }
       @response_parser.parse(response:, array_class:, object_class:, client: self, request:)
     end
   end

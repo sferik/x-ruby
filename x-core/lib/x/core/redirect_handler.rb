@@ -90,17 +90,37 @@ module X
       # @example Handle a response
       #   response = handler.handle(response: resp, request: req)
       def handle(response:, request:, headers: {}, authenticator: Authenticator.new, redirect_count: 0)
-        return response unless response.is_a?(Net::HTTPRedirection)
+        follow(response:, request:, headers:, authenticator:, redirect_count:).first
+      end
+
+      # Follow redirects, and return the final response with the request it answers
+      #
+      # Redirects are followed as handle follows them. The final response answers the last request that was sent, which a redirect may have sent to another URI
+      # with another method, so the response is reported, and its error named, for that request rather than the
+      # first.
+      #
+      # @api private
+      # @param response [Net::HTTPResponse] the HTTP response to handle
+      # @param request [Net::HTTPRequest] the request the response answers, built from a URI
+      # @param headers [Hash] additional headers to send with redirected requests
+      # @param authenticator [Authenticator] the authenticator for requests
+      # @param redirect_count [Integer] the current redirect count
+      # @return [Array(Net::HTTPResponse, Net::HTTPRequest)] the final HTTP response and the request it answers
+      # @raise [TooManyRedirects] if the maximum number of redirects is exceeded
+      # @example Follow a response
+      #   response, request = handler.follow(response: resp, request: req)
+      def follow(response:, request:, headers: {}, authenticator: Authenticator.new, redirect_count: 0)
+        return [response, request] unless response.is_a?(Net::HTTPRedirection)
 
         uri = request.uri #: URI::Generic
         new_uri = build_new_uri(response, uri)
-        return response if new_uri.nil?
+        return [response, request] if new_uri.nil?
         check_redirect_count(request, redirect_count)
 
         preserve = preserves_method?(request, Integer(response.code))
         authenticator, headers = Origin.credentials_for(from: uri, to: new_uri, authenticator:, headers: headers_for(preserve, headers))
         new_request = build_request(request, new_uri, preserve, headers, authenticator)
-        handle(response: connection.perform(request: new_request), request: new_request, headers:, authenticator:,
+        follow(response: connection.perform(request: new_request), request: new_request, headers:, authenticator:,
           redirect_count: redirect_count + 1)
       end
 

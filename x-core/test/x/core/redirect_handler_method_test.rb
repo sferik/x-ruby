@@ -50,5 +50,22 @@ module X
 
       assert_requested :get, "http://example.com/2", headers: {"X-Custom" => "value"}
     end
+
+    def test_follow_with_no_redirects_returns_the_response_and_its_request
+      request = Net::HTTP::Get.new(URI("http://example.com/some_path"))
+      response = Net::HTTPSuccess.new("1.1", "200", "OK")
+
+      assert_equal [response, request], @redirect_handler.follow(response:, request:)
+    end
+
+    def test_follow_returns_the_request_the_final_response_answers
+      request = Net::HTTP::Post.new(URI("http://example.com/old"))
+      response = Net::HTTPSeeOther.new("1.1", "303", "See Other")
+      response["Location"] = "http://example.com/new"
+      stub_request(:get, "http://example.com/new")
+      final_response, final_request = @redirect_handler.follow(response:, request:)
+
+      assert_equal ["200", "GET", "http://example.com/new"], [final_response.code, final_request.method, final_request.uri.to_s]
+    end
   end
 end

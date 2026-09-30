@@ -27,6 +27,25 @@ module X
       assert_equal [[:post, 429]], @responses.map { |response| [response.http_method, response.status] }
     end
 
+    def redirect_to_a_missing_resource
+      stub_request(:post, "https://api.x.com/2/old").to_return(status: 303, headers: {"Location" => "https://api.x.com/2/new"})
+      stub_request(:get, "https://api.x.com/2/new").to_return(status: 404, body: '{"title":"Not Found"}', headers: {"Content-Type" => "application/json"})
+      assert_raises(NotFound) { @client.post("old", {text: "hi"}) }
+    end
+
+    def test_a_redirected_request_is_reported_for_the_request_the_response_answers
+      redirect_to_a_missing_resource
+
+      assert_equal [[:get, "https://api.x.com/2/new", 404]], @responses.map { |response| [response.http_method, response.uri.to_s, response.status] }
+    end
+
+    def test_the_error_of_a_redirected_request_names_the_request_the_response_answers
+      error = redirect_to_a_missing_resource
+
+      assert_equal [:get, "https://api.x.com/2/new"], [error.http_method, error.uri.to_s]
+      assert_match(%r{\AGET /2/new: }, error.message)
+    end
+
     def test_on_response_receives_each_object_a_stream_delivers_before_it_is_yielded
       stub_request(:get, "https://api.x.com/2/tweets/sample/stream")
         .to_return(body: "{\"data\":{\"id\":\"1\"},\"includes\":{\"users\":[{\"id\":\"2\"}]}}\r\n\r\n{\"data\":{\"id\":\"3\"}}\r\n", headers: {"x-rate-limit-limit" => "50", "x-rate-limit-remaining" => "49", "x-rate-limit-reset" => "1"})
