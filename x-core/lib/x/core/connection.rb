@@ -8,6 +8,7 @@ require_relative "connection_pool"
 require_relative "connection_proxy"
 require_relative "connection_request"
 require_relative "proxy_setting"
+require_relative "request_context"
 require_relative "setting_validator"
 require_relative "errors/network_error"
 require_relative "errors/callback_error"
@@ -145,7 +146,7 @@ module X
         use_ssl = uri.scheme.eql?("https")
         send_request(request, [use_ssl, hostname, port], -> { open_http_client(uri, use_ssl) })
       rescue *NETWORK_ERRORS => e
-        raise NetworkError.new("Network error: #{e}", request:)
+        raise NetworkError.new("Network error: #{e}", **RequestContext.of(request))
       end
 
       # Perform a streaming HTTP request
@@ -176,7 +177,7 @@ module X
         http_client.use_ssl = request.uri.scheme.eql?("https")
         http_client.request(request, &)
       rescue *NETWORK_ERRORS => e
-        raise NetworkError.new("Network error: #{e}", request:)
+        raise NetworkError.new("Network error: #{e}", **RequestContext.of(request))
       end
 
       # Close the connections kept open between requests

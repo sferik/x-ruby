@@ -26,21 +26,22 @@ module X
       # Initialize a new InvalidResponse
       #
       # Public, so that code that rescues an InvalidResponse can be tested with one built from a Net::HTTP response, as
-      # ResponseParser and StreamParser build one. The error names the request, when given one, as x-core names the
-      # request the response answers.
+      # ResponseParser and StreamParser build one. The error names the request, when given its method and URI, as
+      # x-core names the request the response answers.
       #
       # @api public
       # @param http_response [Net::HTTPResponse] the HTTP response
       # @param body [String, nil] the body that is not JSON
-      # @param request [Net::HTTPRequest, nil] the request the response answers, which the error names
+      # @param http_method [Symbol, String, nil] the method of the request the response answers, in any case
+      # @param uri [URI::Generic, nil] the URI of the request the response answers
       # @return [InvalidResponse] a new instance
       # @example Create an error
       #   error = X::InvalidResponse.new(http_response: response, body: response.body)
       # @example Create an error for a line of a stream
-      #   error = X::InvalidResponse.new(http_response: response, body: line, request: request)
-      def initialize(http_response:, body: nil, request: nil)
+      #   error = X::InvalidResponse.new(http_response: response, body: line, http_method: :get, uri: stream_uri)
+      def initialize(http_response:, body: nil, http_method: nil, uri: nil)
         @body = body
-        super(http_response:, request:)
+        super(http_response:, http_method:, uri:)
       end
 
       private

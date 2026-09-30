@@ -24,7 +24,7 @@ module X
       end
     end
 
-    def request = Net::HTTP::Get.new(URI("https://api.x.com/2/users/1"))
+    URI_OF_REQUEST = URI("https://api.x.com/2/users/1?user.fields=id")
 
     def test_an_http_error_is_built_from_a_response
       error = NotFound.new(http_response: not_found)
@@ -34,18 +34,25 @@ module X
     end
 
     def test_an_http_error_names_the_request_it_is_given
-      error = NotFound.new(http_response: not_found, request:)
+      error = NotFound.new(http_response: not_found, http_method: :get, uri: URI_OF_REQUEST)
 
-      assert_equal [:get, URI("https://api.x.com/2/users/1")], [error.http_method, error.uri]
+      assert_equal [:get, URI_OF_REQUEST], [error.http_method, error.uri]
+      assert_equal "GET /2/users/1: Not Found Error: Could not find user.", error.message
     end
 
     def test_the_errors_of_a_request_are_built_with_a_message
       [NetworkError, TooManyRedirects].each do |error_class|
-        error = error_class.new("went wrong", request:)
+        error = error_class.new("went wrong", http_method: :get, uri: URI_OF_REQUEST)
 
-        assert_equal [:get, URI("https://api.x.com/2/users/1")], [error.http_method, error.uri]
-        assert_includes error.message, "went wrong"
+        assert_equal [:get, URI_OF_REQUEST, "GET /2/users/1: went wrong"], [error.http_method, error.uri, error.message]
       end
+    end
+
+    def test_the_errors_of_a_line_of_a_stream_name_the_request_of_the_stream
+      problems = [Problem.new({"title" => "operational-disconnect"})]
+
+      assert_equal "GET /2/users/1: operational-disconnect", StreamError.new(problems, http_method: :get, uri: URI_OF_REQUEST).message
+      assert_equal [:get, URI_OF_REQUEST], InvalidResponse.new(http_response: not_found, body: "<", http_method: :get, uri: URI_OF_REQUEST).then { |error| [error.http_method, error.uri] }
     end
 
     def test_an_invalid_response_is_built_from_a_response

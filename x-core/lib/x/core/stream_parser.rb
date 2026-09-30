@@ -5,6 +5,7 @@ require "net/http"
 require_relative "errors/callback_error"
 require_relative "errors/stream_error"
 require_relative "problem"
+require_relative "request_context"
 require_relative "response_parser"
 
 module X
@@ -47,7 +48,7 @@ module X
             decode_line(line, response_parser:, array_class:, object_class:, client:, request:)
           end
         rescue JSON::ParserError
-          raise InvalidResponse.new(http_response: response, body: line, request:)
+          raise InvalidResponse.new(http_response: response, body: line, **RequestContext.of(request))
         end
         read_lines(response:, decode:, &block)
       end
@@ -96,7 +97,7 @@ module X
       def decode_line(line, response_parser:, array_class:, object_class:, client:, request:)
         body = JSON.parse(line)
         problems = (Hash === body && !body.key?("data")) ? Problem.all_from(body) : [] #: Array[Problem]
-        raise StreamError.new(problems, request:) unless problems.empty?
+        raise StreamError.new(problems, **RequestContext.of(request)) unless problems.empty?
         return object_class.from_response(body, client:) if object_class.respond_to?(:from_response)
 
         response_parser.decode(line, array_class:, object_class:)

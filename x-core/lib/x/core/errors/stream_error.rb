@@ -39,17 +39,19 @@ module X
       # Initialize a new StreamError
       #
       # Public, so that code that rescues a StreamError can be tested with one built by hand, as StreamParser builds one
-      # for a line of a stream. The error names the request, when given one, as x-core names the request of the stream.
+      # for a line of a stream. The error names the request, when given its method and URI, as x-core names the request
+      # of the stream.
       #
       # @api public
       # @param problems [Array<Problem>] the problems the line held
-      # @param request [Net::HTTPRequest, nil] the request of the stream, which the error names
+      # @param http_method [Symbol, String, nil] the method of the request of the stream, in any case
+      # @param uri [URI::Generic, nil] the URI of the request of the stream
       # @return [StreamError] a new instance
       # @example Create an error
-      #   error = X::StreamError.new(X::Problem.all_from(body), request: request)
-      def initialize(problems, request: nil)
+      #   error = X::StreamError.new(X::Problem.all_from(body), http_method: :get, uri: stream_uri)
+      def initialize(problems, http_method: nil, uri: nil)
         @problems = problems.dup.freeze
-        name_request(request)
+        name_request(http_method, uri)
         super(message_naming_request(problems.map { |problem| [problem.title, problem.detail || problem.message].compact.join(": ") }.join(", ")))
       end
     end

@@ -25,17 +25,18 @@ module X
       # Initialize a new NetworkError
       #
       # Public, so that code that rescues a NetworkError can be tested with one built by hand, as Connection builds one
-      # for the errors a socket raises. The error names the request, when given one, as x-core names the request that
-      # failed.
+      # for the errors a socket raises. The error names the request, when given its method and URI, as x-core names the
+      # request that failed.
       #
       # @api public
       # @param message [String] what went wrong on the network
-      # @param request [Net::HTTPRequest, nil] the request that failed, which the error names
+      # @param http_method [Symbol, String, nil] the method of the request that failed, in any case
+      # @param uri [URI::Generic, nil] the URI of the request that failed
       # @return [NetworkError] a new instance
       # @example Create a network error
-      #   error = X::NetworkError.new("Network error: Connection refused", request: request)
-      def initialize(message, request: nil)
-        name_request(request)
+      #   error = X::NetworkError.new("Network error: Connection refused", http_method: :get, uri: URI("https://api.x.com/2/users/me"))
+      def initialize(message, http_method: nil, uri: nil)
+        name_request(http_method, uri)
         super(message_naming_request(message))
       end
     end

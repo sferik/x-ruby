@@ -16,15 +16,11 @@ module X
     #
     # @api private
     module RequestContext
-      # The query of a request target, which the message of an error leaves out
-      QUERY = /\?.*\z/
-      private_constant :QUERY
-
       # The HTTP method the request was sent with
       #
       # @api public
-      # @return [Symbol, nil] the method, as :get, :post, :put, or :delete, or nil for an error built without a
-      #   request, such as one a test built from a response alone
+      # @return [Symbol, nil] the method, as :get, :post, :put, or :delete, or nil for an error built without one,
+      #   such as one a test built from a response alone
       # @example Tell a read that failed from a write
       #   writes_failed += 1 unless error.http_method.eql?(:get)
       attr_reader :http_method
@@ -32,10 +28,23 @@ module X
       # The URI the request was sent to
       #
       # @api public
-      # @return [URI::Generic, nil] the URI, or nil for an error built without a request
+      # @return [URI::Generic, nil] the URI, or nil for an error built without one
       # @example Count the failures of each endpoint
       #   failures[error.uri.path] += 1
       attr_reader :uri
+
+      # The method and URI of a request, as the keywords of an error that names it
+      #
+      # The errors take the method and URI of a request rather than the Net::HTTP request itself, so that code that
+      # builds one, as a test does, depends on neither Net::HTTP nor the way x-core sends a request.
+      #
+      # @api private
+      # @param request [Net::HTTPRequest, nil] the request that failed, or nil for none
+      # @return [Hash{Symbol => Object}, nil] the http_method and uri of the request, or nil, which splats no keywords,
+      #   for none
+      # @example The keywords of a request
+      #   RequestContext.of(request) # => {http_method: "GET", uri: #<URI::HTTPS https://api.x.com/2/users/me>}
+      def self.of(request) = request && {http_method: request.method, uri: request.uri}
 
       private
 
@@ -45,12 +54,16 @@ module X
       # URI naming a host and nothing else is named as the request for its root that it was sent as.
       #
       # @api private
-      # @param request [Net::HTTPRequest, nil] the request that failed, or nil for an error built without one
+      # @param http_method [Symbol, String, nil] the method the request was sent with, in any case, or nil for none
+      # @param uri [URI::Generic, nil] the URI the request was sent to, or nil for none
       # @return [void]
-      def name_request(request)
-        @http_method = request&.method&.downcase&.to_sym
-        @uri = request&.uri
-        @request_line = request && "#{request.method} #{request.path.sub(QUERY, "")}"
+      def name_request(http_method, uri)
+        @http_method = http_method&.downcase&.to_sym
+        @uri = uri
+        return unless http_method && uri
+
+        path = uri.path #: String
+        @request_line = "#{http_method.upcase} #{path.empty? ? "/" : path}"
       end
 
       # The message of an error, behind the request it names

@@ -24,6 +24,7 @@ require_relative "errors/unauthorized"
 require_relative "errors/unavailable_for_legal_reasons"
 require_relative "errors/unprocessable_entity"
 require_relative "errors/unsupported_media_type"
+require_relative "request_context"
 
 module X
   module Core
@@ -84,7 +85,7 @@ module X
         begin
           decode(body, array_class:, object_class:, client:)
         rescue JSON::ParserError
-          raise InvalidResponse.new(http_response: response, body:, request:)
+          raise InvalidResponse.new(http_response: response, body:, **RequestContext.of(request))
         end
       end
 
@@ -125,7 +126,7 @@ module X
       # @example Raise the error of a response
       #   raise parser.error(response, request)
       def error(response, request)
-        error_class(response).new(http_response: response, request:)
+        error_class(response).new(http_response: response, **RequestContext.of(request))
       end
 
       private

@@ -112,6 +112,13 @@ module X
       assert_nil error.uri
     end
 
+    def test_the_error_of_a_response_parsed_without_a_request_names_none
+      stub_request(:get, "https://api.x.com/2/users/1").to_return(status: 404, headers: {"content-type" => "application/json"}, body: '{"errors": [{"message": "Could not find user"}]}')
+      error = assert_raises(NotFound) { Core.const_get(:ResponseParser).new.parse(response: Net::HTTP.get_response(URI("https://api.x.com/2/users/1"))) }
+
+      assert_equal ["Could not find user", nil, nil], [error.message, error.http_method, error.uri]
+    end
+
     def test_a_network_error_built_without_a_request_names_none
       error = NetworkError.new("Network error: Connection refused")
 

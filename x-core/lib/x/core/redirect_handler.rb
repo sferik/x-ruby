@@ -6,6 +6,7 @@ require_relative "authenticator"
 require_relative "connection"
 require_relative "errors/too_many_redirects"
 require_relative "origin"
+require_relative "request_context"
 require_relative "request_builder"
 require_relative "setting_validator"
 
@@ -133,7 +134,7 @@ module X
       # @return [void]
       # @raise [TooManyRedirects] if max_redirects have been followed
       def check_redirect_count(request, redirect_count)
-        raise TooManyRedirects.new("Too many redirects", request:) if redirect_count >= max_redirects
+        raise TooManyRedirects.new("Too many redirects", **RequestContext.of(request)) if redirect_count >= max_redirects
       end
 
       # Build a new URI from the redirect response

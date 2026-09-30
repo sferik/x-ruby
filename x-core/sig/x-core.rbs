@@ -133,7 +133,7 @@ module X
     attr_reader problems: Array[Problem]
     attr_reader problem: Problem?
 
-    def initialize: (http_response: Net::HTTPResponse, ?request: Net::HTTPRequest?) -> void
+    def initialize: (http_response: Net::HTTPResponse, ?http_method: (Symbol | String)?, ?uri: URI::Generic?) -> void
     def http_method: () -> Symbol?
     def uri: () -> URI::Generic?
     def headers: () -> Hash[String, String]
@@ -161,7 +161,7 @@ module X
   end
 
   class NetworkError < Error
-    def initialize: (String message, ?request: Net::HTTPRequest?) -> void
+    def initialize: (String message, ?http_method: (Symbol | String)?, ?uri: URI::Generic?) -> void
     def http_method: () -> Symbol?
     def uri: () -> URI::Generic?
   end
@@ -194,13 +194,13 @@ module X
   class StreamError < Error
     attr_reader problems: Array[Problem]
 
-    def initialize: (Array[Problem] problems, ?request: Net::HTTPRequest?) -> void
+    def initialize: (Array[Problem] problems, ?http_method: (Symbol | String)?, ?uri: URI::Generic?) -> void
     def http_method: () -> Symbol?
     def uri: () -> URI::Generic?
   end
 
   class TooManyRedirects < Error
-    def initialize: (String message, ?request: Net::HTTPRequest?) -> void
+    def initialize: (String message, ?http_method: (Symbol | String)?, ?uri: URI::Generic?) -> void
     def http_method: () -> Symbol?
     def uri: () -> URI::Generic?
   end
@@ -220,7 +220,7 @@ module X
   class InvalidResponse < HTTPError
     attr_reader body: String?
 
-    def initialize: (http_response: Net::HTTPResponse, ?body: String?, ?request: Net::HTTPRequest?) -> void
+    def initialize: (http_response: Net::HTTPResponse, ?body: String?, ?http_method: (Symbol | String)?, ?uri: URI::Generic?) -> void
   end
 
   class TooManyRequests < ClientError

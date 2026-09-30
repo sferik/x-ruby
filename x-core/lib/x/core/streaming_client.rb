@@ -9,6 +9,7 @@ require_relative "origin"
 require_relative "problem"
 require_relative "proxy_setting"
 require_relative "reconnect_handler"
+require_relative "request_context"
 require_relative "request_builder"
 require_relative "request_encoding"
 require_relative "response"
@@ -340,7 +341,7 @@ module X
           @stream_parser.process(response:, response_parser: @response_parser, array_class:, object_class:, client:,
             on_body: ->(body = nil) { report(uri, response, body) }, request:, &)
         end
-        raise NetworkError.new(ENDED_MESSAGE, request:)
+        raise NetworkError.new(ENDED_MESSAGE, **RequestContext.of(request))
       end
 
       # The client the rules are read and changed with, which authenticates as the app

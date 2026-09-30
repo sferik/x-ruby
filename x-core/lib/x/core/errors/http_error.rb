@@ -76,17 +76,18 @@ module X
       #
       # Public, so that code that rescues an HTTPError, or a subclass such as NotFound, can be tested with one built from a
       # Net::HTTP response, as x-core builds each from the response it parses. The error names the request, when given
-      # one, as x-core names the request the response answers.
+      # its method and URI, as x-core names the request the response answers.
       #
       # @api public
       # @param http_response [Net::HTTPResponse] the HTTP response
-      # @param request [Net::HTTPRequest, nil] the request the response answers, which the error names
+      # @param http_method [Symbol, String, nil] the method of the request the response answers, in any case
+      # @param uri [URI::Generic, nil] the URI of the request the response answers
       # @return [HTTPError] a new instance
       # @example Create an HTTP error
-      #   error = X::HTTPError.new(http_response: response, request: request)
-      def initialize(http_response:, request: nil)
+      #   error = X::HTTPError.new(http_response: response, http_method: :get, uri: URI("https://api.x.com/2/users/me"))
+      def initialize(http_response:, http_method: nil, uri: nil)
         @http_response = http_response
-        name_request(request)
+        name_request(http_method, uri)
         parsed = parsed_body
         errors = errors_from(parsed)
         described = (Problem.new(parsed) if describes_problem?(parsed))

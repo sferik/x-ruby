@@ -4,6 +4,7 @@ require "json"
 require "net/http"
 require "simple_oauth"
 require "uri"
+require_relative "request_context"
 require_relative "response_parser"
 
 module X
@@ -111,7 +112,7 @@ module X
       def failure(response, request)
         return ResponseParser.new.error(response, request) unless response.is_a?(Net::HTTPSuccess)
 
-        InvalidResponse.new(http_response: response, body: response.body, request:)
+        InvalidResponse.new(http_response: response, body: response.body, **RequestContext.of(request))
       end
 
       # Build the POST that sends a token request

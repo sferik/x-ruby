@@ -74,8 +74,6 @@ module X
     end
 
     module RequestContext
-      QUERY: Regexp
-
       @http_method: Symbol?
       @uri: URI::Generic?
       @request_line: String?
@@ -83,8 +81,10 @@ module X
       attr_reader http_method: Symbol?
       attr_reader uri: URI::Generic?
 
+      def self.of: (Net::HTTPRequest? request) -> { http_method: String, uri: URI::Generic }?
+
       private
-      def name_request: (Net::HTTPRequest? request) -> void
+      def name_request: ((Symbol | String)? http_method, URI::Generic? uri) -> void
       def message_naming_request: (String message) -> String
     end
 
