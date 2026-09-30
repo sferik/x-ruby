@@ -33,12 +33,9 @@ module X
     # A minor release may add to it the expansions the API adds, so that a lookup asks for them too; see
     # {Resource#hydrated?} for what that means for a resource looked up with a list of expansions of its own.
     EXPANSIONS = %w[affiliation most_recent_post_id pinned_post_id].freeze
-    # Maximum number of followers, followed users, or affiliates per page
-    MAX_FOLLOW_RESULTS = 1000
-    # Maximum number of posts or lists per page
-    MAX_RESULTS = 100
     # Maximum number of users per page of a user search
     MAX_SEARCH_RESULTS = 1000
+    private_constant :MAX_SEARCH_RESULTS
 
     class << self
       # The API endpoint used to look up users by identifier

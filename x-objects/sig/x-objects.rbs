@@ -24,7 +24,6 @@ module X
 
   class Trend
     FIELDS: Array[String]
-    MAX_TRENDS: Integer
 
     attr_reader attrs: Hash[String, untyped]
 
@@ -423,9 +422,6 @@ module X
 
     FIELDS: Array[String]
     EXPANSIONS: Array[String]
-    MAX_FOLLOW_RESULTS: Integer
-    MAX_RESULTS: Integer
-    MAX_SEARCH_RESULTS: Integer
 
     def self.default_params: () -> Hash[String, Array[String]]
     def self.find_by_id: (Objects::id id, client: Objects::_Client, **untyped params) ?{ (Problem problem) -> void } -> User?
@@ -529,8 +525,6 @@ module X
 
     FIELDS: Array[String]
     EXPANSIONS: Array[String]
-    MAX_RESULTS: Integer
-    MAX_ARCHIVE_RESULTS: Integer
 
     def self.default_params: () -> Hash[String, Array[String]]
     def self.search: (String query, client: Objects::_Client, **untyped params) -> Cursor[Post]
@@ -643,7 +637,6 @@ module X
     extend Objects::_Lookup[Community]
     include Objects::_Hydration[Community]
     FIELDS: Array[String]
-    MAX_RESULTS: Integer
 
     def id: () -> Integer
 
@@ -666,7 +659,6 @@ module X
     include Objects::_Hydration[List]
     FIELDS: Array[String]
     EXPANSIONS: Array[String]
-    MAX_RESULTS: Integer
 
     def id: () -> Integer
 
@@ -703,7 +695,6 @@ module X
     include Objects::_Hydration[DirectMessage]
     FIELDS: Array[String]
     EXPANSIONS: Array[String]
-    MAX_RESULTS: Integer
 
     def id: () -> Integer
 
@@ -744,7 +735,6 @@ module X
     include Objects::_Hydration[Space]
     FIELDS: Array[String]
     EXPANSIONS: Array[String]
-    MAX_RESULTS: Integer
 
     def id: () -> String
 

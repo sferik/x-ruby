@@ -15,7 +15,9 @@ module X
     module DirectMessageConversations
       # The pattern of a conversation identifier: two user identifiers joined with a hyphen, or a group's own number
       CONVERSATION_ID = /\A\d+(-\d+)?\z/
-      private_constant :CONVERSATION_ID
+      # Maximum number of events per page of a conversation
+      MAX_RESULTS = 100
+      private_constant :CONVERSATION_ID, :MAX_RESULTS
 
       # Start a group conversation, sending its first message as the authenticated user
       #
@@ -73,7 +75,7 @@ module X
       #   X::DirectMessage.in(message, client: client).each { |event| puts event.text }
       def in(conversation, client:, **params)
         path = "dm_conversations/#{conversation_id_of(conversation)}/dm_events"
-        Cursor.__send__(:build, DirectMessage, path, client:, params: {max_results: DirectMessage::MAX_RESULTS}.merge(params))
+        Cursor.__send__(:build, DirectMessage, path, client:, params: {max_results: MAX_RESULTS}.merge(params))
       end
 
       private

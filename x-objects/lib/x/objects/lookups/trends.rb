@@ -17,7 +17,7 @@ module X
         #
         # @api public
         # @param woeid [Integer, String] the Yahoo! Where On Earth identifier of the place, such as 1 for the world
-        # @param params [Hash] query parameters, such as max_trends, which is X::Trend::MAX_TRENDS unless given
+        # @param params [Hash] query parameters, such as max_trends, which is 50, the most the API returns, unless given
         # @return [Array<Trend>] the trends, frozen
         # @raise [ArgumentError] if the WOEID is not a number, before a request
         # @example Print the ten topics trending most in the world

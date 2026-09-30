@@ -23,6 +23,7 @@ module X
     EXPANSIONS = %w[owner_id].freeze
     # Maximum number of users or posts per page
     MAX_RESULTS = 100
+    private_constant :MAX_RESULTS
 
     class << self
       # The API endpoint used to look up lists by identifier

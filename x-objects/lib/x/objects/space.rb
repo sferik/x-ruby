@@ -28,6 +28,7 @@ module X
     EXPANSIONS = %w[creator_id host_ids invited_user_ids speaker_ids topic_ids].freeze
     # Maximum number of posts or buyers per page, or of spaces a search returns
     MAX_RESULTS = 100
+    private_constant :MAX_RESULTS
 
     class << self
       # The API endpoint used to look up spaces by identifier

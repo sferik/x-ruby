@@ -12,6 +12,12 @@ module X
     #
     # @api private
     module PostSearch
+      # Maximum number of posts per page of a search, or of the reposts of the authenticated user
+      MAX_RESULTS = 100
+      # Maximum number of posts per page of full-archive search, which allows only MAX_RESULTS with context annotations
+      MAX_ARCHIVE_RESULTS = 500
+      private_constant :MAX_RESULTS, :MAX_ARCHIVE_RESULTS
+
       # Search recent posts
       #
       # @api public
@@ -23,7 +29,7 @@ module X
       #   X::Post.search("ruby -is:retweet", client: client).each { |post| puts post.text }
       def search(query, client:, **params)
         # @type self: singleton(Post)
-        Cursor.__send__(:build, self, "tweets/search/recent", client:, params: {query:, max_results: Post::MAX_RESULTS}.merge(params), min_results: 10)
+        Cursor.__send__(:build, self, "tweets/search/recent", client:, params: {query:, max_results: MAX_RESULTS}.merge(params), min_results: 10)
       end
 
       # Search the full archive of posts
@@ -41,7 +47,7 @@ module X
       #   X::Post.search_all("ruby", client: client, "post.fields": %w[author_id created_at text])
       def search_all(query, client:, **params)
         # @type self: singleton(Post)
-        max_results = context_annotations?(params) ? Post::MAX_RESULTS : Post::MAX_ARCHIVE_RESULTS
+        max_results = context_annotations?(params) ? MAX_RESULTS : MAX_ARCHIVE_RESULTS
         Cursor.__send__(:build, self, "tweets/search/all", client:, params: {query:, max_results:}.merge(params), min_results: 10)
       end
 
@@ -57,7 +63,7 @@ module X
       #   X::Post.reposts_of_me(client: client).each { |post| puts post.text }
       def reposts_of_me(client:, **params)
         # @type self: singleton(Post)
-        Cursor.__send__(:build, self, "users/reposts_of_me", client:, params: {max_results: Post::MAX_RESULTS}.merge(params))
+        Cursor.__send__(:build, self, "users/reposts_of_me", client:, params: {max_results: MAX_RESULTS}.merge(params))
       end
 
       alias_method :retweets_of_me, :reposts_of_me

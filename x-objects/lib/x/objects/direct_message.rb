@@ -25,6 +25,7 @@ module X
     EXPANSIONS = %w[attachments.media_keys participant_ids referenced_posts sender_id].freeze
     # Maximum number of events per page
     MAX_RESULTS = 100
+    private_constant :MAX_RESULTS
 
     class << self
       # The API endpoint used to look up direct message events by identifier

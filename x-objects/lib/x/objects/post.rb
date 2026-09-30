@@ -39,10 +39,6 @@ module X
     # {Resource#hydrated?} for what that means for a resource looked up with a list of expansions of its own.
     EXPANSIONS = %w[attachments.media_keys attachments.poll_ids author_id geo.place_id in_reply_to_user_id
       referenced_posts].freeze
-    # Maximum number of posts or users per page
-    MAX_RESULTS = 100
-    # Maximum number of posts per page of full-archive search, which allows only MAX_RESULTS with context annotations
-    MAX_ARCHIVE_RESULTS = 500
 
     include Objects::References
     include Objects::PostCollections

@@ -9,6 +9,10 @@ module X
     #
     # @api private
     module PostCollections
+      # Maximum number of users or posts per page
+      MAX_RESULTS = 100
+      private_constant :MAX_RESULTS
+
       # The users who liked this post
       #
       # @api public
@@ -17,7 +21,7 @@ module X
       # @example Print the users who liked a post
       #   post.liked_by.each { |user| puts user.username }
       def liked_by(**params)
-        cursor(User, "tweets/#{id}/liking_users", max_results: Post::MAX_RESULTS, **params)
+        cursor(User, "tweets/#{id}/liking_users", max_results: MAX_RESULTS, **params)
       end
 
       # The users who reposted this post
@@ -28,7 +32,7 @@ module X
       # @example Print the reposting users
       #   post.reposted_by.each { |user| puts user.username }
       def reposted_by(**params)
-        cursor(User, "tweets/#{id}/retweeted_by", max_results: Post::MAX_RESULTS, **params)
+        cursor(User, "tweets/#{id}/retweeted_by", max_results: MAX_RESULTS, **params)
       end
 
       # The reposts of this post, each a post of its own by the user who reposted it
@@ -39,7 +43,7 @@ module X
       # @example Print when and by whom a post was reposted
       #   post.reposts.each { |repost| puts "#{repost.author.username} at #{repost.created_at}" }
       def reposts(**params)
-        cursor(Post, "tweets/#{id}/retweets", max_results: Post::MAX_RESULTS, **params)
+        cursor(Post, "tweets/#{id}/retweets", max_results: MAX_RESULTS, **params)
       end
 
       # The posts quoting this post
@@ -50,7 +54,7 @@ module X
       # @example Print the quotes
       #   post.quotes.each { |quote| puts quote.text }
       def quotes(**params)
-        cursor(Post, "tweets/#{id}/quote_tweets", max_results: Post::MAX_RESULTS, min_results: 10, **params)
+        cursor(Post, "tweets/#{id}/quote_tweets", max_results: MAX_RESULTS, min_results: 10, **params)
       end
 
       alias_method :retweeted_by, :reposted_by

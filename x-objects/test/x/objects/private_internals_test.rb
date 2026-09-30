@@ -38,6 +38,15 @@ module X
       assert_raises(NameError) { Cursor::DEFAULT_TOKEN_PARAM }
     end
 
+    def test_the_sizes_of_the_pages_a_resource_asks_for_are_private
+      [-> { Community::MAX_RESULTS }, -> { DirectMessage::MAX_RESULTS }, -> { List::MAX_RESULTS }, -> { Space::MAX_RESULTS },
+        -> { Trend::MAX_TRENDS }, -> { User::MAX_SEARCH_RESULTS }, -> { User::MAX_RESULTS }, -> { Post::MAX_RESULTS },
+        -> { Objects::UserCollections::MAX_FOLLOW_RESULTS }, -> { Objects::PostSearch::MAX_ARCHIVE_RESULTS },
+        -> { Objects::PostCollections::MAX_RESULTS }, -> { Objects::DirectMessageConversations::MAX_RESULTS }].each do |constant|
+        assert_raises(NameError, &constant)
+      end
+    end
+
     def test_the_trends_of_a_user_and_the_usage_name_their_endpoints_privately
       assert_raises(NameError) { PersonalizedTrend::ENDPOINT }
       assert_raises(NameError) { Usage::ENDPOINT }

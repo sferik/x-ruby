@@ -362,6 +362,7 @@ module X
     end
 
     module DirectMessageConversations
+      MAX_RESULTS: Integer
       CONVERSATION_ID: Regexp
 
       def create_group: (Array[id] users, ?String? text, client: _Client, ?media_ids: untyped, **untyped params) -> DirectMessage?
@@ -396,6 +397,8 @@ module X
     end
 
     module PostSearch : _ResourceClass[Post]
+      MAX_RESULTS: Integer
+      MAX_ARCHIVE_RESULTS: Integer
       def search: (String query, client: _Client, **untyped params) -> Cursor[Post]
       def search_all: (String query, client: _Client, **untyped params) -> Cursor[Post]
       def reposts_of_me: (client: _Client, **untyped params) -> Cursor[Post]
@@ -406,6 +409,8 @@ module X
     end
 
     module UserCollections : Resource
+      MAX_FOLLOW_RESULTS: Integer
+      MAX_RESULTS: Integer
       def followers: (**untyped params) -> Cursor[User]
       def following: (**untyped params) -> Cursor[User]
       def blocking: (**untyped params) -> Cursor[User]
@@ -426,6 +431,7 @@ module X
     end
 
     module PostCollections : Resource
+      MAX_RESULTS: Integer
       def liked_by: (**untyped params) -> Cursor[User]
       def reposted_by: (**untyped params) -> Cursor[User]
       def retweeted_by: (**untyped params) -> Cursor[User]
@@ -619,6 +625,7 @@ module X
   end
 
   class Trend
+    MAX_TRENDS: Integer
     include Objects::ValueEquality
     include Objects::ValueMarshalling
     include Objects::Serialization
@@ -756,6 +763,7 @@ module X
   end
 
   class User < Resource
+    MAX_SEARCH_RESULTS: Integer
     include Objects::Relationships
     include Objects::UserCollections
     extend Objects::UserFinders
@@ -783,6 +791,7 @@ module X
   end
 
   class Community < Resource
+    MAX_RESULTS: Integer
     extend Objects::Finders
 
     private def self.endpoint: () -> String
@@ -790,6 +799,7 @@ module X
   end
 
   class List < Resource
+    MAX_RESULTS: Integer
     extend Objects::Finders
 
     private def self.endpoint: () -> String
@@ -802,6 +812,7 @@ module X
   end
 
   class DirectMessage < Resource
+    MAX_RESULTS: Integer
     extend Objects::Finders
     extend Objects::DirectMessageConversations
 
@@ -810,6 +821,7 @@ module X
   end
 
   class Space < Resource
+    MAX_RESULTS: Integer
     extend Objects::BatchFinders
 
     private def self.id_type: () -> Symbol

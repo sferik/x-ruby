@@ -18,6 +18,7 @@ module X
     FIELDS = %w[access created_at description id join_policy member_count name].freeze
     # Maximum number of communities per page of a search
     MAX_RESULTS = 100
+    private_constant :MAX_RESULTS
 
     class << self
       # The API endpoint used to look up communities by identifier

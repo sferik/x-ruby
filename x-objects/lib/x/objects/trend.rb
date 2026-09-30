@@ -24,6 +24,7 @@ module X
     FIELDS = %w[trend_name tweet_count].freeze
     # The most trends the API returns for a place, which it returns 20 of unless asked for more
     MAX_TRENDS = 50
+    private_constant :MAX_TRENDS
 
     # The raw attributes of the trend
     # @api public
@@ -48,7 +49,7 @@ module X
     # @api public
     # @param woeid [Integer, String] the Yahoo! Where On Earth identifier of the place, such as 1 for the world
     # @param client [Object] the client used to make the request
-    # @param params [Hash] query parameters, such as max_trends, which is MAX_TRENDS unless given
+    # @param params [Hash] query parameters, such as max_trends, which is 50, the most the API returns, unless given
     # @return [Array<Trend>] the trends, frozen
     # @raise [ArgumentError] if the WOEID is not a number, before a request
     # @raise [InvalidAttribute] if the response holds the trends as something other than a list of objects
