@@ -234,12 +234,19 @@ module X
 
       # Check whether a user sent this message
       #
+      # A message that does not name its sender, as the message a new direct message returns does not, or one fetched
+      # with dm_event.fields that leave sender_id out, cannot say who sent it, so it answers nil rather than false.
+      #
       # @api public
       # @param user [User, String, Integer] the user or their identifier
-      # @return [Boolean] true if the user sent the message
+      # @return [Boolean, nil] true if the user sent the message, false if another user did, or nil if the message does
+      #   not name its sender
       # @example Split messages into sent and received
       #   messages.partition { |message| message.from?(client.current_user!) }
-      def from?(user) = sender_id.to_s.eql?(Utils.id_of(user, User))
+      def from?(user)
+        user_id = Utils.id_of(user, User)
+        sender_id.to_s.eql?(user_id) unless sender_id.nil?
+      end
 
       # Check whether the message belongs to a group conversation
       #
@@ -259,20 +266,23 @@ module X
       # The other participant of a one-to-one conversation, as seen by a user
       #
       # The sender, when the user did not send the message, and otherwise the other member of the
-      # conversation, from the includes or as a stub holding only its identifier. A group conversation has no one
-      # other participant.
+      # conversation, from the includes or as a stub holding only its identifier. A message that does not name its
+      # sender, as the message a new direct message returns does not, is read by its conversation alone, whose other
+      # member is the peer of a user who is one of its two. A group conversation has no one other participant.
       #
       # @api public
       # @param user [User, String, Integer] the user, usually the authenticated user, or their identifier
-      # @return [User, nil] the other participant, or nil for a group conversation or one without another participant
+      # @return [User, nil] the other participant, or nil for a group conversation, one without another participant,
+      #   or one the user is not a member of
       # @example Print who each message was exchanged with
       #   client.direct_messages.reject(&:group?).each { |message| puts message.peer(client.current_user!).username }
       def peer(user)
         return if group?
-        return sender unless from?(user)
+        return sender if from?(user).eql?(false)
 
         user_id = Utils.id_of(user, User)
-        resolve(User, dm_conversation_id.to_s.split("-").find { |id| !id.eql?(user_id) }) #: User?
+        members = dm_conversation_id.to_s.split("-")
+        resolve(User, members.find { |id| !id.eql?(user_id) }) if members.include?(user_id) #: User?
       end
 
       # Delete this direct message event as the authenticated user

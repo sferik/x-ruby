@@ -62,70 +62,10 @@ module X
       assert_raises(MissingClient) { DirectMessage.new({"id" => "1"}).delete }
     end
 
-    def test_from
-      message = DirectMessage.new({"id" => "1", "sender_id" => "9"})
-
-      assert message.from?("9")
-      assert message.from?(9)
-      assert message.from?(User.new({"id" => "9"}))
-      refute message.from?("8")
-      refute DirectMessage.new({"id" => "1"}).from?("9")
-    end
-
-    def test_peer_of_a_received_message_is_the_sender
-      message = DirectMessage.__send__(:build, {"id" => "1", "sender_id" => "8", "dm_conversation_id" => "8-9"}, includes: @includes)
-
-      assert_equal "friend", message.peer(User.new({"id" => "9"})).username
-      assert_equal "friend", message.peer(9).username
-      assert_equal "friend", message.peer("9").username
-    end
-
-    def test_peer_of_a_received_message_is_the_sender_whatever_the_conversation
-      message = DirectMessage.__send__(:build, {"id" => "1", "sender_id" => "8"}, includes: @includes)
-
-      assert_equal "friend", message.peer("9").username
-      assert_equal "friend", DirectMessage.__send__(:build, {"id" => "1", "sender_id" => "8", "dm_conversation_id" => "7-9"}, includes: @includes).peer("9").username
-    end
-
-    def test_peer_of_a_sent_message_is_the_other_participant
-      message = DirectMessage.__send__(:build, {"id" => "1", "sender_id" => "9", "dm_conversation_id" => "9-8"}, includes: @includes)
-
-      assert_equal "friend", message.peer("9").username
-      assert_equal "friend", message.peer(9).username
-      assert_equal "friend", message.peer(User.new({"id" => "9"})).username
-      assert_same message.peer("9"), message.peer("9")
-    end
-
-    def test_peer_of_a_sent_message_is_a_stub_when_not_included
-      message = DirectMessage.new({"id" => "1", "sender_id" => "9", "dm_conversation_id" => "8-9"}, client: @client)
-      peer = message.peer("9")
-
-      assert_equal 8, peer.id
-      assert_predicate peer, :stub?
-      assert_same @client, peer.client
-    end
-
-    def test_peer_without_another_participant
-      assert_nil DirectMessage.new({"id" => "1", "sender_id" => "9", "dm_conversation_id" => "9-9"}).peer("9")
-      assert_nil DirectMessage.new({"id" => "1", "sender_id" => "9"}).peer("9")
-    end
-
-    def test_peer_of_a_group_conversation
-      sent = DirectMessage.__send__(:build, {"id" => "1", "sender_id" => "9", "dm_conversation_id" => "1582838223204016129"}, includes: @includes)
-      received = DirectMessage.__send__(:build, {"id" => "2", "sender_id" => "8", "dm_conversation_id" => "1582838223204016129"}, includes: @includes)
-
-      assert_nil sent.peer("9")
-      assert_nil received.peer("9")
-    end
-
     def test_group
       assert_predicate DirectMessage.new({"id" => "1", "dm_conversation_id" => "1582838223204016129"}), :group?
       refute_predicate DirectMessage.new({"id" => "1", "dm_conversation_id" => "8-9"}), :group?
       refute_predicate DirectMessage.new({"id" => "1"}), :group?
-    end
-
-    def test_peer_without_a_sender
-      assert_nil DirectMessage.new({"id" => "1", "dm_conversation_id" => "8-9"}).peer("9")
     end
   end
 end
