@@ -13,6 +13,7 @@ matcher:
   - X::Uploader*
   - X::UploadedMedia
   - X::AltTextFailed
+  - X::ChunkedUploadFailed
   - X::InvalidMedia
   - X::InvalidMediaType
   - X::MediaProcessingCheckFailed

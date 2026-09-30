@@ -123,6 +123,7 @@ module X
       def init: (client: _Client, source: Source, media_type: String, media_category: String) -> Hash[String, untyped]
       def append: (client: _Client, source: Source, chunk_size: Integer, media: untyped, boundary: String, concurrency: Integer) -> void
       def finalize: (client: _Client, media: Hash[String, untyped]) -> Hash[String, untyped]?
+      def complete: (client: _Client, source: Source, chunk_size: Integer, media: Hash[String, untyped], concurrency: Integer) -> UploadedMedia
 
       private
       def await: (Array[Thread] workers) -> void
@@ -237,6 +238,10 @@ module X
 
     private
     def deep_freeze: (untyped value) -> untyped
+  end
+
+  class ChunkedUploadFailed < Uploader::Error
+    private def self.keeping: [T] (Hash[String, untyped] media) { () -> T } -> T
   end
 
   class AltTextFailed < Uploader::Error

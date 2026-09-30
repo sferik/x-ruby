@@ -126,6 +126,12 @@ module X
     def to_s: () -> String
   end
 
+  class ChunkedUploadFailed < Uploader::Error
+    attr_reader media: UploadedMedia?
+    def initialize: (?String? message, ?media: UploadedMedia | Hash[String, untyped] | nil) -> void
+    def to_s: () -> String
+  end
+
   class AltTextFailed < Uploader::Error
     attr_reader media: UploadedMedia?
     def initialize: (?String? message, ?media: UploadedMedia?) -> void

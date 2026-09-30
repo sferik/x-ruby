@@ -49,21 +49,21 @@ module X
     def test_a_failed_chunk_stops_the_chunks_not_yet_begun
       stub_failing_first_append(failure_wait: 0.02, success_wait: 0.1)
 
-      assert_raises(BadRequest) { upload(chunks: 6, concurrency: 2) }
+      assert_instance_of BadRequest, assert_raises(ChunkedUploadFailed) { upload(chunks: 6, concurrency: 2) }.cause
       assert_equal 2, appends
     end
 
     def test_a_failure_waits_for_the_chunks_already_begun
       stub_failing_first_append(failure_wait: 0.01, success_wait: 0.05)
 
-      assert_raises(BadRequest) { upload(chunks: 2, concurrency: 2) }
+      assert_instance_of BadRequest, assert_raises(ChunkedUploadFailed) { upload(chunks: 2, concurrency: 2) }.cause
       assert_equal 1, @finished.size
     end
 
     def test_raises_the_error_of_the_chunk_that_failed_first
       stub_failing_first_append(failure_wait: 0, success_wait: 0.05, success_status: 403, after_failure: true)
 
-      assert_raises(BadRequest) { upload(chunks: 2, concurrency: 2) }
+      assert_instance_of BadRequest, assert_raises(ChunkedUploadFailed) { upload(chunks: 2, concurrency: 2) }.cause
     end
 
     private

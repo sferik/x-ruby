@@ -28,7 +28,7 @@ module X
     def test_chunked_upload_raises_when_finalize_returns_empty_response
       stub_chunked_upload_workflow(finalize_status: 204, finalize_body: nil)
 
-      assert_raises(MissingMediaData) { perform_chunked_upload }
+      assert_instance_of MissingMediaData, assert_raises(ChunkedUploadFailed) { perform_chunked_upload }.cause
     end
 
     def test_init_raises_when_server_returns_empty_response

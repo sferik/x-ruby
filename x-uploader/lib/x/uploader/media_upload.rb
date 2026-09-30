@@ -4,6 +4,7 @@ require "json"
 require "securerandom"
 require "x/core"
 require_relative "alt_text_failed"
+require_relative "chunked_upload_failed"
 require_relative "media_processing_check_failed"
 require_relative "chunks"
 require_relative "gif"
@@ -145,6 +146,8 @@ module X
       # @raise [InvalidMediaType] if no media category is given for media that names no file and no signature names
       #   one, or if media uploaded in chunks is given no media type and none can be inferred
       # @raise [MissingMediaData] if a response of the upload holds no media, or carries no body at all
+      # @raise [ChunkedUploadFailed] if media uploaded in chunks is initialized, but a chunk cannot be appended, or it
+      #   cannot be finalized, with the media it initialized
       # @raise [MediaProcessingFailed] if the media fails to process, or its processing ends in no state X documents
       # @raise [MediaProcessingTimeout] if the media is still processing once processing_timeout seconds would pass
       # @raise [MediaProcessingCheckFailed] if the media is uploaded, but a check of its processing fails, as when the
@@ -220,8 +223,10 @@ module X
       #   larger than a segment the API takes, or would need more segments than the API numbers, or the concurrency is
       #   not 1 to MAX_CONCURRENCY
       # @raise [InvalidMediaType] if no media type is given and none can be inferred
-      # @raise [MissingMediaData] if the response that initializes the upload holds no media to append the chunks to, or
-      #   the response that finalizes it holds no media or carries no body at all
+      # @raise [MissingMediaData] if the response that initializes the upload holds no media to append the chunks to
+      # @raise [ChunkedUploadFailed] if the upload is initialized, but a chunk cannot be appended, or it cannot be
+      #   finalized, or the response that finalizes it holds no media or carries no body at all, with the media it
+      #   initialized, and the error that failed it as the cause
       # @example Upload a large video
       #   Uploader::MediaUpload.chunked_upload("video.mp4", client: client)
       def chunked_upload(media, client:, media_category: nil, media_type: nil, chunk_size_mb: nil, concurrency: DEFAULT_CONCURRENCY)
@@ -233,8 +238,7 @@ module X
         chunk_size = Validator.validate_segments!(source, chunk_size_mb)
         media_type ||= Inference.infer_media_type(source, media_category)
         uploaded = Chunks.init(client:, source:, media_type:, media_category:)
-        Chunks.append(client:, source:, chunk_size:, media: uploaded, boundary: SecureRandom.hex, concurrency:)
-        UploadedMedia.new(Utils.media_data(Chunks.finalize(client:, media: uploaded), "that finalizes the upload"))
+        ChunkedUploadFailed.__send__(:keeping, uploaded) { Chunks.complete(client:, source:, chunk_size:, media: uploaded, concurrency:) }
       end
 
       # Wait for media processing to complete

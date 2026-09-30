@@ -38,7 +38,9 @@ module X
       stub_init({data: {"id" => TEST_MEDIA_ID}})
       stub_request(:post, "#{BASE_URL}/#{TEST_MEDIA_ID}/append").to_return(status: 204)
       stub_request(:post, "#{BASE_URL}/#{TEST_MEDIA_ID}/finalize").to_return(headers: JSON_HEADERS, body: "{}")
-      error = assert_raises(MissingMediaData) { chunked_upload }
+      error = assert_raises(ChunkedUploadFailed) { chunked_upload }.cause
+
+      assert_instance_of MissingMediaData, error
 
       assert_equal "The response that finalizes the upload holds no media", error.message
     end

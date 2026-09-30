@@ -1,8 +1,10 @@
 # frozen_string_literal: true
 
+require "securerandom"
 require_relative "json_classes"
 require_relative "missing_media_data"
 require_relative "multipart"
+require_relative "uploaded_media"
 require_relative "utils"
 
 module X
@@ -67,6 +69,23 @@ module X
         media_id = media.fetch("id")
         await Array.new([concurrency, queue.size].min) { append_worker(queue, errors, client:, source:, chunk_size:, media_id:, boundary:) }
         raise errors.deq unless errors.empty?
+      end
+
+      # Append the chunks of a file to a chunked upload and finalize it
+      #
+      # @api private
+      # @param client [Client] the X API client
+      # @param source [Source] the media
+      # @param chunk_size [Integer] the chunk size in bytes
+      # @param media [Hash] the media the upload initialized
+      # @param concurrency [Integer] the number of chunks uploaded at once
+      # @return [UploadedMedia] the uploaded media, as the response that finalizes the upload describes it
+      # @raise [MissingMediaData] if the response that finalizes the upload holds no media or carries no body at all
+      # @example Upload the chunks of a video and finalize it
+      #   Uploader::Chunks.complete(client:, source:, chunk_size: 1_048_576, media:, concurrency: 4)
+      def complete(client:, source:, chunk_size:, media:, concurrency:)
+        append(client:, source:, chunk_size:, media:, boundary: SecureRandom.hex, concurrency:)
+        UploadedMedia.new(Utils.media_data(finalize(client:, media:), "that finalizes the upload"))
       end
 
       # Finalize a chunked upload, once its chunks are appended

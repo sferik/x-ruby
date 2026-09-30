@@ -89,7 +89,7 @@ module X
       stub_request(:post, append_url).to_return(status: 500)
 
       with_thread_exceptions_suppressed do
-        assert_raises(InternalServerError) { perform_upload }
+        assert_instance_of InternalServerError, assert_raises(ChunkedUploadFailed) { perform_upload }.cause
       end
 
       assert_requested(:post, append_url, times: 3)
@@ -102,7 +102,7 @@ module X
       stub_request(:post, append_url).to_return(status: 500)
 
       with_thread_exceptions_suppressed do
-        assert_raises(InternalServerError) { perform_upload }
+        assert_instance_of InternalServerError, assert_raises(ChunkedUploadFailed) { perform_upload }.cause
       end
 
       assert_requested(:post, append_url, times: 1)
@@ -122,7 +122,7 @@ module X
       stub_request(:post, append_url).to_return(status: 503, headers: {"Retry-After" => "120"})
 
       with_thread_exceptions_suppressed do
-        assert_raises(ServiceUnavailable) { perform_upload }
+        assert_instance_of ServiceUnavailable, assert_raises(ChunkedUploadFailed) { perform_upload }.cause
       end
 
       assert_requested(:post, append_url, times: 1)
@@ -133,7 +133,7 @@ module X
       stub_request(:post, append_url).to_return(status: 400)
 
       with_thread_exceptions_suppressed do
-        assert_raises(BadRequest) { perform_upload }
+        assert_instance_of BadRequest, assert_raises(ChunkedUploadFailed) { perform_upload }.cause
       end
 
       assert_requested(:post, append_url, times: 1)
@@ -164,7 +164,7 @@ module X
       stub_request(:post, append_url).to_return(status: 204)
       stub_request(:post, finalize_url).to_raise(Errno::ECONNRESET)
 
-      assert_raises(NetworkError) { perform_upload }
+      assert_instance_of NetworkError, assert_raises(ChunkedUploadFailed) { perform_upload }.cause
       assert_requested(:post, finalize_url, times: 2)
     end
   end
