@@ -1,9 +1,7 @@
 # frozen_string_literal: true
 
-require "securerandom"
 require "x/core"
 require_relative "invalid_media_type"
-require_relative "json_classes"
 require_relative "multipart"
 require_relative "source"
 require_relative "validator"
@@ -56,7 +54,7 @@ module X
       def update_profile_image(media, client:)
         source = Source.for(media)
         Validator.validate_profile_image!(source, SUPPORTED_EXTENSIONS)
-        update_profile_image_binary(source.content, client:)
+        Multipart.post(client, PROFILE_IMAGE_URL, "image", source.content)
       end
 
       # Update the authenticating user's profile image from binary content
@@ -67,13 +65,13 @@ module X
       # @param content [String] the binary image content
       # @param client [Client] the X API client
       # @return [Hash, nil] the updated user, as the API v1.1 answers with it, or nil for a response with no body
+      # @raise [InvalidMedia] if the content is empty, which holds nothing to upload
+      # @raise [InvalidMediaType] if the content does not begin with the signature of a GIF, a JPEG, or a PNG
       # @example Update profile image from binary content
       #   Uploader::Account.update_profile_image_binary(image_data, client: client)
       def update_profile_image_binary(content, client:)
-        boundary = SecureRandom.hex
-        body = Multipart.body("image", content, boundary:)
-        headers = Multipart.headers(boundary)
-        client.post(PROFILE_IMAGE_URL, body, headers:, **JSON_CLASSES)
+        Validator.validate_profile_content!(Source::Buffer.new(content))
+        Multipart.post(client, PROFILE_IMAGE_URL, "image", content)
       end
 
       # Update the authenticating user's profile banner
@@ -102,7 +100,8 @@ module X
       def update_profile_banner(media, client:, width: nil, height: nil, offset_left: nil, offset_top: nil)
         source = Source.for(media)
         Validator.validate_profile_image!(source, SUPPORTED_EXTENSIONS)
-        update_profile_banner_binary(source.content, client:, width:, height:, offset_left:, offset_top:)
+        Multipart.post(client, PROFILE_BANNER_URL, "banner", source.content, width:, height:, offset_left:, offset_top:)
+        nil
       end
 
       # Update the authenticating user's profile banner from binary content
@@ -117,13 +116,13 @@ module X
       # @param offset_left [Integer, nil] the left offset of the banner
       # @param offset_top [Integer, nil] the top offset of the banner
       # @return [nil] nil once the banner is updated, which the API answers with no content
+      # @raise [InvalidMedia] if the content is empty, which holds nothing to upload
+      # @raise [InvalidMediaType] if the content does not begin with the signature of a GIF, a JPEG, or a PNG
       # @example Update profile banner from binary content
       #   Uploader::Account.update_profile_banner_binary(image_data, client: client)
       def update_profile_banner_binary(content, client:, width: nil, height: nil, offset_left: nil, offset_top: nil)
-        boundary = SecureRandom.hex
-        body = Multipart.body("banner", content, boundary:, width:, height:, offset_left:, offset_top:)
-        headers = Multipart.headers(boundary)
-        client.post(PROFILE_BANNER_URL, body, headers:, **JSON_CLASSES)
+        Validator.validate_profile_content!(Source::Buffer.new(content))
+        Multipart.post(client, PROFILE_BANNER_URL, "banner", content, width:, height:, offset_left:, offset_top:)
         nil
       end
     end

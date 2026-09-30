@@ -163,9 +163,22 @@ module X
       # @example Validate a profile image held in memory
       #   Uploader::Validator.validate_profile_image!(source, %w[gif jpg jpeg png])
       def validate_profile_image!(source, extensions)
+        name = source.name or return validate_profile_content!(source)
         validate_source!(source)
-        name = source.name
-        return validate_extension!(name, extensions) if name
+        validate_extension!(name, extensions)
+      end
+
+      # Validate a profile image or banner that names no file, by its signature
+      #
+      # @api private
+      # @param source [Source] the image to upload
+      # @return [void]
+      # @raise [InvalidMedia] if the image cannot be read, or is empty
+      # @raise [InvalidMediaType] if the image does not begin with the signature of a GIF, a JPEG, or a PNG
+      # @example Validate a profile image given as its bytes
+      #   Uploader::Validator.validate_profile_content!(Uploader::Source::Buffer.new(png))
+      def validate_profile_content!(source)
+        validate_source!(source)
         return if PROFILE_IMAGE_TYPES.include?(Signature.media_type(source.sniff))
 
         raise InvalidMediaType, "#{source.description} is not a GIF, JPEG, or PNG image, which a profile image or banner must be"

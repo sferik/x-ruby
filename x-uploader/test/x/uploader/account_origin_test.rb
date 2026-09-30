@@ -8,7 +8,7 @@ module X
   class AccountOriginTest < Minitest::Test
     cover Uploader::Account
 
-    CONTENT = "image data"
+    CONTENT = "GIF89a image data"
     BEARER_TOKEN = "TEST_BEARER_TOKEN"
 
     def test_the_profile_image_is_updated_at_the_host_of_the_base_url_with_the_credentials_of_the_client

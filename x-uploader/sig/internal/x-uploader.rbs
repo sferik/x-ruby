@@ -113,6 +113,7 @@ module X
       extend Multipart
 
       def headers: (String boundary) -> Hash[String, String]
+      def post: (_Client client, String url, String name, String content, **untyped fields) -> Hash[String, untyped]?
       def body: (String name, String content, boundary: String, **untyped fields) -> String
     end
 
@@ -220,6 +221,7 @@ module X
       def validate_size!: (Source source, String media_category) -> nil
       def validate_single_request!: (Source source, String media_category) -> nil
       def validate_profile_image!: (Source source, Array[String] extensions) -> nil
+      def validate_profile_content!: (Source source) -> nil
       def derived_chunk_size: (Integer file_size) -> Integer
     end
 

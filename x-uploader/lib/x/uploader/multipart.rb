@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+require "securerandom"
+require_relative "json_classes"
+
 module X
   module Uploader
     # Builds the multipart form requests of the uploads
@@ -19,6 +22,22 @@ module X
       # @example The headers of a request
       #   Uploader::Multipart.headers("boundary") # => {"Content-Type" => "multipart/form-data; boundary=boundary"}
       def headers(boundary) = {"Content-Type" => "multipart/form-data; boundary=#{boundary}"}
+
+      # Post a multipart form request, with a boundary of its own
+      #
+      # @api private
+      # @param client [Client] the X API client
+      # @param url [String] the endpoint, relative to the base URL of the client
+      # @param name [String] the name of the field that holds the content
+      # @param content [String] the content to upload
+      # @param fields [Hash{Symbol => Object}] the form fields that come before the content, less any that are nil
+      # @return [Hash, nil] the parsed response, or nil for a response with no body
+      # @example Update a profile image
+      #   Uploader::Multipart.post(client, "../1.1/account/update_profile_image.json", "image", png)
+      def post(client, url, name, content, **fields)
+        boundary = SecureRandom.hex
+        client.post(url, body(name, content, boundary:, **fields), headers: headers(boundary), **JSON_CLASSES)
+      end
 
       # The body of a multipart form request: any form fields, then the content uploaded
       #

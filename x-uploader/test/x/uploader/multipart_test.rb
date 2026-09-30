@@ -7,8 +7,35 @@ module X
   class MultipartTest < Minitest::Test
     cover Uploader.const_get(:Multipart)
 
+    UPLOAD_URL = "https://api.x.com/2/upload"
+
     FILE_PART = "--b\r\nContent-Disposition: form-data; name=\"media\"\r\n" \
       "Content-Type: application/octet-stream\r\n\r\ncontent\r\n--b--\r\n"
+
+    def test_post_parses_the_response
+      stub_request(:post, UPLOAD_URL).to_return(headers: {"content-type" => "application/json"}, body: '{"id":1}')
+
+      assert_equal({"id" => 1}, Uploader.const_get(:Multipart).post(Client.new, "upload", "image", "content"))
+    end
+
+    def test_post_sends_the_body_with_the_boundary_its_headers_name
+      stub_request(:post, UPLOAD_URL)
+      Uploader.const_get(:Multipart).post(Client.new, "upload", "image", "content", width: 2)
+
+      assert_requested(:post, UPLOAD_URL) do |request|
+        boundary = request.headers["Content-Type"][/\Amultipart\/form-data; boundary=(\h+)\z/, 1]
+        request.body.eql?(Uploader.const_get(:Multipart).body("image", "content", boundary:, width: 2))
+      end
+    end
+
+    def test_each_post_has_a_boundary_of_its_own
+      stub_request(:post, UPLOAD_URL)
+      2.times { Uploader.const_get(:Multipart).post(Client.new, "upload", "image", "content") }
+      content_types = []
+
+      assert_requested(:post, UPLOAD_URL, times: 2) { |request| content_types << request.headers["Content-Type"] }
+      assert_equal 2, content_types.uniq.size
+    end
 
     def test_headers_name_the_boundary
       assert_equal({"Content-Type" => "multipart/form-data; boundary=b"}, Uploader.const_get(:Multipart).headers("b"))
