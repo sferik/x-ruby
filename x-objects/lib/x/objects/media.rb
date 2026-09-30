@@ -227,7 +227,7 @@ module X
       #   @return [Integer, nil] the duration in milliseconds
       #   @example Get the duration
       #     media.duration_ms
-      attribute :duration_ms
+      attribute :duration_ms, :integer
 
       # @!attribute [r] height
       #   The height in pixels
@@ -235,7 +235,7 @@ module X
       #   @return [Integer, nil] the height in pixels
       #   @example Get the height
       #     media.height
-      attribute :height
+      attribute :height, :integer
 
       # @!attribute [r] width
       #   The width in pixels
@@ -243,7 +243,7 @@ module X
       #   @return [Integer, nil] the width in pixels
       #   @example Get the width
       #     media.width
-      attribute :width
+      attribute :width, :integer
 
       # @!attribute [r] variants
       #   The video variants with their bit rates, content types, and URLs
@@ -267,7 +267,7 @@ module X
       #   @return [Integer, nil] the view count
       #   @example Get the view count
       #     media.view_count
-      attribute :view_count, key: %w[public_metrics view_count]
+      attribute :view_count, :integer, key: %w[public_metrics view_count]
     end
   end
 end

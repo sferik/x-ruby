@@ -27,8 +27,9 @@ module X
       klass = Class.new(Resource) { attribute :flag, :boolean, key: %w[settings flag] }
 
       assert_predicate klass.new({"id" => "1", "settings" => {"flag" => true}}), :flag?
-      refute_predicate klass.new({"id" => "1", "settings" => {"flag" => "true"}}), :flag?
+      refute_predicate klass.new({"id" => "1", "settings" => {"flag" => false}}), :flag?
       refute_predicate klass.new({"id" => "1"}), :flag?
+      assert_raises(InvalidAttribute) { klass.new({"id" => "1", "settings" => {"flag" => "true"}}).flag? }
     end
 
     def test_a_predicate_raises_as_its_reader_does

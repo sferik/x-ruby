@@ -206,7 +206,7 @@ module X
       #   @return [Integer, nil] the participant count
       #   @example Get the participant count
       #     space.participant_count
-      attribute :participant_count
+      attribute :participant_count, :integer
 
       # @!attribute [r] subscriber_count
       #   The number of subscribers
@@ -214,7 +214,7 @@ module X
       #   @return [Integer, nil] the subscriber count
       #   @example Get the subscriber count
       #     space.subscriber_count
-      attribute :subscriber_count
+      attribute :subscriber_count, :integer
 
       # @!attribute [r] creator_id
       #   The identifier of the creator

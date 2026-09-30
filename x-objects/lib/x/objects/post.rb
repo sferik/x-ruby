@@ -382,7 +382,7 @@ module X
       #   @return [Integer, nil] the repost count
       #   @example Get the repost count
       #     post.repost_count
-      attribute :repost_count, key: %w[public_metrics repost_count], tweet_key: %w[public_metrics retweet_count]
+      attribute :repost_count, :integer, key: %w[public_metrics repost_count], tweet_key: %w[public_metrics retweet_count]
 
       # @!attribute [r] reply_count
       #   The number of replies
@@ -390,7 +390,7 @@ module X
       #   @return [Integer, nil] the reply count
       #   @example Get the reply count
       #     post.reply_count
-      attribute :reply_count, key: %w[public_metrics reply_count]
+      attribute :reply_count, :integer, key: %w[public_metrics reply_count]
 
       # @!attribute [r] like_count
       #   The number of likes
@@ -398,7 +398,7 @@ module X
       #   @return [Integer, nil] the like count
       #   @example Get the like count
       #     post.like_count
-      attribute :like_count, key: %w[public_metrics like_count]
+      attribute :like_count, :integer, key: %w[public_metrics like_count]
 
       # @!attribute [r] quote_count
       #   The number of quotes
@@ -406,7 +406,7 @@ module X
       #   @return [Integer, nil] the quote count
       #   @example Get the quote count
       #     post.quote_count
-      attribute :quote_count, key: %w[public_metrics quote_count]
+      attribute :quote_count, :integer, key: %w[public_metrics quote_count]
 
       # @!attribute [r] bookmark_count
       #   The number of bookmarks
@@ -414,7 +414,7 @@ module X
       #   @return [Integer, nil] the bookmark count
       #   @example Get the bookmark count
       #     post.bookmark_count
-      attribute :bookmark_count, key: %w[public_metrics bookmark_count]
+      attribute :bookmark_count, :integer, key: %w[public_metrics bookmark_count]
 
       # @!attribute [r] impression_count
       #   The number of impressions
@@ -422,7 +422,7 @@ module X
       #   @return [Integer, nil] the impression count
       #   @example Get the impression count
       #     post.impression_count
-      attribute :impression_count, key: %w[public_metrics impression_count]
+      attribute :impression_count, :integer, key: %w[public_metrics impression_count]
 
       # @!method author
       #   The author, resolved from the includes or as a stub holding only its identifier

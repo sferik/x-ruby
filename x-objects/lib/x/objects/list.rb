@@ -129,7 +129,7 @@ module X
       #   @return [Integer, nil] the follower count
       #   @example Get the follower count
       #     list.follower_count
-      attribute :follower_count
+      attribute :follower_count, :integer
 
       # @!attribute [r] member_count
       #   The number of members
@@ -137,7 +137,7 @@ module X
       #   @return [Integer, nil] the member count
       #   @example Get the member count
       #     list.member_count
-      attribute :member_count
+      attribute :member_count, :integer
 
       # @!attribute [r] owner_id
       #   The identifier of the owner

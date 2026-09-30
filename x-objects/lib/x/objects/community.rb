@@ -93,7 +93,7 @@ module X
       #   @return [Integer, nil] the member count
       #   @example Get the member count
       #     community.member_count
-      attribute :member_count
+      attribute :member_count, :integer
 
       # @!attribute [r] access
       #   Who can see the community's posts, as the API names it

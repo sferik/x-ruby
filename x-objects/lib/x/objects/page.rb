@@ -155,10 +155,11 @@ module X
       #
       # @api public
       # @return [Integer, nil] the result count
+      # @raise [InvalidAttribute] if the meta holds a result count that is not a number
       # @example Get the result count
       #   page.result_count
       def result_count
-        meta["result_count"]
+        Utils.read("#{self.class}#result_count", meta["result_count"]) { |value| Utils.integer(value) }
       end
 
       # The attributes of the resources of this page, as a JSON encoder reads them

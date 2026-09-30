@@ -255,7 +255,7 @@ module X
       #   @return [Integer, nil] the verified follower count
       #   @example Get the verified follower count
       #     user.verified_followers_count
-      attribute :verified_followers_count
+      attribute :verified_followers_count, :integer
 
       # @!attribute [r] subscriber_count
       #   The number of users who subscribe to the user
@@ -263,7 +263,7 @@ module X
       #   @return [Integer, nil] the subscriber count
       #   @example Get the subscriber count
       #     user.subscriber_count
-      attribute :subscriber_count
+      attribute :subscriber_count, :integer
 
       # @!attribute [r] connection_status
       #   How the authenticated user and this user are connected
@@ -319,7 +319,7 @@ module X
       #   @return [Integer, nil] the follower count
       #   @example Get the follower count
       #     user.followers_count
-      attribute :followers_count, key: %w[public_metrics followers_count]
+      attribute :followers_count, :integer, key: %w[public_metrics followers_count]
 
       # @!attribute [r] following_count
       #   The number of followed users
@@ -327,7 +327,7 @@ module X
       #   @return [Integer, nil] the following count
       #   @example Get the following count
       #     user.following_count
-      attribute :following_count, key: %w[public_metrics following_count]
+      attribute :following_count, :integer, key: %w[public_metrics following_count]
 
       # @!attribute [r] post_count
       #   The number of posts
@@ -335,7 +335,7 @@ module X
       #   @return [Integer, nil] the post count
       #   @example Get the post count
       #     user.post_count
-      attribute :post_count, key: %w[public_metrics post_count], tweet_key: %w[public_metrics tweet_count]
+      attribute :post_count, :integer, key: %w[public_metrics post_count], tweet_key: %w[public_metrics tweet_count]
 
       # @!attribute [r] listed_count
       #   The number of lists the user is a member of
@@ -343,7 +343,7 @@ module X
       #   @return [Integer, nil] the listed count
       #   @example Get the listed count
       #     user.listed_count
-      attribute :listed_count, key: %w[public_metrics listed_count]
+      attribute :listed_count, :integer, key: %w[public_metrics listed_count]
 
       # @!attribute [r] like_count
       #   The number of posts the user has liked
@@ -351,7 +351,7 @@ module X
       #   @return [Integer, nil] the like count
       #   @example Get the like count
       #     user.like_count
-      attribute :like_count, key: %w[public_metrics like_count]
+      attribute :like_count, :integer, key: %w[public_metrics like_count]
 
       # @!attribute [r] media_count
       #   The number of photos and videos the user has posted
@@ -359,7 +359,7 @@ module X
       #   @return [Integer, nil] the media count
       #   @example Get the media count
       #     user.media_count
-      attribute :media_count, key: %w[public_metrics media_count]
+      attribute :media_count, :integer, key: %w[public_metrics media_count]
 
       # @!method pinned_post
       #   The pinned post, from the includes or as a stub holding only its identifier

@@ -68,9 +68,18 @@ module X
         refute_predicate widget, :active?
       end
 
-      def test_truthy_non_boolean_attribute_is_not_predicate_true
-        assert_equal "yes", @klass.new({"id" => "1", "active" => "yes"}).active
-        refute_predicate @klass.new({"id" => "1", "active" => "yes"}), :active?
+      def test_boolean_attribute_that_is_not_true_or_false_raises
+        widget = @klass.new({"id" => "1", "active" => "yes"})
+        error = assert_raises(InvalidAttribute) { widget.active }
+
+        assert_equal "#{@klass}#active cannot be read from \"yes\"", error.message
+        assert_raises(InvalidAttribute) { widget.active? }
+        [1, 0, "true", "false"].each { |value| assert_raises(InvalidAttribute) { @klass.new({"id" => "1", "active" => value}).active } }
+      end
+
+      def test_boolean_attribute_reads_false_and_nil_as_they_are
+        assert_equal [false, nil], [@klass.new({"id" => "1", "active" => false}).active, @klass.new({"id" => "1"}).active]
+        assert_equal [false, false], [@klass.new({"id" => "1", "active" => false}).active?, @klass.new({"id" => "1"}).active?]
       end
 
       def test_predicate_only_defined_for_boolean

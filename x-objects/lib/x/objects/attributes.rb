@@ -12,11 +12,14 @@ module X
       EMPTY_LIST = [] #: Array[untyped]
       EMPTY_LIST.freeze
       private_constant :EMPTY_LIST
+      # The values a flag is read from, which the API gives as true or false, and a response that omits it as nil
+      FLAGS = [true, false, nil].freeze
+      private_constant :FLAGS
       # Converters keyed by attribute type
       CONVERTERS = {
         raw: ->(value) { value },
         media_key: ->(value) { value },
-        boolean: ->(value) { value },
+        boolean: ->(value) { FLAGS.include?(value) ? value : raise(ArgumentError, "#{value.inspect} is not true or false") },
         time: ->(value) { Utils.time(value) },
         integer: ->(value) { Utils.integer(value) },
         integers: ->(value) { (Shape.list(value) || EMPTY_LIST).map { |id| Utils.integer(id) }.freeze },

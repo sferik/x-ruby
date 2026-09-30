@@ -54,7 +54,7 @@ module X
     #   @return [Integer, nil] the duration in minutes
     #   @example Get the duration
     #     poll.duration_minutes
-    attribute :duration_minutes
+    attribute :duration_minutes, :integer
 
     # @!attribute [r] end_datetime
     #   The time when the poll ends

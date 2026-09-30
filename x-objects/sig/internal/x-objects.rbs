@@ -223,6 +223,7 @@ module X
 
     module Attributes : Class
       EMPTY_LIST: Array[untyped]
+      FLAGS: Array[bool?]
       CONVERTERS: Hash[Symbol, ^(untyped) -> untyped]
 
       @attribute_names: Array[Symbol]?
