@@ -51,7 +51,7 @@ module X
         .to_return(body: "{\"data\":{\"id\":\"1\"},\"includes\":{\"users\":[{\"id\":\"2\"}]}}\r\n\r\n{\"data\":{\"id\":\"3\"}}\r\n", headers: {"x-rate-limit-limit" => "50", "x-rate-limit-remaining" => "49", "x-rate-limit-reset" => "1"})
       events = []
       client = Client.new(on_response: ->(response) { events << [response.resource_count, response.rate_limit.remaining, response.uri.path] })
-      client.streaming(max_reconnects: 0).stream("tweets/sample/stream") { |post| events << post.dig("data", "id") }
+      until_the_stream_ends { client.streaming(max_reconnects: 0).stream("tweets/sample/stream") { |post| events << post.dig("data", "id") } }
 
       assert_equal [[2, 49, "/2/tweets/sample/stream"], "1", [1, 49, "/2/tweets/sample/stream"], "3"], events
     end

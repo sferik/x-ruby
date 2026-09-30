@@ -35,6 +35,16 @@ module X
       assert_requested(:get, STREAM_URL, times: 1)
     end
 
+    def test_a_stream_the_server_ends_reconnects_and_raises_once_it_has_no_reconnects_left
+      stub_request(:get, STREAM_URL).to_return(body: "")
+      streaming_client = @client.streaming(max_reconnects: 2)
+      error = assert_raises(NetworkError) { without_sleeping(streaming_client) { streaming_client.stream("tweets/sample/stream") { |post| post } } }
+
+      assert_equal ["GET /2/tweets/sample/stream: The stream ended", :get, STREAM_URL], [error.message, error.http_method, error.uri.to_s]
+      assert_equal [0.0, 0.25], @sleeps
+      assert_requested(:get, STREAM_URL, times: 3)
+    end
+
     def test_reads_with_a_short_timeout_of_its_own
       client = Client.new(read_timeout: 60)
 

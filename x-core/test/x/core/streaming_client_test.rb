@@ -70,7 +70,7 @@ module X
     def test_includes_authentication
       mock_response = mock_streaming_response(chunks: [])
       request = with_stream_request(mock_response) do
-        streaming.stream("tweets/search/stream") { |_json| flunk "unexpected yield" }
+        until_the_stream_ends { streaming.stream("tweets/search/stream") { |_json| flunk "unexpected yield" } }
       end
 
       assert_match(/Bearer #{TEST_BEARER_TOKEN}/o, request["Authorization"])
@@ -79,7 +79,7 @@ module X
     def test_builds_get_request
       mock_response = mock_streaming_response(chunks: [])
       request = with_stream_request(mock_response) do
-        streaming.stream("tweets/search/stream") { |_json| flunk "unexpected yield" }
+        until_the_stream_ends { streaming.stream("tweets/search/stream") { |_json| flunk "unexpected yield" } }
       end
 
       assert_instance_of Net::HTTP::Get, request
@@ -88,7 +88,7 @@ module X
     def test_with_params
       mock_response = mock_streaming_response(chunks: [])
       request = with_stream_request(mock_response) do
-        streaming.stream("tweets/sample/stream", params: {"tweet.fields": %w[id text], expansions: nil}) { |_json| flunk "unexpected yield" }
+        until_the_stream_ends { streaming.stream("tweets/sample/stream", params: {"tweet.fields": %w[id text], expansions: nil}) { |_json| flunk "unexpected yield" } }
       end
 
       assert_equal URI("https://api.x.com/2/tweets/sample/stream?tweet.fields=id,text"), request.uri
@@ -97,7 +97,7 @@ module X
     def test_an_endpoint_with_a_leading_slash_is_relative_to_the_base_url
       mock_response = mock_streaming_response(chunks: [])
       request = with_stream_request(mock_response) do
-        streaming.stream("/tweets/search/stream") { |_json| flunk "unexpected yield" }
+        until_the_stream_ends { streaming.stream("/tweets/search/stream") { |_json| flunk "unexpected yield" } }
       end
 
       assert_equal URI("https://api.x.com/2/tweets/search/stream"), request.uri
@@ -114,7 +114,7 @@ module X
     def test_uses_base_url
       mock_response = mock_streaming_response(chunks: [])
       request = with_stream_request(mock_response) do
-        streaming.stream("tweets/search/stream") { |_json| flunk "unexpected yield" }
+        until_the_stream_ends { streaming.stream("tweets/search/stream") { |_json| flunk "unexpected yield" } }
       end
 
       assert_equal URI("https://api.x.com/2/tweets/search/stream"), request.uri

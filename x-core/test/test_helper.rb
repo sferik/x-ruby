@@ -115,6 +115,15 @@ end
 
 # A class that builds objects from a whole response, as the object layer's resources do, accepting the keywords
 # later versions of x-core may pass it
+# Run a stream that reconnects no more to its end, which the server ending it raises for; any other error is raised
+def until_the_stream_ends
+  yield
+
+  flunk "the stream returned rather than raise once it ended"
+rescue X::NetworkError => e
+  raise unless e.message.end_with?("The stream ended")
+end
+
 class ResponseBuilder
   # Return what it was given, so a test can see the body and the client
   def self.from_response(body, client:, **) = {body:, client:}
@@ -158,7 +167,7 @@ module StreamHelpers
 
   def stream_and_collect(endpoint, client: @client, **options)
     results = []
-    streaming(client:).stream(endpoint, **options) { |json| results << json }
+    until_the_stream_ends { streaming(client:).stream(endpoint, **options) { |json| results << json } }
     results
   end
 

@@ -729,6 +729,7 @@ module X
     include Core::ProxySetting
 
     NO_BLOCK_MESSAGE: String
+    ENDED_MESSAGE: String
     RULES_ENDPOINT: String
     JSON_CLASSES: Hash[Symbol, Class]
 

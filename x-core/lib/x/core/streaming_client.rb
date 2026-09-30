@@ -54,6 +54,9 @@ module X
       # The message of the error raised for a stream without a block to deliver its objects to
       NO_BLOCK_MESSAGE = "stream takes a block, which receives each object the stream delivers"
       private_constant :NO_BLOCK_MESSAGE
+      # The message of the error raised for a stream the server ended, which a stream reconnects after as after a drop
+      ENDED_MESSAGE = "The stream ended"
+      private_constant :ENDED_MESSAGE
       # The endpoint that reads and changes the rules the filtered stream matches posts against
       RULES_ENDPOINT = "tweets/search/stream/rules"
       private_constant :RULES_ENDPOINT
@@ -165,13 +168,14 @@ module X
       # @param object_class [Class, #from_response] the class for parsing JSON objects, or one that responds to
       #   from_response and builds the result from each whole object the stream delivers; see {Client}
       # @yield [Hash, Array] each parsed JSON object from the stream
-      # @return [Object, nil] what the block broke with, or nil once the stream ends with no reconnects left
+      # @return [Object] what the block broke with
       # @raise [ArgumentError] if no block is given, or the endpoint is not a valid URL, or does not resolve to an http or
       #   https URL, before the stream is opened
       # @raise [ArgumentError] if array_class is not a Class, or object_class is neither a Class nor responds to
       #   from_response, before the stream is opened
       # @raise [UnsupportedOperation] if the client authenticates with OAuth 2.0 as a user and holds no credentials of
       #   the app, before the stream is opened
+      # @raise [NetworkError] if the stream ends or drops, or cannot connect, with no reconnects left
       # @raise [HTTPError] if the response is not successful and the stream may not reconnect
       # @raise [StreamError] if a line holds errors and no data, which the stream reconnects after only when each is an
       #   operational-disconnect, and then raises once it has no reconnects left
@@ -318,6 +322,10 @@ module X
       end
 
       # Open a stream once, and deliver each object it sends until it ends
+      #
+      # X holds a stream open until it drops it, so a stream the server ends raises a NetworkError, as one that drops
+      # does, which a stream reconnects after, and which reaches the caller once it has no reconnects left.
+      #
       # @api private
       # @param uri [URI::Generic] the URI of the stream
       # @param headers [Hash] the headers of the stream, beside those of the client
@@ -325,12 +333,14 @@ module X
       # @param object_class [Class, #from_response] the class for parsing JSON objects
       # @yield [Hash, Array] each parsed JSON object from the stream
       # @return [void]
+      # @raise [NetworkError] once the stream ends
       def open_stream(uri, headers, array_class:, object_class:, &)
         request = request_for(uri, headers)
         @connection.perform_stream(request:) do |response|
           @stream_parser.process(response:, response_parser: @response_parser, array_class:, object_class:, client:,
             on_body: ->(body = nil) { report(uri, response, body) }, request:, &)
         end
+        raise NetworkError.new(ENDED_MESSAGE, request:)
       end
 
       # The client the rules are read and changed with, which authenticates as the app

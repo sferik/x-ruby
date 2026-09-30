@@ -107,7 +107,7 @@ module X
       client = Client.new(**test_oauth_credentials)
       stub_request(:get, STREAM_URL).with(headers: {"Authorization" => "Bearer #{TEST_BEARER_TOKEN}"}).to_return(body: "{\"data\":{\"id\":\"1\"}}\r\n")
       built = []
-      client.streaming(max_reconnects: 0).stream("tweets/sample/stream", object_class: ResponseBuilder) { |object| built << object }
+      until_the_stream_ends { client.streaming(max_reconnects: 0).stream("tweets/sample/stream", object_class: ResponseBuilder) { |object| built << object } }
 
       assert_same client, built.first[:client]
     end

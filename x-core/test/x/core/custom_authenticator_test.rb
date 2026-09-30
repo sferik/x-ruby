@@ -62,7 +62,7 @@ module X
       stub_request(:get, "https://api.x.com/2/tweets/sample/stream").with(headers: {"Authorization" => "Signed get /2/tweets/sample/stream"})
         .to_return(body: "{\"data\":{\"id\":\"1\"}}\r\n")
       streamed = []
-      @client.streaming(max_reconnects: 0).stream("tweets/sample/stream") { |object| streamed << object }
+      until_the_stream_ends { @client.streaming(max_reconnects: 0).stream("tweets/sample/stream") { |object| streamed << object } }
 
       assert_equal [{"data" => {"id" => "1"}}], streamed
     end

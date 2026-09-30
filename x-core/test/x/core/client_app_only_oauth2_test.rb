@@ -37,7 +37,7 @@ module X
       stub_request(:get, STREAM_URL).with(headers: {"Authorization" => "Bearer APP_BEARER_TOKEN"}).to_return(body: "{\"data\":{\"id\":\"1\"}}\r\n")
       client = Client.new(**test_oauth2_credentials, bearer_token: "APP_BEARER_TOKEN")
       objects = []
-      client.streaming(max_reconnects: 0).stream("tweets/sample/stream") { |object| objects << object }
+      until_the_stream_ends { client.streaming(max_reconnects: 0).stream("tweets/sample/stream") { |object| objects << object } }
 
       assert_equal [{"data" => {"id" => "1"}}], objects
     end

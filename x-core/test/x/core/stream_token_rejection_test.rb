@@ -17,7 +17,7 @@ module X
 
     def stream(client)
       objects = []
-      client.streaming(max_reconnects: 0).stream("tweets/sample/stream") { |object| objects << object }
+      until_the_stream_ends { client.streaming(max_reconnects: 0).stream("tweets/sample/stream") { |object| objects << object } }
       objects
     end
 

@@ -87,7 +87,7 @@ module X
       object_class = Class.new(Hash)
       array_class = Class.new(Array)
       received = []
-      @client.streaming(max_reconnects: 0).stream("tweets/search/stream", array_class:, object_class:) { |json| received << json }
+      until_the_stream_ends { @client.streaming(max_reconnects: 0).stream("tweets/search/stream", array_class:, object_class:) { |json| received << json } }
 
       assert_instance_of object_class, received.first
       assert_instance_of array_class, received.first["data"]["ids"]
@@ -97,7 +97,7 @@ module X
       body = JSON.generate({"data" => {"id" => "1"}, "errors" => [DISCONNECT]})
       stub_request(:get, STREAM_URL).to_return(body: "#{body}\r\n")
       received = []
-      @client.streaming(max_reconnects: 0).stream("tweets/search/stream", object_class: DataBuilder) { |post| received << post[:id] }
+      until_the_stream_ends { @client.streaming(max_reconnects: 0).stream("tweets/search/stream", object_class: DataBuilder) { |post| received << post[:id] } }
 
       assert_equal ["1"], received
     end
@@ -106,7 +106,7 @@ module X
       stub_request(:get, STREAM_URL).to_return(body: "{\"errors\":[]}\r\n[1]\r\n")
       received = []
       builder = Class.new { def self.from_response(body, client:, **) = body }
-      @client.streaming(max_reconnects: 0).stream("tweets/search/stream", object_class: builder) { |json| received << json }
+      until_the_stream_ends { @client.streaming(max_reconnects: 0).stream("tweets/search/stream", object_class: builder) { |json| received << json } }
 
       assert_equal [{"errors" => []}, [1]], received
     end
@@ -114,7 +114,7 @@ module X
     def test_a_line_of_no_errors_is_yielded_as_a_hash
       stub_request(:get, STREAM_URL).to_return(body: "{\"errors\":[]}\r\n[1]\r\n")
       received = []
-      @client.streaming(max_reconnects: 0).stream("tweets/search/stream") { |json| received << json }
+      until_the_stream_ends { @client.streaming(max_reconnects: 0).stream("tweets/search/stream") { |json| received << json } }
 
       assert_equal [{"errors" => []}, [1]], received
     end

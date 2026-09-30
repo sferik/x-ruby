@@ -100,7 +100,9 @@ client.stream("tweets/search/stream") { |post| puts post }
 client.streaming.stream("tweets/search/stream") { |post| puts post }
 ```
 
-A stream reconnects when it ends or drops, where 0.19 returned or raised. Pass `max_reconnects: 0` to `streaming` to keep the old behavior.
+A stream reconnects when it ends or drops, where 0.19 returned or raised, and raises once it has no reconnects left, `X::NetworkError` for a stream that ended as for one that dropped, so it no longer returns nil. Pass `max_reconnects: 0` to `streaming` to reconnect no stream, as 0.19 did, and rescue `X::NetworkError` where 0.19 returned once the stream ended. A stream reads with a `read_timeout` of its own, 30 seconds by default, where 0.19 read with the 60 of the client; pass `streaming(read_timeout: 60)` for the old one.
+
+A stream authenticates as the app, which the stream endpoints take alone: a client that signs with OAuth 1.0a fetches the app's bearer token with its API key and secret, and a client that authenticates with OAuth 2.0 as a user streams with the app's `bearer_token`, or its `api_key` and `api_key_secret`, given beside the user's credentials, and raises `X::UnsupportedOperation` before it connects when it holds neither.
 
 ### Errors
 
