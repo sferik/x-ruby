@@ -193,7 +193,9 @@ module X
         #
         # A response whose data is an object builds one resource, and one whose data is an array builds a Page of one
         # for each element, which holds the meta of the response, such as its next_token, and the problems it
-        # reported. A client calls this when a resource class is the object_class of a request.
+        # reported. A list the API finds empty holds no data, only a meta, which may still name the token of a page
+        # after it, so a response with a meta and no data builds an empty Page. A client calls this when a resource
+        # class is the object_class of a request.
         # A later version of x-core may pass it keywords of its own, which are ignored, as X::Client asks of
         # what it calls from_response on.
         #
@@ -204,17 +206,30 @@ module X
         # @param body [Hash, nil] the parsed response body
         # @param client [Object] the client used to make the request
         # @param hydrated [Boolean] whether the response holds every field the object layer requests
-        # @return [Resource, Page, nil] the resource, or the page of resources, or nil if the response has no data
+        # @return [Resource, Page, nil] the resource, or the page of resources, or nil if the response has neither data
+        #   nor a meta
         # @raise [InvalidAttribute] if the response holds a resource without an identifier, or with one that is not one
         # @example Build a user from a response
         #   X::User.from_response({"data" => {"id" => "7505382"}}, client: client)
         # @example Build users from a client request, and read the token of the next page
         #   client.get("users/7505382/blocking", object_class: X::User).next_token
         def from_response(body, client:, hydrated: false, **)
-          return collection_from_response(body, client:, hydrated:) if body.to_h["data"].is_a?(Array)
+          return collection_from_response(body, client:, hydrated:) if list?(body.to_h)
 
           resource_from_response(body, client:, hydrated:)
         end
+
+        # Whether a response holds a list
+        #
+        # A response holds one when its data is an array, and when it holds a meta and no data.
+        #
+        #
+        # @api private
+        # @param body [Hash] the parsed response body
+        # @return [Boolean] true if the response holds a list
+        # @example Ask whether an empty list is one
+        #   X::User.__send__(:list?, {"meta" => {"result_count" => 0}}) # => true
+        private def list?(body) = body["data"].is_a?(Array) || (body["data"].nil? && body["meta"].is_a?(Hash))
 
         # Build a resource from a response with a single data object
         #

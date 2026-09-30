@@ -155,6 +155,29 @@ module X
         assert_equal ["abc", 1, [problem]], [page.next_token, page.result_count, page.problems.map(&:to_h)]
         assert_equal({}, User.from_response({"data" => [], "meta" => "unreadable"}, client: @client).meta)
       end
+
+      def test_from_response_with_a_meta_and_no_data_builds_an_empty_page
+        page = User.from_response({"meta" => {"result_count" => 0}}, client: @client)
+
+        assert_instance_of Page, page
+        assert_empty page
+        assert_nil page.next_token
+      end
+
+      def test_from_response_with_a_meta_and_no_data_keeps_the_token_of_the_next_page
+        problem = {"title" => "Not Found Error", "resource_type" => "user", "resource_id" => "3"}
+        page = User.from_response({"meta" => {"result_count" => 0, "next_token" => "abc"}, "errors" => [problem]}, client: @client)
+
+        assert_equal [[], "abc", [problem]], [page.to_a, page.next_token, page.problems.map(&:to_h)]
+      end
+
+      def test_from_response_with_a_meta_that_is_not_an_object_and_no_data_builds_nothing
+        assert_nil User.from_response({"meta" => "unreadable"}, client: @client)
+      end
+
+      def test_from_response_with_a_meta_and_data_that_is_not_a_list_builds_nothing
+        assert_nil User.from_response({"data" => "unreadable", "meta" => {"result_count" => 0}}, client: @client)
+      end
     end
   end
 end

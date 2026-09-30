@@ -689,6 +689,7 @@ module X
     private def self.fully_requested_by?: (Hash[String, untyped] query) -> bool
     private def self.resource_from_response: (Objects::body body, client: Objects::_Client?, ?hydrated: bool) -> Resource?
     private def self.collection_from_response: (Objects::body body, client: Objects::_Client?, ?hydrated: bool) -> Page[Resource]
+    private def self.list?: (Hash[String, untyped] body) -> bool
     private def self.resource_built_from: (Objects::body body, client: Objects::_Client?, hydrated: bool, query: Hash[String, untyped]?) -> Resource?
     private def self.collection_built_from: (Objects::body body, client: Objects::_Client?, hydrated: bool, query: Hash[String, untyped]?) -> Array[Resource]
     private def self.batch_key: () -> Symbol
