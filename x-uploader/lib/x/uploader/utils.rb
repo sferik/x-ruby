@@ -52,6 +52,23 @@ module X
       #   Uploader::Utils.extension("cat.JPG") # => "jpg"
       def extension(file_path) = File.extname(file_path).delete(".").downcase
 
+      # The options of an uploader a method of a client was given, which name no client
+      #
+      # A method of a client uploads with that client, so a client among the options, which would upload with the
+      # credentials of another, raises as a keyword the method does not take raises, rather than take its place.
+      #
+      # @api private
+      # @param options [Hash{Symbol => Object}] the options the method was given
+      # @return [Hash{Symbol => Object}] the options
+      # @raise [ArgumentError] if the options name a client
+      # @example The options of an upload of a client
+      #   Uploader::Utils.without_client(media_category: "tweet_image") # => {media_category: "tweet_image"}
+      def without_client(options)
+        raise ArgumentError, "unknown keyword: :client" if options.key?(:client)
+
+        options
+      end
+
       # The media identifier of an upload response, of media, or of an identifier
       #
       # Media that is not what an upload returned, such as the X::Media of x-objects, which this gem does not depend

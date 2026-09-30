@@ -82,7 +82,7 @@ module X
     end
 
     def test_a_class_that_includes_an_uploader_gains_its_public_methods_alone
-      [Uploader::MediaUpload, Uploader::Account, Uploader::Metadata].each do |uploader|
+      [Uploader::MediaUpload, Uploader::Account, Uploader::Metadata, Uploader::API].each do |uploader|
         assert_empty uploader.private_instance_methods(false), "Expected #{uploader} to define no private methods"
         assert_empty uploader.ancestors - [uploader], "Expected #{uploader} to include no other module"
       end

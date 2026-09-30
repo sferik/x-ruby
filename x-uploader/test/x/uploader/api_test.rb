@@ -6,6 +6,7 @@ require_relative "../../test_helper"
 module X
   class UploaderAPITest < Minitest::Test
     cover Uploader::API
+    cover Uploader.const_get(:Utils)
 
     # Each method of a client that takes options, the uploader it calls, and the arguments it is given before them
     REFUSING = {upload_media: [Uploader::MediaUpload, :upload, ["cat.jpg"]], await_media_processing: [Uploader::MediaUpload, :await_processing, [7]],
