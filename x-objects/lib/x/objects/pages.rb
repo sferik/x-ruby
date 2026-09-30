@@ -108,7 +108,7 @@ module X
       # @param index [Integer] the zero-based page index
       # @param wanted [Integer, nil] the number of resources wanted from the page, or nil for the page size
       # @return [Page, nil] the page or nil if the previous page was the last
-      # @raise [InvalidAttribute] if the previous page names the token of a page before it as the next
+      # @raise [UnreadableResponse] if the previous page names the token of a page before it as the next
       def fetch(index, wanted = nil)
         params = params_for(index)
         return if params.nil?
@@ -164,7 +164,7 @@ module X
       # @api private
       # @param index [Integer] the zero-based page index
       # @return [Hash{String => Object}, nil] the parameters or nil if the previous page was the last
-      # @raise [InvalidAttribute] if the previous page names the token of a page before it as the next
+      # @raise [UnreadableResponse] if the previous page names the token of a page before it as the next
       def params_for(index)
         return @cursor.params if index.zero?
 
@@ -180,11 +180,11 @@ module X
       # @api private
       # @param index [Integer] the zero-based index of the page, which is fetched
       # @return [String, nil] the token, or nil if the page is the last
-      # @raise [InvalidAttribute] if the page names the token of a page before it as the next
+      # @raise [UnreadableResponse] if the page names the token of a page before it as the next
       def next_token(index)
         pages = fetched
         token = pages.fetch(index).next_token
-        raise InvalidAttribute, format(REPEATED_TOKEN, index:, path: @cursor.path, token:) if pages.take(index).map(&:next_token).include?(token)
+        raise UnreadableResponse, format(REPEATED_TOKEN, index:, path: @cursor.path, token:) if pages.take(index).map(&:next_token).include?(token)
 
         token
       end

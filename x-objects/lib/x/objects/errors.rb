@@ -43,6 +43,22 @@ module X
     end
   end
 
+  # Raised when a successful response holds what the object layer cannot read as what the API documents
+  #
+  # It is the base of InvalidAttribute, for one value of a response, and is raised itself for what a response says
+  # beside its values, such as a page that names the token of a page before it as the next, which would have the
+  # pages requested again for good. It is not the InvalidResponse of x-core, which a body that is not JSON raises,
+  # and which holds the response.
+  #
+  # @api public
+  # @example Rescue what the object layer cannot read of a response
+  #   begin
+  #     user.followers.to_a
+  #   rescue X::UnreadableResponse => e
+  #     logger.warn(e.message)
+  #   end
+  class UnreadableResponse < Objects::Error; end
+
   # Raised when a response holds a value that cannot be read as what the API documents it to be
   #
   # A timestamp that is not ISO 8601, or an identifier that is not one, is read when the attribute or the reference
@@ -51,7 +67,7 @@ module X
   # than as the ArgumentError the same value raises when a caller passes it. The cause is the error that refused it.
   #
   # @api public
-  class InvalidAttribute < Objects::Error; end
+  class InvalidAttribute < UnreadableResponse; end
 
   # Raised when a resource that holds no client is asked for what only a request can answer
   #

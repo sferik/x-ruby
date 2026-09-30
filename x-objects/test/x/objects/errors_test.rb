@@ -22,6 +22,8 @@ module X
 
       def test_every_error_of_the_object_layer_descends_from_its_own_base
         assert_operator MissingResource, :<, Objects::Error
+        assert_operator UnreadableResponse, :<, Objects::Error
+        assert_operator InvalidAttribute, :<, UnreadableResponse
         assert_operator Objects::Error, :<, X::Error
       end
 

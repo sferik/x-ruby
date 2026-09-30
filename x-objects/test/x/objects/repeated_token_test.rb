@@ -19,7 +19,7 @@ module X
 
     def test_a_cursor_stops_at_a_page_that_names_its_own_token_as_the_next
       client = paging("users/1/followers", %w[a a])
-      error = assert_raises(InvalidAttribute) { User.from_id(1, client:).followers.to_a }
+      error = assert_raises(UnreadableResponse) { User.from_id(1, client:).followers.to_a }
 
       assert_equal 'Page 1 of users/1/followers names the next_token "a", which fetched an earlier page', error.message
       assert_equal [nil, "a"], client.queries.map { |query| query["pagination_token"] }
@@ -27,7 +27,7 @@ module X
 
     def test_a_cursor_stops_at_a_page_that_names_the_token_of_any_earlier_page
       client = paging("users/1/followers", %w[a b a])
-      error = assert_raises(InvalidAttribute) { User.from_id(1, client:).followers.each_page.to_a }
+      error = assert_raises(UnreadableResponse) { User.from_id(1, client:).followers.each_page.to_a }
 
       assert_equal 'Page 2 of users/1/followers names the next_token "a", which fetched an earlier page', error.message
       assert_equal 3, client.requests.size
@@ -36,8 +36,15 @@ module X
     def test_first_stops_at_a_repeated_token_as_well
       client = paging("users/1/followers", %w[a a])
 
-      assert_raises(InvalidAttribute) { User.from_id(1, client:).followers.first(3) }
+      assert_raises(UnreadableResponse) { User.from_id(1, client:).followers.first(3) }
       assert_equal 2, client.requests.size
+    end
+
+    def test_a_repeated_token_is_no_invalid_attribute
+      client = paging("users/1/followers", %w[a a])
+
+      assert_instance_of UnreadableResponse, assert_raises(UnreadableResponse) { User.from_id(1, client:).followers.to_a }
+      assert_instance_of UnreadableResponse, assert_raises(UnreadableResponse) { Post.count("ruby", client: paging("tweets/counts/recent", %w[a a])) }
     end
 
     def test_a_cursor_whose_tokens_differ_reads_every_page
@@ -46,7 +53,7 @@ module X
 
     def test_a_count_stops_at_a_page_that_names_the_token_of_an_earlier_page
       client = paging("tweets/counts/recent", %w[a b b])
-      error = assert_raises(InvalidAttribute) { Post.count("ruby", client:) }
+      error = assert_raises(UnreadableResponse) { Post.count("ruby", client:) }
 
       assert_equal 'The counts of X::Post name the next_token "b", which fetched an earlier page', error.message
       assert_equal [nil, "a", "b"], client.queries.map { |query| query["next_token"] }

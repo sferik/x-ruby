@@ -16,7 +16,10 @@ module X
     def initialize: (?String? message, ?problems: Array[Problem]) -> void
   end
 
-  class InvalidAttribute < Objects::Error
+  class UnreadableResponse < Objects::Error
+  end
+
+  class InvalidAttribute < UnreadableResponse
   end
 
   class MissingClient < Objects::Error

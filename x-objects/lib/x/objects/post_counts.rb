@@ -35,6 +35,7 @@ module X
       # @param params [Hash] query parameters, such as start_time and end_time
       # @return [Integer] the number of matching posts
       # @raise [InvalidAttribute] if the response holds a total that is not a number
+      # @raise [UnreadableResponse] if a page names the token of a page before it as the next
       # @example Count the recent posts about Ruby
       #   X::Post.count("ruby", client: client)
       def count(query, client:, **params) = total(pages(RECENT_ENDPOINT, query, client:, **params))
@@ -47,6 +48,7 @@ module X
       # @param params [Hash] query parameters, such as start_time and end_time
       # @return [Integer] the number of matching posts
       # @raise [InvalidAttribute] if the response holds a total that is not a number
+      # @raise [UnreadableResponse] if a page names the token of a page before it as the next
       # @example Count every post about Ruby
       #   X::Post.count_all("ruby", client: client)
       def count_all(query, client:, **params) = total(pages(ALL_ENDPOINT, query, client:, **params))
@@ -59,6 +61,7 @@ module X
       # @param params [Hash] query parameters, such as granularity, which is day by default
       # @return [Hash{Time => Integer}] the number of matching posts, keyed by the start of each period, oldest first
       # @raise [InvalidAttribute] if the response holds a period without a start in ISO 8601, or without a count
+      # @raise [UnreadableResponse] if a page names the token of a page before it as the next
       # @example Count the recent posts about Ruby by hour
       #   X::Post.count_by_period("ruby", client: client, granularity: "hour")
       def count_by_period(query, client:, **params) = periods(pages(RECENT_ENDPOINT, query, client:, **params))
@@ -71,6 +74,7 @@ module X
       # @param params [Hash] query parameters, such as granularity, which is day by default
       # @return [Hash{Time => Integer}] the number of matching posts, keyed by the start of each period, oldest first
       # @raise [InvalidAttribute] if the response holds a period without a start in ISO 8601, or without a count
+      # @raise [UnreadableResponse] if a page names the token of a page before it as the next
       # @example Count every post about Ruby by day
       #   X::Post.count_all_by_period("ruby", client: client)
       def count_all_by_period(query, client:, **params) = periods(pages(ALL_ENDPOINT, query, client:, **params))
@@ -84,8 +88,8 @@ module X
       # @param client [Object] the client used to make the requests
       # @param params [Hash] query parameters
       # @return [Array<Hash>] the response bodies
-      # @raise [InvalidAttribute] if a response holds a meta that is not an object, or names the token of a page
-      #   before it as the next
+      # @raise [InvalidAttribute] if a response holds a meta that is not an object
+      # @raise [UnreadableResponse] if a response names the token of a page before it as the next
       def pages(path, query, client:, **params)
         params = {query:, granularity: DEFAULT_GRANULARITY}.merge(params)
         client = RECENT_ENDPOINT.eql?(path) ? Utils.space_client(client) : Utils.app_client(client)
@@ -106,12 +110,12 @@ module X
       # @api private
       # @param bodies [Array<Hash>] the response bodies so far
       # @return [String, nil] the token, or nil if the last page is the last of the counts
-      # @raise [InvalidAttribute] if the last response holds a meta that is not an object, or names the token of a
-      #   page before it as the next
+      # @raise [InvalidAttribute] if the last response holds a meta that is not an object
+      # @raise [UnreadableResponse] if the last response names the token of a page before it as the next
       def next_token(bodies)
         tokens = bodies.map { |body| Shape.dig("The next page of the counts of #{self}", body, %w[meta next_token]) }
         token = tokens.last
-        raise InvalidAttribute, "The counts of #{self} name the next_token #{token.inspect}, which fetched an earlier page" if tokens.count(token) > 1
+        raise UnreadableResponse, "The counts of #{self} name the next_token #{token.inspect}, which fetched an earlier page" if tokens.count(token) > 1
 
         token
       end
