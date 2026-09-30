@@ -160,6 +160,24 @@ module X
     #   error.problems.all?(&:disconnect?)
     def disconnect? = type.to_s.end_with?("/operational-disconnect")
 
+    # Check whether another problem is the same problem
+    #
+    # @api public
+    # @param other [Object] the other problem
+    # @return [Boolean] true if the other problem is a Problem of the same attributes
+    # @example Check whether a response reported a problem before
+    #   seen.include?(problem)
+    def ==(other) = other.instance_of?(self.class) && attrs.eql?(other.attrs)
+    alias_method :eql?, :==
+
+    # The hash of the problem, which equal problems share
+    #
+    # @api public
+    # @return [Integer] the hash
+    # @example Count the distinct problems
+    #   problems.uniq.size
+    def hash = [self.class, attrs].hash
+
     # The attributes, as a JSON encoder and ActiveSupport read them
     #
     # ActiveSupport's Object#as_json would otherwise read the instance variables, which is the same Hash under

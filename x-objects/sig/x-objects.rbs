@@ -299,6 +299,9 @@ module X
     def entries: () -> Array[R]
     def next_token: () -> String?
     def result_count: () -> Integer?
+    def ==: (untyped other) -> bool
+    def eql?: (untyped other) -> bool
+    def hash: () -> Integer
     def as_json: (*untyped) -> Array[Hash[String, untyped]]
     def to_json: (?JSON::State? state) -> String
     def marshal_dump: () -> [Integer, Array[[singleton(Resource), Objects::attrs, bool, Integer]], Hash[String, untyped], Array[Problem], Array[Objects::included]]

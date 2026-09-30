@@ -117,6 +117,9 @@ module X
     def message: () -> String?
     def not_found?: () -> bool
     def disconnect?: () -> bool
+    def ==: (untyped other) -> bool
+    def eql?: (untyped other) -> bool
+    def hash: () -> Integer
     def as_json: (*untyped) -> Hash[String, untyped]
     def to_json: (?JSON::State? state) -> String
     def inspect: () -> String

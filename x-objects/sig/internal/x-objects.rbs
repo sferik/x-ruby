@@ -710,6 +710,7 @@ module X
     YAML_KEYS: Array[String]
 
     private
+    def state: () -> [Array[R], Hash[String, untyped], Array[Problem]]
     def response_of: (Resource resource) -> Objects::Includes
     def read: (singleton(Resource) klass, Objects::attrs attrs, bool hydrated, Objects::Includes includes) -> R
     def resource_states: (Array[Objects::Includes] responses) -> Array[[singleton(Resource), Objects::attrs, bool, Integer]]

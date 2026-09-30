@@ -82,6 +82,28 @@ module X
 
     alias_method :entries, :to_a
 
+    # Check whether another page is the same page
+    #
+    # Its resources are compared as resources are, by class and identifier, so a page read again, or read back from
+    # Marshal, equals the page it was read from.
+    #
+    # @api public
+    # @param other [Object] the other page
+    # @return [Boolean] true if the other page is a Page of the same resources, in the same order, with the same meta
+    #   and problems
+    # @example Check whether a page was read before
+    #   seen.include?(page)
+    def ==(other) = other.instance_of?(self.class) && state.eql?(other.__send__(:state))
+    alias_method :eql?, :==
+
+    # The hash of the page, which equal pages share
+    #
+    # @api public
+    # @return [Integer] the hash
+    # @example Count the distinct pages
+    #   pages.uniq.size
+    def hash = [self.class, state].hash
+
     # The token used to fetch the next page
     #
     # @api public
@@ -183,6 +205,11 @@ module X
     def init_with(coder) = marshal_load(coder.map.values_at(*YAML_KEYS))
 
     private
+
+    # What a page is compared by: its resources, meta, and problems
+    # @api private
+    # @return [Array(Array<Resource>, Hash, Array<Problem>)] the resources, meta, and problems
+    def state = [items, meta, problems]
 
     # The identity map of the response a resource came from
     # @api private

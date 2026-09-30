@@ -19,6 +19,33 @@ module X
       assert_predicate problem.attrs, :frozen?
     end
 
+    def test_problems_of_the_same_attributes_are_equal
+      problem = Problem.new(NOT_FOUND)
+      same = Problem.new(NOT_FOUND.transform_keys(&:to_sym))
+
+      assert_equal problem, same
+      assert problem.eql?(same)
+      assert_equal 1, {problem => 1}.fetch(same)
+      assert_equal [problem], [problem, same, Marshal.load(Marshal.dump(same))].uniq
+    end
+
+    def test_problems_of_other_attributes_are_not_equal
+      problem = Problem.new(NOT_FOUND)
+      other = Problem.new(NOT_FOUND.merge("value" => "2"))
+
+      refute_equal problem, other
+      refute_equal problem.hash, other.hash
+      refute_equal problem, NOT_FOUND
+    end
+
+    def test_problems_of_another_class_are_not_equal
+      problem = Problem.new(NOT_FOUND)
+      subclassed = Class.new(Problem).new(NOT_FOUND)
+
+      refute_equal problem, subclassed
+      refute_equal problem.hash, subclassed.hash
+    end
+
     def identifiers(attrs) = Problem.new(attrs).then { |problem| [problem.resource_id, problem.value] }
 
     def test_an_identifier_is_the_string_the_api_gave_whatever_the_kind_of_resource

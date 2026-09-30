@@ -11,6 +11,32 @@ module X
       @page = Page.new(@users, {next_token: "abc", result_count: 2})
     end
 
+    def test_pages_of_the_same_resources_meta_and_problems_are_equal
+      same = Page.new([User.new({"id" => "1", "username" => "a"}), User.from_id(2)], {"next_token" => "abc", "result_count" => 2})
+
+      assert_equal @page, same
+      assert @page.eql?(same)
+      assert_equal 1, {@page => 1}.fetch(same)
+      assert_equal [@page], [@page, same, Marshal.load(Marshal.dump(@page))].uniq
+    end
+
+    def test_pages_of_other_resources_order_meta_or_problems_are_not_equal
+      problem = Problem.new({"title" => "Not Found Error"})
+
+      [Page.new(@users.reverse, @page.meta), Page.new(@users.take(1), @page.meta), Page.new(@users, {next_token: "abd", result_count: 2}),
+        Page.new(@users, @page.meta, problems: [problem]), @users].each do |other|
+        refute_equal @page, other
+        refute_equal @page.hash, other.hash
+      end
+    end
+
+    def test_pages_of_another_class_are_not_equal
+      subclassed = Class.new(Page).new(@users, @page.meta)
+
+      refute_equal @page, subclassed
+      refute_equal @page.hash, subclassed.hash
+    end
+
     def test_items
       assert_equal @users, @page.items
       assert_predicate @page.items, :frozen?
