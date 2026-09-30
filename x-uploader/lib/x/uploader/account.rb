@@ -87,7 +87,7 @@ module X
       # @param height [Integer, nil] the height of the banner
       # @param offset_left [Integer, nil] the left offset of the banner
       # @param offset_top [Integer, nil] the top offset of the banner
-      # @return [nil] nil once the banner is updated, which the API answers with no content
+      # @return [void]
       # @raise [Errno::ENOENT] if the file does not exist
       # @raise [ArgumentError] if the media is neither a path nor an IO
       # @raise [InvalidMedia] if the media cannot be read, or is empty, which holds nothing to upload
@@ -115,7 +115,7 @@ module X
       # @param height [Integer, nil] the height of the banner
       # @param offset_left [Integer, nil] the left offset of the banner
       # @param offset_top [Integer, nil] the top offset of the banner
-      # @return [nil] nil once the banner is updated, which the API answers with no content
+      # @return [void]
       # @raise [InvalidMedia] if the content is empty, which holds nothing to upload
       # @raise [InvalidMediaType] if the content does not begin with the signature of a GIF, a JPEG, or a PNG
       # @example Update profile banner from binary content

@@ -67,7 +67,7 @@ module X
 
       assert_equal({"text" => "long"}, matched)
       assert_equal({tweet_count: 3, pinned_tweet_id: 9}, user.deconstruct_keys(%i[tweet_count pinned_tweet_id pinned_tweet]))
-      assert_equal({conversation_id: "9-8"}, message.deconstruct_keys([:conversation_id]))
+      assert_equal({dm_conversation_id: "9-8"}, message.deconstruct_keys(%i[dm_conversation_id conversation_id]))
     end
 
     def test_a_pattern_asking_for_every_attribute_reads_each_once_by_the_name_it_is_declared_by
@@ -82,7 +82,7 @@ module X
       assert_equal User.__send__(:attribute_aliases) + [:handle], klass.__send__(:attribute_aliases)
       assert_equal "sferik", klass.new({"id" => "1", "username" => "sferik"}).handle
       assert_equal %i[retweet_count edit_history_tweet_ids note_tweet referenced_tweets], Post.__send__(:attribute_aliases)
-      assert_equal %i[conversation_id referenced_tweets], DirectMessage.__send__(:attribute_aliases)
+      assert_equal %i[referenced_tweets], DirectMessage.__send__(:attribute_aliases)
     end
 
     def test_a_resource_without_aliases_declares_none

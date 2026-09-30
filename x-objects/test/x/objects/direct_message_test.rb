@@ -37,7 +37,7 @@ module X
     end
 
     def test_more_attributes
-      assert_equal "9-8", @message.conversation_id
+      refute_respond_to @message, :conversation_id
       assert_equal [9, 8], @message.participant_ids
       assert_equal [{"id" => "5"}], @message.referenced_posts
       assert_equal @message.referenced_posts, @message.referenced_tweets

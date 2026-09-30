@@ -285,7 +285,6 @@ module X
         self.class.delete(self, client: client!)
       end
 
-      attribute_alias :conversation_id, :dm_conversation_id
       attribute_alias :referenced_tweets, :referenced_posts
     end
   end

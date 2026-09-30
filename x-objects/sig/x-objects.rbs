@@ -713,7 +713,6 @@ module X
     def created_at: () -> Time?
     def sender_id: () -> Integer?
     def dm_conversation_id: () -> String?
-    def conversation_id: () -> String?
     def participant_ids: () -> Array[Integer]
     def referenced_posts: () -> Array[Hash[String, String]]
     def referenced_tweets: () -> Array[Hash[String, String]]

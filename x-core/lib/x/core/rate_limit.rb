@@ -26,18 +26,6 @@ module X
     #   rate_limit.type # => "rate-limit"
     attr_reader :type
 
-    # The response the limit was read from, as the client received it
-    #
-    # It is an escape hatch, for what the limit does not read: {#limit}, {#remaining}, and {#reset_at} are the
-    # headers it reports, and X::Response#headers and X::HTTPError#headers are all of them. It is the Net::HTTP
-    # response the client sent the request with.
-    #
-    # @api public
-    # @return [Net::HTTPResponse] the HTTP response the rate limit headers came with
-    # @example Read the reason phrase of the status line
-    #   rate_limit.http_response.message # => "Too Many Requests"
-    attr_reader :http_response
-
     # Every rate limit a response reports in full, in the order of TYPES
     #
     # Internal to x-core: it takes the Net::HTTP response of a request, so that it can change within 1.x, as that
@@ -129,6 +117,16 @@ module X
     end
 
     private
+
+    # The response the limit was read from, as the client received it
+    #
+    # Internal to x-core: the limit reads its headers from it, so that a limit promises nothing of Net::HTTP.
+    # {#limit}, {#remaining}, and {#reset_at} are the headers it reports, and X::Response#http_response and
+    # X::HTTPError#http_response are the response itself.
+    #
+    # @api private
+    # @return [Net::HTTPResponse] the HTTP response the rate limit headers came with
+    attr_reader :http_response
 
     # Read a field of the rate limit from its header, in base 10
     # @api private

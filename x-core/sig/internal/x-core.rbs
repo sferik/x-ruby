@@ -664,6 +664,7 @@ module X
     def self.reported?: (String type, Net::HTTPResponse http_response) -> bool
 
     private
+    attr_reader http_response: Net::HTTPResponse
     def field: (String name) -> Integer
   end
 

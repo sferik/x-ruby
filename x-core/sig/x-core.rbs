@@ -275,7 +275,6 @@ module X
     TYPES: Array[String]
 
     attr_reader type: String
-    attr_reader http_response: Net::HTTPResponse
     def limit: -> Integer
     def remaining: -> Integer
     def exhausted?: -> bool
@@ -299,8 +298,8 @@ module X
   end
 
   class StreamingClient
-    DEFAULT_READ_TIMEOUT: Integer
-    DEFAULT_MAX_RECONNECTS: Float
+    DEFAULT_READ_TIMEOUT: Float | Integer
+    DEFAULT_MAX_RECONNECTS: Float | Integer
 
     type addable_rule = StreamRule | Hash[untyped, untyped] | String
     type rule = addable_rule | Integer
@@ -373,13 +372,13 @@ module X
     DEFAULT_BASE_URL: String
     DEFAULT_ARRAY_CLASS: singleton(Array)
     DEFAULT_OBJECT_CLASS: singleton(Hash)
-    DEFAULT_OPEN_TIMEOUT: Integer
-    DEFAULT_READ_TIMEOUT: Integer
-    DEFAULT_WRITE_TIMEOUT: Integer
-    DEFAULT_KEEP_ALIVE_TIMEOUT: Integer
+    DEFAULT_OPEN_TIMEOUT: Float | Integer
+    DEFAULT_READ_TIMEOUT: Float | Integer
+    DEFAULT_WRITE_TIMEOUT: Float | Integer
+    DEFAULT_KEEP_ALIVE_TIMEOUT: Float | Integer
     DEFAULT_MAX_REDIRECTS: Integer
     DEFAULT_MAX_RATE_LIMIT_RETRIES: Integer
-    DEFAULT_MAX_RATE_LIMIT_WAIT: Integer
+    DEFAULT_MAX_RATE_LIMIT_WAIT: Float | Integer
     DEFAULT_MAX_RETRIES: Integer
 
     attr_reader on_token_refresh: _TokenRefreshHook?
