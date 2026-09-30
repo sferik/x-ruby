@@ -5,7 +5,7 @@ require_relative "../../test_helper"
 module X
   module Objects
     class APITimelinesTest < Minitest::Test
-      cover API::Lookups
+      cover Objects::Lookups
       cover Post
       cover Objects::PostSearch
 

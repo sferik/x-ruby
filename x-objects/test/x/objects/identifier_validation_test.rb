@@ -9,7 +9,7 @@ module X
     cover Objects::Finders
     cover Objects::BatchFinders
     cover Objects::Relationships
-    cover Objects::API::Actions::Relationships
+    cover Objects::Actions::Relationships
 
     MESSAGE = "\"sferik\" is not an identifier: pass X::User, an Integer, or a String of digits"
 

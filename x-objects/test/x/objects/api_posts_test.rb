@@ -5,7 +5,7 @@ require_relative "../../test_helper"
 module X
   module Objects
     class APIPostsTest < Minitest::Test
-      cover API::Actions::Posts
+      cover Objects::Actions::Posts
 
       def setup
         @client = FakeClient.new

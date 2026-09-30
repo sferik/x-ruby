@@ -5,7 +5,7 @@ require_relative "../../test_helper"
 module X
   class UsageTest < Minitest::Test
     cover Usage
-    cover Objects::API::Lookups
+    cover Objects::Lookups
 
     DATA = {
       "project_id" => "1234567890", "project_usage" => "1234", "project_cap" => "3000000", "cap_reset_day" => 16,

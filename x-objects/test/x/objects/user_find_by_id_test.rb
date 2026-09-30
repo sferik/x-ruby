@@ -7,7 +7,7 @@ module X
   # variable, where find takes it for a username
   class UserFindByIdTest < Minitest::Test
     cover X::Objects::UserFinders
-    cover X::Objects::API::Lookups
+    cover X::Objects::Lookups
 
     def setup
       @client = FakeClient.new

@@ -6,7 +6,7 @@ module X
   class TrendTest < Minitest::Test
     cover Trend
     cover PersonalizedTrend
-    cover Objects::API::Lookups::Trends
+    cover Objects::Lookups::Trends
 
     TRENDS = [{"trend_name" => "#ruby", "tweet_count" => 1234}, {"trend_name" => "Rails"}].freeze
     PERSONALIZED = [{"trend_name" => "#ruby", "category" => "Technology", "post_count" => "12.3K posts", "trending_since" => "Trending now"}].freeze

@@ -5,7 +5,7 @@ require_relative "../../test_helper"
 module X
   module Objects
     class APIProblemForwardingTest < Minitest::Test
-      cover API::Lookups
+      cover Objects::Lookups
       cover X::User
       cover X::Objects::UserCollections
       cover X::Objects::UserFinders

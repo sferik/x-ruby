@@ -4,10 +4,10 @@ require_relative "../../test_helper"
 
 module X
   class CurrentUserIdTest < Minitest::Test
-    cover Objects::API::Lookups
+    cover Objects::Lookups
     cover Objects::Utils
-    cover Objects::API::Actions::Relationships
-    cover Objects::API::Actions::Engagement
+    cover Objects::Actions::Relationships
+    cover Objects::Actions::Engagement
     cover Objects::Relationships
 
     # An authenticator double that names the user its credentials act for, as an OAuth 1.0a one does

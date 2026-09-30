@@ -1,5 +1,5 @@
 # The public interface of x-objects, as its @api public documentation states it. The modules the resource classes
-# and X::Objects::API are built of, such as Finders, Relationships, and API::Lookups::Users, the helpers of the
+# and X::Objects::API are built of, such as Finders, Relationships, and Lookups::Users, the helpers of the
 # object layer, such as Utils, Pages, and Includes, and the constants, methods, and instance variables the code keeps
 # private are declared in sig/internal/x-objects.rbs, which reopens the same modules and classes, so that Steep type
 # checks the gem against them, but which the gem does not ship. The public methods those modules give a resource

@@ -5,7 +5,7 @@ require_relative "../../test_helper"
 module X
   class SpaceCreatorsAndBuyersTest < Minitest::Test
     cover Space
-    cover Objects::API::Lookups
+    cover Objects::Lookups
 
     # A client with an app-only client, as an X::Client that signs with OAuth 1.0a has
     class UserClient < FakeClient

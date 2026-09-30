@@ -6,7 +6,7 @@ module X
   class NameValidationTest < Minitest::Test
     cover Objects::Utils
     cover Objects::UserFinders
-    cover Objects::API::Lookups
+    cover Objects::Lookups
     cover Objects::BatchFinders
 
     RAW_MESSAGE = "\"a/b?c=d\" is not an identifier: pass X::Space, or a String of word characters"

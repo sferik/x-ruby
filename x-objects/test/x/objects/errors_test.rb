@@ -9,7 +9,7 @@ module X
       cover Resource
       cover Objects::Finders
       cover Objects::BatchFinders
-      cover API::Lookups
+      cover Objects::Lookups
 
       def setup
         @client = FakeClient.new
