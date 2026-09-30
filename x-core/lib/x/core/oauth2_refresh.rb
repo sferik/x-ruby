@@ -58,7 +58,8 @@ module X
       # @param client [Client, nil] the client whose request refreshes, or nil for none
       # @return [void]
       # @raise [AuthorizationError] if X refuses to refresh the token
-      # @raise [TooManyRequests, ServerError] if the token endpoint limits the rate of the request or fails to answer
+      # @raise [HTTPError, InvalidResponse] if the token endpoint limits the rate of the request or fails to answer,
+      #   as a server error, a redirect, or the page of a proxy says
       # @raise [TokenReportFailed] if on_token_refresh raises for the tokens of the refresh
       def refresh_expired_token(connection, client = nil)
         tokens = @mutex.synchronize { renew(connection) if refresh_token && token_expired? }
@@ -79,7 +80,8 @@ module X
       # @param client [Client, nil] the client whose request the API rejected, or nil for none
       # @return [Boolean] true if the access token is no longer the one rejected
       # @raise [AuthorizationError] if X refuses to refresh the token
-      # @raise [TooManyRequests, ServerError] if the token endpoint limits the rate of the request or fails to answer
+      # @raise [HTTPError, InvalidResponse] if the token endpoint limits the rate of the request or fails to answer,
+      #   as a server error, a redirect, or the page of a proxy says
       # @raise [TokenReportFailed] if on_token_refresh raises for the tokens of the refresh
       def refresh_rejected_token!(rejected_token, connection, client = nil)
         tokens, replaced = @mutex.synchronize do
@@ -135,7 +137,8 @@ module X
       # @return [OAuth2Tokens, nil] the tokens the refresh issued, or those it took from the store in place of a
       #   refusal, or nil for tokens taken from the store that need no refresh
       # @raise [AuthorizationError] if X refuses to refresh the token
-      # @raise [TooManyRequests, ServerError] if the token endpoint limits the rate of the request or fails to answer
+      # @raise [HTTPError, InvalidResponse] if the token endpoint limits the rate of the request or fails to answer,
+      #   as a server error, a redirect, or the page of a proxy says
       def renew(connection)
         refresh(connection) unless adopt_stored_tokens && !token_expired?
       end
@@ -151,7 +154,8 @@ module X
       # @return [OAuth2Tokens] the tokens the refresh issued, once the authenticator holds them, or those it took from
       #   the store in place of a refusal
       # @raise [AuthorizationError] if X refuses to refresh the token, and the store holds no other
-      # @raise [TooManyRequests, ServerError] if the token endpoint limits the rate of the request or fails to answer
+      # @raise [HTTPError, InvalidResponse] if the token endpoint limits the rate of the request or fails to answer,
+      #   as a server error, a redirect, or the page of a proxy says
       def refresh(connection)
         held = refresh_token #: String
         update_tokens(TokenEndpoint.fetch(oauth2_client.refresh_token_request(refresh_token: held), connection:))

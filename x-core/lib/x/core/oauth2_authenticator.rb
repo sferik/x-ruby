@@ -103,7 +103,8 @@ module X
     # @param _request [#method, #uri, #body, #[], nil] the request, which a bearer token does not sign
     # @return [Hash{String => String}] the authentication header
     # @raise [AuthorizationError] if the token has expired and X refuses to refresh it
-    # @raise [TooManyRequests, ServerError] if the token endpoint limits the rate of the request or fails to answer
+    # @raise [HTTPError, InvalidResponse] if the token endpoint limits the rate of the request or fails to answer,
+    #   as a server error, a redirect, or the page of a proxy says
     # @raise [TokenReportFailed] if on_token_refresh raises for the tokens of a refresh, with the tokens
     # @example Get the header
     #   authenticator.headers(request)
@@ -151,7 +152,8 @@ module X
     # @return [OAuth2Tokens] the tokens the refresh issued, or those it took from storage in place of a refusal
     # @raise [UnsupportedOperation] if the authenticator holds no refresh token, before any request
     # @raise [AuthorizationError] if X refuses to refresh the token
-    # @raise [TooManyRequests, ServerError] if the token endpoint limits the rate of the request or fails to answer
+    # @raise [HTTPError, InvalidResponse] if the token endpoint limits the rate of the request or fails to answer,
+    #   as a server error, a redirect, or the page of a proxy says
     # @raise [TokenReportFailed] if on_token_refresh raises for the tokens of the refresh, with the tokens
     # @example Refresh the tokens and store them
     #   store.save(**authenticator.refresh!.to_h)

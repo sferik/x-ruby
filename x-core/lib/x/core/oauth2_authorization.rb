@@ -178,7 +178,8 @@ module X
     #   token expires, and cannot authenticate as the app
     # @raise [AuthorizationError] if the user denied the app, the state does not match, X refuses the code, or the
     #   redirect is not a valid URL
-    # @raise [TooManyRequests, ServerError] if the token endpoint limits the rate of the request or fails to answer
+    # @raise [HTTPError, InvalidResponse] if the token endpoint limits the rate of the request or fails to answer,
+    #   as a server error, a redirect, or the page of a proxy says
     # @example Store the credentials of the user
     #   store.save(authorization.credentials(request.url))
     # @example Build the client of a confidential app from the credentials it stored
@@ -207,7 +208,8 @@ module X
     #   which the client is given by the exchange of the code
     # @raise [AuthorizationError] if the user denied the app, the state does not match, X refuses the code, or the
     #   redirect is not a valid URL
-    # @raise [TooManyRequests, ServerError] if the token endpoint limits the rate of the request or fails to answer
+    # @raise [HTTPError, InvalidResponse] if the token endpoint limits the rate of the request or fails to answer,
+    #   as a server error, a redirect, or the page of a proxy says
     # @raise [TokenReportFailed] if on_token_refresh raises for the tokens of the exchange, with the client and tokens
     # @example Act for the user who authorized the app, storing the refresh token of the exchange and of each refresh
     #   client = authorization.client(request.url, on_token_refresh: ->(tokens) { store.save(tokens.refresh_token) })

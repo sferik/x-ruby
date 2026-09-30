@@ -7,8 +7,9 @@ module X
   #
   # X refuses a token when it declines an authorization code, a refresh token, such as one that was revoked or already
   # used, or an app's API key and secret. The error code tells these apart. A token endpoint that fails to answer, with
-  # 429 Too Many Requests or a server error, refuses nothing, so it raises the TooManyRequests or ServerError a
-  # response of the API raises, which a client retries, rather than this error.
+  # 429 Too Many Requests, a server error, a redirect, or a page that is not JSON, such as that of a proxy, firewall,
+  # or captive portal, refuses nothing, so it raises the HTTPError, such as the TooManyRequests or ServerError a client
+  # retries, or the InvalidResponse, a response of the API raises, rather than this error.
   #
   # It descends from Error directly, rather than from HTTPError or Unauthorized, since the redirect back from X raises
   # it without a response, for a user who declined or a state that does not match. A client that refreshes an

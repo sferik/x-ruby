@@ -7,13 +7,16 @@ module X
     module TokenEndpoint
       extend TokenEndpoint
 
-      FAILURES: Array[singleton(Net::HTTPTooManyRequests) | singleton(Net::HTTPServerError)]
+      REFUSALS: Array[singleton(Net::HTTPBadRequest) | singleton(Net::HTTPUnauthorized)]
+      ANSWERS: Array[singleton(Net::HTTPSuccess) | singleton(Net::HTTPClientError)]
 
       def fetch: (SimpleOAuth::OAuth2::Request token_request, connection: Connection) -> SimpleOAuth::OAuth2::Token
       def url_at: (String base_url, String token_url) -> String
 
       private
-      def failure?: (Net::HTTPResponse response) -> bool
+      def answer?: (Net::HTTPResponse response) -> bool
+      def json_object?: (String body) -> bool
+      def failure: (Net::HTTPResponse response, Net::HTTP::Post request) -> (HTTPError | InvalidResponse)
       def post: (SimpleOAuth::OAuth2::Request token_request) -> Net::HTTP::Post
     end
 
