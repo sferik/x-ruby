@@ -41,6 +41,12 @@ module X
       assert_equal [2, [1]], [result, @sleeps]
     end
 
+    def test_sends_an_idempotent_request_again_after_the_api_gave_up_waiting_for_it
+      result = handle(Core::RetryHandler.new(max_retries: 1)) { (@attempts < 1) ? fail_with(RequestTimeout) : @attempts += 1 }
+
+      assert_equal [2, [1]], [result, @sleeps]
+    end
+
     def test_waits_a_second_and_doubles_the_wait_before_each_retry
       assert_raises(NetworkError) { handle(Core::RetryHandler.new(max_retries: 3)) { fail_with(NetworkError) } }
       assert_equal [4, [1, 2, 4]], [@attempts, @sleeps]
@@ -124,7 +130,7 @@ module X
     end
 
     def status_of(error_class)
-      {ServiceUnavailable => "503", InternalServerError => "500", NotFound => "404"}.fetch(error_class)
+      {ServiceUnavailable => "503", InternalServerError => "500", NotFound => "404", RequestTimeout => "408"}.fetch(error_class)
     end
   end
 end

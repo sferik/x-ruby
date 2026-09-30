@@ -4,6 +4,7 @@ require "net/http"
 require "socket"
 require_relative "errors/http_error"
 require_relative "errors/network_error"
+require_relative "errors/request_timeout"
 require_relative "errors/server_error"
 require_relative "setting_validator"
 
@@ -14,12 +15,12 @@ module X
     # A client sends no POST again, since the API may have acted on one whose answer never arrived, and sends no
     # request again after its answer failed to arrive, since the API bills a read it answered whether or not the
     # answer arrived. A request that is safe to send again anyway, such as the chunk of an upload, which names the
-    # segment it is appended at and which the API bills nothing for, is sent again with this: after a ServerError or
-    # a NetworkError of any kind, up to max_retries times, as a client sends an idempotent request again, after the
-    # wait a response asks for, or a backoff that doubles with each retry and is cut short at random, so that the
-    # requests one failure ended are not sent again together. A response that asks to be left alone for longer than
-    # a minute raises at once. The block must build its request anew each time, so that each attempt is signed
-    # afresh, as a request of a client is.
+    # segment it is appended at and which the API bills nothing for, is sent again with this: after a ServerError, a
+    # RequestTimeout, or a NetworkError of any kind, up to max_retries times, as a client sends an idempotent request
+    # again, after the wait a response asks for, or a backoff that doubles with each retry and is cut short at
+    # random, so that the requests one failure ended are not sent again together. A response that asks to be left
+    # alone for longer than a minute raises at once. The block must build its request anew each time, so that each
+    # attempt is signed afresh, as a request of a client is.
     #
     # Wrap a request the client sends no more than once, such as a POST: a client sends a GET, a PUT, or a DELETE
     # again itself, so one wrapped in this is sent max_retries times more for each time this sends it, nine times in
@@ -32,8 +33,8 @@ module X
     # @return [Object] what the block returns
     # @raise [ArgumentError] if the maximum number of retries is not an Integer of at least 0
     # @raise [NetworkError] if the request fails once more than the retries allow
-    # @raise [ServerError] if the API fails to answer once more than the retries allow, or asks for a wait longer
-    #   than a minute
+    # @raise [ServerError, RequestTimeout] if the API fails to answer once more than the retries allow, or asks for a
+    #   wait longer than a minute
     # @example Append a chunk of an upload, again after a failure, as often as the client sends a request again
     #   X::Core.with_retries(max_retries: client.max_retries) { client.post("media/upload/1/append", body, headers:) }
     def self.with_retries(max_retries: RetryHandler::DEFAULT_MAX_RETRIES, &)
@@ -54,8 +55,9 @@ module X
       # The longest wait a response may ask for that a request waits out before it is sent again; a response that
       # asks to be left alone for longer raises at once, rather than hold a caller for minutes on end
       MAX_RETRY_AFTER = 60
-      # The failures a retry may follow, neither of which the request itself is the reason for
-      RETRIABLE_ERRORS = [NetworkError, ServerError].freeze
+      # The failures a retry may follow, none of which the request itself is the reason for: a 408 says the API gave
+      # up waiting for the request, not that it refused it
+      RETRIABLE_ERRORS = [NetworkError, ServerError, RequestTimeout].freeze
       # The errors of a socket, the cause of a NetworkError, that fail a request before any of it is written: a host
       # that cannot be resolved or reached, a connection refused, and a connection or TLS handshake that timed out
       UNSENT_ERRORS = [Errno::ECONNREFUSED, Errno::EHOSTUNREACH, Errno::ENETUNREACH, Net::OpenTimeout, SocketError].freeze
@@ -100,8 +102,8 @@ module X
       # @yield runs the request
       # @return [Object] what the block returns
       # @raise [NetworkError] if the request fails once more than the retries allow
-      # @raise [ServerError] if the API fails to answer once more than the retries allow, or asks for a wait longer
-      #   than MAX_RETRY_AFTER
+      # @raise [ServerError, RequestTimeout] if the API fails to answer once more than the retries allow, or asks for a
+      #   wait longer than MAX_RETRY_AFTER
       # @example Retry a lookup
       #   handler.handle(idempotent: true) { client.get("users/me") }
       def handle(idempotent:, resend_unanswered: false)
@@ -122,15 +124,16 @@ module X
 
       # Whether a failure leaves a request safe to send again
       #
-      # A ServerError is an answer, which says the API failed to act on the request. A NetworkError says the API never
-      # received it only when its cause is among UNSENT_ERRORS; any other may have come after the API answered.
+      # A ServerError or a RequestTimeout is an answer, which says the API failed to act on the request. A NetworkError
+      # says the API never received it only when its cause is among UNSENT_ERRORS; any other may have come after the
+      # API answered.
       #
       # @api private
       # @param error [Error] the error the request raised
       # @param resend_unanswered [Boolean] whether a request the API may have answered is sent again
       # @return [Boolean] true if the request may be sent again
       def resendable?(error, resend_unanswered)
-        resend_unanswered || error.is_a?(ServerError) || UNSENT_ERRORS.any? { |unsent| error.cause.is_a?(unsent) }
+        resend_unanswered || error.is_a?(HTTPError) || UNSENT_ERRORS.any? { |unsent| error.cause.is_a?(unsent) }
       end
 
       # The seconds a response asks a request to wait before it is sent again

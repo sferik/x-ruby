@@ -144,7 +144,7 @@ module X
       DEFAULT_MAX_RETRIES: Integer
       INITIAL_WAIT: Integer
       MAX_RETRY_AFTER: Integer
-      RETRIABLE_ERRORS: Array[singleton(NetworkError) | singleton(ServerError)]
+      RETRIABLE_ERRORS: Array[singleton(NetworkError) | singleton(ServerError) | singleton(RequestTimeout)]
       UNSENT_ERRORS: Array[singleton(Exception)]
 
       attr_reader max_retries: Integer
@@ -164,7 +164,7 @@ module X
       HTTP_BACKOFF_START: Integer
       RATE_LIMIT_BACKOFF_START: Integer
       MAX_HTTP_BACKOFF: Integer
-      RECONNECTABLE_ERRORS: Array[singleton(NetworkError) | singleton(ServerError) | singleton(Conflict) | singleton(TooManyRequests) | singleton(InvalidResponse)]
+      RECONNECTABLE_ERRORS: Array[singleton(NetworkError) | singleton(ServerError) | singleton(RequestTimeout) | singleton(Conflict) | singleton(TooManyRequests) | singleton(InvalidResponse)]
 
       ConsumerError: singleton(StandardError)
 

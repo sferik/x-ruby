@@ -154,7 +154,7 @@ module X
     #   whose limit resets later raises TooManyRequests at once, and a few seconds are added at random to each wait,
     #   so that the requests one reset releases are not sent again in one burst
     # @param max_retries [Integer] the maximum number of times to send a request again after the API failed to answer
-    #   it, with a 5xx status, or after its answer never arrived, which is twice by default and is 0 for a client
+    #   it, with a 5xx status or a 408, or after its answer never arrived, which is twice by default and is 0 for a client
     #   that raises at once; a retry waits up to a second before the first and up to twice as long before each after,
     #   a random share of each wait taken off so that the requests one failure of the API ended are not sent again
     #   together, or for as long as the response asks when it carries a Retry-After header, whichever is longer, and
