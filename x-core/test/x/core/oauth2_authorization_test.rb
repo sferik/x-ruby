@@ -340,4 +340,41 @@ module X
       assert error.message.end_with?("cannot be given access_token, refresh_token")
     end
   end
+
+  # The code is exchanged at the origin of the base URL of the client it is exchanged for, as the client refreshes its
+  # tokens there
+  class OAuth2AuthorizationTokenEndpointTest < Minitest::Test
+    cover OAuth2Authorization
+
+    REDIRECT_URI = "https://example.com/callback"
+    CODE_VERIFIER = ("a" * 43).freeze
+    TOKENS = {token_type: "bearer", access_token: "ACCESS", refresh_token: "REFRESH", expires_in: 7200}.freeze
+
+    def authorization(**options)
+      OAuth2Authorization.new(client_id: TEST_CLIENT_ID, redirect_uri: REDIRECT_URI, state: "STATE", code_verifier: CODE_VERIFIER, **options)
+    end
+
+    def test_the_code_is_exchanged_at_the_origin_of_the_base_url_of_the_authorization
+      stub = stub_request(:post, "http://localhost:3000/2/oauth2/token").to_return(body: TOKENS.to_json)
+      client = authorization(base_url: "http://localhost:3000/2/").client("state=STATE&code=CODE")
+
+      assert_requested stub
+      assert_equal "http://localhost:3000/2/", client.base_url
+    end
+
+    def test_the_code_is_exchanged_at_the_origin_of_the_base_url_the_client_is_given
+      stub = stub_request(:post, "http://localhost:3000/2/oauth2/token").to_return(body: TOKENS.to_json)
+      client = authorization(base_url: "http://localhost:4000/2/").client("state=STATE&code=CODE", base_url: "http://localhost:3000/2/")
+
+      assert_requested stub
+      assert_equal "http://localhost:3000/2/", client.base_url
+    end
+
+    def test_the_credentials_are_exchanged_at_the_origin_of_the_base_url_of_the_authorization
+      stub = stub_request(:post, "http://localhost:3000/2/oauth2/token").to_return(body: TOKENS.to_json)
+      authorization(base_url: "http://localhost:3000/2/").credentials("state=STATE&code=CODE")
+
+      assert_requested stub
+    end
+  end
 end

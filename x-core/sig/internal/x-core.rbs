@@ -533,15 +533,16 @@ module X
     MISSING_STATE: String
 
     @pkce: SimpleOAuth::OAuth2::PKCE
-    @settings: {proxy_url: (URI::Generic | String)?, open_timeout: (Float | Integer)?, read_timeout: (Float | Integer)?, write_timeout: (Float | Integer)?, keep_alive_timeout: Float | Integer, debug_output: _DebugOutput?}
+    @settings: {base_url: String, proxy_url: (URI::Generic | String)?, open_timeout: (Float | Integer)?, read_timeout: (Float | Integer)?, write_timeout: (Float | Integer)?, keep_alive_timeout: Float | Integer, debug_output: _DebugOutput?}
 
     private
     def validate!: (client_id: String, redirect_uri: String, client_secret: String?, scopes: Array[String], state: String) -> void
     attr_reader client_secret: String?
+    def base_url: () -> String
     attr_reader connection: Core::Connection
-    def oauth2_client: () -> SimpleOAuth::OAuth2::Client
+    def oauth2_client: (String base_url) -> SimpleOAuth::OAuth2::Client
     def query_of: (String | Hash[String | Symbol, String] callback) -> (String | Hash[String | Symbol, String])
-    def exchange: (String | Hash[String | Symbol, String] callback) -> SimpleOAuth::OAuth2::Token
+    def exchange: (String | Hash[String | Symbol, String] callback, String base_url) -> SimpleOAuth::OAuth2::Token
     def report_exchange: (Client client, SimpleOAuth::OAuth2::Token token) -> void
     def credentials_from: (SimpleOAuth::OAuth2::Token token) -> Hash[Symbol, String | Time | nil]
   end

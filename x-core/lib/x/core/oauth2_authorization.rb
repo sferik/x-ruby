@@ -96,8 +96,8 @@ module X
     # Initialize an authorization
     #
     # A new state and code verifier are generated unless they are given. The authorization code is exchanged for
-    # tokens with the proxy, timeouts, keep-alive timeout, and debug output given, which a client built with {#client}
-    # is given too.
+    # tokens at the origin of the base URL given, with the proxy, timeouts, keep-alive timeout, and debug output given,
+    # which a client built with {#client} is given too.
     #
     # @api public
     # @param client_id [String] the OAuth 2.0 client ID of the app
@@ -106,6 +106,9 @@ module X
     # @param scopes [Array<String>] the scopes to ask the user for; offline.access keeps a refresh token
     # @param state [String] the state, as stored when the user was sent to X
     # @param code_verifier [String] the PKCE code verifier, as stored when the user was sent to X
+    # @param base_url [String] the base URL of the client the authorization builds, at whose origin the code is
+    #   exchanged, as the client refreshes its tokens, so that an authorization pointed at another host, such as a test
+    #   server, exchanges the code there
     # @param proxy_url [String, URI::Generic, nil] the proxy URL for the token request
     # @param open_timeout [Integer, Float, nil] the timeout for opening connections in seconds, or nil for none
     # @param read_timeout [Integer, Float, nil] the timeout for reading responses in seconds, or nil for none
@@ -122,14 +125,16 @@ module X
     # @raise [ArgumentError] if the scopes are not an Array of Strings
     # @raise [ArgumentError] if the state is nil or empty, which would accept the redirect of any authorization
     # @raise [ArgumentError] if the code verifier is not 43 to 128 unreserved characters
+    # @raise [ArgumentError] if the base URL is not an absolute http or https URL with no user, password, query, or
+    #   fragment
     # @raise [ArgumentError] if a timeout is neither a finite number of seconds of at least 0 nor nil, or the
     #   keep-alive timeout is not a finite number of seconds of at least 0
     # @example Start an authorization
     #   authorization = X::OAuth2Authorization.new(client_id: "id", redirect_uri: "https://example.com/callback")
     def initialize(client_id:, redirect_uri:, client_secret: nil, scopes: DEFAULT_SCOPES, state: SecureRandom.urlsafe_base64(STATE_BYTES),
-      code_verifier: SimpleOAuth::OAuth2::PKCE.generate.verifier, proxy_url: nil, open_timeout: Client::DEFAULT_OPEN_TIMEOUT,
-      read_timeout: Client::DEFAULT_READ_TIMEOUT, write_timeout: Client::DEFAULT_WRITE_TIMEOUT,
-      keep_alive_timeout: Client::DEFAULT_KEEP_ALIVE_TIMEOUT, debug_output: nil)
+      code_verifier: SimpleOAuth::OAuth2::PKCE.generate.verifier, base_url: Client::DEFAULT_BASE_URL, proxy_url: nil,
+      open_timeout: Client::DEFAULT_OPEN_TIMEOUT, read_timeout: Client::DEFAULT_READ_TIMEOUT,
+      write_timeout: Client::DEFAULT_WRITE_TIMEOUT, keep_alive_timeout: Client::DEFAULT_KEEP_ALIVE_TIMEOUT, debug_output: nil)
       validate!(client_id:, redirect_uri:, client_secret:, scopes:, state:)
       @client_id = client_id
       @client_secret = client_secret
@@ -138,8 +143,8 @@ module X
       @state = state
       @pkce = SimpleOAuth::OAuth2::PKCE.new(verifier: code_verifier)
       @code_verifier = code_verifier
-      @settings = {proxy_url:, open_timeout:, read_timeout:, write_timeout:, keep_alive_timeout:, debug_output:}
-      @connection = Core::Connection.new(**@settings)
+      @settings = {base_url: Core::SettingValidator.base_url!(base_url), proxy_url:, open_timeout:, read_timeout:, write_timeout:, keep_alive_timeout:, debug_output:}
+      @connection = Core::Connection.new(**@settings.except(:base_url))
     end
 
     # Summarize the authorization for the console without revealing its secrets
@@ -159,7 +164,7 @@ module X
     # @example Send the user to X
     #   redirect_to authorization.url
     def url
-      oauth2_client.authorization_url(redirect_uri:, pkce: @pkce, state:, scope: scopes)
+      oauth2_client(base_url).authorization_url(redirect_uri:, pkce: @pkce, state:, scope: scopes)
     end
 
     # Exchange the code of the redirect back from X for the credentials of a client
@@ -184,7 +189,7 @@ module X
     #   store.save(authorization.credentials(request.url))
     # @example Build the client of a confidential app from the credentials it stored
     #   X::Client.new(**store.load, client_secret: ENV.fetch("X_CLIENT_SECRET"))
-    def credentials(callback) = credentials_from(exchange(callback))
+    def credentials(callback) = credentials_from(exchange(callback, base_url))
 
     # Exchange the code of the redirect back from X for a client
     #
@@ -199,10 +204,14 @@ module X
     # callable that raises, as one whose storage is briefly down may, raises TokenReportFailed, which holds the client
     # and the tokens, so neither is lost with the code.
     #
+    # The code is exchanged at the origin of the base URL of the client, the base_url of the options or else that of
+    # the authorization, as the client refreshes its tokens there.
+    #
     # @api public
     # @param callback [String, Hash] the redirect back from X: its URL, its query string, or its query parameters
     # @param options [Hash] other options of Client#initialize, such as on_token_refresh, which it is built with
-    #   beside the proxy, timeouts, keep-alive timeout, and debug output of the authorization, and in place of them
+    #   beside the base URL, proxy, timeouts, keep-alive timeout, and debug output of the authorization, and in place
+    #   of them
     # @return [Client] a client with the user's credentials
     # @raise [ArgumentError] if an option is one Client#initialize refuses, or a credential or an authenticator,
     #   which the client is given by the exchange of the code
@@ -217,8 +226,8 @@ module X
       given = options.keys & CREDENTIALS
       raise ArgumentError, format(CREDENTIALS_GIVEN_MESSAGE, given.join(", ")) unless given.empty?
 
-      Client.new(**options) # refuses an option before the code, which X accepts once, is spent
-      token = exchange(callback)
+      checked = Client.new(**@settings, **options) # refuses an option before the code, which X accepts once, is spent
+      token = exchange(callback, checked.base_url)
       Client.new(**credentials_from(token), client_secret:, **@settings, **options).tap { |client| report_exchange(client, token) }
     end
 
@@ -253,17 +262,29 @@ module X
     # @return [String, nil] the client secret, or nil for a public client
     attr_reader :client_secret
 
+    # The base URL of the client the authorization builds
+    #
+    # The code is exchanged at its origin, unless the client is given another.
+    #
+    # @api private
+    # @return [String] the base URL
+    def base_url = @settings.fetch(:base_url)
+
     # The connection that exchanges the authorization code for tokens
     # @api private
     # @return [Core::Connection] the connection
     attr_reader :connection
 
     # The client for the authorization page and token endpoint
+    #
+    # The token endpoint is the one at the origin of the base URL of the client the code is exchanged for.
+    #
     # @api private
+    # @param base_url [String] the base URL of the client the code is exchanged for
     # @return [SimpleOAuth::OAuth2::Client] the OAuth 2.0 client
-    def oauth2_client
+    def oauth2_client(base_url)
       SimpleOAuth::OAuth2::Client.new(client_id:, client_secret:, authorization_endpoint: AUTHORIZATION_URL,
-        token_endpoint: TOKEN_URL)
+        token_endpoint: Core::TokenEndpoint.url_at(base_url, TOKEN_URL))
     end
 
     # The query of a redirect back from X
@@ -280,12 +301,13 @@ module X
     # Exchange the code of the redirect back from X for a token
     # @api private
     # @param callback [String, Hash] the redirect back from X: its URL, its query string, or its query parameters
+    # @param base_url [String] the base URL of the client the code is exchanged for, at whose origin it is exchanged
     # @return [SimpleOAuth::OAuth2::Token] the token
     # @raise [AuthorizationError] if the user denied the app, the state does not match, X refuses the code, or the
     #   redirect is not a valid URL
-    def exchange(callback)
+    def exchange(callback, base_url)
       code = SimpleOAuth::OAuth2::AuthorizationResponse.parse(query_of(callback), state:).code
-      Core::TokenEndpoint.fetch(oauth2_client.authorization_code_request(code:, redirect_uri:, code_verifier:), connection:)
+      Core::TokenEndpoint.fetch(oauth2_client(base_url).authorization_code_request(code:, redirect_uri:, code_verifier:), connection:)
     rescue SimpleOAuth::OAuth2::Error => e
       raise AuthorizationError.__send__(:from, e, DEFAULT_ERROR_MESSAGE), cause: nil
     end

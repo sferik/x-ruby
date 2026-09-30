@@ -42,6 +42,12 @@ module X
       assert_raises(ArgumentError) { authorization(scopes: [:"tweet.read"]) }
     end
 
+    def test_a_base_url_that_is_not_one_a_client_takes_is_refused
+      ["api.x.com/2/", "https://user:SECRET@api.x.com/2/", nil].each do |base_url|
+        assert_raises(ArgumentError) { authorization(base_url:) }
+      end
+    end
+
     def test_an_empty_array_of_scopes_is_taken
       assert_empty authorization(scopes: []).scopes
     end
