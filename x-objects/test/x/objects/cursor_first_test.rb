@@ -131,4 +131,29 @@ module X
       assert_equal [7, 7, 7], [cursor.refresh, cursor.prefetch, cursor.stubs].map { |cursor| cursor.__send__(:min_results) }
     end
   end
+
+  class CursorFirstCountTest < Minitest::Test
+    cover Cursor
+    cover Objects::Utils
+
+    def setup
+      @client = FakeClient.new
+      @client.stub(:get, "users/1/followers", ->(query, _) { {"data" => (1..query.fetch("max_results").to_i).map { |id| {"id" => id.to_s} }} })
+      @user = User.new({"id" => "1"}, client: @client)
+    end
+
+    def test_first_and_take_read_a_float_count_as_the_integer_it_converts_to
+      assert_equal [[1, 2], [1, 2]], [@user.followers.first(2.5).map(&:id), @user.followers.take(2.9).map(&:id)]
+      assert_equal %w[2 2], @client.queries.map { |query| query["max_results"] }
+    end
+
+    def test_first_and_take_refuse_a_count_that_is_not_a_number_without_a_request
+      [->(cursor) { cursor.first("2") }, ->(cursor) { cursor.take("2") }, ->(cursor) { cursor.take(nil) }].each do |read|
+        error = assert_raises(TypeError) { read.call(@user.followers) }
+
+        assert_match(/\Ano implicit conversion of (String|NilClass) into Integer\z/, error.message)
+      end
+      assert_empty @client.requests
+    end
+  end
 end

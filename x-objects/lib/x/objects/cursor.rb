@@ -180,13 +180,15 @@ module X
     # and an iteration after first requests only what first left.
     #
     # @api public
-    # @param count [Integer, nil] the number of resources, or nil for the first resource alone
+    # @param count [Integer, nil] the number of resources, or nil for the first resource alone; a Float is read as
+    #   the Integer it converts to, as Array#first reads it
     # @return [Resource, Array<Resource>, nil] the first resource, or the first resources, frozen
     # @raise [ArgumentError] if the count is negative
+    # @raise [TypeError] if the count is not a number that converts to an Integer
     # @example Read ten followers in one request for ten users
     #   user.followers.first(10)
     def first(count = nil)
-      resources = @pages.read(count || 1) #: Array[untyped]
+      resources = @pages.read(count.nil? ? 1 : Objects::Utils.count!(count)) #: Array[untyped]
       return resources unless count.nil?
 
       resource, = resources
@@ -209,12 +211,14 @@ module X
     # The first few resources, requesting pages no larger than needed, as first does
     #
     # @api public
-    # @param count [Integer] the number of resources
+    # @param count [Integer] the number of resources; a Float is read as the Integer it converts to, as Array#take
+    #   reads it
     # @return [Array<Resource>] the first resources, frozen
-    # @raise [TypeError] if the count is not a number
+    # @raise [ArgumentError] if the count is negative
+    # @raise [TypeError] if the count is not a number that converts to an Integer, such as nil or a String
     # @example Read three followers in one request for three users
     #   user.followers.take(3)
-    def take(count) = first(Integer(count))
+    def take(count) = first(Objects::Utils.count!(count))
 
     # Check whether the collection holds any resource, requesting one
     #

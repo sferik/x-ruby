@@ -44,6 +44,16 @@ module X
         end
       end
 
+      # The number of resources a count asks for, converted as Array#first converts it
+      #
+      # @api private
+      # @param count [Object] the count
+      # @return [Integer] the count, as an Integer
+      # @raise [TypeError] if the count does not convert to an Integer
+      # @example Read a count given as a Float
+      #   X::Objects::Utils.count!(2.5) # => 2
+      def count!(count) = Integer.try_convert(count) || raise(TypeError, "no implicit conversion of #{count.class} into Integer")
+
       # The attributes a public constructor is given, which must be a Hash
       #
       # Attributes that are not one, such as nil, would otherwise be taken, and raise NoMethodError from a reader, far
