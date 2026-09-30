@@ -65,11 +65,29 @@ module X
       assert_raises(MissingMediaData) { Uploader::Metadata.add_subtitles(7, 8, "EN", client: @client) }
     end
 
-    def test_media_that_holds_no_identifier_raises
-      error = assert_raises(MissingMediaData) { UploadedMedia.new({}).id }
+    def test_media_built_by_hand_without_an_identifier_is_a_mistake_of_the_caller
+      error = assert_raises(ArgumentError) { UploadedMedia.new({}).id }
 
       assert_equal "The media holds no identifier", error.message
-      assert_raises(MissingMediaData) { UploadedMedia.new({"media_key" => "3_7"}).media_id }
+      assert_raises(ArgumentError) { UploadedMedia.new({"media_key" => "3_7"}).media_id }
+    end
+
+    def test_a_response_of_an_upload_whose_identifier_is_nil_or_empty_raises
+      [nil, ""].each do |id|
+        stub_request(:post, BASE_URL).to_return(headers: JSON_HEADERS, body: {data: {id:}}.to_json)
+        error = assert_raises(MissingMediaData, id.inspect) { Uploader::MediaUpload.upload("test/sample_files/sample.png", client: @client) }
+
+        assert_equal "The response of the upload holds no media", error.message
+      end
+    end
+
+    def test_a_response_that_initializes_an_upload_with_an_identifier_of_nil_or_empty_raises
+      [nil, ""].each do |id|
+        stub_init({data: {id:}})
+
+        assert_raises(MissingMediaData, id.inspect) { chunked_upload }
+      end
+      assert_not_requested :post, %r{/append\z}
     end
 
     private

@@ -33,8 +33,9 @@ module X
       # @return [UploadedMedia] the media given, if it is uploaded media, or else uploaded media built from the upload
       #   response, the media key, or the media identifier given
       # @raise [ArgumentError] if the alt text is empty or longer than the API takes, before a request
-      # @raise [ArgumentError] if the media given is neither media, a media key, nor a media identifier, or its media key names none
-      # @raise [MissingMediaData] if the media given holds no identifier, or the response holds no metadata or carries no body at all
+      # @raise [ArgumentError] if the media given is nil, holds no identifier, or is neither media, a media key, nor a
+      #   media identifier, or its media key names none
+      # @raise [MissingMediaData] if the response holds no metadata or carries no body at all
       # @example Describe an uploaded image
       #   Uploader::Metadata.add_alt_text(media, "A cat asleep on a keyboard", client: client)
       # @example Describe an image as it is uploaded, and attach it to a post
@@ -68,9 +69,9 @@ module X
       #   response, the media key, or the media identifier given
       # @raise [ArgumentError] if the media category is neither tweet_video nor amplify_video, or the language code is
       #   not two letters
-      # @raise [ArgumentError] if the video or the subtitles are neither media, a media key, nor a media identifier, have a media key
-      #   that names none, or an identifier the API does not take
-      # @raise [MissingMediaData] if the video or the subtitles hold no identifier, or the response holds no metadata or carries no body at all
+      # @raise [ArgumentError] if the video or the subtitles are nil, hold no identifier, are neither media, a media
+      #   key, nor a media identifier, have a media key that names none, or an identifier the API does not take
+      # @raise [MissingMediaData] if the response holds no metadata or carries no body at all
       # @example Upload a video and its English subtitles
       #   video = Uploader::MediaUpload.upload("cat.mp4", client: client)
       #   subtitles = Uploader::MediaUpload.upload("cat.srt", client: client)

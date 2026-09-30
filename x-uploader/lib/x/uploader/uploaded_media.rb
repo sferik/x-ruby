@@ -2,7 +2,6 @@
 
 require "json"
 require "x/core"
-require_relative "missing_media_data"
 
 module X
   # Media that was uploaded: the response of an upload, or the status of its processing
@@ -65,11 +64,11 @@ module X
     #
     # @api public
     # @return [Integer] the media ID, whether the response held it as a String or an Integer
-    # @raise [MissingMediaData] if the response held no id
-    # @raise [ArgumentError] if the response held an id that names no number
+    # @raise [ArgumentError] if the media holds no id, or an id that names no number: media an upload returns always
+    #   holds one, so media without one was built by hand
     # @example Get the media ID
     #   media.id # => 1880028106020515840
-    def id = Integer(fetch("id") { raise MissingMediaData, NO_MEDIA_ID }.to_s, 10)
+    def id = Integer(fetch("id") { raise ArgumentError, NO_MEDIA_ID }.to_s, 10)
 
     # The numeric media ID, as the X::Media of x-objects names it
     #
@@ -77,8 +76,8 @@ module X
     #
     # @api public
     # @return [Integer] the media ID, whether the response held it as a String or an Integer
-    # @raise [MissingMediaData] if the response held no id
-    # @raise [ArgumentError] if the response held an id that names no number
+    # @raise [ArgumentError] if the media holds no id, or an id that names no number: media an upload returns always
+    #   holds one, so media without one was built by hand
     # @example Get the media ID
     #   media.media_id # => 1880028106020515840
     def media_id = id

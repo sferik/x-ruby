@@ -94,6 +94,7 @@ module X
       def uploaded_media: (media media) -> UploadedMedia
       def described: (Hash[String, untyped]? response, media media) -> UploadedMedia
       def media_data: (Hash[String, untyped]? response, String description) -> Hash[String, untyped]
+      def identified?: (Hash[String, untyped] media) -> bool
       def subtitled_media_category: (String | Symbol media_category) -> String
       def sending_again: [T] (::X::Client client) { () -> T } -> T
       def processed!: (UploadedMedia status) -> UploadedMedia

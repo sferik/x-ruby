@@ -75,18 +75,18 @@ module X
       # on, is read from its media key, which names the identifier after the number of its type, as 3_7 names 7, and
       # a String that is a media key is read the same way, as the media_ids of a new post read one.
       #
-      # Nil, or an empty identifier, names no media, and would reach the API as an identifier that is not there.
-      # Anything else raises rather than reach the API as whatever its to_s reads, such as the inspection of an
-      # object.
+      # Nil, or an empty identifier, names no media, and would reach the API as an identifier that is not there, so it
+      # raises ArgumentError, as a mistake of the caller: every response an upload builds media from holds an
+      # identifier, or raises MissingMediaData where it is read. Anything else raises rather than reach the API as
+      # whatever its to_s reads, such as the inspection of an object.
       #
       # @api private
       # @param media [UploadedMedia, Hash, #media_key, String, Integer] the uploaded media, the upload response, media
       #   that has a media key, the media key, or the media identifier
       # @return [String] the media identifier
-      # @raise [ArgumentError] if the media is neither media, a media key, nor a media identifier, its media key names no
-      #   identifier, or its identifier is none the API takes, which is 1 to 19 digits
-      # @raise [MissingMediaData] if the media is nil or empty, an upload response holds no identifier, or media
-      #   has no media key
+      # @raise [ArgumentError] if the media is nil or empty, neither media, a media key, nor a media identifier, holds
+      #   no identifier, has no media key or one that names no identifier, or its identifier is none the API takes,
+      #   which is 1 to 19 digits
       # @example The identifier of uploaded media
       #   Uploader::Utils.media_id({"id" => "1880028106020515840"}) # => "1880028106020515840"
       # @example The identifier of media of a post
@@ -101,7 +101,7 @@ module X
         else media_key_id(media)
         end
         text = id.to_s
-        raise MissingMediaData, NO_MEDIA_ID if text.empty?
+        raise ArgumentError, NO_MEDIA_ID if text.empty?
 
         text.match?(MEDIA_ID) ? text : raise(ArgumentError, format(NOT_MEDIA_ID, text.inspect))
       end
@@ -130,9 +130,8 @@ module X
       # @param media [UploadedMedia, Hash, #media_key, String, Integer] the uploaded media, the upload response, media
       #   that has a media key, the media key, or the media identifier
       # @return [UploadedMedia] the uploaded media
-      # @raise [ArgumentError] if the media is neither media, a media key, nor a media identifier, or its media key names
-      #   none
-      # @raise [MissingMediaData] if the media is nil or empty, or holds no identifier
+      # @raise [ArgumentError] if the media is nil or empty, neither media, a media key, nor a media identifier, or its
+      #   media key names none
       # @example Uploaded media known by its identifier
       #   Uploader::Utils.uploaded_media(7) # => #<X::UploadedMedia id=7 media_key=nil state=nil>
       def uploaded_media(media)
@@ -167,8 +166,9 @@ module X
       #
       # The API answers an upload with what it acted on, under the data of the response, which always holds the
       # identifier of the media. A response that succeeded without it describes no media, whether it carries no body
-      # at all, a body without data, or data without an identifier, so it raises rather than leave the upload to fail
-      # later on what is missing, or return media that cannot be attached for media the API may have billed.
+      # at all, a body without data, or data whose identifier is missing, nil, or empty, so it raises rather than
+      # leave the upload to fail later on what is missing, or return media that cannot be attached for media the API
+      # may have billed. What it returns holds an identifier, so media that holds none was given by the caller.
       #
       # @api private
       # @param response [Hash, nil] the parsed response body, or nil for a response without one
@@ -179,10 +179,21 @@ module X
       #   Uploader::Utils.media_data({"data" => {"id" => 7}}, "of the upload") # => {"id" => 7}
       def media_data(response, description)
         media = Hash.try_convert(response.to_h["data"])
-        return media if media&.key?("id")
+        return media if media && identified?(media)
 
         raise MissingMediaData.new(format(NO_MEDIA, description), problems: Problem.all_from(response))
       end
+
+      # Check whether media the API answered with holds an identifier
+      #
+      # An identifier of nil, or an empty one, is none.
+      #
+      # @api private
+      # @param media [Hash{String => Object}] the media, as the data of a response
+      # @return [Boolean] true if the media holds an identifier
+      # @example Media whose identifier is nil
+      #   Uploader::Utils.identified?({"id" => nil}) # => false
+      def identified?(media) = !media.fetch("id", nil).to_s.empty?
 
       # Send a request again after a server or network error, as an idempotent one is
       #

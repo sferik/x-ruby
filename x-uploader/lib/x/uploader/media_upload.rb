@@ -284,8 +284,9 @@ module X
       #   all, before giving up, or Float::INFINITY to wait for as long as processing takes
       # @return [UploadedMedia] the uploaded media, which holds the processing status
       # @raise [ArgumentError] if the processing timeout is not a number of seconds of at least 0
-      # @raise [ArgumentError] if the media given is neither media, a media key, nor a media identifier, or its media key names none
-      # @raise [MissingMediaData] if the media given holds no identifier, or a status response holds no media or carries no body at all
+      # @raise [ArgumentError] if the media given is nil, holds no identifier, or is neither media, a media key, nor a
+      #   media identifier, or its media key names none
+      # @raise [MissingMediaData] if a status response holds no media or carries no body at all
       # @raise [MediaProcessingTimeout] if the media is still processing once the next check would pass the deadline
       # @example Wait for processing
       #   Uploader::MediaUpload.await_processing(media, client: client)
@@ -318,8 +319,9 @@ module X
       #   processing takes
       # @return [UploadedMedia] the uploaded media, which holds the processing status
       # @raise [ArgumentError] if the processing timeout is not a number of seconds of at least 0
-      # @raise [ArgumentError] if the media given is neither media, a media key, nor a media identifier, or its media key names none
-      # @raise [MissingMediaData] if the media given holds no identifier, or a status response holds no media or carries no body at all
+      # @raise [ArgumentError] if the media given is nil, holds no identifier, or is neither media, a media key, nor a
+      #   media identifier, or its media key names none
+      # @raise [MissingMediaData] if a status response holds no media or carries no body at all
       # @raise [MediaProcessingFailed] if media processing failed, or ended in no state X documents, with the status X
       #   reported
       # @raise [MediaProcessingTimeout] if the media is still processing once the next check would pass the deadline

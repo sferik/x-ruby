@@ -44,7 +44,7 @@ module X
         body = {media_type:, media_category:, total_bytes: source.size}
         response = client.post("media/upload/initialize", body, **JSON_CLASSES)
         media = Hash.try_convert(response.to_h["data"])
-        raise MissingMediaData.new(NO_MEDIA, problems: Problem.all_from(response)) unless media&.key?("id")
+        raise MissingMediaData.new(NO_MEDIA, problems: Problem.all_from(response)) unless media && Utils.identified?(media)
 
         media
       end

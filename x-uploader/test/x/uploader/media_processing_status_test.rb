@@ -105,7 +105,7 @@ module X
     end
 
     def test_media_without_id
-      error = assert_raises(MissingMediaData) { Uploader::MediaUpload.await_processing({}, client: @client) }
+      error = assert_raises(ArgumentError) { Uploader::MediaUpload.await_processing({}, client: @client) }
 
       assert_equal "The media given holds no identifier", error.message
     end
