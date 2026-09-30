@@ -14,10 +14,16 @@ module X
       # case, so a header is read here by the name it is written with here. A field the API sent more than once
       # is joined with a comma, as HTTP joins the lines of a repeated field.
       #
+      # Set-Cookie is joined the same way, though HTTP does not join it, since a cookie may hold a comma, as its
+      # Expires attribute does, so the cookies of a response that sets more than one cannot be read apart from its
+      # headers: read each of them from the http_response, with get_fields.
+      #
       # @api public
       # @return [Hash{String => String}] the headers, frozen
       # @example Read how long the API took to answer
       #   response.headers["x-response-time"]
+      # @example Read each cookie a response sets
+      #   response.http_response.get_fields("set-cookie")
       def headers = http_response.to_hash.transform_values { |values| values.join(", ") }.freeze
     end
   end
