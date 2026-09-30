@@ -22,9 +22,9 @@ module X
       # @param client [Object] the client used to make the request
       # @param reply_to [Post, String, Integer, nil] the post to reply to or its identifier
       # @param quote [Post, String, Integer, nil] the post to quote or its identifier
-      # @param media_ids [Array<String, Integer, #fetch, Media>, String, Integer, #fetch, Media, nil] the identifiers of
-      #   uploaded media to attach, what the uploads returned, or media, such as that of a post, one or many; an
-      #   empty list attaches nothing, as nil does
+      # @param media_ids [Array<String, Integer, #fetch, Media>, String, Integer, #fetch, Media, nil] the identifiers or
+      #   media keys of uploaded media to attach, what the uploads returned, or media, such as that of a post, one or
+      #   many; an empty list attaches nothing, as nil does
       # @param community [Community, String, Integer, nil] the community to post in or its identifier
       # @param params [Hash] additional request body fields, such as poll or reply_settings, among them reply and
       #   media, whose other fields reply_to and media_ids are merged into

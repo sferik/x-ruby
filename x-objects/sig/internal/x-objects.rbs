@@ -102,6 +102,7 @@ module X
       extend MediaIds
 
       MEDIA_KEY: Regexp
+      MEDIA_ID: Regexp
       NOT_MEDIA: String
 
       def media_ids_of: (untyped media_ids) -> Array[String]

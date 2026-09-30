@@ -12,9 +12,12 @@ module X
       # The pattern of a media key, which names the media identifier after the number of its type and an underscore
       MEDIA_KEY = /\A\d+_(\d+)\z/
 
+      # The pattern of a media identifier the API takes: one to nineteen digits
+      MEDIA_ID = /\A\d{1,19}\z/
+
       # The message of the error raised for something that is neither media nor the identifier of media
-      NOT_MEDIA = "media is what an upload returned, media such as X::Media, or a media identifier, not %s"
-      private_constant :MEDIA_KEY, :NOT_MEDIA
+      NOT_MEDIA = "media is what an upload returned, media such as X::Media, a media key, or a media identifier, not %s"
+      private_constant :MEDIA_KEY, :MEDIA_ID, :NOT_MEDIA
 
       extend self
 
@@ -22,18 +25,20 @@ module X
       #
       # What an upload returns is read with fetch, which a Hash answers and so does the uploaded media of
       # x-uploader, which this gem does not depend on. Media, such as the media of a post, is read from its media
-      # key, which names the identifier.
+      # key, which names the identifier, and so is a String that is a media key, such as the id of X::Media.
       #
       # @api private
-      # @param value [#fetch, #media_key, String, Integer] what an upload returned, holding an id, media, or an
-      #   identifier
+      # @param value [#fetch, #media_key, String, Integer] what an upload returned, holding an id, media, a media key,
+      #   or an identifier
       # @return [String] the media identifier
-      # @raise [ArgumentError] if the value is none of them
+      # @raise [ArgumentError] if the value is none of them, or names an identifier the API would refuse
       def media_id_of(value)
-        case value
-        when String, Integer then value.to_s
+        id = case value
+        when String then value[MEDIA_KEY, 1] || value
+        when Integer then value.to_s
         else value.respond_to?(:fetch) ? value.fetch("id").to_s : media_key_id(value)
         end
+        id.match?(MEDIA_ID) ? id : raise(ArgumentError, format(NOT_MEDIA, value.inspect))
       end
 
       # The media identifier a media key names

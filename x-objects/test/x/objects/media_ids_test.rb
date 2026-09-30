@@ -31,8 +31,29 @@ module X
         [Object.new, Struct.new(:media_key).new(nil), Struct.new(:media_key).new("3_"), Struct.new(:media_key).new("x3_7"), :media].each do |value|
           error = assert_raises(ArgumentError, value.inspect) { MediaIds.media_id_of(value) }
 
-          assert_equal "media is what an upload returned, media such as X::Media, or a media identifier, not #{value.inspect}", error.message
+          assert_equal "media is what an upload returned, media such as X::Media, a media key, or a media identifier, not #{value.inspect}", error.message
         end
+      end
+
+      def test_media_id_of_a_media_key
+        assert_equal "1880028106020515840", MediaIds.media_id_of("3_1880028106020515840")
+        assert_equal %w[7 8], MediaIds.media_ids_of(%w[3_7 13_8])
+      end
+
+      def test_media_id_of_the_id_of_media
+        assert_equal "7", MediaIds.media_id_of(Media.new({"media_key" => "3_7", "type" => "photo"}).id)
+      end
+
+      def test_media_id_of_what_names_no_identifier_the_api_takes
+        ["abc", " 7", "-7", "7 ", "", "3_", "_7", "1" * 20, -7, {"id" => "abc"}, {"id" => nil}].each do |value|
+          error = assert_raises(ArgumentError, value.inspect) { MediaIds.media_id_of(value) }
+
+          assert_equal "media is what an upload returned, media such as X::Media, a media key, or a media identifier, not #{value.inspect}", error.message
+        end
+      end
+
+      def test_media_id_of_the_longest_identifier_the_api_takes
+        assert_equal "9" * 19, MediaIds.media_id_of("9" * 19)
       end
 
       def test_media_ids_of_many
