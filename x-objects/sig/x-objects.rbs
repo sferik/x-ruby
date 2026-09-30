@@ -308,7 +308,7 @@ module X
     def ==: (untyped other) -> bool
     def eql?: (untyped other) -> bool
     def hash: () -> Integer
-    def as_json: (*untyped) -> Array[Hash[String, untyped]]
+    def as_json: (*untyped) -> Hash[String, untyped]
     def to_json: (?JSON::State? state) -> String
     def marshal_dump: () -> untyped
     def marshal_load: (untyped state) -> void

@@ -74,18 +74,28 @@ module X
       assert_equal JSON.pretty_generate(usage.attrs), JSON.pretty_generate(usage)
     end
 
-    def test_a_page_serializes_its_resources
-      page = Page.new([@post], {"result_count" => 1})
+    def test_a_page_serializes_in_the_shape_of_its_response
+      page = Page.new([@post], {"result_count" => 1, "next_token" => "abc"})
+      json = {"data" => [@post.attrs], "meta" => {"result_count" => 1, "next_token" => "abc"}}
 
-      assert_equal [@post.attrs], page.as_json
-      assert_equal [@post.attrs], JSON.parse(page.to_json)
-      assert_equal JSON.pretty_generate([@post.attrs]), JSON.pretty_generate(page)
+      assert_equal json, page.as_json
+      assert_equal json, JSON.parse(page.to_json)
+      assert_equal JSON.pretty_generate(json), JSON.pretty_generate(page)
+    end
+
+    def test_a_page_is_built_again_from_what_it_serialized_to
+      problem = {"title" => "Not Found Error", "resource_type" => "post", "resource_id" => "3"}
+      page = Page.new([@post], {"next_token" => "abc"}, problems: [Problem.new(problem)])
+      again = Post.from_response(JSON.parse(page.to_json), client: nil)
+
+      assert_equal [problem], page.as_json["errors"]
+      assert_equal [page.as_json, "abc"], [again.as_json, again.next_token]
     end
 
     def test_a_page_is_serialized_as_plain_data
       as_json = Page.new([@post], {"result_count" => 1}).as_json
 
-      assert_same @post.attrs, as_json.first
+      assert_same @post.attrs, as_json["data"].first
       assert_predicate as_json, :frozen?
     end
 

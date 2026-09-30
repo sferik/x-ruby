@@ -162,24 +162,33 @@ module X
         Utils.read("#{self.class}#result_count", meta["result_count"]) { |value| Utils.integer(value) }
       end
 
-      # The attributes of the resources of this page, as a JSON encoder reads them
+      # This page, as a JSON encoder reads it, in the shape of the response it came from
       #
-      # Each resource is given as its own as_json gives it, so what this returns is plain data, as the as_json of a
-      # resource is, which ActiveSupport reads too.
+      # Its resources are the data, each given as its own as_json gives it, beside the meta of the page, which holds
+      # the token of the next, and, when the response reported any, its problems as the errors, so that what this
+      # returns is plain data, which ActiveSupport reads too, and which the from_response of the resource class builds
+      # into a page again. The objects the response included are not among it, so a reference of a resource built
+      # again from it is a stub.
       #
       # @api public
-      # @return [Array<Hash{String => Object}>] the attributes of each resource, frozen
+      # @return [Hash{String => Object}] the data, meta, and errors of the page, frozen
       # @example Serialize a page
-      #   page.as_json # => [{"id" => "7505382"}]
-      def as_json(*) = map(&:as_json).freeze
+      #   page.as_json # => {"data" => [{"id" => "7505382"}], "meta" => {"next_token" => "abc"}}
+      # @example Build a page again from what it serialized to
+      #   X::User.from_response(JSON.parse(page.to_json), client: client)
+      def as_json(*)
+        json = {"data" => map(&:as_json), "meta" => meta}
+        json["errors"] = problems.map(&:to_h) unless problems.empty?
+        json.freeze
+      end
 
-      # The resources of this page as a JSON array of their attributes
+      # This page as a JSON object in the shape of the response it came from
       #
       # @api public
       # @param state [JSON::State, nil] the state a JSON encoder passes, which the attributes are given
-      # @return [String] the resources as a JSON array
+      # @return [String] the data, meta, and errors of the page as a JSON object
       # @example Serialize a page
-      #   page.to_json # => "[{\"id\":\"7505382\"}]"
+      #   page.to_json # => "{\"data\":[{\"id\":\"7505382\"}],\"meta\":{}}"
       def to_json(state = nil) = as_json.to_json(state)
 
       # The state Marshal writes
