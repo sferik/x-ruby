@@ -52,7 +52,7 @@ module X
     def test_a_request_the_api_failed_to_answer_yields_every_attempt
       stub_request(:get, URL).to_return({status: 503}, {status: 200, body: "{}"})
       client = Client.new(max_retries: 1)
-      handler = client.instance_variable_get(:@retry_handler)
+      handler = internals(client).instance_variable_get(:@retry_handler)
       handler.stub(:sleep, nil) { client.get("users/me") { |response| @responses << response.status } }
 
       assert_equal [503, 200], @responses

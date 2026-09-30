@@ -5,6 +5,7 @@ require_relative "../../test_helper"
 module X
   # A request that is safe to send again is sent again after any failure of the API or of the network
   class WithRetriesTest < Minitest::Test
+    cover "X::Client#with_retries"
     cover "X::Core::ClientSettings#with_retries"
 
     def setup
@@ -42,7 +43,7 @@ module X
     def with_retries(**options, &)
       sleeps = @sleeps
       client = Client.new(**options)
-      handler = client.instance_variable_get(:@retry_handler)
+      handler = internals(client).instance_variable_get(:@retry_handler)
       handler.define_singleton_method(:rand) { 0.0 }
       handler.define_singleton_method(:sleep) { |seconds| sleeps << seconds }
       client.with_retries(&)

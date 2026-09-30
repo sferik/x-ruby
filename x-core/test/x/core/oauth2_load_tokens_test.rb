@@ -161,7 +161,7 @@ module X
 
       assert_equal "load_tokens must return an X::OAuth2Tokens, or nil for none in the store, not a Hash. Build the " \
         "tokens from what the store holds with X::OAuth2Tokens.new", error.message
-      assert_equal TEST_ACCESS_TOKEN, client.__send__(:access_token)
+      assert_equal TEST_ACCESS_TOKEN, internals(client).__send__(:access_token)
       assert_not_requested :post, TOKEN_URL
     end
 

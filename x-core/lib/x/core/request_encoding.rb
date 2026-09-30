@@ -5,9 +5,15 @@ require "uri"
 
 module X
   module Core
-    # Encodes the query strings and bodies of requests, included into Client
+    # Encodes the query strings and bodies of requests
+    #
+    # Internal to x-core: a client resolves the endpoint of each request, and encodes its body, with it, and a
+    # streaming client resolves the endpoint of each stream.
+    #
     # @api private
     module RequestEncoding
+      extend self
+
       # The slashes that begin an endpoint, which would resolve against the host of the base URL rather than its path
       LEADING_SLASHES = %r{\A/+}
       private_constant :LEADING_SLASHES
@@ -19,8 +25,6 @@ module X
       # The message of the error raised for an endpoint that does not resolve to a URL a request can be sent to
       INVALID_ENDPOINT = "Invalid endpoint %s: %s"
       private_constant :INVALID_ENDPOINT
-
-      private
 
       # Resolve an endpoint and its query parameters against a base URL
       #
@@ -43,6 +47,28 @@ module X
       rescue URI::InvalidURIError
         raise ArgumentError, format(INVALID_ENDPOINT, endpoint.inspect, "it is not a valid URL; escape what a URL may not hold, such as a space")
       end
+
+      # Encode a form as form fields, a String body as given, and any other body as JSON
+      #
+      # A body that is not a String, such as a Hash or an Array, is encoded as JSON, since Net::HTTP sends nothing but a
+      # String, which it would raise NoMethodError for once the connection was open.
+      #
+      # @api private
+      # @param body [String, Hash, Array, nil] the request body
+      # @param form [Hash, nil] the form fields
+      # @return [String, nil] the encoded body
+      # @raise [ArgumentError] if both a body and form fields are given, which would send one and drop the other
+      def encode_body(body, form)
+        raise ArgumentError, BODY_AND_FORM if body && form
+        return URI.encode_www_form(form) unless form.nil?
+
+        case body
+        when nil, String then body
+        else JSON.generate(body)
+        end
+      end
+
+      private
 
       # Append query parameters to an endpoint, relative to the base URL
       #
@@ -73,26 +99,6 @@ module X
         when Array then value.join(",")
         when Time then value.getutc.iso8601
         else value
-        end
-      end
-
-      # Encode a form as form fields, a String body as given, and any other body as JSON
-      #
-      # A body that is not a String, such as a Hash or an Array, is encoded as JSON, since Net::HTTP sends nothing but a
-      # String, which it would raise NoMethodError for once the connection was open.
-      #
-      # @api private
-      # @param body [String, Hash, Array, nil] the request body
-      # @param form [Hash, nil] the form fields
-      # @return [String, nil] the encoded body
-      # @raise [ArgumentError] if both a body and form fields are given, which would send one and drop the other
-      def encode_body(body, form)
-        raise ArgumentError, BODY_AND_FORM if body && form
-        return URI.encode_www_form(form) unless form.nil?
-
-        case body
-        when nil, String then body
-        else JSON.generate(body)
         end
       end
     end

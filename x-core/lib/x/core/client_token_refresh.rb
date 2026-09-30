@@ -7,17 +7,15 @@ require_relative "setting_validator"
 module X
   module Core
     # The OAuth 2.0 authenticator of a client, which its copies share, and the tokens it last refreshed, included into
-    # Client
+    # ClientInternals
     # @api private
     module ClientTokenRefresh
       # The time the OAuth 2.0 access token expires, as last refreshed
       #
-      # A refresh that reports no lifetime leaves it nil, rather than the time the client was given.
+      # {Client#expires_at} returns it.
       #
-      # @api public
+      # @api private
       # @return [Time, nil] the expiration time, or nil if it is not known
-      # @example Get the expiration time
-      #   client.expires_at
       def expires_at
         current = oauth2_authenticator_in_use
         current ? current.expires_at : @expires_at
@@ -40,18 +38,20 @@ module X
       #
       # A copy that holds the credentials of the client shares its OAuth 2.0 or app-only authenticator, so that the
       # copy refreshes the tokens of the client, or sends the bearer token it fetched, rather than hold tokens of its
-      # own. A copy given an authenticator of its own keeps it.
+      # own. A copy given an authenticator of its own keeps it. The internals of the client copied call it on those of
+      # the copy with __send__, since it is private.
       #
       # @api private
+      # @param copy [Client] the copy these are the internals of
       # @param other [Authenticator] the authenticator of the client this one was copied from
       # @param options [Hash] the options the copy was given in place of the client's
       # @return [void]
-      def share_authenticator(other, options)
+      def share_authenticator(copy, other, options)
         return if options[:authenticator]
 
         case other
         when AppOnlyAuthenticator then share_app_only(other, options)
-        when OAuth2Authenticator then share_oauth2(other, options)
+        when OAuth2Authenticator then share_oauth2(copy, other, options)
         end
       end
 
@@ -66,14 +66,15 @@ module X
       # another sets it for both.
       #
       # @api private
+      # @param copy [Client] the copy these are the internals of
       # @param other [OAuth2Authenticator] the authenticator of the client this one was copied from
       # @param options [Hash] the options the copy was given in place of the client's
       # @return [void]
-      def share_oauth2(other, options)
+      def share_oauth2(copy, other, options)
         return unless oauth2_authenticator_in_use && other.__send__(:holds?, options)
 
         other.__send__(:update_expires_at, options.fetch(:expires_at)) if options.key?(:expires_at)
-        @authenticator = join(other)
+        @authenticator = join(copy, other)
       end
 
       # Share the app-only authenticator of the client this one was copied from
@@ -95,11 +96,12 @@ module X
       # given it, and the refreshes of an OAuth 2.0 one reach the on_token_refresh of each client that shares it.
       #
       # @api private
+      # @param client [Client] the client these are the internals of
       # @param authenticator [Authenticator] the authenticator
       # @return [Authenticator] the authenticator
-      def take(authenticator)
+      def take(client, authenticator)
         case authenticator
-        when OAuth2Authenticator then join(authenticator.__send__(:token_requests_over, @connection, base_url))
+        when OAuth2Authenticator then join(client, authenticator.__send__(:token_requests_over, @connection, base_url))
         when AppOnlyAuthenticator then authenticator.__send__(:token_requests_over, @connection, base_url)
         else authenticator
         end
@@ -107,11 +109,12 @@ module X
 
       # Join the clients whose on_token_refresh an OAuth 2.0 authenticator reports to
       # @api private
+      # @param client [Client] the client these are the internals of
       # @param authenticator [OAuth2Authenticator] the authenticator
       # @return [OAuth2Authenticator] the authenticator
-      def join(authenticator)
+      def join(client, authenticator)
         clients = authenticator.__send__(:clients)
-        clients[self] = true
+        clients[client] = true
         authenticator.__send__(:report_refreshes_to, -> { clients.keys.filter_map(&:on_token_refresh).uniq })
         authenticator
       end
@@ -132,13 +135,14 @@ module X
       # for the user and cannot refresh.
       #
       # @api private
+      # @param client [Client] the client these are the internals of
       # @return [OAuth2Authenticator, nil] the OAuth 2.0 authenticator or nil
-      def oauth2_authenticator
+      def oauth2_authenticator(client)
         client_id = @client_id
         access_token = @access_token
         return unless client_id && access_token
 
-        new_oauth2_authenticator(client_id:, access_token:, refresh_token: @refresh_token)
+        new_oauth2_authenticator(client, client_id:, access_token:, refresh_token: @refresh_token)
       end
 
       # The OAuth 2.0 authenticator of the client's credentials, as last refreshed
@@ -180,26 +184,30 @@ module X
       # its tokens with its client ID alone.
       #
       # @api private
+      # @param client [Client] the client these are the internals of
       # @param client_id [String] the OAuth 2.0 client ID
       # @param access_token [String] the OAuth 2.0 access token
       # @param refresh_token [String, nil] the OAuth 2.0 refresh token, or nil for an access token that is not refreshed
       # @return [OAuth2Authenticator] the OAuth 2.0 authenticator
-      def new_oauth2_authenticator(client_id:, access_token:, refresh_token:)
+      def new_oauth2_authenticator(client, client_id:, access_token:, refresh_token:)
         authenticator = OAuth2Authenticator.new(client_id:, client_secret: @client_secret, access_token:, refresh_token:, expires_at: @expires_at)
-        join(authenticator.__send__(:token_requests_over, @connection, base_url))
+        join(client, authenticator.__send__(:token_requests_over, @connection, base_url))
       end
 
       # Run a request, again if a refresh replaces an OAuth 2.0 token the API rejects
       #
       # Only a rejection by the origin of the base URL, which the token is sent to, refreshes it; see {Origin}. An
-      # app-only bearer token the API rejects is fetched again the same way; see {AppOnlyAuthenticator}.
+      # app-only bearer token the API rejects is fetched again the same way; see {AppOnlyAuthenticator}. A streaming
+      # client runs each stream through it, and calls it with __send__, since it is private.
       #
       # @api private
+      # @param client [Client, nil] the client these are the internals of, which a refresh that fails to report is
+      #   raised with, or nil for a stream, which authenticates as the app and so refreshes no OAuth 2.0 token
       # @yield runs the request
       # @return [Object] what the block returns
-      def refreshing_rejected_token(&)
+      def refreshing_rejected_token(client = nil, &)
         case (current = @authenticator)
-        when OAuth2Authenticator then current.__send__(:retrying_rejected_token, URI(base_url), @connection, self, &)
+        when OAuth2Authenticator then current.__send__(:retrying_rejected_token, URI(base_url), @connection, client, &)
         when AppOnlyAuthenticator then current.__send__(:retrying_rejected_token, URI(base_url), &)
         else yield
         end

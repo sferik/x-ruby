@@ -59,10 +59,13 @@ end
 # Pass seconds on the clock of on_fake_clock, as a request that takes them does
 def advance_clock(seconds) = @fake_clock += seconds
 
+# The internals of a client, which hold its connection and handlers
+def internals(client) = client.instance_variable_get(:@internals)
+
 # Have the client send its requests again without waiting, adding each wait it would have taken, with no share taken
 # off it, to the waits given, and return the client
 def retrying_without_waiting(client, waits = [])
-  retry_handler = client.instance_variable_get(:@retry_handler)
+  retry_handler = internals(client).instance_variable_get(:@retry_handler)
   retry_handler.define_singleton_method(:rand) { 0.0 }
   retry_handler.define_singleton_method(:sleep) { |seconds| waits << seconds }
   client

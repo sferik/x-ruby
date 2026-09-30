@@ -16,7 +16,7 @@ module X
     # refreshes reads them
     def client_read_before_a_refresh(**options)
       Client.new(**test_oauth2_credentials, **options).tap do |client|
-        stale = client.send(:credentials)
+        stale = internals(client).send(:credentials)
         client.authenticator.refresh!
         client.define_singleton_method(:credentials) { stale }
       end
@@ -27,7 +27,7 @@ module X
       copy = client.with
 
       assert_same client.authenticator, copy.authenticator
-      assert_equal "NEW_REFRESH_TOKEN", copy.send(:refresh_token)
+      assert_equal "NEW_REFRESH_TOKEN", internals(copy).send(:refresh_token)
     end
 
     def test_a_copy_built_while_the_tokens_are_refreshed_keeps_the_expiration_time_of_the_refresh
@@ -100,7 +100,7 @@ module X
 
     private
 
-    def copy_connection(copy) = copy.instance_variable_get(:@connection)
+    def copy_connection(copy) = internals(copy).instance_variable_get(:@connection)
 
     # The connections the token requests a block sends are sent over
     def connections_of_refreshes

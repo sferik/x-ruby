@@ -26,7 +26,7 @@ module X
       client = Client.new(authenticator: @authenticator)
       @authenticator.refresh!
 
-      assert_same client.instance_variable_get(:@connection), @authenticator.send(:connection)
+      assert_same internals(client).instance_variable_get(:@connection), @authenticator.send(:connection)
       assert_empty reported
     end
 

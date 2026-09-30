@@ -39,8 +39,8 @@ module X
     # The authenticator a client builds from credentials that may not form a complete set
     def authenticator_for(credentials)
       client = Client.new
-      credentials.each { |name, value| client.instance_variable_set(:"@#{name}", value) }
-      client.send(:built_authenticator)
+      credentials.each { |name, value| internals(client).instance_variable_set(:"@#{name}", value) }
+      internals(client).send(:built_authenticator, client)
     end
   end
 end

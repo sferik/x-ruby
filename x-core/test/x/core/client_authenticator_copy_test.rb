@@ -44,7 +44,7 @@ module X
       client = Client.new(bearer_token: TEST_BEARER_TOKEN)
       oauth2_client = Client.new(**test_oauth2_credentials)
 
-      assert_equal({bearer_token: TEST_BEARER_TOKEN}, client.with(authenticator: nil).send(:credentials).compact)
+      assert_equal({bearer_token: TEST_BEARER_TOKEN}, internals(client.with(authenticator: nil)).send(:credentials).compact)
       assert_same oauth2_client.authenticator, oauth2_client.with(authenticator: nil).authenticator
     end
 

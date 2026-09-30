@@ -2,7 +2,7 @@
 
 module X
   module Core
-    # The authentication credentials of a client, which it reads but never changes, included into Client
+    # The authentication credentials of a client, which it reads but never changes, included into ClientInternals
     #
     # A client is built with the credentials it keeps for as long as it lives. {Client#with} derives a client whose
     # credentials differ, rather than replacing the ones a client holds, so that a request never signs with a mix of
@@ -11,26 +11,28 @@ module X
     # @api private
     module ClientCredentials
       # The API key for OAuth 1.0a authentication
-      # @api public
+      #
+      # {Client#api_key} returns it.
+      #
+      # @api private
       # @return [String, nil] the API key for OAuth 1.0a authentication
-      # @example Get the API key
-      #   client.api_key
       attr_reader :api_key
 
       # The OAuth 2.0 client ID
-      # @api public
+      #
+      # {Client#client_id} returns it.
+      #
+      # @api private
       # @return [String, nil] the OAuth 2.0 client ID
-      # @example Get the client ID
-      #   client.client_id
       attr_reader :client_id
 
       private
 
       # The API key secret for OAuth 1.0a authentication
       #
-      # It is private, as {Client#inspect} hides it, so that code that reflects over a client never reads a secret
-      # out of it. {Client#with} carries it to a copy without revealing it, and the authenticator of a client holds
-      # the credentials it signs with.
+      # It is private, as {Client#inspect} hides it, and the client holds it here rather than in a reader of its own,
+      # so that code that reflects over a client never reads a secret out of it. {Client#with} carries it to a copy
+      # without revealing it, and the authenticator of a client holds the credentials it signs with.
       #
       # @api private
       # @return [String, nil] the API key secret for OAuth 1.0a authentication
@@ -101,18 +103,20 @@ module X
       # option, before it takes it, and a client that raises leaves the authenticator as it was.
       #
       # @api private
+      # @param client [Client] the client these are the internals of
       # @param given [Authenticator, nil] the authenticator the client was given, or nil to build one
       # @return [void]
-      def initialize_authenticator(given)
+      def initialize_authenticator(client, given)
         @given_authenticator = given
-        @authenticator = given ? take(given) : built_authenticator
+        @authenticator = given ? take(client, given) : built_authenticator(client)
       end
 
       # Build the authenticator of the first complete set of credentials held
       # @api private
+      # @param client [Client] the client these are the internals of
       # @return [Authenticator] the authenticator, which sends no credentials when no set is complete
-      def built_authenticator
-        oauth1_authenticator || oauth2_authenticator || app_only_authenticator || bearer_authenticator || Authenticator.new
+      def built_authenticator(client)
+        oauth1_authenticator || oauth2_authenticator(client) || app_only_authenticator || bearer_authenticator || Authenticator.new
       end
 
       # The options of a copy of the client, beside the credentials it is built with

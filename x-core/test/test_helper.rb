@@ -32,21 +32,28 @@ require "x/core"
 
 module Minitest
   class Test
-    # Cover X::Client and the modules of x-core that compose it
+    # Cover X::Client, its internals, and the modules of x-core that compose them
     #
     # Mutant matches a test to a subject by the expression the test covers, and a method a module mixes into the
-    # client is a subject of the module that defines it, so a test of the client names them here rather than one by
-    # one.
+    # internals of the client is a subject of the module that defines it, so a test of the client names them here
+    # rather than one by one.
     #
     # @return [void]
     def self.cover_client
       cover X::Client
+      cover X::Core.const_get(:ClientInternals)
       cover X::Core.const_get(:ClientAppOnly)
       cover X::Core.const_get(:ClientCredentials)
       cover X::Core.const_get(:ClientSettings)
       cover X::Core.const_get(:ClientTokenRefresh)
       cover X::Core.const_get(:RequestEncoding)
     end
+
+    # The internals of a client, which hold its credentials, settings, connection, and handlers
+    #
+    # @param client [X::Client] the client
+    # @return [Object] the internals the client delegates to
+    def internals(client) = client.instance_variable_get(:@internals)
   end
 end
 

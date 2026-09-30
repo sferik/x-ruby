@@ -6,7 +6,7 @@ require_relative "errors/unsupported_operation"
 
 module X
   module Core
-    # The app-only copy of a client, for the endpoints that refuse OAuth 1.0a, included into Client
+    # The app-only copy of a client, for the endpoints that refuse OAuth 1.0a, included into ClientInternals
     # @api private
     module ClientAppOnly
       # The message of the error raised for a client that holds no credentials of the app to authenticate with
@@ -15,32 +15,23 @@ module X
         "OAuth 2.0 credentials rather than an OAuth2Authenticator, which is given alone"
       private_constant :NO_APP_CREDENTIALS
 
-      # A client that authenticates as the app, for the endpoints that refuse OAuth 1.0a
+      # A client that authenticates as the app, which Client#app_only returns
       #
-      # A client that authenticates as a user, signing with OAuth 1.0a or with OAuth 2.0, returns a copy that
-      # authenticates with the app's bearer token: the one it was given, or one it fetches with its API key and secret
-      # the first time. It returns the same copy, with the connections it keeps open, from then on, since the
-      # credentials and settings of a client never change; threads that ask for the copy together get one. A client
-      # with a bearer token or an API key and secret alone already authenticates as the app, and is returned as it is,
-      # as is one given an authenticator that authenticates as the app, or as no one. A client given an
-      # OAuth1Authenticator fetches the token with the API key and secret it signs with. A client that authenticates
-      # with OAuth 2.0 as a user and holds neither the app's bearer token nor its API key and secret, as a client
-      # given an OAuth2Authenticator holds neither, raises, rather than send the user's credentials to an endpoint
-      # that would refuse them with 403 Forbidden.
+      # A client that authenticates as a user returns a copy that authenticates with the app's bearer token, built
+      # once; any other returns itself; see {Client#app_only}.
       #
-      # @api public
+      # @api private
+      # @param client [Client] the client these are the internals of
       # @return [Client] a copy that authenticates with the bearer token, or the client itself
       # @raise [UnsupportedOperation] if the client authenticates with OAuth 2.0 as a user and holds no credentials of
       #   the app
-      # @example Add a filtered stream rule, which takes app-only authentication
-      #   client.app_only.post("tweets/search/stream/rules", {add: [{value: "ruby"}]})
-      def app_only
+      def app_only(client)
         case authenticator
         when OAuth1Authenticator, OAuth2Authenticator
           raise UnsupportedOperation, NO_APP_CREDENTIALS unless bearer_token || app_credentials
 
-          app_only_copy
-        else self
+          app_only_copy(client)
+        else client
         end
       end
 
@@ -52,17 +43,19 @@ module X
       # It is built under a lock, so that threads which ask for it together build one copy and fetch one token.
       #
       # @api private
+      # @param client [Client] the client these are the internals of
       # @return [Client] the copy
-      def app_only_copy
-        @app_only_monitor.synchronize { @app_only ||= build_app_only }
+      def app_only_copy(client)
+        @app_only_monitor.synchronize { @app_only ||= build_app_only(client) }
       end
 
       # Build a copy that holds the app's credentials and bearer token
       # @api private
+      # @param client [Client] the client these are the internals of
       # @return [Client] the copy
-      def build_app_only
+      def build_app_only(client)
         key, secret = app_credentials
-        with(**credentials.to_h { |name, _| [name, nil] }, api_key: key, api_key_secret: secret, bearer_token: app_bearer_token)
+        with(client, {**credentials.to_h { |name, _| [name, nil] }, api_key: key, api_key_secret: secret, bearer_token: app_bearer_token})
       end
 
       # The app-only bearer token, the client's own or one it fetches

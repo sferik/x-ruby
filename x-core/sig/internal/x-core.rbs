@@ -280,18 +280,18 @@ module X
 
       private
       def initialize_token_hooks: (on_token_refresh: _TokenRefreshHook?, load_tokens: _TokenLoader?) -> void
-      def share_authenticator: (Authenticator | AppOnlyAuthenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator other, Hash[Symbol, untyped] options) -> void
-      def share_oauth2: (OAuth2Authenticator other, Hash[Symbol, untyped] options) -> void
+      def share_authenticator: (Client copy, Authenticator | AppOnlyAuthenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator other, Hash[Symbol, untyped] options) -> void
+      def share_oauth2: (Client copy, OAuth2Authenticator other, Hash[Symbol, untyped] options) -> void
       def share_app_only: (AppOnlyAuthenticator other, Hash[Symbol, untyped] options) -> void
-      def take: (Authenticator authenticator) -> Authenticator
-      def join: (OAuth2Authenticator authenticator) -> OAuth2Authenticator
+      def take: (Client client, Authenticator authenticator) -> Authenticator
+      def join: (Client client, OAuth2Authenticator authenticator) -> OAuth2Authenticator
       def oauth2_authenticator_in_use: () -> OAuth2Authenticator?
       def oauth2_credentials_in_use: () -> OAuth2Authenticator?
-      def oauth2_authenticator: -> OAuth2Authenticator?
+      def oauth2_authenticator: (Client client) -> OAuth2Authenticator?
       def access_token: () -> String?
       def refresh_token: () -> String?
-      def new_oauth2_authenticator: (client_id: String, access_token: String, refresh_token: String?) -> OAuth2Authenticator
-      def refreshing_rejected_token: [T] () { () -> T } -> T
+      def new_oauth2_authenticator: (Client client, client_id: String, access_token: String, refresh_token: String?) -> OAuth2Authenticator
+      def refreshing_rejected_token: [T] (?Client? client) { () -> T } -> T
     end
 
     module ClientSettings : _SettingsHost
@@ -334,11 +334,11 @@ module X
       @app_only_monitor: Monitor
       @connection: Connection
 
-      def app_only: () -> (Client | self)
+      def app_only: (Client client) -> Client
 
       private
-      def app_only_copy: () -> Client
-      def build_app_only: () -> Client
+      def app_only_copy: (Client client) -> Client
+      def build_app_only: (Client client) -> Client
       def app_bearer_token: () -> String
       def app_credentials: () -> [String, String]?
       def authenticator: () -> (Authenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator)
@@ -361,7 +361,7 @@ module X
       attr_reader client_id: String?
 
       private
-      def oauth2_authenticator: () -> OAuth2Authenticator?
+      def oauth2_authenticator: (Client client) -> OAuth2Authenticator?
       attr_reader api_key_secret: String?
       attr_reader access_token_secret: String?
       attr_reader bearer_token: String?
@@ -371,10 +371,10 @@ module X
       def credentials: () -> { api_key: String?, api_key_secret: String?, access_token: String?, access_token_secret: String?, bearer_token: String?, client_id: String?, client_secret: String?, refresh_token: String?, expires_at: Time? }
       def initialize_credentials: (api_key: String?, api_key_secret: String?, access_token: String?, access_token_secret: String?, bearer_token: String?, client_id: String?, client_secret: String?, refresh_token: String?, expires_at: Time?) -> void
       def validate_credentials!: (Authenticator? authenticator) -> void
-      def initialize_authenticator: (Authenticator? given) -> void
-      def built_authenticator: () -> Authenticator
+      def initialize_authenticator: (Client client, Authenticator? given) -> void
+      def built_authenticator: (Client client) -> Authenticator
       def with_credentials: (Hash[Symbol, untyped] options) -> Hash[Symbol, untyped]
-      def take: (Authenticator authenticator) -> Authenticator
+      def take: (Client client, Authenticator authenticator) -> Authenticator
       def oauth1_authenticator: -> OAuth1Authenticator?
       def bearer_authenticator: -> BearerTokenAuthenticator?
       def app_only_authenticator: -> AppOnlyAuthenticator?
@@ -384,12 +384,54 @@ module X
       LEADING_SLASHES: Regexp
       BODY_AND_FORM: String
       INVALID_ENDPOINT: String
+      extend RequestEncoding
+
+      def uri_for: (String base_url, String endpoint, params? params) -> URI::HTTP
+      def encode_body: (body? body, params? form) -> String?
 
       private
-      def uri_for: (String base_url, String endpoint, params? params) -> URI::HTTP
       def endpoint_with: (String endpoint, params? params) -> String
       def query_value: (untyped value) -> untyped
-      def encode_body: (body? body, params? form) -> String?
+    end
+
+    class ClientInternals
+      include ClientAppOnly
+      include ClientCredentials
+      include ClientSettings
+      include CredentialHolder
+      include ClientTokenRefresh
+      include ProxySetting
+
+      FORM_CONTENT_TYPE: String
+
+      @authenticator: Authenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator
+      @connection: Connection
+      @app_only_monitor: Monitor
+      @request_builder: RequestBuilder
+      @redirect_handler: RedirectHandler
+      @rate_limit_handler: RateLimitHandler
+      @retry_handler: RetryHandler
+      @response_parser: ResponseParser
+      @given_authenticator: Authenticator?
+      @client_id: String?
+      @client_secret: String?
+      @access_token: String?
+      @refresh_token: String?
+      @expires_at: Time?
+
+      attr_reader authenticator: Authenticator | AppOnlyAuthenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator
+      attr_reader on_token_refresh: _TokenRefreshHook?
+      attr_reader load_tokens: _TokenLoader?
+
+      def self.of: (Client client) -> ClientInternals
+      def initialize: (Client client, api_key: String?, api_key_secret: String?, access_token: String?, access_token_secret: String?, bearer_token: String?, client_id: String?, client_secret: String?, refresh_token: String?, expires_at: Time?, authenticator: Authenticator?, base_url: String, open_timeout: (Float | Integer)?, read_timeout: (Float | Integer)?, write_timeout: (Float | Integer)?, keep_alive_timeout: Float | Integer, debug_output: _DebugOutput?, proxy_url: (URI::Generic | String)?, default_array_class: Class, default_object_class: object_class, headers: headers, max_redirects: Integer, max_rate_limit_retries: Integer, max_rate_limit_wait: Float | Integer, max_retries: Integer, on_response: _ResponseHook?, on_token_refresh: _TokenRefreshHook?, load_tokens: _TokenLoader?) -> void
+      def inspect: () -> String
+      def with: (Client client, Hash[Symbol, untyped] options) -> Client
+      def close: () -> void
+      def execute_request: (Client client, :delete | :get | :post | :put http_method, String endpoint, params: params?, headers: headers, array_class: Class, object_class: object_class, ?body: body?, ?form: params?) ?{ (Response) -> void } -> untyped
+
+      private
+      def perform: (Client client, :delete | :get | :post | :put http_method, URI::Generic uri, body: String?, headers: headers, array_class: Class, object_class: object_class) ?{ (Response) -> void } -> untyped
     end
 
     # What a Response and an HTTPError hold the headers of
@@ -685,7 +727,6 @@ module X
   class StreamingClient
     include Core::CredentialHolder
     include Core::ProxySetting
-    include Core::RequestEncoding
 
     NO_BLOCK_MESSAGE: String
     RULES_ENDPOINT: String
@@ -780,7 +821,7 @@ module X
   interface _CredentialHost
     def authenticator: () -> (Authenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator)
     def base_url: () -> String
-    def with: (**untyped options) -> Client
+    def with: (Client client, Hash[Symbol, untyped] options) -> Client
     def expires_at: () -> Time?
   end
 
@@ -794,32 +835,9 @@ module X
   end
 
   class Client
-    include Core::ClientAppOnly
-    include Core::ClientCredentials
-    include Core::ClientSettings
+    extend Forwardable
     include Core::CredentialHolder
-    include Core::ClientTokenRefresh
-    include Core::ProxySetting
-    include Core::RequestEncoding
 
-    FORM_CONTENT_TYPE: String
-
-    @authenticator: Authenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator
-    @connection: Core::Connection
-    @request_builder: Core::RequestBuilder
-    @redirect_handler: Core::RedirectHandler
-    @rate_limit_handler: Core::RateLimitHandler
-    @retry_handler: Core::RetryHandler
-    @response_parser: Core::ResponseParser
-    @given_authenticator: Authenticator?
-    @client_id: String?
-    @client_secret: String?
-    @access_token: String?
-    @refresh_token: String?
-    @expires_at: Time?
-
-    private
-    def perform: (:delete | :get | :post | :put http_method, URI::Generic uri, body: String?, headers: headers, array_class: Class, object_class: object_class) ?{ (Response) -> void } -> untyped
-    def execute_request: (:delete | :get | :post | :put http_method, String endpoint, ?body: body?, ?params: params?, ?form: params?, ?headers: headers, ?array_class: Class, ?object_class: object_class) ?{ (Response) -> void } -> untyped
+    @internals: Core::ClientInternals
   end
 end

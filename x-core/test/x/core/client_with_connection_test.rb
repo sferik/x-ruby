@@ -48,7 +48,7 @@ module X
 
     private
 
-    def pool_of(client) = client.instance_variable_get(:@connection).__send__(:pool)
+    def pool_of(client) = internals(client).instance_variable_get(:@connection).__send__(:pool)
 
     # Serve every request on a port of the loopback, keeping each connection open, and yield the port and the
     # connections accepted

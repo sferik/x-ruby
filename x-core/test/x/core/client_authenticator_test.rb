@@ -69,7 +69,7 @@ module X
         first = Client.new(authenticator:)
         Client.new(authenticator:)
 
-        assert_same first.instance_variable_get(:@connection), authenticator.__send__(:connection)
+        assert_same internals(first).instance_variable_get(:@connection), authenticator.__send__(:connection)
       end
     end
 
@@ -77,7 +77,7 @@ module X
       client = Client.new(**test_oauth2_credentials)
       Client.new(authenticator: client.authenticator)
 
-      assert_same client.instance_variable_get(:@connection), client.authenticator.__send__(:connection)
+      assert_same internals(client).instance_variable_get(:@connection), client.authenticator.__send__(:connection)
     end
 
     def test_a_client_given_an_app_only_authenticator_authenticates_as_the_app
@@ -94,7 +94,7 @@ module X
         copy = Client.new(authenticator: authenticator_class.new(**test_oauth_credentials)).app_only
 
         assert_instance_of AppOnlyAuthenticator, copy.authenticator
-        assert_equal({api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET, bearer_token: TEST_BEARER_TOKEN}, copy.send(:credentials).compact)
+        assert_equal({api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET, bearer_token: TEST_BEARER_TOKEN}, internals(copy).send(:credentials).compact)
       end
       assert_requested @app_token_request.with(basic_auth: [TEST_API_KEY, TEST_API_KEY_SECRET]), times: 2
     end

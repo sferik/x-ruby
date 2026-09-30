@@ -13,11 +13,19 @@ module X
       end
     end
 
-    def test_what_a_copy_or_a_stream_reads_of_a_client_is_private
-      %i[proxy_url settings share_authenticator oauth2_authenticator oauth2_authenticator_in_use].each do |name|
-        assert_includes Client.private_instance_methods, name
+    def test_what_a_copy_or_a_stream_reads_of_the_internals_of_a_client_is_private
+      %i[proxy_url settings share_authenticator share_connection refreshing_rejected_token oauth2_authenticator
+        oauth2_authenticator_in_use].each do |name|
+        assert_includes Core.const_get(:ClientInternals).private_instance_methods, name
       end
       assert_includes StreamingClient.private_instance_methods, :proxy_url
+    end
+
+    def test_a_client_has_no_private_method_but_initialize
+      assert_equal [:initialize], Client.private_instance_methods(false)
+      (Client.ancestors - Object.ancestors - [Client]).each do |ancestor|
+        assert_empty ancestor.private_instance_methods(false), "Expected #{ancestor} to give a client no private methods"
+      end
     end
 
     def test_x_core_names_its_version_alone
@@ -25,7 +33,7 @@ module X
     end
 
     def test_an_internal_cannot_be_named
-      %w[Connection RequestBuilder RetryHandler SettingValidator CallbackError].each do |name|
+      %w[ClientInternals Connection RequestBuilder RetryHandler SettingValidator CallbackError].each do |name|
         assert_raises(NameError) { Core.module_eval("Core::#{name}", __FILE__, __LINE__) }
       end
     end

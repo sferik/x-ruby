@@ -1,28 +1,11 @@
 # frozen_string_literal: true
 
-require "json"
-require "uri"
-require_relative "app_only_authenticator"
-require_relative "authenticator"
-require_relative "bearer_token_authenticator"
-require_relative "client_app_only"
-require_relative "client_credentials"
-require_relative "client_settings"
-require_relative "client_token_refresh"
+require "forwardable"
+require_relative "client_internals"
 require_relative "connection"
 require_relative "credential_holder"
-require_relative "credential_validator"
-require_relative "errors/callback_error"
-require_relative "oauth1_authenticator"
-require_relative "oauth2_authenticator"
-require_relative "origin"
-require_relative "proxy_setting"
 require_relative "rate_limit_handler"
 require_relative "redirect_handler"
-require_relative "request_builder"
-require_relative "request_encoding"
-require_relative "response"
-require_relative "response_parser"
 require_relative "retry_handler"
 require_relative "setting_validator"
 require_relative "streaming_client"
@@ -46,15 +29,14 @@ module X
     # in def self.from_response(body, client:, **). The signatures of x-core state it as the X::_ResponseBuilder
     # interface.
     #
+    # A client keeps its credentials, settings, and connection in an object of x-core it delegates to, and has no
+    # private methods but initialize, so that the methods x-objects and x-uploader include into it, which may be
+    # named as they like, take the place of none of its own.
+    #
     # @api public
     class ::X::Client
-      include ClientAppOnly
-      include ClientCredentials
-      include ClientSettings
+      extend Forwardable
       include CredentialHolder
-      include ClientTokenRefresh
-      include ProxySetting
-      include RequestEncoding
 
       # Default base URL for the X API
       DEFAULT_BASE_URL = "https://api.x.com/2/"
@@ -78,9 +60,9 @@ module X
       DEFAULT_MAX_RATE_LIMIT_WAIT = RateLimitHandler::DEFAULT_MAX_WAIT
       # Default maximum number of times to send an idempotent request again after a failure
       DEFAULT_MAX_RETRIES = RetryHandler::DEFAULT_MAX_RETRIES
-      # Content type of a form-encoded request body
-      FORM_CONTENT_TYPE = "application/x-www-form-urlencoded; charset=utf-8"
-      private_constant :FORM_CONTENT_TYPE
+
+      def_delegators :@internals, :open_timeout, :read_timeout, :write_timeout, :keep_alive_timeout, :debug_output,
+        :max_redirects, :max_rate_limit_retries, :max_rate_limit_wait, :max_retries
 
       # The authenticator for API requests
       #
@@ -96,14 +78,14 @@ module X
       # @return [Authenticator] the authenticator instance
       # @example Check if the OAuth 2.0 token has expired
       #   client.authenticator.token_expired?
-      attr_reader :authenticator
+      def authenticator = @internals.authenticator
 
       # A callable passed the OAuth2Tokens of each refresh, and of an authorization
       # @api public
       # @return [#call, nil] the callable, or nil for none
       # @example Read the hook a refresh reports to
       #   client.on_token_refresh
-      attr_reader :on_token_refresh
+      def on_token_refresh = @internals.on_token_refresh
 
       # The callable a refresh reads the stored OAuth2Tokens with
       #
@@ -113,7 +95,80 @@ module X
       # @return [#call, nil] the callable, or nil for none
       # @example Read the loader a refresh reads stored tokens with
       #   client.load_tokens
-      attr_reader :load_tokens
+      def load_tokens = @internals.load_tokens
+
+      # The API key for OAuth 1.0a authentication
+      # @api public
+      # @return [String, nil] the API key for OAuth 1.0a authentication
+      # @example Get the API key
+      #   client.api_key
+      def api_key = @internals.api_key
+
+      # The OAuth 2.0 client ID
+      # @api public
+      # @return [String, nil] the OAuth 2.0 client ID
+      # @example Get the client ID
+      #   client.client_id
+      def client_id = @internals.client_id
+
+      # The time the OAuth 2.0 access token expires, as last refreshed
+      #
+      # A refresh that reports no lifetime leaves it nil, rather than the time the client was given.
+      #
+      # @api public
+      # @return [Time, nil] the expiration time, or nil if it is not known
+      # @example Get the expiration time
+      #   client.expires_at
+      def expires_at = @internals.expires_at
+
+      # The base URL for API requests
+      # @api public
+      # @return [String] the base URL for API requests, which ends with a slash
+      # @example Get the base URL
+      #   client.base_url # => "https://api.x.com/2/"
+      def base_url = @internals.base_url
+
+      # The default class for parsing JSON arrays
+      # @api public
+      # @return [Class] the default class for parsing JSON arrays
+      # @example Get the default array class
+      #   client.default_array_class # => Array
+      def default_array_class = @internals.default_array_class
+
+      # The default class for parsing JSON objects
+      #
+      # It is a class that JSON.parse builds each JSON object into, or one that responds to from_response and builds
+      # the result from the whole body; see {Client}.
+      #
+      # @api public
+      # @return [Class, #from_response] the default class for parsing JSON objects
+      # @example Get the default object class
+      #   client.default_object_class # => Hash
+      def default_object_class = @internals.default_object_class
+
+      # A callable passed an X::Response after each request and streamed object
+      #
+      # It is the hook of every request a client makes. A block passed to a single request receives the same
+      # summary, after this, for code that reads the response of that one request rather than of all of them.
+      #
+      # @api public
+      # @return [#call, nil] the callable, or nil for none
+      # @example Read the hook a client reports to
+      #   client.on_response
+      def on_response = @internals.on_response
+
+      # The headers sent with every request the client makes
+      #
+      # They are defaults: a header of the same name passed to a request, or to a stream, is sent in place of the
+      # client's, and each of them is sent in place of a default of the gem, such as its User-Agent. A header that
+      # carries credentials, such as Authorization or Cookie, is dropped by a redirect to another origin, as one
+      # passed to a request is.
+      #
+      # @api public
+      # @return [Hash{String => String}] the headers, frozen
+      # @example Read the headers a client sends
+      #   client.headers # => {"User-Agent" => "my-app/1.0"}
+      def headers = @internals.headers
 
       # Initialize a new X API client
       #
@@ -237,16 +292,11 @@ module X
         on_response: nil,
         on_token_refresh: nil,
         load_tokens: nil)
-        @proxy_url = proxy_url
-        @connection = Connection.new(open_timeout:, read_timeout:, write_timeout:, keep_alive_timeout:, debug_output:, proxy_url:)
-        @app_only_monitor = Monitor.new
-        @request_builder = RequestBuilder.new
-        @response_parser = ResponseParser.new
-        initialize_credentials(api_key:, api_key_secret:, access_token:, access_token_secret:, bearer_token:, client_id:, client_secret:, refresh_token:, expires_at:)
-        validate_credentials!(authenticator)
-        initialize_settings(base_url:, default_array_class:, default_object_class:, headers:, on_response:, max_redirects:, max_rate_limit_retries:, max_rate_limit_wait:, max_retries:)
-        initialize_token_hooks(on_token_refresh:, load_tokens:)
-        initialize_authenticator(authenticator) # last, since it takes an authenticator it was given, which a client that raised must leave alone
+        @internals = ClientInternals.new(self, api_key:, api_key_secret:, access_token:, access_token_secret:, bearer_token:,
+          client_id:, client_secret:, refresh_token:, expires_at:, authenticator:, base_url:, open_timeout:, read_timeout:,
+          write_timeout:, keep_alive_timeout:, debug_output:, proxy_url:, default_array_class:, default_object_class:,
+          headers:, max_redirects:, max_rate_limit_retries:, max_rate_limit_wait:, max_retries:, on_response:,
+          on_token_refresh:, load_tokens:)
       end
 
       # Summarize the client for the console without revealing credentials
@@ -284,12 +334,28 @@ module X
       #   app_client = client.with(access_token: nil, access_token_secret: nil)
       # @example Derive a client that authenticates with another authenticator
       #   user_client = app_client.with(authenticator: X::OAuth2Authenticator.new(**stored_tokens))
-      def with(**options) # steep:ignore DifferentMethodParameterKind
-        self.class.new(**settings, **with_credentials(options)).tap do |copy|
-          copy.__send__(:share_authenticator, authenticator, options)
-          copy.__send__(:share_connection, @connection)
-        end
-      end
+      def with(**options) = @internals.with(self, options) # steep:ignore DifferentMethodParameterKind
+
+      # A client that authenticates as the app, for the endpoints that refuse OAuth 1.0a
+      #
+      # A client that authenticates as a user, signing with OAuth 1.0a or with OAuth 2.0, returns a copy that
+      # authenticates with the app's bearer token: the one it was given, or one it fetches with its API key and secret
+      # the first time. It returns the same copy, with the connections it keeps open, from then on, since the
+      # credentials and settings of a client never change; threads that ask for the copy together get one. A client
+      # with a bearer token or an API key and secret alone already authenticates as the app, and is returned as it is,
+      # as is one given an authenticator that authenticates as the app, or as no one. A client given an
+      # OAuth1Authenticator fetches the token with the API key and secret it signs with. A client that authenticates
+      # with OAuth 2.0 as a user and holds neither the app's bearer token nor its API key and secret, as a client
+      # given an OAuth2Authenticator holds neither, raises, rather than send the user's credentials to an endpoint
+      # that would refuse them with 403 Forbidden.
+      #
+      # @api public
+      # @return [Client] a copy that authenticates with the bearer token, or the client itself
+      # @raise [UnsupportedOperation] if the client authenticates with OAuth 2.0 as a user and holds no credentials of
+      #   the app
+      # @example Add a filtered stream rule, which takes app-only authentication
+      #   client.app_only.post("tweets/search/stream/rules", {add: [{value: "ruby"}]})
+      def app_only = @internals.app_only(self)
 
       # Perform a GET request to the X API
       #
@@ -314,7 +380,7 @@ module X
       # @example Read what a response reported of the rate limit it spent
       #   user = client.get("users/me") { |response| limit = response.rate_limit }
       def get(endpoint, params: nil, headers: {}, array_class: default_array_class, object_class: default_object_class, &)
-        execute_request(:get, endpoint, params:, headers:, array_class:, object_class:, &)
+        @internals.execute_request(self, :get, endpoint, params:, headers:, array_class:, object_class:, &)
       end
 
       # Perform a POST request to the X API
@@ -344,7 +410,7 @@ module X
       #   v1_client.post("account/settings.json", form: {lang: "en"})
       def post(endpoint, body = nil, params: nil, form: nil, headers: {}, array_class: default_array_class, object_class: default_object_class, **unknown, &) # steep:ignore DifferentMethodParameterKind
         SettingValidator.no_unknown_keywords!(:post, endpoint, unknown)
-        execute_request(:post, endpoint, body:, params:, form:, headers:, array_class:, object_class:, &)
+        @internals.execute_request(self, :post, endpoint, body:, params:, form:, headers:, array_class:, object_class:, &)
       end
 
       # Perform a PUT request to the X API
@@ -372,7 +438,7 @@ module X
       #   client.put("some/endpoint", {key: "value"})
       def put(endpoint, body = nil, params: nil, form: nil, headers: {}, array_class: default_array_class, object_class: default_object_class, **unknown, &) # steep:ignore DifferentMethodParameterKind
         SettingValidator.no_unknown_keywords!(:put, endpoint, unknown)
-        execute_request(:put, endpoint, body:, params:, form:, headers:, array_class:, object_class:, &)
+        @internals.execute_request(self, :put, endpoint, body:, params:, form:, headers:, array_class:, object_class:, &)
       end
 
       # Perform a DELETE request to the X API
@@ -394,7 +460,7 @@ module X
       # @example Delete a post
       #   client.delete("tweets/1234567890")
       def delete(endpoint, params: nil, headers: {}, array_class: default_array_class, object_class: default_object_class, &)
-        execute_request(:delete, endpoint, params:, headers:, array_class:, object_class:, &)
+        @internals.execute_request(self, :delete, endpoint, params:, headers:, array_class:, object_class:, &)
       end
 
       # A client for the streaming endpoints, which reads and reconnects differently
@@ -413,6 +479,30 @@ module X
         StreamingClient.new(self, read_timeout:, max_reconnects:)
       end
 
+      # Send a request that is safe to send twice again after a failure
+      #
+      # The client sends no POST again, since the API may have acted on one whose answer never arrived, and sends no
+      # request again after its answer failed to arrive, since the API bills a read it answered whether or not the
+      # answer arrived. A request that is safe to send again anyway, such as the chunk of an upload, which names the
+      # segment it is appended at and which the API bills nothing for, is sent again with this: after a ServerError, a
+      # RequestTimeout, or a NetworkError of any kind, up to max_retries times, as the client sends an idempotent
+      # request again, after the wait a response asks for, or a backoff that doubles with each retry and is cut short
+      # at random. A response that asks to be left alone for longer than a minute raises at once. The block must build
+      # its request anew each time, so that each attempt is signed afresh, as a request of the client is.
+      #
+      # Wrap a request the client sends no more than once, such as a POST: the client sends a GET, a PUT, or a DELETE
+      # again itself, so one wrapped in this is sent max_retries times more for each time this sends it, nine times in
+      # all with the defaults, rather than three.
+      #
+      # @api public
+      # @yield sends the request
+      # @return [Object] what the block returns
+      # @raise [NetworkError] if the request fails once more than the retries allow
+      # @raise [ServerError, RequestTimeout] if the API fails to answer once more than the retries allow, or asks for a
+      #   wait longer than a minute
+      # @example Append a chunk of an upload, again after a failure
+      #   client.with_retries { client.post("media/upload/1/append", body, headers:) }
+      def with_retries(&) = @internals.with_retries(&)
       # Close the connections the client keeps open between requests
       #
       # A later request opens a connection again. A client and the copies made of it with {#with} that open their
@@ -423,47 +513,7 @@ module X
       # @return [void]
       # @example Close the connections before a long pause
       #   client.close
-      def close
-        @connection.close
-      end
-
-      private
-
-      # Execute an HTTP request to the X API
-      #
-      # An error a callback raised, which the request tags as a CallbackError so that no handler sends the request
-      # again, waits out a rate limit, or refreshes a token for it, is raised as it was, once the handlers are left.
-      #
-      # @api private
-      # @return [Object, nil] the parsed response body, or what an object_class that responds to from_response builds
-      def execute_request(http_method, endpoint, body: nil, params: nil, form: nil, headers: {}, array_class: default_array_class, object_class: default_object_class, &block)
-        SettingValidator.parsing_classes!(array_class:, object_class:)
-        uri = uri_for(base_url, endpoint, params)
-        headers = headers_for(form.nil? ? headers : RequestBuilder.merge_headers({"Content-Type" => FORM_CONTENT_TYPE}, headers))
-        @retry_handler.handle(idempotent: RequestBuilder.idempotent?(http_method)) do
-          @rate_limit_handler.handle { refreshing_rejected_token { perform(http_method, uri, body: encode_body(body, form), headers:, array_class:, object_class:, &block) } }
-        end
-      rescue CallbackError => e
-        raise e.error
-      end
-
-      # Perform a request once, following redirects and parsing the response
-      #
-      # A request to another origin than the base URL carries none of the client's credentials, as a redirect to one
-      # carries none of them. The error on_response or the block of the request raises, as the error from_response
-      # raises, is tagged as a CallbackError, so that it is not taken for an error of the response. The response is
-      # reported, and its error named, for the request it answers, which a redirect may have sent to another URI with
-      # another method than the request was made with.
-      #
-      # @api private
-      # @return [Object, nil] the parsed response body, or what an object_class that responds to from_response builds
-      def perform(http_method, uri, body:, headers:, array_class:, object_class:, &)
-        authenticator, headers = Origin.credentials_for(from: URI(base_url), to: uri, authenticator: self.authenticator, headers:)
-        request = @request_builder.build(http_method:, uri:, body:, headers:, authenticator:)
-        response, request = @redirect_handler.follow(response: @connection.perform(request:), request:, headers:, authenticator:)
-        CallbackError.tagging { report(request.method.downcase.to_sym, request.uri, response, &) }
-        @response_parser.parse(response:, array_class:, object_class:, client: self, request:)
-      end
+      def close = @internals.close
     end
   end
 end

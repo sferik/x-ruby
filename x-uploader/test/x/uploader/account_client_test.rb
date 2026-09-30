@@ -90,7 +90,7 @@ module X
     # The URLs of the requests the block performed with the connection the client holds, which a copy would hold none of
     def performed_by(client, &)
       performed = []
-      connection = client.instance_variable_get(:@connection)
+      connection = internals(client).instance_variable_get(:@connection)
       perform = connection.method(:perform)
       recorder = lambda do |request:|
         performed << request.uri.to_s

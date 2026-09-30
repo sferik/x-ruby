@@ -23,6 +23,13 @@ module X
       assert_equal "#<X::Client base_url=\"https://api.x.com/2/\" authenticator=#<X::OAuth1Authenticator>>", client.inspect
     end
 
+    def test_the_internals_of_a_client_hide_the_credentials_as_the_client_does
+      client = Client.new(**test_oauth_credentials, base_url: "https://api.x.com/1.1/")
+
+      assert_equal "#<X::Core::ClientInternals base_url=\"https://api.x.com/1.1/\" authenticator=#<X::OAuth1Authenticator>>",
+        internals(client).inspect
+    end
+
     def test_missing_api_key_or_secret
       %i[api_key api_key_secret].each do |missing_credential|
         assert_raises(ArgumentError) { Client.new(**test_oauth_credentials.except(missing_credential)) }
@@ -83,7 +90,7 @@ module X
     def test_a_bearer_token_alone_authenticates_with_it
       client = Client.new(bearer_token: "bearer_token")
 
-      assert_equal "bearer_token", client.send(:bearer_token)
+      assert_equal "bearer_token", internals(client).send(:bearer_token)
       assert_instance_of BearerTokenAuthenticator, client.authenticator
     end
   end
@@ -93,7 +100,7 @@ module X
 
     def test_initialize_with_default_connection_options
       client = Client.new
-      connection = client.instance_variable_get(:@connection)
+      connection = internals(client).instance_variable_get(:@connection)
 
       assert_equal Core.const_get(:Connection)::DEFAULT_OPEN_TIMEOUT, connection.open_timeout
       assert_equal Core.const_get(:Connection)::DEFAULT_READ_TIMEOUT, connection.read_timeout
@@ -105,7 +112,7 @@ module X
     def test_initialize_connection_options
       client = Client.new(open_timeout: 10, read_timeout: 20, write_timeout: 30,
         debug_output: $stderr, proxy_url: "https://user:pass@proxy.com:42")
-      connection = client.instance_variable_get(:@connection)
+      connection = internals(client).instance_variable_get(:@connection)
 
       assert_equal 10, connection.open_timeout
       assert_equal 20, connection.read_timeout
@@ -153,10 +160,10 @@ module X
 
     def test_passes_options_to_redirect_handler
       client = Client.new(max_redirects: 5)
-      redirect_handler = client.instance_variable_get(:@redirect_handler)
+      redirect_handler = internals(client).instance_variable_get(:@redirect_handler)
 
-      assert_equal client.instance_variable_get(:@connection), redirect_handler.connection
-      assert_equal client.instance_variable_get(:@request_builder), redirect_handler.request_builder
+      assert_equal internals(client).instance_variable_get(:@connection), redirect_handler.connection
+      assert_equal internals(client).instance_variable_get(:@request_builder), redirect_handler.request_builder
       assert_equal 5, redirect_handler.instance_variable_get(:@max_redirects)
     end
   end

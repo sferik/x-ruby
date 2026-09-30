@@ -51,7 +51,7 @@ module X
 
     def test_a_rate_limit_a_callback_raises_is_not_waited_out
       client = Client.new(max_rate_limit_retries: 1, on_response: ->(_) { raise TooManyRequests.new(http_response: Net::HTTPTooManyRequests.new("1.1", "429", "Too Many Requests")) })
-      handler = client.instance_variable_get(:@rate_limit_handler)
+      handler = internals(client).instance_variable_get(:@rate_limit_handler)
 
       handler.stub(:sleep, ->(_) { flunk "waited out a rate limit the hook raised" }) do
         assert_raises(TooManyRequests) { client.get("users/me") }
@@ -75,7 +75,7 @@ module X
       stub_request(:get, URL).to_return({status: 503}, SUCCESS)
       client = Client.new(max_retries: 1)
 
-      client.instance_variable_get(:@retry_handler).stub(:sleep, nil) do
+      internals(client).instance_variable_get(:@retry_handler).stub(:sleep, nil) do
         assert_equal({"data" => {"id" => "1"}}, client.get("users/me"))
       end
     end

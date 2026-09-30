@@ -26,7 +26,7 @@ module X
       copy = Client.new(**test_oauth_credentials, base_url: "https://api.x.com/2/").app_only
 
       assert_equal [TEST_BEARER_TOKEN, nil, nil, "https://api.x.com/2/"],
-        [copy.send(:bearer_token), copy.send(:access_token), copy.send(:access_token_secret), copy.base_url]
+        [internals(copy).send(:bearer_token), internals(copy).send(:access_token), internals(copy).send(:access_token_secret), copy.base_url]
     end
 
     def test_an_app_only_copy_holds_the_credentials_of_the_app_alone
@@ -34,7 +34,7 @@ module X
       copy = client.app_only
 
       assert_instance_of AppOnlyAuthenticator, copy.authenticator
-      assert_equal({api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET, bearer_token: TEST_BEARER_TOKEN}, copy.send(:credentials).compact)
+      assert_equal({api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET, bearer_token: TEST_BEARER_TOKEN}, internals(copy).send(:credentials).compact)
     end
 
     def test_the_token_is_fetched_over_the_client_connection
@@ -43,7 +43,7 @@ module X
       fetch = Core.const_get(:TokenEndpoint).method(:fetch)
       Core.const_get(:TokenEndpoint).stub(:fetch, ->(request, connection:) { fetch.call(request, connection: connections.push(connection).last) }) { client.app_only }
 
-      assert_equal [client.instance_variable_get(:@connection)], connections
+      assert_equal [internals(client).instance_variable_get(:@connection)], connections
     end
 
     def test_the_token_is_fetched_with_the_api_key_and_secret
@@ -56,13 +56,13 @@ module X
     def test_an_app_only_client_fetches_its_token_over_the_client_connection
       client = Client.new(api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET, proxy_url: "http://proxy.example.com:8080", open_timeout: 5)
 
-      assert_same client.instance_variable_get(:@connection), client.authenticator.send(:connection)
+      assert_same internals(client).instance_variable_get(:@connection), client.authenticator.send(:connection)
     end
 
     def test_an_oauth2_client_refreshes_its_token_over_the_client_connection
       client = Client.new(**test_oauth2_credentials, proxy_url: "http://proxy.example.com:8080", read_timeout: 5)
 
-      assert_same client.instance_variable_get(:@connection), client.authenticator.send(:connection)
+      assert_same internals(client).instance_variable_get(:@connection), client.authenticator.send(:connection)
     end
 
     def test_the_client_connection_settings_reach_the_token_request
@@ -74,7 +74,7 @@ module X
     def test_a_given_bearer_token_is_used_without_a_request
       client = Client.new(**test_oauth_credentials, bearer_token: "GIVEN")
 
-      assert_equal "GIVEN", client.app_only.send(:bearer_token)
+      assert_equal "GIVEN", internals(client.app_only).send(:bearer_token)
       assert_not_requested @token_request
     end
 

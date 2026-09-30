@@ -14,7 +14,7 @@ module X
 
     def opened_by(client, &)
       clients = []
-      connection = client.instance_variable_get(:@connection)
+      connection = internals(client).instance_variable_get(:@connection)
       original = connection.method(:build_http_client)
       connection.stub(:build_http_client, ->(*args) { original.call(*args).tap { |http_client| clients << http_client } }, &)
       clients
@@ -62,7 +62,7 @@ module X
       client = Client.new(**test_oauth_credentials)
       client.close
 
-      assert_nil client.instance_variable_get(:@app_only)
+      assert_nil internals(client).instance_variable_get(:@app_only)
     end
   end
 end

@@ -245,14 +245,14 @@ module X
       client = authorization.client("state=STATE&code=CODE", base_url: "https://api.x.com/3/")
 
       assert_instance_of OAuth2Authenticator, client.authenticator
-      assert_equal ["ACCESS", "REFRESH", "https://api.x.com/3/"], [client.send(:access_token), client.send(:refresh_token), client.base_url]
+      assert_equal ["ACCESS", "REFRESH", "https://api.x.com/3/"], [internals(client).send(:access_token), internals(client).send(:refresh_token), client.base_url]
     end
 
     def test_the_client_of_a_confidential_app_holds_its_secret
       stub_token
       client = authorization(client_secret: TEST_CLIENT_SECRET).client("state=STATE&code=CODE")
 
-      assert_equal TEST_CLIENT_SECRET, client.send(:client_secret)
+      assert_equal TEST_CLIENT_SECRET, internals(client).send(:client_secret)
     end
 
     def test_the_client_reaches_the_api_as_the_authorization_did
@@ -260,7 +260,7 @@ module X
       client = authorization(proxy_url: "http://proxy.example.com:8080", read_timeout: 2, keep_alive_timeout: 4).client("state=STATE&code=CODE")
 
       assert_equal ["http://proxy.example.com:8080", 2, Client::DEFAULT_OPEN_TIMEOUT, 4],
-        [client.send(:proxy_url), client.read_timeout, client.open_timeout, client.keep_alive_timeout]
+        [internals(client).send(:proxy_url), client.read_timeout, client.open_timeout, client.keep_alive_timeout]
     end
 
     def test_the_options_of_the_client_replace_the_settings_of_the_authorization

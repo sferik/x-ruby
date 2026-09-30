@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "uri"
+require_relative "client_internals"
 require_relative "connection"
 require_relative "credential_holder"
 require_relative "errors/rules_rejected"
@@ -45,7 +46,6 @@ module X
     class ::X::StreamingClient
       include CredentialHolder
       include ProxySetting
-      include RequestEncoding
 
       # Default timeout for reading from a stream in seconds, half again the 20-second interval of the keep-alive X sends
       DEFAULT_READ_TIMEOUT = 30 # seconds
@@ -83,7 +83,7 @@ module X
       #   streaming_client = X::StreamingClient.new(client, max_reconnects: 5)
       def initialize(client, read_timeout: DEFAULT_READ_TIMEOUT, max_reconnects: DEFAULT_MAX_RECONNECTS)
         @client = client
-        @proxy_url = client.__send__(:proxy_url)
+        @proxy_url = ClientInternals.of(client).__send__(:proxy_url)
         @connection = Connection.new(open_timeout: client.open_timeout, read_timeout:, write_timeout: client.write_timeout,
           debug_output: client.debug_output, proxy_url:)
         @reconnect_handler = ReconnectHandler.new(max_reconnects:, max_rate_limit_wait: client.max_rate_limit_wait)
@@ -184,9 +184,9 @@ module X
         raise ArgumentError, NO_BLOCK_MESSAGE if block.nil?
 
         SettingValidator.parsing_classes!(array_class:, object_class:)
-        uri = uri_for(client.base_url, endpoint, params)
+        uri = RequestEncoding.uri_for(client.base_url, endpoint, params)
         @reconnect_handler.handle(block) do |deliver|
-          app_client.__send__(:refreshing_rejected_token) { open_stream(uri, headers, array_class:, object_class:, &deliver) }
+          ClientInternals.of(app_client).__send__(:refreshing_rejected_token) { open_stream(uri, headers, array_class:, object_class:, &deliver) }
         end
       end
 

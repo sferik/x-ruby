@@ -10,7 +10,7 @@ require_relative "setting_validator"
 module X
   module Core
     # The settings of a client other than its credentials: its base URL, parsing classes, hook, and the settings of
-    # its connection and handlers, included into Client
+    # its connection and handlers, included into ClientInternals
     #
     # A client is built with the settings it keeps for as long as it lives. {Client#with} derives a client whose
     # settings differ, rather than replacing the ones a client holds, so that a request never runs under a setting
@@ -21,52 +21,43 @@ module X
       extend Forwardable
 
       # The base URL for API requests
-      # @api public
+      #
+      # {Client#base_url} returns it.
+      #
+      # @api private
       # @return [String] the base URL for API requests, which ends with a slash
-      # @example Get the base URL
-      #   client.base_url # => "https://api.x.com/2/"
       attr_reader :base_url
 
       # The default class for parsing JSON arrays
-      # @api public
+      #
+      # {Client#default_array_class} returns it.
+      #
+      # @api private
       # @return [Class] the default class for parsing JSON arrays
-      # @example Get the default array class
-      #   client.default_array_class # => Array
       attr_reader :default_array_class
 
       # The default class for parsing JSON objects
       #
-      # It is a class that JSON.parse builds each JSON object into, or one that responds to from_response and builds
-      # the result from the whole body; see {Client}.
+      # {Client#default_object_class} returns it.
       #
-      # @api public
+      # @api private
       # @return [Class, #from_response] the default class for parsing JSON objects
-      # @example Get the default object class
-      #   client.default_object_class # => Hash
       attr_reader :default_object_class
 
-      # A callable passed an X::Response after each request and streamed object
+      # The callable passed an X::Response after each request and streamed object
       #
-      # It is the hook of every request a client makes. A block passed to a single request receives the same
-      # summary, after this, for code that reads the response of that one request rather than of all of them.
+      # {Client#on_response} returns it.
       #
-      # @api public
+      # @api private
       # @return [#call, nil] the callable, or nil for none
-      # @example Read the hook a client reports to
-      #   client.on_response
       attr_reader :on_response
 
       # The headers sent with every request the client makes
       #
-      # They are defaults: a header of the same name passed to a request, or to a stream, is sent in place of the
-      # client's, and each of them is sent in place of a default of the gem, such as its User-Agent. A header that
-      # carries credentials, such as Authorization or Cookie, is dropped by a redirect to another origin, as one
-      # passed to a request is.
+      # {Client#headers} returns it.
       #
-      # @api public
+      # @api private
       # @return [Hash{String => String}] the headers, frozen
-      # @example Read the headers a client sends
-      #   client.headers # => {"User-Agent" => "my-app/1.0"}
       attr_reader :headers
 
       def_delegators :@connection, :open_timeout, :read_timeout, :write_timeout, :keep_alive_timeout, :debug_output
@@ -76,27 +67,11 @@ module X
 
       # Send a request that is safe to send twice again after a failure
       #
-      # The client sends no POST again, since the API may have acted on one whose answer never arrived, and sends no
-      # request again after its answer failed to arrive, since the API bills a read it answered whether or not the
-      # answer arrived. A request that is safe to send again anyway, such as the chunk of an upload, which names the
-      # segment it is appended at and which the API bills nothing for, is sent again with this: after a ServerError, a
-      # RequestTimeout, or a NetworkError of any kind, up to max_retries times, as the client sends an idempotent
-      # request again, after the wait a response asks for, or a backoff that doubles with each retry and is cut short
-      # at random. A response that asks to be left alone for longer than a minute raises at once. The block must build
-      # its request anew each time, so that each attempt is signed afresh, as a request of the client is.
+      # It is what {Client#with_retries} does.
       #
-      # Wrap a request the client sends no more than once, such as a POST: the client sends a GET, a PUT, or a DELETE
-      # again itself, so one wrapped in this is sent max_retries times more for each time this sends it, nine times in
-      # all with the defaults, rather than three.
-      #
-      # @api public
+      # @api private
       # @yield sends the request
       # @return [Object] what the block returns
-      # @raise [NetworkError] if the request fails once more than the retries allow
-      # @raise [ServerError, RequestTimeout] if the API fails to answer once more than the retries allow, or asks for a
-      #   wait longer than a minute
-      # @example Append a chunk of an upload, again after a failure
-      #   client.with_retries { client.post("media/upload/1/append", body, headers:) }
       def with_retries(&) = @retry_handler.handle(idempotent: true, resend_unanswered: true, &)
 
       private
@@ -107,6 +82,8 @@ module X
       # A copy that differs only in what it sends, such as its headers, base URL, or credentials, would otherwise
       # open connections of its own, with a TCP and TLS handshake for each, and keep them open, idle, until it is
       # collected, so a copy made for each request would leave connections to each host behind it.
+      #
+      # The internals of the client copied call it on those of the copy with __send__, since it is private.
       #
       # @api private
       # @param connection [Connection] the connection of the client this one was copied from

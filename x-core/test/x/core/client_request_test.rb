@@ -49,7 +49,7 @@ module X
       stub_request(:get, "https://api.x.com/2/tweets")
         .to_return(body: '{"set": [1, 2, 2, 3]}', headers: {"Content-Type" => "application/json"})
       client = Client.new(default_object_class: OpenStruct, default_array_class: Set)
-      ostruct = client.send(:execute_request, :get, "tweets")
+      ostruct = client.get("tweets")
 
       assert_kind_of OpenStruct, ostruct
       assert_kind_of Set, ostruct.set

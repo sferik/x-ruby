@@ -63,7 +63,7 @@ module X
 
     # Collect the waits instead of taking them, with the random share of each one fixed at none
     def without_sleeping(client, &)
-      handler = client.instance_variable_get(:@rate_limit_handler)
+      handler = internals(client).instance_variable_get(:@rate_limit_handler)
       handler.stub(:rand, 0.0) { handler.stub(:sleep, ->(seconds) { @sleeps << seconds }, &) }
     end
   end

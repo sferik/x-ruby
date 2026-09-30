@@ -91,10 +91,10 @@ module X
       stub_users_me(TEST_ACCESS_TOKEN, status: 401)
       stub_users_me("NEW_ACCESS_TOKEN")
       client = Client.new(**test_oauth2_credentials)
-      client.instance_variable_set(:@authenticator, Class.new(OAuth2Authenticator).new(**test_oauth2_credentials))
+      internals(client).instance_variable_set(:@authenticator, Class.new(OAuth2Authenticator).new(**test_oauth2_credentials))
 
       assert_equal({"data" => {"id" => "1"}}, client.get("users/me"))
-      assert_equal "NEW_REFRESH_TOKEN", client.send(:refresh_token)
+      assert_equal "NEW_REFRESH_TOKEN", internals(client).send(:refresh_token)
     end
 
     def test_other_clients_do_not_refresh_on_unauthorized
@@ -110,7 +110,7 @@ module X
       client = Client.new(**test_oauth2_credentials)
       client.authenticator.refresh!
 
-      assert_equal ["NEW_ACCESS_TOKEN", "NEW_REFRESH_TOKEN"], [client.send(:access_token), client.send(:refresh_token)]
+      assert_equal ["NEW_ACCESS_TOKEN", "NEW_REFRESH_TOKEN"], [internals(client).send(:access_token), internals(client).send(:refresh_token)]
       assert_in_delta Time.now + 7200, client.expires_at, 5
     end
 
@@ -153,7 +153,7 @@ module X
       client = Client.new(**test_oauth_credentials, **test_oauth2_credentials)
 
       assert_instance_of OAuth1Authenticator, client.authenticator
-      assert_equal [TEST_REFRESH_TOKEN, TEST_ACCESS_TOKEN], [client.send(:refresh_token), client.send(:access_token)]
+      assert_equal [TEST_REFRESH_TOKEN, TEST_ACCESS_TOKEN], [internals(client).send(:refresh_token), internals(client).send(:access_token)]
     end
 
     def test_expires_at_is_kept_without_oauth2
@@ -191,7 +191,7 @@ module X
       copy.authenticator.refresh!
 
       assert_same client.authenticator, copy.authenticator
-      assert_equal %w[NEW_REFRESH_TOKEN NEW_REFRESH_TOKEN], [client.send(:refresh_token), copy.send(:refresh_token)]
+      assert_equal %w[NEW_REFRESH_TOKEN NEW_REFRESH_TOKEN], [internals(client).send(:refresh_token), internals(copy).send(:refresh_token)]
     end
 
     def test_a_refresh_calls_the_hook_of_each_client_that_shares_the_authenticator_once
@@ -216,7 +216,7 @@ module X
     def test_a_copy_shares_a_subclass_of_the_oauth2_authenticator
       client = Client.new(**test_oauth2_credentials)
       authenticator = Class.new(OAuth2Authenticator).new(**test_oauth2_credentials)
-      client.instance_variable_set(:@authenticator, authenticator)
+      internals(client).instance_variable_set(:@authenticator, authenticator)
 
       assert_same authenticator, client.with.authenticator
     end
