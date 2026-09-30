@@ -149,6 +149,9 @@ module X
     # request, and the stream is opened once more with it. A stream that drops, or that X disconnects with an
     # operational-disconnect, reconnects, backing off as X recommends, up to max_reconnects times in a row. The API bills
     # each object a stream delivers, so the client's on_response receives each one, as well as a failed response.
+    # An error on_response or the object_class raises stops the stream, and reaches the caller as it was raised, even
+    # an error of the X API, such as the X::ServiceUnavailable of a request on_response made, which a stream that
+    # dropped reconnects after.
     #
     # A stream runs until its block stops it: break out of the block to stop the stream and return a value, throw to
     # unwind to a catch further out, or raise, which stops the stream even where a drop would have reconnected, and

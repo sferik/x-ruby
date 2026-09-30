@@ -48,13 +48,14 @@ module X
       end
     end
 
-    def test_perform_stream_raises_the_error_a_callback_of_the_stream_raised
+    def test_perform_stream_raises_the_error_a_callback_of_the_stream_raised_tagged
       stub_request(:get, "http://example.com:80")
       request = Net::HTTP::Get.new(URI("http://example.com:80"))
-
-      assert_raises(Errno::ECONNREFUSED) do
+      error = assert_raises(Core::CallbackError) do
         @connection.perform_stream(request:) { |_response| raise Core::CallbackError, Errno::ECONNREFUSED.new }
       end
+
+      assert_kind_of Errno::ECONNREFUSED, error.error
     end
 
     def test_a_callback_error_holds_the_error_a_callback_raised_and_its_message

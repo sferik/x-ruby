@@ -155,9 +155,9 @@ module X
       # The connection is opened for this request and closed once the block returns, rather than taken from the
       # connections kept open and given back, since a stream holds its connection for as long as it reads.
       #
-      # An error the block raises, which StreamParser tags as a CallbackError, is raised as it was, rather than
-      # reported as a network error: the callbacks of a stream run inside the request that reads it, and the errors a
-      # socket raises are the ones a stream reconnects after.
+      # An error the block raises, which StreamParser tags as a CallbackError, is raised tagged, rather than reported
+      # as a network error: the callbacks of a stream run inside the request that reads it, and the errors a socket
+      # raises are the ones a stream reconnects after. The ReconnectHandler of the stream raises it as it was, once it no longer reconnects.
       #
       # The body is not tagged UTF-8 here, as the body of {#perform} is: Net::HTTP tags a body it reads whole, and
       # raises for one it passes to a block a chunk at a time, as a stream is read. StreamParser tags each line of
@@ -168,14 +168,13 @@ module X
       # @yield [Net::HTTPResponse] the HTTP response for streaming
       # @return [void]
       # @raise [NetworkError] if a network error occurs
+      # @raise [CallbackError] if a callback of the stream raises
       # @example Perform a streaming request
       #   connection.perform_stream(request: request) { |response| response.read_body { |chunk| } }
       def perform_stream(request:, &)
         http_client = build_http_client(request.uri)
         http_client.use_ssl = request.uri.scheme.eql?("https")
         http_client.request(request, &)
-      rescue CallbackError => e
-        raise e.error
       rescue *NETWORK_ERRORS => e
         raise NetworkError.new("Network error: #{e}", request:)
       end

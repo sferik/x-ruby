@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require_relative "errors/callback_error"
 require_relative "errors/conflict"
 require_relative "errors/invalid_response"
 require_relative "errors/network_error"
@@ -65,9 +66,10 @@ module X
       # Run a stream, running it again whenever it drops
       #
       # An error raised by the consumer stops the stream, even one that would otherwise reconnect, and reaches the
-      # caller, as does any error that is not one a stream reconnects after, such as one raised by the on_response
-      # of the client or by the class an object is parsed into, or the StreamError of a line that holds errors other
-      # than a disconnect.
+      # caller, as does an error raised by the on_response of the client or by the class an object is parsed into,
+      # which the stream tags as a CallbackError, so that one a stream reconnects after, such as an X::ServerError of
+      # a request on_response made, is not taken for the stream's own, and any error that is not one a stream
+      # reconnects after, such as the StreamError of a line that holds errors other than a disconnect.
       # The stream is run again with while rather than Kernel#loop, which rescues StopIteration, so that a
       # StopIteration raised from an Enumerator that has run out, wherever it is raised, reaches the caller too,
       # rather than end the stream without a word.
@@ -87,6 +89,8 @@ module X
         while run_once(stream, deliver, state); end
       rescue ConsumerError => e
         raise cause_of(e)
+      rescue CallbackError => e
+        raise e.error
       end
 
       private

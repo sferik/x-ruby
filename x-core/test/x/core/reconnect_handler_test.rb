@@ -126,4 +126,18 @@ module X
       raise error_class.new(http_response: Net::HTTPServiceUnavailable.new("1.1", "503", "Service Unavailable"))
     end
   end
+
+  class ReconnectHandlerCallbackTest < Minitest::Test
+    cover Core::ReconnectHandler
+
+    def test_an_error_a_callback_raised_stops_the_stream_and_reaches_the_caller_as_it_was_raised
+      failure = NetworkError.new("the hook's own request failed")
+      runs = []
+      stream = proc { raise Core::CallbackError, failure.tap { runs << 1 } }
+      handler = Core::ReconnectHandler.new
+      error = handler.stub(:sleep, ->(_seconds) { flunk "unexpected reconnect" }) { assert_raises(NetworkError) { handler.handle(->(_) {}, &stream) } }
+
+      assert_equal [failure, [1]], [error, runs]
+    end
+  end
 end
