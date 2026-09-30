@@ -2,6 +2,7 @@
 
 require "fileutils"
 require "tmpdir"
+require "stringio"
 require_relative "../../test_helper"
 require "x/uploader/account"
 
@@ -19,26 +20,26 @@ module X
     end
 
     def test_image_upload_uses_a_v1_client_with_the_same_credentials
-      Uploader::Account.update_profile_image_binary(PNG, client: @client)
+      Uploader::Account.update_profile_image(StringIO.new(PNG), client: @client)
 
       assert_requested(:post, "#{V1_URL}update_profile_image.json") { |request| request.headers["Authorization"].include?("oauth_consumer_key=\"#{TEST_API_KEY}\"") }
     end
 
     def test_banner_upload_uses_a_v1_client_with_the_same_credentials
-      Uploader::Account.update_profile_banner_binary(PNG, client: @client)
+      Uploader::Account.update_profile_banner(StringIO.new(PNG), client: @client)
 
       assert_requested(:post, "#{V1_URL}update_profile_banner.json") { |request| request.headers["Authorization"].include?("oauth_token=\"#{TEST_ACCESS_TOKEN}\"") }
     end
 
     def test_an_image_upload_posts_to_the_v1_url_with_the_connection_the_client_holds
-      performed = performed_by(@client) { Uploader::Account.update_profile_image_binary(PNG, client: @client) }
+      performed = performed_by(@client) { Uploader::Account.update_profile_image(StringIO.new(PNG), client: @client) }
 
       assert_equal ["#{V1_URL}update_profile_image.json"], performed
       assert_equal "https://api.x.com/2/", @client.base_url
     end
 
     def test_a_banner_upload_posts_to_the_v1_url_with_the_connection_the_client_holds
-      performed = performed_by(@client) { Uploader::Account.update_profile_banner_binary(PNG, client: @client) }
+      performed = performed_by(@client) { Uploader::Account.update_profile_banner(StringIO.new(PNG), client: @client) }
 
       assert_equal ["#{V1_URL}update_profile_banner.json"], performed
       assert_equal "https://api.x.com/2/", @client.base_url
@@ -46,8 +47,8 @@ module X
 
     def test_an_upload_copies_the_client_for_nothing
       @client.stub(:with, ->(**) { flunk "the client was copied for an upload" }) do
-        Uploader::Account.update_profile_image_binary(PNG, client: @client)
-        Uploader::Account.update_profile_banner_binary(PNG, client: @client)
+        Uploader::Account.update_profile_image(StringIO.new(PNG), client: @client)
+        Uploader::Account.update_profile_banner(StringIO.new(PNG), client: @client)
       end
 
       assert_requested(:post, V1_URL_PATTERN, times: 2)
@@ -55,7 +56,7 @@ module X
 
     def test_an_upload_keeps_the_settings_of_the_client
       client = Client.new(**test_oauth_credentials, read_timeout: 9, max_redirects: 1)
-      Uploader::Account.update_profile_image_binary(PNG, client:)
+      Uploader::Account.update_profile_image(StringIO.new(PNG), client:)
 
       assert_requested(:post, "#{V1_URL}update_profile_image.json")
       assert_equal [9, 1, "https://api.x.com/2/"], [client.read_timeout, client.max_redirects, client.base_url]

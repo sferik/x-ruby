@@ -60,9 +60,7 @@ module X
       extend Account
 
       def update_profile_image: (uploadable media, client: ::X::Client) -> void
-      def update_profile_image_binary: (String content, client: ::X::Client) -> void
       def update_profile_banner: (uploadable media, client: ::X::Client, ?width: Integer?, ?height: Integer?, ?offset_left: Integer?, ?offset_top: Integer?) -> void
-      def update_profile_banner_binary: (String content, client: ::X::Client, ?width: Integer?, ?height: Integer?, ?offset_left: Integer?, ?offset_top: Integer?) -> void
     end
   end
 

@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "stringio"
 require_relative "../../test_helper"
 require "x/uploader/account"
 
@@ -21,8 +22,8 @@ module X
       end
     end
 
-    def test_update_profile_image_binary_body
-      Uploader::Account.update_profile_image_binary(CONTENT, client: @client)
+    def test_update_profile_image_body_of_an_io
+      Uploader::Account.update_profile_image(StringIO.new(CONTENT), client: @client)
 
       assert_equal "/1.1/account/update_profile_image.json", @request.uri.path
       assert_equal image_body(CONTENT, request_boundary), @request.body.b
@@ -34,15 +35,15 @@ module X
       assert_equal image_body(File.binread(PNG_FILE), request_boundary), @request.body.b
     end
 
-    def test_update_profile_banner_binary_body_without_dimensions
-      Uploader::Account.update_profile_banner_binary(CONTENT, client: @client)
+    def test_update_profile_banner_body_of_an_io_without_dimensions
+      Uploader::Account.update_profile_banner(StringIO.new(CONTENT), client: @client)
 
       assert_equal "/1.1/account/update_profile_banner.json", @request.uri.path
       assert_equal banner_body(CONTENT, request_boundary), @request.body.b
     end
 
-    def test_update_profile_banner_binary_body_with_dimensions
-      Uploader::Account.update_profile_banner_binary(CONTENT, client: @client, width: 1500, height: 500,
+    def test_update_profile_banner_body_of_an_io_with_dimensions
+      Uploader::Account.update_profile_banner(StringIO.new(CONTENT), client: @client, width: 1500, height: 500,
         offset_left: 10, offset_top: 20)
 
       expected = banner_body(CONTENT, request_boundary, width: 1500, height: 500, offset_left: 10, offset_top: 20)
@@ -60,9 +61,9 @@ module X
     end
 
     def test_each_upload_has_a_boundary_of_its_own
-      Uploader::Account.update_profile_image_binary(CONTENT, client: @client)
+      Uploader::Account.update_profile_image(StringIO.new(CONTENT), client: @client)
       first = request_boundary
-      Uploader::Account.update_profile_image_binary(CONTENT, client: @client)
+      Uploader::Account.update_profile_image(StringIO.new(CONTENT), client: @client)
 
       refute_equal first, request_boundary
     end

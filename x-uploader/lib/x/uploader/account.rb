@@ -57,25 +57,6 @@ module X
         nil
       end
 
-      # Update the authenticating user's profile image from binary content
-      #
-      # Like {update_profile_image}, it returns nil, whatever the client answers with.
-      #
-      # @api public
-      # @param content [String] the binary image content
-      # @param client [Client] the X API client
-      # @return [void]
-      # @raise [InvalidMedia] if the content is empty, which holds nothing to upload, or is larger than the 700
-      #   kilobytes the API takes of a profile image
-      # @raise [InvalidMediaType] if the content does not begin with the signature of a GIF, a JPEG, or a PNG
-      # @example Update profile image from binary content
-      #   Uploader::Account.update_profile_image_binary(image_data, client: client)
-      def update_profile_image_binary(content, client:)
-        Validator.validate_profile_image!(Source::Buffer.new(content), Validator::MAX_PROFILE_IMAGE_BYTES, "a profile image")
-        Multipart.post(client, PROFILE_IMAGE_URL, "image", content)
-        nil
-      end
-
       # Update the authenticating user's profile banner
       #
       # It returns nil, whatever the client answers with, since the endpoint answers with no content once the banner
@@ -104,29 +85,6 @@ module X
         source = Source.for(media)
         Validator.validate_profile_image!(source, Validator::MAX_PROFILE_BANNER_BYTES, "a profile banner")
         Multipart.post(client, PROFILE_BANNER_URL, "banner", source.content, width:, height:, offset_left:, offset_top:)
-        nil
-      end
-
-      # Update the authenticating user's profile banner from binary content
-      #
-      # Like {update_profile_banner}, it returns nil, whatever the client answers with.
-      #
-      # @api public
-      # @param content [String] the binary image content
-      # @param client [Client] the X API client
-      # @param width [Integer, nil] the width of the banner
-      # @param height [Integer, nil] the height of the banner
-      # @param offset_left [Integer, nil] the left offset of the banner
-      # @param offset_top [Integer, nil] the top offset of the banner
-      # @return [void]
-      # @raise [InvalidMedia] if the content is empty, which holds nothing to upload, or is larger than the 5
-      #   megabytes X takes of a profile banner
-      # @raise [InvalidMediaType] if the content does not begin with the signature of a GIF, a JPEG, or a PNG
-      # @example Update profile banner from binary content
-      #   Uploader::Account.update_profile_banner_binary(image_data, client: client)
-      def update_profile_banner_binary(content, client:, width: nil, height: nil, offset_left: nil, offset_top: nil)
-        Validator.validate_profile_image!(Source::Buffer.new(content), Validator::MAX_PROFILE_BANNER_BYTES, "a profile banner")
-        Multipart.post(client, PROFILE_BANNER_URL, "banner", content, width:, height:, offset_left:, offset_top:)
         nil
       end
     end

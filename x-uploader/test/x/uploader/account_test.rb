@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "tempfile"
+require "stringio"
 require_relative "../../test_helper"
 require "x/uploader/account"
 
@@ -22,6 +23,11 @@ module X
       assert_raises(NameError) { Uploader::Account::SUPPORTED_EXTENSIONS }
     end
 
+    def test_an_image_held_in_memory_is_passed_as_an_io_rather_than_to_a_binary_form
+      refute_respond_to Uploader::Account, :update_profile_image_binary
+      refute_respond_to Uploader::Account, :update_profile_banner_binary
+    end
+
     def test_update_profile_image_sends_multipart_request
       stub_profile_image_request
       response = update_profile_image("test/sample_files/sample.png")
@@ -30,9 +36,9 @@ module X
       assert_nil response
     end
 
-    def test_update_profile_image_binary_sends_content_directly
+    def test_update_profile_image_sends_the_content_of_an_io
       stub_profile_image_request
-      response = Uploader::Account.update_profile_image_binary(SAMPLE_BINARY_CONTENT, client: @client)
+      response = Uploader::Account.update_profile_image(StringIO.new(SAMPLE_BINARY_CONTENT), client: @client)
 
       assert_requested(:post, V1_PROFILE_IMAGE_URL)
       assert_nil response
@@ -112,7 +118,7 @@ module X
       stub_request(:post, V1_PROFILE_BANNER_URL).to_return(headers: {"content-type" => "application/json"}, body: {id: 1}.to_json)
 
       assert_nil update_profile_banner("test/sample_files/sample.png")
-      assert_nil Uploader::Account.update_profile_banner_binary(SAMPLE_BINARY_CONTENT, client: @client)
+      assert_nil Uploader::Account.update_profile_banner(StringIO.new(SAMPLE_BINARY_CONTENT), client: @client)
     end
 
     def test_update_profile_banner_with_dimensions
@@ -122,9 +128,9 @@ module X
       assert_banner_dimensions_in_request
     end
 
-    def test_update_profile_banner_binary_sends_content_directly
+    def test_update_profile_banner_sends_the_content_of_an_io
       stub_profile_banner_request
-      Uploader::Account.update_profile_banner_binary(SAMPLE_BINARY_CONTENT, client: @client)
+      Uploader::Account.update_profile_banner(StringIO.new(SAMPLE_BINARY_CONTENT), client: @client)
 
       assert_requested(:post, V1_PROFILE_BANNER_URL)
     end
