@@ -56,7 +56,7 @@ X::Post.search("ruby", client:)
 
 ## Building objects from any response
 
-`from_response` builds a resource from a parsed response, or an `X::Page` of them when its data is a list, which holds the `meta` of the response, such as its `next_token`, and the problems it reported. `X::Client` from `x-core` calls it when a resource class is the `object_class` of a request, passing the parsed body and itself:
+`from_response` builds a resource from a parsed response, or an `X::Page` of them when its data is a list, which holds the `meta` of the response, such as its `next_token`, and the problems it reported. A lookup of several resources, such as `users?ids=`, that finds none of them builds an empty page of the problems it reported, as one that finds some builds a page of those. `X::Client` from `x-core` calls it when a resource class is the `object_class` of a request, passing the parsed body and itself:
 
 ```ruby
 user = client.get("users/by/username/sferik", object_class: X::User)

@@ -15,7 +15,10 @@ module X
       MARSHAL_FORMAT = 1
       # The name YAML writes each part of the state under, in the order Marshal writes them
       YAML_KEYS = %w[format resources meta problems includes].freeze
-      private_constant :MARSHAL_FORMAT, :YAML_KEYS
+      # The query parameters that name the resources of a lookup of several, which a problem of a response names when
+      # it found none of them
+      LIST_PARAMETERS = %w[ids media_keys usernames].freeze
+      private_constant :MARSHAL_FORMAT, :YAML_KEYS, :LIST_PARAMETERS
 
       # The resources on this page
       # @api public
@@ -205,6 +208,24 @@ module X
       #   X::Page.__send__(:meta_of, {"meta" => {"next_token" => "abc"}}) # => {"next_token" => "abc"}
       def self.meta_of(body) = Shape.read_object("#{self}#meta", body.to_h["meta"]) || {}
       private_class_method :meta_of
+
+      # Whether a response holds a list
+      #
+      # The from_response of a resource class builds a page of a response that holds one.
+      #
+      # A response holds one when its data is an array, and when it holds no data and either a meta, which must then
+      # be an object, or a problem that names a parameter of a lookup of several, as one that found none of them does.
+      #
+      # @api private
+      # @param body [Hash] the parsed response body
+      # @return [Boolean] true if the response holds a list
+      # @example Ask whether an empty list is one
+      #   X::Page.__send__(:list?, {"meta" => {"result_count" => 0}}) # => true
+      def self.list?(body)
+        data = body["data"]
+        data.is_a?(Array) || (data.nil? && (body.key?("meta") || Problem.all_from(body).any? { |problem| LIST_PARAMETERS.include?(problem.parameter) }))
+      end
+      private_class_method :list?
 
       # The state Marshal writes
       #
