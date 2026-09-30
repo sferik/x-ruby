@@ -21,6 +21,11 @@ module X
     # a minute raises at once. The block must build its request anew each time, so that each attempt is signed
     # afresh, as a request of a client is.
     #
+    # Wrap a request the client sends no more than once, such as a POST: a client sends a GET, a PUT, or a DELETE
+    # again itself, so one wrapped in this is sent max_retries times more for each time this sends it, nine times in
+    # all with the defaults, rather than three. It is public, although the rest of X::Core is internal to x-core, since
+    # a caller who knows a POST to be safe to send twice sends it with this, as x-uploader sends the chunks of an upload.
+    #
     # @api public
     # @param max_retries [Integer] the maximum number of times to send the request again, as X::Client takes it
     # @yield sends the request
