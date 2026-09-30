@@ -17,7 +17,8 @@ module X
   #
   # @api public
   class AppOnlyAuthenticator < Authenticator
-    # The endpoint that exchanges an API key and secret for a bearer token
+    # The endpoint that exchanges an API key and secret for a bearer token, at X, whose path is requested at the
+    # origin of the base URL of the client that takes the authenticator
     TOKEN_URL = "https://api.x.com/oauth2/token"
     # The message raised when the token endpoint describes no reason for the failure
     DEFAULT_ERROR_MESSAGE = "Bearer token request failed"
@@ -46,6 +47,7 @@ module X
       @api_key_secret = api_key_secret
       @bearer_token = bearer_token
       @connection = Core::Connection.new
+      @token_url = TOKEN_URL
       @mutex = Mutex.new
     end
 
@@ -86,17 +88,23 @@ module X
 
     # Fetch the bearer token over the connection of the first client that takes it
     #
-    # A client that takes it after the first leaves it fetching over the connection of the first; see
+    # The token endpoint is requested at the scheme, host, and port of the base URL of the client, rather than of
+    # TOKEN_URL, so that a client pointed at another host sends the API key and secret there, as it sends its
+    # requests. A client that takes it after the first leaves it fetching over the connection of the first; see
     # {OAuth2Authenticator}. Internal to x-core: a client fetches the token of the authenticator it builds, or is
     # given, over its own connection, with its proxy, timeouts, and debug output, and calls it with __send__, since it
     # is private.
     #
     # @api private
     # @param connection [Core::Connection] the connection to fetch the token over
+    # @param base_url [String] the base URL of the client, at whose origin the token endpoint is requested
     # @return [AppOnlyAuthenticator] the authenticator
-    def token_requests_over(connection)
+    def token_requests_over(connection, base_url)
       @mutex.synchronize do
-        @connection = connection unless @taken
+        unless @taken
+          @connection = connection
+          @token_url = Core::TokenEndpoint.url_at(base_url, TOKEN_URL)
+        end
         @taken = true
       end
       self
@@ -167,7 +175,7 @@ module X
     # @api private
     # @return [SimpleOAuth::OAuth2::Request] the token request
     def token_request
-      SimpleOAuth::OAuth2::Client.new(client_id: api_key, client_secret: api_key_secret, token_endpoint: TOKEN_URL)
+      SimpleOAuth::OAuth2::Client.new(client_id: api_key, client_secret: api_key_secret, token_endpoint: @token_url)
         .client_credentials_request
     end
   end

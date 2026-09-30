@@ -99,8 +99,8 @@ module X
       # @return [Authenticator] the authenticator
       def take(authenticator)
         case authenticator
-        when OAuth2Authenticator then join(authenticator.__send__(:token_requests_over, @connection))
-        when AppOnlyAuthenticator then authenticator.__send__(:token_requests_over, @connection)
+        when OAuth2Authenticator then join(authenticator.__send__(:token_requests_over, @connection, base_url))
+        when AppOnlyAuthenticator then authenticator.__send__(:token_requests_over, @connection, base_url)
         else authenticator
         end
       end
@@ -186,7 +186,7 @@ module X
       # @return [OAuth2Authenticator] the OAuth 2.0 authenticator
       def new_oauth2_authenticator(client_id:, access_token:, refresh_token:)
         authenticator = OAuth2Authenticator.new(client_id:, client_secret: @client_secret, access_token:, refresh_token:, expires_at: @expires_at)
-        join(authenticator.__send__(:token_requests_over, @connection))
+        join(authenticator.__send__(:token_requests_over, @connection, base_url))
       end
 
       # Run a request, again if a refresh replaces an OAuth 2.0 token the API rejects

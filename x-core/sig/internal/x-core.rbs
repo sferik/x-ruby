@@ -10,6 +10,7 @@ module X
       FAILURES: Array[singleton(Net::HTTPTooManyRequests) | singleton(Net::HTTPServerError)]
 
       def fetch: (SimpleOAuth::OAuth2::Request token_request, connection: Connection) -> SimpleOAuth::OAuth2::Token
+      def url_at: (String base_url, String token_url) -> String
 
       private
       def failure?: (Net::HTTPResponse response) -> bool
@@ -522,10 +523,11 @@ module X
     @bearer_token: String?
     @mutex: Thread::Mutex
     @taken: bool
+    @token_url: String
 
     private
     attr_reader connection: Core::Connection
-    def token_requests_over: (Core::Connection connection) -> self
+    def token_requests_over: (Core::Connection connection, String base_url) -> self
     def bearer_token: () -> String
     attr_reader api_key_secret: String
     def holds?: (Hash[Symbol, untyped] options) -> bool
@@ -689,6 +691,7 @@ module X
     EXPIRATION_BUFFER: Integer
     NO_REFRESH_TOKEN: String
 
+    @token_url: String
     @mutex: Thread::Mutex
     @reporter: Core::RefreshReporter
     @refreshed_at: Float?
@@ -699,7 +702,7 @@ module X
     attr_reader refresh_token: String?
     attr_reader connection: Core::Connection
     attr_reader clients: _ClientRegistry
-    def token_requests_over: (Core::Connection connection) -> self
+    def token_requests_over: (Core::Connection connection, String base_url) -> self
     def holds?: (Hash[Symbol, untyped] options) -> bool
     def update_expires_at: (Time? expires_at) -> void
     def report_refreshes_to: (^() -> Array[_TokenRefreshHook] hooks) -> ^() -> Array[_TokenRefreshHook]
@@ -754,6 +757,7 @@ module X
 
   interface _CredentialHost
     def authenticator: () -> (Authenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator)
+    def base_url: () -> String
     def with: (**untyped options) -> Client
     def expires_at: () -> Time?
   end

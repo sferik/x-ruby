@@ -19,6 +19,24 @@ module X
       # The responses that say the endpoint failed to answer a request, rather than refused it
       FAILURES = [Net::HTTPTooManyRequests, Net::HTTPServerError].freeze
 
+      # The URL of a token endpoint at the origin of a base URL
+      #
+      # A token endpoint of X is requested at the scheme, host, and port of the base URL of the client that sends its
+      # requests, so that a client pointed at another host, such as a test server or a recording proxy, sends its
+      # credentials there, as it sends its requests, rather than to X. The path is the one X serves the endpoint at.
+      #
+      # @api private
+      # @param base_url [String] the base URL of the client
+      # @param token_url [String] the URL X serves the endpoint at
+      # @return [String] the URL of the endpoint at the origin of the base URL
+      # @example The token endpoint of a client pointed at a test server
+      #   X::Core::TokenEndpoint.url_at("http://localhost:3000/2/", X::AppOnlyAuthenticator::TOKEN_URL)
+      #   # => "http://localhost:3000/oauth2/token"
+      def url_at(base_url, token_url)
+        path = URI(token_url).path #: String
+        String(URI.join(base_url, path))
+      end
+
       # Send a token request and read the token the endpoint returns
       #
       # A response of 429 Too Many Requests, or of a server error, says that the endpoint failed to answer rather than

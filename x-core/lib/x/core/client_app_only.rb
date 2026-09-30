@@ -70,7 +70,7 @@ module X
       # @return [String] the bearer token
       def app_bearer_token
         key, secret = app_credentials #: [String, String]
-        bearer_token || AppOnlyAuthenticator.new(api_key: key, api_key_secret: secret).__send__(:token_requests_over, @connection).__send__(:bearer_token)
+        bearer_token || AppOnlyAuthenticator.new(api_key: key, api_key_secret: secret).__send__(:token_requests_over, @connection, base_url).__send__(:bearer_token)
       end
 
       # The API key and secret of the app

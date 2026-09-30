@@ -21,7 +21,7 @@ module X
       connection = Core::Connection.new(open_timeout: 5)
       authenticator = AppOnlyAuthenticator.new(api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET)
 
-      assert_same authenticator, authenticator.send(:token_requests_over, connection)
+      assert_same authenticator, authenticator.send(:token_requests_over, connection, Client::DEFAULT_BASE_URL)
       assert_same connection, authenticator.send(:connection)
     end
 
@@ -53,7 +53,7 @@ module X
       requests = []
       connection = Minitest::Mock.new
       connection.expect(:perform, Net::HTTP.post(URI(AppOnlyAuthenticator::TOKEN_URL), "")) { |request:| requests << request }
-      authenticator = AppOnlyAuthenticator.new(api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET).send(:token_requests_over, connection)
+      authenticator = AppOnlyAuthenticator.new(api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET).send(:token_requests_over, connection, Client::DEFAULT_BASE_URL)
 
       assert_equal TEST_BEARER_TOKEN, authenticator.send(:bearer_token)
       assert_instance_of Net::HTTP::Post, requests.first

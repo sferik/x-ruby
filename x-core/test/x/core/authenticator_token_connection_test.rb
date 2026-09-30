@@ -16,9 +16,9 @@ module X
     def test_the_first_connection_an_authenticator_is_given_is_kept
       authenticators.each do |authenticator|
         first = Core::Connection.new
-        authenticator.__send__(:token_requests_over, first)
+        authenticator.__send__(:token_requests_over, first, Client::DEFAULT_BASE_URL)
 
-        assert_same authenticator, authenticator.__send__(:token_requests_over, Core::Connection.new)
+        assert_same authenticator, authenticator.__send__(:token_requests_over, Core::Connection.new, Client::DEFAULT_BASE_URL)
         assert_same first, authenticator.__send__(:connection)
       end
     end
@@ -37,7 +37,7 @@ module X
     # Start taking a connection while the lock of a token request is held, and check that it waits for the lock
     def taking(authenticator, connection)
       authenticator.instance_variable_get(:@mutex).synchronize do
-        Thread.new { authenticator.__send__(:token_requests_over, connection) }.tap do |thread|
+        Thread.new { authenticator.__send__(:token_requests_over, connection, Client::DEFAULT_BASE_URL) }.tap do |thread|
           Thread.pass until thread.status.eql?("sleep")
 
           refute_same connection, authenticator.__send__(:connection)

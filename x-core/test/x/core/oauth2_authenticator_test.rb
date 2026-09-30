@@ -30,7 +30,7 @@ module X
       connection = Core::Connection.new(open_timeout: 5)
       authenticator = OAuth2Authenticator.new(**test_oauth2_credentials)
 
-      assert_same authenticator, authenticator.send(:token_requests_over, connection)
+      assert_same authenticator, authenticator.send(:token_requests_over, connection, Client::DEFAULT_BASE_URL)
       assert_same connection, authenticator.send(:connection)
     end
 

@@ -29,7 +29,8 @@ module X
   class OAuth2Authenticator < Authenticator
     include Core::OAuth2Refresh
 
-    # The endpoint that refreshes an access token
+    # The endpoint that refreshes an access token, at X, whose path is requested at the origin of the base URL of
+    # the client that takes the authenticator
     TOKEN_URL = "https://api.x.com/2/oauth2/token"
     # Buffer time in seconds to account for clock skew and network latency
     EXPIRATION_BUFFER = 30
@@ -90,6 +91,7 @@ module X
       @refresh_token = refresh_token
       @expires_at = expires_at
       @connection = Core::Connection.new
+      @token_url = TOKEN_URL
       @clients = ObjectSpace::WeakMap.new
     end
 
@@ -213,6 +215,10 @@ module X
 
     # Send the token requests over the connection of the first client that takes it
     #
+    # The token endpoint is requested at the scheme, host, and port of the base URL of the client, rather than of
+    # TOKEN_URL, so that a client pointed at another host sends the client credentials and refresh token there, as it
+    # sends its requests.
+    #
     # The authenticator is shared by the copies of the client that takes it, and may be given to other clients
     # besides, so a client that takes it after the first leaves it sending them over the connection of the first,
     # as a copy of a client leaves the authenticator of that client. Internal to x-core: a client sends the token
@@ -221,10 +227,14 @@ module X
     #
     # @api private
     # @param connection [Core::Connection] the connection to send the token requests over
+    # @param base_url [String] the base URL of the client, at whose origin the token endpoint is requested
     # @return [OAuth2Authenticator] the authenticator
-    def token_requests_over(connection)
+    def token_requests_over(connection, base_url)
       @mutex.synchronize do
-        @connection = connection unless @taken
+        unless @taken
+          @connection = connection
+          @token_url = Core::TokenEndpoint.url_at(base_url, TOKEN_URL)
+        end
         @taken = true
       end
       self
@@ -271,6 +281,6 @@ module X
     # The client for the token endpoint
     # @api private
     # @return [SimpleOAuth::OAuth2::Client] the OAuth 2.0 client
-    def oauth2_client = SimpleOAuth::OAuth2::Client.new(client_id:, client_secret:, token_endpoint: TOKEN_URL)
+    def oauth2_client = SimpleOAuth::OAuth2::Client.new(client_id:, client_secret:, token_endpoint: @token_url)
   end
 end
