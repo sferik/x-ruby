@@ -31,7 +31,7 @@ module X
         #   client.create_post("Hello!", reply_to: post, media_ids: [media["id"]])
         # @example Quote a post
         #   client.create_post("Worth reading", quote: post)
-        def create_post(text = nil, **params)
+        def create_post(text = nil, **params) # steep:ignore DifferentMethodParameterKind
           Post.create(text, client: self, **params)
         end
 

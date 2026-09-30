@@ -295,9 +295,9 @@ module X
       def find_all_by_id: (Array[id] ids, client: _Client, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[User]
       def find_by_id: (id id, client: _Client, **untyped params) ?{ (Problem problem) -> void } -> User?
       def find_by_id!: (id id, client: _Client, **untyped params) -> User
-      def find_all_by_username: (Array[id] usernames, client: _Client, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[User]
-      def find_by_username: (untyped username, client: _Client, **untyped params) ?{ (Problem problem) -> void } -> User?
-      def find_by_username!: (untyped username, client: _Client, **untyped params) -> User
+      def find_all_by_username: (Array[String] usernames, client: _Client, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[User]
+      def find_by_username: (String username, client: _Client, **untyped params) ?{ (Problem problem) -> void } -> User?
+      def find_by_username!: (String username, client: _Client, **untyped params) -> User
       def current: (client: _Client, **untyped params) ?{ (Problem problem) -> void } -> User?
       def current!: (client: _Client, **untyped params) -> User
 
@@ -571,8 +571,8 @@ module X
 
     module Actions
       module Posts : _Client
-        def create_post: (?String? text, **untyped params) -> Post?
-        def create_tweet: (?String? text, **untyped params) -> Post?
+        def create_post: (?String? text, ?reply_to: Objects::id?, ?quote: Objects::id?, ?media_ids: untyped, ?community: Objects::id?, **untyped params) -> Post?
+        def create_tweet: (?String? text, ?reply_to: Objects::id?, ?quote: Objects::id?, ?media_ids: untyped, ?community: Objects::id?, **untyped params) -> Post?
         def delete_post: (id post) -> bool
         def delete_tweet: (id post) -> bool
         def hide_reply: (id post) -> bool
@@ -592,12 +592,12 @@ module X
       end
 
       module DirectMessages : _Client
-        def create_direct_message: (id user, ?String? text, **untyped params) -> DirectMessage?
-        def create_dm: (id user, ?String? text, **untyped params) -> DirectMessage?
-        def create_group_direct_message: (Array[id] users, ?String? text, **untyped params) -> DirectMessage?
-        def create_group_dm: (Array[id] users, ?String? text, **untyped params) -> DirectMessage?
-        def create_direct_message_in: (DirectMessage | String | Integer conversation, ?String? text, **untyped params) -> DirectMessage?
-        def create_dm_in: (DirectMessage | String | Integer conversation, ?String? text, **untyped params) -> DirectMessage?
+        def create_direct_message: (id user, ?String? text, ?media_ids: untyped, **untyped params) -> DirectMessage?
+        def create_dm: (id user, ?String? text, ?media_ids: untyped, **untyped params) -> DirectMessage?
+        def create_group_direct_message: (Array[id] users, ?String? text, ?media_ids: untyped, **untyped params) -> DirectMessage?
+        def create_group_dm: (Array[id] users, ?String? text, ?media_ids: untyped, **untyped params) -> DirectMessage?
+        def create_direct_message_in: (DirectMessage | String | Integer conversation, ?String? text, ?media_ids: untyped, **untyped params) -> DirectMessage?
+        def create_dm_in: (DirectMessage | String | Integer conversation, ?String? text, ?media_ids: untyped, **untyped params) -> DirectMessage?
         def delete_direct_message: (id message) -> bool
         def delete_dm: (id message) -> bool
       end

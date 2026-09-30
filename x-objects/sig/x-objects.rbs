@@ -213,8 +213,8 @@ module X
       def dms_with: (id user, **untyped params) -> Cursor[DirectMessage]
       def direct_messages_in: (DirectMessage | String | Integer conversation, **untyped params) -> Cursor[DirectMessage]
       def dms_in: (DirectMessage | String | Integer conversation, **untyped params) -> Cursor[DirectMessage]
-      def create_post: (?String? text, **untyped params) -> Post?
-      def create_tweet: (?String? text, **untyped params) -> Post?
+      def create_post: (?String? text, ?reply_to: Objects::id?, ?quote: Objects::id?, ?media_ids: untyped, ?community: Objects::id?, **untyped params) -> Post?
+      def create_tweet: (?String? text, ?reply_to: Objects::id?, ?quote: Objects::id?, ?media_ids: untyped, ?community: Objects::id?, **untyped params) -> Post?
       def delete_post: (id post) -> bool
       def delete_tweet: (id post) -> bool
       def hide_reply: (id post) -> bool
@@ -228,12 +228,12 @@ module X
       def unfollow_list: (id list) -> bool
       def pin_list: (id list) -> bool
       def unpin_list: (id list) -> bool
-      def create_direct_message: (id user, ?String? text, **untyped params) -> DirectMessage?
-      def create_dm: (id user, ?String? text, **untyped params) -> DirectMessage?
-      def create_group_direct_message: (Array[id] users, ?String? text, **untyped params) -> DirectMessage?
-      def create_group_dm: (Array[id] users, ?String? text, **untyped params) -> DirectMessage?
-      def create_direct_message_in: (DirectMessage | String | Integer conversation, ?String? text, **untyped params) -> DirectMessage?
-      def create_dm_in: (DirectMessage | String | Integer conversation, ?String? text, **untyped params) -> DirectMessage?
+      def create_direct_message: (id user, ?String? text, ?media_ids: untyped, **untyped params) -> DirectMessage?
+      def create_dm: (id user, ?String? text, ?media_ids: untyped, **untyped params) -> DirectMessage?
+      def create_group_direct_message: (Array[id] users, ?String? text, ?media_ids: untyped, **untyped params) -> DirectMessage?
+      def create_group_dm: (Array[id] users, ?String? text, ?media_ids: untyped, **untyped params) -> DirectMessage?
+      def create_direct_message_in: (DirectMessage | String | Integer conversation, ?String? text, ?media_ids: untyped, **untyped params) -> DirectMessage?
+      def create_dm_in: (DirectMessage | String | Integer conversation, ?String? text, ?media_ids: untyped, **untyped params) -> DirectMessage?
       def delete_direct_message: (id message) -> bool
       def delete_dm: (id message) -> bool
       def follow: (id user) -> bool
@@ -427,9 +427,9 @@ module X
     def self.find_by_id: (Objects::id id, client: Objects::_Client, **untyped params) ?{ (Problem problem) -> void } -> User?
     def self.find_by_id!: (Objects::id id, client: Objects::_Client, **untyped params) -> User
     def self.find_all_by_id: (Array[Objects::id] ids, client: Objects::_Client, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[User]
-    def self.find_by_username: (untyped username, client: Objects::_Client, **untyped params) ?{ (Problem problem) -> void } -> User?
-    def self.find_by_username!: (untyped username, client: Objects::_Client, **untyped params) -> User
-    def self.find_all_by_username: (Array[Objects::id] usernames, client: Objects::_Client, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[User]
+    def self.find_by_username: (String username, client: Objects::_Client, **untyped params) ?{ (Problem problem) -> void } -> User?
+    def self.find_by_username!: (String username, client: Objects::_Client, **untyped params) -> User
+    def self.find_all_by_username: (Array[String] usernames, client: Objects::_Client, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[User]
     def self.current: (client: Objects::_Client, **untyped params) ?{ (Problem problem) -> void } -> User?
     def self.current!: (client: Objects::_Client, **untyped params) -> User
     def self.search: (String query, client: Objects::_Client, **untyped params) -> Cursor[User]

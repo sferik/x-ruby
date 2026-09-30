@@ -31,7 +31,7 @@ module X
       def find(id_or_username, client:, **params, &)
         return super if Utils.id?(id_or_username)
 
-        find_by_username(id_or_username, client:, **params, &)
+        find_by_username(_ = id_or_username, client:, **params, &)
       end
 
       # Look up a user by identifier or username, which must exist
@@ -51,7 +51,7 @@ module X
       def find!(id_or_username, client:, **params)
         return super if Utils.id?(id_or_username)
 
-        find_by_username!(id_or_username, client:, **params)
+        find_by_username!(_ = id_or_username, client:, **params)
       end
 
       # Look up many users by identifier or username, in parallel batches
@@ -76,7 +76,7 @@ module X
         ids, usernames = ids_or_usernames.partition { |value| Utils.id?(value) }
         usernames.each { |username| Utils.username!(username) }
         found = super(ids, client:, concurrency:, **params) #: Array[User]
-        in_order(found + find_all_by_username(usernames, client:, concurrency:, **params, &), ids_or_usernames)
+        in_order(found + find_all_by_username(_ = usernames, client:, concurrency:, **params, &), ids_or_usernames)
       end
 
       # Look up many users by identifier, in parallel batches

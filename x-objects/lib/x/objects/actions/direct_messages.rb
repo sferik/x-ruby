@@ -28,7 +28,7 @@ module X
         #   client.create_direct_message(user, "Hello!")
         # @example Send an image without text
         #   client.create_direct_message(user, media_ids: media)
-        def create_direct_message(user, text = nil, **params)
+        def create_direct_message(user, text = nil, **params) # steep:ignore DifferentMethodParameterKind
           DirectMessage.create(user, text, client: self, **params)
         end
 
@@ -47,7 +47,7 @@ module X
         #   client.create_group_direct_message([alice, bob], "Hello, both of you!")
         # @example Start a group conversation with an image
         #   client.create_group_direct_message([alice, bob], media_ids: media)
-        def create_group_direct_message(users, text = nil, **params)
+        def create_group_direct_message(users, text = nil, **params) # steep:ignore DifferentMethodParameterKind
           DirectMessage.create_group(users, text, client: self, **params)
         end
 
@@ -68,7 +68,7 @@ module X
         #   client.create_direct_message_in(message, "Sounds good")
         # @example Reply with an image
         #   client.create_direct_message_in(message, media_ids: media)
-        def create_direct_message_in(conversation, text = nil, **params)
+        def create_direct_message_in(conversation, text = nil, **params) # steep:ignore DifferentMethodParameterKind
           DirectMessage.create_in(conversation, text, client: self, **params)
         end
 
