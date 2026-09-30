@@ -42,8 +42,8 @@ module X
     def deconstruct_keys: (Array[Symbol]? keys) -> Hash[Symbol, untyped]
     def as_json: (*untyped) -> Hash[String, untyped]
     def to_json: (?JSON::State? state) -> String
-    def marshal_dump: () -> [Integer, Hash[String, untyped]]
-    def marshal_load: ([Integer, Hash[String, untyped]] state) -> void
+    def marshal_dump: () -> untyped
+    def marshal_load: (untyped state) -> void
   end
 
   class PersonalizedTrend
@@ -64,8 +64,8 @@ module X
     def deconstruct_keys: (Array[Symbol]? keys) -> Hash[Symbol, untyped]
     def as_json: (*untyped) -> Hash[String, untyped]
     def to_json: (?JSON::State? state) -> String
-    def marshal_dump: () -> [Integer, Hash[String, untyped]]
-    def marshal_load: ([Integer, Hash[String, untyped]] state) -> void
+    def marshal_dump: () -> untyped
+    def marshal_load: (untyped state) -> void
   end
 
   class PostUsage
@@ -88,8 +88,8 @@ module X
     def deconstruct_keys: (Array[Symbol]? keys) -> Hash[Symbol, untyped]
     def as_json: (*untyped) -> Hash[String, untyped]
     def to_json: (?JSON::State? state) -> String
-    def marshal_dump: () -> [Integer, Hash[String, untyped]]
-    def marshal_load: ([Integer, Hash[String, untyped]] state) -> void
+    def marshal_dump: () -> untyped
+    def marshal_load: (untyped state) -> void
   end
 
   module Objects
@@ -102,10 +102,6 @@ module X
     type query = Hash[String, untyped]
     type body = Hash[String, untyped]?
     type id = String | Integer | Resource
-
-    # What Marshal writes of the response some resources came from: the objects it included that they refer to, the
-    # problems about them, and the query of the request
-    type included = [Hash[String, Array[attrs]], Array[Problem], Hash[String, untyped]?]
 
     # What an upload returned, holding the identifier of the media: a Hash, or the uploaded media of x-uploader
     interface _UploadedMedia
@@ -278,8 +274,8 @@ module X
     def deconstruct_keys: (Array[Symbol]? keys) -> Hash[Symbol, untyped]
     def as_json: (*untyped) -> Hash[String, untyped]
     def to_json: (?JSON::State? state) -> String
-    def marshal_dump: () -> [Integer, Objects::attrs, bool, Hash[String, Array[Objects::attrs]], Array[Problem], Hash[String, untyped]?]
-    def marshal_load: ([Integer, Objects::attrs, bool, Hash[String, Array[Objects::attrs]], Array[Problem], Hash[String, untyped]?] state) -> void
+    def marshal_dump: () -> untyped
+    def marshal_load: (untyped state) -> void
     def encode_with: (untyped coder) -> void
     def init_with: (untyped coder) -> void
     def inspect: () -> String
@@ -304,8 +300,8 @@ module X
     def hash: () -> Integer
     def as_json: (*untyped) -> Array[Hash[String, untyped]]
     def to_json: (?JSON::State? state) -> String
-    def marshal_dump: () -> [Integer, Array[[singleton(Resource), Objects::attrs, bool, Integer]], Hash[String, untyped], Array[Problem], Array[Objects::included]]
-    def marshal_load: ([Integer, Array[[singleton(Resource), Objects::attrs, bool, Integer]], Hash[String, untyped], Array[Problem], Array[Objects::included]] state) -> void
+    def marshal_dump: () -> untyped
+    def marshal_load: (untyped state) -> void
     def encode_with: (untyped coder) -> void
     def init_with: (untyped coder) -> void
   end
@@ -628,8 +624,8 @@ module X
     def hash: () -> Integer
     def as_json: (*untyped) -> Hash[String, untyped]
     def to_json: (?JSON::State? state) -> String
-    def marshal_dump: () -> [Integer, Hash[String, untyped]]
-    def marshal_load: ([Integer, Hash[String, untyped]] state) -> void
+    def marshal_dump: () -> untyped
+    def marshal_load: (untyped state) -> void
     def inspect: () -> String
   end
 

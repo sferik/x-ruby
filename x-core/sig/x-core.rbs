@@ -122,8 +122,8 @@ module X
     def as_json: (*untyped) -> Hash[String, untyped]
     def to_json: (?JSON::State? state) -> String
     def inspect: () -> String
-    def marshal_dump: () -> [Integer, Hash[String, untyped]]
-    def marshal_load: ([Integer, Hash[String, untyped]] state) -> void
+    def marshal_dump: () -> untyped
+    def marshal_load: (untyped state) -> void
   end
 
   class HTTPError < Error
@@ -293,8 +293,8 @@ module X
     def eql?: (untyped other) -> bool
     def hash: () -> Integer
     def inspect: () -> String
-    def marshal_dump: () -> [Integer, {id: Integer?, value: String, tag: String?}]
-    def marshal_load: ([Integer, {id: Integer?, value: String, tag: String?}] state) -> void
+    def marshal_dump: () -> untyped
+    def marshal_load: (untyped state) -> void
   end
 
   class StreamingClient
@@ -342,8 +342,8 @@ module X
     def eql?: (untyped other) -> bool
     def hash: () -> Integer
     def inspect: () -> String
-    def marshal_dump: () -> [Integer, {access_token: String, refresh_token: String, expires_at: Time?}]
-    def marshal_load: ([Integer, {access_token: String, refresh_token: String, expires_at: Time?}] state) -> void
+    def marshal_dump: () -> untyped
+    def marshal_load: (untyped state) -> void
   end
 
   interface _TokenRefreshHook

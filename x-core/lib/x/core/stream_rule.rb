@@ -130,7 +130,7 @@ module X
     # @example Read cached rules
     #   Marshal.load(Marshal.dump(rule)).value
     def marshal_load(state)
-      format, rule = state
+      format, rule = state #: [Integer, {id: Integer?, value: String, tag: String?}]
       raise UnsupportedMarshalFormat, "#{self.class} reads format #{MARSHAL_FORMAT} of Marshal, not #{format.inspect}" unless MARSHAL_FORMAT.eql?(format)
 
       initialize(**rule)

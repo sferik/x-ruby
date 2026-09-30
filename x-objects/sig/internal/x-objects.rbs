@@ -10,6 +10,10 @@ module X
   module Objects
     type key = Array[String]
 
+    # What Marshal writes of the response some resources came from: the objects it included that they refer to, the
+    # problems about them, and the query of the request
+    type included = [Hash[String, Array[attrs]], Array[Problem], Hash[String, untyped]?]
+
     # What a resource that publishes the number of a collection answers, which Resource does
     interface _Counted
       def refresh: () -> Resource?

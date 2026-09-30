@@ -119,7 +119,7 @@ module X
     # @example Read stored tokens
     #   Marshal.load(File.binread("tokens")).expires_at
     def marshal_load(state)
-      format, tokens = state
+      format, tokens = state #: [Integer, {access_token: String, refresh_token: String, expires_at: Time?}]
       raise UnsupportedMarshalFormat, "#{self.class} reads format #{MARSHAL_FORMAT} of Marshal, not #{format.inspect}" unless MARSHAL_FORMAT.eql?(format)
 
       initialize(**tokens)
