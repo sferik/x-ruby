@@ -107,7 +107,8 @@ module X
       #
       # A page that names the token of a page before it as the next would have the pages requested again for good,
       # and the API bill each request, so it raises instead. The next_token the counts were given, which fetched the
-      # first page, is the token of a page before each of them too.
+      # first page, is the token of a page before each of them too. An empty token names no page, so the page that
+      # names one is the last, as a page that names none is.
       #
       # @api private
       # @param bodies [Array<Hash>] the response bodies so far
@@ -117,7 +118,9 @@ module X
       # @raise [UnreadableResponse] if the last response names the token of a page before it as the next
       def next_token(bodies, given)
         tokens = bodies.map { |body| Shape.dig("The next page of the counts of #{self}", body, %w[meta next_token]) }
-        token = tokens.pop or return
+        token = tokens.pop
+        return if token.nil? || token.eql?("")
+
         raise UnreadableResponse, "The counts of #{self} name the next_token #{token.inspect}, which fetched an earlier page" if [given, *tokens].include?(token)
 
         token

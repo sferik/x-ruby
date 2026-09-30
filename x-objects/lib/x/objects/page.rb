@@ -147,12 +147,16 @@ module X
 
       # The token used to fetch the next page
       #
+      # An empty token names no page, so a page whose meta holds one is the last, as a page whose meta holds none is,
+      # rather than one whose next page is fetched with an empty token the API refuses.
+      #
       # @api public
       # @return [String, nil] the token or nil if this is the last page
       # @example Get the next token
       #   page.next_token
       def next_token
-        meta["next_token"]
+        token = meta["next_token"]
+        token unless token.eql?("")
       end
 
       # The number of results reported by the API

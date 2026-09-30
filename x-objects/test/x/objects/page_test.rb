@@ -113,6 +113,11 @@ module X
       assert_nil Page.new([], {}).next_token
     end
 
+    def test_an_empty_next_token_names_no_page
+      assert_nil Page.new([], {"next_token" => ""}).next_token
+      assert_equal " ", Page.new([], {"next_token" => " "}).next_token
+    end
+
     def test_result_count
       assert_equal 2, @page.result_count
       assert_nil Page.new([], {}).result_count

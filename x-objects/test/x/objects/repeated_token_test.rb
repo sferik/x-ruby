@@ -67,6 +67,20 @@ module X
       assert_equal ["a"], client.queries.map { |query| query["next_token"] }
     end
 
+    def test_a_cursor_stops_at_a_page_that_names_an_empty_token
+      client = paging("users/1/followers", ["a", ""])
+
+      assert_equal [1, 2], User.from_id(1, client:).followers.map(&:id)
+      assert_equal 2, client.requests.size
+    end
+
+    def test_a_count_stops_at_a_page_that_names_an_empty_token
+      client = paging("tweets/counts/recent", ["a", ""])
+      Post.count("ruby", client:)
+
+      assert_equal [nil, "a"], client.queries.map { |query| query["next_token"] }
+    end
+
     def test_a_cursor_given_a_token_reads_the_pages_after_it
       assert_equal [2, 3], User.from_id(1, client: paging("users/1/followers", %w[a b])).followers(pagination_token: "a").map(&:id)
     end
