@@ -92,14 +92,14 @@ module X
       }.each do |bytes, category|
         source = Uploader.const_get(:Source).for(StringIO.new(bytes.b))
 
-        assert_equal category, Uploader.const_get(:Signature).media_category!(source), bytes.inspect
+        assert_equal category, Uploader.const_get(:Signature).media_category(source), bytes.inspect
       end
     end
 
     def test_a_transport_stream_is_a_video
       source = Uploader.const_get(:Source).for(StringIO.new((("G" + ("\xFF" * 187)) * 3).b))
 
-      assert_equal "tweet_video", Uploader.const_get(:Signature).media_category!(source)
+      assert_equal "tweet_video", Uploader.const_get(:Signature).media_category(source)
     end
 
     def test_media_type_raises_for_media_no_signature_names

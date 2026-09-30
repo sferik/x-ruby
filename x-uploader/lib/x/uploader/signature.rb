@@ -105,16 +105,6 @@ module X
           raise(InvalidMediaType, "unable to determine the media type of #{source.description}: pass media_category")
       end
 
-      # The media category of posts the signature of media that names no file gives it
-      #
-      # @api private
-      # @param source [Source] the media
-      # @return [String] the media category
-      # @raise [InvalidMediaType] if no signature names the type of the media
-      # @example Read the media category of media held in memory
-      #   Uploader::Signature.media_category!(source) # => "tweet_image"
-      def media_category!(source) = CATEGORIES.fetch(media_type!(source), DEFAULT_CATEGORY)
-
       # The media category of posts that the signature of media gives it
       #
       # Media that names no file must have a signature that names its type. A file whose extension names no type, such

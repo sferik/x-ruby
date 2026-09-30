@@ -67,7 +67,6 @@ module X
       def media_type: (String bytes) -> String?
       def matroska?: (String bytes) -> bool
       def media_type!: (Source source) -> String
-      def media_category!: (Source source) -> String
       def media_category: (Source source) -> String
 
       private
