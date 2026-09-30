@@ -38,6 +38,8 @@ module X
       # @raise [MediaProcessingFailed] if media processing failed, or ended in no state X documents, with the status X
       #   reported
       # @raise [MediaProcessingTimeout] if the media is still processing once the processing timeout would pass
+      # @raise [MediaProcessingCheckFailed] if the media is uploaded, but a check of its processing fails, as when the
+      #   API answers it with an error, with the media it uploaded
       # @raise [AltTextFailed] if the media is uploaded, but its alt text cannot be added, with the media it uploaded
       # @example Upload an image with alt text and post it
       #   media = client.upload_media("cat.jpg", alt_text: "A cat asleep on a keyboard")

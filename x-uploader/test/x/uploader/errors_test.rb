@@ -122,7 +122,8 @@ module X
   class UploaderErrorNamesTest < Minitest::Test
     # Every class a caller names is under X, as the classes of x-core are, and X::Uploader::Error alone is left
     # under the gem's module, for the rescue that means the failure of an upload alone.
-    PROMOTED = %i[AltTextFailed InvalidMedia InvalidMediaType MediaProcessingFailed MediaProcessingTimeout MissingMediaData UploadedMedia].freeze
+    PROMOTED = %i[AltTextFailed InvalidMedia InvalidMediaType MediaProcessingCheckFailed MediaProcessingFailed MediaProcessingTimeout MissingMediaData
+      UploadedMedia].freeze
 
     def test_each_is_named_under_x
       PROMOTED.each { |name| assert X.const_defined?(name, false), "X::#{name} is not defined" }
@@ -184,11 +185,66 @@ module X
     end
   end
 
+  class UploaderMediaProcessingCheckFailedTest < Minitest::Test
+    cover MediaProcessingCheckFailed
+
+    def test_holds_the_media_and_names_it_with_the_reason_the_check_failed
+      media = UploadedMedia.new({"id" => "7"})
+      failure = Class.new(Error) { def message = "Service Unavailable" }
+      error = assert_raises(MediaProcessingCheckFailed) { MediaProcessingCheckFailed.__send__(:keeping, media) { raise failure } }
+
+      assert_same media, error.media
+      assert_equal ["Media 7 was uploaded, but its processing could not be checked: Service Unavailable"] * 2, [error.message, error.to_s]
+    end
+
+    def test_names_the_media_alone_without_a_cause
+      assert_equal "Media 7 was uploaded, but its processing could not be checked",
+        MediaProcessingCheckFailed.new(media: UploadedMedia.new({"id" => "7"})).message
+    end
+
+    def test_takes_a_message_of_its_own_as_a_test_stub_raises_it
+      error = assert_raises(MediaProcessingCheckFailed) { raise MediaProcessingCheckFailed, "Processing could not be checked" }
+
+      assert_equal ["Processing could not be checked", nil], [error.message, error.media]
+    end
+
+    def test_names_no_media_when_given_none
+      assert_equal "Media was uploaded, but its processing could not be checked", MediaProcessingCheckFailed.new.message
+    end
+
+    def test_a_message_of_its_own_ends_with_the_reason_the_check_failed
+      error = assert_raises(MediaProcessingCheckFailed) do
+        raise Error, "Service Unavailable"
+      rescue Error
+        raise MediaProcessingCheckFailed.new("No check", media: UploadedMedia.new({"id" => "7"}))
+      end
+
+      assert_equal ["No check: Service Unavailable", 7], [error.message, error.media.id]
+    end
+
+    def test_keeping_raises_a_processing_timeout_as_it_was_raised
+      timeout = MediaProcessingTimeout.new(timeout: 1)
+      error = assert_raises(MediaProcessingTimeout) { MediaProcessingCheckFailed.__send__(:keeping, nil) { raise timeout } }
+
+      assert_same timeout, error
+    end
+
+    def test_keeping_is_private
+      refute_respond_to MediaProcessingCheckFailed, :keeping
+    end
+
+    def test_keeping_returns_what_the_block_returns_and_raises_what_is_not_an_error_of_the_api
+      assert_equal 1, MediaProcessingCheckFailed.__send__(:keeping, nil) { 1 }
+      assert_raises(ArgumentError) { MediaProcessingCheckFailed.__send__(:keeping, nil) { raise ArgumentError } }
+    end
+  end
+
   class UploaderErrorTest < Minitest::Test
     cover Uploader::Error
 
     def test_every_error_of_an_upload_is_an_uploader_error
-      errors = [AltTextFailed.new(media: UploadedMedia.new({"id" => "7"})), InvalidMedia.new, InvalidMediaType.new, MediaProcessingFailed.new, MediaProcessingTimeout.new]
+      errors = [AltTextFailed.new(media: UploadedMedia.new({"id" => "7"})), InvalidMedia.new, InvalidMediaType.new, MediaProcessingCheckFailed.new,
+        MediaProcessingFailed.new, MediaProcessingTimeout.new]
 
       assert(errors.all? { |error| error.is_a?(Uploader::Error) })
       assert(errors.all? { |error| error.is_a?(Error) })

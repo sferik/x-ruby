@@ -42,6 +42,26 @@ module X
       assert_equal "Media processing did not finish within 4 seconds", error.message
     end
 
+    def test_upload_keeps_the_media_when_a_check_of_its_processing_fails
+      stub_pending_upload
+      stub_request(:get, STATUS_URL).to_return(status: 400, headers: JSON_HEADERS, body: {title: "Invalid Request"}.to_json)
+      error = Uploader.const_get(:Utils).stub(:sleep, nil) do
+        assert_raises(MediaProcessingCheckFailed) { Uploader::MediaUpload.upload(ANIMATED_GIF, client: @client) }
+      end
+
+      assert_equal [TEST_MEDIA_ID, "pending", BadRequest], [error.media["id"], error.media.state, error.cause.class]
+    end
+
+    def test_upload_names_the_media_it_kept_when_a_check_of_its_processing_fails
+      stub_pending_upload
+      stub_request(:get, STATUS_URL).to_return(status: 400, headers: JSON_HEADERS, body: {title: "Invalid Request"}.to_json)
+      error = Uploader.const_get(:Utils).stub(:sleep, nil) do
+        assert_raises(MediaProcessingCheckFailed) { Uploader::MediaUpload.upload(ANIMATED_GIF, client: @client) }
+      end
+
+      assert error.message.start_with?("Media #{TEST_MEDIA_ID} was uploaded, but its processing could not be checked: ")
+    end
+
     def test_upload_checks_no_status_of_media_that_has_already_been_processed
       stub_request(:post, BASE_URL).to_return(headers: JSON_HEADERS, body: {data: {id: TEST_MEDIA_ID, processing_info: {state: "succeeded"}}}.to_json)
       response = Uploader::MediaUpload.upload(ANIMATED_GIF, client: @client)

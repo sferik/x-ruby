@@ -15,6 +15,7 @@ matcher:
   - X::AltTextFailed
   - X::InvalidMedia
   - X::InvalidMediaType
+  - X::MediaProcessingCheckFailed
   - X::MediaProcessingFailed
   - X::MediaProcessingTimeout
   - X::MissingMediaData

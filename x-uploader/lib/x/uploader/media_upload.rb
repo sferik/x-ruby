@@ -4,6 +4,7 @@ require "json"
 require "securerandom"
 require "x/core"
 require_relative "alt_text_failed"
+require_relative "media_processing_check_failed"
 require_relative "chunks"
 require_relative "gif"
 require_relative "invalid_media_type"
@@ -146,6 +147,8 @@ module X
       # @raise [MissingMediaData] if a response of the upload holds no media, or carries no body at all
       # @raise [MediaProcessingFailed] if the media fails to process, or its processing ends in no state X documents
       # @raise [MediaProcessingTimeout] if the media is still processing once processing_timeout seconds would pass
+      # @raise [MediaProcessingCheckFailed] if the media is uploaded, but a check of its processing fails, as when the
+      #   API answers it with an error, with the media it uploaded
       # @raise [AltTextFailed] if the media is uploaded, but its alt text cannot be added, with the media it uploaded
       # @example Upload an image
       #   Uploader::MediaUpload.upload("image.png", client: client)
@@ -165,7 +168,7 @@ module X
         else
           upload_binary(source.content, client:, media_category:)
         end
-        uploaded = Utils.processed!(uploaded.processing? ? await_processing(uploaded, client:, processing_timeout:) : uploaded)
+        uploaded = Utils.processed!(uploaded.processing? ? MediaProcessingCheckFailed.__send__(:keeping, uploaded) { await_processing(uploaded, client:, processing_timeout:) } : uploaded)
         AltTextFailed.__send__(:keeping, uploaded) { Metadata.add_alt_text(uploaded, alt_text, client:) } unless alt_text.nil?
         uploaded
       end

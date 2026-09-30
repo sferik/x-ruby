@@ -238,6 +238,10 @@ module X
     private def self.keeping: [T] (UploadedMedia media) { () -> T } -> T
   end
 
+  class MediaProcessingCheckFailed < Uploader::Error
+    private def self.keeping: [T] (UploadedMedia media) { () -> T } -> T
+  end
+
   class MediaProcessingFailed < Uploader::Error
     DEFAULT_MESSAGE: String
   end

@@ -120,6 +120,12 @@ module X
     def initialize: (?String? message, ?media: UploadedMedia | Hash[String, untyped] | nil, ?timeout: (Float | Integer)?) -> void
   end
 
+  class MediaProcessingCheckFailed < Uploader::Error
+    attr_reader media: UploadedMedia?
+    def initialize: (?String? message, ?media: UploadedMedia?) -> void
+    def to_s: () -> String
+  end
+
   class AltTextFailed < Uploader::Error
     attr_reader media: UploadedMedia?
     def initialize: (?String? message, ?media: UploadedMedia?) -> void
