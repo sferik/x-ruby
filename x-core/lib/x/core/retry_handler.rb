@@ -131,5 +131,6 @@ module X
         wait - (rand * wait / 2)
       end
     end
+    private_constant :RetryHandler
   end
 end

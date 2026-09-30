@@ -5,12 +5,12 @@ require_relative "../../test_helper"
 
 module X
   class ResponseParserTest < Minitest::Test
-    cover Core::ResponseParser
+    cover Core.const_get(:ResponseParser)
 
     JSON_HEADERS = {"Content-Type" => "application/json"}.freeze
 
     def setup
-      @response_parser = Core::ResponseParser.new
+      @response_parser = Core.const_get(:ResponseParser).new
       @uri = URI("http://example.com")
     end
 

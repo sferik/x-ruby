@@ -5,7 +5,7 @@ require_relative "../../test_helper"
 module X
   class ClientRedirectContentTypeTest < Minitest::Test
     cover_client
-    cover Core::RedirectHandler
+    cover Core.const_get(:RedirectHandler)
 
     FORM_CONTENT_TYPE = "application/x-www-form-urlencoded; charset=utf-8"
 

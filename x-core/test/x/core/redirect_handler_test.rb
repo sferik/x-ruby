@@ -4,12 +4,12 @@ require_relative "../../test_helper"
 
 module X
   class RedirectHandlerTest < Minitest::Test
-    cover Core::RedirectHandler
+    cover Core.const_get(:RedirectHandler)
 
     def setup
-      @connection = Core::Connection.new
-      @request_builder = Core::RequestBuilder.new
-      @redirect_handler = Core::RedirectHandler.new(connection: @connection, request_builder: @request_builder)
+      @connection = Core.const_get(:Connection).new
+      @request_builder = Core.const_get(:RequestBuilder).new
+      @redirect_handler = Core.const_get(:RedirectHandler).new(connection: @connection, request_builder: @request_builder)
     end
 
     def redirect_to(location)
@@ -19,10 +19,10 @@ module X
     end
 
     def test_initialize_with_defaults
-      redirect_handler = Core::RedirectHandler.new
+      redirect_handler = Core.const_get(:RedirectHandler).new
 
-      assert_instance_of Core::Connection, redirect_handler.connection
-      assert_instance_of Core::RequestBuilder, redirect_handler.request_builder
+      assert_instance_of Core.const_get(:Connection), redirect_handler.connection
+      assert_instance_of Core.const_get(:RequestBuilder), redirect_handler.request_builder
     end
 
     def test_handle_with_no_redirects
@@ -109,11 +109,11 @@ module X
       end
 
       assert_equal "GET /some_path: Too many redirects", e.message
-      assert_requested :get, "http://example.com/some_path", times: Core::RedirectHandler::DEFAULT_MAX_REDIRECTS
+      assert_requested :get, "http://example.com/some_path", times: Core.const_get(:RedirectHandler)::DEFAULT_MAX_REDIRECTS
     end
 
     def test_a_max_redirects_of_zero_follows_no_redirect
-      handler = Core::RedirectHandler.new(max_redirects: 0)
+      handler = Core.const_get(:RedirectHandler).new(max_redirects: 0)
 
       assert_raises(TooManyRedirects) { handler.handle(response: redirect_to("http://example.com/2"), request: Net::HTTP::Get.new(URI("http://example.com/"))) }
       assert_not_requested :get, "http://example.com/2"
@@ -121,7 +121,7 @@ module X
 
     def test_a_redirect_that_cannot_be_followed_is_returned_however_many_were_followed
       not_modified = Net::HTTPNotModified.new("1.1", "304", "Not Modified")
-      handler = Core::RedirectHandler.new(max_redirects: 0)
+      handler = Core.const_get(:RedirectHandler).new(max_redirects: 0)
 
       assert_same not_modified, handler.handle(response: not_modified, request: Net::HTTP::Get.new(URI("http://example.com/")))
     end
@@ -130,7 +130,7 @@ module X
       request = Net::HTTP::Get.new(URI("http://example.com/some_path"))
       response = Net::HTTPFound.new("1.1", "302", "Found")
       response["Location"] = "http://example.com/some_path"
-      redirect_count = Core::RedirectHandler::DEFAULT_MAX_REDIRECTS + 1
+      redirect_count = Core.const_get(:RedirectHandler)::DEFAULT_MAX_REDIRECTS + 1
 
       assert_raises(TooManyRedirects) do
         @redirect_handler.handle(response:, request:, redirect_count:)
@@ -140,13 +140,13 @@ module X
   end
 
   class RedirectHandlerCredentialsTest < Minitest::Test
-    cover Core::RedirectHandler
-    cover Core::Origin
+    cover Core.const_get(:RedirectHandler)
+    cover Core.const_get(:Origin)
 
     AUTHORIZATION = "Bearer #{TEST_BEARER_TOKEN}".freeze
 
     def setup
-      @redirect_handler = Core::RedirectHandler.new
+      @redirect_handler = Core.const_get(:RedirectHandler).new
       @authenticator = BearerTokenAuthenticator.new(bearer_token: TEST_BEARER_TOKEN)
     end
 
@@ -265,12 +265,12 @@ module X
   end
 
   class RedirectHandlerStatusTest < Minitest::Test
-    cover Core::RedirectHandler
+    cover Core.const_get(:RedirectHandler)
 
     def setup
-      @connection = Core::Connection.new
-      @request_builder = Core::RequestBuilder.new
-      @redirect_handler = Core::RedirectHandler.new(connection: @connection, request_builder: @request_builder)
+      @connection = Core.const_get(:Connection).new
+      @request_builder = Core.const_get(:RequestBuilder).new
+      @redirect_handler = Core.const_get(:RedirectHandler).new(connection: @connection, request_builder: @request_builder)
     end
 
     def test_handle_with_301_moved_permanently

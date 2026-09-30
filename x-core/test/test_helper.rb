@@ -41,11 +41,11 @@ module Minitest
     # @return [void]
     def self.cover_client
       cover X::Client
-      cover X::Core::ClientAppOnly
-      cover X::Core::ClientCredentials
-      cover X::Core::ClientSettings
-      cover X::Core::ClientTokenRefresh
-      cover X::Core::RequestEncoding
+      cover X::Core.const_get(:ClientAppOnly)
+      cover X::Core.const_get(:ClientCredentials)
+      cover X::Core.const_get(:ClientSettings)
+      cover X::Core.const_get(:ClientTokenRefresh)
+      cover X::Core.const_get(:RequestEncoding)
     end
   end
 end
@@ -60,7 +60,7 @@ TEST_OAUTH_TIMESTAMP = Time.utc(1983, 11, 24).to_i.to_s
 TEST_CLIENT_ID = "TEST_CLIENT_ID"
 TEST_CLIENT_SECRET = "TEST_CLIENT_SECRET"
 TEST_REFRESH_TOKEN = "TEST_REFRESH_TOKEN"
-# The messages of X::Core::CredentialValidator, which is private about the constants that hold them
+# The messages of X::Core.const_get(:CredentialValidator), which is private about the constants that hold them
 TEST_INCOMPLETE_CREDENTIALS = "The credentials given do not form a complete set. Pass api_key, api_key_secret, " \
   "access_token, and access_token_secret for OAuth 1.0a; client_id and access_token, with the refresh_token that " \
   "refreshes it and the client_secret of a confidential client, for OAuth 2.0; bearer_token for the app's bearer " \

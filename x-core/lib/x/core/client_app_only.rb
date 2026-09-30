@@ -89,5 +89,6 @@ module X
         [key, secret] if key
       end
     end
+    private_constant :ClientAppOnly
   end
 end

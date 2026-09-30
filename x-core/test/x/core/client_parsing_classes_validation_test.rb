@@ -8,7 +8,7 @@ module X
   class ClientParsingClassesValidationTest < Minitest::Test
     cover_client
     cover StreamingClient
-    cover Core::SettingValidator
+    cover Core.const_get(:SettingValidator)
 
     ARRAY_CLASS_MESSAGE = "%s must be a Class that JSON.parse builds each array into, such as Array, not %s"
     OBJECT_CLASS_MESSAGE = "%s must be a Class that JSON.parse builds each object into, such as Hash, or respond to " \

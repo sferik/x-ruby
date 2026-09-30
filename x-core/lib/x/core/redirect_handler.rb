@@ -192,5 +192,6 @@ module X
         request_builder.build(http_method:, uri:, body:, headers:, authenticator:)
       end
     end
+    private_constant :RedirectHandler
   end
 end

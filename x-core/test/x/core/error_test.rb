@@ -13,7 +13,7 @@ module X
       @client = Client.new(max_retries: 0)
     end
 
-    Core::ResponseParser::ERROR_MAP.each do |status, error_class|
+    Core.const_get(:ResponseParser)::ERROR_MAP.each do |status, error_class|
       name = error_class.name.split("::").last
       define_method :"test_initialize_#{name.downcase}_error" do
         response = Net::HTTPResponse::CODE_TO_OBJ[status.to_s].new("1.1", status, error_class.name)

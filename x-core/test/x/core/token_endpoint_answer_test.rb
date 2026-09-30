@@ -7,7 +7,7 @@ module X
   # as the page of a proxy, firewall, or captive portal, raises the error of its status rather than AuthorizationError,
   # which tells a caller to ask the user to authorize the app again
   class TokenEndpointAnswerTest < Minitest::Test
-    cover Core::TokenEndpoint
+    cover Core.const_get(:TokenEndpoint)
 
     TOKEN_URL = OAuth2Authenticator::TOKEN_URL
     PAGE = {headers: {"Content-Type" => "text/html"}, body: "<html><body>Sign in to the network</body></html>"}.freeze

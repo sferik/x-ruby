@@ -87,5 +87,6 @@ module X
       # @return [String] the URL, without the user and password
       def redact(proxy_url) = String(proxy_url).sub(%r{([^/]*//)?.*@}m, "\\1")
     end
+    private_constant :ConnectionProxy
   end
 end

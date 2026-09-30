@@ -6,8 +6,8 @@ module X
   # The order in which an authenticator reports its refreshes, which is the order a store must keep them in
   class OAuth2AuthenticatorRefreshOrderTest < Minitest::Test
     cover OAuth2Authenticator
-    cover Core::OAuth2Refresh
-    cover Core::RefreshReporter
+    cover Core.const_get(:OAuth2Refresh)
+    cover Core.const_get(:RefreshReporter)
 
     def setup
       stub_request(:post, "https://api.x.com/2/oauth2/token")

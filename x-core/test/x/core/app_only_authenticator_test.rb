@@ -6,7 +6,7 @@ require_relative "../../test_helper"
 module X
   class AppOnlyAuthenticatorTest < Minitest::Test
     cover AppOnlyAuthenticator
-    cover Core::TokenEndpoint
+    cover Core.const_get(:TokenEndpoint)
 
     def setup
       @authenticator = AppOnlyAuthenticator.new(api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET)
@@ -14,11 +14,11 @@ module X
 
     def test_initialize
       assert_equal TEST_API_KEY, @authenticator.api_key
-      assert_instance_of Core::Connection, @authenticator.send(:connection)
+      assert_instance_of Core.const_get(:Connection), @authenticator.send(:connection)
     end
 
     def test_the_token_can_be_fetched_over_another_connection
-      connection = Core::Connection.new(open_timeout: 5)
+      connection = Core.const_get(:Connection).new(open_timeout: 5)
       authenticator = AppOnlyAuthenticator.new(api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET)
 
       assert_same authenticator, authenticator.send(:token_requests_over, connection, Client::DEFAULT_BASE_URL)

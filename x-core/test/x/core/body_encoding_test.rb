@@ -9,9 +9,9 @@ module X
   class BodyEncodingTest < Minitest::Test
     include LocalServer
 
-    cover Core::Connection
-    cover Core::ResponseParser
-    cover Core::StreamParser
+    cover Core.const_get(:Connection)
+    cover Core.const_get(:ResponseParser)
+    cover Core.const_get(:StreamParser)
 
     def http_response(status, body, content_type: "application/json")
       "HTTP/1.1 #{status}\r\nContent-Type: #{content_type}\r\nContent-Length: #{body.bytesize}\r\n\r\n#{body}"

@@ -288,5 +288,6 @@ module X
         end
       end
     end
+    private_constant :Connection
   end
 end

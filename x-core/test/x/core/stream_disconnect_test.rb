@@ -8,8 +8,8 @@ module X
   # A stream reconnects after a line that holds operational-disconnects alone, as it does after a connection that
   # dropped, and stops after a line that holds any other error
   class StreamDisconnectTest < Minitest::Test
-    cover Core::ReconnectHandler
-    cover Core::StreamParser
+    cover Core.const_get(:ReconnectHandler)
+    cover Core.const_get(:StreamParser)
 
     STREAM_URL = "https://api.x.com/2/tweets/search/stream"
     DISCONNECT = StreamErrorTest::DISCONNECT
@@ -75,7 +75,7 @@ module X
       disconnect = Problem.new({"type" => "https://api.x.com/2/problems/operational-disconnect"})
 
       assert_raises(StreamError) do
-        handle(Core::ReconnectHandler.new(max_reconnects: 3)) do
+        handle(Core.const_get(:ReconnectHandler).new(max_reconnects: 3)) do
           @runs += 1
           raise StreamError.new([disconnect])
         end
@@ -87,7 +87,7 @@ module X
       refusal = Problem.new({"type" => "https://api.x.com/2/problems/streaming-connection"})
 
       [StreamError, Class.new(StreamError)].each do |error_class|
-        assert_raises(error_class) { handle(Core::ReconnectHandler.new(max_reconnects: 3)) { raise error_class.new([refusal]) } }
+        assert_raises(error_class) { handle(Core.const_get(:ReconnectHandler).new(max_reconnects: 3)) { raise error_class.new([refusal]) } }
       end
       assert_empty @sleeps
     end

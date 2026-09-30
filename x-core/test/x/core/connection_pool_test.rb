@@ -5,13 +5,13 @@ require_relative "../../test_helper"
 
 module X
   class ConnectionPoolTest < Minitest::Test
-    cover Core::ConnectionPool
+    cover Core.const_get(:ConnectionPool)
 
     KEY = [true, "example.com", 443].freeze
 
     def setup
       stub_request(:get, "https://example.com/")
-      @pool = Core::ConnectionPool.new
+      @pool = Core.const_get(:ConnectionPool).new
       @opened = []
     end
 
@@ -73,12 +73,12 @@ module X
     end
 
     def test_keeps_no_more_than_the_maximum_idle
-      nest(Core::ConnectionPool::MAX_IDLE + 1)
+      nest(Core.const_get(:ConnectionPool)::MAX_IDLE + 1)
 
-      assert_equal Core::ConnectionPool::MAX_IDLE, @opened.count(&:started?)
-      nest(Core::ConnectionPool::MAX_IDLE)
+      assert_equal Core.const_get(:ConnectionPool)::MAX_IDLE, @opened.count(&:started?)
+      nest(Core.const_get(:ConnectionPool)::MAX_IDLE)
 
-      assert_equal Core::ConnectionPool::MAX_IDLE + 1, @opened.size
+      assert_equal Core.const_get(:ConnectionPool)::MAX_IDLE + 1, @opened.size
     end
 
     def test_closes_a_connection_whose_block_raises
@@ -144,13 +144,13 @@ module X
   end
 
   class ConnectionPoolLockTest < Minitest::Test
-    cover Core::ConnectionPool
+    cover Core.const_get(:ConnectionPool)
 
     KEY = ConnectionPoolTest::KEY
 
     def setup
       stub_request(:get, "https://example.com/")
-      @pool = Core::ConnectionPool.new
+      @pool = Core.const_get(:ConnectionPool).new
       @opened = []
     end
 
@@ -195,12 +195,12 @@ module X
   end
 
   class ConnectionKeepAliveTest < Minitest::Test
-    cover Core::Connection
-    cover Core::ConnectionRequest
+    cover Core.const_get(:Connection)
+    cover Core.const_get(:ConnectionRequest)
 
     def setup
       stub_request(:get, "https://example.com/")
-      @connection = Core::Connection.new
+      @connection = Core.const_get(:Connection).new
     end
 
     def perform(connection = @connection) = connection.perform(request: Net::HTTP::Get.new(URI("https://example.com/")))
@@ -231,7 +231,7 @@ module X
     end
 
     def test_a_reused_connection_keeps_the_timeouts_it_was_opened_with
-      connection = Core::Connection.new(open_timeout: 6, read_timeout: 5, write_timeout: 7)
+      connection = Core.const_get(:Connection).new(open_timeout: 6, read_timeout: 5, write_timeout: 7)
       clients = opened(connection) { 2.times { perform(connection) } }
 
       assert_equal 1, clients.size

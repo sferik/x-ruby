@@ -5,7 +5,7 @@ require_relative "../../test_helper"
 module X
   class ResponseTest < Minitest::Test
     cover Response
-    cover Core::ResponseHeaders
+    cover Core.const_get(:ResponseHeaders)
 
     URI_ME = URI("https://api.x.com/2/users/me")
 

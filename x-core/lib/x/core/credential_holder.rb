@@ -44,5 +44,6 @@ module X
       #   PostJob.perform_later(user_id: client.current_user_id)
       def encode_with(_coder) = raise(TypeError, format(REFUSAL_MESSAGE, self.class, "YAML"))
     end
+    private_constant :CredentialHolder
   end
 end

@@ -4,10 +4,10 @@ require_relative "../../test_helper"
 
 module X
   class RedirectHandlerMethodTest < Minitest::Test
-    cover Core::RedirectHandler
+    cover Core.const_get(:RedirectHandler)
 
     def setup
-      @redirect_handler = Core::RedirectHandler.new
+      @redirect_handler = Core.const_get(:RedirectHandler).new
     end
 
     def redirect_to(location)

@@ -162,5 +162,6 @@ module X
         BearerTokenAuthenticator.new(bearer_token:)
       end
     end
+    private_constant :ClientCredentials
   end
 end

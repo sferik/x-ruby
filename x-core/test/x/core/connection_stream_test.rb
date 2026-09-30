@@ -8,11 +8,11 @@ module X
   class ConnectionStreamTest < Minitest::Test
     include LocalServer
 
-    cover Core::Connection
-    cover Core::CallbackError
+    cover Core.const_get(:Connection)
+    cover Core.const_get(:CallbackError)
 
     def setup
-      @connection = Core::Connection.new
+      @connection = Core.const_get(:Connection).new
     end
 
     def test_perform_stream
@@ -51,15 +51,15 @@ module X
     def test_perform_stream_raises_the_error_a_callback_of_the_stream_raised_tagged
       stub_request(:get, "http://example.com:80")
       request = Net::HTTP::Get.new(URI("http://example.com:80"))
-      error = assert_raises(Core::CallbackError) do
-        @connection.perform_stream(request:) { |_response| raise Core::CallbackError, Errno::ECONNREFUSED.new }
+      error = assert_raises(Core.const_get(:CallbackError)) do
+        @connection.perform_stream(request:) { |_response| raise Core.const_get(:CallbackError), Errno::ECONNREFUSED.new }
       end
 
       assert_kind_of Errno::ECONNREFUSED, error.error
     end
 
     def test_a_callback_error_holds_the_error_a_callback_raised_and_its_message
-      error = Core::CallbackError.new(Errno::ECONNREFUSED.new("the hook failed"))
+      error = Core.const_get(:CallbackError).new(Errno::ECONNREFUSED.new("the hook failed"))
 
       assert_kind_of Errno::ECONNREFUSED, error.error
       assert_equal Errno::ECONNREFUSED.new("the hook failed").message, error.message

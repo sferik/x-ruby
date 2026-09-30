@@ -17,5 +17,6 @@ module X
       # @return [String, URI::Generic, nil] the proxy URL, or nil to take the proxy the environment names
       def proxy_url = @proxy_url
     end
+    private_constant :ProxySetting
   end
 end

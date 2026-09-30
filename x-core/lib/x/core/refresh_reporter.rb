@@ -72,5 +72,6 @@ module X
         raise TokenReportFailed.new(REPORT_FAILED, client:, tokens:), cause: errors.first unless errors.empty?
       end
     end
+    private_constant :RefreshReporter
   end
 end

@@ -7,7 +7,7 @@ module X
   # a client given it, as the authenticators of x-core do
   class CustomAuthenticatorTest < Minitest::Test
     cover_client
-    cover Core::CredentialValidator
+    cover Core.const_get(:CredentialValidator)
     cover Authenticator
 
     # Signs each request with its method and path, as a scheme of an application's own might

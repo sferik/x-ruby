@@ -178,5 +178,6 @@ module X
         yield decode.call(line.force_encoding(Encoding::UTF_8))
       end
     end
+    private_constant :StreamParser
   end
 end

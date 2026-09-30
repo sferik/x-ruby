@@ -247,5 +247,6 @@ module X
         !refreshed_at.nil? && Process.clock_gettime(Process::CLOCK_MONOTONIC) - refreshed_at < FRESH_TOKEN_SECONDS
       end
     end
+    private_constant :OAuth2Refresh
   end
 end

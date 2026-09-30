@@ -6,7 +6,7 @@ require_relative "../../test_helper"
 module X
   # What holds credentials refuses Marshal and YAML, which would write them in the clear wherever it is kept
   class CredentialMarshalTest < Minitest::Test
-    cover Core::CredentialHolder
+    cover Core.const_get(:CredentialHolder)
 
     def holders
       client = Client.new(api_key: "KEY", api_key_secret: "SECRET", bearer_token: "BEARER")
@@ -51,7 +51,7 @@ module X
     end
 
     def test_the_message_is_named_privately
-      assert_raises(NameError) { Core::CredentialHolder::REFUSAL_MESSAGE }
+      assert_raises(NameError) { Core.const_get(:CredentialHolder)::REFUSAL_MESSAGE }
     end
   end
 end

@@ -9,7 +9,7 @@ module X
     JSON_HEADERS = {"Content-Type" => "application/json"}.freeze
 
     def setup
-      @response_parser = Core::ResponseParser.new
+      @response_parser = Core.const_get(:ResponseParser).new
       @uri = URI("http://example.com")
     end
 

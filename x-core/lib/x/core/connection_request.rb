@@ -76,5 +76,6 @@ module X
       # @return [Boolean] true for a GET, PUT, or DELETE
       def idempotent?(request) = RequestBuilder.idempotent?(request.method.downcase.to_sym)
     end
+    private_constant :ConnectionRequest
   end
 end

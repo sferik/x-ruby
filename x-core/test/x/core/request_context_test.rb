@@ -7,15 +7,15 @@ module X
     include StreamHelpers
 
     # The errors that name the request they were raised for, and the parsers and the connection that build them
-    cover Core::RequestContext
-    cover Core::ResponseParser
-    cover Core::StreamParser
-    cover Core::Connection
+    cover Core.const_get(:RequestContext)
+    cover Core.const_get(:ResponseParser)
+    cover Core.const_get(:StreamParser)
+    cover Core.const_get(:Connection)
     cover HTTPError
     cover InvalidResponse
     cover NetworkError
     cover TooManyRedirects
-    cover Core::RedirectHandler
+    cover Core.const_get(:RedirectHandler)
     cover StreamingClient
 
     def setup
@@ -73,13 +73,15 @@ module X
       assert_equal [:get, URI("https://api.x.com/2/tweets/search/stream")], [error.http_method, error.uri]
     end
 
+    def parse_stream(response, request)
+      Core.const_get(:StreamParser).new.process(response:, response_parser: Core.const_get(:ResponseParser).new, request:) { flunk "unexpected yield" }
+    end
+
     def test_the_error_of_a_stream_line_that_is_not_json_names_the_request
       response = Net::HTTPOK.new("1.1", "200", "OK")
       response.define_singleton_method(:read_body) { |&block| block.call("<html>\r\n") }
       request = Net::HTTP::Get.new(URI("https://api.x.com/2/tweets/search/stream?expansions=author_id"))
-      error = assert_raises(InvalidResponse) do
-        Core::StreamParser.new.process(response:, response_parser: Core::ResponseParser.new, request:) { flunk "unexpected yield" }
-      end
+      error = assert_raises(InvalidResponse) { parse_stream(response, request) }
 
       assert_equal "GET /2/tweets/search/stream: The body of the 200 response is not JSON (no content type)", error.message
       assert_equal [:get, URI("https://api.x.com/2/tweets/search/stream?expansions=author_id")], [error.http_method, error.uri]

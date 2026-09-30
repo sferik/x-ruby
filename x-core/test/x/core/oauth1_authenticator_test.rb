@@ -56,7 +56,7 @@ module X
     end
 
     def test_header_contains_authorization_key
-      header = @authenticator.headers(Core::AuthenticatorRequest.new(get_request))
+      header = @authenticator.headers(Core.const_get(:AuthenticatorRequest).new(get_request))
 
       assert header.key?("Authorization"), "Header does not contain \"Authorization\" key"
     end
@@ -108,7 +108,7 @@ module X
     private
 
     def authorization_for(request)
-      @authenticator.headers(Core::AuthenticatorRequest.new(request))["Authorization"]
+      @authenticator.headers(Core.const_get(:AuthenticatorRequest).new(request))["Authorization"]
     end
   end
 
@@ -138,7 +138,7 @@ module X
 
     def test_signs_the_form_encoded_body
       with_fixed_oauth_params(nonce: NONCE, time: Time.at(TIMESTAMP)) do
-        without_body = @authenticator.headers(Core::AuthenticatorRequest.new(post_request(body: nil)))["Authorization"]
+        without_body = @authenticator.headers(Core.const_get(:AuthenticatorRequest).new(post_request(body: nil)))["Authorization"]
 
         refute_equal without_body, authorization
       end
@@ -160,7 +160,7 @@ module X
     private
 
     def authorization
-      @authenticator.headers(Core::AuthenticatorRequest.new(post_request))["Authorization"]
+      @authenticator.headers(Core.const_get(:AuthenticatorRequest).new(post_request))["Authorization"]
     end
 
     def post_request(body: BODY, content_type: "application/x-www-form-urlencoded")
@@ -237,7 +237,7 @@ module X
       request = Net::HTTP::Post.new(URI(URL))
       request["Content-Type"] = content_type
       request.body = body
-      @authenticator.headers(Core::AuthenticatorRequest.new(request))["Authorization"][/oauth_signature="([^"]+)"/, 1]
+      @authenticator.headers(Core.const_get(:AuthenticatorRequest).new(request))["Authorization"][/oauth_signature="([^"]+)"/, 1]
     end
   end
 end

@@ -6,7 +6,7 @@ module X
   # The fields of a body given without the braces of a Hash are refused with how to pass them
   class ClientBodyKeywordsTest < Minitest::Test
     cover Client
-    cover Core::SettingValidator
+    cover Core.const_get(:SettingValidator)
 
     def setup
       @client = Client.new(bearer_token: TEST_BEARER_TOKEN)

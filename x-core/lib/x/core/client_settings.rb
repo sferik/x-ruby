@@ -184,5 +184,6 @@ module X
         block&.call(summary)
       end
     end
+    private_constant :ClientSettings
   end
 end

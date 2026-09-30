@@ -7,11 +7,11 @@ module X
   class StreamParserOnBodyTest < Minitest::Test
     include StreamHelpers
 
-    cover Core::StreamParser
+    cover Core.const_get(:StreamParser)
 
     def setup
-      @stream_parser = Core::StreamParser.new
-      @response_parser = Core::ResponseParser.new
+      @stream_parser = Core.const_get(:StreamParser).new
+      @response_parser = Core.const_get(:ResponseParser).new
     end
 
     def test_process_passes_each_line_to_on_body_before_decoding_it

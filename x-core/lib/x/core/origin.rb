@@ -90,5 +90,6 @@ module X
         headers.reject { |name, _| CREDENTIAL_HEADERS.any? { |header| name.to_s.casecmp?(header) } }
       end
     end
+    private_constant :Origin
   end
 end

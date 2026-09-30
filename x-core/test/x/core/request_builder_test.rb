@@ -5,30 +5,30 @@ require_relative "../../test_helper"
 
 module X
   class RequestBuilderTest < Minitest::Test
-    cover Core::RequestBuilder
+    cover Core.const_get(:RequestBuilder)
 
     def setup
       @authenticator = OAuth1Authenticator.new(api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET,
         access_token: TEST_ACCESS_TOKEN, access_token_secret: TEST_ACCESS_TOKEN_SECRET)
-      @request_builder = Core::RequestBuilder.new
+      @request_builder = Core.const_get(:RequestBuilder).new
       @uri = URI("http://example.com")
     end
 
     def test_merge_headers_replaces_a_header_whose_name_differs_in_case_alone
       assert_equal({"X-Trace" => "a", "user-agent" => "b"},
-        Core::RequestBuilder.merge_headers({"X-Trace" => "a", "User-Agent" => "x"}, {"user-agent" => "b"}))
+        Core.const_get(:RequestBuilder).merge_headers({"X-Trace" => "a", "User-Agent" => "x"}, {"user-agent" => "b"}))
     end
 
     def test_merge_headers_replaces_a_header_named_by_a_symbol
-      assert_equal({"User-Agent" => "b"}, Core::RequestBuilder.merge_headers({"user-agent": "x"}, {"User-Agent" => "b"}))
+      assert_equal({"User-Agent" => "b"}, Core.const_get(:RequestBuilder).merge_headers({"user-agent": "x"}, {"User-Agent" => "b"}))
     end
 
     def test_merge_headers_replaces_a_header_with_one_named_by_a_symbol
-      assert_equal({"user-agent": "b"}, Core::RequestBuilder.merge_headers({"User-Agent" => "x"}, {"user-agent": "b"}))
+      assert_equal({"user-agent": "b"}, Core.const_get(:RequestBuilder).merge_headers({"User-Agent" => "x"}, {"user-agent": "b"}))
     end
 
     def test_merge_headers_keeps_the_headers_that_are_not_overridden
-      assert_equal({"X-Trace" => "a", "X-Other" => "b"}, Core::RequestBuilder.merge_headers({"X-Trace" => "a"}, {"X-Other" => "b"}))
+      assert_equal({"X-Trace" => "a", "X-Other" => "b"}, Core.const_get(:RequestBuilder).merge_headers({"X-Trace" => "a"}, {"X-Other" => "b"}))
     end
 
     def test_build_get_request
@@ -46,7 +46,7 @@ module X
     end
 
     def test_idempotent_methods_may_be_sent_again
-      assert_equal [true, true, true, false], %i[get put delete post].map { |http_method| Core::RequestBuilder.idempotent?(http_method) }
+      assert_equal [true, true, true, false], %i[get put delete post].map { |http_method| Core.const_get(:RequestBuilder).idempotent?(http_method) }
     end
 
     def test_a_request_with_a_body_is_given_the_json_content_type
@@ -58,7 +58,7 @@ module X
     def test_a_request_with_a_body_is_given_the_other_default_headers_too
       request = @request_builder.build(http_method: :post, uri: @uri, body: "{}", authenticator: @authenticator)
 
-      assert_equal Core::RequestBuilder::DEFAULT_HEADERS.fetch("User-Agent"), request["User-Agent"]
+      assert_equal Core.const_get(:RequestBuilder)::DEFAULT_HEADERS.fetch("User-Agent"), request["User-Agent"]
     end
 
     def test_a_request_without_a_body_is_given_no_content_type

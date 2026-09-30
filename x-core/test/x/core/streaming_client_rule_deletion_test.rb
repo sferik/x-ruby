@@ -9,7 +9,7 @@ module X
   # it matches, so the rules that were added delete what they added.
   class StreamingClientRuleDeletionTest < Minitest::Test
     cover StreamingClient
-    cover Core::StreamRules
+    cover Core.const_get(:StreamRules)
 
     RULES_URL = "https://api.x.com/2/tweets/search/stream/rules"
     RUBY_RULE = {"id" => "1", "value" => "ruby -is:retweet", "tag" => "ruby"}.freeze

@@ -5,7 +5,7 @@ require_relative "../../test_helper"
 module X
   class ClientEmptyCredentialsTest < Minitest::Test
     cover_client
-    cover Core::CredentialValidator
+    cover Core.const_get(:CredentialValidator)
 
     def test_an_empty_credential_is_refused
       %i[api_key api_key_secret access_token access_token_secret bearer_token client_id client_secret refresh_token].each do |name|

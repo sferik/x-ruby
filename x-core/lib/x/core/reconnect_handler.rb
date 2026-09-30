@@ -195,5 +195,6 @@ module X
       # @return [Integer] the seconds to wait
       def http_backoff(reconnects) = [HTTP_BACKOFF_START << (reconnects - 1), MAX_HTTP_BACKOFF].min
     end
+    private_constant :ReconnectHandler
   end
 end

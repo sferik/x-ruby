@@ -102,5 +102,6 @@ module X
         hash["value"] || hash[:value] || raise(ArgumentError, format(NOT_A_RULE, rule.inspect))
       end
     end
+    private_constant :StreamRules
   end
 end

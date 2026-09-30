@@ -7,7 +7,7 @@ module X
     cover_client
 
     def test_a_client_keeps_connections_open_for_the_default_time
-      assert_equal Core::Connection::DEFAULT_KEEP_ALIVE_TIMEOUT, Client.new.keep_alive_timeout
+      assert_equal Core.const_get(:Connection)::DEFAULT_KEEP_ALIVE_TIMEOUT, Client.new.keep_alive_timeout
     end
 
     def test_a_client_takes_a_keep_alive_timeout

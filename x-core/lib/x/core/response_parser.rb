@@ -149,5 +149,6 @@ module X
         ERROR_MAP.fetch(status) { STATUS_CLASS_ERRORS.fetch(status / 100, HTTPError) }
       end
     end
+    private_constant :ResponseParser
   end
 end

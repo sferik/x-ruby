@@ -10,8 +10,8 @@ end
 
 module X
   class StreamingClientCallbackTest < Minitest::Test
-    cover Core::Connection
-    cover Core::StreamParser
+    cover Core.const_get(:Connection)
+    cover Core.const_get(:StreamParser)
     cover StreamingClient
 
     STREAM_URL = "https://api.x.com/2/tweets/sample/stream"

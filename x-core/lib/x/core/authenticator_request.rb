@@ -51,5 +51,6 @@ module X
       #   request["Content-Type"] # => "application/json; charset=utf-8"
       def [](name) = @request[name]
     end
+    private_constant :AuthenticatorRequest
   end
 end

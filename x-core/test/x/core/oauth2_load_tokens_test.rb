@@ -28,7 +28,7 @@ module X
 
     cover_client
     cover OAuth2Authenticator
-    cover Core::OAuth2Refresh
+    cover Core.const_get(:OAuth2Refresh)
 
     def setup
       @reported = []
@@ -147,7 +147,7 @@ module X
   class OAuth2LoadTokensTypeTest < Minitest::Test
     include LoadTokensHelpers
 
-    cover Core::OAuth2Refresh
+    cover Core.const_get(:OAuth2Refresh)
 
     # A client whose token has expired, which reads the store with a callable that returns each of the values given in
     # turn, and then the last of them
@@ -186,8 +186,8 @@ module X
 
     cover_client
     cover OAuth2Authenticator
-    cover Core::OAuth2Refresh
-    cover Core::SettingValidator
+    cover Core.const_get(:OAuth2Refresh)
+    cover Core.const_get(:SettingValidator)
 
     def test_stored_tokens_of_the_refresh_token_a_refresh_spent_are_not_taken
       stub_refresh(TEST_REFRESH_TOKEN)

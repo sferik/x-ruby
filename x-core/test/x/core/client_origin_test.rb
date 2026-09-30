@@ -7,7 +7,7 @@ module X
     include StreamHelpers
 
     cover_client
-    cover Core::Origin
+    cover Core.const_get(:Origin)
 
     AUTHORIZATION = "Bearer #{TEST_BEARER_TOKEN}".freeze
 

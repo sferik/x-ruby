@@ -26,5 +26,6 @@ module X
       #   response.http_response.get_fields("set-cookie")
       def headers = http_response.to_hash.transform_values { |values| values.join(", ") }.freeze
     end
+    private_constant :ResponseHeaders
   end
 end

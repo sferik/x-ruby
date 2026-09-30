@@ -125,5 +125,6 @@ module X
         request
       end
     end
+    private_constant :TokenEndpoint
   end
 end

@@ -5,10 +5,10 @@ require_relative "../../test_helper"
 module X
   class ClientAuthenticatorTest < Minitest::Test
     cover_client
-    cover Core::CredentialValidator
+    cover Core.const_get(:CredentialValidator)
     cover AppOnlyAuthenticator
     cover OAuth2Authenticator
-    cover Core::OAuth2Refresh
+    cover Core.const_get(:OAuth2Refresh)
 
     def setup
       stub_request(:post, OAuth2Authenticator::TOKEN_URL)

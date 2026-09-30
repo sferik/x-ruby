@@ -10,7 +10,7 @@ module X
     cover Authenticator
     cover OAuth1Authenticator
     cover OAuth2Authenticator
-    cover Core::OAuth2Refresh
+    cover Core.const_get(:OAuth2Refresh)
     cover AppOnlyAuthenticator
     cover BearerTokenAuthenticator
 

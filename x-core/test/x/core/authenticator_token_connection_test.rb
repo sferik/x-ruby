@@ -7,7 +7,7 @@ module X
   class AuthenticatorTokenConnectionTest < Minitest::Test
     cover AppOnlyAuthenticator
     cover OAuth2Authenticator
-    cover Core::OAuth2Refresh
+    cover Core.const_get(:OAuth2Refresh)
 
     def authenticators
       [AppOnlyAuthenticator.new(api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET), OAuth2Authenticator.new(**test_oauth2_credentials)]
@@ -15,17 +15,17 @@ module X
 
     def test_the_first_connection_an_authenticator_is_given_is_kept
       authenticators.each do |authenticator|
-        first = Core::Connection.new
+        first = Core.const_get(:Connection).new
         authenticator.__send__(:token_requests_over, first, Client::DEFAULT_BASE_URL)
 
-        assert_same authenticator, authenticator.__send__(:token_requests_over, Core::Connection.new, Client::DEFAULT_BASE_URL)
+        assert_same authenticator, authenticator.__send__(:token_requests_over, Core.const_get(:Connection).new, Client::DEFAULT_BASE_URL)
         assert_same first, authenticator.__send__(:connection)
       end
     end
 
     def test_a_connection_is_taken_under_the_lock_a_token_request_holds
       authenticators.each do |authenticator|
-        connection = Core::Connection.new
+        connection = Core.const_get(:Connection).new
         taking(authenticator, connection).join
 
         assert_same connection, authenticator.__send__(:connection)

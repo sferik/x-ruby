@@ -7,8 +7,8 @@ module X
   # which would send it again, wait out a rate limit, or refresh a token for it
   class ClientCallbackErrorTest < Minitest::Test
     cover_client
-    cover Core::CallbackError
-    cover Core::ResponseParser
+    cover Core.const_get(:CallbackError)
+    cover Core.const_get(:ResponseParser)
 
     URL = "https://api.x.com/2/users/me"
     SUCCESS = {status: 200, body: '{"data":{"id":"1"}}', headers: {"Content-Type" => "application/json"}}.freeze
@@ -95,13 +95,13 @@ module X
 
     def test_an_error_tagged_twice_stands_in_for_the_error_a_callback_raised
       failure = ArgumentError.new("the callback failed")
-      error = assert_raises(Core::CallbackError) { Core::CallbackError.tagging { Core::CallbackError.tagging { raise failure } } }
+      error = assert_raises(Core.const_get(:CallbackError)) { Core.const_get(:CallbackError).tagging { Core.const_get(:CallbackError).tagging { raise failure } } }
 
       assert_same failure, error.error
     end
 
     def test_tagging_returns_what_the_callback_returned
-      assert_equal 1, Core::CallbackError.tagging { 1 }
+      assert_equal 1, Core.const_get(:CallbackError).tagging { 1 }
     end
   end
 end

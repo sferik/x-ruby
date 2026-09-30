@@ -10,7 +10,7 @@ module X
     HTML_HEADERS = {"Content-Type" => "text/html"}.freeze
 
     def setup
-      @response_parser = Core::ResponseParser.new
+      @response_parser = Core.const_get(:ResponseParser).new
       @uri = URI("http://example.com")
     end
 

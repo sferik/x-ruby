@@ -8,8 +8,8 @@ module X
   # as, and the stream reconnects after one that holds operational-disconnects alone
   class StreamErrorTest < Minitest::Test
     cover StreamError
-    cover Core::StreamParser
-    cover Core::ReconnectHandler
+    cover Core.const_get(:StreamParser)
+    cover Core.const_get(:ReconnectHandler)
     cover StreamingClient
 
     STREAM_URL = "https://api.x.com/2/tweets/search/stream"

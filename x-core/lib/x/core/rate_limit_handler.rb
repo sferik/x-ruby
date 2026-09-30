@@ -99,5 +99,6 @@ module X
         wait + (rand * RESET_JITTER)
       end
     end
+    private_constant :RateLimitHandler
   end
 end

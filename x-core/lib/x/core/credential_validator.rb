@@ -168,5 +168,6 @@ module X
         (given - complete.flatten).any?
       end
     end
+    private_constant :CredentialValidator
   end
 end

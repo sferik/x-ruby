@@ -11,7 +11,7 @@ module X
       @client = Client.new
     end
 
-    X::Core::RequestBuilder::HTTP_METHODS.each_key do |http_method|
+    X::Core.const_get(:RequestBuilder)::HTTP_METHODS.each_key do |http_method|
       define_method :"test_#{http_method}_request" do
         stub_request(http_method, "https://api.x.com/2/tweets")
         @client.public_send(http_method, "tweets")

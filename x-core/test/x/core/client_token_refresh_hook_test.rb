@@ -6,8 +6,8 @@ module X
   class ClientTokenRefreshHookTest < Minitest::Test
     cover_client
     cover OAuth2Authenticator
-    cover Core::OAuth2Refresh
-    cover Core::RefreshReporter
+    cover Core.const_get(:OAuth2Refresh)
+    cover Core.const_get(:RefreshReporter)
 
     def setup
       stub_request(:post, "https://api.x.com/2/oauth2/token")

@@ -4,12 +4,12 @@ require_relative "../../test_helper"
 
 module X
   class AuthenticatorCredentialsTest < Minitest::Test
-    cover Core::CredentialValidator
+    cover Core.const_get(:CredentialValidator)
     cover BearerTokenAuthenticator
     cover AppOnlyAuthenticator
     cover OAuth1Authenticator
     cover OAuth2Authenticator
-    cover Core::OAuth2Refresh
+    cover Core.const_get(:OAuth2Refresh)
 
     OAUTH2_CREDENTIALS = {client_id: TEST_CLIENT_ID, access_token: TEST_ACCESS_TOKEN, refresh_token: TEST_REFRESH_TOKEN}.freeze
     APP_CREDENTIALS = {api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET}.freeze

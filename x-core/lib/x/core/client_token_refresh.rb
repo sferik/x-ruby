@@ -205,5 +205,6 @@ module X
         end
       end
     end
+    private_constant :ClientTokenRefresh
   end
 end

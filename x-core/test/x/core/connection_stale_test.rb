@@ -4,14 +4,14 @@ require_relative "../../test_helper"
 
 module X
   class ConnectionStaleTest < Minitest::Test
-    cover Core::Connection
-    cover Core::ConnectionRequest
+    cover Core.const_get(:Connection)
+    cover Core.const_get(:ConnectionRequest)
 
     URL = "https://api.x.com/2/tweets"
     OTHER_URL = "https://example.com/2/tweets"
 
     def setup
-      @connection = Core::Connection.new
+      @connection = Core.const_get(:Connection).new
     end
 
     def test_a_request_on_a_connection_that_had_gone_stale_is_sent_again

@@ -6,7 +6,7 @@ module X
   class AppOnlyTokenRejectionTest < Minitest::Test
     cover_client
     cover AppOnlyAuthenticator
-    cover Core::Origin
+    cover Core.const_get(:Origin)
 
     POST_URL = "https://api.x.com/2/tweets/1"
 

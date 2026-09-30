@@ -8,8 +8,8 @@ module X
 
   class OAuth2AuthenticatorInitializationTest < Minitest::Test
     cover OAuth2Authenticator
-    cover Core::OAuth2Refresh
-    cover Core::TokenEndpoint
+    cover Core.const_get(:OAuth2Refresh)
+    cover Core.const_get(:TokenEndpoint)
 
     def test_initialize_with_required_credentials
       authenticator = OAuth2Authenticator.new(**test_oauth2_credentials)
@@ -23,11 +23,11 @@ module X
       authenticator = OAuth2Authenticator.new(**test_oauth2_credentials)
 
       %i[connection token_requests_over].each { |name| refute_respond_to authenticator, name }
-      assert_instance_of Core::Connection, authenticator.send(:connection)
+      assert_instance_of Core.const_get(:Connection), authenticator.send(:connection)
     end
 
     def test_the_tokens_can_be_refreshed_over_another_connection
-      connection = Core::Connection.new(open_timeout: 5)
+      connection = Core.const_get(:Connection).new(open_timeout: 5)
       authenticator = OAuth2Authenticator.new(**test_oauth2_credentials)
 
       assert_same authenticator, authenticator.send(:token_requests_over, connection, Client::DEFAULT_BASE_URL)
@@ -56,8 +56,8 @@ module X
 
   class OAuth2AuthenticatorHeaderTest < Minitest::Test
     cover OAuth2Authenticator
-    cover Core::OAuth2Refresh
-    cover Core::TokenEndpoint
+    cover Core.const_get(:OAuth2Refresh)
+    cover Core.const_get(:TokenEndpoint)
 
     def test_header_returns_bearer_token
       authenticator = OAuth2Authenticator.new(**test_oauth2_credentials)
@@ -70,8 +70,8 @@ module X
 
   class OAuth2AuthenticatorTokenExpirationTest < Minitest::Test
     cover OAuth2Authenticator
-    cover Core::OAuth2Refresh
-    cover Core::TokenEndpoint
+    cover Core.const_get(:OAuth2Refresh)
+    cover Core.const_get(:TokenEndpoint)
 
     def test_token_expired_returns_false_when_no_expires_at
       authenticator = OAuth2Authenticator.new(**test_oauth2_credentials)
@@ -133,8 +133,8 @@ module X
 
   class OAuth2AuthenticatorRefreshTokenTest < Minitest::Test
     cover OAuth2Authenticator
-    cover Core::OAuth2Refresh
-    cover Core::TokenEndpoint
+    cover Core.const_get(:OAuth2Refresh)
+    cover Core.const_get(:TokenEndpoint)
 
     def test_refresh_token_sends_correct_content_type
       authenticator = OAuth2Authenticator.new(**test_oauth2_credentials)
@@ -262,8 +262,8 @@ module X
 
   class OAuth2AuthenticatorAutomaticRefreshTest < Minitest::Test
     cover OAuth2Authenticator
-    cover Core::OAuth2Refresh
-    cover Core::TokenEndpoint
+    cover Core.const_get(:OAuth2Refresh)
+    cover Core.const_get(:TokenEndpoint)
 
     def setup
       @refresh = stub_request(:post, TOKEN_URL)
@@ -346,7 +346,7 @@ module X
 
   class OAuth2AuthenticatorRejectedTokenTest < Minitest::Test
     cover OAuth2Authenticator
-    cover Core::OAuth2Refresh
+    cover Core.const_get(:OAuth2Refresh)
 
     def setup
       @refresh = stub_request(:post, TOKEN_URL)
@@ -364,8 +364,8 @@ module X
     # The connections the refreshes a block makes are sent over
     def refreshes_over
       connections = []
-      fetch = Core::TokenEndpoint.method(:fetch)
-      Core::TokenEndpoint.stub(:fetch, ->(request, connection:) { fetch.call(request, connection: connections.push(connection).last) }) { yield }
+      fetch = Core.const_get(:TokenEndpoint).method(:fetch)
+      Core.const_get(:TokenEndpoint).stub(:fetch, ->(request, connection:) { fetch.call(request, connection: connections.push(connection).last) }) { yield }
       connections
     end
 
@@ -391,7 +391,7 @@ module X
 
     def test_retrying_rejected_token_refreshes_an_expired_token_before_the_request_over_the_connection_given
       authenticator = OAuth2Authenticator.new(**test_oauth2_credentials, expires_at: Time.now - 60)
-      connection = Core::Connection.new
+      connection = Core.const_get(:Connection).new
       sent = []
 
       assert_equal [connection], refreshes_over { authenticator.send(:retrying_rejected_token, API, connection) { sent << authenticator.__send__(:access_token) } }
@@ -400,7 +400,7 @@ module X
 
     def test_retrying_rejected_token_refreshes_a_rejected_token_over_the_connection_given
       authenticator = OAuth2Authenticator.new(**test_oauth2_credentials)
-      connection = Core::Connection.new
+      connection = Core.const_get(:Connection).new
       attempts = 0
 
       assert_equal [connection], refreshes_over { authenticator.send(:retrying_rejected_token, API, connection) { (attempts += 1).eql?(1) ? raise(unauthorized) : :ok } }
@@ -472,8 +472,8 @@ module X
 
   class OAuth2AuthenticatorConcurrentRefreshTest < Minitest::Test
     cover OAuth2Authenticator
-    cover Core::OAuth2Refresh
-    cover Core::TokenEndpoint
+    cover Core.const_get(:OAuth2Refresh)
+    cover Core.const_get(:TokenEndpoint)
 
     # Answer the token endpoint slowly, so that concurrent callers overlap the refresh
     def stub_slow_refresh
@@ -521,8 +521,8 @@ module X
 
   class OAuth2AuthenticatorRefreshTokenErrorTest < Minitest::Test
     cover OAuth2Authenticator
-    cover Core::OAuth2Refresh
-    cover Core::TokenEndpoint
+    cover Core.const_get(:OAuth2Refresh)
+    cover Core.const_get(:TokenEndpoint)
 
     def test_refresh_token_raises_on_error_with_description
       authenticator = OAuth2Authenticator.new(**test_oauth2_credentials)
@@ -584,7 +584,7 @@ module X
 
   class OAuth2AuthenticatorHoldsTest < Minitest::Test
     cover OAuth2Authenticator
-    cover Core::OAuth2Refresh
+    cover Core.const_get(:OAuth2Refresh)
 
     def setup
       @authenticator = OAuth2Authenticator.new(**test_oauth2_credentials)

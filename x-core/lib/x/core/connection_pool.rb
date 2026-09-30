@@ -117,5 +117,6 @@ module X
         nil
       end
     end
+    private_constant :ConnectionPool
   end
 end

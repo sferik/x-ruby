@@ -8,7 +8,7 @@ module X
   # A copy that opens its connections as the client does shares the connections the client keeps open
   class ClientWithConnectionTest < Minitest::Test
     cover_client
-    cover Core::Connection
+    cover Core.const_get(:Connection)
 
     def setup
       @client = Client.new(bearer_token: "TEST_BEARER_TOKEN")

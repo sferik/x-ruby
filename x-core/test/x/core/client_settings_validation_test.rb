@@ -5,11 +5,11 @@ require_relative "../../test_helper"
 module X
   class ClientSettingsValidationTest < Minitest::Test
     cover_client
-    cover Core::SettingValidator
-    cover Core::RedirectHandler
-    cover Core::RateLimitHandler
-    cover Core::RetryHandler
-    cover Core::ReconnectHandler
+    cover Core.const_get(:SettingValidator)
+    cover Core.const_get(:RedirectHandler)
+    cover Core.const_get(:RateLimitHandler)
+    cover Core.const_get(:RetryHandler)
+    cover Core.const_get(:ReconnectHandler)
 
     def message_of(&) = assert_raises(ArgumentError, &).message
 
@@ -119,7 +119,7 @@ module X
     end
 
     def test_the_validator_returns_what_it_checked
-      validator = Core::SettingValidator
+      validator = Core.const_get(:SettingValidator)
 
       assert_equal [2, 900, Float::INFINITY], [validator.count!(:max_retries, 2), validator.seconds!(:max_rate_limit_wait, 900), validator.count_or_infinity!(:max_reconnects, Float::INFINITY)]
       refute_respond_to validator, :count?

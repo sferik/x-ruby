@@ -55,5 +55,6 @@ module X
         @error = error
       end
     end
+    private_constant :CallbackError
   end
 end

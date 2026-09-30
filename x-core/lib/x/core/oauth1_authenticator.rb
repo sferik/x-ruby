@@ -6,136 +6,138 @@ require_relative "authenticator"
 require_relative "credential_validator"
 
 module X
-  # Authenticator for OAuth 1.0a authentication
-  # @api public
-  class OAuth1Authenticator < Authenticator
-    # The media type whose body OAuth 1.0a signs as request parameters
-    FORM_CONTENT_TYPE = "application/x-www-form-urlencoded"
-    private_constant :FORM_CONTENT_TYPE
-
-    # The API key (consumer key)
+  module Core
+    # Authenticator for OAuth 1.0a authentication
     # @api public
-    # @return [String] the API key (consumer key)
-    # @example Get the API key
-    #   authenticator.api_key
-    attr_reader :api_key
+    class ::X::OAuth1Authenticator < Authenticator
+      # The media type whose body OAuth 1.0a signs as request parameters
+      FORM_CONTENT_TYPE = "application/x-www-form-urlencoded"
+      private_constant :FORM_CONTENT_TYPE
 
-    # Initialize a new OAuth1Authenticator
-    #
-    # @api public
-    # @param api_key [String] the API key (consumer key)
-    # @param api_key_secret [String] the API key secret (consumer secret)
-    # @param access_token [String] the access token
-    # @param access_token_secret [String] the access token secret
-    # @return [OAuth1Authenticator] a new instance
-    # @raise [ArgumentError] if a credential is nil or empty
-    # @example Create an OAuth authenticator
-    #   authenticator = X::OAuth1Authenticator.new(
-    #     api_key: "key",
-    #     api_key_secret: "secret",
-    #     access_token: "token",
-    #     access_token_secret: "token_secret"
-    #   )
-    def initialize(api_key:, api_key_secret:, access_token:, access_token_secret:)
-      Core::CredentialValidator.validate_required!({api_key:, api_key_secret:, access_token:, access_token_secret:})
-      @api_key = api_key
-      @api_key_secret = api_key_secret
-      @access_token = access_token
-      @access_token_secret = access_token_secret
-    end
+      # The API key (consumer key)
+      # @api public
+      # @return [String] the API key (consumer key)
+      # @example Get the API key
+      #   authenticator.api_key
+      attr_reader :api_key
 
-    # The identifier of the user the access token acts for
-    #
-    # An OAuth 1.0a access token begins with the identifier of the user who authorized it, so a client that signs
-    # with one knows the user it acts for without asking the API.
-    #
-    # @api public
-    # @return [Integer, nil] the identifier, or nil for a token that begins with none
-    # @example Read the user a client acts for without a request
-    #   client.authenticator.user_id # => 7505382
-    def user_id
-      prefix = access_token[/\A(\d+)-/, 1]
-      Integer(prefix, 10) if prefix
-    end
+      # Initialize a new OAuth1Authenticator
+      #
+      # @api public
+      # @param api_key [String] the API key (consumer key)
+      # @param api_key_secret [String] the API key secret (consumer secret)
+      # @param access_token [String] the access token
+      # @param access_token_secret [String] the access token secret
+      # @return [OAuth1Authenticator] a new instance
+      # @raise [ArgumentError] if a credential is nil or empty
+      # @example Create an OAuth authenticator
+      #   authenticator = X::OAuth1Authenticator.new(
+      #     api_key: "key",
+      #     api_key_secret: "secret",
+      #     access_token: "token",
+      #     access_token_secret: "token_secret"
+      #   )
+      def initialize(api_key:, api_key_secret:, access_token:, access_token_secret:)
+        CredentialValidator.validate_required!({api_key:, api_key_secret:, access_token:, access_token_secret:})
+        @api_key = api_key
+        @api_key_secret = api_key_secret
+        @access_token = access_token
+        @access_token_secret = access_token_secret
+      end
 
-    # Generate the OAuth authentication headers for a request
-    #
-    # The signature covers the HTTP method, the URL, its query parameters, and a
-    # form-encoded body. Bodies of any other media type, such as the JSON and multipart
-    # bodies the X API takes, are not signed.
-    #
-    # @api public
-    # @param request [#http_method, #uri, #body, #[]] the request, whose method, uri, body, and Content-Type the signature reads
-    # @return [Hash{String => String}] the authentication header with OAuth signature
-    # @example Generate an OAuth authentication header
-    #   authenticator.headers(request)
-    def headers(request)
-      oauth_header = SimpleOAuth::Header.new(request.http_method, request.uri, form_params(request), credentials)
-      {AUTHENTICATION_HEADER => oauth_header.to_s}
-    end
+      # The identifier of the user the access token acts for
+      #
+      # An OAuth 1.0a access token begins with the identifier of the user who authorized it, so a client that signs
+      # with one knows the user it acts for without asking the API.
+      #
+      # @api public
+      # @return [Integer, nil] the identifier, or nil for a token that begins with none
+      # @example Read the user a client acts for without a request
+      #   client.authenticator.user_id # => 7505382
+      def user_id
+        prefix = access_token[/\A(\d+)-/, 1]
+        Integer(prefix, 10) if prefix
+      end
 
-    private
+      # Generate the OAuth authentication headers for a request
+      #
+      # The signature covers the HTTP method, the URL, its query parameters, and a
+      # form-encoded body. Bodies of any other media type, such as the JSON and multipart
+      # bodies the X API takes, are not signed.
+      #
+      # @api public
+      # @param request [#http_method, #uri, #body, #[]] the request, whose method, uri, body, and Content-Type the signature reads
+      # @return [Hash{String => String}] the authentication header with OAuth signature
+      # @example Generate an OAuth authentication header
+      #   authenticator.headers(request)
+      def headers(request)
+        oauth_header = SimpleOAuth::Header.new(request.http_method, request.uri, form_params(request), credentials)
+        {AUTHENTICATION_HEADER => oauth_header.to_s}
+      end
 
-    # The API key secret (consumer secret), which signs a request
-    # @api private
-    # @return [String] the API key secret (consumer secret)
-    # @example Sign with the API key secret
-    #   api_key_secret
-    attr_reader :api_key_secret
+      private
 
-    # The access token, which signs each request and names the user it acts for
-    #
-    # It is a credential, so it is private, as the access token of a client is: the user it acts for is read with
-    # {#user_id}.
-    #
-    # @api private
-    # @return [String] the access token
-    # @example Sign with the access token
-    #   access_token
-    attr_reader :access_token
+      # The API key secret (consumer secret), which signs a request
+      # @api private
+      # @return [String] the API key secret (consumer secret)
+      # @example Sign with the API key secret
+      #   api_key_secret
+      attr_reader :api_key_secret
 
-    # The access token secret, which signs a request
-    # @api private
-    # @return [String] the access token secret
-    # @example Sign with the access token secret
-    #   access_token_secret
-    attr_reader :access_token_secret
+      # The access token, which signs each request and names the user it acts for
+      #
+      # It is a credential, so it is private, as the access token of a client is: the user it acts for is read with
+      # {#user_id}.
+      #
+      # @api private
+      # @return [String] the access token
+      # @example Sign with the access token
+      #   access_token
+      attr_reader :access_token
 
-    # The credentials, under the names simple_oauth gives them
-    # @api private
-    # @return [Hash{Symbol => String}] the credentials for signing
-    def credentials
-      {consumer_key: api_key, consumer_secret: api_key_secret, token: access_token,
-       token_secret: access_token_secret}
-    end
+      # The access token secret, which signs a request
+      # @api private
+      # @return [String] the access token secret
+      # @example Sign with the access token secret
+      #   access_token_secret
+      attr_reader :access_token_secret
 
-    # The parameters a form-encoded body contributes to the signature
-    #
-    # A parameter that repeats is signed once per value, as RFC 5849 Section 3.4.1.3.2 requires,
-    # which the key-value pairs preserve.
-    #
-    # @api private
-    # @param request [#http_method, #uri, #body, #[]] the request
-    # @return [Array<Array(String, String)>] the body parameters, empty unless the body is form-encoded
-    def form_params(request)
-      URI.decode_www_form(form_body(request))
-    end
+      # The credentials, under the names simple_oauth gives them
+      # @api private
+      # @return [Hash{Symbol => String}] the credentials for signing
+      def credentials
+        {consumer_key: api_key, consumer_secret: api_key_secret, token: access_token,
+         token_secret: access_token_secret}
+      end
 
-    # The body whose parameters take part in the signature
-    #
-    # @api private
-    # @param request [#http_method, #uri, #body, #[]] the request
-    # @return [String] the body, or an empty String when it is not form-encoded
-    def form_body(request)
-      form_encoded?(request) ? request.body.to_s : ""
-    end
+      # The parameters a form-encoded body contributes to the signature
+      #
+      # A parameter that repeats is signed once per value, as RFC 5849 Section 3.4.1.3.2 requires,
+      # which the key-value pairs preserve.
+      #
+      # @api private
+      # @param request [#http_method, #uri, #body, #[]] the request
+      # @return [Array<Array(String, String)>] the body parameters, empty unless the body is form-encoded
+      def form_params(request)
+        URI.decode_www_form(form_body(request))
+      end
 
-    # Check whether a request carries a form-encoded body
-    # @api private
-    # @param request [#http_method, #uri, #body, #[]] the request
-    # @return [Boolean] true if the body is form-encoded
-    def form_encoded?(request)
-      request["Content-Type"].to_s.split(";").first.to_s.strip.downcase.eql?(FORM_CONTENT_TYPE)
+      # The body whose parameters take part in the signature
+      #
+      # @api private
+      # @param request [#http_method, #uri, #body, #[]] the request
+      # @return [String] the body, or an empty String when it is not form-encoded
+      def form_body(request)
+        form_encoded?(request) ? request.body.to_s : ""
+      end
+
+      # Check whether a request carries a form-encoded body
+      # @api private
+      # @param request [#http_method, #uri, #body, #[]] the request
+      # @return [Boolean] true if the body is form-encoded
+      def form_encoded?(request)
+        request["Content-Type"].to_s.split(";").first.to_s.strip.downcase.eql?(FORM_CONTENT_TYPE)
+      end
     end
   end
 end

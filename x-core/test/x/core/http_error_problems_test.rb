@@ -12,7 +12,7 @@ module X
 
     def error_for(body, headers: JSON_HEADERS)
       stub_request(:get, URL).to_return(status: [400, "Bad Request"], body:, headers:)
-      assert_raises(BadRequest) { Core::ResponseParser.new.parse(response: Net::HTTP.get_response(URI(URL))) }
+      assert_raises(BadRequest) { Core.const_get(:ResponseParser).new.parse(response: Net::HTTP.get_response(URI(URL))) }
     end
 
     def test_the_problems_are_every_error_the_body_names

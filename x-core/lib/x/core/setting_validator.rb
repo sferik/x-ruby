@@ -323,5 +323,6 @@ module X
       # @return [Boolean] true if the value is a finite real number of at least 0
       def finite_seconds?(value) = seconds?(value) && value.finite?
     end
+    private_constant :SettingValidator
   end
 end

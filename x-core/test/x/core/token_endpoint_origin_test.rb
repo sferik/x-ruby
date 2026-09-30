@@ -5,16 +5,16 @@ require_relative "../../test_helper"
 module X
   # A client pointed at another host than X requests the token endpoints there, as it sends its requests
   class TokenEndpointOriginTest < Minitest::Test
-    cover Core::TokenEndpoint
+    cover Core.const_get(:TokenEndpoint)
     cover AppOnlyAuthenticator
     cover OAuth2Authenticator
 
     TEST_SERVER = "http://localhost:3000/2/"
 
     def test_the_url_of_a_token_endpoint_is_at_the_origin_of_the_base_url
-      assert_equal "http://localhost:3000/oauth2/token", Core::TokenEndpoint.url_at(TEST_SERVER, AppOnlyAuthenticator::TOKEN_URL)
-      assert_equal "http://localhost:3000/2/oauth2/token", Core::TokenEndpoint.url_at(TEST_SERVER, OAuth2Authenticator::TOKEN_URL)
-      assert_equal AppOnlyAuthenticator::TOKEN_URL, Core::TokenEndpoint.url_at(Client::DEFAULT_BASE_URL, AppOnlyAuthenticator::TOKEN_URL)
+      assert_equal "http://localhost:3000/oauth2/token", Core.const_get(:TokenEndpoint).url_at(TEST_SERVER, AppOnlyAuthenticator::TOKEN_URL)
+      assert_equal "http://localhost:3000/2/oauth2/token", Core.const_get(:TokenEndpoint).url_at(TEST_SERVER, OAuth2Authenticator::TOKEN_URL)
+      assert_equal AppOnlyAuthenticator::TOKEN_URL, Core.const_get(:TokenEndpoint).url_at(Client::DEFAULT_BASE_URL, AppOnlyAuthenticator::TOKEN_URL)
     end
 
     def test_an_app_only_client_fetches_its_bearer_token_at_the_origin_of_its_base_url
@@ -39,8 +39,8 @@ module X
 
     def test_an_authenticator_requests_its_token_endpoint_at_the_origin_of_the_first_client_that_takes_it
       authenticator = AppOnlyAuthenticator.new(api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET)
-      authenticator.__send__(:token_requests_over, Core::Connection.new, TEST_SERVER)
-      authenticator.__send__(:token_requests_over, Core::Connection.new, Client::DEFAULT_BASE_URL)
+      authenticator.__send__(:token_requests_over, Core.const_get(:Connection).new, TEST_SERVER)
+      authenticator.__send__(:token_requests_over, Core.const_get(:Connection).new, Client::DEFAULT_BASE_URL)
 
       assert_equal "http://localhost:3000/oauth2/token", authenticator.__send__(:token_request).url
     end

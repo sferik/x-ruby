@@ -5,8 +5,8 @@ require_relative "../../test_helper"
 module X
   class ClientTimeoutsValidationTest < Minitest::Test
     cover_client
-    cover Core::Connection
-    cover Core::SettingValidator
+    cover Core.const_get(:Connection)
+    cover Core.const_get(:SettingValidator)
     cover StreamingClient
     cover OAuth2Authorization
 
@@ -53,7 +53,7 @@ module X
     end
 
     def test_the_validator_returns_the_timeouts_it_checked
-      validator = Core::SettingValidator
+      validator = Core.const_get(:SettingValidator)
 
       assert_equal [30, 60, nil], [validator.finite_seconds!(:keep_alive_timeout, 30), validator.timeout!(:read_timeout, 60), validator.timeout!(:read_timeout, nil)]
       refute_respond_to validator, :seconds?

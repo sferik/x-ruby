@@ -40,8 +40,8 @@ module X
     def test_the_token_is_fetched_over_the_client_connection
       client = Client.new(**test_oauth_credentials)
       connections = []
-      fetch = Core::TokenEndpoint.method(:fetch)
-      Core::TokenEndpoint.stub(:fetch, ->(request, connection:) { fetch.call(request, connection: connections.push(connection).last) }) { client.app_only }
+      fetch = Core.const_get(:TokenEndpoint).method(:fetch)
+      Core.const_get(:TokenEndpoint).stub(:fetch, ->(request, connection:) { fetch.call(request, connection: connections.push(connection).last) }) { client.app_only }
 
       assert_equal [client.instance_variable_get(:@connection)], connections
     end

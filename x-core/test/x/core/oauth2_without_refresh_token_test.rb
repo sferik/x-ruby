@@ -9,7 +9,7 @@ module X
   class OAuth2WithoutRefreshTokenTest < Minitest::Test
     cover_client
     cover OAuth2Authenticator
-    cover Core::OAuth2Refresh
+    cover Core.const_get(:OAuth2Refresh)
     cover OAuth2Authorization
     cover StreamingClient
 

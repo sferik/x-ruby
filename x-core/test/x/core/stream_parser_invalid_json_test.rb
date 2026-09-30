@@ -5,11 +5,11 @@ require_relative "../../test_helper"
 
 module X
   class StreamParserInvalidJSONTest < Minitest::Test
-    cover Core::StreamParser
+    cover Core.const_get(:StreamParser)
 
     def setup
-      @stream_parser = Core::StreamParser.new
-      @response_parser = Core::ResponseParser.new
+      @stream_parser = Core.const_get(:StreamParser).new
+      @response_parser = Core.const_get(:ResponseParser).new
     end
 
     def test_process_raises_invalid_response_for_a_line_that_is_not_json

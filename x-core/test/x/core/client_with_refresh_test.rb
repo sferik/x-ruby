@@ -105,8 +105,8 @@ module X
     # The connections the token requests a block sends are sent over
     def connections_of_refreshes
       connections = []
-      fetch = Core::TokenEndpoint.method(:fetch)
-      Core::TokenEndpoint.stub(:fetch, ->(request, connection:) { fetch.call(request, connection: connections.push(connection).last) }) { yield }
+      fetch = Core.const_get(:TokenEndpoint).method(:fetch)
+      Core.const_get(:TokenEndpoint).stub(:fetch, ->(request, connection:) { fetch.call(request, connection: connections.push(connection).last) }) { yield }
       connections
     end
   end

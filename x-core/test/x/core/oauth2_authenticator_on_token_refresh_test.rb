@@ -5,8 +5,8 @@ require_relative "../../test_helper"
 module X
   class OAuth2AuthenticatorOnTokenRefreshTest < Minitest::Test
     cover OAuth2Authenticator
-    cover Core::OAuth2Refresh
-    cover Core::RefreshReporter
+    cover Core.const_get(:OAuth2Refresh)
+    cover Core.const_get(:RefreshReporter)
 
     def setup
       @refresh = stub_request(:post, "https://api.x.com/2/oauth2/token")
@@ -58,7 +58,7 @@ module X
     def test_on_token_refresh_can_refresh_a_rejected_token
       replaced = []
       authenticator = nil #: OAuth2Authenticator?
-      authenticator = oauth2_authenticator_reporting_to(->(_) { replaced << authenticator&.send(:refresh_rejected_token!, TEST_ACCESS_TOKEN, Core::Connection.new) })
+      authenticator = oauth2_authenticator_reporting_to(->(_) { replaced << authenticator&.send(:refresh_rejected_token!, TEST_ACCESS_TOKEN, Core.const_get(:Connection).new) })
 
       assert authenticator.send(:refresh_rejected_token!, TEST_ACCESS_TOKEN, authenticator.send(:connection))
       assert_equal [true], replaced

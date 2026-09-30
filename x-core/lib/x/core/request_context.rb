@@ -67,5 +67,6 @@ module X
         line.nil? ? message : "#{line}: #{message}"
       end
     end
+    private_constant :RequestContext
   end
 end

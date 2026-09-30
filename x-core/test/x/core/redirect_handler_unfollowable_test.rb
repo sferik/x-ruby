@@ -4,10 +4,10 @@ require_relative "../../test_helper"
 
 module X
   class RedirectHandlerUnfollowableTest < Minitest::Test
-    cover Core::RedirectHandler
+    cover Core.const_get(:RedirectHandler)
 
     def setup
-      @redirect_handler = Core::RedirectHandler.new
+      @redirect_handler = Core.const_get(:RedirectHandler).new
       @request = Net::HTTP::Get.new(URI("https://api.x.com/2/users/me"))
     end
 
@@ -18,7 +18,7 @@ module X
     def test_a_response_that_is_not_a_redirect_is_returned_whatever_its_location
       response = Net::HTTPCreated.new("1.1", "201", "Created").tap { |created| created["Location"] = "https://example.com/created" }
 
-      assert_same response, @redirect_handler.handle(response:, request: @request, redirect_count: Core::RedirectHandler::DEFAULT_MAX_REDIRECTS)
+      assert_same response, @redirect_handler.handle(response:, request: @request, redirect_count: Core.const_get(:RedirectHandler)::DEFAULT_MAX_REDIRECTS)
       assert_not_requested :get, "https://example.com/created"
     end
 

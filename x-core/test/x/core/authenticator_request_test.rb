@@ -4,13 +4,13 @@ require_relative "../../test_helper"
 
 module X
   class AuthenticatorRequestTest < Minitest::Test
-    cover Core::AuthenticatorRequest
+    cover Core.const_get(:AuthenticatorRequest)
 
     def setup
       request = Net::HTTP::Post.new(URI("https://api.x.com/2/tweets?a=1"))
       request.body = '{"text":"Hi"}'
       request["Content-Type"] = "application/json"
-      @request = Core::AuthenticatorRequest.new(request)
+      @request = Core.const_get(:AuthenticatorRequest).new(request)
     end
 
     def test_reads_the_method_as_a_symbol

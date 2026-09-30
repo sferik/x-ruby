@@ -4,10 +4,10 @@ require_relative "../../test_helper"
 
 module X
   class ResponseParserBuilderTest < Minitest::Test
-    cover Core::ResponseParser
+    cover Core.const_get(:ResponseParser)
 
     def setup
-      @response_parser = Core::ResponseParser.new
+      @response_parser = Core.const_get(:ResponseParser).new
       @uri = URI("http://example.com")
     end
 

@@ -5,66 +5,68 @@ require_relative "../request_context"
 require_relative "../response_headers"
 
 module X
-  # Error raised for a successful response whose body is not JSON, such as the page of a proxy or captive portal
-  #
-  # It reads the response as X::HTTPError reads one: the status is {#status}, the headers are {#headers}, and the
-  # body is {#body}.
-  #
-  # @api public
-  class InvalidResponse < Error
-    include Core::RequestContext
-    include Core::ResponseHeaders
-
-    # The response itself, as the client received it
+  module Core
+    # Error raised for a successful response whose body is not JSON, such as the page of a proxy or captive portal
     #
-    # It is an escape hatch, for what the error does not read: the status is {#status}, the headers are
-    # {#headers}, and the body is {#body}. It is the Net::HTTP response the client sent the request with.
+    # It reads the response as X::HTTPError reads one: the status is {#status}, the headers are {#headers}, and the
+    # body is {#body}.
     #
     # @api public
-    # @return [Net::HTTPResponse] the HTTP response
-    # @example Read the reason phrase of the status line
-    #   error.http_response.message # => "OK"
-    attr_reader :http_response
+    class ::X::InvalidResponse < Error
+      include RequestContext
+      include ResponseHeaders
 
-    # The body that is not JSON: the whole body of a response, or the line of a stream
-    #
-    # The body of a stream can be read only as it arrives, so an error raised for a line of a stream holds that line.
-    # It is tagged UTF-8, as {Response#body} is, and keeps the bytes of a body that is not valid UTF-8.
-    #
-    # @api public
-    # @return [String, nil] the body, or the line of a stream, tagged UTF-8, or nil for an error built without one
-    # @example Read the body that could not be parsed
-    #   error.body
-    attr_reader :body
+      # The response itself, as the client received it
+      #
+      # It is an escape hatch, for what the error does not read: the status is {#status}, the headers are
+      # {#headers}, and the body is {#body}. It is the Net::HTTP response the client sent the request with.
+      #
+      # @api public
+      # @return [Net::HTTPResponse] the HTTP response
+      # @example Read the reason phrase of the status line
+      #   error.http_response.message # => "OK"
+      attr_reader :http_response
 
-    # Initialize a new InvalidResponse
-    #
-    # Public, so that code that rescues an InvalidResponse can be tested with one built from a Net::HTTP response, as
-    # ResponseParser and StreamParser build one. The error names the request, when given one, as x-core names the
-    # request the response answers.
-    #
-    # @api public
-    # @param http_response [Net::HTTPResponse] the HTTP response
-    # @param body [String, nil] the body that is not JSON
-    # @param request [Net::HTTPRequest, nil] the request the response answers, which the error names
-    # @return [InvalidResponse] a new instance
-    # @example Create an error
-    #   error = X::InvalidResponse.new(http_response: response, body: response.body)
-    # @example Create an error for a line of a stream
-    #   error = X::InvalidResponse.new(http_response: response, body: line, request: request)
-    def initialize(http_response:, body: nil, request: nil)
-      name_request(request)
-      super(message_naming_request("The body of the #{http_response.code} response is not JSON (#{http_response["content-type"] || "no content type"})"))
-      @http_response = http_response
-      @body = body
+      # The body that is not JSON: the whole body of a response, or the line of a stream
+      #
+      # The body of a stream can be read only as it arrives, so an error raised for a line of a stream holds that line.
+      # It is tagged UTF-8, as {Response#body} is, and keeps the bytes of a body that is not valid UTF-8.
+      #
+      # @api public
+      # @return [String, nil] the body, or the line of a stream, tagged UTF-8, or nil for an error built without one
+      # @example Read the body that could not be parsed
+      #   error.body
+      attr_reader :body
+
+      # Initialize a new InvalidResponse
+      #
+      # Public, so that code that rescues an InvalidResponse can be tested with one built from a Net::HTTP response, as
+      # ResponseParser and StreamParser build one. The error names the request, when given one, as x-core names the
+      # request the response answers.
+      #
+      # @api public
+      # @param http_response [Net::HTTPResponse] the HTTP response
+      # @param body [String, nil] the body that is not JSON
+      # @param request [Net::HTTPRequest, nil] the request the response answers, which the error names
+      # @return [InvalidResponse] a new instance
+      # @example Create an error
+      #   error = X::InvalidResponse.new(http_response: response, body: response.body)
+      # @example Create an error for a line of a stream
+      #   error = X::InvalidResponse.new(http_response: response, body: line, request: request)
+      def initialize(http_response:, body: nil, request: nil)
+        name_request(request)
+        super(message_naming_request("The body of the #{http_response.code} response is not JSON (#{http_response["content-type"] || "no content type"})"))
+        @http_response = http_response
+        @body = body
+      end
+
+      # The HTTP status code, as an Integer like X::Response#status
+      #
+      # @api public
+      # @return [Integer] the HTTP status code
+      # @example Tell the page of a proxy from a response of the API
+      #   error.status # => 200
+      def status = Integer(http_response.code)
     end
-
-    # The HTTP status code, as an Integer like X::Response#status
-    #
-    # @api public
-    # @return [Integer] the HTTP status code
-    # @example Tell the page of a proxy from a response of the API
-    #   error.status # => 200
-    def status = Integer(http_response.code)
   end
 end
