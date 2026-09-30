@@ -22,7 +22,7 @@ module X
       [PNG, Pathname(PNG)].each do |path|
         source = Uploader.const_get(:Source).for(path)
 
-        assert_equal [PNG, true, PNG, "png"], [source.name, source.named?, source.description, source.extension]
+        assert_equal [PNG, PNG, "png"], [source.name, source.description, source.extension]
       end
     end
 
@@ -40,7 +40,7 @@ module X
       File.open(PNG, "rb") do |file|
         source = Uploader.const_get(:Source).for(file)
 
-        assert_equal [PNG, true], [source.name, source.named?]
+        assert_equal PNG, source.name
         assert_equal File.size(PNG), source.size
       end
     end
@@ -84,7 +84,7 @@ module X
     def test_an_io_that_names_no_file_is_read_to_its_end_and_held
       source = Uploader.const_get(:Source).for(StringIO.new("0123456789"))
 
-      assert_equal [nil, false, "the media given", ""], [source.name, source.named?, source.description, source.extension]
+      assert_equal [nil, "the media given", ""], [source.name, source.description, source.extension]
       assert_equal [true, true, 10], [source.exist?, source.readable?, source.size]
       assert_equal "0123456789", source.content
       assert_equal "1234", source.read(4, 1)

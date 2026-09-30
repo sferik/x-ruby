@@ -62,6 +62,14 @@ module X
       assert_match(/\Athe media given is video\/mp4, which subtitles media is not: /, error.message)
     end
 
+    def test_infer_media_category_refuses_a_file_whose_name_names_no_type
+      %w[a.unknown a].each do |file|
+        error = assert_raises(InvalidMediaType) { inference.infer_media_category(file) }
+
+        assert_equal "unable to determine the media type of #{file}: pass media_category", error.message
+      end
+    end
+
     private
 
     def in_file(name, content)

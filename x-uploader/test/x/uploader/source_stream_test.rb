@@ -28,16 +28,16 @@ module X
         io = IO.new(file.fileno, "rb", autoclose: false, path: "<STDIN>")
         source = Uploader.const_get(:Source).for(io)
 
-        assert_equal [nil, false, File.size(file)], [source.name, source.named?, source.size]
+        assert_equal [nil, File.size(file)], [source.name, source.size]
         assert_equal File.binread(file.path), source.content
       end
     end
 
     def test_stdin_redirected_from_a_file_is_read_through_it_and_names_no_file
-      script = "source = X::Uploader.const_get(:Source).for($stdin); print [source.named?, source.size, source.sniff.bytesize].inspect"
+      script = "source = X::Uploader.const_get(:Source).for($stdin); print [source.name, source.size, source.sniff.bytesize].inspect"
       output = IO.popen([RbConfig.ruby, "-rbundler/setup", "-Ilib", "-rx/uploader/source", "-e", script], in: "test/sample_files/sample.png", err: %i[child out], &:read)
 
-      assert_equal [false, File.size("test/sample_files/sample.png"), File.size("test/sample_files/sample.png")].inspect, output
+      assert_equal [nil, File.size("test/sample_files/sample.png"), File.size("test/sample_files/sample.png")].inspect, output
     end
 
     def test_a_file_open_on_a_pipe_is_read_in_binary_mode

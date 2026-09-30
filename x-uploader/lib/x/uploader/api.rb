@@ -35,8 +35,8 @@ module X
       # @raise [InvalidMedia] if the media cannot be read, or is empty, which holds nothing to upload
       # @raise [InvalidMedia] if the media is larger than the API takes of its category, whatever the account: 5
       #   megabytes of an image, 15 of a GIF, and one of subtitles, or larger than the 16 gigabytes it takes of any
-      # @raise [InvalidMediaType] if no media category is given for media that names no file and no signature names
-      #   one, or the category does not take the type of the media
+      # @raise [InvalidMediaType] if no media category is given for media whose type neither its bytes nor the name of
+      #   its file names, or the category does not take the type of the media
       # @raise [MissingMediaData] if a response of the upload holds no media, or carries no body at all
       # @raise [ChunkedUploadFailed] if media uploaded in chunks is initialized, but a chunk cannot be appended, or it
       #   cannot be finalized, with the media it initialized

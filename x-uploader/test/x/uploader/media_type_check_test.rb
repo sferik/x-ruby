@@ -103,6 +103,18 @@ module X
       assert_not_requested :any, /x\.com/
     end
 
+    def test_a_file_of_no_known_type_is_refused_unless_its_category_is_given
+      in_file("notes.pdf", "%PDF-1.7\n") do |path|
+        error = assert_raises(InvalidMediaType) { Uploader::MediaUpload.upload(path, client: @client) }
+
+        assert_equal "unable to determine the media type of #{path}: pass media_category", error.message
+        assert_not_requested :any, /x\.com/
+        Uploader::MediaUpload.upload(path, client: @client, media_category: "tweet_image")
+      end
+
+      assert_requested :post, BASE_URL
+    end
+
     private
 
     def in_file(name, content)

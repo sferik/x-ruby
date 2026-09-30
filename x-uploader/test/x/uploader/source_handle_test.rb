@@ -38,7 +38,7 @@ module X
         file.write("GIF89a")
         source = source_for(file)
 
-        assert_equal [nil, false, "the media given"], [source.name, source.named?, source.description]
+        assert_equal [nil, "the media given"], [source.name, source.description]
         assert_equal [true, 6, "GIF89a"], [source.readable?, source.size, source.sniff]
       end
     end

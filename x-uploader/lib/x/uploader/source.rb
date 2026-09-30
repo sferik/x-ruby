@@ -143,16 +143,6 @@ module X
       #   Uploader::Source.for("cat.jpg").name # => "cat.jpg"
       attr_reader :name
 
-      # Whether the media names a file
-      #
-      # The media category and type of media that names one are inferred from that name.
-      #
-      # @api private
-      # @return [Boolean] true if the media names a file
-      # @example Check whether media names a file
-      #   Uploader::Source.for(StringIO.new(bytes)).named? # => false
-      def named? = !name.nil?
-
       # The media in words, for the message of an error it raises
       # @api private
       # @return [String] the file name, or a phrase for media that names none

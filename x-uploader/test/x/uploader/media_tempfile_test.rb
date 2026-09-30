@@ -22,11 +22,12 @@ module X
       end
     end
 
-    def test_a_file_whose_extension_and_signature_name_no_type_is_an_image
+    def test_a_file_whose_extension_and_signature_name_no_type_must_be_given_a_category
       Tempfile.create("unknown") do |tempfile|
         tempfile.write("not media at all")
+        error = assert_raises(InvalidMediaType) { inference.infer_media_category(tempfile) }
 
-        assert_equal "tweet_image", inference.infer_media_category(tempfile)
+        assert_equal "unable to determine the media type of #{tempfile.path}: pass media_category", error.message
       end
     end
 
@@ -40,8 +41,8 @@ module X
       end
     end
 
-    def test_a_missing_file_whose_extension_names_no_type_is_an_image
-      assert_equal "tweet_image", inference.infer_media_category("missing")
+    def test_a_missing_file_whose_extension_names_no_type_must_be_given_a_category
+      assert_raises(InvalidMediaType) { inference.infer_media_category("missing") }
     end
 
     def test_the_media_type_of_a_file_whose_extension_names_no_type_is_read_from_its_signature

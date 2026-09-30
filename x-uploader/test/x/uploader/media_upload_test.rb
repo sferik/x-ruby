@@ -23,10 +23,8 @@ module X
       assert_equal "tweet_image", inference.infer_media_category("a.jpeg")
     end
 
-    def test_infer_media_category_ignores_case_and_unknown_extensions
+    def test_infer_media_category_ignores_case
       assert_equal "tweet_gif", inference.infer_media_category("A.GIF")
-      assert_equal "tweet_image", inference.infer_media_category("a.unknown")
-      assert_equal "tweet_image", inference.infer_media_category("a")
     end
 
     def test_infer_media_category_tells_a_still_gif_from_an_animated_one

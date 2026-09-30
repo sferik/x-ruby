@@ -154,8 +154,8 @@ module X
       #   the chunk size is not a positive, finite number, is larger than a segment the API takes, or would need more
       #   segments than the API numbers, the concurrency is not 1 to MAX_CONCURRENCY, or the processing timeout is not
       #   a number of seconds of at least 0
-      # @raise [InvalidMediaType] if no media category is given for media that names no file and no signature names
-      #   one, if media uploaded in chunks is given no media type and none can be inferred, if the category does not
+      # @raise [InvalidMediaType] if no media category is given for media whose type neither its bytes nor the name of
+      #   its file names, if media uploaded in chunks is given no media type and none can be inferred, if the category does not
       #   take the type of the media, such as an MP4 video uploaded as a GIF, or if the file is named as a type every
       #   file of which begins with a signature, such as a PNG, and does not begin with it
       # @raise [MissingMediaData] if a response of the upload holds no media, or carries no body at all
@@ -371,8 +371,8 @@ module X
         # @api private
         # @param media [String, Pathname, IO, StringIO] the path to the media, or an IO open on it
         # @return [String] tweet_gif, tweet_video for MP4, QuickTime, WebM, or MPEG-TS, subtitles for SubRip or WebVTT, or tweet_image
-        # @raise [InvalidMediaType] if the media names no file and its type cannot be read, or its file is named as a
-        #   type whose signature it does not begin with
+        # @raise [InvalidMediaType] if neither the bytes of the media nor the name of its file names its type, or its
+        #   file is named as a type whose signature it does not begin with
         # @example Infer the category of a video
         #   Inference.infer_media_category("cat.mp4") # => "tweet_video"
         # @example Infer the category of an animated GIF held in memory
@@ -380,26 +380,12 @@ module X
         def infer_media_category(media)
           source = Source.for(media)
           documented!(source)
-          type = media_type_of(source)
-          category = type ? TYPE_CATEGORIES.fetch(type, TWEET_IMAGE) : untyped_category(source)
+          type = media_type_of(source) or raise InvalidMediaType, "unable to determine the media type of #{source.description}: pass media_category"
+          category = TYPE_CATEGORIES.fetch(type, TWEET_IMAGE)
           # A GIF of a single frame is an image, which its category is read again as. A GIF larger than the API takes
           # of any GIF is not read, since it is refused whether it is animated or not, and reading it would hold it all
           still = category.eql?(TWEET_GIF) && source.readable? && source.size <= MAX_GIF_BYTES && !Gif.animated?(source)
           still ? TWEET_IMAGE : category
-        end
-
-        # The media category of media whose type cannot be read
-        #
-        # A file is an image, since its name says nothing either way, and media that names no file raises.
-        #
-        # @api private
-        # @param source [Source] the media, whose type cannot be read
-        # @return [String] tweet_image for a file
-        # @raise [InvalidMediaType] if the media names no file
-        def untyped_category(source)
-          return TWEET_IMAGE if source.named?
-
-          raise InvalidMediaType, "unable to determine the media type of #{source.description}: pass media_category"
         end
 
         # Infer the media type from the media and its category
