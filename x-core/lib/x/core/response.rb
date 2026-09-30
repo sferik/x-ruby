@@ -38,10 +38,10 @@ module X
 
     # Summarize a response
     #
-    # Internal to x-core: it takes the Net::HTTP response of a request, so that it can change within 1.x, as that
-    # response may.
+    # Public, so that an on_response hook can be tested with a summary built from a Net::HTTP response, as the client
+    # builds one for each response it reads.
     #
-    # @api private
+    # @api public
     # @param http_method [Symbol] the HTTP method of the request
     # @param uri [URI::Generic] the URI of the request
     # @param http_response [Net::HTTPResponse] the HTTP response

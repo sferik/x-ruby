@@ -39,9 +39,10 @@ module X
 
     # Initialize a new RulesRejected
     #
-    # Internal to x-core: StreamingClient raises it for the problems of a change of the rules.
+    # Public, so that code that rescues a RulesRejected can be tested with one built by hand, as StreamingClient builds
+    # one for the problems of a change of the rules.
     #
-    # @api private
+    # @api public
     # @param problems [Array<Problem>] the problems the API reported
     # @param result [Array<StreamRule>, Integer] what the method would have returned
     # @return [RulesRejected] a new instance

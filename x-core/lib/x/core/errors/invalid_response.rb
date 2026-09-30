@@ -39,10 +39,11 @@ module X
 
     # Initialize a new InvalidResponse
     #
-    # Internal to x-core: ResponseParser and StreamParser raise it, and it takes the Net::HTTP request and response
-    # of a request, so that either can change within 1.x, as they may.
+    # Public, so that code that rescues an InvalidResponse can be tested with one built from a Net::HTTP response, as
+    # ResponseParser and StreamParser build one. The error names the request, when given one, as x-core names the
+    # request the response answers.
     #
-    # @api private
+    # @api public
     # @param http_response [Net::HTTPResponse] the HTTP response
     # @param body [String, nil] the body that is not JSON
     # @param request [Net::HTTPRequest, nil] the request the response answers, which the error names

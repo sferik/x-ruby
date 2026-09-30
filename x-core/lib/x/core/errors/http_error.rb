@@ -73,10 +73,11 @@ module X
 
     # Initialize a new HTTPError
     #
-    # Internal to x-core: ResponseParser raises the errors of the responses it parses, and it takes the Net::HTTP
-    # request and response of a request, so that either can change within 1.x, as they may.
+    # Public, so that code that rescues an HTTPError, or a subclass such as NotFound, can be tested with one built from a
+    # Net::HTTP response, as x-core builds each from the response it parses. The error names the request, when given
+    # one, as x-core names the request the response answers.
     #
-    # @api private
+    # @api public
     # @param http_response [Net::HTTPResponse] the HTTP response
     # @param request [Net::HTTPRequest, nil] the request the response answers, which the error names
     # @return [HTTPError] a new instance

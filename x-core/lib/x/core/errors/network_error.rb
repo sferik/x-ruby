@@ -23,10 +23,11 @@ module X
 
     # Initialize a new NetworkError
     #
-    # Internal to x-core: Connection raises it for the errors a socket raises, and it takes the Net::HTTP request
-    # that failed, so that it can change within 1.x, as that request may.
+    # Public, so that code that rescues a NetworkError can be tested with one built by hand, as Connection builds one
+    # for the errors a socket raises. The error names the request, when given one, as x-core names the request that
+    # failed.
     #
-    # @api private
+    # @api public
     # @param message [String] what went wrong on the network
     # @param request [Net::HTTPRequest, nil] the request that failed, which the error names
     # @return [NetworkError] a new instance

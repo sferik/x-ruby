@@ -67,19 +67,20 @@ module X
     # @example Check for the 15-minute rate limit
     #   X::RateLimit.__send__(:reported?, "rate-limit", response)
     def self.reported?(type, http_response) = FIELDS.all? { |field| http_response["x-#{type}-#{field}"].to_s.match?(COUNT) }
-    private_class_method :all_from, :reported?
+    private_class_method :all_from, :reported?, :new
 
     # Initialize a new RateLimit
     #
     # Internal to x-core: it takes the Net::HTTP response of a request, so that it can change within 1.x, as that
-    # response may.
+    # response may, and new is private, so that only all_from builds one, as X::Response#rate_limits and
+    # X::TooManyRequests#rate_limits read them.
     #
     # @api private
     # @param type [String] the type of rate limit
     # @param http_response [Net::HTTPResponse] the HTTP response containing rate limit headers
     # @return [RateLimit] a new instance
     # @example Create a rate limit instance
-    #   rate_limit = X::RateLimit.new(type: "rate-limit", http_response: response)
+    #   rate_limit = X::RateLimit.__send__(:new, type: "rate-limit", http_response: response)
     def initialize(type:, http_response:)
       @type = type
       @http_response = http_response

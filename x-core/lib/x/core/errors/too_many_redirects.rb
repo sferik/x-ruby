@@ -18,10 +18,11 @@ module X
 
     # Initialize a new TooManyRedirects
     #
-    # Internal to x-core: RedirectHandler raises it, and it takes the Net::HTTP request that was redirected, so that
-    # it can change within 1.x, as that request may.
+    # Public, so that code that rescues a TooManyRedirects can be tested with one built by hand, as RedirectHandler
+    # builds one. The error names the request, when given one, as x-core names the request whose redirect was one too
+    # many.
     #
-    # @api private
+    # @api public
     # @param message [String] what went wrong
     # @param request [Net::HTTPRequest, nil] the request whose redirect was one too many, which the error names
     # @return [TooManyRedirects] a new instance

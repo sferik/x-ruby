@@ -594,8 +594,6 @@ module X
     include Core::RequestContext
     include Core::ResponseHeaders
 
-    def initialize: (http_response: Net::HTTPResponse, ?request: Net::HTTPRequest?) -> void
-
     JSON_CONTENT_TYPE_REGEXP: Regexp
     PROBLEM_KEYS: Array[String]
     RETRY_AFTER_HEADER: String
@@ -614,36 +612,26 @@ module X
 
   class NetworkError < Error
     include Core::RequestContext
-
-    def initialize: (String message, ?request: Net::HTTPRequest?) -> void
   end
 
   class StreamError < Error
     include Core::RequestContext
 
     @problems: Array[Problem]
-
-    def initialize: (Array[Problem] problems, ?request: Net::HTTPRequest?) -> void
   end
 
   class RulesRejected < Error
     @problems: Array[Problem]
     @result: Array[StreamRule] | Integer
-
-    def initialize: (Array[Problem] problems, result: Array[StreamRule] | Integer) -> void
   end
 
   class TooManyRedirects < Error
     include Core::RequestContext
-
-    def initialize: (String message, ?request: Net::HTTPRequest?) -> void
   end
 
   class InvalidResponse < Error
     include Core::RequestContext
     include Core::ResponseHeaders
-
-    def initialize: (http_response: Net::HTTPResponse, ?body: String?, ?request: Net::HTTPRequest?) -> void
   end
 
   class TooManyRequests < ClientError
@@ -660,8 +648,6 @@ module X
 
     @body: String?
     @parsed_body: Hash[String, untyped]?
-
-    def initialize: (Symbol http_method, URI::Generic uri, Net::HTTPResponse http_response, ?body: String?) -> void
 
     private
     def parsed_body: () -> Hash[String, untyped]

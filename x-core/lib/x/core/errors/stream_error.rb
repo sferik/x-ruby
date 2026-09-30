@@ -37,10 +37,10 @@ module X
 
     # Initialize a new StreamError
     #
-    # Internal to x-core: StreamParser raises it for a line of a stream, and it takes the Net::HTTP request of the
-    # stream, so that it can change within 1.x, as that request may.
+    # Public, so that code that rescues a StreamError can be tested with one built by hand, as StreamParser builds one
+    # for a line of a stream. The error names the request, when given one, as x-core names the request of the stream.
     #
-    # @api private
+    # @api public
     # @param problems [Array<Problem>] the problems the line held
     # @param request [Net::HTTPRequest, nil] the request of the stream, which the error names
     # @return [StreamError] a new instance
