@@ -9,7 +9,7 @@ module X
     cover Objects.const_get(:ValueEquality)
 
     def test_objects_of_the_same_attributes_are_equal_and_share_a_hash
-      [Trend, PersonalizedTrend, Usage].each do |klass|
+      [Trend, PersonalizedTrend, PostUsage].each do |klass|
         first = klass.new({"trend_name" => "#ruby", "tweet_count" => 1})
         second = klass.new({"tweet_count" => 1, "trend_name" => "#ruby"})
 

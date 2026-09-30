@@ -42,7 +42,7 @@ module X
       # The message of the error raised for a timeout that is neither a finite number of seconds of at least 0 nor nil
       INVALID_TIMEOUT = "%s must be a finite number of seconds of at least 0, or nil for no timeout, not %s"
       # The message of the error raised for a base URL that is not an absolute HTTP or HTTPS URL
-      INVALID_BASE_URL = "base_url must be an absolute http or https URL, such as \"https://api.x.com/2/\", not %s"
+      INVALID_BASE_URL = "base_url must be an absolute http or https URL with no query or fragment, such as \"https://api.x.com/2/\", not %s"
       # The message of the error raised for headers that are not a Hash
       INVALID_HEADERS = "headers must be a Hash of header names to values, not a %s"
       # The message of the error raised for a header whose name or value is not what a header takes
@@ -141,10 +141,14 @@ module X
 
       # Check that a base URL is an absolute HTTP or HTTPS URL, with a host
       #
+      # An endpoint is appended to the path of the base URL, so a query or a fragment, which would come before the
+      # endpoint rather than after it, is refused.
+      #
       # @api private
       # @param value [Object] the base URL
       # @return [String] the base URL
-      # @raise [ArgumentError] if the base URL is not a String that is an absolute http or https URL with a host
+      # @raise [ArgumentError] if the base URL is not a String that is an absolute http or https URL with a host, and
+      #   no query or fragment
       # @example Check the base URL of the v1.1 API
       #   X::Core::SettingValidator.base_url!("https://api.x.com/1.1/") # => "https://api.x.com/1.1/"
       def base_url!(value)
@@ -282,13 +286,13 @@ module X
       # @return [Boolean] true if the value is a String or a Symbol
       def header_name?(value) = value.is_a?(String) || value.instance_of?(Symbol)
 
-      # Check whether a String is an absolute HTTP or HTTPS URL with a host
+      # Check whether a String is an absolute HTTP or HTTPS URL fit to be a base URL
       # @api private
       # @param value [String] the URL
-      # @return [Boolean] true if the URL is an absolute http or https URL with a host
+      # @return [Boolean] true if the URL is an absolute http or https URL with a host, and no query or fragment
       def http_url?(value)
         uri = URI(value)
-        uri.is_a?(URI::HTTP) && !uri.host.to_s.empty?
+        uri.is_a?(URI::HTTP) && !uri.host.to_s.empty? && uri.query.nil? && uri.fragment.nil?
       rescue URI::InvalidURIError
         false
       end

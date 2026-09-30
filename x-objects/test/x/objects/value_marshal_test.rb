@@ -9,13 +9,13 @@ module X
     cover Objects.const_get(:ValueMarshalling)
     cover Trend
     cover PersonalizedTrend
-    cover Usage
+    cover PostUsage
     cover MatchingRule
 
     def setup
       @values = [Trend.new({"trend_name" => "#ruby", "tweet_count" => 1234}),
         PersonalizedTrend.new({"trend_name" => "#ruby", "category" => "Technology", "post_count" => "12.3K posts"}),
-        Usage.new({"project_usage" => "1234", "daily_project_usage" => {"usage" => [{"date" => "2026-09-28T00:00:00.000Z", "usage" => "5"}]}}),
+        PostUsage.new({"project_usage" => "1234", "daily_project_usage" => {"usage" => [{"date" => "2026-09-28T00:00:00.000Z", "usage" => "5"}]}}),
         MatchingRule.new(id: 1_165_037_377_523_306_498, tag: "ruby"), MatchingRule.new(id: 1)]
     end
 
@@ -48,7 +48,7 @@ module X
     end
 
     def test_the_format_is_named_privately
-      [Trend, PersonalizedTrend, Usage, MatchingRule].each { |klass| assert_raises(NameError) { klass::MARSHAL_FORMAT } }
+      [Trend, PersonalizedTrend, PostUsage, MatchingRule].each { |klass| assert_raises(NameError) { klass::MARSHAL_FORMAT } }
     end
   end
 end

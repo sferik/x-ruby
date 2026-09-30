@@ -14,7 +14,7 @@ module X
     # project has spent and how much of its cap remains.
     #
     # @api public
-    class ::X::Usage
+    class ::X::PostUsage
       include Serialization
       include ValueEquality
       include ValueMarshalling
@@ -49,9 +49,9 @@ module X
       # @api public
       # @param client [Object] the client used to make the request
       # @param params [Hash] query parameters, such as days, the number of days to report, which is 7 by default
-      # @return [Usage] the usage
+      # @return [PostUsage] the usage
       # @example Look up the usage of the last 30 days
-      #   X::Usage.current(client: client, days: 30).project_usage
+      #   X::PostUsage.current(client: client, days: 30).project_usage
       def self.current(client:, **params)
         body = Utils.app_client(client).get(Utils.path(ENDPOINT, {"usage.fields" => FIELDS}.merge(params)), **Utils::JSON_CLASSES)
         new(body.to_h["data"].to_h)
@@ -61,10 +61,10 @@ module X
       #
       # @api public
       # @param attrs [Hash{String => Object}] the attributes
-      # @return [Usage] a new usage
+      # @return [PostUsage] a new usage
       # @raise [ArgumentError] if the attributes are not a Hash
       # @example Build a usage
-      #   X::Usage.new({"project_usage" => "1234"})
+      #   X::PostUsage.new({"project_usage" => "1234"})
       def initialize(attrs)
         @attrs = Utils.deep_freeze(Utils.attributes!(attrs))
         freeze

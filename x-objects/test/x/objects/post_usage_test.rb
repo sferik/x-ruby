@@ -3,8 +3,8 @@
 require_relative "../../test_helper"
 
 module X
-  class UsageTest < Minitest::Test
-    cover Usage
+  class PostUsageTest < Minitest::Test
+    cover PostUsage
     cover Objects.const_get(:Lookups)
 
     DATA = {
@@ -20,15 +20,15 @@ module X
     end
 
     def test_current_requests_every_field
-      usage = Usage.current(client: @client, days: 30)
+      usage = PostUsage.current(client: @client, days: 30)
 
-      refute_respond_to Usage, :find
+      refute_respond_to PostUsage, :find
       assert_equal DATA, usage.to_h
-      assert_equal [{"usage.fields" => Usage::FIELDS.join(","), "days" => "30"}], @client.queries
+      assert_equal [{"usage.fields" => PostUsage::FIELDS.join(","), "days" => "30"}], @client.queries
     end
 
     def test_totals
-      usage = @client.usage(days: 2)
+      usage = @client.post_usage(days: 2)
 
       assert_equal [1_234_567_890, 1234, 3_000_000, 16], [usage.project_id, usage.project_usage, usage.project_cap, usage.cap_reset_day]
       assert_equal "2", @client.queries.first["days"]
@@ -37,19 +37,19 @@ module X
     end
 
     def test_the_reset_day_is_read_as_an_integer_whether_it_is_a_number_or_a_string
-      assert_equal [16, 16], [Usage.new({"cap_reset_day" => 16}).cap_reset_day, Usage.new({"cap_reset_day" => "16"}).cap_reset_day]
-      assert_equal 'X::Usage#cap_reset_day cannot be read from "soon"', assert_raises(InvalidAttribute) { Usage.new({"cap_reset_day" => "soon"}).cap_reset_day }.message
+      assert_equal [16, 16], [PostUsage.new({"cap_reset_day" => 16}).cap_reset_day, PostUsage.new({"cap_reset_day" => "16"}).cap_reset_day]
+      assert_equal 'X::PostUsage#cap_reset_day cannot be read from "soon"', assert_raises(InvalidAttribute) { PostUsage.new({"cap_reset_day" => "soon"}).cap_reset_day }.message
     end
 
     def test_daily_usage_counts_a_day_without_a_number_as_zero
-      daily = Usage.new(DATA).daily
+      daily = PostUsage.new(DATA).daily
 
       assert_equal({Time.utc(2026, 9, 14) => 10, Time.utc(2026, 9, 15) => 0}, daily)
       assert_predicate daily, :frozen?
     end
 
     def test_daily_usage_by_app
-      by_app = Usage.new(DATA).daily_by_app
+      by_app = PostUsage.new(DATA).daily_by_app
 
       assert_equal({42 => {Time.utc(2026, 9, 15) => 3}, nil => {}}, by_app)
       assert_predicate by_app, :frozen?
@@ -57,7 +57,7 @@ module X
     end
 
     def test_attributes_are_deep_frozen
-      usage = Usage.new({"project_usage" => +"1", "daily_project_usage" => {"usage" => []}})
+      usage = PostUsage.new({"project_usage" => +"1", "daily_project_usage" => {"usage" => []}})
 
       assert_predicate usage.attrs, :frozen?
       assert_predicate usage.attrs["project_usage"], :frozen?
@@ -65,10 +65,10 @@ module X
     end
 
     def test_an_empty_usage
-      usage = Usage.new({})
+      usage = PostUsage.new({})
 
       assert_equal [nil, nil, nil, nil, {}, {}], [usage.project_id, usage.project_usage, usage.project_cap, usage.cap_reset_day, usage.daily, usage.daily_by_app]
-      assert_empty Usage.current(client: FakeClient.new.stub(:get, "usage/tweets", nil)).to_h
+      assert_empty PostUsage.current(client: FakeClient.new.stub(:get, "usage/tweets", nil)).to_h
     end
   end
 end

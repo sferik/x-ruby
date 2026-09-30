@@ -149,10 +149,10 @@ The API bills a resource once per UTC day, however often it is read, and bills o
 
 Writes are billed by the request, and cost more than reads. Creating a post costs $0.015, or $0.20 when its text holds a URL, so a link costs more than ten times as much as the post around it. A like, repost, follow, or direct message costs $0.015, and undoing one costs $0.01. Prices change, so check the [pricing page](https://docs.x.com/x-api/getting-started/pricing) before a large run.
 
-**Usage.** `usage` reports how many posts the app's project has read this billing cycle, against its monthly cap, and how many it read each day.
+**Post usage.** `post_usage` reports how many posts the app's project has read this billing cycle, against its monthly cap, and how many it read each day.
 
 ```ruby
-usage = x_client.usage(days: 30)
+usage = x_client.post_usage(days: 30)
 usage.project_cap - usage.project_usage # the posts left to read this cycle
 usage.daily                            # => {2026-09-14 00:00:00 UTC => 1234, ...}
 usage.daily_by_app                     # the same, keyed by the ID of each of the project's apps

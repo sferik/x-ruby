@@ -13,7 +13,7 @@ module X
     type media = UploadedMedia | Hash[String, untyped] | _MediaKeyed | String | Integer
 
     # Media to upload: a path to it, or an IO open on it
-    type uploadable = path | _Reader
+    type uploadable = String | _ToPath | _Reader
 
     # What the uploaders ask of a client, which X::Client provides
     interface _Client

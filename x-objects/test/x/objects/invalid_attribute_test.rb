@@ -9,7 +9,7 @@ module X
     cover Objects.const_get(:Attributes)
     cover Objects.const_get(:Utils)
     cover Resource
-    cover Usage
+    cover PostUsage
 
     def test_an_invalid_attribute_is_an_error_of_the_object_layer
       assert_operator InvalidAttribute, :<, Objects::Error
@@ -83,28 +83,28 @@ module X
 
     def test_the_totals_of_usage_that_cannot_be_read_raise_where_they_are_read
       messages = %w[project_id project_usage project_cap].map do |name|
-        assert_raises(InvalidAttribute) { Usage.new({name => "many"}).public_send(name) }.message
+        assert_raises(InvalidAttribute) { PostUsage.new({name => "many"}).public_send(name) }.message
       end
 
-      assert_equal %w[project_id project_usage project_cap].map { |name| "X::Usage##{name} cannot be read from \"many\"" }, messages
+      assert_equal %w[project_id project_usage project_cap].map { |name| "X::PostUsage##{name} cannot be read from \"many\"" }, messages
     end
 
     def test_the_usage_of_an_app_that_cannot_be_read_raises_where_it_is_read
-      usage = Usage.new({"daily_client_app_usage" => [{"client_app_id" => "app", "usage" => []}]})
+      usage = PostUsage.new({"daily_client_app_usage" => [{"client_app_id" => "app", "usage" => []}]})
 
-      assert_equal "X::Usage#daily_by_app cannot be read from \"app\"", assert_raises(InvalidAttribute) { usage.daily_by_app }.message
+      assert_equal "X::PostUsage#daily_by_app cannot be read from \"app\"", assert_raises(InvalidAttribute) { usage.daily_by_app }.message
     end
 
     def test_a_day_of_usage_that_cannot_be_read_raises_where_it_is_read
-      assert_equal "X::Usage#daily cannot be read from \"today\"", daily_error("today", "1").message
-      assert_equal "X::Usage#daily cannot be read from \"x\"", daily_error("2026-01-01T00:00:00Z", "x").message
+      assert_equal "X::PostUsage#daily cannot be read from \"today\"", daily_error("today", "1").message
+      assert_equal "X::PostUsage#daily cannot be read from \"x\"", daily_error("2026-01-01T00:00:00Z", "x").message
     end
 
     private
 
     # The error the daily usage of a day that cannot be read raises
     def daily_error(date, count)
-      assert_raises(InvalidAttribute) { Usage.new({"daily_project_usage" => {"usage" => [{"date" => date, "usage" => count}]}}).daily }
+      assert_raises(InvalidAttribute) { PostUsage.new({"daily_project_usage" => {"usage" => [{"date" => date, "usage" => count}]}}).daily }
     end
   end
 end

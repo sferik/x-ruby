@@ -29,7 +29,7 @@ matcher:
   - X::Resource*
   - X::Space*
   - X::Trend*
-  - X::Usage*
+  - X::PostUsage*
   - X::User*
 mutation:
   operators: full

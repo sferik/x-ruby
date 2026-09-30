@@ -9,7 +9,7 @@ module X
     cover Objects.const_get(:PostCounts)
     cover Objects.const_get(:DirectMessageConversations)
     cover Objects.const_get(:Utils)
-    cover Usage
+    cover PostUsage
 
     def setup
       @client = FakeClient.new
@@ -52,10 +52,10 @@ module X
     end
 
     def test_a_day_of_usage_without_a_date_raises_where_it_is_read
-      usage = Usage.new({"daily_project_usage" => {"usage" => [{"usage" => "1"}]}})
+      usage = PostUsage.new({"daily_project_usage" => {"usage" => [{"usage" => "1"}]}})
 
-      assert_equal "X::Usage#daily cannot be read from nil", assert_raises(InvalidAttribute) { usage.daily }.message
-      assert_raises(InvalidAttribute) { Usage.new({"daily_project_usage" => {"usage" => [{"date" => 1, "usage" => "1"}]}}).daily }
+      assert_equal "X::PostUsage#daily cannot be read from nil", assert_raises(InvalidAttribute) { usage.daily }.message
+      assert_raises(InvalidAttribute) { PostUsage.new({"daily_project_usage" => {"usage" => [{"date" => 1, "usage" => "1"}]}}).daily }
     end
 
     def test_a_timestamp_that_is_a_number_raises_where_it_is_read

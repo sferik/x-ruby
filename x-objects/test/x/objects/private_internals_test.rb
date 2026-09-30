@@ -63,7 +63,7 @@ module X
 
     def test_the_trends_of_a_user_and_the_usage_name_their_endpoints_privately
       assert_raises(NameError) { PersonalizedTrend::ENDPOINT }
-      assert_raises(NameError) { Usage::ENDPOINT }
+      assert_raises(NameError) { PostUsage::ENDPOINT }
     end
 
     def test_a_resource_and_a_page_name_the_format_marshal_writes_privately

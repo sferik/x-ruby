@@ -7,7 +7,7 @@ module X
     cover Resource
     cover Objects.const_get(:Serialization)
     cover Problem
-    cover Usage
+    cover PostUsage
     cover Page
     cover Cursor
 
@@ -67,7 +67,7 @@ module X
     end
 
     def test_a_usage_serializes_its_attributes
-      usage = Usage.new({"project_usage" => "1234"})
+      usage = PostUsage.new({"project_usage" => "1234"})
 
       assert_equal({"project_usage" => "1234"}, usage.as_json)
       assert_equal usage.attrs, JSON.parse(usage.to_json)

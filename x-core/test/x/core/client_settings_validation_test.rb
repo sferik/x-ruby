@@ -22,10 +22,11 @@ module X
     end
 
     def test_a_base_url_that_is_not_an_absolute_http_url_is_refused_when_the_client_is_built
-      values = ["api.x.com/2/", "ftp://api.x.com/2/", "https://", "https:api.x.com", "https://api x.com/", "", nil, URI("https://api.x.com/2/")]
+      values = ["api.x.com/2/", "ftp://api.x.com/2/", "https://", "https:api.x.com", "https://api x.com/", "", nil, URI("https://api.x.com/2/"),
+        "https://api.x.com/2?x=1", "https://api.x.com/2/#top", "https://api.x.com/2/?"]
       messages = values.map { |base_url| message_of { Client.new(base_url:) } }
 
-      assert_equal values.map { |value| "base_url must be an absolute http or https URL, such as \"https://api.x.com/2/\", not #{value.inspect}" }, messages
+      assert_equal values.map { |value| "base_url must be an absolute http or https URL with no query or fragment, such as \"https://api.x.com/2/\", not #{value.inspect}" }, messages
       assert_raises(ArgumentError) { Client.new.with(base_url: "api.x.com") }
     end
 

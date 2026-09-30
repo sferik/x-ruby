@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require_relative "../post"
-require_relative "../usage"
+require_relative "../post_usage"
 
 module X
   module Objects
@@ -149,11 +149,11 @@ module X
         #
         # @api public
         # @param params [Hash] query parameters, such as days, the number of days to report, which is 7 by default
-        # @return [Usage] the usage
+        # @return [PostUsage] the usage
         # @example Check how much of the monthly cap remains
-        #   usage = client.usage
+        #   usage = client.post_usage
         #   usage.project_cap - usage.project_usage
-        def usage(**params) = Usage.current(client: self, **params)
+        def post_usage(**params) = PostUsage.current(client: self, **params)
 
         alias_method :find_tweet, :find_post
         alias_method :find_tweet!, :find_post!

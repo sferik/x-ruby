@@ -9,7 +9,7 @@ module X
     cover Resource
     cover Trend
     cover PersonalizedTrend
-    cover Usage
+    cover PostUsage
 
     NOT_A_HASH = [nil, "id", [["id", "1"]], 1].freeze
 
@@ -18,7 +18,7 @@ module X
     end
 
     def test_a_trend_and_the_usage_refuse_attributes_that_are_not_a_hash
-      [Trend, PersonalizedTrend, Usage].each do |klass|
+      [Trend, PersonalizedTrend, PostUsage].each do |klass|
         assert_equal NOT_A_HASH.map { |attrs| "attrs must be a Hash, not #{attrs.inspect}" }, messages { |attrs| klass.new(attrs) }
       end
     end

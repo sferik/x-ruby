@@ -10,7 +10,7 @@ module X
     # those attributes, led by the number of their format, as a resource is written, and what is read is built of
     # them as the constructor builds it, frozen.
     #
-    # Internal to x-objects: the methods it gives X::Trend, X::PersonalizedTrend, X::Usage, and X::MatchingRule,
+    # Internal to x-objects: the methods it gives X::Trend, X::PersonalizedTrend, X::PostUsage, and X::MatchingRule,
     # marshal_dump and marshal_load, are public API, but the module is only how they are shared, and which classes
     # include it can change within 1.x.
     #
