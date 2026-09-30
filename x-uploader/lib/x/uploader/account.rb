@@ -31,15 +31,15 @@ module X
 
       # Update the authenticating user's profile image
       #
-      # It returns the user the API v1.1 answers with, deliberately as the Hash it parses to, keyed as v1.1 keys it,
-      # such as screen_name rather than username: the API v2 has no endpoint that updates a profile image, and an
-      # X::User of x-objects, which x-uploader does not load, reads the users of the API v2 alone.
+      # It returns nil, whatever the client answers with, as {update_profile_banner} does: the API v1.1 answers with
+      # the user in its own shape, keyed as v1.1 keys it, which no object of these gems reads, since an X::User of
+      # x-objects reads the users of the API v2 alone. Look the user up with the API v2 to read the image it now has.
       #
       # @api public
       # @param media [String, Pathname, IO, StringIO] the path to the image, or an IO that reads it, which is read from
       #   its start, as the media of an upload is
       # @param client [Client] the X API client
-      # @return [Hash, nil] the updated user, as the API v1.1 answers with it, or nil for a response with no body
+      # @return [void]
       # @raise [Errno::ENOENT] if the file does not exist
       # @raise [ArgumentError] if the media is neither a path nor an IO
       # @raise [InvalidMedia] if the media cannot be read, is empty, which holds nothing to upload, or is larger than
@@ -54,16 +54,17 @@ module X
         source = Source.for(media)
         Validator.validate_profile_image!(source, Validator::MAX_PROFILE_IMAGE_BYTES, "a profile image")
         Multipart.post(client, PROFILE_IMAGE_URL, "image", source.content)
+        nil
       end
 
       # Update the authenticating user's profile image from binary content
       #
-      # Like {update_profile_image}, it returns the user the API v1.1 answers with as the Hash it parses to.
+      # Like {update_profile_image}, it returns nil, whatever the client answers with.
       #
       # @api public
       # @param content [String] the binary image content
       # @param client [Client] the X API client
-      # @return [Hash, nil] the updated user, as the API v1.1 answers with it, or nil for a response with no body
+      # @return [void]
       # @raise [InvalidMedia] if the content is empty, which holds nothing to upload, or is larger than the 700
       #   kilobytes the API takes of a profile image
       # @raise [InvalidMediaType] if the content does not begin with the signature of a GIF, a JPEG, or a PNG
@@ -72,6 +73,7 @@ module X
       def update_profile_image_binary(content, client:)
         Validator.validate_profile_image!(Source::Buffer.new(content), Validator::MAX_PROFILE_IMAGE_BYTES, "a profile image")
         Multipart.post(client, PROFILE_IMAGE_URL, "image", content)
+        nil
       end
 
       # Update the authenticating user's profile banner

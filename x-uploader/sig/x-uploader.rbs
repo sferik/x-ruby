@@ -21,7 +21,7 @@ module X
       def await_media_processing!: (media media, ?processing_timeout: Float | Integer) -> UploadedMedia
       def add_alt_text: (media media, String text) -> UploadedMedia
       def add_subtitles: (media video, media subtitles, String language_code, ?display_name: String?, ?media_category: String | Symbol) -> UploadedMedia
-      def update_profile_image: (uploadable media) -> Hash[String, untyped]?
+      def update_profile_image: (uploadable media) -> void
       def update_profile_banner: (uploadable media, ?width: Integer?, ?height: Integer?, ?offset_left: Integer?, ?offset_top: Integer?) -> void
     end
 
@@ -59,8 +59,8 @@ module X
     module Account
       extend Account
 
-      def update_profile_image: (uploadable media, client: ::X::Client) -> Hash[String, untyped]?
-      def update_profile_image_binary: (String content, client: ::X::Client) -> Hash[String, untyped]?
+      def update_profile_image: (uploadable media, client: ::X::Client) -> void
+      def update_profile_image_binary: (String content, client: ::X::Client) -> void
       def update_profile_banner: (uploadable media, client: ::X::Client, ?width: Integer?, ?height: Integer?, ?offset_left: Integer?, ?offset_top: Integer?) -> void
       def update_profile_banner_binary: (String content, client: ::X::Client, ?width: Integer?, ?height: Integer?, ?offset_left: Integer?, ?offset_top: Integer?) -> void
     end

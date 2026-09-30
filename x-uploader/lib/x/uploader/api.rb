@@ -127,8 +127,7 @@ module X
       #
       # @api public
       # @param media [String, Pathname, IO, StringIO] the path to the image, or an IO that reads it
-      # @return [Hash, nil] the user whose profile image was updated, as the Hash of the API v1.1 that
-      #   {Account.update_profile_image} returns, or nil for a response with no body
+      # @return [void]
       # @raise [Errno::ENOENT] if the file does not exist
       # @raise [ArgumentError] if the media is neither a path nor an IO
       # @raise [InvalidMedia] if the media cannot be read, is empty, or is larger than the 700 kilobytes the API takes

@@ -52,7 +52,7 @@ module X
       stub_request(:post, "https://api.x.com/1.1/account/update_profile_image.json").to_return(user)
       stub_request(:post, "https://api.x.com/1.1/account/update_profile_banner.json").to_return(user)
 
-      assert_equal({"id" => 1, "entities" => [1]}, Uploader::Account.update_profile_image("test/sample_files/sample.png", client: @client))
+      assert_nil Uploader::Account.update_profile_image("test/sample_files/sample.png", client: @client)
       assert_nil Uploader::Account.update_profile_banner("test/sample_files/sample.png", client: @client)
     end
   end

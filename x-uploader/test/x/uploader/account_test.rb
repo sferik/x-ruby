@@ -27,7 +27,7 @@ module X
       response = update_profile_image("test/sample_files/sample.png")
 
       assert_multipart_image_request
-      assert_equal "12345", response["id"]
+      assert_nil response
     end
 
     def test_update_profile_image_binary_sends_content_directly
@@ -35,7 +35,7 @@ module X
       response = Uploader::Account.update_profile_image_binary(SAMPLE_BINARY_CONTENT, client: @client)
 
       assert_requested(:post, V1_PROFILE_IMAGE_URL)
-      assert_equal "12345", response["id"]
+      assert_nil response
     end
 
     def test_update_profile_image_raises_for_missing_file

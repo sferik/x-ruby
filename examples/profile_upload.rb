@@ -16,8 +16,8 @@ client = X::Client.new(**x_credentials)
 # The image must be no larger than 700 KB, or X::InvalidMedia is raised before any request
 profile_image_path = "path/to/your/avatar.png"
 
-user = client.update_profile_image(profile_image_path)
-puts "Profile image updated for @#{user["screen_name"]}"
+client.update_profile_image(profile_image_path)
+puts "Profile image updated for @#{client.current_user!.username}"
 
 # Update profile banner
 # Recommended dimensions: 1500x500 pixels, of no more than 5 MB

@@ -327,11 +327,8 @@ x_client.add_subtitles(video, subtitles, "EN", display_name: "English")
 x_client.create_post("Look at this cat move", media_ids: [video])
 
 # Update the profile image and banner of the authenticated user. These two call the API v1.1, which the API v2 has
-# no endpoint for, so they answer in its shape rather than with an X::User: update_profile_image returns the updated
-# user as a Hash, keyed as v1.1 keys it, and update_profile_banner returns nothing to read, since its endpoint sends
-# no body.
-user = x_client.update_profile_image("avatar.png")
-user["screen_name"]                    # => "sferik", the v1.1 name for a username
+# no endpoint for, and return nothing to read: look the user up to read the image and banner it now has.
+x_client.update_profile_image("avatar.png")
 x_client.update_profile_banner("banner.png")
 
 # Media is a path, or an IO open on it. Media given as a String or a Pathname is read from the file it names, and
@@ -351,7 +348,7 @@ x_client.upload_media(StringIO.new(srt), media_category: "subtitles")
 
 Each of these methods calls an uploader with the client: `upload_media`, `upload_media_binary`, and `await_media_processing` call `X::Uploader::Media`, `add_alt_text` and `add_subtitles` call `X::Uploader::Metadata`, and `update_profile_image` and `update_profile_banner` call `X::Uploader::Account`. The uploaders do more, such as `X::Uploader::Media.chunked_upload("cat.mp4", client: x_client, chunk_size_mb: 4)`, and take any client as `client:`.
 
-What each returns: `upload_media`, `upload_media_binary`, `await_media_processing`, and `await_media_processing!` return an `X::Uploader::UploadedMedia`, which reads as the Hash the API answered with as well as by its own methods; `add_alt_text` and `add_subtitles` return the `data` of the response as a Hash; `update_profile_image` returns the updated user as a Hash of the API v1.1, whose keys are the v1.1 ones, such as `screen_name` rather than `username`; and `update_profile_banner` returns nothing to read, since its endpoint answers with no body. The two profile methods are the only ones in these gems that call the v1.1 API, which is why they alone answer outside the object layer.
+What each returns: `upload_media`, `await_media_processing`, and `await_media_processing!` return an `X::UploadedMedia`, which reads as the Hash the API answered with as well as by its own methods; `add_alt_text` and `add_subtitles` return the media they describe as an `X::UploadedMedia`, the video for `add_subtitles`, so either can be passed on to `create_post`; and `update_profile_image` and `update_profile_banner` return nothing to read, `nil`: they are the only methods in these gems that call the v1.1 API, whose user no object of the object layer reads, so `current_user!` reads the image and banner the user now has.
 
 ### Streaming
 

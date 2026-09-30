@@ -27,7 +27,7 @@ module X
         io = StringIO.new(image)
         io.read
 
-        assert_equal({"id_str" => "1"}, Uploader::Account.update_profile_image(io, client: @client))
+        assert_nil(Uploader::Account.update_profile_image(io, client: @client))
         assert_requested(:post, PROFILE_IMAGE_URL) { |request| request.body.b.include?(image) }
       end
     end
@@ -43,7 +43,7 @@ module X
       File.open("test/sample_files/sample.png", "rb") do |file|
         stdin = IO.new(file.fileno, "rb", autoclose: false, path: "<STDIN>")
 
-        assert_equal({"id_str" => "1"}, Uploader::Account.update_profile_image(stdin, client: @client))
+        assert_nil(Uploader::Account.update_profile_image(stdin, client: @client))
       end
       assert_requested(:post, PROFILE_IMAGE_URL) { |request| request.body.b.include?(File.binread("test/sample_files/sample.png")) }
     end
@@ -90,7 +90,7 @@ module X
         file.write(File.binread("test/sample_files/sample.png"))
         file.flush
 
-        assert_equal({"id_str" => "1"}, Uploader::Account.update_profile_image(file, client: @client))
+        assert_nil(Uploader::Account.update_profile_image(file, client: @client))
         assert_nil Uploader::Account.update_profile_banner(file, client: @client)
       end
     end
@@ -98,7 +98,7 @@ module X
     def test_the_client_methods_take_an_io
       @client.extend(Uploader::API)
 
-      assert_equal({"id_str" => "1"}, @client.update_profile_image(StringIO.new(File.binread("test/sample_files/sample.png"))))
+      assert_nil(@client.update_profile_image(StringIO.new(File.binread("test/sample_files/sample.png"))))
       assert_nil @client.update_profile_banner(StringIO.new(File.binread("test/sample_files/sample.jpg")), height: 500)
     end
   end
