@@ -39,7 +39,7 @@ module X
         assert_raises(MediaProcessingTimeout) { Uploader::MediaUpload.upload(ANIMATED_GIF, client: @client, processing_timeout: 4) }
       end
 
-      assert_equal "Media processing did not finish within 4 seconds", error.message
+      assert_equal "Media processing did not finish within the 4 seconds allowed: its next check would come after them", error.message
     end
 
     def test_upload_keeps_the_media_when_a_check_of_its_processing_fails

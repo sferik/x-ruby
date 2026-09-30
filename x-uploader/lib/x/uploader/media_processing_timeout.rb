@@ -7,6 +7,11 @@ module X
   # Error raised when uploaded media is still processing after the time await_processing may wait
   # @api public
   class MediaProcessingTimeout < Uploader::Error
+    # The message for the seconds allowed: the error is raised once the check X asks for next would come after them,
+    # which is at once when X asks for the first check only after they have passed
+    WITHIN_TIMEOUT = "Media processing did not finish within the %s seconds allowed: its next check would come after them"
+    private_constant :WITHIN_TIMEOUT
+
     # The uploaded media, as the last processing status X reported describes it
     #
     # Its processing_info holds the state and progress of the processing.
@@ -44,7 +49,7 @@ module X
     def initialize(message = nil, media: nil, timeout: nil)
       @media = media.is_a?(Hash) ? UploadedMedia.new(media) : media
       @timeout = timeout
-      super(message || (timeout ? "Media processing did not finish within #{timeout} seconds" : "Media processing did not finish"))
+      super(message || (timeout ? format(WITHIN_TIMEOUT, timeout) : "Media processing did not finish"))
     end
   end
 end

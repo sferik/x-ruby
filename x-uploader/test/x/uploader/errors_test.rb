@@ -55,7 +55,7 @@ module X
       status = {"processing_info" => {"state" => "in_progress"}}
       error = MediaProcessingTimeout.new(media: status, timeout: 600)
 
-      assert_equal [UploadedMedia.new(status), 600, "Media processing did not finish within 600 seconds"], [error.media, error.timeout, error.message]
+      assert_equal [UploadedMedia.new(status), 600, "Media processing did not finish within the 600 seconds allowed: its next check would come after them"], [error.media, error.timeout, error.message]
       assert_kind_of Error, error
     end
 

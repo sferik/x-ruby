@@ -259,4 +259,8 @@ module X
   class MediaProcessingFailed < Uploader::Error
     DEFAULT_MESSAGE: String
   end
+
+  class MediaProcessingTimeout < Uploader::Error
+    WITHIN_TIMEOUT: String
+  end
 end

@@ -49,7 +49,7 @@ module X
       stub_statuses(pending)
       error = assert_raises(MediaProcessingTimeout) { await(processing_timeout: 12) }
 
-      assert_equal [[5, 5], UploadedMedia.new({"id" => TEST_MEDIA_ID, **pending}), "Media processing did not finish within 12 seconds"], [@sleeps, error.media, error.message]
+      assert_equal [[5, 5], UploadedMedia.new({"id" => TEST_MEDIA_ID, **pending}), "Media processing did not finish within the 12 seconds allowed: its next check would come after them"], [@sleeps, error.media, error.message]
       assert_requested(:get, STATUS_URL, times: 3)
     end
 

@@ -36,7 +36,7 @@ module X
         assert_raises(MediaProcessingTimeout) { Uploader::MediaUpload.upload("test/sample_files/sample.mp4", client: @client, processing_timeout: 30) }
       end
 
-      assert_equal [60, 30, "Media processing did not finish within 30 seconds"], [error.media.check_after_secs, error.timeout, error.message]
+      assert_equal [60, 30, "Media processing did not finish within the 30 seconds allowed: its next check would come after them"], [error.media.check_after_secs, error.timeout, error.message]
       assert_not_requested(:get, status_url)
     end
 
