@@ -20,7 +20,10 @@ module X
     PROCESSING_STATES = %w[pending in_progress].freeze
     # The message of the error raised for media that holds no identifier
     NO_MEDIA_ID = "The media holds no identifier"
-    # The number of the format of the state Marshal writes, which a release that changes the format raises
+    # The number of the format of the state Marshal writes, which every release of 1.x writes
+    #
+    # A later release of 1.x adds to the state only what an earlier one ignores, parts after those it reads and keys of a
+    # Hash it does not read, so that the state one release of 1.x writes is read by every other, earlier or later.
     MARSHAL_FORMAT = 1
     private_constant :PROCESSING_STATES, :NO_MEDIA_ID, :MARSHAL_FORMAT
 

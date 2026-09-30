@@ -30,6 +30,12 @@ module X
       assert_equal [true] * 4, [loaded, loaded.attrs, loaded.attrs["id"], loaded.processing_info].map(&:frozen?)
     end
 
+    def test_media_a_later_release_added_to_reads_back_as_it_was
+      loaded = UploadedMedia.allocate.tap { |media| media.marshal_load([1, ATTRS, "added"]) }
+
+      assert_equal @media, loaded
+    end
+
     def test_media_of_another_format_is_refused
       error = assert_raises(UnsupportedMarshalFormat) { UploadedMedia.allocate.marshal_load(["1", ATTRS]) }
 

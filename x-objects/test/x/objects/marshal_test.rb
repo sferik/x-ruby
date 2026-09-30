@@ -108,6 +108,12 @@ module X
       assert_predicate Marshal.load(Marshal.dump(post)).polls.first, :hydrated?
     end
 
+    def test_a_resource_a_later_release_added_to_reads_back_as_it_was
+      loaded = Post.allocate.tap { |post| post.marshal_load([*@post.marshal_dump, "added"]) }
+
+      assert_equal [@post, "sferik"], [loaded, loaded.author.username]
+    end
+
     def test_a_resource_of_another_format_is_refused
       error = assert_raises(UnsupportedMarshalFormat) { Post.allocate.marshal_load([2, {"id" => "1"}, false, {}, [], nil]) }
 

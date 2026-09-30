@@ -39,6 +39,12 @@ module X
       end
     end
 
+    def test_a_value_a_later_release_added_to_reads_back_as_it_was
+      @values.each do |value|
+        assert_equal value, value.class.allocate.tap { |loaded| loaded.marshal_load([1, value.attrs, "added"]) }
+      end
+    end
+
     def test_a_value_of_another_format_is_refused
       @values.each do |value|
         error = assert_raises(UnsupportedMarshalFormat) { value.class.allocate.marshal_load(["1", value.attrs]) }

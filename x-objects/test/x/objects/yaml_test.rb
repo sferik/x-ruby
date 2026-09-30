@@ -51,6 +51,12 @@ module X
       assert_equal "Hello", YAML.unsafe_load(yaml).fetch("posts").first.text
     end
 
+    def test_a_resource_a_later_release_added_to_reads_back_as_it_was
+      loaded = YAML.unsafe_load("#{YAML.dump(@post)}added: true\n")
+
+      assert_equal [@post, "sferik"], [loaded, loaded.author.username]
+    end
+
     def test_a_resource_of_another_format_raises
       yaml = YAML.dump(@post).sub("format: 1", "format: 2")
 
@@ -79,6 +85,12 @@ module X
       page = Page.new([@post], {"result_count" => 1})
 
       assert_equal %w[format resources meta problems includes], YAML.unsafe_load(YAML.dump(page).sub("!ruby/object:X::Page", "")).keys
+    end
+
+    def test_a_page_a_later_release_added_to_reads_back_as_it_was
+      page = Page.new([@post], {"result_count" => 1})
+
+      assert_equal page, YAML.unsafe_load("#{YAML.dump(page)}added: true\n")
     end
 
     def test_a_page_of_another_format_raises

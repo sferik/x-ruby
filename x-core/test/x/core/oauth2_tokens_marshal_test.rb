@@ -32,6 +32,12 @@ module X
       refute_match(/ACCESS|REFRESH/, loaded.inspect)
     end
 
+    def test_tokens_a_later_release_added_to_read_back_as_they_were
+      loaded = OAuth2Tokens.allocate.tap { |tokens| tokens.marshal_load([1, {**@tokens.to_h, scope: "tweet.read"}, "added"]) }
+
+      assert_equal @tokens, loaded
+    end
+
     def test_tokens_of_another_format_are_refused
       error = assert_raises(UnsupportedMarshalFormat) { OAuth2Tokens.allocate.marshal_load(["1", {access_token: "A", refresh_token: "R"}]) }
 

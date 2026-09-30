@@ -13,7 +13,10 @@ module X
     #
     # @api public
     class ::X::OAuth2Tokens
-      # The number of the format of the state Marshal writes, which a release that changes the format raises
+      # The number of the format of the state Marshal writes, which every release of 1.x writes
+      #
+      # A later release of 1.x adds to the state only what an earlier one ignores, parts after those it reads and keys of a
+      # Hash it does not read, so that the state one release of 1.x writes is read by every other, earlier or later.
       MARSHAL_FORMAT = 1
       private_constant :MARSHAL_FORMAT
 
@@ -131,7 +134,7 @@ module X
         format, tokens = state #: [Integer, {access_token: String, refresh_token: String?, expires_at: Time?}]
         raise UnsupportedMarshalFormat, "#{self.class} reads format #{MARSHAL_FORMAT} of Marshal, not #{format.inspect}" unless MARSHAL_FORMAT.eql?(format)
 
-        initialize(**tokens)
+        initialize(**tokens.slice(:access_token, :refresh_token, :expires_at)) # steep:ignore InsufficientKeywordArguments
       end
     end
   end

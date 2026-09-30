@@ -89,6 +89,12 @@ module X
       assert_equal [true, true, true, true], [loaded, loaded.items, loaded.meta, loaded.problems].map(&:frozen?)
     end
 
+    def test_a_page_a_later_release_added_to_reads_back_as_it_was
+      loaded = Page.allocate.tap { |page| page.marshal_load([*@page.marshal_dump, "added"]) }
+
+      assert_equal @page, loaded
+    end
+
     def test_a_page_of_another_format_is_refused
       error = assert_raises(UnsupportedMarshalFormat) { Page.allocate.marshal_load(["2", [], {}, []]) }
 

@@ -30,6 +30,12 @@ module X
       assert_predicate Marshal.load(Marshal.dump(@rules.first)).tag, :frozen?
     end
 
+    def test_a_rule_a_later_release_added_to_reads_back_as_it_was
+      loaded = StreamRule.allocate.tap { |rule| rule.marshal_load([1, {id: 1, value: "ruby", tag: "ruby", added: true}, "added"]) }
+
+      assert_equal StreamRule.new(id: 1, value: "ruby", tag: "ruby"), loaded
+    end
+
     def test_a_rule_of_another_format_is_refused
       error = assert_raises(UnsupportedMarshalFormat) { StreamRule.allocate.marshal_load(["1", {value: "ruby"}]) }
 

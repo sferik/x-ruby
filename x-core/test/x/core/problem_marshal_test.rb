@@ -30,6 +30,12 @@ module X
       assert_equal [true] * 4, [loaded, loaded.attrs, loaded.attrs["title"], loaded.attrs["errors"].first].map(&:frozen?)
     end
 
+    def test_a_problem_a_later_release_added_to_reads_back_as_it_was
+      loaded = Problem.allocate.tap { |problem| problem.marshal_load([1, ATTRS, "added"]) }
+
+      assert_equal ATTRS, loaded.attrs
+    end
+
     def test_a_problem_of_another_format_is_refused
       error = assert_raises(UnsupportedMarshalFormat) { Problem.allocate.marshal_load(["1", ATTRS]) }
 

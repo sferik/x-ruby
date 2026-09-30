@@ -11,7 +11,10 @@ module X
     class ::X::Page
       include Enumerable
 
-      # The number of the format of the state Marshal writes, which a release that changes the format raises
+      # The number of the format of the state Marshal writes, which every release of 1.x writes
+      #
+      # A later release of 1.x adds to the state only what an earlier one ignores, parts after those it reads and keys of a
+      # Hash it does not read, so that the state one release of 1.x writes is read by every other, earlier or later.
       MARSHAL_FORMAT = 1
       # The name YAML writes each part of the state under, in the order Marshal writes them
       YAML_KEYS = %w[format resources meta problems includes].freeze
