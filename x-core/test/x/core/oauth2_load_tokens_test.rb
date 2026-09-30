@@ -64,7 +64,7 @@ module X
       refresh = stub_refresh("STORED_REFRESH")
       authenticator = OAuth2Authenticator.new(**test_oauth2_credentials, expires_at: Time.now - 1, load_tokens: -> { stored(expires_at: Time.now - 1) })
 
-      assert_equal({"Authorization" => "Bearer NEW_ACCESS"}, authenticator.header(nil))
+      assert_equal({"Authorization" => "Bearer NEW_ACCESS"}, authenticator.headers(nil))
       assert_requested refresh, times: 1
     end
 

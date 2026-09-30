@@ -23,13 +23,13 @@ module X
     end
 
     def test_header_passes_a_refresh_to_on_token_refresh
-      authenticator(expires_at: Time.now - 1).header(nil)
+      authenticator(expires_at: Time.now - 1).headers(nil)
 
       assert_equal ["NEW_ACCESS_TOKEN"], @refreshed
     end
 
     def test_header_without_a_refresh_leaves_on_token_refresh_alone
-      authenticator(expires_at: Time.now + 3600).header(nil)
+      authenticator(expires_at: Time.now + 3600).headers(nil)
 
       assert_empty @refreshed
     end
@@ -49,9 +49,9 @@ module X
         .to_return(status: 200, body: {access_token: "NEW_ACCESS_TOKEN", expires_in: 7200}.to_json)
       headers = []
       authenticator = nil #: OAuth2Authenticator?
-      authenticator = oauth2_authenticator_reporting_to(->(_) { headers << authenticator&.header(nil) }, expires_at: Time.now - 1)
+      authenticator = oauth2_authenticator_reporting_to(->(_) { headers << authenticator&.headers(nil) }, expires_at: Time.now - 1)
 
-      assert_equal({"Authorization" => "Bearer NEW_ACCESS_TOKEN"}, authenticator.header(nil))
+      assert_equal({"Authorization" => "Bearer NEW_ACCESS_TOKEN"}, authenticator.headers(nil))
       assert_equal [{"Authorization" => "Bearer NEW_ACCESS_TOKEN"}], headers
     end
 

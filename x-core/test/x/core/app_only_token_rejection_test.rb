@@ -73,7 +73,7 @@ module X
       http_response.uri = URI(POST_URL)
       attempts = []
       authenticator.__send__(:retrying_rejected_token, URI("https://api.x.com/2/")) do
-        attempts << authenticator.header(nil)
+        attempts << authenticator.headers(nil)
         raise Unauthorized.new(http_response:) if attempts.one?
       end
 

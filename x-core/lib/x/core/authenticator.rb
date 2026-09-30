@@ -6,7 +6,7 @@ require_relative "credential_holder"
 module X
   # Base class for authentication
   #
-  # Subclass it to authenticate with a scheme of your own, overriding {#header}, as the authenticators of x-core do.
+  # Subclass it to authenticate with a scheme of your own, overriding {#headers}, as the authenticators of x-core do.
   #
   # @api public
   class Authenticator
@@ -25,25 +25,25 @@ module X
     # it, so its headers never leave the origin they were built for. It is called on the thread that sends the
     # request, so one a client shares across threads must be thread-safe.
     #
-    # The request is guaranteed to answer four methods alone, which are all the authenticators of x-core read of it:
-    # method, the HTTP method as an uppercase String, such as "POST"; uri, the URI::Generic it is sent to, query
-    # included; body, the String it sends, or nil for none; and [], the value of a header by its name, in any case,
-    # or nil for one it does not send. It is the Net::HTTPRequest the client sends today, but 1.x may pass another
-    # object that answers these methods, so an authenticator that reads anything else of it may break.
+    # The request answers four methods alone, which are all the authenticators of x-core read of it: http_method, the
+    # HTTP method as a Symbol, such as :post, as a response and an error name it; uri, the URI::Generic it is sent
+    # to, query included; body, the String it sends, or nil for none; and [], the value of a header by its name, in
+    # any case, or nil for one it does not send. It answers them alone whatever request the client sends, so an
+    # authenticator of your own reads nothing a later version of 1.x could take away.
     #
     # A client refreshes the token of none but its own OAuth 2.0 authenticator, so an authenticator of your own that
     # holds a token that expires refreshes it here. A client given one takes it to authenticate as the app, as it
     # does an X::Authenticator itself, so app_only returns the client, and a stream is opened with it.
     #
     # @api public
-    # @param _request [#method, #uri, #body, #[]] the request, which answers method, uri, body, and [] alone
+    # @param _request [#http_method, #uri, #body, #[]] the request, which answers method, uri, body, and [] alone
     # @return [Hash{String => String}] the headers that authenticate the request, empty for none
     # @example Authenticate every request with a token an application keeps
     #   class VaultAuthenticator < X::Authenticator
-    #     def header(_request) = {AUTHENTICATION_HEADER => "Bearer #{Vault.read("x/bearer_token")}"}
+    #     def headers(_request) = {AUTHENTICATION_HEADER => "Bearer #{Vault.read("x/bearer_token")}"}
     #   end
     #   client = X::Client.new(authenticator: VaultAuthenticator.new)
-    def header(_request)
+    def headers(_request)
       {}
     end
 

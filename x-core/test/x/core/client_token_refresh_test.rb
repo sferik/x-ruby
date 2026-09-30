@@ -80,7 +80,7 @@ module X
       authenticator = nil #: OAuth2Authenticator?
       client = Client.new(**test_oauth2_credentials, on_response: ->(_) { authenticator&.instance_variable_set(:@access_token, "REPLACED") })
       authenticator = client.authenticator
-      authenticator.stub(:header, ->(_) { {"Authorization" => "Bearer #{authenticator.__send__(:access_token)}"} }) do
+      authenticator.stub(:headers, ->(_) { {"Authorization" => "Bearer #{authenticator.__send__(:access_token)}"} }) do
         client.get("users/me")
       end
 

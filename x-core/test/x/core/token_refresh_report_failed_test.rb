@@ -33,7 +33,7 @@ module X
     end
 
     def test_a_refresh_before_a_header_raises_with_the_tokens
-      error = assert_raises(TokenReportFailed) { oauth2_authenticator_reporting_to(@failing, expires_at: Time.now - 1).header(nil) }
+      error = assert_raises(TokenReportFailed) { oauth2_authenticator_reporting_to(@failing, expires_at: Time.now - 1).headers(nil) }
 
       assert_equal ["NEW_REFRESH_TOKEN", nil], [error.tokens.refresh_token, error.client]
     end

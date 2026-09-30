@@ -20,14 +20,14 @@ module X
       @bearer_token = bearer_token
     end
 
-    # Generate the authentication header for a request
+    # Generate the authentication headers for a request
     #
     # @api public
     # @param _request [#method, #uri, #body, #[], nil] the request, which a bearer token does not sign
     # @return [Hash{String => String}] the authentication header with bearer token
     # @example Generate a bearer authentication header
-    #   authenticator.header(request)
-    def header(_request)
+    #   authenticator.headers(request)
+    def headers(_request)
       {AUTHENTICATION_HEADER => "Bearer #{bearer_token}"}
     end
 

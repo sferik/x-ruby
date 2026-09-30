@@ -106,8 +106,8 @@ module X
     # @raise [TooManyRequests, ServerError] if the token endpoint limits the rate of the request or fails to answer
     # @raise [TokenReportFailed] if on_token_refresh raises for the tokens of a refresh, with the tokens
     # @example Get the header
-    #   authenticator.header(request)
-    def header(_request)
+    #   authenticator.headers(request)
+    def headers(_request)
       refresh_expired_token(connection)
       {AUTHENTICATION_HEADER => "Bearer #{access_token}"}
     end

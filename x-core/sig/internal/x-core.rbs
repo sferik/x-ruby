@@ -85,6 +85,14 @@ module X
       def message_naming_request: (String message) -> String
     end
 
+    class AuthenticatorRequest
+      include _AuthenticatorRequest
+
+      @request: Net::HTTPRequest
+
+      def initialize: (Net::HTTPRequest request) -> void
+    end
+
     class RequestBuilder
       HTTP_METHODS: Hash[Symbol, (singleton(Net::HTTP::Get) | singleton(Net::HTTP::Post) | singleton(Net::HTTP::Put) | singleton(Net::HTTP::Delete))]
       DEFAULT_HEADERS: Hash[String, String]

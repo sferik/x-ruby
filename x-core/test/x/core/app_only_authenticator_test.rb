@@ -36,7 +36,7 @@ module X
     def test_header_fetches_a_bearer_token
       stub_token_request
 
-      assert_equal({"Authorization" => "Bearer #{TEST_BEARER_TOKEN}"}, @authenticator.header(nil))
+      assert_equal({"Authorization" => "Bearer #{TEST_BEARER_TOKEN}"}, @authenticator.headers(nil))
     end
 
     def test_token_request_uses_basic_authentication_and_the_client_credentials_grant
@@ -62,7 +62,7 @@ module X
 
     def test_bearer_token_is_fetched_once
       stub_token_request
-      3.times { @authenticator.header(nil) }
+      3.times { @authenticator.headers(nil) }
 
       assert_equal TEST_BEARER_TOKEN, @authenticator.send(:bearer_token)
       assert_requested :post, AppOnlyAuthenticator::TOKEN_URL, times: 1
@@ -89,7 +89,7 @@ module X
     def test_a_given_bearer_token_is_not_fetched
       authenticator = AppOnlyAuthenticator.new(api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET, bearer_token: "given")
 
-      assert_equal({"Authorization" => "Bearer given"}, authenticator.header(nil))
+      assert_equal({"Authorization" => "Bearer given"}, authenticator.headers(nil))
       assert_not_requested :post, AppOnlyAuthenticator::TOKEN_URL
     end
 

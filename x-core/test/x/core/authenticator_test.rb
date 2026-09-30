@@ -11,7 +11,7 @@ module X
     end
 
     def test_header
-      assert_equal({}, @authenticator.header(nil))
+      assert_equal({}, @authenticator.headers(nil))
     end
 
     def test_credentials_that_name_no_user_have_no_user_id

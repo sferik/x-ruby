@@ -11,8 +11,8 @@ module X
     end
 
     def test_header
-      assert_kind_of Hash, @authenticator.header(nil)
-      assert_equal "Bearer #{TEST_BEARER_TOKEN}", @authenticator.header(nil)["Authorization"]
+      assert_kind_of Hash, @authenticator.headers(nil)
+      assert_equal "Bearer #{TEST_BEARER_TOKEN}", @authenticator.headers(nil)["Authorization"]
     end
 
     def test_inspect_hides_the_bearer_token

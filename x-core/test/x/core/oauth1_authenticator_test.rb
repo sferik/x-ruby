@@ -56,7 +56,7 @@ module X
     end
 
     def test_header_contains_authorization_key
-      header = @authenticator.header(get_request)
+      header = @authenticator.headers(Core::AuthenticatorRequest.new(get_request))
 
       assert header.key?("Authorization"), "Header does not contain \"Authorization\" key"
     end
@@ -108,7 +108,7 @@ module X
     private
 
     def authorization_for(request)
-      @authenticator.header(request)["Authorization"]
+      @authenticator.headers(Core::AuthenticatorRequest.new(request))["Authorization"]
     end
   end
 
@@ -138,29 +138,29 @@ module X
 
     def test_signs_the_form_encoded_body
       with_fixed_oauth_params(nonce: NONCE, time: Time.at(TIMESTAMP)) do
-        without_body = @authenticator.header(post_request(body: nil))["Authorization"]
+        without_body = @authenticator.headers(Core::AuthenticatorRequest.new(post_request(body: nil)))["Authorization"]
 
         refute_equal without_body, authorization
       end
     end
 
-    def test_signs_a_request_that_answers_method_uri_body_and_a_header_alone
+    def test_signs_a_request_that_answers_http_method_uri_body_and_a_header_alone
       request = Class.new do
-        def method = "POST"
+        def http_method = :post
         def uri = URI(URL)
         def body = BODY
         def [](name) = ("application/x-www-form-urlencoded" if name.casecmp?("Content-Type"))
       end
 
       with_fixed_oauth_params(nonce: NONCE, time: Time.at(TIMESTAMP)) do
-        assert_includes @authenticator.header(request.new)["Authorization"], "oauth_signature=\"#{SIGNATURE}\""
+        assert_includes @authenticator.headers(request.new)["Authorization"], "oauth_signature=\"#{SIGNATURE}\""
       end
     end
 
     private
 
     def authorization
-      @authenticator.header(post_request)["Authorization"]
+      @authenticator.headers(Core::AuthenticatorRequest.new(post_request))["Authorization"]
     end
 
     def post_request(body: BODY, content_type: "application/x-www-form-urlencoded")
@@ -237,7 +237,7 @@ module X
       request = Net::HTTP::Post.new(URI(URL))
       request["Content-Type"] = content_type
       request.body = body
-      @authenticator.header(request)["Authorization"][/oauth_signature="([^"]+)"/, 1]
+      @authenticator.headers(Core::AuthenticatorRequest.new(request))["Authorization"][/oauth_signature="([^"]+)"/, 1]
     end
   end
 end

@@ -51,7 +51,7 @@ module X
       @mutex = Mutex.new
     end
 
-    # Generate the authentication header, fetching the bearer token first if needed
+    # Generate the authentication headers, fetching the bearer token first if needed
     #
     # @api public
     # @param _request [#method, #uri, #body, #[], nil] the request, which app-only authentication does not sign
@@ -59,8 +59,8 @@ module X
     # @raise [AuthorizationError] if X refuses to issue the bearer token
     # @raise [TooManyRequests, ServerError] if the token endpoint limits the rate of the request or fails to answer
     # @example Generate the header
-    #   authenticator.header(request) # => {"Authorization" => "Bearer ..."}
-    def header(_request)
+    #   authenticator.headers(request) # => {"Authorization" => "Bearer ..."}
+    def headers(_request)
       {AUTHENTICATION_HEADER => "Bearer #{bearer_token}"}
     end
 

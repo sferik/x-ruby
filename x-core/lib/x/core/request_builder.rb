@@ -3,6 +3,7 @@
 require "net/http"
 require "uri"
 require_relative "authenticator"
+require_relative "authenticator_request"
 require_relative "version"
 
 module X
@@ -99,7 +100,7 @@ module X
       # @param authenticator [Authenticator] the authenticator
       # @return [void]
       def add_authentication(request:, authenticator:)
-        authenticator.header(request).each do |key, value|
+        authenticator.headers(AuthenticatorRequest.new(request)).each do |key, value|
           request[key] = value
         end
       end

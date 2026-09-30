@@ -58,19 +58,19 @@ module X
       Integer(prefix, 10) if prefix
     end
 
-    # Generate the OAuth authentication header for a request
+    # Generate the OAuth authentication headers for a request
     #
     # The signature covers the HTTP method, the URL, its query parameters, and a
     # form-encoded body. Bodies of any other media type, such as the JSON and multipart
     # bodies the X API takes, are not signed.
     #
     # @api public
-    # @param request [#method, #uri, #body, #[]] the request, whose method, uri, body, and Content-Type the signature reads
+    # @param request [#http_method, #uri, #body, #[]] the request, whose method, uri, body, and Content-Type the signature reads
     # @return [Hash{String => String}] the authentication header with OAuth signature
     # @example Generate an OAuth authentication header
-    #   authenticator.header(request)
-    def header(request)
-      oauth_header = SimpleOAuth::Header.new(request.method, request.uri, form_params(request), credentials)
+    #   authenticator.headers(request)
+    def headers(request)
+      oauth_header = SimpleOAuth::Header.new(request.http_method, request.uri, form_params(request), credentials)
       {AUTHENTICATION_HEADER => oauth_header.to_s}
     end
 
@@ -115,7 +115,7 @@ module X
     # which the key-value pairs preserve.
     #
     # @api private
-    # @param request [#method, #uri, #body, #[]] the request
+    # @param request [#http_method, #uri, #body, #[]] the request
     # @return [Array<Array(String, String)>] the body parameters, empty unless the body is form-encoded
     def form_params(request)
       URI.decode_www_form(form_body(request))
@@ -124,7 +124,7 @@ module X
     # The body whose parameters take part in the signature
     #
     # @api private
-    # @param request [#method, #uri, #body, #[]] the request
+    # @param request [#http_method, #uri, #body, #[]] the request
     # @return [String] the body, or an empty String when it is not form-encoded
     def form_body(request)
       form_encoded?(request) ? request.body.to_s : ""
@@ -132,7 +132,7 @@ module X
 
     # Check whether a request carries a form-encoded body
     # @api private
-    # @param request [#method, #uri, #body, #[]] the request
+    # @param request [#http_method, #uri, #body, #[]] the request
     # @return [Boolean] true if the body is form-encoded
     def form_encoded?(request)
       request["Content-Type"].to_s.split(";").first.to_s.strip.downcase.eql?(FORM_CONTENT_TYPE)

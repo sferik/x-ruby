@@ -20,7 +20,7 @@ module X
       copies = [client.app_only, client.app_only]
 
       assert_same(*copies)
-      assert_equal({"Authorization" => "Bearer APP_BEARER_TOKEN"}, copies.first.authenticator.header(nil))
+      assert_equal({"Authorization" => "Bearer APP_BEARER_TOKEN"}, copies.first.authenticator.headers(nil))
       assert_not_requested @token_request
     end
 
@@ -28,7 +28,7 @@ module X
       client = Client.new(**test_oauth2_credentials, api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET)
       copy = client.app_only
 
-      assert_equal({"Authorization" => "Bearer #{TEST_BEARER_TOKEN}"}, copy.authenticator.header(nil))
+      assert_equal({"Authorization" => "Bearer #{TEST_BEARER_TOKEN}"}, copy.authenticator.headers(nil))
       assert_instance_of OAuth2Authenticator, client.authenticator
       assert_requested @token_request, times: 1
     end

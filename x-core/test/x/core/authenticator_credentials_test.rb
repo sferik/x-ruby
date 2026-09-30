@@ -47,7 +47,7 @@ module X
     end
 
     def test_an_app_only_authenticator_takes_a_bearer_token_or_none
-      assert_equal ["Bearer #{TEST_BEARER_TOKEN}", true], [AppOnlyAuthenticator.new(**APP_CREDENTIALS, bearer_token: TEST_BEARER_TOKEN).header(nil)["Authorization"],
+      assert_equal ["Bearer #{TEST_BEARER_TOKEN}", true], [AppOnlyAuthenticator.new(**APP_CREDENTIALS, bearer_token: TEST_BEARER_TOKEN).headers(nil)["Authorization"],
         AppOnlyAuthenticator.new(**APP_CREDENTIALS).is_a?(AppOnlyAuthenticator)]
     end
 

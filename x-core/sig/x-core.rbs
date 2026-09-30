@@ -12,9 +12,9 @@ module X
   end
 
   # What an authenticator is guaranteed to read of the request it authenticates, which is all the authenticators of
-  # x-core read of it: its method, as an uppercase String, the URI it is sent to, its body, and a header by its name
+  # x-core read of it: its method, as a Symbol, the URI it is sent to, its body, and a header by its name
   interface _AuthenticatorRequest
-    def method: () -> String
+    def http_method: () -> Symbol
     def uri: () -> URI::Generic
     def body: () -> String?
     def []: (String name) -> String?
@@ -25,14 +25,14 @@ module X
 
     def user_id: () -> Integer?
     def inspect: () -> String
-    def header: (_AuthenticatorRequest request) -> Hash[String, String]
+    def headers: (_AuthenticatorRequest request) -> Hash[String, String]
     def marshal_dump: () -> bot
     def encode_with: (untyped coder) -> bot
   end
 
   class BearerTokenAuthenticator < Authenticator
     def initialize: (bearer_token: String) -> void
-    def header: (_AuthenticatorRequest? request) -> Hash[String, String]
+    def headers: (_AuthenticatorRequest? request) -> Hash[String, String]
   end
 
   class OAuth2Authorization
@@ -75,14 +75,14 @@ module X
 
     attr_reader api_key: String
     def initialize: (api_key: String, api_key_secret: String, ?bearer_token: String?) -> void
-    def header: (_AuthenticatorRequest? request) -> Hash[String, String]
+    def headers: (_AuthenticatorRequest? request) -> Hash[String, String]
   end
 
   class OAuth1Authenticator < Authenticator
     attr_reader api_key: String
     def initialize: (api_key: String, api_key_secret: String, access_token: String, access_token_secret: String) -> void
     def user_id: () -> Integer?
-    def header: (_AuthenticatorRequest request) -> Hash[String, String]
+    def headers: (_AuthenticatorRequest request) -> Hash[String, String]
   end
 
   class Error < StandardError
@@ -315,7 +315,7 @@ module X
     def inspect: () -> String
     def token_expired?: -> bool
     def refresh!: -> OAuth2Tokens
-    def header: (_AuthenticatorRequest? request) -> Hash[String, String]
+    def headers: (_AuthenticatorRequest? request) -> Hash[String, String]
   end
 
   class OAuth2Tokens

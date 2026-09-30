@@ -62,7 +62,7 @@ module X
     def test_header_returns_bearer_token
       authenticator = OAuth2Authenticator.new(**test_oauth2_credentials)
 
-      header = authenticator.header(nil)
+      header = authenticator.headers(nil)
 
       assert_equal({"Authorization" => "Bearer #{TEST_ACCESS_TOKEN}"}, header)
     end
@@ -273,13 +273,13 @@ module X
     def test_header_refreshes_an_expired_token
       authenticator = OAuth2Authenticator.new(**test_oauth2_credentials, expires_at: Time.now - 1)
 
-      assert_equal({"Authorization" => "Bearer NEW_ACCESS_TOKEN"}, authenticator.header(nil))
+      assert_equal({"Authorization" => "Bearer NEW_ACCESS_TOKEN"}, authenticator.headers(nil))
       assert_requested @refresh, times: 1
     end
 
     def test_header_refreshes_an_expired_token_once_when_no_lifetime_is_returned
       authenticator = OAuth2Authenticator.new(**test_oauth2_credentials, expires_at: Time.now - 1)
-      2.times { authenticator.header(nil) }
+      2.times { authenticator.headers(nil) }
 
       assert_requested @refresh, times: 1
     end
@@ -287,7 +287,7 @@ module X
     def test_header_keeps_an_unexpired_token
       authenticator = OAuth2Authenticator.new(**test_oauth2_credentials, expires_at: Time.now + 3600)
 
-      assert_equal({"Authorization" => "Bearer #{TEST_ACCESS_TOKEN}"}, authenticator.header(nil))
+      assert_equal({"Authorization" => "Bearer #{TEST_ACCESS_TOKEN}"}, authenticator.headers(nil))
       assert_not_requested @refresh
     end
 
@@ -501,7 +501,7 @@ module X
     def test_concurrent_headers_refresh_an_expired_token_once
       stub_slow_refresh
       authenticator = OAuth2Authenticator.new(**test_oauth2_credentials, expires_at: Time.now - 1)
-      concurrently { authenticator.header(nil) }
+      concurrently { authenticator.headers(nil) }
 
       assert_requested :post, TOKEN_URL, times: 1
     end
@@ -512,7 +512,7 @@ module X
       refreshing = Thread.new { authenticator.refresh! }
       sleep 0.01
 
-      assert_equal({"Authorization" => "Bearer NEW_ACCESS_TOKEN"}, authenticator.header(nil))
+      assert_equal({"Authorization" => "Bearer NEW_ACCESS_TOKEN"}, authenticator.headers(nil))
       refreshing.join
 
       assert_requested :post, TOKEN_URL, times: 1
