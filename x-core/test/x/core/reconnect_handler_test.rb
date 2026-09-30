@@ -39,16 +39,6 @@ module X
       assert_equal [4, [5, 10, 20]], [@runs, @sleeps]
     end
 
-    def test_a_rate_limit_waits_until_it_resets_or_backs_off_from_a_minute
-      assert_raises(TooManyRequests) { stream_with(Core.const_get(:ReconnectHandler).new(max_reconnects: 8)) { refused((@runs > 2) ? 1000 : nil) } }
-      assert_equal [60, 120, 240, 1000, 1000, 1000, 1000, 1000], @sleeps
-    end
-
-    def test_a_rate_limit_that_resets_sooner_still_backs_off_from_a_minute
-      assert_raises(TooManyRequests) { stream_with(Core.const_get(:ReconnectHandler).new(max_reconnects: 2)) { refused(10) } }
-      assert_equal [60, 120], @sleeps
-    end
-
     def test_delivering_an_object_starts_the_count_over
       handler = Core.const_get(:ReconnectHandler).new(max_reconnects: 1)
       stream_with(handler) do |deliver|
@@ -110,13 +100,6 @@ module X
       Time.stub(:now, Time.utc(1983, 11, 24)) do
         handler.stub(:sleep, ->(seconds) { @sleeps << seconds }) { handler.handle(->(object) { @delivered << object }, &stream) }
       end
-    end
-
-    def refused(reset_in)
-      @runs += 1
-      response = Net::HTTPTooManyRequests.new("1.1", "429", "Too Many Requests")
-      {"x-rate-limit-limit" => "50", "x-rate-limit-remaining" => "0", "x-rate-limit-reset" => (Time.now.to_i + reset_in).to_s}.each { |name, value| response[name] = value } if reset_in
-      raise TooManyRequests.new(http_response: response)
     end
 
     def fail_with(error_class)

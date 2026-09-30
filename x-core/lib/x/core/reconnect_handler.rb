@@ -8,6 +8,7 @@ require_relative "errors/request_timeout"
 require_relative "errors/server_error"
 require_relative "errors/stream_error"
 require_relative "errors/too_many_requests"
+require_relative "rate_limit_handler"
 require_relative "setting_validator"
 
 module X
@@ -17,11 +18,13 @@ module X
     # A stream that ends, loses its connection, or cannot open one, as when the connection is refused, or that X
     # disconnects with an operational-disconnect, reconnects at once, then after a delay that grows by a quarter
     # second each attempt, up to 16 seconds. A server error, a 408 Request Timeout, a 409 Conflict, or a line that is
-    # not JSON backs off from 5 seconds, doubling each attempt, up to 320 seconds. A rate limit waits until it resets,
-    # or, when it names no reset, from a minute, doubling each attempt, up to 320 seconds. Delivering an object starts
-    # the count over.
+    # not JSON backs off from 5 seconds, doubling each attempt, up to 320 seconds. A rate limit backs off from a minute,
+    # doubling each attempt, up to 320 seconds, as X asks, and waits longer when the limit resets later; one that would
+    # wait longer than max_rate_limit_wait raises at once, rather than hold the stream closed for hours, as a limit on
+    # the requests of a day would. Delivering an object starts the count over.
     #
-    # Internal to x-core: StreamingClient reconnects with it, and max_reconnects is set on the streaming client.
+    # Internal to x-core: StreamingClient reconnects with it, max_reconnects is set on the streaming client, and
+    # max_rate_limit_wait is the client's.
     #
     # @api private
     class ReconnectHandler
@@ -44,6 +47,13 @@ module X
       ConsumerError = Class.new(StandardError) #: singleton(StandardError)
       private_constant :ConsumerError
 
+      # The longest a stream waits for a rate limit to reset, in seconds
+      # @api private
+      # @return [Integer, Float] the maximum wait in seconds
+      # @example Read the maximum wait
+      #   handler.max_rate_limit_wait # => 900
+      attr_reader :max_rate_limit_wait
+
       # The maximum number of times in a row to reconnect without delivering an object
       # @api private
       # @return [Integer, Float] the maximum number of reconnects, or Float::INFINITY for no limit
@@ -55,13 +65,15 @@ module X
       #
       # @api private
       # @param max_reconnects [Integer, Float] the maximum number of reconnects in a row, or Float::INFINITY
+      # @param max_rate_limit_wait [Integer, Float] the longest wait for a rate limit to reset, in seconds
       # @return [ReconnectHandler] a new instance
       # @raise [ArgumentError] if the maximum number of reconnects is neither an Integer of at least 0 nor
-      #   Float::INFINITY
+      #   Float::INFINITY, or the maximum wait is not a number of seconds of at least 0
       # @example Create a reconnect handler
       #   handler = X::Core::ReconnectHandler.new(max_reconnects: 5)
-      def initialize(max_reconnects: DEFAULT_MAX_RECONNECTS)
+      def initialize(max_reconnects: DEFAULT_MAX_RECONNECTS, max_rate_limit_wait: RateLimitHandler::DEFAULT_MAX_WAIT)
         @max_reconnects = SettingValidator.count_or_infinity!(:max_reconnects, max_reconnects)
+        @max_rate_limit_wait = SettingValidator.seconds!(:max_rate_limit_wait, max_rate_limit_wait)
       end
 
       # Run a stream, running it again whenever it drops
@@ -82,6 +94,7 @@ module X
       # @return [nil] once the stream ends with no reconnects left
       # @raise [NetworkError, ServerError, RequestTimeout, Conflict, TooManyRequests, InvalidResponse, StreamError] if
       #   the stream fails with no reconnects left
+      # @raise [TooManyRequests] if a rate limit asks the stream to wait longer than max_rate_limit_wait
       # @example Reconnect a stream
       #   handler.handle(->(post) { puts post }) { |deliver| read_stream(&deliver) }
       def handle(consumer, &stream)
@@ -174,13 +187,21 @@ module X
       end
 
       # The wait before a reconnect after a rate limit, at least until it resets
+      #
+      # X asks a stream refused for a rate limit to back off from RATE_LIMIT_BACKOFF_START, doubling each attempt, so a
+      # limit that resets sooner still waits that long, and one that resets later waits until it does.
+      #
       # @api private
       # @param error [TooManyRequests] the error the connection raised
       # @param reconnects [Integer] the number of the reconnect, counting from one
       # @return [Integer] the seconds to wait
+      # @raise [TooManyRequests] the error, if the wait is longer than max_rate_limit_wait
       def rate_limit_backoff(error, reconnects)
         backoff = [RATE_LIMIT_BACKOFF_START << (reconnects - 1), MAX_HTTP_BACKOFF].min
-        [error.retry_after, backoff].compact.max #: Integer
+        wait = [error.retry_after, backoff].compact.max #: Integer
+        raise if wait > max_rate_limit_wait
+
+        wait
       end
 
       # The wait before a reconnect after a dropped connection

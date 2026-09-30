@@ -152,8 +152,9 @@ module X
       # @param max_rate_limit_retries [Integer] the maximum number of times to retry a request refused for a rate limit,
       #   after waiting for the limit to reset
       # @param max_rate_limit_wait [Integer, Float] the maximum number of seconds to wait for a rate limit to reset; a request
-      #   whose limit resets later raises TooManyRequests at once, and a few seconds are added at random to each wait,
-      #   so that the requests one reset releases are not sent again in one burst
+      #   whose limit resets later raises TooManyRequests at once, as does a stream that would wait longer to reconnect,
+      #   and a few seconds are added at random to each wait of a request, so that the requests one reset releases are
+      #   not sent again in one burst
       # @param max_retries [Integer] the maximum number of times to send a request again after the API failed to answer
       #   it, with a 5xx status or a 408, or after its answer never arrived, which is twice by default and is 0 for a client
       #   that raises at once; a retry waits up to a second before the first and up to twice as long before each after,

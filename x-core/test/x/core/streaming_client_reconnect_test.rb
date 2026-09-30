@@ -26,6 +26,15 @@ module X
       assert_requested(:get, STREAM_URL, times: 3)
     end
 
+    def test_a_stream_waits_for_a_rate_limit_no_longer_than_the_client_does
+      stub_request(:get, STREAM_URL).to_return(status: 429)
+      streaming_client = Client.new(bearer_token: TEST_BEARER_TOKEN, max_rate_limit_wait: 59).streaming
+
+      assert_raises(TooManyRequests) { without_sleeping(streaming_client) { streaming_client.stream("tweets/sample/stream") { |post| post } } }
+      assert_equal [], @sleeps
+      assert_requested(:get, STREAM_URL, times: 1)
+    end
+
     def test_reads_with_a_short_timeout_of_its_own
       client = Client.new(read_timeout: 60)
 

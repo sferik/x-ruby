@@ -86,7 +86,7 @@ module X
         @proxy_url = client.__send__(:proxy_url)
         @connection = Connection.new(open_timeout: client.open_timeout, read_timeout:, write_timeout: client.write_timeout,
           debug_output: client.debug_output, proxy_url:)
-        @reconnect_handler = ReconnectHandler.new(max_reconnects:)
+        @reconnect_handler = ReconnectHandler.new(max_reconnects:, max_rate_limit_wait: client.max_rate_limit_wait)
         @request_builder = RequestBuilder.new
         @response_parser = ResponseParser.new
         @stream_parser = StreamParser.new
