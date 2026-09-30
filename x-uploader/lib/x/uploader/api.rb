@@ -145,7 +145,8 @@ module X
       # @param options [Hash] the options of {Account.update_profile_banner}: width, height, offset_left, and offset_top
       # @return [void]
       # @raise [Errno::ENOENT] if the file does not exist
-      # @raise [ArgumentError] if the media is neither a path nor an IO
+      # @raise [ArgumentError] if the media is neither a path nor an IO, or a width, height, or offset is neither nil
+      #   nor an Integer of the pixels it takes
       # @raise [InvalidMedia] if the media cannot be read, is empty, or is larger than the 5 megabytes X takes
       # @raise [InvalidMediaType] if the image does not begin with the signature of a GIF, a JPEG, or a PNG
       # @example Update the profile banner

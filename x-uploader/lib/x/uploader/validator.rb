@@ -40,6 +40,9 @@ module X
       MAX_SIMPLE_UPLOAD_BYTES = 5 * BYTES_PER_MB
       # The media types of the images a profile image or banner takes
       PROFILE_IMAGE_TYPES = %w[image/gif image/jpeg image/png].freeze
+      # The least number of pixels each dimension of the region of a profile banner takes: a width and a height hold at
+      # least one, and an offset none
+      BANNER_REGION = {width: 1, height: 1, offset_left: 0, offset_top: 0}.freeze
       # Greatest number of bytes the API v1.1 takes of a profile image: its reference for update_profile_image takes an
       # image of less than 700 kilobytes, each of 1,024 bytes, as a megabyte here is 1,048,576
       MAX_PROFILE_IMAGE_BYTES = 700 * 1024
@@ -177,6 +180,30 @@ module X
         raise InvalidMedia, "#{source.description} is #{source.size} bytes, more than the #{max_bytes} bytes the API takes of #{use}"
       end
 
+      # Validate the region of a profile banner to crop it to
+      #
+      # The reference of the API v1.1 for update_profile_banner takes the width and height of the region of the image
+      # to use, and its offsets from the left and the top, each in pixels. A width or height is a positive Integer,
+      # and an offset an Integer of at least 0, or nil for none, so that anything else, such as a String read from a
+      # form, raises before any request, rather than be sent as whatever its to_s reads.
+      #
+      # @api private
+      # @param region [Hash{Symbol => Integer, nil}] the width and height of the region, and its offset_left and
+      #   offset_top, in pixels
+      # @return [void]
+      # @raise [ArgumentError] if a width or height is not a positive Integer, or an offset not an Integer of at
+      #   least 0, and is not nil
+      # @example Validate the region of a banner
+      #   Uploader::Validator.validate_banner_region!(width: 1500, height: 500, offset_left: 0, offset_top: nil)
+      def validate_banner_region!(**region)
+        region.each do |name, pixels|
+          least = BANNER_REGION.fetch(name)
+          next if pixels.nil? || whole_number?(pixels, least)
+
+          raise ArgumentError, "#{name} must be an Integer of pixels of at least #{least}, or nil, not #{pixels.inspect}"
+        end
+      end
+
       # Validate the alt text of an upload, of up to MAX_ALT_TEXT_LENGTH characters
       #
       # The alt text is sent as JSON, which is UTF-8, so text of another encoding is sent as the UTF-8 it converts to,
@@ -245,19 +272,21 @@ module X
       # @example Validate the options of a chunked upload
       #   Uploader::Validator.validate_chunks!(chunk_size: 4_194_304, concurrency: 2)
       def validate_chunks!(chunk_size:, concurrency:)
-        raise ArgumentError, "chunk_size must be a positive Integer of bytes, not #{chunk_size.inspect}" unless chunk_size.nil? || whole_bytes?(chunk_size)
+        raise ArgumentError, "chunk_size must be a positive Integer of bytes, not #{chunk_size.inspect}" unless chunk_size.nil? || whole_number?(chunk_size, 1)
         raise ArgumentError, "chunk_size must be at most #{MAX_CHUNK}, the bytes of a segment the API takes, not #{chunk_size}" if chunk_size && chunk_size > MAX_CHUNK
         raise ArgumentError, "concurrency must be an Integer of 1 to #{MAX_CONCURRENCY}, not #{concurrency.inspect}" unless concurrency.instance_of?(Integer) && (1..MAX_CONCURRENCY).cover?(concurrency)
       end
 
-      # Check whether a value is a whole number of bytes above zero
+      # Check whether a value is a whole number of at least the least given
       #
-      # A Float is not, even a whole one, nor is a Rational, so that no size is rounded to a byte.
+      # A number of bytes or pixels is one. A Float is not, even a whole one, nor is a Rational, so that no size is
+      # rounded to a byte or a pixel.
       #
       # @api private
       # @param value [Object] the value
-      # @return [Boolean] true if the value is a positive Integer
-      def whole_bytes?(value) = value.instance_of?(Integer) && value.positive?
+      # @param least [Integer] the least the number may be
+      # @return [Boolean] true if the value is an Integer of at least the least given
+      def whole_number?(value, least) = value.instance_of?(Integer) && value >= least
 
       # Validate the seconds to wait for media to process
       #

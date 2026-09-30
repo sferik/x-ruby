@@ -66,13 +66,14 @@ module X
       # @param media [String, Pathname, IO, StringIO] the path to the image, or an IO that reads it, which is read from
       #   its start, as the media of an upload is
       # @param client [Client] the X API client
-      # @param width [Integer, nil] the width of the banner
-      # @param height [Integer, nil] the height of the banner
-      # @param offset_left [Integer, nil] the left offset of the banner
-      # @param offset_top [Integer, nil] the top offset of the banner
+      # @param width [Integer, nil] the width of the region of the image to use, in pixels, of at least 1
+      # @param height [Integer, nil] the height of the region of the image to use, in pixels, of at least 1
+      # @param offset_left [Integer, nil] the pixels by which the region is offset from the left, of at least 0
+      # @param offset_top [Integer, nil] the pixels by which the region is offset from the top, of at least 0
       # @return [void]
       # @raise [Errno::ENOENT] if the file does not exist
-      # @raise [ArgumentError] if the media is neither a path nor an IO
+      # @raise [ArgumentError] if the media is neither a path nor an IO, or a width, height, or offset is neither
+      #   nil nor an Integer of the pixels it takes
       # @raise [InvalidMedia] if the media cannot be read, is empty, which holds nothing to upload, or is larger than
       #   the 5 megabytes X takes of a profile banner
       # @raise [InvalidMediaType] if the media does not begin with the signature of a GIF, a JPEG, or a PNG, whatever
@@ -82,6 +83,7 @@ module X
       # @example Update profile banner with dimensions
       #   Uploader::Account.update_profile_banner("banner.png", client: client, width: 1500, height: 500)
       def update_profile_banner(media, client:, width: nil, height: nil, offset_left: nil, offset_top: nil)
+        Validator.validate_banner_region!(width:, height:, offset_left:, offset_top:)
         source = Source.for(media)
         Validator.validate_profile_image!(source, Validator::MAX_PROFILE_BANNER_BYTES, "a profile banner")
         Multipart.post(client, PROFILE_BANNER_URL, "banner", source.content, width:, height:, offset_left:, offset_top:)

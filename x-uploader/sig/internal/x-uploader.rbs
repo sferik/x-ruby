@@ -204,6 +204,7 @@ module X
       MAX_MEDIA_BYTES: Hash[String, Integer]
       MAX_UPLOAD_BYTES: Integer
       PROFILE_IMAGE_TYPES: Array[String]
+      BANNER_REGION: Hash[Symbol, Integer]
       MAX_PROFILE_IMAGE_BYTES: Integer
       MAX_PROFILE_BANNER_BYTES: Integer
       MAX_SIMPLE_UPLOAD_BYTES: Integer
@@ -216,7 +217,8 @@ module X
       def validate_language_code!: (untyped language_code) -> String
       def validate_media_category!: (String | Symbol media_category) -> String
       def validate_chunks!: (chunk_size: Integer?, concurrency: Integer) -> nil
-      def whole_bytes?: (untyped value) -> bool
+      def whole_number?: (untyped value, Integer least) -> bool
+      def validate_banner_region!: (**untyped region) -> void
       def validate_processing_timeout!: (untyped processing_timeout) -> nil
       def validate_segments!: (Source source, Integer? chunk_size) -> Integer
       def validate_size!: (Source source, String media_category) -> nil
