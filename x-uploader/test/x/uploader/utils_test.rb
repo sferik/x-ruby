@@ -105,7 +105,7 @@ module X
         error = assert_raises(ArgumentError, media.inspect) { Uploader.const_get(:Utils).media_id(media) }
 
         assert_equal "#{media.inspect} is not media: pass uploaded media, the Hash of an upload response, media that has a " \
-          "media key, such as X::Media, or a media identifier", error.message
+          "media key, such as X::Media, a media key, or a media identifier", error.message
       end
     end
 

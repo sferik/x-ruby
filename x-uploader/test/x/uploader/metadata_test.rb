@@ -29,6 +29,13 @@ module X
       assert_requested :post, METADATA_URL, body: {id: "7", metadata: {alt_text: {text: "A cat"}}}.to_json
     end
 
+    def test_add_alt_text_to_a_media_key
+      stub_request(:post, METADATA_URL).to_return(headers: JSON_HEADERS, body: {data: {id: "7"}}.to_json)
+
+      assert_equal UploadedMedia.new({"id" => "7"}), Uploader::Metadata.add_alt_text("3_7", "A cat", client: @client)
+      assert_requested :post, METADATA_URL, body: {id: "7", metadata: {alt_text: {text: "A cat"}}}.to_json
+    end
+
     def test_add_alt_text_returns_the_uploaded_media_it_was_given
       stub_request(:post, METADATA_URL).to_return(headers: JSON_HEADERS, body: {data: {id: "7", associated_metadata: {}}}.to_json)
       media = UploadedMedia.new({"id" => "7", "size" => 1024})

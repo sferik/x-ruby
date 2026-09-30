@@ -27,7 +27,7 @@ module X
       NO_METADATA = "The response that adds the metadata holds none"
       # The message of the error raised for something that is neither media nor the identifier of media
       NOT_MEDIA = "%s is not media: pass uploaded media, the Hash of an upload response, media that has a media key, " \
-        "such as X::Media, or a media identifier"
+        "such as X::Media, a media key, or a media identifier"
       # The message of the error raised for a media key that names no media identifier
       NOT_MEDIA_KEY = "The media key %s names no media identifier"
       # The pattern of a media key, which names the media identifier after the number of its type and an underscore
@@ -55,7 +55,8 @@ module X
       # The media identifier of an upload response, of media, or of an identifier
       #
       # Media that is not what an upload returned, such as the X::Media of x-objects, which this gem does not depend
-      # on, is read from its media key, which names the identifier after the number of its type, as 3_7 names 7.
+      # on, is read from its media key, which names the identifier after the number of its type, as 3_7 names 7, and
+      # a String that is a media key is read the same way, as the media_ids of a new post read one.
       #
       # Nil, or an empty identifier, names no media, and would reach the API as an identifier that is not there.
       # Anything else raises rather than reach the API as whatever its to_s reads, such as the inspection of an
@@ -63,9 +64,9 @@ module X
       #
       # @api private
       # @param media [UploadedMedia, Hash, #media_key, String, Integer] the uploaded media, the upload response, media
-      #   that has a media key, or the media identifier
+      #   that has a media key, the media key, or the media identifier
       # @return [String] the media identifier
-      # @raise [ArgumentError] if the media is neither media nor a media identifier, its media key names no
+      # @raise [ArgumentError] if the media is neither media, a media key, nor a media identifier, its media key names no
       #   identifier, or its identifier is none the API takes, which is 1 to 19 digits
       # @raise [MissingMediaData] if the media is nil or empty, an upload response holds no identifier, or media
       #   has no media key
@@ -73,10 +74,13 @@ module X
       #   Uploader::Utils.media_id({"id" => "1880028106020515840"}) # => "1880028106020515840"
       # @example The identifier of media of a post
       #   Uploader::Utils.media_id(X::Media.new(media_key: "3_1880028106020515840")) # => "1880028106020515840"
+      # @example The identifier a media key names
+      #   Uploader::Utils.media_id("3_1880028106020515840") # => "1880028106020515840"
       def media_id(media)
         id = case media
         when Hash, UploadedMedia then media.fetch("id", nil)
-        when String, Integer, nil then media
+        when String then media[MEDIA_KEY, 1] || media
+        when Integer, nil then media
         else media_key_id(media)
         end
         text = id.to_s
@@ -107,9 +111,10 @@ module X
       #
       # @api private
       # @param media [UploadedMedia, Hash, #media_key, String, Integer] the uploaded media, the upload response, media
-      #   that has a media key, or the media identifier
+      #   that has a media key, the media key, or the media identifier
       # @return [UploadedMedia] the uploaded media
-      # @raise [ArgumentError] if the media is neither media nor a media identifier, or its media key names none
+      # @raise [ArgumentError] if the media is neither media, a media key, nor a media identifier, or its media key names
+      #   none
       # @raise [MissingMediaData] if the media is nil or empty, or holds no identifier
       # @example Uploaded media known by its identifier
       #   Uploader::Utils.uploaded_media(7) # => #<X::UploadedMedia id=7 media_key=nil state=nil>

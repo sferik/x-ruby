@@ -61,7 +61,7 @@ module X
       #
       # @api public
       # @param media [UploadedMedia, Hash, #media_key, String, Integer] the uploaded media, media that has a media key,
-      #   such as X::Media, or the media identifier
+      #   such as X::Media, the media key, or the media identifier
       # @param options [Hash] the options of {MediaUpload.await_processing}, such as processing_timeout
       # @return [UploadedMedia] the uploaded media, which holds the processing status, failed or not
       # @raise [MediaProcessingTimeout] if the media is still processing once the processing timeout would pass
@@ -76,7 +76,7 @@ module X
       #
       # @api public
       # @param media [UploadedMedia, Hash, #media_key, String, Integer] the uploaded media, media that has a media key,
-      #   such as X::Media, or the media identifier
+      #   such as X::Media, the media key, or the media identifier
       # @param options [Hash] the options of {MediaUpload.await_processing!}, such as processing_timeout
       # @return [UploadedMedia] the uploaded media, which holds the processing status
       # @raise [MediaProcessingFailed] if media processing failed, or ended in no state X documents, with the status X
@@ -92,7 +92,7 @@ module X
       #
       # @api public
       # @param media [UploadedMedia, Hash, #media_key, String, Integer] the uploaded media, media that has a media key,
-      #   such as X::Media, or the media identifier
+      #   such as X::Media, the media key, or the media identifier
       # @param text [String] the alt text, of 1 to 1,000 characters
       # @return [UploadedMedia] the media given, as uploaded media, which a call can be chained to
       # @raise [ArgumentError] if the alt text is empty or longer than the API takes, before a request
