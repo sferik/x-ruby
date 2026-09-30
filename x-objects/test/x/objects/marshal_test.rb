@@ -89,14 +89,14 @@ module X
             "errors" => [{"title" => "Not Found Error", "resource_id" => "8"}, {"title" => "Not Found Error", "resource_id" => "7"}]}.freeze
 
     def test_a_marshalled_resource_carries_what_it_refers_to_of_its_response_alone
-      _, _, _, data, problems, = Post.collection_from_response(PAGE, client: @client).first.marshal_dump
+      _, _, _, data, problems, = Post.__send__(:collection_from_response, PAGE, client: @client).first.marshal_dump
 
       assert_equal({"users" => [{"id" => "9", "username" => "sferik"}, {"id" => "7", "username" => "gem"}], "tweets" => [{"id" => "2", "author_id" => "7"}]}, data)
       assert_equal ["7"], problems.map(&:resource_id)
     end
 
     def test_a_marshalled_resource_resolves_what_its_references_refer_to
-      loaded = Marshal.load(Marshal.dump(Post.collection_from_response(PAGE, client: @client).first))
+      loaded = Marshal.load(Marshal.dump(Post.__send__(:collection_from_response, PAGE, client: @client).first))
 
       assert_equal ["sferik", "gem", ["7"]], [loaded.author.username, loaded.quoted.author.username, loaded.quoted.author.problems.map(&:resource_id)]
     end

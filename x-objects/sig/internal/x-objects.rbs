@@ -352,17 +352,14 @@ module X
       def unhide_reply: (id post, client: _Client) -> bool
 
       private
+      # The private class method of Post that extends it, which it reads
+      def resource_from_response: (body body, client: _Client?, ?hydrated: bool) -> Post?
       def change_visibility: (id post, bool hidden, client: _Client) -> bool?
       def referenced: (Hash[Symbol, untyped] params, reply_to: id?, quote: id?, media_ids: untyped, community: id?) -> Hash[Symbol, untyped]
       def merged: (Hash[Symbol, untyped] params, Symbol key, **untyped field) -> Hash[Symbol, untyped]
     end
 
-    # The class side of DirectMessage, which builds its messages
-    interface _DirectMessageClass
-      def resource_from_response: (body body, client: _Client?, ?hydrated: bool) -> DirectMessage?
-    end
-
-    module DirectMessageConversations : _DirectMessageClass
+    module DirectMessageConversations
       CONVERSATION_ID: Regexp
 
       def create_group: (Array[id] users, ?String? text, client: _Client, ?media_ids: untyped, **untyped params) -> DirectMessage?
@@ -370,6 +367,8 @@ module X
       def `in`: (DirectMessage | String | Integer conversation, client: _Client, **untyped params) -> Cursor[DirectMessage]
 
       private
+      # The private class method of DirectMessage that extends it, which it reads
+      def resource_from_response: (body body, client: _Client?, ?hydrated: bool) -> DirectMessage?
       def conversation_id_of: (DirectMessage | String | Integer conversation) -> String
       def message: (String? text, Hash[Symbol, untyped] params, untyped media_ids) -> Hash[Symbol, untyped]
       def sent: (body body, client: _Client) -> DirectMessage?
@@ -674,6 +673,8 @@ module X
     private def self.includes_key: () -> String?
     private def self.fields_key: () -> String?
     private def self.fully_requested_by?: (Hash[String, untyped] query) -> bool
+    private def self.resource_from_response: (Objects::body body, client: Objects::_Client?, ?hydrated: bool) -> Resource?
+    private def self.collection_from_response: (Objects::body body, client: Objects::_Client?, ?hydrated: bool) -> Array[Resource]
     private def self.resource_built_from: (Objects::body body, client: Objects::_Client?, hydrated: bool, query: Hash[String, untyped]?) -> Resource?
     private def self.collection_built_from: (Objects::body body, client: Objects::_Client?, hydrated: bool, query: Hash[String, untyped]?) -> Array[Resource]
     private def self.batch_key: () -> Symbol
@@ -790,6 +791,7 @@ module X
 
     private def self.endpoint: () -> String
     private def self.fields_key: () -> String
+    private def self.resource_from_response: (Objects::body body, client: Objects::_Client?, ?hydrated: bool) -> List?
 
     private
     def fewer_memberships?: (Objects::id user) -> bool

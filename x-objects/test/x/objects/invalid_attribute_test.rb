@@ -67,13 +67,13 @@ module X
     end
 
     def test_a_response_that_holds_a_resource_with_an_identifier_that_is_not_one_raises
-      error = assert_raises(InvalidAttribute) { User.resource_from_response({"data" => {"id" => "abc"}}, client: nil) }
+      error = assert_raises(InvalidAttribute) { User.__send__(:resource_from_response, {"data" => {"id" => "abc"}}, client: nil) }
 
       assert_equal "X::User#id cannot be read from \"abc\"", error.message
     end
 
     def test_a_response_whose_data_is_not_an_object_raises
-      assert_raises(InvalidAttribute) { User.collection_from_response({"data" => ["1"]}, client: nil) }
+      assert_raises(InvalidAttribute) { User.__send__(:collection_from_response, {"data" => ["1"]}, client: nil) }
     end
 
     def test_an_identifier_a_caller_passes_still_raises_argument_error

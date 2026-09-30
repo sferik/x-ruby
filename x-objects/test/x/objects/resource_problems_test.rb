@@ -16,7 +16,7 @@ module X
     GENERAL = {"title" => "Something went wrong"}.freeze
 
     def posts(*data, errors: [AUTHOR_MISSING])
-      Post.collection_from_response({"data" => data, "errors" => errors}, client: nil)
+      Post.__send__(:collection_from_response, {"data" => data, "errors" => errors}, client: nil)
     end
 
     def details(resources) = resources.map { |resource| resource.problems.map(&:title) }
@@ -62,14 +62,14 @@ module X
 
     def test_a_problem_about_a_post_a_direct_message_refers_to
       problem = {"title" => "Not Found Error", "resource_type" => "tweet", "resource_id" => "9"}
-      messages = DirectMessage.collection_from_response({"data" => [{"id" => "1", "referenced_posts" => [{"id" => "9"}]}, {"id" => "2", "sender_id" => "3"}], "errors" => [problem]}, client: nil)
+      messages = DirectMessage.__send__(:collection_from_response, {"data" => [{"id" => "1", "referenced_posts" => [{"id" => "9"}]}, {"id" => "2", "sender_id" => "3"}], "errors" => [problem]}, client: nil)
 
       assert_equal [["Not Found Error"], []], details(messages)
     end
 
     def test_a_reference_under_another_name_after_tweets
       problem = {"title" => "Not Found Error", "resource_type" => "tweet", "resource_id" => "9"}
-      user = User.resource_from_response({"data" => {"id" => "1", "pinned_tweet_id" => "9"}, "errors" => [problem]}, client: nil)
+      user = User.__send__(:resource_from_response, {"data" => {"id" => "1", "pinned_tweet_id" => "9"}, "errors" => [problem]}, client: nil)
 
       assert_equal ["Not Found Error"], user.problems.map(&:title)
     end
@@ -89,7 +89,7 @@ module X
 
     def test_an_included_resource_reports_the_problems_about_it
       problem = {"title" => "Not Found Error", "resource_type" => "tweet", "resource_id" => "9"}
-      post = Post.resource_from_response({"data" => {"id" => "1", "author_id" => "2"}, "errors" => [problem],
+      post = Post.__send__(:resource_from_response, {"data" => {"id" => "1", "author_id" => "2"}, "errors" => [problem],
                                           "includes" => {"users" => [{"id" => "2", "pinned_post_id" => "9"}]}}, client: nil)
 
       assert_equal [[], ["Not Found Error"]], details([post, post.author])

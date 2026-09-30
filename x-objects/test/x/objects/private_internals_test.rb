@@ -7,7 +7,7 @@ module X
   class PrivateInternalsTest < Minitest::Test
     RESOURCE_METHODS = %i[endpoint endpoint! id_key id_type includes_key fields_key from_id_in_batch build fully_requested_by?
       batch_key lookup lookup_all client_for attribute_names attribute_aliases reference_keys referenced_ids resource_built_from
-      collection_built_from].freeze
+      collection_built_from resource_from_response collection_from_response].freeze
 
     def test_no_resource_class_reads_its_lookups_publicly
       [Resource, User, Post, List, DirectMessage, Space, Community, Media, Poll, Place].each do |klass|

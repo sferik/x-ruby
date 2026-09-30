@@ -219,27 +219,32 @@ module X
       # A line of the filtered stream holds the rules its post matched beside its data, as matching_rules, which the
       # resource keeps among its attributes, where X::Post#matching_rules reads them.
       #
-      # @api public
+      # Internal to the object layer: from_response, which a client calls, builds what a response holds, and takes
+      # the keywords a later version of x-core may pass it, where this does not.
+      #
+      # @api private
       # @param body [Hash, nil] the parsed response body
       # @param client [Object] the client used to make the request
       # @param hydrated [Boolean] whether the response holds every field the object layer requests
       # @return [Resource, nil] the resource or nil if the response has no data
       # @raise [InvalidAttribute] if the response holds a resource without an identifier, or with one that is not one
       # @example Build a user from a response
-      #   X::User.resource_from_response({"data" => {"id" => "7505382"}}, client: client)
-      def resource_from_response(body, client:, hydrated: false) = resource_built_from(body, client:, hydrated:, query: nil)
+      #   X::User.__send__(:resource_from_response, {"data" => {"id" => "7505382"}}, client: client)
+      private def resource_from_response(body, client:, hydrated: false) = resource_built_from(body, client:, hydrated:, query: nil)
 
       # Build resources from a response with a data array
       #
-      # @api public
+      # Internal to the object layer, as resource_from_response is.
+      #
+      # @api private
       # @param body [Hash, nil] the parsed response body
       # @param client [Object] the client used to make the request
       # @param hydrated [Boolean] whether the response holds every field the object layer requests
       # @return [Array<Resource>] the resources
       # @raise [InvalidAttribute] if the response holds a resource without an identifier, or with one that is not one
       # @example Build users from a response
-      #   X::User.collection_from_response({"data" => [{"id" => "7505382"}]}, client: client)
-      def collection_from_response(body, client:, hydrated: false) = collection_built_from(body, client:, hydrated:, query: nil)
+      #   X::User.__send__(:collection_from_response, {"data" => [{"id" => "7505382"}]}, client: client)
+      private def collection_from_response(body, client:, hydrated: false) = collection_built_from(body, client:, hydrated:, query: nil)
 
       # Build a resource from a response, knowing the query of its request
       #

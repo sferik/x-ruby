@@ -58,7 +58,7 @@ module X
     end
 
     def test_a_response_built_without_its_query_hydrates_nothing_it_included
-      post = Post.resource_from_response({"data" => POST, "includes" => INCLUDES}, client: @client, hydrated: true)
+      post = Post.__send__(:resource_from_response, {"data" => POST, "includes" => INCLUDES}, client: @client, hydrated: true)
 
       refute_predicate post.polls.first, :hydrated?
     end

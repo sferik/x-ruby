@@ -20,7 +20,7 @@ module X
                              "public_metrics" => {"tweet_count" => 12}}]}.freeze
 
     def setup
-      @post = Post.resource_from_response({"data" => POST, "includes" => INCLUDES}, client: FakeClient.new)
+      @post = Post.__send__(:resource_from_response, {"data" => POST, "includes" => INCLUDES}, client: FakeClient.new)
     end
 
     def test_a_post_reads_the_tweet_names
@@ -50,7 +50,7 @@ module X
     def test_the_posts_of_the_includes_are_read_first
       body = {"data" => POST, "includes" => {"posts" => [{"id" => "2", "text" => "post"}], "tweets" => [{"id" => "2", "text" => "tweet"}]}}
 
-      assert_equal "post", Post.resource_from_response(body, client: FakeClient.new).quoted.text
+      assert_equal "post", Post.__send__(:resource_from_response, body, client: FakeClient.new).quoted.text
     end
 
     def test_a_direct_message_reads_the_tweets_it_refers_to

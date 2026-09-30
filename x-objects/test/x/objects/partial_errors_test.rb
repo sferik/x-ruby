@@ -37,11 +37,11 @@ module X
       def test_a_resource_without_problems
         assert_empty User.new({"id" => "1"}).problems
         assert_predicate User.new({"id" => "1"}).problems, :frozen?
-        assert_empty User.resource_from_response({"data" => {"id" => "1"}}, client: @client).problems
+        assert_empty User.__send__(:resource_from_response, {"data" => {"id" => "1"}}, client: @client).problems
       end
 
       def test_a_resource_of_a_collection_reports_the_problems_about_it_alone
-        users = User.collection_from_response({"data" => [{"id" => "1"}, {"id" => "2", "pinned_post_id" => "9"}], "errors" => [USER_MISSING, PINNED_MISSING]}, client: @client)
+        users = User.__send__(:collection_from_response, {"data" => [{"id" => "1"}, {"id" => "2", "pinned_post_id" => "9"}], "errors" => [USER_MISSING, PINNED_MISSING]}, client: @client)
 
         assert_equal [[], ["Could not find tweet with pinned_tweet_id: [9]."]], users.map { |user| user.problems.map(&:detail) }
       end

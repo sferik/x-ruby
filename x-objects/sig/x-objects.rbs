@@ -134,8 +134,6 @@ module X
     interface _ResourceClass[R]
       def from_id: (id id, ?client: _Client?) -> R
       def from_response: (body body, client: _Client?, ?hydrated: bool, **untyped) -> (R | Array[R])?
-      def resource_from_response: (body body, client: _Client?, ?hydrated: bool) -> R?
-      def collection_from_response: (body body, client: _Client?, ?hydrated: bool) -> Array[R]
     end
 
     # The class-side lookups of a concrete resource class the API looks up by identifier, typed with that class
@@ -263,8 +261,6 @@ module X
     def self.default_params: () -> Hash[String, Array[String]]
     def self.from_id: (Objects::id id, ?client: Objects::_Client?) -> Resource
     def self.from_response: (Objects::body body, client: Objects::_Client?, ?hydrated: bool, **untyped) -> (Resource | Array[Resource])?
-    def self.resource_from_response: (Objects::body body, client: Objects::_Client?, ?hydrated: bool) -> Resource?
-    def self.collection_from_response: (Objects::body body, client: Objects::_Client?, ?hydrated: bool) -> Array[Resource]
 
     def initialize: (Hash[untyped, untyped] attrs, ?client: Objects::_Client?, ?hydrated: bool) -> void
     def id: () -> (Integer | String)

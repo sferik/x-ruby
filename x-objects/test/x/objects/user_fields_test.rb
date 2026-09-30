@@ -66,7 +66,7 @@ module X
     def test_the_affiliated_users_resolve_from_the_includes
       body = {"data" => {"id" => "1", "affiliation" => {"user_id" => %w[783214 9]}},
               "includes" => {"users" => [{"id" => "783214", "username" => "X"}]}}
-      user = User.resource_from_response(body, client: nil)
+      user = User.__send__(:resource_from_response, body, client: nil)
 
       assert_equal [[783_214, "X", false], [9, nil, true]], user.affiliated_users.map { |affiliated| [affiliated.id, affiliated.username, affiliated.stub?] }
       assert_empty @user.affiliated_users

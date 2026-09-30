@@ -22,7 +22,7 @@ module X
     end
 
     def test_a_post_keeps_the_rules_among_its_attributes
-      post = Post.resource_from_response(LINE, client: nil)
+      post = Post.__send__(:resource_from_response, LINE, client: nil)
 
       assert_equal LINE.fetch("data").merge(LINE.slice("matching_rules")), post.attrs
       assert_equal post.matching_rules, Marshal.load(Marshal.dump(post)).matching_rules
@@ -32,7 +32,7 @@ module X
     def test_a_post_that_did_not_come_from_the_filtered_stream_matched_no_rule
       assert_empty Post.new({"id" => "1"}).matching_rules
       assert_predicate Post.new({"id" => "1"}).matching_rules, :frozen?
-      refute Post.resource_from_response({"data" => {"id" => "1"}}, client: nil).attrs.key?("matching_rules")
+      refute Post.__send__(:resource_from_response, {"data" => {"id" => "1"}}, client: nil).attrs.key?("matching_rules")
     end
 
     def test_only_the_post_of_the_line_matched_the_rules
