@@ -67,7 +67,7 @@ module X
 
       # Send a request that is safe to send twice again after a failure
       #
-      # It is what {Client#with_retries} does.
+      # It is what Client#with_retries does.
       #
       # @api private
       # @yield sends the request

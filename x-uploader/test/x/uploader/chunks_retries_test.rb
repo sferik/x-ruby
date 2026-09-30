@@ -13,6 +13,7 @@ module X
     def test_a_request_is_sent_again_with_the_retries_of_the_client
       client = Object.new
       def client.with_retries = [:retried, yield]
+      client.singleton_class.send(:private, :with_retries)
 
       assert_equal [:retried, :sent], utils.sending_again(client) { :sent }
     end

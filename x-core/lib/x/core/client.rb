@@ -482,6 +482,20 @@ module X
         StreamingClient.new(self, read_timeout:, max_reconnects:)
       end
 
+      # Close the connections the client keeps open between requests
+      #
+      # A later request opens a connection again. A client and the copies made of it with {#with} that open their
+      # connections as it does share their connections, as the app-only copy of a client that signs with OAuth 1.0a
+      # does, so closing one closes them for all of them.
+      #
+      # @api public
+      # @return [void]
+      # @example Close the connections before a long pause
+      #   client.close
+      def close = @internals.close
+
+      private
+
       # Send a request that is safe to send twice again after a failure
       #
       # The client sends no POST again, since the API may have acted on one whose answer never arrived, and sends no
@@ -497,26 +511,18 @@ module X
       # again itself, so one wrapped in this is sent max_retries times more for each time this sends it, nine times in
       # all with the defaults, rather than three.
       #
-      # @api public
+      # Internal to the gems of x: x-uploader sends each chunk of an upload with it, with __send__, so that 1.x can
+      # change how the requests of an upload are sent again without a change to the public API of a client.
+      #
+      # @api private
       # @yield sends the request
       # @return [Object] what the block returns
       # @raise [NetworkError] if the request fails once more than the retries allow
       # @raise [ServerError, RequestTimeout] if the API fails to answer once more than the retries allow, or asks for a
       #   wait longer than a minute
       # @example Append a chunk of an upload, again after a failure
-      #   client.with_retries { client.post("media/upload/1/append", body, headers:) }
+      #   client.__send__(:with_retries) { client.post("media/upload/1/append", body, headers:) }
       def with_retries(&) = @internals.with_retries(&)
-      # Close the connections the client keeps open between requests
-      #
-      # A later request opens a connection again. A client and the copies made of it with {#with} that open their
-      # connections as it does share their connections, as the app-only copy of a client that signs with OAuth 1.0a
-      # does, so closing one closes them for all of them.
-      #
-      # @api public
-      # @return [void]
-      # @example Close the connections before a long pause
-      #   client.close
-      def close = @internals.close
     end
   end
 end

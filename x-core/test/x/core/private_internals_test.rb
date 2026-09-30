@@ -21,8 +21,8 @@ module X
       assert_includes StreamingClient.private_instance_methods, :proxy_url
     end
 
-    def test_a_client_has_no_private_method_but_initialize
-      assert_equal [:initialize], Client.private_instance_methods(false)
+    def test_a_client_has_no_private_method_but_initialize_and_what_an_upload_sends_a_chunk_with
+      assert_equal %i[initialize with_retries], Client.private_instance_methods(false).sort
       (Client.ancestors - Object.ancestors - [Client]).each do |ancestor|
         assert_empty ancestor.private_instance_methods(false), "Expected #{ancestor} to give a client no private methods"
       end

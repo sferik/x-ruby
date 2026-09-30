@@ -408,7 +408,6 @@ module X
     def put: (String endpoint, ?body? body, ?params: params?, ?form: params?, ?headers: headers, ?array_class: Class, ?object_class: object_class) ?{ (Response) -> void } -> untyped
     def delete: (String endpoint, ?params: params?, ?headers: headers, ?array_class: Class, ?object_class: object_class) ?{ (Response) -> void } -> untyped
     def streaming: (?read_timeout: (Float | Integer)?, ?max_reconnects: Float | Integer) -> StreamingClient
-    def with_retries: [T] () { () -> T } -> T
     def close: () -> void
     def marshal_dump: () -> bot
     def encode_with: (untyped coder) -> bot

@@ -46,7 +46,7 @@ module X
       handler = internals(client).instance_variable_get(:@retry_handler)
       handler.define_singleton_method(:rand) { 0.0 }
       handler.define_singleton_method(:sleep) { |seconds| sleeps << seconds }
-      client.with_retries(&)
+      client.__send__(:with_retries, &)
     end
 
     # Raise the given error, counting the attempt it ends

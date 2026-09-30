@@ -219,8 +219,9 @@ module X
       # it is appended at. Those are sent again with the with_retries of the client, up to its max_retries, after the
       # wait a failed response asks for, or a backoff that grows with each retry and is cut short at random, so that
       # the requests one failure ended are not sent again together. They are sent again after a timeout too, which a
-      # client sends no read again after, since the API bills an upload for nothing it sends twice. A client that has
-      # no with_retries, which X::Client has, sends each request as it sends any other.
+      # client sends no read again after, since the API bills an upload for nothing it sends twice. with_retries is
+      # private to a client, since it is internal to the gems of x, and a client that has none, which X::Client has,
+      # sends each request as it sends any other.
       #
       # @api private
       # @param client [Client] the X API client
@@ -230,7 +231,7 @@ module X
       #   Uploader::Utils.sending_again(client) { client.post("media/upload/1/append", body, headers:) }
       def sending_again(client, &)
         retrying = client #: untyped
-        retrying.respond_to?(:with_retries) ? retrying.with_retries(&) : yield
+        retrying.respond_to?(:with_retries, true) ? retrying.__send__(:with_retries, &) : yield
       end
 
       # The processing status of media, unless the media failed to process
