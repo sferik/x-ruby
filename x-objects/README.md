@@ -6,6 +6,10 @@ It makes no HTTP requests itself: it asks a client to make them. Its one runtime
 
 Most applications should install [`x`](https://rubygems.org/gems/x), which wires this gem to the HTTP client from [`x-core`](https://github.com/sferik/x-ruby/tree/main/x-core).
 
+## Installation
+
+    bundle add x-objects
+
 ## Resources
 
 | Class | References | Collections | Class collections |
