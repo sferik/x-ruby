@@ -17,11 +17,22 @@ module X
       assert_equal [1, 10], [Media.new({"media_key" => "16_1"}).media_id, Media.from_id("3_010").media_id]
     end
 
-    def test_a_media_key_that_names_no_identifier
-      error = assert_raises(InvalidAttribute) { Media.from_id("abc").media_id }
+    def test_what_is_not_a_media_key_is_not_an_identifier_of_media
+      message = "%s is not an identifier: pass X::Media, what an upload returned, or a media key, such as \"3_1880028106020515840\""
 
-      assert_equal 'X::Media#media_id cannot be read from "abc"', error.message
-      assert_raises(InvalidAttribute) { Media.from_id("3_").media_id }
+      ["abc", "3_", "_1", "1880028106020515840", "3_1\n"].each do |id|
+        assert_equal format(message, id.inspect), assert_raises(ArgumentError) { Media.from_id(id) }.message
+      end
+      assert_raises(ArgumentError) { Media.from_id(1_880_028_106_020_515_840) }
+      assert_raises(ArgumentError) { Media.new({"media_key" => "1880028106020515840"}) }
+    end
+
+    def test_media_is_not_looked_up_by_its_numeric_identifier
+      client = Object.new
+
+      assert_raises(ArgumentError) { Media.find(1_880_028_106_020_515_840, client:) }
+      assert_raises(ArgumentError) { Media.find!("1880028106020515840", client:) }
+      assert_raises(ArgumentError) { Media.find_all(["3_1", "1880028106020515840"], client:) }
     end
   end
 end

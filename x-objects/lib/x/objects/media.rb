@@ -62,13 +62,17 @@ module X
       {"media.fields" => FIELDS}
     end
 
-    # The type of the identifier, which is not a number
+    # The type of the identifier, a media key
+    #
+    # Media is looked up by its media key, such as "3_1880028106020515840", and not by the numeric identifier an
+    # upload returns beside it, which the lookup endpoint does not find, so a number raises rather than look up
+    # nothing.
     #
     # @api private
-    # @return [Symbol] raw
+    # @return [Symbol] media_key
     # @example Get the identifier type
-    #   X::Media.__send__(:id_type) # => :raw
-    def self.id_type = :raw
+    #   X::Media.__send__(:id_type) # => :media_key
+    def self.id_type = :media_key
 
     # The media key of what an upload returned, or of a value that is one already
     #
@@ -92,7 +96,7 @@ module X
     # @yieldparam problem [Problem] each problem the API reported
     # @example Look up what an upload returned
     #   X::Media.find(uploaded, client: client)
-    def self.find(media, client:, **params) = super(key_of(media), client:, **params)
+    def self.find(media, client:, **params) = super(key_of(media), client:, **params) #: Media?
 
     # Look up media by media key, which must exist
     #
@@ -107,7 +111,7 @@ module X
     # @raise [MissingResource] if the media was not found
     # @example Look up what an upload returned
     #   X::Media.find!(uploaded, client: client)
-    def self.find!(media, client:, **params) = super(key_of(media), client:, **params)
+    def self.find!(media, client:, **params) = super(key_of(media), client:, **params) #: Media
 
     # Refer to media by media key without a request
     #
@@ -117,7 +121,7 @@ module X
     # @return [Media] a stub that hydrates to the full media
     # @example Refer to what an upload returned
     #   X::Media.from_id(uploaded, client: client).hydrate.url
-    def self.from_id(media, client: nil) = super
+    def self.from_id(media, client: nil) = super #: Media
 
     # Build a stub of media that hydrates with the stubs of a batch
     #
@@ -140,7 +144,7 @@ module X
     # @yieldparam problem [Problem] each problem the API reported
     # @example Look up what the uploads returned
     #   X::Media.find_all(uploads, client: client)
-    def self.find_all(media, client:, concurrency: Objects::BatchFinders::DEFAULT_CONCURRENCY, **params) = super(media.map { |value| key_of(value) }, client:, concurrency:, **params)
+    def self.find_all(media, client:, concurrency: Objects::BatchFinders::DEFAULT_CONCURRENCY, **params) = super(media.map { |value| key_of(value) }, client:, concurrency:, **params) #: Array[Media]
 
     # The key under which media appear in the includes of a response
     #
@@ -180,10 +184,9 @@ module X
     #
     # @api public
     # @return [Integer] the media identifier
-    # @raise [InvalidAttribute] if the media key names no identifier
     # @example Get the identifier the media key names
     #   X::Media.from_id("3_1880028106020515840").media_id # => 1880028106020515840
-    def media_id = Objects::Utils.read("#{self.class}#media_id", media_key) { Integer(Objects::MediaIds.media_key_id(self), 10) }
+    def media_id = Integer(Objects::MediaIds.media_key_id(self), 10)
 
     # @!attribute [r] type
     #   The media type: photo, video, or animated_gif

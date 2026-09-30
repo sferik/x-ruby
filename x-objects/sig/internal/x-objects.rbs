@@ -70,7 +70,8 @@ module X
 
       JSON_CLASSES: Hash[Symbol, singleton(Array) | singleton(Hash)]
       NUMERIC_ID: Regexp
-      RAW_ID: Regexp
+      ID_PATTERNS: Hash[Symbol, Regexp]
+      ID_DESCRIPTIONS: Hash[Symbol, String]
       USERNAME: Regexp
       FOREIGN_RESOURCE: String
 
@@ -539,9 +540,9 @@ module X
       end
 
       module Media : _Client
-        def find_media: (id | _MediaKeyHolder media_key, **untyped params) ?{ (Problem problem) -> void } -> X::Media?
-        def find_all_media: (Array[id | _MediaKeyHolder] media, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[X::Media]
-        def find_media!: (id | _MediaKeyHolder media_key, **untyped params) -> X::Media
+        def find_media: (String | _MediaKeyHolder media_key, **untyped params) ?{ (Problem problem) -> void } -> X::Media?
+        def find_all_media: (Array[String | _MediaKeyHolder] media, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[X::Media]
+        def find_media!: (String | _MediaKeyHolder media_key, **untyped params) -> X::Media
       end
 
       module Communities : _Client

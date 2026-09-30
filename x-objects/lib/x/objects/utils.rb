@@ -15,14 +15,19 @@ module X
       # The pattern of an identifier that is a number, which most resources are identified by
       NUMERIC_ID = /\A\d+\z/
 
-      # The pattern of an identifier that is not a number: the word characters a space identifier and a media key are
-      # written with, or the two numbers a one-to-one conversation identifier joins with a hyphen
-      RAW_ID = /\A(?:\w+|\d+-\d+)\z/
+      # The pattern of the identifiers of each type, as the id_type of a resource class names it: a number; the word
+      # characters a space identifier is written with, or the two numbers a one-to-one conversation identifier joins
+      # with a hyphen; and a media key, which is the number of the type of media and the numeric identifier of the
+      # media, joined with an underscore
+      ID_PATTERNS = {integer: NUMERIC_ID, raw: /\A(?:\w+|\d+-\d+)\z/, media_key: /\A\d+_\d+\z/}.freeze
+
+      # What an identifier of each type is, which the error raised for one that is not names
+      ID_DESCRIPTIONS = {integer: "an Integer, or a String of digits", raw: "or a String of word characters", media_key: "what an upload returned, or a media key, such as \"3_1880028106020515840\""}.freeze
 
       # The pattern of a username: one to fifteen word characters, which the at sign a handle is often written with
       # may precede
       USERNAME = /\A@?\w{1,15}\z/
-      private_constant :RAW_ID, :USERNAME
+      private_constant :ID_PATTERNS, :ID_DESCRIPTIONS, :USERNAME
 
       # The message of the error raised for a resource of another class than the one an identifier was expected of
       FOREIGN_RESOURCE = "%<given>s %<id>s is not %<expected>s: pass %<expected>s or its identifier"
@@ -117,10 +122,11 @@ module X
       # Extract the identifier of a resource of a class from the resource or a raw value
       #
       # The identifiers of most resources are numbers, so a value that is not, such as a username, raises rather than
-      # reach the API as an identifier it cannot be. The identifiers that are not numbers, such as those of spaces and
-      # media, are word characters, so anything else raises rather than reach the API as part of a path. A resource
-      # of another class raises too, since its identifier is one of another kind of resource, which the API would
-      # read as the identifier of a resource of this class, such as a list followed as though it were a user.
+      # reach the API as an identifier it cannot be. The identifiers that are not numbers, such as those of spaces, are
+      # word characters, so anything else raises rather than reach the API as part of a path, and a media key is two
+      # numbers joined with an underscore, so the numeric identifier of media raises rather than look up nothing. A
+      # resource of another class raises too, since its identifier is one of another kind of resource, which the API
+      # would read as the identifier of a resource of this class, such as a list followed as though it were a user.
       #
       # @api private
       # @param value [Resource, String, Integer] a resource or an identifier
@@ -128,10 +134,10 @@ module X
       # @return [String] the identifier
       # @raise [ArgumentError] if the value is a resource of another class, is neither a resource nor an identifier,
       #   or the identifier is not a number, or is not word characters for a resource whose identifiers are not
-      #   numbers, such as a space
+      #   numbers, such as a space, or is not a media key for media
       def id_of(value, klass)
         id = id_from(value, klass)
-        return id if id.match?(klass.__send__(:id_type).eql?(:raw) ? RAW_ID : NUMERIC_ID)
+        return id if id.match?(ID_PATTERNS.fetch(klass.__send__(:id_type)))
 
         not_an_identifier(value, klass)
       end
@@ -164,8 +170,7 @@ module X
       # @return [void]
       # @raise [ArgumentError] always
       def not_an_identifier(value, klass)
-        raw = klass.__send__(:id_type).eql?(:raw)
-        raise ArgumentError, "#{value.inspect} is not an identifier: pass #{klass}, #{raw ? "or a String of word characters" : "an Integer, or a String of digits"}"
+        raise ArgumentError, "#{value.inspect} is not an identifier: pass #{klass}, #{ID_DESCRIPTIONS.fetch(klass.__send__(:id_type))}"
       end
 
       # Normalize a username, dropping the at sign a handle is often written with

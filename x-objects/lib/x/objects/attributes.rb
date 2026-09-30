@@ -15,6 +15,7 @@ module X
       # Converters keyed by attribute type
       CONVERTERS = {
         raw: ->(value) { value },
+        media_key: ->(value) { value },
         boolean: ->(value) { value },
         time: ->(value) { Utils.time(value) },
         integer: ->(value) { Utils.integer(value) },

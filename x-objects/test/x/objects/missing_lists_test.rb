@@ -20,7 +20,7 @@ module X
 
     def test_every_list_the_response_omitted_reads_as_empty_and_frozen
       LISTS.each do |klass, names|
-        resource = klass.new({klass.__send__(:id_key) => "1"})
+        resource = klass.new({klass.__send__(:id_key) => klass.equal?(Media) ? "3_1" : "1"})
         names.each do |name|
           assert_empty resource.public_send(name), "Expected #{klass}##{name} to be empty"
           assert_predicate resource.public_send(name), :frozen?, "Expected #{klass}##{name} to be frozen"
