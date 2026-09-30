@@ -22,7 +22,7 @@ module X
         error = assert_raises(TypeError) { Marshal.dump(holder) }
 
         assert_equal "#{holder.class} holds credentials, which Marshal would write in the clear wherever it is kept; keep the credentials " \
-          "in a secret store, and the X::OAuth2Tokens on_token_refresh is passed, and build it again from them", error.message
+          "in a secret store, and the X::OAuth2Tokens save_tokens is passed, and build it again from them", error.message
       end
     end
 
@@ -35,7 +35,7 @@ module X
         error = assert_raises(TypeError) { YAML.dump(holder) }
 
         assert_equal "#{holder.class} holds credentials, which YAML would write in the clear wherever it is kept; keep the credentials " \
-          "in a secret store, and the X::OAuth2Tokens on_token_refresh is passed, and build it again from them", error.message
+          "in a secret store, and the X::OAuth2Tokens save_tokens is passed, and build it again from them", error.message
       end
     end
 

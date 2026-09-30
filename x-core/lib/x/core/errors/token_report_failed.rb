@@ -3,14 +3,14 @@
 require_relative "error"
 
 module X
-  # Error raised when on_token_refresh raised for the tokens of an exchange of a code or of a refresh
+  # Error raised when save_tokens raised for the tokens of an exchange of a code or of a refresh
   #
   # An authorization code works once, and so does a refresh token, so the tokens X issues for either are held in
-  # memory alone until on_token_refresh stores them: the first refresh token of X::OAuth2Authorization#client by the
+  # memory alone until save_tokens stores them: the first refresh token of X::OAuth2Authorization#client by the
   # client it builds, and the one a refresh issued by the authenticator that refreshed, since the one it replaced is
   # spent. They are not lost to a failure to store them, such as a database that is briefly down: the error holds
   # them, so they can be stored again, and the client, which the exchange builds, or whose request refreshed. The
-  # error on_token_refresh raised is the cause, whose message the message ends with.
+  # error save_tokens raised is the cause, whose message the message ends with.
   #
   # @api public
   class TokenReportFailed < Error
@@ -23,7 +23,7 @@ module X
     #     e.client.get("users/me")
     attr_reader :client
 
-    # The tokens of the exchange or the refresh, which on_token_refresh raised for
+    # The tokens of the exchange or the refresh, which save_tokens raised for
     # @api public
     # @return [OAuth2Tokens, nil] the tokens, or nil if none were given
     # @example Store the tokens again
@@ -38,22 +38,22 @@ module X
     # @param client [Client, nil] the client the authorization built, or whose request refreshed the tokens
     # @param tokens [OAuth2Tokens, nil] the tokens of the exchange or the refresh
     # @return [TokenReportFailed] a new error
-    # @example Raise the error for tokens on_token_refresh raised for
+    # @example Raise the error for tokens save_tokens raised for
     #   raise X::TokenReportFailed.new(client:, tokens:)
     def initialize(message = nil, client: nil, tokens: nil)
       @client = client
       @tokens = tokens
-      super(message || "The code was exchanged for tokens, but on_token_refresh raised for them")
+      super(message || "The code was exchanged for tokens, but save_tokens raised for them")
     end
 
-    # The message, ending with why on_token_refresh raised
+    # The message, ending with why save_tokens raised
     #
-    # It ends with the message of the error on_token_refresh raised, which is the cause, if there is one.
+    # It ends with the message of the error save_tokens raised, which is the cause, if there is one.
     #
     # @api public
     # @return [String] the message
     # @example Read why the tokens were not stored
-    #   error.message # => "The code was exchanged for tokens, but on_token_refresh raised for them: connection refused"
+    #   error.message # => "The code was exchanged for tokens, but save_tokens raised for them: connection refused"
     def to_s = [super, cause&.message].compact.join(": ")
   end
 end

@@ -3,7 +3,7 @@
 require_relative "../../test_helper"
 
 module X
-  # A refresh whose tokens on_token_refresh raised for raises TokenReportFailed, which holds them, since the refresh
+  # A refresh whose tokens save_tokens raised for raises TokenReportFailed, which holds them, since the refresh
   # token they replaced is spent
   class TokenRefreshReportFailedTest < Minitest::Test
     cover_client
@@ -29,7 +29,7 @@ module X
       assert_equal %w[NEW_ACCESS_TOKEN NEW_REFRESH_TOKEN], [error.tokens.access_token, error.tokens.refresh_token]
       assert_instance_of StorageDown, error.cause
       assert_nil error.client
-      assert_equal "The tokens were refreshed, but on_token_refresh raised for them: connection refused", error.message
+      assert_equal "The tokens were refreshed, but save_tokens raised for them: connection refused", error.message
     end
 
     def test_a_refresh_before_a_header_raises_with_the_tokens
@@ -39,7 +39,7 @@ module X
     end
 
     def test_a_refresh_before_a_request_raises_with_the_client_and_the_tokens
-      client = Client.new(**test_oauth2_credentials, expires_at: Time.now - 1, on_token_refresh: @failing)
+      client = Client.new(**test_oauth2_credentials, expires_at: Time.now - 1, save_tokens: @failing)
       error = assert_raises(TokenReportFailed) { client.get("users/me") }
 
       assert_same client, error.client
@@ -49,7 +49,7 @@ module X
 
     def test_a_refresh_of_a_rejected_token_raises_with_the_client_and_the_tokens
       stub_request(:get, USERS_ME).to_return(status: 401)
-      client = Client.new(**test_oauth2_credentials, on_token_refresh: @failing)
+      client = Client.new(**test_oauth2_credentials, save_tokens: @failing)
       error = assert_raises(TokenReportFailed) { client.get("users/me") }
 
       assert_same client, error.client
@@ -59,7 +59,7 @@ module X
     end
 
     def test_the_client_holds_the_tokens_the_error_does
-      client = Client.new(**test_oauth2_credentials, expires_at: Time.now - 1, on_token_refresh: @failing)
+      client = Client.new(**test_oauth2_credentials, expires_at: Time.now - 1, save_tokens: @failing)
       error = assert_raises(TokenReportFailed) { client.get("users/me") }
 
       assert_equal error.tokens.access_token, client.authenticator.send(:access_token)

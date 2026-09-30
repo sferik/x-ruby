@@ -174,7 +174,7 @@ module X
       #
       # An authorization code works once, so call this, or {#client}, once for each redirect.
       #
-      # The credentials are the tokens of the user, the OAuth2Tokens a client passes on_token_refresh and reads from
+      # The credentials are the tokens of the user, the OAuth2Tokens a client passes save_tokens and reads from
       # load_tokens, which are stored for each user, so they leave out the client ID, and the client secret of a
       # confidential client, which are the app's and kept once, apart from them; pass them beside the tokens to a
       # client built of them, which refreshes the access token with them.
@@ -200,7 +200,7 @@ module X
       # such as a misspelled keyword, raises before the code is spent rather than after, with the tokens it was
       # exchanged for lost.
       #
-      # The on_token_refresh of the client is passed the OAuth2Tokens of the exchange before the client is returned, as
+      # The save_tokens of the client is passed the OAuth2Tokens of the exchange before the client is returned, as
       # it is passed those of each refresh after, so that a callable that stores them stores every refresh token X
       # issues, the first among them; a refresh token held by the client alone would be lost with it, and the user would
       # have to authorize the app again. Without offline.access, which issues no refresh token, it is passed tokens whose
@@ -215,7 +215,7 @@ module X
       #
       # @api public
       # @param callback [String, Hash] the redirect back from X: its URL, its query string, or its query parameters
-      # @param options [Hash] other options of Client#initialize, such as on_token_refresh, which it is built with
+      # @param options [Hash] other options of Client#initialize, such as save_tokens, which it is built with
       #   beside the base URL, proxy, timeouts, keep-alive timeout, and debug output of the authorization, and in place
       #   of them
       # @return [Client] a client with the user's credentials
@@ -225,9 +225,9 @@ module X
       #   redirect is not a valid URL
       # @raise [HTTPError, InvalidResponse] if the token endpoint limits the rate of the request or fails to answer,
       #   as a server error, a redirect, or the page of a proxy says
-      # @raise [TokenReportFailed] if on_token_refresh raises for the tokens of the exchange, with the client and tokens
+      # @raise [TokenReportFailed] if save_tokens raises for the tokens of the exchange, with the client and tokens
       # @example Act for the user who authorized the app, storing the refresh token of the exchange and of each refresh
-      #   client = authorization.client(request.url, on_token_refresh: ->(tokens) { store.save(tokens.refresh_token) })
+      #   client = authorization.client(request.url, save_tokens: ->(tokens) { store.save(tokens.refresh_token) })
       def client(callback, **options) # steep:ignore DifferentMethodParameterKind
         given = options.keys & CREDENTIALS
         raise ArgumentError, format(CREDENTIALS_GIVEN_MESSAGE, given.join(", ")) unless given.empty?
@@ -342,14 +342,14 @@ module X
       # @return [Client] the client
       def client_of(tokens, options) = Client.new(client_id:, client_secret:, **tokens.to_h, **@settings, **options)
 
-      # Pass the tokens of the exchange to the on_token_refresh of the client
+      # Pass the tokens of the exchange to the save_tokens of the client
       # @api private
       # @param client [Client] the client
       # @param tokens [OAuth2Tokens] the tokens of the exchange
       # @return [void]
-      # @raise [TokenReportFailed] if on_token_refresh raises, with the client and tokens
+      # @raise [TokenReportFailed] if save_tokens raises, with the client and tokens
       def report_exchange(client, tokens)
-        hook = client.on_token_refresh or return
+        hook = client.save_tokens or return
 
         begin
           hook.call(tokens)

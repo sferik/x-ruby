@@ -60,11 +60,11 @@ module X
 
       # The callable passed the OAuth2Tokens of each refresh
       #
-      # {Client#on_token_refresh} returns it.
+      # {Client#save_tokens} returns it.
       #
       # @api private
       # @return [#call, nil] the callable, or nil for none
-      attr_reader :on_token_refresh
+      attr_reader :save_tokens
 
       # The callable a refresh reads the stored OAuth2Tokens with
       #
@@ -96,7 +96,7 @@ module X
         client_secret:, refresh_token:, expires_at:, authenticator:, base_url:, open_timeout:, read_timeout:,
         write_timeout:, keep_alive_timeout:, debug_output:, proxy_url:, default_array_class:, default_object_class:,
         headers:, max_redirects:, max_rate_limit_retries:, max_rate_limit_wait:, max_retries:, on_response:,
-        on_token_refresh:, load_tokens:)
+        save_tokens:, load_tokens:)
         @proxy_url = proxy_url
         @connection = Connection.new(open_timeout:, read_timeout:, write_timeout:, keep_alive_timeout:, debug_output:, proxy_url:)
         @app_only_monitor = Monitor.new
@@ -105,7 +105,7 @@ module X
         initialize_credentials(api_key:, api_key_secret:, access_token:, access_token_secret:, bearer_token:, client_id:, client_secret:, refresh_token:, expires_at:)
         validate_credentials!(authenticator)
         initialize_settings(base_url:, default_array_class:, default_object_class:, headers:, on_response:, max_redirects:, max_rate_limit_retries:, max_rate_limit_wait:, max_retries:)
-        initialize_token_hooks(on_token_refresh:, load_tokens:)
+        initialize_token_hooks(save_tokens:, load_tokens:)
         initialize_authenticator(client, authenticator)
       end
 

@@ -208,9 +208,9 @@ module X
       assert_equal OAuth2Tokens.new(access_token: "new", refresh_token: "NEW_REFRESH", expires_at: Time.utc(2026, 1, 1) + 7200), result
     end
 
-    def test_refresh_returns_the_tokens_on_token_refresh_is_passed
+    def test_refresh_returns_the_tokens_save_tokens_is_passed
       reported = []
-      client = Client.new(**test_oauth2_credentials, on_token_refresh: ->(tokens) { reported << tokens })
+      client = Client.new(**test_oauth2_credentials, save_tokens: ->(tokens) { reported << tokens })
       stub_request(:post, TOKEN_URL).to_return(status: 200, body: {access_token: "new", refresh_token: "NEW_REFRESH"}.to_json)
 
       tokens = client.authenticator.refresh!
@@ -291,7 +291,7 @@ module X
       assert_not_requested @refresh
     end
 
-    def test_on_token_refresh_receives_the_tokens_the_refresh_issued
+    def test_save_tokens_receives_the_tokens_the_refresh_issued
       stub_request(:post, "https://api.x.com/2/oauth2/token")
         .to_return(status: 200, body: {access_token: "NEW_ACCESS_TOKEN", refresh_token: "NEW_REFRESH_TOKEN", expires_in: 7200}.to_json)
       tokens = []

@@ -25,12 +25,12 @@ module X
 
       # Initialize the callables that store and load the tokens of a refresh
       # @api private
-      # @param on_token_refresh [#call, nil] the callable passed the OAuth2Tokens of each refresh
+      # @param save_tokens [#call, nil] the callable passed the OAuth2Tokens of each refresh
       # @param load_tokens [#call, nil] the callable that returns the OAuth2Tokens in the store
       # @return [void]
-      # @raise [ArgumentError] if on_token_refresh or load_tokens is neither nil nor responds to call
-      def initialize_token_hooks(on_token_refresh:, load_tokens:)
-        @on_token_refresh = SettingValidator.callable!(:on_token_refresh, on_token_refresh)
+      # @raise [ArgumentError] if save_tokens or load_tokens is neither nil nor responds to call
+      def initialize_token_hooks(save_tokens:, load_tokens:)
+        @save_tokens = SettingValidator.callable!(:save_tokens, save_tokens)
         @load_tokens = SettingValidator.callable!(:load_tokens, load_tokens)
       end
 
@@ -93,7 +93,7 @@ module X
       # Take an authenticator the client was given, as it would one it built
       #
       # The token requests of an authenticator that makes them are sent over the connection of the first client
-      # given it, and the refreshes of an OAuth 2.0 one reach the on_token_refresh of each client that shares it.
+      # given it, and the refreshes of an OAuth 2.0 one reach the save_tokens of each client that shares it.
       #
       # @api private
       # @param client [Client] the client these are the internals of
@@ -107,7 +107,7 @@ module X
         end
       end
 
-      # Join the clients whose on_token_refresh an OAuth 2.0 authenticator reports to
+      # Join the clients whose save_tokens an OAuth 2.0 authenticator reports to
       # @api private
       # @param client [Client] the client these are the internals of
       # @param authenticator [OAuth2Authenticator] the authenticator
@@ -115,7 +115,7 @@ module X
       def join(client, authenticator)
         clients = authenticator.__send__(:clients)
         clients[client] = true
-        authenticator.__send__(:report_refreshes_to, -> { clients.keys.filter_map(&:on_token_refresh).uniq })
+        authenticator.__send__(:report_refreshes_to, -> { clients.keys.filter_map(&:save_tokens).uniq })
         authenticator
       end
 
@@ -158,7 +158,7 @@ module X
       # The access token for OAuth authentication, as last refreshed
       #
       # It is private, as {ClientCredentials#api_key_secret} is, and as the access token of the authenticator is. A
-      # hook given to on_token_refresh is passed the OAuth2Tokens of the refresh it reports.
+      # hook given to save_tokens is passed the OAuth2Tokens of the refresh it reports.
       #
       # @api private
       # @return [String, nil] the access token for OAuth authentication

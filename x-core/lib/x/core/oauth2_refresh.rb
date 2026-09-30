@@ -16,7 +16,7 @@ module X
     # Processes that share the tokens of a user read the store they share with load_tokens before a refresh, and take
     # the tokens there in place of their own when those hold another refresh token, which another process issued
     # by a refresh of its own. The tokens taken are copied, and never recorded as the latest a refresh issued, so the
-    # RefreshReporter passes them to no on_token_refresh: they came from the store.
+    # RefreshReporter passes them to no save_tokens: they came from the store.
     #
     # Internal to x-core: the methods are private, and a client calls retrying_rejected_token with __send__.
     #
@@ -60,7 +60,7 @@ module X
       # @raise [AuthorizationError] if X refuses to refresh the token
       # @raise [HTTPError, InvalidResponse] if the token endpoint limits the rate of the request or fails to answer,
       #   as a server error, a redirect, or the page of a proxy says
-      # @raise [TokenReportFailed] if on_token_refresh raises for the tokens of the refresh
+      # @raise [TokenReportFailed] if save_tokens raises for the tokens of the refresh
       def refresh_expired_token(connection, client = nil)
         tokens = @mutex.synchronize { renew(connection) if refresh_token && token_expired? }
         report_refresh(tokens, client) if tokens
@@ -82,7 +82,7 @@ module X
       # @raise [AuthorizationError] if X refuses to refresh the token
       # @raise [HTTPError, InvalidResponse] if the token endpoint limits the rate of the request or fails to answer,
       #   as a server error, a redirect, or the page of a proxy says
-      # @raise [TokenReportFailed] if on_token_refresh raises for the tokens of the refresh
+      # @raise [TokenReportFailed] if save_tokens raises for the tokens of the refresh
       def refresh_rejected_token!(rejected_token, connection, client = nil)
         tokens, replaced = @mutex.synchronize do
           [(renew(connection) if refresh_token && access_token.eql?(rejected_token) && !fresh?), !access_token.eql?(rejected_token)]
@@ -114,7 +114,7 @@ module X
       # @return [Object] what the block returns
       # @raise [Unauthorized] if the request is rejected again, or by another origin, or a refresh does not replace
       #   the access token
-      # @raise [TokenReportFailed] if on_token_refresh raises for the tokens of a refresh, with the tokens and client
+      # @raise [TokenReportFailed] if save_tokens raises for the tokens of a refresh, with the tokens and client
       def retrying_rejected_token(origin, connection, client = nil)
         refresh_expired_token(connection, client)
         token = access_token
@@ -181,7 +181,7 @@ module X
       # Tokens that hold no refresh token, as an authorization without offline.access stores them, are not taken, since
       # they would take away the refresh token of an authenticator that refreshes, which a refresh never does. Tokens
       # that hold the refresh token the authenticator holds, or the one its last refresh spent, are its own,
-      # as the store holds them until on_token_refresh has stored the tokens of that refresh, which it is passed once
+      # as the store holds them until save_tokens has stored the tokens of that refresh, which it is passed once
       # the lock is released, so they are not taken. The age of the access token taken is unknown, so it is not fresh.
       #
       # @api private
@@ -224,7 +224,7 @@ module X
       # @param tokens [OAuth2Tokens] the tokens the refresh issued
       # @param client [Client, nil] the client whose request refreshed, which TokenReportFailed holds, or nil for none
       # @return [void]
-      # @raise [TokenReportFailed] if on_token_refresh raises for the tokens, with the tokens and client
+      # @raise [TokenReportFailed] if save_tokens raises for the tokens, with the tokens and client
       def report_refresh(tokens, client) = @reporter.report(tokens, client)
 
       # Update tokens from the response

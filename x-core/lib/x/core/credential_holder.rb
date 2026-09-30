@@ -19,7 +19,7 @@ module X
     module CredentialHolder
       # The message of the error raised for Marshal or YAML, which names the class refused and what refused it
       REFUSAL_MESSAGE = "%s holds credentials, which %s would write in the clear wherever it is kept; keep the " \
-        "credentials in a secret store, and the X::OAuth2Tokens on_token_refresh is passed, and build it again from them"
+        "credentials in a secret store, and the X::OAuth2Tokens save_tokens is passed, and build it again from them"
       private_constant :REFUSAL_MESSAGE
 
       # Refuse to be written with Marshal, which would write the credentials
@@ -28,7 +28,7 @@ module X
       # @return [void]
       # @raise [TypeError] always
       # @example Store the tokens a refresh issued, rather than the client
-      #   X::Client.new(**credentials, on_token_refresh: ->(tokens) { store.save(**tokens.to_h) })
+      #   X::Client.new(**credentials, save_tokens: ->(tokens) { store.save(**tokens.to_h) })
       def marshal_dump = raise(TypeError, format(REFUSAL_MESSAGE, self.class, "Marshal"))
 
       # Refuse to be written as YAML, which would write the credentials

@@ -13,13 +13,13 @@ module X
     #
     # X issues a new refresh token with each access token and accepts a refresh token once, so an authenticator
     # refreshes under a lock, and the authenticator of a client passes the tokens each refresh issued, as OAuth2Tokens,
-    # to the on_token_refresh of that client and of each copy of it that shares the authenticator, so that they can be
+    # to the save_tokens of that client and of each copy of it that shares the authenticator, so that they can be
     # stored.
     #
-    # Processes that share the tokens of a user, storing each refresh with on_token_refresh, read the store with
+    # Processes that share the tokens of a user, storing each refresh with save_tokens, read the store with
     # load_tokens, which a refresh calls under its lock before it refreshes: X accepts a refresh token once, and a
     # process that refreshed with the one another had already spent would be refused. The tokens a refresh takes from
-    # the store are not passed to on_token_refresh, since they came from it.
+    # the store are not passed to save_tokens, since they came from it.
     #
     # X issues no refresh token for an authorization without the offline.access scope, so an authenticator built
     # without one authenticates as the user until its access token expires, and refreshes nothing: a request sent
@@ -82,7 +82,7 @@ module X
       # @example Share the tokens of a user among processes, storing each refresh and reading the store before one
       #   authenticator = X::OAuth2Authenticator.new(client_id: "id", **store.load(user).to_h,
       #     load_tokens: -> { store.load(user) })
-      #   client = X::Client.new(authenticator:, on_token_refresh: ->(tokens) { store.save(user, tokens) })
+      #   client = X::Client.new(authenticator:, save_tokens: ->(tokens) { store.save(user, tokens) })
       def initialize(client_id:, access_token:, refresh_token: nil, client_secret: nil, expires_at: nil, load_tokens: nil)
         CredentialValidator.validate_required!({client_id:, access_token:}, {refresh_token:, client_secret:, expires_at:})
         initialize_refresh(load_tokens)
@@ -106,7 +106,7 @@ module X
       # @raise [AuthorizationError] if the token has expired and X refuses to refresh it
       # @raise [HTTPError, InvalidResponse] if the token endpoint limits the rate of the request or fails to answer,
       #   as a server error, a redirect, or the page of a proxy says
-      # @raise [TokenReportFailed] if on_token_refresh raises for the tokens of a refresh, with the tokens
+      # @raise [TokenReportFailed] if save_tokens raises for the tokens of a refresh, with the tokens
       # @example Get the header
       #   authenticator.headers(request)
       def headers(_request)
@@ -137,17 +137,17 @@ module X
       # Refresh the access token using the refresh token
       #
       # The authenticator holds the new tokens once it returns, and the authenticator of a client has passed them to the
-      # on_token_refresh of the clients that share it. The tokens it returns are those of this refresh, frozen, the
-      # same object on_token_refresh is passed, so they are a set that belongs together, whatever refreshes follow on
+      # save_tokens of the clients that share it. The tokens it returns are those of this refresh, frozen, the
+      # same object save_tokens is passed, so they are a set that belongs together, whatever refreshes follow on
       # other threads.
       #
       # A refresh reads the tokens in storage first, with load_tokens, and refreshes with the refresh token there when it
       # is another. When X refuses the refresh for a refresh token another process spent, and the storage holds
-      # another, the tokens there are returned in place of an error, and are not passed to on_token_refresh.
+      # another, the tokens there are returned in place of an error, and are not passed to save_tokens.
       #
-      # An on_token_refresh that raises, as one whose storage is briefly down may, raises TokenReportFailed once each
+      # A save_tokens that raises, as one whose storage is briefly down may, raises TokenReportFailed once each
       # has been passed the tokens, which holds them, since the refresh token they replaced is spent and the
-      # authenticator holds them alone, with the error on_token_refresh raised as its cause.
+      # authenticator holds them alone, with the error save_tokens raised as its cause.
       #
       # @api public
       # @return [OAuth2Tokens] the tokens the refresh issued, or those it took from storage in place of a refusal
@@ -155,7 +155,7 @@ module X
       # @raise [AuthorizationError] if X refuses to refresh the token
       # @raise [HTTPError, InvalidResponse] if the token endpoint limits the rate of the request or fails to answer,
       #   as a server error, a redirect, or the page of a proxy says
-      # @raise [TokenReportFailed] if on_token_refresh raises for the tokens of the refresh, with the tokens
+      # @raise [TokenReportFailed] if save_tokens raises for the tokens of the refresh, with the tokens
       # @example Refresh the tokens and store them
       #   store.save(**authenticator.refresh!.to_h)
       def refresh!
@@ -174,7 +174,7 @@ module X
       # The OAuth 2.0 access token, as last refreshed
       #
       # It is a secret, so it is private, as the access token of a client is, since a client hands out its
-      # authenticator. The tokens of a refresh are passed to on_token_refresh, and returned by {#refresh!}. Internal to
+      # authenticator. The tokens of a refresh are passed to save_tokens, and returned by {#refresh!}. Internal to
       # x-core: a client reads it with __send__.
       #
       # @api private
@@ -208,7 +208,7 @@ module X
 
       # The clients that authenticate with the authenticator, held weakly
       #
-      # Each refresh reaches the on_token_refresh of each of them. Internal to x-core: a client joins the clients of the
+      # Each refresh reaches the save_tokens of each of them. Internal to x-core: a client joins the clients of the
       # authenticator it builds, shares with the client it was copied from, or is given, and reads them with __send__,
       # since they are private.
       #
@@ -273,7 +273,7 @@ module X
 
       # Pass each refresh to the callables another reads
       #
-      # Internal to x-core: Client passes the refreshes of the authenticator it builds to the on_token_refresh of each
+      # Internal to x-core: Client passes the refreshes of the authenticator it builds to the save_tokens of each
       # client that shares it, and calls it with __send__, since it is private.
       #
       # @api private

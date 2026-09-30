@@ -5,7 +5,7 @@ require_relative "errors/unsupported_marshal_format"
 
 module X
   module Core
-    # The OAuth 2.0 tokens one refresh issued, or the exchange of an authorization code, which on_token_refresh is
+    # The OAuth 2.0 tokens one refresh issued, or the exchange of an authorization code, which save_tokens is
     # passed to store
     #
     # It is frozen, and taken while the refresh holds its lock, so it holds the tokens of the refresh it reports,
@@ -119,7 +119,7 @@ module X
       # @api public
       # @return [Array(Integer, Hash{Symbol => String, Time, nil})] the number of the format, then the tokens as a Hash
       # @example Store the tokens of a refresh
-      #   X::Client.new(**credentials, on_token_refresh: ->(tokens) { File.binwrite("tokens", Marshal.dump(tokens)) })
+      #   X::Client.new(**credentials, save_tokens: ->(tokens) { File.binwrite("tokens", Marshal.dump(tokens)) })
       def marshal_dump = [MARSHAL_FORMAT, to_h]
 
       # Restore tokens Marshal read, built as the constructor builds them, frozen

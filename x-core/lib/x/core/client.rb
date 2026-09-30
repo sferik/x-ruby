@@ -70,7 +70,7 @@ module X
       # requests of an authenticator that makes them, an AppOnlyAuthenticator or an OAuth2Authenticator, over its own
       # connection, with its proxy, timeouts, and debug output, whether it built the authenticator or was given it; an
       # authenticator given to several clients sends them over the connection of the first. The refreshes of an
-      # OAuth2Authenticator reach the on_token_refresh of each client that authenticates with it, a refresh reads the
+      # OAuth2Authenticator reach the save_tokens of each client that authenticates with it, a refresh reads the
       # stored tokens with the load_tokens of the authenticator, or else with the load_tokens of a client that
       # authenticates with it, and the expires_at of the client is the authenticator's.
       #
@@ -84,8 +84,8 @@ module X
       # @api public
       # @return [#call, nil] the callable, or nil for none
       # @example Read the hook a refresh reports to
-      #   client.on_token_refresh
-      def on_token_refresh = @internals.on_token_refresh
+      #   client.save_tokens
+      def save_tokens = @internals.save_tokens
 
       # The callable a refresh reads the stored OAuth2Tokens with
       #
@@ -223,19 +223,19 @@ module X
       #   API bills a read it answered, such as one that timed out reading its response, whether or not the answer came
       # @param on_response [#call, nil] a callable passed an X::Response after every request, failed ones included, and
       #   every object a stream delivers; a block passed to a single request receives the same summary, after this
-      # @param on_token_refresh [#call, nil] a callable passed the OAuth2Tokens of each refresh, to store them; the
+      # @param save_tokens [#call, nil] a callable passed the OAuth2Tokens of each refresh, to store them; the
       #   refreshes are reported one at a time, in the order they were made, and one already replaced is not reported;
       #   the client of OAuth2Authorization#client passes it the tokens of the exchange of the code as well; a callable
       #   that raises, as one whose storage is briefly down may, raises TokenReportFailed from the request that
       #   refreshed, which holds the tokens, since the refresh token they replaced is spent, and the client, with the
       #   error of the callable as its cause
       # @param load_tokens [#call, nil] a callable that takes no arguments and returns the OAuth2Tokens in the storage
-      #   that on_token_refresh writes to, or nil for none there, for processes that share the tokens of a user: X
+      #   that save_tokens writes to, or nil for none there, for processes that share the tokens of a user: X
       #   accepts a refresh token once, so a refresh reads the storage first, under its lock, and takes the tokens there
       #   in place of its own when their refresh token is another, as it is once another process has refreshed; it
       #   sends the request with them when their access token has not expired, and refreshes with them when it has,
       #   and a refresh X refuses for a refresh token another process spent reads the storage again, and takes the
-      #   tokens there in place of raising; the tokens it takes came from the storage, so on_token_refresh is not
+      #   tokens there in place of raising; the tokens it takes came from the storage, so save_tokens is not
       #   passed them; see {#authenticator}
       # @return [Client] a new client instance
       # @raise [ArgumentError] if credentials are given that do not form a complete set, which would send requests
@@ -250,24 +250,24 @@ module X
       #   keep_alive_timeout, nil, or if a maximum is not a count or a number of seconds of at least 0
       # @raise [ArgumentError] if base_url is not an absolute http or https URL with no user, password, query, or
       #   fragment, or headers are not a Hash that names each header with a String or a Symbol and gives it a String
-      # @raise [ArgumentError] if on_response, on_token_refresh, or load_tokens is neither nil nor responds to call
+      # @raise [ArgumentError] if on_response, save_tokens, or load_tokens is neither nil nor responds to call
       # @raise [ArgumentError] if default_array_class is not a Class, or default_object_class is neither a Class nor
       #   responds to from_response, which a response would be parsed with once the API had answered the request
       # @example Create a client with bearer token authentication
       #   client = X::Client.new(bearer_token: "your_bearer_token")
       # @example Create a client with OAuth 2.0 authentication that stores the tokens of each refresh
       #   client = X::Client.new(client_id: "id", client_secret: "secret", access_token: "token", refresh_token: "refresh",
-      #     expires_at: Time.now + 7200, on_token_refresh: ->(tokens) { store.save(tokens.refresh_token) })
+      #     expires_at: Time.now + 7200, save_tokens: ->(tokens) { store.save(tokens.refresh_token) })
       # @example Share the tokens of a user among processes, which store each refresh and read the store before one
       #   stored = store.load(user)
       #   client = X::Client.new(client_id: "id", **stored.to_h,
-      #     on_token_refresh: ->(tokens) { store.save(user, tokens) },
+      #     save_tokens: ->(tokens) { store.save(user, tokens) },
       #     load_tokens: -> { store.load(user) })
       # @example Create a client with OAuth 1.0a authentication
       #   client = X::Client.new(api_key: "key", api_key_secret: "secret", access_token: "token", access_token_secret: "token_secret")
       # @example Create a client that authenticates with an authenticator built elsewhere
       #   client = X::Client.new(authenticator: X::OAuth2Authenticator.new(client_id: "id", access_token: "token",
-      #     refresh_token: "refresh", expires_at: Time.now + 7200), on_token_refresh: ->(tokens) { store.save(tokens) })
+      #     refresh_token: "refresh", expires_at: Time.now + 7200), save_tokens: ->(tokens) { store.save(tokens) })
       # @example Create a client that fetches an app-only bearer token with the API key and secret
       #   client = X::Client.new(api_key: "key", api_key_secret: "secret")
       # @example Create a client that retries a rate-limited request up to three times
@@ -293,13 +293,13 @@ module X
         max_rate_limit_wait: DEFAULT_MAX_RATE_LIMIT_WAIT,
         max_retries: DEFAULT_MAX_RETRIES,
         on_response: nil,
-        on_token_refresh: nil,
+        save_tokens: nil,
         load_tokens: nil)
         @internals = ClientInternals.new(self, api_key:, api_key_secret:, access_token:, access_token_secret:, bearer_token:,
           client_id:, client_secret:, refresh_token:, expires_at:, authenticator:, base_url:, open_timeout:, read_timeout:,
           write_timeout:, keep_alive_timeout:, debug_output:, proxy_url:, default_array_class:, default_object_class:,
           headers:, max_redirects:, max_rate_limit_retries:, max_rate_limit_wait:, max_retries:, on_response:,
-          on_token_refresh:, load_tokens:)
+          save_tokens:, load_tokens:)
       end
 
       # Summarize the client for the console without revealing credentials
@@ -318,7 +318,7 @@ module X
       # client reaches the other, since X accepts a refresh token once, unless it is given a client ID, client secret,
       # access token, or refresh token that the authenticator does not hold. It shares it whatever the tokens are when
       # it is built, so a refresh on another thread while it is built reaches it too. A refresh then passes the
-      # tokens it issued to the on_token_refresh of each client that shares it, once for each distinct callable.
+      # tokens it issued to the save_tokens of each client that shares it, once for each distinct callable.
       #
       # A copy of a client that was given its authenticator shares it, unless the copy is given a credential, which
       # replaces it, or an authenticator of its own, which also replaces the credentials of a client that holds them.

@@ -16,11 +16,11 @@ module X
     end
 
     def test_an_authenticator_holds_no_callable_of_its_own
-      refute_respond_to Client.new(**test_oauth2_credentials, on_token_refresh: ->(_) {}).authenticator, :on_token_refresh
+      refute_respond_to Client.new(**test_oauth2_credentials, save_tokens: ->(_) {}).authenticator, :save_tokens
     end
 
     def test_a_refresh_by_the_authenticator_of_a_client_reaches_the_hook_of_the_client
-      client = Client.new(**test_oauth2_credentials, on_token_refresh: ->(auth) { @refreshed << auth.access_token })
+      client = Client.new(**test_oauth2_credentials, save_tokens: ->(auth) { @refreshed << auth.access_token })
       client.authenticator.refresh!
 
       assert_equal ["NEW_ACCESS_TOKEN"], @refreshed

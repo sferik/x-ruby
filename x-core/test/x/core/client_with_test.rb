@@ -50,10 +50,10 @@ module X
 
     def test_a_copy_keeps_the_hooks
       on_response = ->(_) {}
-      on_token_refresh = ->(_) {}
-      copy = Client.new(on_response:, on_token_refresh:).with
+      save_tokens = ->(_) {}
+      copy = Client.new(on_response:, save_tokens:).with
 
-      assert_equal [on_response, on_token_refresh], [copy.on_response, copy.on_token_refresh]
+      assert_equal [on_response, save_tokens], [copy.on_response, copy.save_tokens]
     end
 
     def test_a_copy_changes_the_base_url

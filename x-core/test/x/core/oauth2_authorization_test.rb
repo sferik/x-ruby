@@ -271,42 +271,42 @@ module X
       assert_equal 5, client.read_timeout
     end
 
-    def test_on_token_refresh_is_passed_the_tokens_of_the_exchange
+    def test_save_tokens_is_passed_the_tokens_of_the_exchange
       stub_token
       passed = []
-      client = Time.stub(:now, Time.at(1_000)) { authorization.client("state=STATE&code=CODE", on_token_refresh: ->(tokens) { passed << tokens }) }
+      client = Time.stub(:now, Time.at(1_000)) { authorization.client("state=STATE&code=CODE", save_tokens: ->(tokens) { passed << tokens }) }
 
       assert_equal [OAuth2Tokens.new(access_token: "ACCESS", refresh_token: "REFRESH", expires_at: Time.at(8_200))], passed
       assert_instance_of Client, client
     end
 
-    def test_on_token_refresh_is_passed_the_tokens_of_an_exchange_without_a_refresh_token
+    def test_save_tokens_is_passed_the_tokens_of_an_exchange_without_a_refresh_token
       stub_token(body: {token_type: "bearer", access_token: "ACCESS", expires_in: 7200})
       passed = []
-      client = Time.stub(:now, Time.at(1_000)) { authorization.client("state=STATE&code=CODE", on_token_refresh: ->(tokens) { passed << tokens }) }
+      client = Time.stub(:now, Time.at(1_000)) { authorization.client("state=STATE&code=CODE", save_tokens: ->(tokens) { passed << tokens }) }
 
       assert_equal [OAuth2Tokens.new(access_token: "ACCESS", expires_at: Time.at(8_200))], passed
       assert_instance_of OAuth2Authenticator, client.authenticator
     end
 
-    def test_a_client_without_on_token_refresh_is_built_from_the_exchange
+    def test_a_client_without_save_tokens_is_built_from_the_exchange
       stub_token
 
       assert_instance_of OAuth2Authenticator, authorization.client("state=STATE&code=CODE").authenticator
     end
 
-    def test_an_error_of_on_token_refresh_for_the_tokens_of_the_exchange_keeps_the_client_and_tokens
+    def test_an_error_of_save_tokens_for_the_tokens_of_the_exchange_keeps_the_client_and_tokens
       stub_token
-      error = assert_raises(TokenReportFailed) { authorization.client("state=STATE&code=CODE", on_token_refresh: ->(_) { raise "unstored" }) }
+      error = assert_raises(TokenReportFailed) { authorization.client("state=STATE&code=CODE", save_tokens: ->(_) { raise "unstored" }) }
 
       assert_equal ["ACCESS", "REFRESH"], [error.tokens.access_token, error.tokens.refresh_token]
-      assert_equal ["unstored", "The code was exchanged for tokens, but on_token_refresh raised for them: unstored"], [error.cause.message, error.message]
+      assert_equal ["unstored", "The code was exchanged for tokens, but save_tokens raised for them: unstored"], [error.cause.message, error.message]
     end
 
-    def test_the_client_an_error_of_on_token_refresh_holds_acts_for_the_user
+    def test_the_client_an_error_of_save_tokens_holds_acts_for_the_user
       stub_token
       stub_request(:get, "https://api.x.com/2/users/me").with(headers: {"Authorization" => "Bearer ACCESS"}).to_return(status: 200, body: "{}", headers: {"Content-Type" => "application/json"})
-      error = assert_raises(TokenReportFailed) { authorization.client("state=STATE&code=CODE", on_token_refresh: ->(_) { raise "unstored" }) }
+      error = assert_raises(TokenReportFailed) { authorization.client("state=STATE&code=CODE", save_tokens: ->(_) { raise "unstored" }) }
 
       assert_equal({}, error.client.get("users/me"))
     end

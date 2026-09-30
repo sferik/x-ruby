@@ -16,7 +16,7 @@ module X
     def refused_client(**options)
       reported = []
       assert_raises(ArgumentError) do
-        Client.new(authenticator: @authenticator, on_token_refresh: ->(tokens) { reported << tokens }, proxy_url: "http://proxy.invalid:1", **options)
+        Client.new(authenticator: @authenticator, save_tokens: ->(tokens) { reported << tokens }, proxy_url: "http://proxy.invalid:1", **options)
       end
       reported
     end
@@ -41,7 +41,7 @@ module X
     def test_a_copy_refused_for_a_setting_leaves_the_authenticator_it_shares_alone
       client = Client.new(authenticator: @authenticator)
       reported = []
-      assert_raises(ArgumentError) { client.with(on_token_refresh: ->(tokens) { reported << tokens }, max_redirects: -1) }
+      assert_raises(ArgumentError) { client.with(save_tokens: ->(tokens) { reported << tokens }, max_redirects: -1) }
       @authenticator.refresh!
 
       assert_empty reported

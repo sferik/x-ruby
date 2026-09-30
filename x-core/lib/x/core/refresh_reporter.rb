@@ -20,7 +20,7 @@ module X
     # @api private
     class RefreshReporter
       # The message of the error raised when a callable raised for the tokens of a refresh
-      REPORT_FAILED = "The tokens were refreshed, but on_token_refresh raised for them"
+      REPORT_FAILED = "The tokens were refreshed, but save_tokens raised for them"
 
       # Initialize a reporter with no refresh to report
       # @api private

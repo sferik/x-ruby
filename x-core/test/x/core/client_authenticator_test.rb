@@ -51,7 +51,7 @@ module X
     def test_the_refreshes_of_an_oauth2_authenticator_reach_each_client_given_it
       refreshed = []
       authenticator = OAuth2Authenticator.new(**test_oauth2_credentials)
-      clients = %i[first second].map { |name| Client.new(authenticator:, on_token_refresh: ->(tokens) { refreshed << [name, tokens.refresh_token] }) }
+      clients = %i[first second].map { |name| Client.new(authenticator:, save_tokens: ->(tokens) { refreshed << [name, tokens.refresh_token] }) }
       authenticator.refresh!
 
       assert_equal [[:first, "NEW_REFRESH_TOKEN"], [:second, "NEW_REFRESH_TOKEN"]], refreshed.sort

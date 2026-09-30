@@ -21,7 +21,7 @@ module X
     end
   end
 
-  # Processes that share the tokens of a user store each refresh with on_token_refresh, and read the store with
+  # Processes that share the tokens of a user store each refresh with save_tokens, and read the store with
   # load_tokens before a refresh, since X accepts a refresh token once, and rotates it on the first refresh
   class OAuth2LoadTokensTest < Minitest::Test
     include LoadTokensHelpers
@@ -38,7 +38,7 @@ module X
     # A client whose token has expired, which reads the store with a callable that returns each of the values given in
     # turn, and then the last of them
     def client_loading(*values, **options)
-      Client.new(**test_oauth2_credentials, expires_at: Time.now - 1, on_token_refresh: ->(tokens) { @reported << tokens },
+      Client.new(**test_oauth2_credentials, expires_at: Time.now - 1, save_tokens: ->(tokens) { @reported << tokens },
         load_tokens: -> { values.fetch([(@loads += 1) - 1, values.size - 1].min) }, **options)
     end
 

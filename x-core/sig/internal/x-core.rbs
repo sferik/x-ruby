@@ -273,13 +273,13 @@ module X
       @refresh_token: String?
       @expires_at: Time?
 
-      @on_token_refresh: _TokenRefreshHook?
+      @save_tokens: _TokenSaver?
       @load_tokens: _TokenLoader?
 
       def expires_at: () -> Time?
 
       private
-      def initialize_token_hooks: (on_token_refresh: _TokenRefreshHook?, load_tokens: _TokenLoader?) -> void
+      def initialize_token_hooks: (save_tokens: _TokenSaver?, load_tokens: _TokenLoader?) -> void
       def share_authenticator: (Client copy, Authenticator | AppOnlyAuthenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator other, Hash[Symbol, untyped] options) -> void
       def share_oauth2: (Client copy, OAuth2Authenticator other, Hash[Symbol, untyped] options) -> void
       def share_app_only: (AppOnlyAuthenticator other, Hash[Symbol, untyped] options) -> void
@@ -420,11 +420,11 @@ module X
       @expires_at: Time?
 
       attr_reader authenticator: Authenticator | AppOnlyAuthenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator
-      attr_reader on_token_refresh: _TokenRefreshHook?
+      attr_reader save_tokens: _TokenSaver?
       attr_reader load_tokens: _TokenLoader?
 
       def self.of: (Client client) -> ClientInternals
-      def initialize: (Client client, api_key: String?, api_key_secret: String?, access_token: String?, access_token_secret: String?, bearer_token: String?, client_id: String?, client_secret: String?, refresh_token: String?, expires_at: Time?, authenticator: Authenticator?, base_url: String, open_timeout: (Float | Integer)?, read_timeout: (Float | Integer)?, write_timeout: (Float | Integer)?, keep_alive_timeout: Float | Integer, debug_output: _DebugOutput?, proxy_url: (URI::Generic | String)?, default_array_class: Class, default_object_class: object_class, headers: headers, max_redirects: Integer, max_rate_limit_retries: Integer, max_rate_limit_wait: Float | Integer, max_retries: Integer, on_response: _ResponseHook?, on_token_refresh: _TokenRefreshHook?, load_tokens: _TokenLoader?) -> void
+      def initialize: (Client client, api_key: String?, api_key_secret: String?, access_token: String?, access_token_secret: String?, bearer_token: String?, client_id: String?, client_secret: String?, refresh_token: String?, expires_at: Time?, authenticator: Authenticator?, base_url: String, open_timeout: (Float | Integer)?, read_timeout: (Float | Integer)?, write_timeout: (Float | Integer)?, keep_alive_timeout: Float | Integer, debug_output: _DebugOutput?, proxy_url: (URI::Generic | String)?, default_array_class: Class, default_object_class: object_class, headers: headers, max_redirects: Integer, max_rate_limit_retries: Integer, max_rate_limit_wait: Float | Integer, max_retries: Integer, on_response: _ResponseHook?, save_tokens: _TokenSaver?, load_tokens: _TokenLoader?) -> void
       def inspect: () -> String
       def with: (Client client, Hash[Symbol, untyped] options) -> Client
       def close: () -> void
@@ -544,11 +544,11 @@ module X
     class RefreshReporter
       @monitor: Monitor
       @latest: OAuth2Tokens?
-      @hooks: (^() -> Array[_TokenRefreshHook])?
+      @hooks: (^() -> Array[_TokenSaver])?
 
       def initialize: () -> void
       def issued: (OAuth2Tokens tokens) -> OAuth2Tokens
-      def to: (^() -> Array[_TokenRefreshHook] hooks) -> ^() -> Array[_TokenRefreshHook]
+      def to: (^() -> Array[_TokenSaver] hooks) -> ^() -> Array[_TokenSaver]
       REPORT_FAILED: String
 
       def report: (OAuth2Tokens tokens, Client? client) -> void
@@ -779,7 +779,7 @@ module X
     def token_requests_over: (Core::Connection connection, String base_url) -> self
     def holds?: (Hash[Symbol, untyped] options) -> bool
     def update_expires_at: (Time? expires_at) -> void
-    def report_refreshes_to: (^() -> Array[_TokenRefreshHook] hooks) -> ^() -> Array[_TokenRefreshHook]
+    def report_refreshes_to: (^() -> Array[_TokenSaver] hooks) -> ^() -> Array[_TokenSaver]
     attr_reader client_secret: String?
     def oauth2_client: -> SimpleOAuth::OAuth2::Client
   end
@@ -842,7 +842,7 @@ module X
   end
 
   interface _SettingsHost
-    def on_token_refresh: () -> _TokenRefreshHook?
+    def save_tokens: () -> _TokenSaver?
     def load_tokens: () -> _TokenLoader?
   end
 

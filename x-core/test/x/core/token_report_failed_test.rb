@@ -23,7 +23,7 @@ module X
     end
 
     def test_says_the_tokens_were_not_stored
-      assert_equal "The code was exchanged for tokens, but on_token_refresh raised for them", TokenReportFailed.new.message
+      assert_equal "The code was exchanged for tokens, but save_tokens raised for them", TokenReportFailed.new.message
     end
 
     def test_takes_a_message_of_its_own
