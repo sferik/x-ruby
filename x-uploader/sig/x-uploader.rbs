@@ -122,7 +122,7 @@ module X
 
   class MediaProcessingCheckFailed < Uploader::Error
     attr_reader media: UploadedMedia?
-    def initialize: (?String? message, ?media: UploadedMedia?) -> void
+    def initialize: (?String? message, ?media: UploadedMedia | Hash[String, untyped] | nil) -> void
     def to_s: () -> String
   end
 
@@ -134,7 +134,7 @@ module X
 
   class AltTextFailed < Uploader::Error
     attr_reader media: UploadedMedia?
-    def initialize: (?String? message, ?media: UploadedMedia?) -> void
+    def initialize: (?String? message, ?media: UploadedMedia | Hash[String, untyped] | nil) -> void
     def to_s: () -> String
   end
 

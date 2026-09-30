@@ -141,6 +141,18 @@ module X
   class UploaderAltTextFailedTest < Minitest::Test
     cover AltTextFailed
 
+    def test_holds_media_given_as_a_hash_as_uploaded_media
+      [{"id" => "7"}, Class.new(Hash).new.merge!("id" => "7")].each do |media|
+        assert_equal [UploadedMedia, 7], AltTextFailed.new(media:).media.then { |held| [held.class, held.id] }
+      end
+    end
+
+    def test_holds_uploaded_media_given_as_it_was_given
+      media = UploadedMedia.new({"id" => "7"})
+
+      assert_same media, AltTextFailed.new(media:).media
+    end
+
     def test_holds_the_media_and_names_it_with_the_reason_it_failed
       media = UploadedMedia.new({"id" => "7"})
       failure = Class.new(Error) { def message = "Connection reset" }
@@ -191,6 +203,18 @@ module X
 
   class UploaderMediaProcessingCheckFailedTest < Minitest::Test
     cover MediaProcessingCheckFailed
+
+    def test_holds_media_given_as_a_hash_as_uploaded_media
+      [{"id" => "7"}, Class.new(Hash).new.merge!("id" => "7")].each do |media|
+        assert_equal [UploadedMedia, 7], MediaProcessingCheckFailed.new(media:).media.then { |held| [held.class, held.id] }
+      end
+    end
+
+    def test_holds_uploaded_media_given_as_it_was_given
+      media = UploadedMedia.new({"id" => "7"})
+
+      assert_same media, MediaProcessingCheckFailed.new(media:).media
+    end
 
     def test_holds_the_media_and_names_it_with_the_reason_the_check_failed
       media = UploadedMedia.new({"id" => "7"})

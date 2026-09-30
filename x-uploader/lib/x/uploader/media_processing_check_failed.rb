@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative "error"
+require_relative "uploaded_media"
 require_relative "media_processing_timeout"
 
 module X
@@ -49,14 +50,15 @@ module X
     #
     # @api public
     # @param message [String, nil] the message, or nil for one that names the media
-    # @param media [UploadedMedia, nil] the media that was uploaded
+    # @param media [UploadedMedia, Hash{String => Object}, nil] the media that was uploaded, a Hash of which is held as
+    #   uploaded media
     # @return [MediaProcessingCheckFailed] a new error
     # @example Raise the error for media whose processing could not be checked
     #   raise X::MediaProcessingCheckFailed.new(media: media)
     # @example Raise the error with a message of its own, as a test stub may
     #   raise X::MediaProcessingCheckFailed, "Processing could not be checked"
     def initialize(message = nil, media: nil)
-      @media = media
+      @media = media.is_a?(Hash) ? UploadedMedia.new(media) : media
       super(message || ["Media", media&.[]("id"), "was uploaded, but its processing could not be checked"].compact.join(" "))
     end
 

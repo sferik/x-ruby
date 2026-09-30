@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative "error"
+require_relative "uploaded_media"
 
 module X
   # Error raised when media uploaded with alt text is uploaded, but its alt text cannot be added
@@ -44,14 +45,15 @@ module X
     #
     # @api public
     # @param message [String, nil] the message, or nil for one that names the media
-    # @param media [UploadedMedia, nil] the media that was uploaded
+    # @param media [UploadedMedia, Hash{String => Object}, nil] the media that was uploaded, a Hash of which is held as
+    #   uploaded media
     # @return [AltTextFailed] a new error
     # @example Raise the error for media whose alt text could not be added
     #   raise X::AltTextFailed.new(media: media)
     # @example Raise the error with a message of its own, as a test stub may
     #   raise X::AltTextFailed, "Alt text could not be added"
     def initialize(message = nil, media: nil)
-      @media = media
+      @media = media.is_a?(Hash) ? UploadedMedia.new(media) : media
       super(message || ["Media", media&.[]("id"), "was uploaded, but its alt text could not be added"].compact.join(" "))
     end
 
