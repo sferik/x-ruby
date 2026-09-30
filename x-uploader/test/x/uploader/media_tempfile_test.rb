@@ -30,12 +30,13 @@ module X
       end
     end
 
-    def test_a_file_whose_extension_names_an_image_is_one_whatever_it_begins_with
+    def test_a_file_is_categorized_by_the_signature_it_begins_with_whatever_it_is_named
       Tempfile.create(%w[media .png]) do |tempfile|
         tempfile.binmode
         tempfile.write(File.binread("test/sample_files/sample.mp4"))
 
-        assert_equal "tweet_image", inference.infer_media_category(tempfile)
+        assert_equal "tweet_video", inference.infer_media_category(tempfile)
+        assert_equal "video/mp4", inference.infer_media_type(tempfile, "tweet_video")
       end
     end
 

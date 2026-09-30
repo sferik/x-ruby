@@ -62,7 +62,7 @@ module X
     def test_binary_content_of_as_much_as_a_single_request_takes_uploads
       stub_request(:post, BASE_URL).to_return(headers: JSON_HEADERS, body: '{"data":{"id":"1"}}')
 
-      assert_equal 1, Uploader::MediaUpload.upload_binary("\x00".b * 5 * MB, client: @client, media_category: :dm_gif).media_id
+      assert_equal 1, Uploader::MediaUpload.upload_binary("GIF89a".b.ljust(5 * MB, "\x00"), client: @client, media_category: :dm_gif).media_id
     end
 
     def test_empty_binary_content_uploads_nothing
@@ -118,7 +118,7 @@ module X
     def with_file(name, size)
       Dir.mktmpdir do |dir|
         path = File.join(dir, name)
-        File.write(path, "")
+        File.write(path, name.end_with?(".gif") ? "GIF89a" : "")
         File.truncate(path, size)
         yield path
       end

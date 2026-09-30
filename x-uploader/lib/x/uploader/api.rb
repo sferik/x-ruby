@@ -21,8 +21,8 @@ module X
       # and media given as a File or a Tempfile through that IO, a chunk at a time, so media of any size uploads
       # without being held in memory; media given as any other IO, such as a StringIO, is read to its end and held.
       #
-      # A video or subtitles upload in chunks. The media category is inferred from the name of the file, or, for
-      # media that names none, from the bytes it begins with, unless media_category says what it is.
+      # A video or subtitles upload in chunks. The media category is inferred from the bytes the media begins with, or
+      # else from the name of its file, unless media_category says what it is.
       #
       # @api public
       # @param media [String, Pathname, IO, StringIO] the path to the media to upload, or an IO open on it
@@ -35,7 +35,8 @@ module X
       # @raise [InvalidMedia] if the media cannot be read, or is empty, which holds nothing to upload
       # @raise [InvalidMedia] if the media is larger than the API takes of its category, whatever the account: 5
       #   megabytes of an image, 15 of a GIF, and one of subtitles, or larger than the 16 gigabytes it takes of any
-      # @raise [InvalidMediaType] if no media category is given for media that names no file and no signature names one
+      # @raise [InvalidMediaType] if no media category is given for media that names no file and no signature names
+      #   one, or the category does not take the type of the media
       # @raise [MissingMediaData] if a response of the upload holds no media, or carries no body at all
       # @raise [ChunkedUploadFailed] if media uploaded in chunks is initialized, but a chunk cannot be appended, or it
       #   cannot be finalized, with the media it initialized

@@ -333,6 +333,20 @@ x_client.create_post("Look at this cat move", media_ids: [video])
 user = x_client.update_profile_image("avatar.png")
 user["screen_name"]                    # => "sferik", the v1.1 name for a username
 x_client.update_profile_banner("banner.png")
+
+# Media is a path, or an IO open on it. Media given as a String or a Pathname is read from the file it names, and
+# media given as a File or a Tempfile through that IO, even once the Tempfile is unlinked, or from the file it names
+# once it is closed, a chunk at a time, so media of any size uploads without being held in memory. A String that holds
+# the contents of media, rather than its path, raises ArgumentError: wrap the contents in a StringIO.
+x_client.upload_media(Pathname("cat.jpg"))
+File.open("cat.mp4", "rb") { |file| x_client.upload_media(file) }
+
+# Media given as any other IO, such as a StringIO, is read to its end and held. Its category is read from the bytes
+# it begins with, as the category of a file is before its name: a GIF, PNG, JPEG, BMP, TIFF, WebP, MP4, QuickTime, WebM, MPEG transport
+# stream, or WebVTT file is recognized by its signature. Pass media_category for anything else, such as SubRip subtitles, which begin
+# with nothing a text file could not.
+x_client.upload_media(StringIO.new(png))
+x_client.upload_media(StringIO.new(srt), media_category: "subtitles")
 ```
 
 Each of these methods calls an uploader with the client: `upload_media`, `upload_media_binary`, and `await_media_processing` call `X::Uploader::Media`, `add_alt_text` and `add_subtitles` call `X::Uploader::Metadata`, and `update_profile_image` and `update_profile_banner` call `X::Uploader::Account`. The uploaders do more, such as `X::Uploader::Media.chunked_upload("cat.mp4", client: x_client, chunk_size_mb: 4)`, and take any client as `client:`.

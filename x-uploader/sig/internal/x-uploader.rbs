@@ -61,16 +61,12 @@ module X
     module Signature
       MP4_BRANDS: Array[String]
       SIGNATURES: Hash[Hash[Integer, String], String]
-      CATEGORIES: Hash[String, String]
-      DEFAULT_CATEGORY: String
       EBML: String
       WEBM_DOC_TYPE: String
       extend Signature
 
       def media_type: (String bytes) -> String?
       def matroska?: (String bytes) -> bool
-      def media_type!: (Source source) -> String
-      def media_category: (Source source) -> String
 
       private
       def matroska_type: (String bytes) -> String?
@@ -150,14 +146,16 @@ module X
       QUICKTIME_MIME_TYPE: String
       WEBM_MIME_TYPE: String
       MIME_TYPE_MAP: Hash[String, String]
+      IMAGE_MIME_TYPES: Array[String]
       VIDEO_MIME_TYPES: Array[String]
       SUBTITLES_MIME_TYPES: Array[String]
+      SIGNED_MIME_TYPES: Array[String]
       STATUS_COMMAND: String
       VIDEO_CATEGORIES: Array[String]
       CHUNKED_CATEGORIES: Array[String]
       GIF_CATEGORIES: Array[String]
       MAX_GIF_BYTES: Integer
-      CATEGORY_MAP: Hash[String, String]
+      TYPE_CATEGORIES: Hash[String, String]
       UNDOCUMENTED_VIDEOS: Hash[String, String]
       UNDOCUMENTED_MODELS: Hash[String, String]
       CATEGORY_MIME_TYPES: Hash[String, Array[String]]
@@ -167,7 +165,11 @@ module X
 
         def chunked_upload?: (resolvable media, String | Symbol media_category) -> bool
         def infer_media_category: (resolvable media) -> String
+        def untyped_category: (Source source) -> String
         def infer_media_type: (resolvable media, String | Symbol media_category) -> String
+        def single_request!: (Source source, String media_category) -> String
+        def taken_type: (Source source, String media_category) -> String?
+        def media_type_of: (Source source) -> String?
         def documented!: (Source source) -> void
         def matroska?: (Source source) -> bool
       end

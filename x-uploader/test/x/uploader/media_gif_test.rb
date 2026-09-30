@@ -76,7 +76,7 @@ module X
     def with_gif(size)
       Dir.mktmpdir do |dir|
         path = File.join(dir, "cat.gif")
-        File.write(path, "")
+        File.write(path, "GIF89a")
         File.truncate(path, size)
         yield path
       end

@@ -28,9 +28,9 @@ module X
 
     def test_upload_an_amplify_video_in_chunks_as_mp4
       stub_workflow
-      Uploader::MediaUpload.upload("test/sample_files/sample.png", client: @client, media_category: "amplify_video")
+      Uploader::MediaUpload.upload("test/sample_files/sample.mp4", client: @client, media_category: "amplify_video")
 
-      assert_requested(:post, INIT_URL, body: {media_type: "video/mp4", media_category: "amplify_video", total_bytes: 68}.to_json)
+      assert_requested(:post, INIT_URL, body: {media_type: "video/mp4", media_category: "amplify_video", total_bytes: File.size("test/sample_files/sample.mp4")}.to_json)
       assert_not_requested(:post, BASE_URL)
     end
 

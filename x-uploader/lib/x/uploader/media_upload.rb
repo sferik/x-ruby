@@ -57,10 +57,19 @@ module X
         "m2ts" => MPEG_TS_MIME_TYPE, "mts" => MPEG_TS_MIME_TYPE, "ts" => MPEG_TS_MIME_TYPE, "m4v" => MP4_MIME_TYPE,
         "mp4" => MP4_MIME_TYPE, "mov" => QUICKTIME_MIME_TYPE, "qt" => QUICKTIME_MIME_TYPE, "webm" => WEBM_MIME_TYPE
       }.freeze
+      # MIME types of the images the API takes, which an image category takes every one of: a GIF of a single frame is
+      # an image, since X processes only animated GIFs as GIFs
+      IMAGE_MIME_TYPES = [BMP_MIME_TYPE, GIF_MIME_TYPE, JPEG_MIME_TYPE, PJPEG_MIME_TYPE, PNG_MIME_TYPE, TIFF_MIME_TYPE, WEBP_MIME_TYPE].freeze
       # MIME types of the videos the API takes, the first of which a video of no known type is uploaded as
       VIDEO_MIME_TYPES = [MP4_MIME_TYPE, QUICKTIME_MIME_TYPE, WEBM_MIME_TYPE, MPEG_TS_MIME_TYPE].freeze
       # MIME types of the subtitles the API takes, the first of which subtitles of no known type are uploaded as
       SUBTITLES_MIME_TYPES = [SUBRIP_MIME_TYPE, WEBVTT_MIME_TYPE].freeze
+      # MIME types every file of which begins with a signature {Signature} reads, so that a file named as one that
+      # begins with none is not what its name says, such as TypeScript named .ts, which MPEG-TS is named too. An MP4
+      # or QuickTime file may begin with a brand, or an atom, that names no type, and SubRip subtitles with nothing a
+      # text file could not, so a file named as one of those is typed by its name.
+      SIGNED_MIME_TYPES = [BMP_MIME_TYPE, GIF_MIME_TYPE, JPEG_MIME_TYPE, PJPEG_MIME_TYPE, PNG_MIME_TYPE, TIFF_MIME_TYPE,
+        WEBP_MIME_TYPE, WEBVTT_MIME_TYPE, MPEG_TS_MIME_TYPE].freeze
       # Default number of seconds await_processing waits for processing to finish before it gives up
       DEFAULT_PROCESSING_TIMEOUT = 600
       # Default number of chunks uploaded at once
@@ -77,11 +86,11 @@ module X
       GIF_CATEGORIES = [DM_GIF, TWEET_GIF].freeze
       # Greatest number of bytes the API takes of a GIF, which one is read no further than
       MAX_GIF_BYTES = Validator::MAX_MEDIA_BYTES.fetch(TWEET_GIF)
-      # Mapping of file extensions to the media categories of posts; any other extension is an image
-      CATEGORY_MAP = {
-        "gif" => TWEET_GIF, "m2ts" => TWEET_VIDEO, "m4v" => TWEET_VIDEO, "mov" => TWEET_VIDEO, "mp4" => TWEET_VIDEO,
-        "mts" => TWEET_VIDEO, "qt" => TWEET_VIDEO, "ts" => TWEET_VIDEO, "webm" => TWEET_VIDEO, "srt" => SUBTITLES,
-        "vtt" => SUBTITLES
+      # Mapping of MIME types to the media categories of posts; any other type is an image
+      TYPE_CATEGORIES = {
+        GIF_MIME_TYPE => TWEET_GIF, MPEG_TS_MIME_TYPE => TWEET_VIDEO, MP4_MIME_TYPE => TWEET_VIDEO,
+        QUICKTIME_MIME_TYPE => TWEET_VIDEO, WEBM_MIME_TYPE => TWEET_VIDEO, SUBRIP_MIME_TYPE => SUBTITLES,
+        WEBVTT_MIME_TYPE => SUBTITLES
       }.freeze
       # The containers of the video file extensions the API documents no media type for, by extension: a video the
       # API takes is MP4, QuickTime, WebM, or MPEG-TS, so a file of one of these uploads only as the type its signature
@@ -92,16 +101,18 @@ module X
       # initialization of an upload takes their media types, but X attaches images, GIFs, and videos to a post, so a
       # file of one raises before a request, rather than be sent as an image
       UNDOCUMENTED_MODELS = {"glb" => "glTF", "usdz" => "USDZ"}.freeze
-      # Mapping of media categories to the MIME types they take, the first by default; images are typed by their extension
+      # Mapping of media categories to the MIME types they take; a video or subtitles category uploads media of no
+      # known type as its first, since an MP4 video or SubRip subtitles may begin with no signature that names them
       CATEGORY_MIME_TYPES = {
-        TWEET_GIF => [GIF_MIME_TYPE], DM_GIF => [GIF_MIME_TYPE], TWEET_VIDEO => VIDEO_MIME_TYPES, DM_VIDEO => VIDEO_MIME_TYPES,
-        AMPLIFY_VIDEO => VIDEO_MIME_TYPES, SUBTITLES => SUBTITLES_MIME_TYPES
+        TWEET_IMAGE => IMAGE_MIME_TYPES, DM_IMAGE => IMAGE_MIME_TYPES, TWEET_GIF => [GIF_MIME_TYPE], DM_GIF => [GIF_MIME_TYPE],
+        TWEET_VIDEO => VIDEO_MIME_TYPES, DM_VIDEO => VIDEO_MIME_TYPES, AMPLIFY_VIDEO => VIDEO_MIME_TYPES,
+        SUBTITLES => SUBTITLES_MIME_TYPES
       }.freeze
       private_constant :MIME_TYPES, :BMP_MIME_TYPE, :GIF_MIME_TYPE, :JPEG_MIME_TYPE, :PJPEG_MIME_TYPE, :PNG_MIME_TYPE,
         :TIFF_MIME_TYPE, :WEBP_MIME_TYPE, :SUBRIP_MIME_TYPE, :WEBVTT_MIME_TYPE, :MPEG_TS_MIME_TYPE, :MP4_MIME_TYPE,
-        :QUICKTIME_MIME_TYPE, :WEBM_MIME_TYPE, :MIME_TYPE_MAP, :VIDEO_MIME_TYPES, :SUBTITLES_MIME_TYPES,
-        :STATUS_COMMAND, :VIDEO_CATEGORIES, :CHUNKED_CATEGORIES, :GIF_CATEGORIES, :CATEGORY_MAP, :CATEGORY_MIME_TYPES,
-        :MAX_GIF_BYTES, :UNDOCUMENTED_VIDEOS, :UNDOCUMENTED_MODELS, :BYTES_PER_MB, :MAX_SIMPLE_UPLOAD_BYTES
+        :QUICKTIME_MIME_TYPE, :WEBM_MIME_TYPE, :MIME_TYPE_MAP, :IMAGE_MIME_TYPES, :VIDEO_MIME_TYPES, :SUBTITLES_MIME_TYPES,
+        :SIGNED_MIME_TYPES, :STATUS_COMMAND, :VIDEO_CATEGORIES, :CHUNKED_CATEGORIES, :GIF_CATEGORIES, :TYPE_CATEGORIES,
+        :CATEGORY_MIME_TYPES, :MAX_GIF_BYTES, :UNDOCUMENTED_VIDEOS, :UNDOCUMENTED_MODELS, :BYTES_PER_MB, :MAX_SIMPLE_UPLOAD_BYTES
 
       # Upload media, in chunks when the API needs them, awaiting any processing
       #
@@ -118,8 +129,8 @@ module X
       # @api public
       # @param media [String, Pathname, IO, StringIO] the path to the media to upload, or an IO open on it
       # @param client [Client] the X API client
-      # @param media_category [String, Symbol, nil] the media category, in any case, inferred when nil from the name
-      #   of the file, or from the bytes media that names none begins with
+      # @param media_category [String, Symbol, nil] the media category, in any case, inferred when nil from the bytes
+      #   the media begins with, or else from the name of its file
       # @param alt_text [String, nil] alt text describing the media, for people who cannot see it, of 1 to 1,000 characters
       # @param processing_timeout [Integer, Float] the seconds to wait for media, such as a video or an animated GIF, to
       #   process, of at least 0, from when it is uploaded, as {await_processing} counts them, or Float::INFINITY to
@@ -144,7 +155,9 @@ module X
       #   segments than the API numbers, the concurrency is not 1 to MAX_CONCURRENCY, or the processing timeout is not
       #   a number of seconds of at least 0
       # @raise [InvalidMediaType] if no media category is given for media that names no file and no signature names
-      #   one, or if media uploaded in chunks is given no media type and none can be inferred
+      #   one, if media uploaded in chunks is given no media type and none can be inferred, if the category does not
+      #   take the type of the media, such as an MP4 video uploaded as a GIF, or if the file is named as a type every
+      #   file of which begins with a signature, such as a PNG, and does not begin with it
       # @raise [MissingMediaData] if a response of the upload holds no media, or carries no body at all
       # @raise [ChunkedUploadFailed] if media uploaded in chunks is initialized, but a chunk cannot be appended, or it
       #   cannot be finalized, with the media it initialized
@@ -169,7 +182,7 @@ module X
           # The media is passed on as the Source it was resolved to, which the signatures keep out of what media is
           chunked_upload(_ = source, client:, media_category:, media_type:, chunk_size_mb:, concurrency:)
         else
-          upload_binary(source.content, client:, media_category:)
+          upload_binary(Inference.single_request!(source, media_category), client:, media_category:)
         end
         uploaded = Utils.processed!(uploaded.processing? ? MediaProcessingCheckFailed.__send__(:keeping, uploaded) { await_processing(uploaded, client:, processing_timeout:) } : uploaded)
         AltTextFailed.__send__(:keeping, uploaded) { Metadata.add_alt_text(uploaded, alt_text, client:) } unless alt_text.nil?
@@ -187,6 +200,8 @@ module X
       #   takes in chunks alone
       # @raise [InvalidMedia] if the content is empty, or larger than the API takes of its category or in a single
       #   request, which takes 5 megabytes, so that a larger GIF uploads with upload or chunked_upload
+      # @raise [InvalidMediaType] if the signature of the content names a type the category does not take, or names
+      #   none for a GIF category; content no signature names is sent for an image category, for the API to type
       # @raise [MissingMediaData] if the response holds no media, or carries no body at all
       # @example Upload binary content
       #   Uploader::MediaUpload.upload_binary(data, client: client, media_category: "tweet_image")
@@ -194,7 +209,9 @@ module X
         media_category = Validator.validate_media_category!(media_category)
         raise ArgumentError, "#{media_category} uploads in chunks alone: pass the file to upload or chunked_upload" if CHUNKED_CATEGORIES.include?(media_category)
 
-        Validator.validate_single_request!(Source::Buffer.new(content), media_category)
+        source = Source::Buffer.new(content)
+        Validator.validate_single_request!(source, media_category)
+        Inference.single_request!(source, media_category)
 
         boundary = SecureRandom.hex
         upload_body = Multipart.body("media", content, boundary:, media_category:)
@@ -207,7 +224,8 @@ module X
       # @param media [String, Pathname, IO, StringIO] the path to the media to upload, or an IO open on it
       # @param client [Client] the X API client
       # @param media_category [String, Symbol, nil] the media category, in any case, inferred from the media when nil
-      # @param media_type [String, nil] the MIME type of the media, inferred from the media and category when nil
+      # @param media_type [String, nil] the MIME type of the media, sent as it is given, or inferred from the media and
+      #   category when nil
       # @param chunk_size_mb [Float, Integer, nil] the size of each chunk in megabytes, rounded up to a whole byte, of
       #   at most 5, the most the API takes in a segment, derived from the size of the media when nil: a megabyte, or
       #   as much more, up to 5, as the segments the API numbers ask
@@ -222,7 +240,8 @@ module X
       # @raise [ArgumentError] if the media category is invalid, the chunk size is not a positive, finite number, is
       #   larger than a segment the API takes, or would need more segments than the API numbers, or the concurrency is
       #   not 1 to MAX_CONCURRENCY
-      # @raise [InvalidMediaType] if no media type is given and none can be inferred
+      # @raise [InvalidMediaType] if no media type is given and none can be inferred, or the one the media is, read
+      #   from its bytes or else from the name of its file, is not one the category takes
       # @raise [MissingMediaData] if the response that initializes the upload holds no media to append the chunks to
       # @raise [ChunkedUploadFailed] if the upload is initialized, but a chunk cannot be appended, or it cannot be
       #   finalized, or the response that finalizes it holds no media or carries no body at all, with the media it
@@ -343,16 +362,17 @@ module X
 
         # Infer the media category of a post attachment from the media
         #
-        # Media that names a file is categorized by the extension of the name, and media that names none, or a file
-        # whose extension names no type, such as a Tempfile, by the bytes it begins with. A GIF with a single frame is
-        # an image, since X processes only animated GIFs as GIFs.
+        # Media is categorized by its type, which {media_type_of} reads from the bytes it begins with, or else from the
+        # extension of the name of its file, so that a file named as what it is not is categorized as what it is. A
+        # GIF with a single frame is an image, since X processes only animated GIFs as GIFs.
         #
         # upload infers the category of media it is given none for with it.
         #
         # @api private
         # @param media [String, Pathname, IO, StringIO] the path to the media, or an IO open on it
         # @return [String] tweet_gif, tweet_video for MP4, QuickTime, WebM, or MPEG-TS, subtitles for SubRip or WebVTT, or tweet_image
-        # @raise [InvalidMediaType] if the media names no file and no signature names its type
+        # @raise [InvalidMediaType] if the media names no file and its type cannot be read, or its file is named as a
+        #   type whose signature it does not begin with
         # @example Infer the category of a video
         #   Inference.infer_media_category("cat.mp4") # => "tweet_video"
         # @example Infer the category of an animated GIF held in memory
@@ -360,19 +380,34 @@ module X
         def infer_media_category(media)
           source = Source.for(media)
           documented!(source)
-          category = CATEGORY_MAP.fetch(source.extension) { MIME_TYPE_MAP.key?(source.extension) ? TWEET_IMAGE : Signature.media_category(source) }
+          type = media_type_of(source)
+          category = type ? TYPE_CATEGORIES.fetch(type, TWEET_IMAGE) : untyped_category(source)
           # A GIF of a single frame is an image, which its category is read again as. A GIF larger than the API takes
           # of any GIF is not read, since it is refused whether it is animated or not, and reading it would hold it all
           still = category.eql?(TWEET_GIF) && source.readable? && source.size <= MAX_GIF_BYTES && !Gif.animated?(source)
           still ? TWEET_IMAGE : category
         end
 
-        # Infer the media type from file path and category
+        # The media category of media whose type cannot be read
         #
-        # A file whose extension names a type the category takes is uploaded as that type, and media whose name names no
-        # type, such as a StringIO or a Tempfile, as the type its signature names. A GIF category takes only
-        # GIFs, and a video or subtitles category otherwise takes its first type, MP4 or SubRip, whatever the file is
-        # named. Any other category, an image, is typed by its extension alone.
+        # A file is an image, since its name says nothing either way, and media that names no file raises.
+        #
+        # @api private
+        # @param source [Source] the media, whose type cannot be read
+        # @return [String] tweet_image for a file
+        # @raise [InvalidMediaType] if the media names no file
+        def untyped_category(source)
+          return TWEET_IMAGE if source.named?
+
+          raise InvalidMediaType, "unable to determine the media type of #{source.description}: pass media_category"
+        end
+
+        # Infer the media type from the media and its category
+        #
+        # Media is uploaded as its type, which {media_type_of} reads, when the category takes that type, and raises
+        # when it does not, rather than be sent as a type it is not, such as an MP4 video as a GIF. Media whose type
+        # cannot be read is uploaded as the first type of a video or subtitles category, MP4 or SubRip, which may
+        # begin with no signature that names them, and raises for any other category.
         #
         # A chunked upload infers the type of media it is given none for with it.
         #
@@ -380,16 +415,73 @@ module X
         # @param media [String, Pathname, IO, StringIO] the path to the media, or an IO open on it
         # @param media_category [String, Symbol] the media category, in any case
         # @return [String] the inferred MIME type
-        # @raise [InvalidMediaType] if the MIME type cannot be determined
+        # @raise [InvalidMediaType] if the category does not take the type of the media, or the MIME type cannot be determined
         # @example Inference.infer_media_type("image.png", "tweet_image") #=> "image/png"
         # @example Inference.infer_media_type("clip.webm", "tweet_video") #=> "video/webm"
         def infer_media_type(media, media_category)
           source = Source.for(media)
           documented!(source)
-          from_media = MIME_TYPE_MAP.fetch(source.extension) { Signature.media_type(source.sniff) if source.readable? }
-          taken = CATEGORY_MIME_TYPES.fetch(media_category.to_s.downcase, [from_media])
-          (taken.include?(from_media) ? from_media : taken.first) ||
+          category = media_category.to_s.downcase
+          taken_type(source, category) ||
+            (CATEGORY_MIME_TYPES.fetch(category).first if CHUNKED_CATEGORIES.include?(category)) ||
             raise(InvalidMediaType, "unable to determine the MIME type of #{source.description}")
+        end
+
+        # Refuse media to upload in a single request as a category that does not take it
+        #
+        # Media of a type the category does not take raises, as does media of no known type for a GIF category, since
+        # every GIF begins with its signature. Media of no known type is sent for an image category, since the API
+        # types what a single request sends itself, and takes images, such as HEIC photos, no signature here names.
+        #
+        # upload and upload_binary check what they send in a single request with it, upload by the name of the file
+        # as well as by its bytes, before it reads the whole of the media.
+        #
+        # @api private
+        # @param source [Source] the media
+        # @param media_category [String] the media category, in lowercase
+        # @return [String] the whole of the media, to send
+        # @raise [InvalidMediaType] if the category does not take the media
+        def single_request!(source, media_category)
+          documented!(source)
+          return source.content if taken_type(source, media_category) || !GIF_CATEGORIES.include?(media_category)
+
+          raise InvalidMediaType, "#{source.description} is not a GIF, which #{media_category} media must be"
+        end
+
+        # The type of media, once its category is known to take it
+        #
+        # @api private
+        # @param source [Source] the media
+        # @param media_category [String] the media category, in lowercase
+        # @return [String, nil] the MIME type, or nil for media whose type cannot be read
+        # @raise [InvalidMediaType] if the category does not take the type of the media
+        def taken_type(source, media_category)
+          type = media_type_of(source)
+          return type if type.nil? || CATEGORY_MIME_TYPES.fetch(media_category).include?(type)
+
+          raise InvalidMediaType, "#{source.description} is #{type}, which #{media_category} media is not: pass the " \
+            "media_category of what it is, or the media_type to send it as to chunked_upload"
+        end
+
+        # The MIME type of media, read from its bytes, or else from the name of its file
+        #
+        # The bytes name the type when a signature is read from them, whatever the file is named, and the extension of
+        # the name names it otherwise, as it does for media that cannot be read. A file named as a type every file of
+        # which begins with a signature, such as a PNG, is not that type when it begins with none.
+        #
+        # @api private
+        # @param source [Source] the media
+        # @return [String, nil] the MIME type, or nil if neither the bytes nor the name names one
+        # @raise [InvalidMediaType] if the file is named as a type whose signature it does not begin with
+        def media_type_of(source)
+          named = MIME_TYPE_MAP[source.extension]
+          return named unless source.readable?
+
+          sniffed = Signature.media_type(source.sniff)
+          return sniffed || named unless sniffed.nil? && SIGNED_MIME_TYPES.include?(named)
+
+          raise InvalidMediaType, "#{source.description} is named as #{named}, but does not begin with the bytes every " \
+            "#{named} file begins with"
         end
 
         # Refuse a video of a container the API documents no media type for, or a 3D model

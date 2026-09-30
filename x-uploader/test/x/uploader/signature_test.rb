@@ -68,45 +68,5 @@ module X
     def test_the_media_type_of_media_shorter_than_the_signature_it_begins_with
       assert_nil Uploader.const_get(:Signature).media_type("GIF8")
     end
-
-    def test_media_type_reads_the_signature_of_a_source
-      source = Uploader.const_get(:Source).for(StringIO.new("GIF89a".b))
-
-      assert_equal "image/gif", Uploader.const_get(:Signature).media_type!(source)
-    end
-
-    def test_the_category_a_signature_gives_media_is_one_the_api_takes
-      categories = Uploader.const_get(:Signature)::CATEGORIES
-
-      assert_equal %w[subtitles tweet_gif tweet_video], categories.values.uniq.sort
-      assert_empty categories.values.uniq - Uploader.const_get(:Validator)::MEDIA_CATEGORIES
-    end
-
-    def test_the_category_a_signature_gives_media
-      {
-        "GIF89a" => "tweet_gif",
-        "\x00\x00\x00\x18ftypmp42" => "tweet_video",
-        WEBM => "tweet_video",
-        "WEBVTT\n" => "subtitles",
-        "BM\x00\x00" => "tweet_image"
-      }.each do |bytes, category|
-        source = Uploader.const_get(:Source).for(StringIO.new(bytes.b))
-
-        assert_equal category, Uploader.const_get(:Signature).media_category(source), bytes.inspect
-      end
-    end
-
-    def test_a_transport_stream_is_a_video
-      source = Uploader.const_get(:Source).for(StringIO.new((("G" + ("\xFF" * 187)) * 3).b))
-
-      assert_equal "tweet_video", Uploader.const_get(:Signature).media_category(source)
-    end
-
-    def test_media_type_raises_for_media_no_signature_names
-      source = Uploader.const_get(:Source).for(StringIO.new("not media at all"))
-      error = assert_raises(InvalidMediaType) { Uploader.const_get(:Signature).media_type!(source) }
-
-      assert_equal "unable to determine the media type of the media given: pass media_category", error.message
-    end
   end
 end

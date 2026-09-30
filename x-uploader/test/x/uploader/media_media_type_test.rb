@@ -8,8 +8,16 @@ module X
     cover Uploader::MediaUpload
 
     def test_gif_categories
-      assert_equal "image/gif", inference.infer_media_type("a.bin", "tweet_gif")
-      assert_equal "image/gif", inference.infer_media_type("a.bin", "dm_gif")
+      assert_equal "image/gif", inference.infer_media_type("a.gif", "tweet_gif")
+      assert_equal "image/gif", inference.infer_media_type("a.gif", "dm_gif")
+    end
+
+    def test_gif_and_image_categories_refuse_media_of_no_known_type
+      %w[tweet_gif dm_gif tweet_image dm_image].each do |category|
+        error = assert_raises(InvalidMediaType) { inference.infer_media_type("a.bin", category) }
+
+        assert_equal "unable to determine the MIME type of a.bin", error.message
+      end
     end
 
     def test_video_categories
@@ -22,13 +30,13 @@ module X
     end
 
     def test_categories_ignore_case
-      assert_equal "image/gif", inference.infer_media_type("a.bin", "TWEET_GIF")
+      assert_equal "image/gif", inference.infer_media_type("a.gif", "TWEET_GIF")
       assert_equal "video/mp4", inference.infer_media_type("a.bin", "Dm_Video")
       assert_equal "text/srt", inference.infer_media_type("a.bin", "SUBTITLES")
     end
 
     def test_a_category_of_a_symbol
-      assert_equal %w[image/gif video/mp4], [:tweet_gif, :TWEET_VIDEO].map { |category| inference.infer_media_type("a.bin", category) }
+      assert_equal %w[image/gif video/mp4], [inference.infer_media_type("a.gif", :tweet_gif), inference.infer_media_type("a.bin", :TWEET_VIDEO)]
     end
 
     def test_image_categories_use_the_extension
@@ -54,9 +62,15 @@ module X
       assert_equal "text/vtt", inference.infer_media_type("a.vtt", "subtitles")
     end
 
-    def test_categories_default_a_type_they_do_not_take
-      assert_equal %w[image/gif text/srt video/mp4],
-        [%w[a.mp4 dm_gif], %w[a.mp4 subtitles], %w[a.vtt tweet_video]].map { |file, category| inference.infer_media_type(file, category) }
+    def test_categories_refuse_a_type_they_do_not_take
+      [%w[a.mp4 dm_gif], %w[a.mp4 subtitles], %w[a.vtt tweet_video], %w[a.png tweet_video], %w[a.mp4 tweet_image],
+        %w[a.srt dm_image]].each do |file, category|
+        error = assert_raises(InvalidMediaType) { inference.infer_media_type(file, category) }
+        type = Uploader::MediaUpload.const_get(:MIME_TYPE_MAP).fetch(file.delete_prefix("a."))
+
+        assert_equal "#{file} is #{type}, which #{category} media is not: pass the media_category of what it is, or the " \
+          "media_type to send it as to chunked_upload", error.message
+      end
     end
 
     def test_image_categories_take_every_image_type

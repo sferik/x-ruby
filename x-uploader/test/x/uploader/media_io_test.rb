@@ -53,12 +53,6 @@ module X
       assert_equal "video/webm", inference.infer_media_type(StringIO.new("\x1A\x45\xDF\xA3\x9F\x42\x82\x84webm".b), "tweet_video")
     end
 
-    def test_the_media_type_of_a_category_that_takes_no_type_the_signature_names
-      mp4 = StringIO.new(File.binread("test/sample_files/sample.mp4"))
-
-      assert_equal "text/srt", inference.infer_media_type(mp4, "subtitles")
-    end
-
     def test_the_media_type_of_media_neither_a_name_nor_a_signature_names
       error = assert_raises(InvalidMediaType) { inference.infer_media_type(StringIO.new("not media at all"), "tweet_image") }
 

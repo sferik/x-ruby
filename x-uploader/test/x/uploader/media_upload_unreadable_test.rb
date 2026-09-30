@@ -41,6 +41,7 @@ module X
 
     def test_an_io_open_to_write_alone_is_refused_before_any_request
       Tempfile.create(["media", ".mp4"]) do |file|
+        file.binmode
         file.write(File.binread("test/sample_files/sample.mp4"))
         file.flush
 
@@ -64,6 +65,7 @@ module X
 
     def test_an_io_open_to_read_and_write_is_read_and_left_where_it_was
       Tempfile.create(["media", ".png"]) do |file|
+        file.binmode
         file.write(File.binread("test/sample_files/sample.png"))
         file.seek(1)
         stub_request(:post, BASE_URL).to_return(headers: {"content-type" => "application/json"}, body: {data: {id: TEST_MEDIA_ID}}.to_json)

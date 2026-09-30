@@ -1,16 +1,14 @@
 # frozen_string_literal: true
 
-require_relative "invalid_media_type"
-
 module X
   module Uploader
     # Reads the media type of media from the bytes it begins with
     #
-    # Media given as a file is typed by the name of the file. Media given as an IO that names none, such as a
-    # StringIO, is typed by its signature: the bytes every file of a type begins with. Only a type the API documents
-    # for an upload of a media category it documents is read, so a glTF 3D model, which no category takes, is not
-    # among them, and only one whose signature names it on its own, so SubRip subtitles, which begin with nothing a
-    # text file could not, are not among them either.
+    # Media is typed by its signature, the bytes every file of a type begins with, before the name of its file, so
+    # that a file named as what it is not is typed as what it is. Only a type the API documents for an upload of a
+    # media category it documents is read, so a glTF 3D model, which no category takes, is not among them, and only
+    # one whose signature names it on its own, so SubRip subtitles, which begin with nothing a text file could not,
+    # are not among them either.
     #
     # Internal to x-uploader: X::Uploader::MediaUpload reads a signature with it.
     #
@@ -49,21 +47,13 @@ module X
         {4 => "G".b, 196 => "G".b, 388 => "G".b} => "video/mp2t"
       }.freeze
 
-      # The media category of posts each media type a signature names belongs to; any other type a signature names,
-      # such as an image, belongs to DEFAULT_CATEGORY. The categories are the ones Validator takes.
-      CATEGORIES = {
-        "image/gif" => "tweet_gif", "text/vtt" => "subtitles", "video/mp2t" => "tweet_video",
-        "video/mp4" => "tweet_video", "video/quicktime" => "tweet_video", "video/webm" => "tweet_video"
-      }.freeze
-      # The media category of media whose type belongs to none of its own
-      DEFAULT_CATEGORY = "tweet_image"
       # The bytes of the EBML header a Matroska file begins with, which a WebM file, being Matroska, begins with too
       EBML = [0x1A, 0x45, 0xDF, 0xA3].pack("C*")
       # The DocType element of the EBML header of a WebM file: its identifier, the length of its value, and "webm", which
       # a Matroska file that is not WebM names "matroska" in place of. The header is the first thing in the file, so
       # its DocType is among the bytes a signature is read from.
       WEBM_DOC_TYPE = [0x42, 0x82, 0x84].pack("C*") + "webm".b
-      private_constant :MP4_BRANDS, :SIGNATURES, :DEFAULT_CATEGORY, :EBML, :WEBM_DOC_TYPE
+      private_constant :MP4_BRANDS, :SIGNATURES, :EBML, :WEBM_DOC_TYPE
 
       # The media type the signature of media names
       #
@@ -91,36 +81,6 @@ module X
       # @example Tell a Matroska file
       #   Uploader::Signature.matroska?("\x1A\x45\xDF\xA3...".b) # => true
       def matroska?(bytes) = bytes.start_with?(EBML)
-
-      # The media type the signature of media names, which one must name
-      #
-      # @api private
-      # @param source [Source] the media
-      # @return [String] the media type
-      # @raise [InvalidMediaType] if no signature names the type of the media
-      # @example Read the media type of media held in memory
-      #   Uploader::Signature.media_type!(source) # => "image/png"
-      def media_type!(source)
-        media_type(source.sniff) ||
-          raise(InvalidMediaType, "unable to determine the media type of #{source.description}: pass media_category")
-      end
-
-      # The media category of posts that the signature of media gives it
-      #
-      # Media that names no file must have a signature that names its type. A file whose extension names no type, such
-      # as a Tempfile, is an image when no signature names one, or when it cannot be read, since its name says nothing
-      # either way.
-      #
-      # @api private
-      # @param source [Source] the media
-      # @return [String] the media category
-      # @raise [InvalidMediaType] if the media names no file and no signature names its type
-      # @example Read the media category of a video in a file named without an extension
-      #   Uploader::Signature.media_category(source) # => "tweet_video"
-      def media_category(source)
-        type = source.named? ? (media_type(source.sniff) if source.readable?) : media_type!(source)
-        CATEGORIES.fetch(type, DEFAULT_CATEGORY)
-      end
 
       private
 
