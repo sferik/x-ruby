@@ -54,7 +54,7 @@ module X
     def test_update_profile_image_raises_for_unsupported_file_type
       error = assert_raises(InvalidMediaType) { update_profile_image("test/sample_files/sample.mp4") }
 
-      assert_includes error.message, "Unsupported file type"
+      assert_equal "test/sample_files/sample.mp4 is not a GIF, JPEG, or PNG image, which a profile image must be", error.message
     end
 
     def test_supports_jpg_extension
@@ -138,7 +138,7 @@ module X
     def test_update_profile_banner_raises_for_unsupported_file_type
       error = assert_raises(InvalidMediaType) { update_profile_banner("test/sample_files/sample.mp4") }
 
-      assert_includes error.message, "Unsupported file type"
+      assert_equal "test/sample_files/sample.mp4 is not a GIF, JPEG, or PNG image, which a profile banner must be", error.message
     end
 
     private

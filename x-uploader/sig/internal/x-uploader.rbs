@@ -203,12 +203,13 @@ module X
       MAX_MEDIA_BYTES: Hash[String, Integer]
       MAX_UPLOAD_BYTES: Integer
       PROFILE_IMAGE_TYPES: Array[String]
+      MAX_PROFILE_IMAGE_BYTES: Integer
+      MAX_PROFILE_BANNER_BYTES: Integer
       MAX_SIMPLE_UPLOAD_BYTES: Integer
       extend Validator
 
       def validate_upload!: (Source source, (String | Symbol)? media_category, alt_text: String?, chunk_size_mb: (Float | Integer)?, concurrency: Integer, processing_timeout: Float | Integer) ?{ () -> (String | Symbol) } -> String
       def validate_source!: (Source source) -> nil
-      def validate_extension!: (path file_path, Array[String] extensions) -> nil
       def validate_alt_text!: (String? alt_text) -> nil
       def utf8?: (String text) -> bool
       def validate_language_code!: (untyped language_code) -> String
@@ -219,8 +220,7 @@ module X
       def validate_segments!: (Source source, (Float | Integer)? chunk_size_mb) -> Integer
       def validate_size!: (Source source, String media_category) -> nil
       def validate_single_request!: (Source source, String media_category) -> nil
-      def validate_profile_image!: (Source source, Array[String] extensions) -> nil
-      def validate_profile_content!: (Source source) -> nil
+      def validate_profile_image!: (Source source, Integer max_bytes, String use) -> nil
       def derived_chunk_size: (Integer file_size) -> Integer
     end
 
@@ -228,7 +228,6 @@ module X
       V1_BASE_URL: String
       PROFILE_IMAGE_URL: String
       PROFILE_BANNER_URL: String
-      SUPPORTED_EXTENSIONS: Array[String]
     end
   end
 

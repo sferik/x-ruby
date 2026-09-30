@@ -131,8 +131,8 @@ module X
       #   {Account.update_profile_image} returns, or nil for a response with no body
       # @raise [Errno::ENOENT] if the file does not exist
       # @raise [ArgumentError] if the media is neither a path nor an IO
-      # @raise [InvalidMedia] if the media cannot be read, or is empty, which holds nothing to upload
-      # @raise [InvalidMediaType] if the image is not a GIF, JPEG, or PNG image
+      # @raise [InvalidMedia] if the media cannot be read, is empty, or is larger than the 700 kilobytes the API takes
+      # @raise [InvalidMediaType] if the image does not begin with the signature of a GIF, a JPEG, or a PNG
       # @example Update the profile image
       #   client.update_profile_image("avatar.png")
       def update_profile_image(media)
@@ -147,8 +147,8 @@ module X
       # @return [void]
       # @raise [Errno::ENOENT] if the file does not exist
       # @raise [ArgumentError] if the media is neither a path nor an IO
-      # @raise [InvalidMedia] if the media cannot be read, or is empty, which holds nothing to upload
-      # @raise [InvalidMediaType] if the image is not a GIF, JPEG, or PNG image
+      # @raise [InvalidMedia] if the media cannot be read, is empty, or is larger than the 5 megabytes X takes
+      # @raise [InvalidMediaType] if the image does not begin with the signature of a GIF, a JPEG, or a PNG
       # @example Update the profile banner
       #   client.update_profile_banner("banner.png", width: 1500, height: 500)
       def update_profile_banner(media, **options) # steep:ignore DifferentMethodParameterKind

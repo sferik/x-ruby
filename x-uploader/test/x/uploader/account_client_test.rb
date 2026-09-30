@@ -72,7 +72,7 @@ module X
         Uploader::Account.update_profile_banner("test/sample_files/sample.mp4", client: @client)
       end
 
-      assert_equal "Unsupported file type: mp4. Supported types: gif, jpg, jpeg, png", error.message
+      assert_equal "test/sample_files/sample.mp4 is not a GIF, JPEG, or PNG image, which a profile banner must be", error.message
     end
 
     def test_extension_is_case_insensitive

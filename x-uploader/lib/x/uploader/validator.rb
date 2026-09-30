@@ -4,7 +4,6 @@ require_relative "invalid_media"
 require_relative "invalid_media_type"
 require_relative "signature"
 require_relative "source"
-require_relative "utils"
 
 module X
   module Uploader
@@ -41,6 +40,12 @@ module X
       MAX_SIMPLE_UPLOAD_BYTES = 5 * BYTES_PER_MB
       # The media types of the images a profile image or banner takes
       PROFILE_IMAGE_TYPES = %w[image/gif image/jpeg image/png].freeze
+      # Greatest number of bytes the API v1.1 takes of a profile image: its reference for update_profile_image takes an
+      # image of less than 700 kilobytes, each of 1,024 bytes, as a megabyte here is 1,048,576
+      MAX_PROFILE_IMAGE_BYTES = 700 * 1024
+      # Greatest number of bytes X takes of a profile banner: the reference of the API v1.1 for update_profile_banner
+      # names none, and answers a banner too large with 422, and the help of X gives 5 MB for a header photo
+      MAX_PROFILE_BANNER_BYTES = 5 * BYTES_PER_MB
       # Valid media category values
       MEDIA_CATEGORIES = %w[amplify_video dm_gif dm_image dm_video subtitles tweet_gif tweet_image tweet_video].map(&:freeze).freeze
       # Greatest number of bytes the API takes of media of each category that documents a size of its own for every
@@ -150,54 +155,26 @@ module X
 
       # Validate an image to upload as a profile image or banner
       #
-      # Media that names a file must have one of the extensions given, as a path must. Media that names none, such as
-      # a StringIO, must begin with the signature of a GIF, a JPEG, or a PNG image, which are the types those take.
+      # The image must begin with the signature of a GIF, a JPEG, or a PNG, which are the types those take, whatever
+      # the name of its file, so that a PNG in a Tempfile is taken, and a video named .png is not read whole and sent.
+      # An image larger than the endpoint takes would be refused once it had been sent, so it raises before.
       #
       # @api private
       # @param source [Source] the image to upload
-      # @param extensions [Array<String>] the supported extensions, in lowercase and without a dot
+      # @param max_bytes [Integer] the greatest number of bytes the endpoint takes
+      # @param use [String] what the image is uploaded as, for the message of an error
       # @return [void]
       # @raise [Errno::ENOENT] if the file does not exist
-      # @raise [InvalidMedia] if the image cannot be read, or is empty
-      # @raise [InvalidMediaType] if the image is not a GIF, a JPEG, or a PNG
-      # @example Validate a profile image held in memory
-      #   Uploader::Validator.validate_profile_image!(source, %w[gif jpg jpeg png])
-      def validate_profile_image!(source, extensions)
-        name = source.name or return validate_profile_content!(source)
-        validate_source!(source)
-        validate_extension!(name, extensions)
-      end
-
-      # Validate a profile image or banner that names no file, by its signature
-      #
-      # @api private
-      # @param source [Source] the image to upload
-      # @return [void]
-      # @raise [InvalidMedia] if the image cannot be read, or is empty
+      # @raise [InvalidMedia] if the image cannot be read, is empty, or is larger than max_bytes
       # @raise [InvalidMediaType] if the image does not begin with the signature of a GIF, a JPEG, or a PNG
-      # @example Validate a profile image given as its bytes
-      #   Uploader::Validator.validate_profile_content!(Uploader::Source::Buffer.new(png))
-      def validate_profile_content!(source)
+      # @example Validate a profile image
+      #   Uploader::Validator.validate_profile_image!(source, 716_800, "a profile image")
+      def validate_profile_image!(source, max_bytes, use)
         validate_source!(source)
-        return if PROFILE_IMAGE_TYPES.include?(Signature.media_type(source.sniff))
+        raise InvalidMediaType, "#{source.description} is not a GIF, JPEG, or PNG image, which #{use} must be" unless PROFILE_IMAGE_TYPES.include?(Signature.media_type(source.sniff))
+        return if source.size <= max_bytes
 
-        raise InvalidMediaType, "#{source.description} is not a GIF, JPEG, or PNG image, which a profile image or banner must be"
-      end
-
-      # Validate that a file has one of the extensions an upload supports
-      #
-      # @api private
-      # @param file_path [String, Pathname] the file path to validate
-      # @param extensions [Array<String>] the supported extensions, in lowercase and without a dot
-      # @return [void]
-      # @raise [InvalidMediaType] if the extension of the file is not supported
-      # @example Validate the extension of a profile image
-      #   Uploader::Validator.validate_extension!("avatar.png", %w[gif jpg jpeg png])
-      def validate_extension!(file_path, extensions)
-        extension = Utils.extension(file_path)
-        return if extensions.include?(extension)
-
-        raise InvalidMediaType, "Unsupported file type: #{extension}. Supported types: #{extensions.join(", ")}"
+        raise InvalidMedia, "#{source.description} is #{source.size} bytes, more than the #{max_bytes} bytes the API takes of #{use}"
       end
 
       # Validate the alt text of an upload, of up to MAX_ALT_TEXT_LENGTH characters

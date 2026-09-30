@@ -12,15 +12,15 @@ x_credentials = {
 client = X::Client.new(**x_credentials)
 
 # Update profile image (avatar)
-# Supported formats: GIF, JPG, JPEG, PNG
-# Image should be under 700 KB
+# Supported formats: GIF, JPEG, PNG, told by the bytes the image begins with, whatever its file is named
+# The image must be no larger than 700 KB, or X::InvalidMedia is raised before any request
 profile_image_path = "path/to/your/avatar.png"
 
 user = client.update_profile_image(profile_image_path)
 puts "Profile image updated for @#{user["screen_name"]}"
 
 # Update profile banner
-# Recommended dimensions: 1500x500 pixels
+# Recommended dimensions: 1500x500 pixels, of no more than 5 MB
 banner_path = "path/to/your/banner.png"
 
 client.update_profile_banner(banner_path)

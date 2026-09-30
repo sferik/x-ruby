@@ -27,9 +27,7 @@ module X
       PROFILE_IMAGE_URL = "#{V1_BASE_URL}account/update_profile_image.json".freeze
       # The endpoint that updates the profile banner of the authenticating user, relative to the base URL of a client
       PROFILE_BANNER_URL = "#{V1_BASE_URL}account/update_profile_banner.json".freeze
-      # Supported image extensions for profile uploads
-      SUPPORTED_EXTENSIONS = %w[gif jpg jpeg png].freeze
-      private_constant :V1_BASE_URL, :PROFILE_IMAGE_URL, :PROFILE_BANNER_URL, :SUPPORTED_EXTENSIONS
+      private_constant :V1_BASE_URL, :PROFILE_IMAGE_URL, :PROFILE_BANNER_URL
 
       # Update the authenticating user's profile image
       #
@@ -44,16 +42,17 @@ module X
       # @return [Hash, nil] the updated user, as the API v1.1 answers with it, or nil for a response with no body
       # @raise [Errno::ENOENT] if the file does not exist
       # @raise [ArgumentError] if the media is neither a path nor an IO
-      # @raise [InvalidMedia] if the media cannot be read, or is empty, which holds nothing to upload
-      # @raise [InvalidMediaType] if the extension of the file, or the signature of media that names none, is not
-      #   that of a GIF, a JPEG, or a PNG
+      # @raise [InvalidMedia] if the media cannot be read, is empty, which holds nothing to upload, or is larger than
+      #   the 700 kilobytes the API takes of a profile image
+      # @raise [InvalidMediaType] if the media does not begin with the signature of a GIF, a JPEG, or a PNG, whatever
+      #   its file is named
       # @example Update profile image from a file
       #   Uploader::Account.update_profile_image("avatar.png", client: client)
       # @example Update profile image from an image held in memory
       #   Uploader::Account.update_profile_image(StringIO.new(png), client: client)
       def update_profile_image(media, client:)
         source = Source.for(media)
-        Validator.validate_profile_image!(source, SUPPORTED_EXTENSIONS)
+        Validator.validate_profile_image!(source, Validator::MAX_PROFILE_IMAGE_BYTES, "a profile image")
         Multipart.post(client, PROFILE_IMAGE_URL, "image", source.content)
       end
 
@@ -65,12 +64,13 @@ module X
       # @param content [String] the binary image content
       # @param client [Client] the X API client
       # @return [Hash, nil] the updated user, as the API v1.1 answers with it, or nil for a response with no body
-      # @raise [InvalidMedia] if the content is empty, which holds nothing to upload
+      # @raise [InvalidMedia] if the content is empty, which holds nothing to upload, or is larger than the 700
+      #   kilobytes the API takes of a profile image
       # @raise [InvalidMediaType] if the content does not begin with the signature of a GIF, a JPEG, or a PNG
       # @example Update profile image from binary content
       #   Uploader::Account.update_profile_image_binary(image_data, client: client)
       def update_profile_image_binary(content, client:)
-        Validator.validate_profile_content!(Source::Buffer.new(content))
+        Validator.validate_profile_image!(Source::Buffer.new(content), Validator::MAX_PROFILE_IMAGE_BYTES, "a profile image")
         Multipart.post(client, PROFILE_IMAGE_URL, "image", content)
       end
 
@@ -90,16 +90,17 @@ module X
       # @return [void]
       # @raise [Errno::ENOENT] if the file does not exist
       # @raise [ArgumentError] if the media is neither a path nor an IO
-      # @raise [InvalidMedia] if the media cannot be read, or is empty, which holds nothing to upload
-      # @raise [InvalidMediaType] if the extension of the file, or the signature of media that names none, is not
-      #   that of a GIF, a JPEG, or a PNG
+      # @raise [InvalidMedia] if the media cannot be read, is empty, which holds nothing to upload, or is larger than
+      #   the 5 megabytes X takes of a profile banner
+      # @raise [InvalidMediaType] if the media does not begin with the signature of a GIF, a JPEG, or a PNG, whatever
+      #   its file is named
       # @example Update profile banner from a file
       #   Uploader::Account.update_profile_banner("banner.png", client: client)
       # @example Update profile banner with dimensions
       #   Uploader::Account.update_profile_banner("banner.png", client: client, width: 1500, height: 500)
       def update_profile_banner(media, client:, width: nil, height: nil, offset_left: nil, offset_top: nil)
         source = Source.for(media)
-        Validator.validate_profile_image!(source, SUPPORTED_EXTENSIONS)
+        Validator.validate_profile_image!(source, Validator::MAX_PROFILE_BANNER_BYTES, "a profile banner")
         Multipart.post(client, PROFILE_BANNER_URL, "banner", source.content, width:, height:, offset_left:, offset_top:)
         nil
       end
@@ -116,12 +117,13 @@ module X
       # @param offset_left [Integer, nil] the left offset of the banner
       # @param offset_top [Integer, nil] the top offset of the banner
       # @return [void]
-      # @raise [InvalidMedia] if the content is empty, which holds nothing to upload
+      # @raise [InvalidMedia] if the content is empty, which holds nothing to upload, or is larger than the 5
+      #   megabytes X takes of a profile banner
       # @raise [InvalidMediaType] if the content does not begin with the signature of a GIF, a JPEG, or a PNG
       # @example Update profile banner from binary content
       #   Uploader::Account.update_profile_banner_binary(image_data, client: client)
       def update_profile_banner_binary(content, client:, width: nil, height: nil, offset_left: nil, offset_top: nil)
-        Validator.validate_profile_content!(Source::Buffer.new(content))
+        Validator.validate_profile_image!(Source::Buffer.new(content), Validator::MAX_PROFILE_BANNER_BYTES, "a profile banner")
         Multipart.post(client, PROFILE_BANNER_URL, "banner", content, width:, height:, offset_left:, offset_top:)
         nil
       end

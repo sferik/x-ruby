@@ -27,8 +27,8 @@ module X
 
     def test_content_that_is_not_a_gif_a_jpeg_or_a_png_is_refused_before_a_request
       each_binary_update("RIFF\x00\x00\x00\x00WEBPVP8 ".b) do |update|
-        assert_equal "the media given is not a GIF, JPEG, or PNG image, which a profile image or banner must be",
-          assert_raises(InvalidMediaType) { update.call }.message
+        assert_match(/\Athe media given is not a GIF, JPEG, or PNG image, which a profile (image|banner) must be\z/,
+          assert_raises(InvalidMediaType) { update.call }.message)
       end
       assert_not_requested :post, /api\.x\.com/
     end
