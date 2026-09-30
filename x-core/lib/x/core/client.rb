@@ -213,9 +213,10 @@ module X
       # @param max_retries [Integer] the maximum number of times to send a request again after the API failed to answer
       #   it, with a 5xx status or a 408, or after its answer never arrived, which is twice by default and is 0 for a client
       #   that raises at once; a retry waits up to a second before the first and up to twice as long before each after,
-      #   a random share of each wait taken off so that the requests one failure of the API ended are not sent again
-      #   together, or for as long as the response asks when it carries a Retry-After header, whichever is longer, and
-      #   a response that asks for longer than a minute raises at once; only a GET, PUT, or DELETE is sent again, since
+      #   but never more than a minute, a random share of each wait taken off so that the requests one failure of the
+      #   API ended are not sent again together, or for as long as the response asks when it carries a Retry-After
+      #   header, whichever is longer, and a response that asks for longer than a minute raises at once; a 429 is not
+      #   among these, and waits for its rate limit to reset as max_rate_limit_wait allows, however long past a minute; only a GET, PUT, or DELETE is sent again, since
       #   the API may have acted on a POST whose answer never arrived, and one whose answer never arrived is sent again
       #   only when it never reached the API, such as for a connection refused or one that timed out opening, since the
       #   API bills a read it answered, such as one that timed out reading its response, whether or not the answer came
@@ -486,8 +487,8 @@ module X
       # answer arrived. A request that is safe to send again anyway, such as the chunk of an upload, which names the
       # segment it is appended at and which the API bills nothing for, is sent again with this: after a ServerError, a
       # RequestTimeout, or a NetworkError of any kind, up to max_retries times, as the client sends an idempotent
-      # request again, after the wait a response asks for, or a backoff that doubles with each retry and is cut short
-      # at random. A response that asks to be left alone for longer than a minute raises at once. The block must build
+      # request again, after the wait a response asks for, or a backoff that doubles with each retry up to a minute and
+      # is cut short at random. A response that asks to be left alone for longer than a minute raises at once. The block must build
       # its request anew each time, so that each attempt is signed afresh, as a request of the client is.
       #
       # Wrap a request the client sends no more than once, such as a POST: the client sends a GET, a PUT, or a DELETE

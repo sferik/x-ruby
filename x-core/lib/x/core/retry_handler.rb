@@ -19,10 +19,11 @@ module X
     class RetryHandler
       # Default maximum number of retries, which sends an idempotent request twice more before it raises
       DEFAULT_MAX_RETRIES = 2
-      # Seconds to wait before the first retry, doubled for each retry after
+      # Seconds to wait before the first retry, doubled for each retry after, up to MAX_RETRY_AFTER
       INITIAL_WAIT = 1
-      # The longest wait a response may ask for that a request waits out before it is sent again; a response that
-      # asks to be left alone for longer raises at once, rather than hold a caller for minutes on end
+      # The longest wait a response may ask for that a request waits out before it is sent again, and the longest the
+      # backoff grows to; a response that asks to be left alone for longer raises at once, rather than hold a caller for
+      # minutes on end
       MAX_RETRY_AFTER = 60
       # The failures a retry may follow, none of which the request itself is the reason for: a 408 says the API gave
       # up waiting for the request, not that it refused it
@@ -53,11 +54,15 @@ module X
       # Run a request, running it again after a failure of the API or of the network
       #
       # A request is sent again while retries remain, after waiting up to a second before the first retry and up to
-      # twice as long before each retry after, or for as long as the response asks when it carries a Retry-After
-      # header, whichever is longer. A response that asks to be left alone for longer than MAX_RETRY_AFTER raises
+      # twice as long before each retry after, but never more than MAX_RETRY_AFTER, or for as long as the response asks
+      # when it carries a Retry-After header, whichever is longer. A response that asks to be left alone for longer than MAX_RETRY_AFTER raises
       # at once, since waiting it out would hold the caller for minutes. Only an idempotent request is retried: the
       # API may have acted on a POST whose answer never arrived, so sending that again could post twice. The block
       # must build its request anew each time, so that each attempt is signed afresh.
+      #
+      # A TooManyRequests is not retried here: a request sent again before its rate limit resets is refused again, so
+      # RateLimitHandler waits for the reset instead, for as long as max_rate_limit_wait allows, well past
+      # MAX_RETRY_AFTER.
       #
       # A NetworkError is retried only when the request never left: a request that timed out reading its response,
       # or whose connection dropped once it was written, may have been answered, and the API bills a read it answered
@@ -119,15 +124,17 @@ module X
 
       # The seconds to wait before a retry
       #
-      # The wait doubles with each retry, and a random share of up to half of it is taken off. The share is what
-      # keeps the requests apart: a failure of the API fails every request in flight at once, and requests that
-      # waited the same time would be sent again together, to fail together once more.
+      # The wait doubles with each retry until it reaches MAX_RETRY_AFTER, and a random share of up to half of it is
+      # taken off. The share is what keeps the requests apart: a failure of the API fails every request in flight at
+      # once, and requests that waited the same time would be sent again together, to fail together once more. The
+      # cap keeps a client given many retries from sleeping for longer than a response may ask it to, as the waits
+      # of a doubling without end would: the tenth retry would otherwise wait over eight minutes.
       #
       # @api private
       # @param retries [Integer] the number of the retry, counting from one
       # @return [Float] the seconds to wait
       def backoff(retries)
-        wait = INITIAL_WAIT << (retries - 1)
+        wait = [INITIAL_WAIT << (retries - 1), MAX_RETRY_AFTER].min
         wait - (rand * wait / 2)
       end
     end

@@ -58,6 +58,11 @@ module X
       assert_equal [1, []], [@attempts, @sleeps]
     end
 
+    def test_the_backoff_doubles_up_to_the_longest_wait_a_response_may_ask_for
+      assert_raises(NetworkError) { handle(Core.const_get(:RetryHandler).new(max_retries: 9)) { fail_with(NetworkError, cause: Errno::ECONNREFUSED.new) } }
+      assert_equal [1, 2, 4, 8, 16, 32, 60, 60, 60], @sleeps
+    end
+
     private
 
     # Run the block, collecting the waits, with no share of each one taken off
