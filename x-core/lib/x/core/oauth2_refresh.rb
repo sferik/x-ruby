@@ -28,6 +28,10 @@ module X
       # Seconds after a refresh in which a rejection of the access token it issued refreshes nothing
       FRESH_TOKEN_SECONDS = 60
       private_constant :FRESH_TOKEN_SECONDS
+      # The message of the error raised for load_tokens that returns what is not tokens
+      NOT_TOKENS = "load_tokens must return an X::OAuth2Tokens, or nil for none in the store, not a %s. Build the " \
+        "tokens from what the store holds with X::OAuth2Tokens.new"
+      private_constant :NOT_TOKENS
       # The error codes of a refresh X refuses for a refresh token it no longer accepts, as one another process spent
       REFUSED_REFRESH_TOKEN = %w[invalid_request invalid_grant].freeze
       private_constant :REFUSED_REFRESH_TOKEN
@@ -190,13 +194,18 @@ module X
       # The tokens in the store the tokens of the user are shared through
       #
       # They are read with the load_tokens of the authenticator, or else with the load_tokens of a client that
-      # authenticates with it.
+      # authenticates with it. The error names the class of what load_tokens returned, rather than inspect it, since a
+      # Hash of the tokens would show them.
       #
       # @api private
       # @return [OAuth2Tokens, nil] the tokens, or nil for none in the store, or no load_tokens to read it with
+      # @raise [TypeError] if load_tokens returns neither OAuth2Tokens nor nil
       def stored_tokens
         load_tokens = @load_tokens || clients.keys.filter_map(&:load_tokens).first
-        load_tokens&.call
+        stored = load_tokens&.call
+        raise TypeError, format(NOT_TOKENS, stored.class) unless stored.nil? || stored.is_a?(OAuth2Tokens)
+
+        stored
       end
 
       # Pass the tokens of a refresh to its callables, once the lock is released

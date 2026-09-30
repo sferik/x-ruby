@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require_relative "credential_validator"
 require_relative "errors/unsupported_marshal_format"
 
 module X
@@ -13,6 +14,10 @@ module X
     # The number of the format of the state Marshal writes, which a release that changes the format raises
     MARSHAL_FORMAT = 1
     private_constant :MARSHAL_FORMAT
+
+    # The message of the error raised for a token that is not a String
+    NOT_A_STRING = "%s must be a String, not a %s"
+    private_constant :NOT_A_STRING
 
     # The OAuth 2.0 access token the refresh issued
     # @api public
@@ -45,9 +50,14 @@ module X
     # @param refresh_token [String] the refresh token
     # @param expires_at [Time, nil] the expiration time of the access token
     # @return [OAuth2Tokens] the frozen tokens
+    # @raise [ArgumentError] if a token is not a String, or is empty, or if the expiration time is neither a Time nor
+    #   nil, as it may be for tokens read back from a store that wrote them as JSON
     # @example Build the tokens of a refresh
     #   X::OAuth2Tokens.new(access_token: "token", refresh_token: "refresh", expires_at: Time.now + 7200)
     def initialize(access_token:, refresh_token:, expires_at: nil)
+      tokens = {access_token:, refresh_token:}
+      tokens.each { |name, token| raise ArgumentError, format(NOT_A_STRING, name, token.class) unless token.is_a?(String) }
+      Core::CredentialValidator.validate_required!(tokens, {expires_at:})
       @access_token = access_token
       @refresh_token = refresh_token
       @expires_at = expires_at

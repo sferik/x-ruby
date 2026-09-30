@@ -653,6 +653,7 @@ module X
   end
 
   class OAuth2Tokens
+    NOT_A_STRING: String
     MARSHAL_FORMAT: Integer
   end
 
@@ -725,6 +726,7 @@ module X
     module OAuth2Refresh
       DEFAULT_ERROR_MESSAGE: String
       FRESH_TOKEN_SECONDS: Integer
+      NOT_TOKENS: String
       REFUSED_REFRESH_TOKEN: Array[String]
 
       @mutex: Thread::Mutex

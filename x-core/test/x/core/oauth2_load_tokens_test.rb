@@ -142,6 +142,44 @@ module X
     end
   end
 
+  # load_tokens that returns what is not tokens, as a store that reads them back as a Hash would, raises from the
+  # request, and the client keeps its own tokens
+  class OAuth2LoadTokensTypeTest < Minitest::Test
+    include LoadTokensHelpers
+
+    cover Core::OAuth2Refresh
+
+    # A client whose token has expired, which reads the store with a callable that returns each of the values given in
+    # turn, and then the last of them
+    def client_loading(*values)
+      Client.new(**test_oauth2_credentials, expires_at: Time.now - 1, load_tokens: -> { values.shift || values.last })
+    end
+
+    def test_load_tokens_that_return_what_is_not_tokens_raise_without_taking_it
+      client = client_loading(stored.to_h)
+      error = assert_raises(TypeError) { client.get("users/me") }
+
+      assert_equal "load_tokens must return an X::OAuth2Tokens, or nil for none in the store, not a Hash. Build the " \
+        "tokens from what the store holds with X::OAuth2Tokens.new", error.message
+      assert_equal TEST_ACCESS_TOKEN, client.__send__(:access_token)
+      assert_not_requested :post, TOKEN_URL
+    end
+
+    def test_a_client_recovers_once_load_tokens_returns_tokens
+      stub_users_me("STORED_ACCESS")
+      client = client_loading(stored.to_h, stored)
+
+      assert_raises(TypeError) { client.get("users/me") }
+      assert_equal({"data" => {"id" => "1"}}, client.get("users/me"))
+    end
+
+    def test_tokens_of_a_subclass_of_oauth2_tokens_are_taken
+      stub_users_me("STORED_ACCESS")
+
+      assert_equal({"data" => {"id" => "1"}}, client_loading(Class.new(OAuth2Tokens).new(**stored.to_h)).get("users/me"))
+    end
+  end
+
   # The load_tokens of an authenticator, which refresh! reads, and which comes before the load_tokens of its client
   class OAuth2AuthenticatorLoadTokensTest < Minitest::Test
     include LoadTokensHelpers
