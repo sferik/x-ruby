@@ -715,6 +715,8 @@ module X
     MARSHAL_FORMAT: Integer
     YAML_KEYS: Array[String]
 
+    private def self.meta_of: (Objects::body body) -> Hash[String, untyped]
+
     private
     def state: () -> [Array[R], Hash[String, untyped], Array[Problem]]
     def response_of: (Resource resource) -> Objects::Includes

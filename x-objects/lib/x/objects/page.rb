@@ -2,6 +2,7 @@
 
 require "json"
 require_relative "errors"
+require_relative "shape"
 
 module X
   module Objects
@@ -190,6 +191,20 @@ module X
       # @example Serialize a page
       #   page.to_json # => "{\"data\":[{\"id\":\"7505382\"}],\"meta\":{}}"
       def to_json(state = nil) = as_json.to_json(state)
+
+      # The meta of a response, which holds the token of its next page
+      #
+      # A cursor and the from_response of a resource class read the meta of the pages they build with it, so that a
+      # meta that is not an object raises alike, rather than end the paging of one of them without a word.
+      #
+      # @api private
+      # @param body [Hash, nil] the parsed response body
+      # @return [Hash{String => Object}] the meta, empty if the response holds none
+      # @raise [InvalidAttribute] if the response holds a meta that is not an object
+      # @example Read the meta of a response
+      #   X::Page.__send__(:meta_of, {"meta" => {"next_token" => "abc"}}) # => {"next_token" => "abc"}
+      def self.meta_of(body) = Shape.read_object("#{self}#meta", body.to_h["meta"]) || {}
+      private_class_method :meta_of
 
       # The state Marshal writes
       #

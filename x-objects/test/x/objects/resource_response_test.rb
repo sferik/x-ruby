@@ -142,6 +142,7 @@ module X
     # A response whose data is a list builds a page, which keeps what the response says of the page
     class ResourceResponsePageTest < Minitest::Test
       cover Resource
+      cover Page
 
       def setup
         @client = FakeClient.new
@@ -153,7 +154,15 @@ module X
 
         assert_instance_of Page, page
         assert_equal ["abc", 1, [problem]], [page.next_token, page.result_count, page.problems.map(&:to_h)]
-        assert_equal({}, User.from_response({"data" => [], "meta" => "unreadable"}, client: @client).meta)
+        assert_equal({}, User.from_response({"data" => []}, client: @client).meta)
+      end
+
+      def test_from_response_with_a_meta_that_is_not_an_object_raises
+        [{"data" => [], "meta" => "unreadable"}, {"meta" => ["unreadable"]}].each do |body|
+          error = assert_raises(InvalidAttribute) { User.from_response(body, client: @client) }
+
+          assert_equal "X::Page#meta cannot be read from #{body["meta"].inspect}", error.message
+        end
       end
 
       def test_from_response_with_a_meta_and_no_data_builds_an_empty_page
@@ -169,10 +178,6 @@ module X
         page = User.from_response({"meta" => {"result_count" => 0, "next_token" => "abc"}, "errors" => [problem]}, client: @client)
 
         assert_equal [[], "abc", [problem]], [page.to_a, page.next_token, page.problems.map(&:to_h)]
-      end
-
-      def test_from_response_with_a_meta_that_is_not_an_object_and_no_data_builds_nothing
-        assert_nil User.from_response({"meta" => "unreadable"}, client: @client)
       end
 
       def test_from_response_with_a_meta_and_data_that_is_not_a_list_builds_nothing

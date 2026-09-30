@@ -221,7 +221,8 @@ module X
 
         # Whether a response holds a list
         #
-        # A response holds one when its data is an array, and when it holds a meta and no data.
+        # A response holds one when its data is an array, and when it holds a meta and no data, whose meta must then be
+        # an object.
         #
         #
         # @api private
@@ -229,7 +230,7 @@ module X
         # @return [Boolean] true if the response holds a list
         # @example Ask whether an empty list is one
         #   X::User.__send__(:list?, {"meta" => {"result_count" => 0}}) # => true
-        private def list?(body) = body["data"].is_a?(Array) || (body["data"].nil? && body["meta"].is_a?(Hash))
+        private def list?(body) = body["data"].is_a?(Array) || (body["data"].nil? && body.key?("meta"))
 
         # Build a resource from a response with a single data object
         #
@@ -258,10 +259,11 @@ module X
         # @param client [Object] the client used to make the request
         # @param hydrated [Boolean] whether the response holds every field the object layer requests
         # @return [Page] the page of resources, with the meta and problems of the response
-        # @raise [InvalidAttribute] if the response holds a resource without an identifier, or with one that is not one
+        # @raise [InvalidAttribute] if the response holds a resource without an identifier, or with one that is not one,
+        #   or a meta that is not an object
         # @example Build users from a response
         #   X::User.__send__(:collection_from_response, {"data" => [{"id" => "7505382"}]}, client: client)
-        private def collection_from_response(body, client:, hydrated: false) = Page.new(collection_built_from(body, client:, hydrated:, query: nil), Hash.try_convert(body.to_h["meta"]) || {}, problems: Problem.all_from(body))
+        private def collection_from_response(body, client:, hydrated: false) = Page.new(collection_built_from(body, client:, hydrated:, query: nil), Page.__send__(:meta_of, body), problems: Problem.all_from(body))
 
         # Build a resource from a response, knowing the query of its request
         #

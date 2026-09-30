@@ -109,13 +109,14 @@ module X
       # @param wanted [Integer, nil] the number of resources wanted from the page, or nil for the page size
       # @return [Page, nil] the page or nil if the previous page was the last
       # @raise [UnreadableResponse] if the previous page names the token of a page before it as the next
+      # @raise [InvalidAttribute] if the response holds a meta that is not an object
       def fetch(index, wanted = nil)
         params = params_for(index)
         return if params.nil?
 
         params = sized(params, wanted) unless wanted.nil?
         body = requester.get(Utils.path(@cursor.__send__(:path), params), **Utils::JSON_CLASSES)
-        Page.new(resources_from(body), body.to_h["meta"].to_h, problems: Problem.all_from(body))
+        Page.new(resources_from(body), Page.__send__(:meta_of, body), problems: Problem.all_from(body))
       end
 
       # The client that fetches the pages, as the app for a space endpoint
