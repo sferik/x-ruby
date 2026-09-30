@@ -38,6 +38,17 @@ module X
       assert_nil InvalidResponse.new(http_response: @response).body
     end
 
+    def test_the_error_is_an_http_error_that_describes_no_problem
+      @response["content-type"] = "application/json"
+      @response.instance_variable_set(:@body, '{"title": "Not JSON after all", "detail": "no"}')
+      @response.instance_variable_set(:@read, true)
+      error = InvalidResponse.new(http_response: @response, body: "<html>")
+
+      assert_kind_of HTTPError, error
+      assert_equal [nil, [], "<html>"], [error.problem, error.problems, error.body]
+      assert_equal "The body of the 200 response is not JSON (application/json)", error.message
+    end
+
     def test_the_message_names_a_response_without_a_content_type
       @response.delete("content-type")
 

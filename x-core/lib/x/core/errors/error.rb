@@ -3,11 +3,11 @@
 module X
   # The base class of every error the X gems raise
   #
-  # Rescuing it catches every way a request can fail: an HTTPError for a response the API refused, a NetworkError for
+  # Rescuing it catches every way a request can fail: an HTTPError for a response that failed, a NetworkError for
   # a request that never got a response, and the errors the gems raise for what they will not send or cannot read.
   #
   #   X::Error
-  #   ├── X::HTTPError                 a response the API refused, which the error holds
+  #   ├── X::HTTPError                 a response the API refused, or one it sent that is not JSON, which the error holds
   #   │   ├── X::ClientError           4xx: the request was refused, and is refused again but for a 408 or 429
   #   │   │   ├── X::BadRequest                 400
   #   │   │   ├── X::Unauthorized               401
@@ -24,13 +24,13 @@ module X
   #   │   │   ├── X::UnprocessableEntity        422
   #   │   │   ├── X::TooManyRequests            429
   #   │   │   └── X::UnavailableForLegalReasons 451
-  #   │   └── X::ServerError           5xx: the API failed, and the same request may pass later
-  #   │       ├── X::InternalServerError        500
-  #   │       ├── X::BadGateway                 502
-  #   │       ├── X::ServiceUnavailable         503
-  #   │       └── X::GatewayTimeout             504
+  #   │   ├── X::ServerError           5xx: the API failed, and the same request may pass later
+  #   │   │   ├── X::InternalServerError        500
+  #   │   │   ├── X::BadGateway                 502
+  #   │   │   ├── X::ServiceUnavailable         503
+  #   │   │   └── X::GatewayTimeout             504
+  #   │   └── X::InvalidResponse       2xx: a response that succeeded, whose body is not the JSON it claims
   #   ├── X::NetworkError              the request never reached the API, or its response never arrived
-  #   ├── X::InvalidResponse           a response that succeeded, whose body is not the JSON it claims
   #   ├── X::AuthorizationError        X refused to issue a token, or the user did not authorize the app
   #   ├── X::TokenReportFailed         on_token_refresh raised for the tokens of an exchange of a code or a refresh
   #   ├── X::TooManyRedirects          a response redirected more times than max_redirects allows

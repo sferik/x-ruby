@@ -1,32 +1,17 @@
 # frozen_string_literal: true
 
-require_relative "error"
-require_relative "../request_context"
-require_relative "../response_headers"
+require_relative "http_error"
 
 module X
   module Core
     # Error raised for a successful response whose body is not JSON, such as the page of a proxy or captive portal
     #
-    # It reads the response as X::HTTPError reads one: the status is {#status}, the headers are {#headers}, and the
-    # body is {#body}.
+    # It is an X::HTTPError, so that code that rescues the failures of a response reads it as it reads any other:
+    # the status is {#status}, the headers are {#headers}, the body is {#body}, and {#http_method} and {#uri} are the
+    # request it answered. A body that is not JSON describes no problem, so {#problem} is nil and {#problems} empty.
     #
     # @api public
-    class ::X::InvalidResponse < Error
-      include RequestContext
-      include ResponseHeaders
-
-      # The response itself, as the client received it
-      #
-      # It is an escape hatch, for what the error does not read: the status is {#status}, the headers are
-      # {#headers}, and the body is {#body}. It is the Net::HTTP response the client sent the request with.
-      #
-      # @api public
-      # @return [Net::HTTPResponse] the HTTP response
-      # @example Read the reason phrase of the status line
-      #   error.http_response.message # => "OK"
-      attr_reader :http_response
-
+    class ::X::InvalidResponse < ::X::HTTPError
       # The body that is not JSON: the whole body of a response, or the line of a stream
       #
       # The body of a stream can be read only as it arrives, so an error raised for a line of a stream holds that line.
@@ -54,19 +39,20 @@ module X
       # @example Create an error for a line of a stream
       #   error = X::InvalidResponse.new(http_response: response, body: line, request: request)
       def initialize(http_response:, body: nil, request: nil)
-        name_request(request)
-        super(message_naming_request("The body of the #{http_response.code} response is not JSON (#{http_response["content-type"] || "no content type"})"))
-        @http_response = http_response
         @body = body
+        super(http_response:, request:)
       end
 
-      # The HTTP status code, as an Integer like X::Response#status
+      private
+
+      # The message of the error, which says the body is not JSON
       #
-      # @api public
-      # @return [Integer] the HTTP status code
-      # @example Tell the page of a proxy from a response of the API
-      #   error.status # => 200
-      def status = Integer(http_response.code)
+      # It names what the response says the body is instead, since a body that is not JSON holds no message.
+      #
+      # @api private
+      # @param _body [Hash{String => Object}] the parsed body, which is empty
+      # @return [String] the message
+      def message_from(_body) = "The body of the #{http_response.code} response is not JSON (#{http_response["content-type"] || "no content type"})"
     end
   end
 end

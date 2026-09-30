@@ -373,6 +373,8 @@ streaming.delete_stream_rules(streaming.stream_rules) # => 2
 
 A client calls its `on_response` after every request with an `X::Response`, which counts the resources the response returned and reads its rate limits. The API returns rate limit headers with nearly every response, and some writes add limits on the requests of a day. The API bills each post a stream delivers, so a stream calls `on_response` for each one, with that post as the body.
 
+An `X::Response` reads the response itself with `status`, `headers`, and `body`, and an `X::HTTPError` reads a refused one the same three ways. Every error a request raises names the request: `http_method` and `uri` are the method it was sent with and the URL it was sent to, on `X::HTTPError`, `X::NetworkError`, `X::InvalidResponse`, and `X::TooManyRedirects` alike, and the message names it too, as `GET /2/users/1: Could not find user` does, so a log of failures says which endpoint each one came from. The message leaves the query out, since a lookup asks for every field of a resource; `uri` keeps it. Header names are lowercase, whatever case the API sent them in, and a header it sent more than once is joined with a comma. `http_response` is the escape hatch for what those do not read: it holds the response as `Net::HTTP` built it. An `X::InvalidResponse`, raised for a successful response whose body is not JSON, is an `X::HTTPError` too, and reads that response the same three ways; its `problem` is nil and its `problems` are empty.
+
 ```ruby
 x_client.on_response = lambda do |response|
   puts "#{response.http_method} #{response.uri.path}: #{response.resource_counts}" # {"data" => 100, "users" => 42}

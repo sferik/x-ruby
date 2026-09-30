@@ -16,7 +16,7 @@ module X
       private
       def answer?: (Net::HTTPResponse response) -> bool
       def json_object?: (String body) -> bool
-      def failure: (Net::HTTPResponse response, Net::HTTP::Post request) -> (HTTPError | InvalidResponse)
+      def failure: (Net::HTTPResponse response, Net::HTTP::Post request) -> HTTPError
       def post: (SimpleOAuth::OAuth2::Request token_request) -> Net::HTTP::Post
     end
 
@@ -630,9 +630,9 @@ module X
     include Core::RequestContext
   end
 
-  class InvalidResponse < Error
-    include Core::RequestContext
-    include Core::ResponseHeaders
+  class InvalidResponse < HTTPError
+    private
+    def message_from: (Hash[String, untyped] _body) -> String
   end
 
   class TooManyRequests < ClientError

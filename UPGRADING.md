@@ -106,7 +106,7 @@ A stream reconnects when it ends or drops, where 0.19 returned or raised. Pass `
 
 A 4xx or 5xx status without an error class of its own raises `X::ClientError` or `X::ServerError` rather than `X::HTTPError`, and `X::NetworkError` wraps every network failure: `IOError`, which includes `EOFError`, `SystemCallError`, which includes every `Errno` error, `Timeout::Error`, `Net::ProtocolError`, `Net::HTTPBadResponse`, `Zlib::Error`, `OpenSSL::SSL::SSLError`, and `SocketError`. Rescuing `X::Error` still catches them all.
 
-A successful response whose body is not JSON, such as the page of a proxy, raises `X::InvalidResponse`, an `X::Error`, rather than returning nil. A successful response without a body still returns nil.
+A successful response whose body is not JSON, such as the page of a proxy, raises `X::InvalidResponse`, an `X::HTTPError`, rather than returning nil. A successful response without a body still returns nil.
 
 `X::TooManyRequests#reset_at`, `#reset_in`, and `#retry_after` return nil when the response does not say when the limit resets, where 0.19 returned `Time.at(0)` and 0, which retried at once. X recommends waiting a minute instead:
 
