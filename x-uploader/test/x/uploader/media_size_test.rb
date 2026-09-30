@@ -91,11 +91,11 @@ module X
     end
 
     def test_media_that_is_not_there_raises_for_that_before_its_size_is_read
-      error = assert_raises(Errno::ENOENT) do
+      error = assert_raises(InvalidMedia) do
         validator.validate_upload!(source("nope.png"), "tweet_image", alt_text: nil, chunk_size: nil, concurrency: 1, processing_timeout: 1)
       end
 
-      assert_equal "No such file or directory - nope.png", error.message
+      assert_equal "nope.png does not exist: there is no file to upload", error.message
     end
 
     private

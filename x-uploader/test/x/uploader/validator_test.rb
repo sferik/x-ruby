@@ -22,9 +22,9 @@ module X
     end
 
     def test_validate_source_raises_for_missing_file
-      error = assert_raises(Errno::ENOENT) { Uploader.const_get(:Validator).validate_source!(Uploader.const_get(:Source).for("bad/path")) }
+      error = assert_raises(InvalidMedia) { Uploader.const_get(:Validator).validate_source!(Uploader.const_get(:Source).for("bad/path")) }
 
-      assert_equal "No such file or directory - bad/path", error.message
+      assert_equal "bad/path does not exist: there is no file to upload", error.message
     end
 
     def test_validate_source_of_a_pathname
@@ -32,9 +32,9 @@ module X
     end
 
     def test_validate_source_raises_for_a_missing_pathname
-      error = assert_raises(Errno::ENOENT) { Uploader.const_get(:Validator).validate_source!(Uploader.const_get(:Source).for(Pathname("bad/path"))) }
+      error = assert_raises(InvalidMedia) { Uploader.const_get(:Validator).validate_source!(Uploader.const_get(:Source).for(Pathname("bad/path"))) }
 
-      assert_equal "No such file or directory - bad/path", error.message
+      assert_equal "bad/path does not exist: there is no file to upload", error.message
     end
 
     def test_validate_chunks
@@ -208,7 +208,7 @@ module X
     end
 
     def test_validate_upload_validates_the_file_the_alt_text_and_the_chunk_options
-      assert_raises(Errno::ENOENT) { validate_upload("nope.png") }
+      assert_raises(InvalidMedia) { validate_upload("nope.png") }
       assert_raises(ArgumentError) { validate_upload("test/sample_files/sample.png", alt_text: "") }
       assert_raises(ArgumentError) { validate_upload("test/sample_files/sample.png", chunk_size: 0) }
       assert_raises(ArgumentError) { validate_upload("test/sample_files/sample.png", concurrency: 0) }

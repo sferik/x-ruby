@@ -35,17 +35,17 @@ module X
     end
 
     def test_missing_file_is_rejected_before_requesting
-      error = assert_raises(Errno::ENOENT) do
+      error = assert_raises(InvalidMedia) do
         Uploader::MediaUpload.chunked_upload("nope.mp4", client: @client, media_category: "tweet_video")
       end
 
-      assert_equal "No such file or directory - nope.mp4", error.message
+      assert_equal "nope.mp4 does not exist: there is no file to upload", error.message
     end
 
     def test_missing_file_of_no_known_type_is_rejected_before_inferring_its_type
-      error = assert_raises(Errno::ENOENT) { Uploader::MediaUpload.chunked_upload("nope.xyz", client: @client) }
+      error = assert_raises(InvalidMedia) { Uploader::MediaUpload.chunked_upload("nope.xyz", client: @client) }
 
-      assert_equal "No such file or directory - nope.xyz", error.message
+      assert_equal "nope.xyz does not exist: there is no file to upload", error.message
     end
 
     def test_invalid_category_is_rejected_before_requesting

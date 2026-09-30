@@ -3,8 +3,8 @@
 require_relative "error"
 
 module X
-  # Raised for media the API would refuse, before any request: media that cannot be read, holds nothing, or is
-  # larger than the API takes
+  # Raised for media the API would refuse, before any request: a file that does not exist, and media that cannot be
+  # read, holds nothing, or is larger than the API takes
   #
   # The media of an upload is often given by a user, so it is told apart from a mistake in the arguments of a call,
   # such as a media category that does not exist, which raises ArgumentError: code that uploads what a user gives

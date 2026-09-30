@@ -36,7 +36,7 @@ module X
         -> { Uploader::MediaUpload.chunked_upload(Pathname("nope.mp4"), client: @client) },
         -> { Uploader::Account.update_profile_image(Pathname("nope.png"), client: @client) },
         -> { Uploader::Account.update_profile_banner(Pathname("nope.png"), client: @client) }].each do |upload|
-        assert_match(/\ANo such file or directory - nope\.(png|mp4)\z/, assert_raises(Errno::ENOENT, &upload).message)
+        assert_match(/\Anope\.(png|mp4) does not exist: there is no file to upload\z/, assert_raises(InvalidMedia, &upload).message)
       end
     end
 

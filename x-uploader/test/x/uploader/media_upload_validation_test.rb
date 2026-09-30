@@ -17,9 +17,9 @@ module X
     end
 
     def test_upload_rejects_a_missing_image_before_reading_it
-      error = assert_raises(Errno::ENOENT) { Uploader::MediaUpload.upload("nope.png", client: @client) }
+      error = assert_raises(InvalidMedia) { Uploader::MediaUpload.upload("nope.png", client: @client) }
 
-      assert_equal "No such file or directory - nope.png", error.message
+      assert_equal "nope.png does not exist: there is no file to upload", error.message
       assert_not_requested :post, BASE_URL
     end
 

@@ -80,7 +80,7 @@ module X
       # @param processing_timeout [Integer, Float] the seconds to wait for the media to process
       # @yieldreturn [String, Symbol] the media category inferred from the media, when none is given
       # @return [String] the media category in lowercase
-      # @raise [Errno::ENOENT] if the file does not exist
+      # @raise [InvalidMedia] if the file does not exist
       # @raise [InvalidMedia] if the media cannot be read, is empty, or is larger than the API takes of its category
       # @raise [ArgumentError] if the media category is invalid, the alt text is empty or too long, the chunk size is
       #   not a positive Integer or is larger than a segment the API takes, the concurrency is not 1 to
@@ -125,12 +125,12 @@ module X
       # @api private
       # @param source [Source] the media to validate
       # @return [void]
-      # @raise [Errno::ENOENT] if the file does not exist
+      # @raise [InvalidMedia] if the file does not exist
       # @raise [InvalidMedia] if the media cannot be read, or is empty
       # @example Validate the media of an upload
       #   Uploader::Validator.validate_source!(source)
       def validate_source!(source)
-        raise Errno::ENOENT, source.description unless source.exist?
+        raise InvalidMedia, "#{source.description} does not exist: there is no file to upload" unless source.exist?
         raise InvalidMedia, "#{source.description} cannot be read: it is not a file, or not one open for reading" unless source.readable?
         raise InvalidMedia, "#{source.description} is empty: there is nothing to upload" if source.size.zero?
       end
@@ -146,7 +146,7 @@ module X
       # @param max_bytes [Integer] the greatest number of bytes the endpoint takes
       # @param use [String] what the image is uploaded as, for the message of an error
       # @return [void]
-      # @raise [Errno::ENOENT] if the file does not exist
+      # @raise [InvalidMedia] if the file does not exist
       # @raise [InvalidMedia] if the image cannot be read, is empty, or is larger than max_bytes
       # @raise [InvalidMediaType] if the image does not begin with the signature of a GIF, a JPEG, or a PNG
       # @example Validate a profile image

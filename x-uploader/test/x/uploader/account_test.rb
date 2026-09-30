@@ -45,9 +45,9 @@ module X
     end
 
     def test_update_profile_image_raises_for_missing_file
-      error = assert_raises(Errno::ENOENT) { update_profile_image("nonexistent.png") }
+      error = assert_raises(InvalidMedia) { update_profile_image("nonexistent.png") }
 
-      assert_includes error.message, "No such file or directory"
+      assert_equal "nonexistent.png does not exist: there is no file to upload", error.message
     end
 
     def test_update_profile_image_raises_for_an_empty_file
@@ -136,9 +136,9 @@ module X
     end
 
     def test_update_profile_banner_raises_for_missing_file
-      error = assert_raises(Errno::ENOENT) { update_profile_banner("nonexistent.png") }
+      error = assert_raises(InvalidMedia) { update_profile_banner("nonexistent.png") }
 
-      assert_includes error.message, "No such file or directory"
+      assert_equal "nonexistent.png does not exist: there is no file to upload", error.message
     end
 
     def test_update_profile_banner_raises_for_unsupported_file_type

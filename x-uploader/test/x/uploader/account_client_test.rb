@@ -63,9 +63,9 @@ module X
     end
 
     def test_missing_file_message
-      error = assert_raises(Errno::ENOENT) { Uploader::Account.update_profile_image("nope.png", client: @client) }
+      error = assert_raises(InvalidMedia) { Uploader::Account.update_profile_image("nope.png", client: @client) }
 
-      assert_equal "No such file or directory - nope.png", error.message
+      assert_equal "nope.png does not exist: there is no file to upload", error.message
     end
 
     def test_unsupported_file_type_message

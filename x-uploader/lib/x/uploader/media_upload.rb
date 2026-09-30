@@ -144,7 +144,7 @@ module X
       #   media that X processes
       # @raise [ArgumentError] if the media is neither a path nor an IO, or is a String that holds a NUL byte or a
       #   line break, as the contents of media given in place of its path do
-      # @raise [Errno::ENOENT] if the file does not exist
+      # @raise [InvalidMedia] if the file does not exist
       # @raise [InvalidMedia] if the media cannot be read, or is empty, which holds nothing to upload
       # @raise [InvalidMedia] if the media is larger than the API takes of its category, whatever the account: 5
       #   megabytes of an image, 15 of a GIF, and one of subtitles, or larger than the 16 gigabytes it takes of any
@@ -202,7 +202,7 @@ module X
       # @return [UploadedMedia] the uploaded media, which holds the upload response
       # @raise [ArgumentError] if the media is neither a path nor an IO, or is a String that holds a NUL byte or a
       #   line break, as the contents of media given in place of its path do
-      # @raise [Errno::ENOENT] if the file does not exist
+      # @raise [InvalidMedia] if the file does not exist
       # @raise [InvalidMedia] if the media cannot be read, or is empty, which holds nothing to upload
       # @raise [InvalidMedia] if the media is larger than the API takes of its category, which is 15 megabytes of a
       #   GIF and one of subtitles, or larger than the 16 gigabytes it takes of any

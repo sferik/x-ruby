@@ -40,7 +40,7 @@ module X
       #   its start, as the media of an upload is
       # @param client [Client] the X API client
       # @return [void]
-      # @raise [Errno::ENOENT] if the file does not exist
+      # @raise [InvalidMedia] if the file does not exist
       # @raise [ArgumentError] if the media is neither a path nor an IO
       # @raise [InvalidMedia] if the media cannot be read, is empty, which holds nothing to upload, or is larger than
       #   the 700 kilobytes the API takes of a profile image
@@ -71,7 +71,7 @@ module X
       # @param offset_left [Integer, nil] the pixels by which the region is offset from the left, of at least 0
       # @param offset_top [Integer, nil] the pixels by which the region is offset from the top, of at least 0
       # @return [void]
-      # @raise [Errno::ENOENT] if the file does not exist
+      # @raise [InvalidMedia] if the file does not exist
       # @raise [ArgumentError] if the media is neither a path nor an IO, or a width, height, or offset is neither
       #   nil nor an Integer of the pixels it takes
       # @raise [InvalidMedia] if the media cannot be read, is empty, which holds nothing to upload, or is larger than

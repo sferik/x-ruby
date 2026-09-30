@@ -31,7 +31,7 @@ module X
       #   media that X processes
       # @raise [ArgumentError] if the media is neither a path nor an IO, or is a String that holds a NUL byte or a
       #   line break, as the contents of media given in place of its path do
-      # @raise [Errno::ENOENT] if the file does not exist
+      # @raise [InvalidMedia] if the file does not exist
       # @raise [InvalidMedia] if the media cannot be read, or is empty, which holds nothing to upload
       # @raise [InvalidMedia] if the media is larger than the API takes of its category, whatever the account: 5
       #   megabytes of an image, 15 of a GIF, and one of subtitles, or larger than the 16 gigabytes it takes of any
@@ -128,7 +128,7 @@ module X
       # @api public
       # @param media [String, Pathname, IO, StringIO] the path to the image, or an IO that reads it
       # @return [void]
-      # @raise [Errno::ENOENT] if the file does not exist
+      # @raise [InvalidMedia] if the file does not exist
       # @raise [ArgumentError] if the media is neither a path nor an IO
       # @raise [InvalidMedia] if the media cannot be read, is empty, or is larger than the 700 kilobytes the API takes
       # @raise [InvalidMediaType] if the image does not begin with the signature of a GIF, a JPEG, or a PNG
@@ -144,7 +144,7 @@ module X
       # @param media [String, Pathname, IO, StringIO] the path to the image, or an IO that reads it
       # @param options [Hash] the options of {Account.update_profile_banner}: width, height, offset_left, and offset_top
       # @return [void]
-      # @raise [Errno::ENOENT] if the file does not exist
+      # @raise [InvalidMedia] if the file does not exist
       # @raise [ArgumentError] if the media is neither a path nor an IO, or a width, height, or offset is neither nil
       #   nor an Integer of the pixels it takes
       # @raise [InvalidMedia] if the media cannot be read, is empty, or is larger than the 5 megabytes X takes
