@@ -585,7 +585,8 @@ module X
     attr_reader connection: Core::Connection
     def oauth2_client: (String base_url) -> SimpleOAuth::OAuth2::Client
     def query_of: (String | Hash[String | Symbol, String] callback) -> (String | Hash[String | Symbol, String])
-    def exchange: (String | Hash[String | Symbol, String] callback, String base_url) -> SimpleOAuth::OAuth2::Token
+    def connection_for: (Hash[Symbol, untyped] options) -> Core::Connection
+    def exchange: (String | Hash[String | Symbol, String] callback, String base_url, ?Core::Connection over) -> SimpleOAuth::OAuth2::Token
     def report_exchange: (Client client, SimpleOAuth::OAuth2::Token token) -> void
     def credentials_from: (SimpleOAuth::OAuth2::Token token) -> Hash[Symbol, String | Time | nil]
   end

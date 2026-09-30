@@ -206,7 +206,9 @@ module X
       # and the tokens, so neither is lost with the code.
       #
       # The code is exchanged at the origin of the base URL of the client, the base_url of the options or else that of
-      # the authorization, as the client refreshes its tokens there.
+      # the authorization, as the client refreshes its tokens there, and through the proxy, with the timeouts,
+      # keep-alive timeout, and debug output of the client, so a client given a proxy reaches X through it from the
+      # first request of its tokens.
       #
       # @api public
       # @param callback [String, Hash] the redirect back from X: its URL, its query string, or its query parameters
@@ -228,7 +230,7 @@ module X
         raise ArgumentError, format(CREDENTIALS_GIVEN_MESSAGE, given.join(", ")) unless given.empty?
 
         checked = Client.new(**@settings, **options) # refuses an option before the code, which X accepts once, is spent
-        token = exchange(callback, checked.base_url)
+        token = exchange(callback, checked.base_url, connection_for(options))
         Client.new(**credentials_from(token), client_secret:, **@settings, **options).tap { |client| report_exchange(client, token) }
       end
 
@@ -299,18 +301,35 @@ module X
         raise AuthorizationError.new(INVALID_CALLBACK_MESSAGE)
       end
 
+      # The connection that exchanges the code for a client, built with its settings
+      #
+      # It has the proxy, timeouts, keep-alive timeout, and debug output of the options of the client, and else those of
+      # the authorization, as the client does.
+      #
+      # @api private
+      # @param options [Hash] the options of Client#initialize the client is built with
+      # @return [Core::Connection] the connection
+      def connection_for(options) = Connection.new(**@settings.merge(options.slice(*@settings.keys)).except(:base_url))
+
       # Exchange the code of the redirect back from X for a token
+      #
+      # A connection other than the authorization's own is built for the one exchange, so it is closed once the code is
+      # exchanged rather than left open for requests the authorization never sends.
+      #
       # @api private
       # @param callback [String, Hash] the redirect back from X: its URL, its query string, or its query parameters
       # @param base_url [String] the base URL of the client the code is exchanged for, at whose origin it is exchanged
+      # @param over [Core::Connection] the connection to send the token request over
       # @return [SimpleOAuth::OAuth2::Token] the token
       # @raise [AuthorizationError] if the user denied the app, the state does not match, X refuses the code, or the
       #   redirect is not a valid URL
-      def exchange(callback, base_url)
+      def exchange(callback, base_url, over = connection)
         code = SimpleOAuth::OAuth2::AuthorizationResponse.parse(query_of(callback), state:).code
-        TokenEndpoint.fetch(oauth2_client(base_url).authorization_code_request(code:, redirect_uri:, code_verifier:), connection:)
+        TokenEndpoint.fetch(oauth2_client(base_url).authorization_code_request(code:, redirect_uri:, code_verifier:), connection: over)
       rescue SimpleOAuth::OAuth2::Error => e
         raise AuthorizationError.__send__(:from, e, DEFAULT_ERROR_MESSAGE), cause: nil
+      ensure
+        over.close unless over.equal?(connection)
       end
 
       # Pass the tokens of the exchange to the on_token_refresh of the client
