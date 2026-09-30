@@ -70,7 +70,7 @@ module X
         yielded = []
         X::Post.find_all([5, *(6..105)], client: @client) { |problem| yielded << problem.resource_id }
 
-        assert_equal [5], yielded
+        assert_equal ["5"], yielded
       end
 
       def test_find_all_asks_for_each_identifier_once

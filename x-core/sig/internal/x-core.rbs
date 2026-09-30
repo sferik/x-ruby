@@ -563,12 +563,9 @@ module X
   end
 
   class Problem
-    INTEGER_ID_TYPES: Array[String]
     MARSHAL_FORMAT: Integer
 
     private
-    def identifier: (untyped value) -> untyped
-    def numeric_identifier?: (untyped value) -> bool
     def deep_freeze: (untyped value) -> untyped
   end
 

@@ -20,7 +20,7 @@ module X
     def test_a_marshalled_problem_reads_back_as_it_was
       loaded = Marshal.load(Marshal.dump(@problem))
 
-      assert_equal [ATTRS, 9, "Not Found Error"], [loaded.attrs, loaded.resource_id, loaded.title]
+      assert_equal [ATTRS, "9", "Not Found Error"], [loaded.attrs, loaded.resource_id, loaded.title]
       assert_instance_of Problem, loaded
     end
 

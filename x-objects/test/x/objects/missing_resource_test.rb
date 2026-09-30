@@ -11,7 +11,7 @@ module X
                    "resource_type" => "tweet", "resource_id" => "1", "parameter" => "pinned_tweet_id", "value" => "1"}.freeze
 
       def test_the_problems_of_a_lookup_are_the_problems_x_core_reads
-        assert_equal Post.from_id(1).id, Problem.new(NOT_FOUND).resource_id
+        assert_equal Post.from_id(1).id.to_s, Problem.new(NOT_FOUND).resource_id
       end
 
       def test_resource_not_found_explains_itself_with_the_first_problem

@@ -36,12 +36,6 @@ module X
       assert_equal [[], ["Authorization Error"]], details(posts({"id" => "1"}, {"id" => "2"}, errors: [problem]))
     end
 
-    def test_a_problem_named_by_its_value_alone
-      problem = {"title" => "Not Found Error", "parameter" => "in_reply_to_user_id", "value" => "5"}
-
-      assert_equal [["Not Found Error"], []], details(posts({"id" => "1", "in_reply_to_user_id" => "5"}, {"id" => "2"}, errors: [problem]))
-    end
-
     def test_a_problem_that_names_no_resource_is_reported_by_every_resource
       assert_equal [["Something went wrong"]] * 2, details(posts({"id" => "1"}, {"id" => "2"}, errors: [GENERAL]))
     end
@@ -132,6 +126,28 @@ module X
       assert_equal [%w[pinned_post_id], %w[pinned_tweet_id], %w[most_recent_post_id], %w[most_recent_tweet_id], %w[affiliation user_id]],
         User.__send__(:reference_keys)
       assert_empty Resource.__send__(:reference_keys)
+    end
+  end
+
+  class ResourceProblemValuesTest < Minitest::Test
+    cover Objects::Includes
+
+    def details(resources) = resources.map { |resource| resource.problems.map(&:title) }
+
+    def posts(*data, errors:)
+      Post.__send__(:collection_from_response, {"data" => data, "errors" => errors}, client: nil)
+    end
+
+    def test_a_problem_named_by_its_value_alone
+      problem = {"title" => "Not Found Error", "parameter" => "in_reply_to_user_id", "value" => "5"}
+
+      assert_equal [["Not Found Error"], []], details(posts({"id" => "1", "in_reply_to_user_id" => "5"}, {"id" => "2"}, errors: [problem]))
+    end
+
+    def test_a_problem_named_by_a_value_the_api_gave_as_a_number
+      problem = {"title" => "Not Found Error", "parameter" => "in_reply_to_user_id", "value" => 5}
+
+      assert_equal [["Not Found Error"], []], details(posts({"id" => "1", "in_reply_to_user_id" => "5"}, {"id" => "2"}, errors: [problem]))
     end
   end
 end

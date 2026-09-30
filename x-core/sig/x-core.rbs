@@ -111,7 +111,7 @@ module X
     def detail: () -> String?
     def type: () -> String?
     def resource_type: () -> String?
-    def resource_id: () -> (Integer | String)?
+    def resource_id: () -> String?
     def parameter: () -> String?
     def value: () -> untyped
     def message: () -> String?
