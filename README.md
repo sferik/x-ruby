@@ -298,7 +298,20 @@ ads_client.get("accounts")
 # connections sooner than X does
 x_client.keep_alive_timeout = 5
 
-# Close the connections a client keeps open between requests; a later request opens one again
+# Send headers with every request, such as one that names your application. They are defaults: a header of the same
+# name passed to a request, or to a stream, is sent in place of the client's, and each of the client's is sent in
+# place of a default of the gem, such as its User-Agent, whatever the case each is named in.
+named_client = X::Client.new(headers: {"User-Agent" => "my-app/1.0 (+https://example.com)"}, **x_credentials)
+named_client.get("users/me", headers: {"X-Trace" => "abc"}) # sends both
+# with(headers:) replaces the headers of the client rather than adding to them, so give the copy every header it sends
+traced_client = named_client.with(headers: named_client.headers.merge("X-Trace" => "abc")) # sharing its connections
+
+# Send requests through a proxy. A client that is given none takes the proxy the environment names for the scheme of
+# each request, in https_proxy or http_proxy, and reaches the hosts that no_proxy names directly.
+proxied_client = X::Client.new(proxy_url: "http://user:password@proxy.example.com:8080", **x_credentials)
+
+# Close the connections a client keeps open between requests, which the copies `with` makes of it share when they
+# open their connections alike; a later request opens one again
 x_client.close
 ```
 
