@@ -25,7 +25,7 @@ module X
     def test_the_rules_of_the_app
       stub_rules({"data" => [RUBY_RULE], "meta" => {"result_count" => 1}})
 
-      rules = @streaming_client.stream_rules
+      rules = @streaming_client.rules
 
       assert_equal [RUBY_STREAM_RULE], rules
       assert_predicate rules, :frozen?
@@ -34,12 +34,12 @@ module X
     def test_an_app_with_no_rules_has_none
       stub_rules({"meta" => {"result_count" => 0}})
 
-      assert_empty @streaming_client.stream_rules
+      assert_empty @streaming_client.rules
     end
 
     def test_the_rules_are_read_as_the_app
       stub_rules({"data" => [RUBY_RULE]})
-      @streaming_client.stream_rules
+      @streaming_client.rules
 
       assert_requested(:get, RULES_URL) { |request| request.headers["Authorization"].eql?("Bearer #{TEST_BEARER_TOKEN}") }
     end
@@ -47,7 +47,7 @@ module X
     def test_the_rules_take_query_parameters
       stub_rules({"data" => [RUBY_RULE]}, url: "#{RULES_URL}?ids=1")
 
-      assert_equal [RUBY_STREAM_RULE], @streaming_client.stream_rules(params: {ids: 1})
+      assert_equal [RUBY_STREAM_RULE], @streaming_client.rules(params: {ids: 1})
     end
 
     def test_every_page_of_the_rules_is_read
@@ -55,7 +55,7 @@ module X
       stub_rules({"data" => [RUBY_RULE], "meta" => {"next_token" => "PAGE2"}}, url: "#{RULES_URL}?ids=1,2&max_results=1")
       stub_rules({"data" => [crystal], "meta" => {"result_count" => 1}}, url: "#{RULES_URL}?ids=1,2&max_results=1&pagination_token=PAGE2")
 
-      rules = @streaming_client.stream_rules(params: {ids: "1,2", max_results: 1})
+      rules = @streaming_client.rules(params: {ids: "1,2", max_results: 1})
 
       assert_equal [RUBY_STREAM_RULE, StreamRule.new(id: 2, value: "crystal")], rules
       assert_predicate rules, :frozen?
@@ -65,20 +65,20 @@ module X
       stub_rules({"data" => [RUBY_RULE], "meta" => {"next_token" => "PAGE2"}})
       stub_rules({"meta" => {"result_count" => 0}}, url: "#{RULES_URL}?pagination_token=PAGE2")
 
-      assert_equal [RUBY_STREAM_RULE], @streaming_client.stream_rules
+      assert_equal [RUBY_STREAM_RULE], @streaming_client.rules
     end
 
     def test_the_rules_are_read_whatever_the_client_parses_into
       stub_rules({"data" => [RUBY_RULE]})
       streaming_client = Client.new(bearer_token: TEST_BEARER_TOKEN, default_object_class: OpenStruct).streaming
 
-      assert_equal [RUBY_STREAM_RULE], streaming_client.stream_rules
+      assert_equal [RUBY_STREAM_RULE], streaming_client.rules
     end
 
     def test_adding_a_rule
       stub_rules({"data" => [RUBY_RULE], "meta" => {"summary" => {"created" => 1}}}, method: :post)
 
-      rules = @streaming_client.add_stream_rules({value: "ruby -is:retweet", tag: "ruby"})
+      rules = @streaming_client.add_rules({value: "ruby -is:retweet", tag: "ruby"})
 
       assert_equal [RUBY_STREAM_RULE], rules
       assert_predicate rules, :frozen?
@@ -87,7 +87,7 @@ module X
 
     def test_adding_rules_named_by_the_values_they_match
       stub_rules({"data" => []}, method: :post)
-      @streaming_client.add_stream_rules(%w[ruby crystal])
+      @streaming_client.add_rules(%w[ruby crystal])
 
       assert_requested(:post, RULES_URL, body: {add: [{value: "ruby"}, {value: "crystal"}]}.to_json)
     end
@@ -95,7 +95,7 @@ module X
     def test_adding_rules_that_are_only_checked
       stub_rules({"data" => [RUBY_RULE, {"value" => "crystal"}]}, method: :post, url: "#{RULES_URL}?dry_run=true")
 
-      assert_equal [RUBY_STREAM_RULE, StreamRule.new(value: "crystal")], @streaming_client.add_stream_rules(%w[ruby crystal], dry_run: true)
+      assert_equal [RUBY_STREAM_RULE, StreamRule.new(value: "crystal")], @streaming_client.add_rules(%w[ruby crystal], dry_run: true)
     end
 
     def test_adding_rules_some_of_which_the_api_does_not_add
@@ -103,26 +103,26 @@ module X
       stub_rules({"data" => [RUBY_RULE], "errors" => [duplicate], "meta" => {"summary" => {"created" => 1, "not_created" => 1}}}, method: :post)
       problems = []
 
-      assert_equal [RUBY_STREAM_RULE], @streaming_client.add_stream_rules(%w[ruby crystal]) { |problem| problems << problem }
+      assert_equal [RUBY_STREAM_RULE], @streaming_client.add_rules(%w[ruby crystal]) { |problem| problems << problem }
       assert_equal [["crystal", "DuplicateRule"]], problems.map { |problem| [problem.value, problem.title] }
-      assert_equal [RUBY_STREAM_RULE], @streaming_client.add_stream_rules(%w[ruby crystal])
+      assert_equal [RUBY_STREAM_RULE], @streaming_client.add_rules(%w[ruby crystal])
     end
 
     def test_adding_rules_the_api_reports_nothing_for
       stub_rules({"meta" => {"summary" => {"created" => 0}}}, method: :post)
 
-      assert_empty @streaming_client.add_stream_rules("ruby")
+      assert_empty @streaming_client.add_rules("ruby")
     end
 
     def test_adding_something_that_is_not_a_rule
-      error = assert_raises(ArgumentError) { @streaming_client.add_stream_rules({"tag" => "ruby"}) }
+      error = assert_raises(ArgumentError) { @streaming_client.add_rules({"tag" => "ruby"}) }
 
       assert_equal 'a rule to add is a StreamRule, a Hash holding a value, or the value it matches, not {"tag" => "ruby"}', error.message
     end
 
     def test_adding_something_that_is_neither_a_hash_nor_a_string
       [42, :ruby, nil, {id: "1"}, {value: nil}, {"value" => nil}].each do |rule|
-        error = assert_raises(ArgumentError) { @streaming_client.add_stream_rules(["ruby", rule]) }
+        error = assert_raises(ArgumentError) { @streaming_client.add_rules(["ruby", rule]) }
 
         assert_equal "a rule to add is a StreamRule, a Hash holding a value, or the value it matches, not #{rule.inspect}", error.message
       end
@@ -131,7 +131,7 @@ module X
 
     def test_adding_a_rule_with_its_value_under_a_string_key
       stub_rules({"data" => []}, method: :post)
-      @streaming_client.add_stream_rules({"value" => "ruby"})
+      @streaming_client.add_rules({"value" => "ruby"})
 
       assert_requested(:post, RULES_URL, body: {add: [{value: "ruby"}]}.to_json)
     end
@@ -139,8 +139,8 @@ module X
     def test_the_rules_of_a_client_that_cannot_authenticate_as_the_app
       streaming_client = Client.new(**test_oauth2_credentials).streaming
 
-      assert_raises(UnsupportedOperation) { streaming_client.stream_rules }
-      assert_raises(UnsupportedOperation) { streaming_client.add_stream_rules("ruby") }
+      assert_raises(UnsupportedOperation) { streaming_client.rules }
+      assert_raises(UnsupportedOperation) { streaming_client.add_rules("ruby") }
     end
   end
 end

@@ -299,9 +299,9 @@ module X
     def write_timeout: () -> (Float | Integer)?
     def debug_output: () -> _DebugOutput?
     def max_reconnects: () -> (Integer | Float)
-    def stream_rules: (?params: params?) -> Array[StreamRule]
-    def add_stream_rules: (Array[addable_rule] | addable_rule rules, ?dry_run: bool) ?{ (Problem problem) -> void } -> Array[StreamRule]
-    def delete_stream_rules: (Array[rule] | rule rules, ?dry_run: bool) ?{ (Problem problem) -> void } -> Integer
+    def rules: (?params: params?) -> Array[StreamRule]
+    def add_rules: (Array[addable_rule] | addable_rule rules, ?dry_run: bool) ?{ (Problem problem) -> void } -> Array[StreamRule]
+    def delete_rules: (Array[rule] | rule rules, ?dry_run: bool) ?{ (Problem problem) -> void } -> Integer
     def marshal_dump: () -> bot
     def encode_with: (untyped coder) -> bot
   end

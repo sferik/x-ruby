@@ -6,8 +6,8 @@ module X
   # A rule of the filtered stream: the value it matches posts against, the tag it is labelled with, and the
   # identifier the API gave it
   #
-  # {StreamingClient#stream_rules} and {StreamingClient#add_stream_rules} return the rules the API holds, and
-  # {StreamingClient#delete_stream_rules} deletes one by its identifier, so a rule that was read deletes itself. A rule
+  # {StreamingClient#rules} and {StreamingClient#add_rules} return the rules the API holds, and
+  # {StreamingClient#delete_rules} deletes one by its identifier, so a rule that was read deletes itself. A rule
   # built to be added has no identifier until the API gives it one, and is deleted by the value it matches.
   #
   # It is frozen, compares equal to a rule of the same identifier, value, and tag, and matches a pattern of them, as
@@ -81,7 +81,7 @@ module X
     # @param _keys [Array<Symbol>, nil] the keys the pattern names
     # @return [Hash{Symbol => Integer, String, nil}] the identifier, value, and tag
     # @example Match the rules without a tag
-    #   streaming_client.stream_rules.select { |rule| rule in {tag: nil} }
+    #   streaming_client.rules.select { |rule| rule in {tag: nil} }
     def deconstruct_keys(_keys) = to_h
 
     # Check whether another rule is the same rule
@@ -90,7 +90,7 @@ module X
     # @param other [Object] the other rule
     # @return [Boolean] true if the other rule is a StreamRule of the same identifier, value, and tag
     # @example Check whether a rule was read before
-    #   streaming_client.stream_rules.include?(rule)
+    #   streaming_client.rules.include?(rule)
     def ==(other) = other.instance_of?(self.class) && to_h.eql?(other.to_h)
     alias_method :eql?, :==
 
@@ -118,7 +118,7 @@ module X
     # @api public
     # @return [Array(Integer, Hash{Symbol => Integer, String, nil})] the number of the format, then the rule as a Hash
     # @example Cache the rules of the filtered stream
-    #   Rails.cache.write("rules", streaming_client.stream_rules)
+    #   Rails.cache.write("rules", streaming_client.rules)
     def marshal_dump = [MARSHAL_FORMAT, to_h]
 
     # Restore a rule Marshal read, built as the constructor builds it, frozen

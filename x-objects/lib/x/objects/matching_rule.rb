@@ -9,8 +9,8 @@ module X
   # the tag it is labelled with
   #
   # The stream names a rule a post matched by its identifier and its tag alone, not by the value it matches, so this is
-  # not an X::StreamRule, which holds that value. It names the rule to X::StreamingClient#delete_stream_rules by its
-  # identifier, as rule.id, or as rule.to_h, and it is found among the rules X::StreamingClient#stream_rules reads by
+  # not an X::StreamRule, which holds that value. It names the rule to X::StreamingClient#delete_rules by its
+  # identifier, as rule.id, or as rule.to_h, and it is found among the rules X::StreamingClient#rules reads by
   # the identifier they share.
   #
   # It is frozen, compares equal to a rule of the same identifier and tag, and matches a pattern of them, as in
@@ -34,11 +34,11 @@ module X
     attr_reader :attrs
 
     # @!method to_h
-    #   Alias for attrs, returns the attributes of the rule, which X::StreamingClient#delete_stream_rules takes
+    #   Alias for attrs, returns the attributes of the rule, which X::StreamingClient#delete_rules takes
     #   @api public
     #   @return [Hash{String => String}] the attributes
     #   @example Delete the rule a post matched
-    #     streaming_client.delete_stream_rules(post.matching_rules.first.to_h)
+    #     streaming_client.delete_rules(post.matching_rules.first.to_h)
     alias_method :to_h, :attrs
 
     # The identifier the API gave the rule

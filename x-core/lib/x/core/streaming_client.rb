@@ -204,21 +204,21 @@ module X
     #   the app
     # @raise [HTTPError] if the API refuses the request
     # @example Print the rules of the app
-    #   streaming_client.stream_rules.each { |rule| puts "#{rule.tag}: #{rule.value}" }
+    #   streaming_client.rules.each { |rule| puts "#{rule.tag}: #{rule.value}" }
     # @example Read two rules by identifier
-    #   streaming_client.stream_rules(params: {ids: "1,2"})
-    def stream_rules(params: nil)
+    #   streaming_client.rules(params: {ids: "1,2"})
+    def rules(params: nil)
       body = app_client.get(RULES_ENDPOINT, params:, **JSON_CLASSES)
       token = body.to_h.dig("meta", "next_token")
-      (rules_of(body) + (token ? stream_rules(params: params.to_h.merge(pagination_token: token)) : [])).freeze
+      (rules_of(body) + (token ? rules(params: params.to_h.merge(pagination_token: token)) : [])).freeze
     end
 
     # Add rules for the filtered stream to match posts against
     #
     # A rule is a StreamRule, or a Hash of the value it matches and the tag it is labelled with, or a String, which is
     # the value of a rule without a tag. A StreamRule is added by its value and tag, so the rules of one app, as
-    # stream_rules returns them, add themselves to another. No rules add none, and send no request. Anything else
-    # raises before a request, as it does for delete_stream_rules.
+    # {#rules} returns them, add themselves to another. No rules add none, and send no request. Anything else
+    # raises before a request, as it does for delete_rules.
     #
     # The API adds the rules it can and reports the rest, such as a rule the app already has, as errors of a
     # response that otherwise succeeds. The rules that were added are returned, and each rule that was not is
@@ -235,13 +235,13 @@ module X
     #   the app
     # @raise [HTTPError] if the API refuses the request, which adds none of the rules
     # @example Add a rule with a tag
-    #   rule = streaming_client.add_stream_rules(X::StreamRule.new(value: "ruby -is:retweet", tag: "ruby")).first
+    #   rule = streaming_client.add_rules(X::StreamRule.new(value: "ruby -is:retweet", tag: "ruby")).first
     #   rule.id # => 1165037377523306498
     # @example Check rules without adding them
-    #   streaming_client.add_stream_rules(["ruby", "crystal"], dry_run: true)
+    #   streaming_client.add_rules(["ruby", "crystal"], dry_run: true)
     # @example Report the rules that were not added
-    #   streaming_client.add_stream_rules(%w[ruby crystal]) { |problem| warn "#{problem.value}: #{problem.title}" }
-    def add_stream_rules(rules, dry_run: false, &)
+    #   streaming_client.add_rules(%w[ruby crystal]) { |problem| warn "#{problem.value}: #{problem.title}" }
+    def add_rules(rules, dry_run: false, &)
       rules = each_rule(rules)
       body = change_rules({add: rules.map { |rule| rule_to_add(rule) }}, dry_run:, &) unless rules.empty?
       rules_of(body)
@@ -250,14 +250,14 @@ module X
     # Delete rules of the filtered stream
     #
     # A rule is deleted by its identifier, or by the value it matches: a StreamRule the API returned, a Hash that holds
-    # an id, or an Integer is deleted by identifier, so what stream_rules returned deletes itself, and a StreamRule or
-    # a Hash that holds a value and no identifier, or a String, is deleted by value, so what add_stream_rules was
+    # an id, or an Integer is deleted by identifier, so what {#rules} returned deletes itself, and a StreamRule or
+    # a Hash that holds a value and no identifier, or a String, is deleted by value, so what add_rules was
     # given deletes what it added. No rules delete none, and send no request, since the API refuses a deletion that
     # names no rule.
     #
     # The API deletes the rules it can and reports the rest, such as a rule the app does not have, as errors of a
     # response that otherwise succeeds. The number of rules that were deleted is returned, and each problem the API
-    # reported is yielded, as add_stream_rules yields the rules it did not add.
+    # reported is yielded, as add_rules yields the rules it did not add.
     #
     # @api public
     # @param rules [Array<StreamRule, Hash, String, Integer>, StreamRule, Hash, String, Integer] the rules to delete,
@@ -270,14 +270,14 @@ module X
     #   the app
     # @raise [HTTPError] if the API refuses the request
     # @example Delete every rule
-    #   streaming_client.delete_stream_rules(streaming_client.stream_rules)
+    #   streaming_client.delete_rules(streaming_client.rules)
     # @example Delete the rules that match two values
-    #   streaming_client.delete_stream_rules(["ruby", "crystal"])
+    #   streaming_client.delete_rules(["ruby", "crystal"])
     # @example Delete a rule by the identifier the API gave it
-    #   streaming_client.delete_stream_rules(1165037377523306498)
+    #   streaming_client.delete_rules(1165037377523306498)
     # @example Report the rules that were not deleted
-    #   streaming_client.delete_stream_rules([1, 2]) { |problem| warn problem.detail }
-    def delete_stream_rules(rules, dry_run: false, &)
+    #   streaming_client.delete_rules([1, 2]) { |problem| warn problem.detail }
+    def delete_rules(rules, dry_run: false, &)
       rules = each_rule(rules)
       return 0 if rules.empty?
 
@@ -353,7 +353,7 @@ module X
 
     # The identifier of a rule, if it is one or holds one
     #
-    # A String is the value a rule matches, as add_stream_rules reads it, so an identifier is an Integer or held by a
+    # A String is the value a rule matches, as add_rules reads it, so an identifier is an Integer or held by a
     # Hash.
     #
     # @api private
