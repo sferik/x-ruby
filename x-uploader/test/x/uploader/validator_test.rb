@@ -257,4 +257,22 @@ module X
       end
     end
   end
+
+  class ValidatorAltTextEncodingTest < Minitest::Test
+    cover Uploader.const_get(:Validator)
+
+    def test_alt_text_that_converts_to_utf8_is_valid
+      ["A cat".encode(Encoding::ISO_8859_1), "Caf\u00e9".encode(Encoding::ISO_8859_1), "A cat".b].each do |alt_text|
+        assert_nil Uploader.const_get(:Validator).validate_alt_text!(alt_text), alt_text.inspect
+      end
+    end
+
+    def test_alt_text_that_does_not_convert_to_utf8_is_refused
+      ["\xFF".b, (+"A \xFF cat").force_encoding(Encoding::UTF_8)].each do |alt_text|
+        error = assert_raises(ArgumentError, alt_text.inspect) { Uploader.const_get(:Validator).validate_alt_text!(alt_text) }
+
+        assert_equal "alt_text must be text that converts to UTF-8, not #{alt_text.inspect}", error.message
+      end
+    end
+  end
 end

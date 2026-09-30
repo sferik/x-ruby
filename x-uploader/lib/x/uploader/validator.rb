@@ -189,18 +189,36 @@ module X
 
       # Validate the alt text of an upload, of up to MAX_ALT_TEXT_LENGTH characters
       #
+      # The alt text is sent as JSON, which is UTF-8, so text of another encoding is sent as the UTF-8 it converts to,
+      # and text that converts to none, such as bytes that are not UTF-8, is refused here, before the media it
+      # describes is uploaded, rather than fail to be sent once it is.
+      #
       # @api private
       # @param alt_text [String, nil] the alt text to validate, or nil for media described with none
       # @return [void]
-      # @raise [ArgumentError] if the alt text is not a String, or is empty or longer than the API takes
+      # @raise [ArgumentError] if the alt text is not a String, does not convert to UTF-8, or is empty or longer than
+      #   the API takes
       # @example Validate alt text
       #   Uploader::Validator.validate_alt_text!("A cat asleep on a keyboard")
       def validate_alt_text!(alt_text)
         return if alt_text.nil?
         raise ArgumentError, "alt_text must be a String, or nil for none, not #{alt_text.inspect}" unless alt_text.is_a?(String)
+        raise ArgumentError, "alt_text must be text that converts to UTF-8, not #{alt_text.inspect}" unless utf8?(alt_text)
         return if (1..MAX_ALT_TEXT_LENGTH).cover?(alt_text.length)
 
         raise ArgumentError, "alt_text must be 1 to #{MAX_ALT_TEXT_LENGTH} characters, not #{alt_text.length}"
+      end
+
+      # Check whether text converts to UTF-8, as the JSON it is sent in is written
+      # @api private
+      # @param text [String] the text
+      # @return [Boolean] true if the text converts to valid UTF-8
+      # @example Check text that holds a byte that is not UTF-8
+      #   Uploader::Validator.utf8?("\xFF".b) # => false
+      def utf8?(text)
+        text.encode(Encoding::UTF_8).valid_encoding?
+      rescue EncodingError
+        false
       end
 
       # Validate the language code of subtitles, and upcase it, as the API takes it

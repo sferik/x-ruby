@@ -209,6 +209,7 @@ module X
       def validate_source!: (Source source) -> nil
       def validate_extension!: (path file_path, Array[String] extensions) -> nil
       def validate_alt_text!: (String? alt_text) -> nil
+      def utf8?: (String text) -> bool
       def validate_language_code!: (untyped language_code) -> String
       def validate_media_category!: (String | Symbol media_category) -> String
       def validate_chunks!: (chunk_size_mb: (Float | Integer)?, concurrency: Integer) -> nil
