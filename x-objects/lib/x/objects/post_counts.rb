@@ -94,9 +94,10 @@ module X
         params = {query:, granularity: DEFAULT_GRANULARITY}.merge(params)
         client = RECENT_ENDPOINT.eql?(path) ? Utils.space_client(client) : Utils.app_client(client)
         bodies = [] #: Array[Hash[String, untyped]]
+        given = params[:next_token]
         loop do
           bodies << client.get(Utils.path(path, params), **Utils::JSON_CLASSES).to_h
-          token = next_token(bodies) or break
+          token = next_token(bodies, given) or break
           params = params.merge(next_token: token)
         end
         bodies
@@ -105,17 +106,19 @@ module X
       # The token of the page of counts after the last, which fetched no page before it
       #
       # A page that names the token of a page before it as the next would have the pages requested again for good,
-      # and the API bill each request, so it raises instead.
+      # and the API bill each request, so it raises instead. The next_token the counts were given, which fetched the
+      # first page, is the token of a page before each of them too.
       #
       # @api private
       # @param bodies [Array<Hash>] the response bodies so far
+      # @param given [String, nil] the next_token the counts were given, or nil for none
       # @return [String, nil] the token, or nil if the last page is the last of the counts
       # @raise [InvalidAttribute] if the last response holds a meta that is not an object
       # @raise [UnreadableResponse] if the last response names the token of a page before it as the next
-      def next_token(bodies)
+      def next_token(bodies, given)
         tokens = bodies.map { |body| Shape.dig("The next page of the counts of #{self}", body, %w[meta next_token]) }
-        token = tokens.last
-        raise UnreadableResponse, "The counts of #{self} name the next_token #{token.inspect}, which fetched an earlier page" if tokens.count(token) > 1
+        token = tokens.pop or return
+        raise UnreadableResponse, "The counts of #{self} name the next_token #{token.inspect}, which fetched an earlier page" if [given, *tokens].include?(token)
 
         token
       end

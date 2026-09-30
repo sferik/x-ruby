@@ -159,6 +159,7 @@ module X
       def id_only?: () -> bool
       def params_for: (Integer index) -> query?
       def next_token: (Integer index) -> String?
+      def earlier_tokens: (Array[Page[untyped]] pages, Integer index) -> Array[String]
       def sized: (query params, Integer wanted) -> query
       def prefetch: (Integer index) -> Thread?
       def claim: (Integer index) -> bool
@@ -395,7 +396,7 @@ module X
 
       private
       def pages: (String path, String query, client: _Client, **untyped params) -> Array[Hash[String, untyped]]
-      def next_token: (Array[Hash[String, untyped]] bodies) -> untyped
+      def next_token: (Array[Hash[String, untyped]] bodies, untyped given) -> untyped
       def total: (Array[Hash[String, untyped]] bodies) -> Integer
       def page_total: (Integer | String | nil value) -> Integer
       def periods: (Array[Hash[String, untyped]] bodies) -> Hash[Time, Integer]

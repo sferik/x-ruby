@@ -51,6 +51,26 @@ module X
       assert_equal [1, 2, 3], User.from_id(1, client: paging("users/1/followers", %w[a b])).followers.map(&:id)
     end
 
+    def test_a_cursor_stops_at_a_first_page_that_names_the_token_it_was_given
+      client = paging("users/1/followers", %w[a a])
+      error = assert_raises(UnreadableResponse) { User.from_id(1, client:).followers(pagination_token: "a").to_a }
+
+      assert_equal 'Page 0 of users/1/followers names the next_token "a", which fetched an earlier page', error.message
+      assert_equal ["a"], client.queries.map { |query| query["pagination_token"] }
+    end
+
+    def test_a_count_stops_at_a_first_page_that_names_the_token_it_was_given
+      client = paging("tweets/counts/recent", %w[a a])
+      error = assert_raises(UnreadableResponse) { Post.count("ruby", client:, next_token: "a") }
+
+      assert_equal 'The counts of X::Post name the next_token "a", which fetched an earlier page', error.message
+      assert_equal ["a"], client.queries.map { |query| query["next_token"] }
+    end
+
+    def test_a_cursor_given_a_token_reads_the_pages_after_it
+      assert_equal [2, 3], User.from_id(1, client: paging("users/1/followers", %w[a b])).followers(pagination_token: "a").map(&:id)
+    end
+
     def test_a_count_stops_at_a_page_that_names_the_token_of_an_earlier_page
       client = paging("tweets/counts/recent", %w[a b b])
       error = assert_raises(UnreadableResponse) { Post.count("ruby", client:) }

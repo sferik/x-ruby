@@ -176,7 +176,8 @@ module X
       # The token of the page after a page, which fetched no page before it
       #
       # A page that names the token of a page before it as the next would have the pages fetched again for good, and
-      # the API bill each of them, so it raises instead.
+      # the API bill each of them, so it raises instead. The token the cursor was given, which fetched its first page,
+      # is the token of a page before each of them too.
       #
       # @api private
       # @param index [Integer] the zero-based index of the page, which is fetched
@@ -185,9 +186,21 @@ module X
       def next_token(index)
         pages = fetched
         token = pages.fetch(index).next_token
-        raise UnreadableResponse, format(REPEATED_TOKEN, index:, path: @cursor.__send__(:path), token:) if pages.take(index).map(&:next_token).include?(token)
+        raise UnreadableResponse, format(REPEATED_TOKEN, index:, path: @cursor.__send__(:path), token:) if earlier_tokens(pages, index).include?(token)
 
         token
+      end
+
+      # The tokens that fetched the pages up to a page
+      #
+      # They are the token the cursor was given, if any, then the next token of each page before it.
+      #
+      # @api private
+      # @param pages [Array<Page>] the pages fetched
+      # @param index [Integer] the zero-based index of the page
+      # @return [Array<String>] the tokens
+      def earlier_tokens(pages, index)
+        [@cursor.__send__(:params)[@cursor.__send__(:token_param)], *pages.take(index).map(&:next_token)].compact
       end
 
       # The query parameters of a page, asking for no more than the resources wanted
