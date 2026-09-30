@@ -87,4 +87,34 @@ module X
       assert_empty @page.problems
     end
   end
+
+  class PageArgumentsTest < Minitest::Test
+    cover Page
+
+    def setup
+      @users = [User.new({"id" => "1"}), User.new({"id" => "2"})]
+    end
+
+    def test_the_arrays_a_page_is_given_are_copied_rather_than_frozen
+      problems = [Problem.new({"title" => "Not Found Error"})]
+      page = Page.new(@users, {}, problems:)
+
+      assert_equal [false, false, true, true], [@users.frozen?, problems.frozen?, page.items.frozen?, page.problems.frozen?]
+      assert_equal [@users, problems], [page.items, page.problems]
+    end
+
+    def test_problems_that_are_not_problems_are_refused
+      [nil, "x", [nil], [{"title" => "Not Found Error"}]].each do |problems|
+        error = assert_raises(ArgumentError, problems.inspect) { Page.new(@users, {}, problems:) }
+
+        assert_equal "problems must be an Array of problems, not #{problems.inspect}", error.message
+      end
+    end
+
+    def test_what_converts_to_an_array_of_problems_is_taken_as_one
+      problem = Problem.new({"title" => "Not Found Error"})
+
+      assert_equal [problem], Page.new(@users, {}, problems: Struct.new(:to_ary).new([problem])).problems
+    end
+  end
 end

@@ -46,14 +46,15 @@ module X
     # @param items [Array<Resource>] the resources on the page
     # @param meta [Hash] the pagination metadata
     # @param problems [Array<Problem>] the problems the page's response reported
-    # @return [Page] a new page
-    # @raise [ArgumentError] if the items are not an Array of resources, or the metadata is not a Hash
+    # @return [Page] a new page, which holds frozen copies of the arrays it is given, leaving them as they are
+    # @raise [ArgumentError] if the items are not an Array of resources, the metadata is not a Hash, or the problems
+    #   are not an Array of problems
     # @example Create a page
     #   X::Page.new([user], {"result_count" => 1})
     def initialize(items, meta, problems: [])
-      @items = resources!(items).freeze
+      @items = resources!(items).dup.freeze
       @meta = Objects::Utils.deep_freeze(Hash.try_convert(meta) || raise(ArgumentError, "meta must be a Hash, not #{meta.inspect}"))
-      @problems = problems.freeze
+      @problems = problems!(problems).dup.freeze
       freeze
     end
 
@@ -223,6 +224,18 @@ module X
       return resources if resources&.all?(Resource)
 
       raise ArgumentError, "items must be an Array of resources, not #{items.inspect}"
+    end
+
+    # The problems a page is given, which must be an Array of problems
+    # @api private
+    # @param problems [Object] the problems
+    # @return [Array<Problem>] the problems
+    # @raise [ArgumentError] if the problems are not an Array of problems
+    def problems!(problems)
+      array = Array.try_convert(problems)
+      return array if array&.all?(Problem)
+
+      raise ArgumentError, "problems must be an Array of problems, not #{problems.inspect}"
     end
   end
 end

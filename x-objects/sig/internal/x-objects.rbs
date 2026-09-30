@@ -706,6 +706,7 @@ module X
     def read: (singleton(Resource) klass, Objects::attrs attrs, bool hydrated, Objects::Includes includes) -> R
     def resource_states: (Array[Objects::Includes] responses) -> Array[[singleton(Resource), Objects::attrs, bool, Integer]]
     def resources!: (untyped items) -> Array[R]
+    def problems!: (untyped problems) -> Array[Problem]
   end
 
   class Cursor[R < Resource = Resource]
