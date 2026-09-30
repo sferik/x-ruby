@@ -8,7 +8,7 @@ module X
   #
   #   X::Error
   #   ├── X::HTTPError                 a response the API refused, which the error holds
-  #   │   ├── X::ClientError           4xx: the request was refused, and the same request is refused again
+  #   │   ├── X::ClientError           4xx: the request was refused, and is refused again but for a 408 or 429
   #   │   │   ├── X::BadRequest                 400
   #   │   │   ├── X::Unauthorized               401
   #   │   │   ├── X::PaymentRequired            402
