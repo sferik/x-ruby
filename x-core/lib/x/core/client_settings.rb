@@ -57,7 +57,7 @@ module X
       # {Client#headers} returns it.
       #
       # @api private
-      # @return [Hash{String => String}] the headers, frozen
+      # @return [Hash{String, Symbol => String}] the headers, frozen
       attr_reader :headers
 
       def_delegators :@connection, :open_timeout, :read_timeout, :write_timeout, :keep_alive_timeout, :debug_output
@@ -109,7 +109,7 @@ module X
       # @param base_url [String] the base URL for API requests
       # @param default_array_class [Class] the default class for parsing JSON arrays
       # @param default_object_class [Class, #from_response] the default class for parsing JSON objects
-      # @param headers [Hash{String => String}] the headers sent with every request
+      # @param headers [Hash{String, Symbol => String}] the headers sent with every request
       # @param on_response [#call, nil] the callable passed an X::Response after every request and streamed object
       # @param max_redirects [Integer] the maximum number of redirects to follow
       # @param max_rate_limit_retries [Integer] the maximum number of times to retry a request refused for a rate limit

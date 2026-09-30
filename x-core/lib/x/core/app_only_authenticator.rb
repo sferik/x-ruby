@@ -55,7 +55,7 @@ module X
       # Generate the authentication headers, fetching the bearer token first if needed
       #
       # @api public
-      # @param _request [#method, #uri, #body, #[], nil] the request, which app-only authentication does not sign
+      # @param _request [#http_method, #uri, #body, #[], nil] the request, which app-only authentication does not sign
       # @return [Hash{String => String}] the authorization header
       # @raise [AuthorizationError] if X refuses to issue the bearer token
       # @raise [HTTPError, InvalidResponse] if the token endpoint limits the rate of the request or fails to answer,

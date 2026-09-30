@@ -165,7 +165,7 @@ module X
       # passed to a request is.
       #
       # @api public
-      # @return [Hash{String => String}] the headers, frozen
+      # @return [Hash{String, Symbol => String}] the headers, frozen, each named as it was given, a String or a Symbol
       # @example Read the headers a client sends
       #   client.headers # => {"User-Agent" => "my-app/1.0"}
       def headers = @internals.headers
@@ -199,7 +199,7 @@ module X
       # @param default_array_class [Class] the default class for parsing JSON arrays
       # @param default_object_class [Class, #from_response] the default class for parsing JSON objects, or one that
       #   responds to from_response and builds the result from the whole body; see {Client}
-      # @param headers [Hash{String => String}] headers sent with every request the client makes, as defaults: a
+      # @param headers [Hash{String, Symbol => String}] headers sent with every request the client makes, as defaults: a
       #   header of the same name passed to a request is sent in place of one of these, and each of these is sent in
       #   place of a default of the gem, such as its User-Agent
       # @param max_redirects [Integer] the maximum number of redirects to follow, beyond which a redirect raises

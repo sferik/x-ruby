@@ -101,7 +101,7 @@ module X
       # An authenticator that holds no refresh token sends an access token that expired as it is, for the API to reject.
       #
       # @api public
-      # @param _request [#method, #uri, #body, #[], nil] the request, which a bearer token does not sign
+      # @param _request [#http_method, #uri, #body, #[], nil] the request, which a bearer token does not sign
       # @return [Hash{String => String}] the authentication header
       # @raise [AuthorizationError] if the token has expired and X refuses to refresh it
       # @raise [HTTPError, InvalidResponse] if the token endpoint limits the rate of the request or fails to answer,

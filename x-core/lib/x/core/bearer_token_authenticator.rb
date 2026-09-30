@@ -24,7 +24,7 @@ module X
       # Generate the authentication headers for a request
       #
       # @api public
-      # @param _request [#method, #uri, #body, #[], nil] the request, which a bearer token does not sign
+      # @param _request [#http_method, #uri, #body, #[], nil] the request, which a bearer token does not sign
       # @return [Hash{String => String}] the authentication header with bearer token
       # @example Generate a bearer authentication header
       #   authenticator.headers(request)

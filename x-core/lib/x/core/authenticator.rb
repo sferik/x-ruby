@@ -37,7 +37,7 @@ module X
       # does an X::Authenticator itself, so app_only returns the client, and a stream is opened with it.
       #
       # @api public
-      # @param _request [#http_method, #uri, #body, #[]] the request, which answers method, uri, body, and [] alone
+      # @param _request [#http_method, #uri, #body, #[]] the request, which answers http_method, uri, body, and [] alone
       # @return [Hash{String => String}] the headers that authenticate the request, empty for none
       # @example Authenticate every request with a token an application keeps
       #   class VaultAuthenticator < X::Authenticator
