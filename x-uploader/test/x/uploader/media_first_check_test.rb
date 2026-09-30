@@ -98,12 +98,12 @@ module X
     def stub_video_upload_that_keeps_processing(check_after_secs:, first_check_after_secs:)
       json = {headers: JSON_HEADERS, body: {data: {id: TEST_MEDIA_ID, processing_info: {state: "pending", check_after_secs: first_check_after_secs}.compact}}.to_json}
       %W[initialize #{TEST_MEDIA_ID}/append #{TEST_MEDIA_ID}/finalize].each { |path| stub_request(:post, "#{UPLOAD_URL}/#{path}").to_return(json) }
-      stub_request(:get, status_url).to_return(headers: JSON_HEADERS, body: {data: {processing_info: {state: "pending", check_after_secs:}}}.to_json)
+      stub_request(:get, status_url).to_return(headers: JSON_HEADERS, body: {data: {id: TEST_MEDIA_ID, processing_info: {state: "pending", check_after_secs:}}}.to_json)
     end
 
     def stub_processing_status_sequence(*states)
       stub = stub_request(:get, status_url)
-      states.each { |state| stub = stub.to_return(headers: JSON_HEADERS, body: {data: {processing_info: {state:}}}.to_json) }
+      states.each { |state| stub = stub.to_return(headers: JSON_HEADERS, body: {data: {id: TEST_MEDIA_ID, processing_info: {state:}}}.to_json) }
     end
   end
 end

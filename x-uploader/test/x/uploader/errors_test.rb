@@ -165,6 +165,10 @@ module X
       assert_equal "Media was uploaded, but its alt text could not be added", AltTextFailed.new.message
     end
 
+    def test_names_no_media_when_given_media_that_holds_no_identifier
+      assert_equal "Media was uploaded, but its alt text could not be added", AltTextFailed.new(media: UploadedMedia.new({})).message
+    end
+
     def test_a_message_of_its_own_ends_with_the_reason_it_failed
       error = assert_raises(AltTextFailed) do
         raise Error, "Connection reset"
@@ -210,6 +214,10 @@ module X
 
     def test_names_no_media_when_given_none
       assert_equal "Media was uploaded, but its processing could not be checked", MediaProcessingCheckFailed.new.message
+    end
+
+    def test_names_no_media_when_given_media_that_holds_no_identifier
+      assert_equal "Media was uploaded, but its processing could not be checked", MediaProcessingCheckFailed.new(media: UploadedMedia.new({})).message
     end
 
     def test_a_message_of_its_own_ends_with_the_reason_the_check_failed

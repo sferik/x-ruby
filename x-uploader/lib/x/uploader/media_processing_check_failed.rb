@@ -45,7 +45,7 @@ module X
 
     # Initialize the error with the media that was uploaded
     #
-    # The message is the one given, or else names the media by its identifier, when media was given.
+    # The message is the one given, or else names the media by its identifier, when media that holds one was given.
     #
     # @api public
     # @param message [String, nil] the message, or nil for one that names the media
@@ -57,7 +57,7 @@ module X
     #   raise X::MediaProcessingCheckFailed, "Processing could not be checked"
     def initialize(message = nil, media: nil)
       @media = media
-      super(message || ["Media", media&.id, "was uploaded, but its processing could not be checked"].compact.join(" "))
+      super(message || ["Media", media&.[]("id"), "was uploaded, but its processing could not be checked"].compact.join(" "))
     end
 
     # The message, ending with why the processing could not be checked

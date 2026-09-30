@@ -143,20 +143,23 @@ module X
 
       # The media a response of an upload describes
       #
-      # The API answers an upload with what it acted on, under the data of the response.
-      # A response that succeeded without it describes no media, whether it carries no body at all or a body without
-      # data, so it raises rather than leave the upload to fail later on what is missing, or return nothing for media
-      # the API may have billed.
+      # The API answers an upload with what it acted on, under the data of the response, which always holds the
+      # identifier of the media. A response that succeeded without it describes no media, whether it carries no body
+      # at all, a body without data, or data without an identifier, so it raises rather than leave the upload to fail
+      # later on what is missing, or return media that cannot be attached for media the API may have billed.
       #
       # @api private
       # @param response [Hash, nil] the parsed response body, or nil for a response without one
       # @param description [String] how the error names the response, for its message
       # @return [Hash] the media
-      # @raise [MissingMediaData] if the response holds no media
+      # @raise [MissingMediaData] if the response holds no media, or media without an identifier
       # @example The media an upload returned
       #   Uploader::Utils.media_data({"data" => {"id" => 7}}, "of the upload") # => {"id" => 7}
       def media_data(response, description)
-        Hash.try_convert(response.to_h["data"]) || raise(MissingMediaData.new(format(NO_MEDIA, description), problems: Problem.all_from(response)))
+        media = Hash.try_convert(response.to_h["data"])
+        return media if media&.key?("id")
+
+        raise MissingMediaData.new(format(NO_MEDIA, description), problems: Problem.all_from(response))
       end
 
       # Send a request again after a server or network error, as an idempotent one is

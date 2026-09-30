@@ -36,7 +36,7 @@ module X
     private
 
     def stub_statuses(*statuses)
-      responses = statuses.map { |data| {headers: {"content-type" => "application/json"}, body: {data:}.to_json} }
+      responses = statuses.map { |data| {headers: {"content-type" => "application/json"}, body: {data: {"id" => TEST_MEDIA_ID, **data}}.to_json} }
       stub_request(:get, STATUS_URL).to_return(*responses)
     end
   end

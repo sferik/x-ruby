@@ -86,6 +86,12 @@ module X
       assert_not_requested :get, STATUS_URL
     end
 
+    def test_upload_an_image_whose_response_holds_media_without_an_identifier_raises
+      stub_request(:post, BASE_URL).to_return(headers: JSON_HEADERS, body: {data: {size: 3}}.to_json)
+
+      assert_raises(MissingMediaData) { Uploader::MediaUpload.upload("test/sample_files/sample.png", client: @client) }
+    end
+
     def test_upload_an_image_without_a_response_body_raises
       stub_request(:post, BASE_URL).to_return(status: 204)
       error = assert_raises(MissingMediaData) { Uploader::MediaUpload.upload("test/sample_files/sample.png", client: @client) }

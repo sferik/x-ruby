@@ -144,6 +144,12 @@ module X
   class UploaderMediaIdentifierTest < Minitest::Test
     cover Uploader.const_get(:Utils)
 
+    def test_media_data_of_a_response_whose_media_holds_no_identifier
+      error = assert_raises(MissingMediaData) { Uploader.const_get(:Utils).media_data({"data" => {"size" => 3}}, "of the upload") }
+
+      assert_equal "The response of the upload holds no media", error.message
+    end
+
     def test_media_id_refuses_an_identifier_the_api_does_not_take
       [" 7", "-7", "7 ", "abc", "1" * 20, -7, {"id" => "abc"}, UploadedMedia.new({"id" => "7x"})].each do |media|
         error = assert_raises(ArgumentError, media.inspect) { Uploader.const_get(:Utils).media_id(media) }

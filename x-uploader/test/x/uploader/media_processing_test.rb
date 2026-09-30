@@ -54,7 +54,7 @@ module X
     end
 
     def test_await_processing_bang_gives_up_after_its_timeout
-      stub_request(:get, status_url).to_return(headers: json_headers, body: {data: {processing_info: {state: "pending", check_after_secs: 5}}}.to_json)
+      stub_request(:get, status_url).to_return(headers: json_headers, body: {data: {id: TEST_MEDIA_ID, processing_info: {state: "pending", check_after_secs: 5}}}.to_json)
 
       assert_raises(MediaProcessingTimeout) { await(:await_processing!, processing_timeout: 4) }
       assert_requested(:get, status_url, times: 1)
@@ -84,7 +84,7 @@ module X
     def stub_video_upload_that_keeps_processing(check_after_secs:)
       json = {headers: json_headers, body: {data: {id: TEST_MEDIA_ID, processing_info: {state: "pending"}}}.to_json}
       %W[initialize #{TEST_MEDIA_ID}/append #{TEST_MEDIA_ID}/finalize].each { |path| stub_request(:post, "https://api.x.com/2/media/upload/#{path}").to_return(json) }
-      stub_request(:get, status_url).to_return(headers: json_headers, body: {data: {processing_info: {state: "pending", check_after_secs:}}}.to_json)
+      stub_request(:get, status_url).to_return(headers: json_headers, body: {data: {id: TEST_MEDIA_ID, processing_info: {state: "pending", check_after_secs:}}}.to_json)
     end
 
     def await(method, **)
@@ -104,7 +104,7 @@ module X
     end
 
     def processing_response(state)
-      {data: {processing_info: {state: state}}}.to_json
+      {data: {id: TEST_MEDIA_ID, processing_info: {state: state}}}.to_json
     end
 
     def stub_processing_status_sequence(*states)

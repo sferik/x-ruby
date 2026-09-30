@@ -24,7 +24,7 @@ module X
     def test_status_with_null_processing_info_is_final
       stub_statuses({"processing_info" => nil})
 
-      assert_equal(UploadedMedia.new({"processing_info" => nil}), await)
+      assert_equal(UploadedMedia.new({"id" => TEST_MEDIA_ID, "processing_info" => nil}), await)
     end
 
     def test_sleeps_for_check_after_secs_between_polls
@@ -49,7 +49,7 @@ module X
       stub_statuses(pending)
       error = assert_raises(MediaProcessingTimeout) { await(processing_timeout: 12) }
 
-      assert_equal [[5, 5], UploadedMedia.new(pending), "Media processing did not finish within 12 seconds"], [@sleeps, error.media, error.message]
+      assert_equal [[5, 5], UploadedMedia.new({"id" => TEST_MEDIA_ID, **pending}), "Media processing did not finish within 12 seconds"], [@sleeps, error.media, error.message]
       assert_requested(:get, STATUS_URL, times: 3)
     end
 
@@ -62,7 +62,7 @@ module X
     def test_counts_the_time_the_checks_take_toward_the_timeout
       stub_request(:get, STATUS_URL).to_return do
         advance_clock(4)
-        {headers: {"content-type" => "application/json"}, body: {data: {processing_info: {state: "pending", check_after_secs: 1}}}.to_json}
+        {headers: {"content-type" => "application/json"}, body: {data: {id: TEST_MEDIA_ID, processing_info: {state: "pending", check_after_secs: 1}}}.to_json}
       end
 
       assert_raises(MediaProcessingTimeout) { await(processing_timeout: 10) }
@@ -72,7 +72,7 @@ module X
 
     def test_returns_the_status_of_a_check_that_finishes_after_the_deadline
       responses = [{"state" => "pending", "check_after_secs" => 5}, {"state" => "succeeded"}].map do |processing_info|
-        {headers: {"content-type" => "application/json"}, body: {data: {processing_info:}}.to_json}
+        {headers: {"content-type" => "application/json"}, body: {data: {id: TEST_MEDIA_ID, processing_info:}}.to_json}
       end
       stub_request(:get, STATUS_URL).to_return { advance_clock(3) && responses.shift }
 
@@ -133,7 +133,7 @@ module X
     end
 
     def stub_statuses(*statuses)
-      responses = statuses.map { |data| {headers: {"content-type" => "application/json"}, body: {data:}.to_json} }
+      responses = statuses.map { |data| {headers: {"content-type" => "application/json"}, body: {data: {"id" => TEST_MEDIA_ID, **data}}.to_json} }
       stub_request(:get, STATUS_URL).to_return(*responses)
     end
   end
