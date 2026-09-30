@@ -39,7 +39,7 @@ module X
       end
 
       def test_from_id_builds_cursors_without_a_request
-        assert_equal "users/1/followers", User.from_id(1, client: @client).followers.path
+        assert_equal "users/1/followers", User.from_id(1, client: @client).followers.__send__(:path)
         assert_empty @client.requests
       end
 

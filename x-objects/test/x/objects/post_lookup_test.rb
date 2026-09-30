@@ -15,9 +15,9 @@ module X
       @client.stub(:get, "tweets/search/recent", {"data" => [{"id" => "1", "text" => "ruby"}]})
       cursor = Post.search("ruby -is:retweet", client: @client, max_results: 10)
 
-      assert_equal "tweets/search/recent", cursor.path
-      assert_equal "ruby -is:retweet", cursor.params["query"]
-      assert_equal 10, cursor.params["max_results"]
+      assert_equal "tweets/search/recent", cursor.__send__(:path)
+      assert_equal "ruby -is:retweet", cursor.__send__(:params)["query"]
+      assert_equal 10, cursor.__send__(:params)["max_results"]
       assert_equal ["ruby"], cursor.map(&:text)
     end
 
@@ -25,40 +25,40 @@ module X
       cursor = Post.search("ruby", client: @client)
 
       assert_equal Post, cursor.resource_class
-      assert_equal 100, cursor.params["max_results"]
-      assert_equal Post::FIELDS.join(","), cursor.params["post.fields"]
+      assert_equal 100, cursor.__send__(:params)["max_results"]
+      assert_equal Post::FIELDS.join(","), cursor.__send__(:params)["post.fields"]
       assert_same @client, cursor.client
     end
 
     def test_search_all
       cursor = Post.search_all("ruby", client: @client, max_results: 500)
 
-      assert_equal "tweets/search/all", cursor.path
-      assert_equal "ruby", cursor.params["query"]
-      assert_equal 500, cursor.params["max_results"]
+      assert_equal "tweets/search/all", cursor.__send__(:path)
+      assert_equal "ruby", cursor.__send__(:params)["query"]
+      assert_equal 500, cursor.__send__(:params)["max_results"]
     end
 
     def test_search_all_defaults
       cursor = Post.search_all("ruby", client: @client)
 
       assert_equal Post, cursor.resource_class
-      assert_equal 100, cursor.params["max_results"]
-      assert_equal Post::FIELDS.join(","), cursor.params["post.fields"]
+      assert_equal 100, cursor.__send__(:params)["max_results"]
+      assert_equal Post::FIELDS.join(","), cursor.__send__(:params)["post.fields"]
       assert_same @client, cursor.client
     end
 
     def test_search_all_pages_by_500_without_context_annotations
       assert_equal [500, 500, 500], [{"post.fields": %w[id text]}, {"post.fields" => "id,text"}, {"post.fields": nil}]
-        .map { |params| Post.search_all("ruby", client: @client, **params).params["max_results"] }
+        .map { |params| Post.search_all("ruby", client: @client, **params).__send__(:params)["max_results"] }
     end
 
     def test_search_all_pages_by_100_with_context_annotations
-      assert_equal 100, Post.search_all("ruby", client: @client, "post.fields": %w[context_annotations text]).params["max_results"]
-      assert_equal 100, Post.search_all("ruby", client: @client, "post.fields": "id,context_annotations").params["max_results"]
+      assert_equal 100, Post.search_all("ruby", client: @client, "post.fields": %w[context_annotations text]).__send__(:params)["max_results"]
+      assert_equal 100, Post.search_all("ruby", client: @client, "post.fields": "id,context_annotations").__send__(:params)["max_results"]
     end
 
     def test_search_all_does_not_mistake_a_similar_field_for_context_annotations
-      assert_equal 500, Post.search_all("ruby", client: @client, "post.fields": "context_annotations_v2").params["max_results"]
+      assert_equal 500, Post.search_all("ruby", client: @client, "post.fields": "context_annotations_v2").__send__(:params)["max_results"]
     end
 
     def test_create

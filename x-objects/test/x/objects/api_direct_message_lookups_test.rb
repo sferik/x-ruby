@@ -21,24 +21,24 @@ module X
       def test_direct_messages
         cursor = @client.direct_messages(max_results: 10)
 
-        assert_equal "dm_events", cursor.path
-        assert_equal 10, cursor.params["max_results"]
+        assert_equal "dm_events", cursor.__send__(:path)
+        assert_equal 10, cursor.__send__(:params)["max_results"]
         assert_same @client, cursor.client
       end
 
       def test_direct_messages_with
         cursor = @client.direct_messages_with(User.new({"id" => "8"}), max_results: 10)
 
-        assert_equal "dm_conversations/with/8/dm_events", cursor.path
-        assert_equal 10, cursor.params["max_results"]
+        assert_equal "dm_conversations/with/8/dm_events", cursor.__send__(:path)
+        assert_equal 10, cursor.__send__(:params)["max_results"]
         assert_same @client, cursor.client
-        assert_equal "dm_conversations/with/8/dm_events", @client.direct_messages_with(8).path
+        assert_equal "dm_conversations/with/8/dm_events", @client.direct_messages_with(8).__send__(:path)
       end
 
       def test_direct_messages_in
         cursor = @client.direct_messages_in("9-8", max_results: 10)
 
-        assert_equal ["dm_conversations/9-8/dm_events", 10], [cursor.path, cursor.params["max_results"]]
+        assert_equal ["dm_conversations/9-8/dm_events", 10], [cursor.__send__(:path), cursor.__send__(:params)["max_results"]]
         assert_same @client, cursor.client
       end
 
@@ -47,9 +47,9 @@ module X
 
         assert_equal "hi", @client.find_dm(1).text
         assert_equal "hi", @client.find_dm!(1).text
-        assert_equal "dm_events", @client.dms.path
-        assert_equal "dm_conversations/with/8/dm_events", @client.dms_with(8).path
-        assert_equal "dm_conversations/9-8/dm_events", @client.dms_in("9-8").path
+        assert_equal "dm_events", @client.dms.__send__(:path)
+        assert_equal "dm_conversations/with/8/dm_events", @client.dms_with(8).__send__(:path)
+        assert_equal "dm_conversations/9-8/dm_events", @client.dms_in("9-8").__send__(:path)
       end
     end
   end

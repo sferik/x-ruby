@@ -45,11 +45,11 @@ module X
     end
 
     def test_cursor_paths
-      assert_equal "tweets/1/liking_users", @post.liked_by.path
-      assert_equal "tweets/1/retweeted_by", @post.reposted_by.path
-      assert_equal "tweets/1/retweeted_by", @post.retweeted_by.path
-      assert_equal "tweets/1/quote_tweets", @post.quotes.path
-      assert_equal "tweets/1/quote_tweets", @post.quote_tweets.path
+      assert_equal "tweets/1/liking_users", @post.liked_by.__send__(:path)
+      assert_equal "tweets/1/retweeted_by", @post.reposted_by.__send__(:path)
+      assert_equal "tweets/1/retweeted_by", @post.retweeted_by.__send__(:path)
+      assert_equal "tweets/1/quote_tweets", @post.quotes.__send__(:path)
+      assert_equal "tweets/1/quote_tweets", @post.quote_tweets.__send__(:path)
     end
 
     def test_cursor_classes
@@ -60,15 +60,15 @@ module X
     end
 
     def test_cursor_max_results
-      assert_equal 100, @post.liked_by.params["max_results"]
-      assert_equal 100, @post.reposted_by.params["max_results"]
-      assert_equal 100, @post.quotes.params["max_results"]
+      assert_equal 100, @post.liked_by.__send__(:params)["max_results"]
+      assert_equal 100, @post.reposted_by.__send__(:params)["max_results"]
+      assert_equal 100, @post.quotes.__send__(:params)["max_results"]
     end
 
     def test_cursor_params
-      assert_equal 5, @post.liked_by(max_results: 5).params["max_results"]
-      assert_equal 5, @post.reposted_by(max_results: 5).params["max_results"]
-      assert_equal 5, @post.quotes(max_results: 5).params["max_results"]
+      assert_equal 5, @post.liked_by(max_results: 5).__send__(:params)["max_results"]
+      assert_equal 5, @post.reposted_by(max_results: 5).__send__(:params)["max_results"]
+      assert_equal 5, @post.quotes(max_results: 5).__send__(:params)["max_results"]
     end
   end
 end

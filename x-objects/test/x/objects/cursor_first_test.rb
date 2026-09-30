@@ -119,8 +119,8 @@ module X
     def test_refresh_and_prefetch_keep_dropped_defaults
       cursor = @user.followers("user.fields": nil)
 
-      refute_includes cursor.refresh.params, "user.fields"
-      refute_includes cursor.prefetch.params, "user.fields"
+      refute_includes cursor.refresh.__send__(:params), "user.fields"
+      refute_includes cursor.prefetch.__send__(:params), "user.fields"
       assert_predicate cursor.prefetch, :prefetch?
       refute_predicate cursor.refresh, :prefetch?
     end

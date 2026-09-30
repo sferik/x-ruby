@@ -68,8 +68,8 @@ module X
       cursor = DirectMessage.all(client: @client, max_results: 5)
 
       assert_equal DirectMessage, cursor.resource_class
-      assert_equal "dm_events", cursor.path
-      assert_equal 5, cursor.params["max_results"]
+      assert_equal "dm_events", cursor.__send__(:path)
+      assert_equal 5, cursor.__send__(:params)["max_results"]
       assert_equal ["hi"], cursor.map(&:text)
       assert_same @client, cursor.client
     end
@@ -77,25 +77,25 @@ module X
     def test_all_default_max_results
       cursor = DirectMessage.all(client: @client)
 
-      assert_equal 100, cursor.params["max_results"]
-      assert_equal DirectMessage::FIELDS.join(","), cursor.params["dm_event.fields"]
+      assert_equal 100, cursor.__send__(:params)["max_results"]
+      assert_equal DirectMessage::FIELDS.join(","), cursor.__send__(:params)["dm_event.fields"]
     end
 
     def test_with
       cursor = DirectMessage.with(User.new({"id" => "8"}), client: @client, max_results: 5)
 
-      assert_equal "dm_conversations/with/8/dm_events", cursor.path
+      assert_equal "dm_conversations/with/8/dm_events", cursor.__send__(:path)
       assert_equal DirectMessage, cursor.resource_class
-      assert_equal 5, cursor.params["max_results"]
-      assert_equal "dm_conversations/with/8/dm_events", DirectMessage.with(8, client: @client).path
+      assert_equal 5, cursor.__send__(:params)["max_results"]
+      assert_equal "dm_conversations/with/8/dm_events", DirectMessage.with(8, client: @client).__send__(:path)
       assert_same @client, cursor.client
     end
 
     def test_with_default_max_results
       cursor = DirectMessage.with("8", client: @client)
 
-      assert_equal 100, cursor.params["max_results"]
-      assert_equal DirectMessage::FIELDS.join(","), cursor.params["dm_event.fields"]
+      assert_equal 100, cursor.__send__(:params)["max_results"]
+      assert_equal DirectMessage::FIELDS.join(","), cursor.__send__(:params)["dm_event.fields"]
     end
   end
 end

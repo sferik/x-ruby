@@ -32,8 +32,8 @@ module X
       def test_search_communities
         cursor = @client.search_communities("ruby", max_results: 10)
 
-        assert_equal "communities/search", cursor.path
-        assert_equal ["ruby", 10], [cursor.params["query"], cursor.params["max_results"]]
+        assert_equal "communities/search", cursor.__send__(:path)
+        assert_equal ["ruby", 10], [cursor.__send__(:params)["query"], cursor.__send__(:params)["max_results"]]
         assert_same @client, cursor.client
       end
     end

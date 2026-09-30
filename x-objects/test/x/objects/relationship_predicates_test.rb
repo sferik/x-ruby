@@ -57,8 +57,8 @@ module X
       stubs = @user.following.stubs
 
       assert_kind_of Cursor, stubs
-      assert_equal({"max_results" => 1000, "user.fields" => "id"}, stubs.params)
-      assert_equal "users/1/following", stubs.path
+      assert_equal({"max_results" => 1000, "user.fields" => "id"}, stubs.__send__(:params))
+      assert_equal "users/1/following", stubs.__send__(:path)
       assert_equal "pagination_token", stubs.__send__(:token_param)
     end
 

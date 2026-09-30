@@ -42,10 +42,10 @@ module X
     end
 
     def test_cursor_paths
-      assert_equal "lists/1/members", @list.members.path
-      assert_equal "lists/1/followers", @list.followers.path
-      assert_equal "lists/1/tweets", @list.posts.path
-      assert_equal "lists/1/tweets", @list.tweets.path
+      assert_equal "lists/1/members", @list.members.__send__(:path)
+      assert_equal "lists/1/followers", @list.followers.__send__(:path)
+      assert_equal "lists/1/tweets", @list.posts.__send__(:path)
+      assert_equal "lists/1/tweets", @list.tweets.__send__(:path)
     end
 
     def test_cursor_classes
@@ -56,15 +56,15 @@ module X
     end
 
     def test_cursor_max_results
-      assert_equal 100, @list.members.params["max_results"]
-      assert_equal 100, @list.followers.params["max_results"]
-      assert_equal 100, @list.posts.params["max_results"]
+      assert_equal 100, @list.members.__send__(:params)["max_results"]
+      assert_equal 100, @list.followers.__send__(:params)["max_results"]
+      assert_equal 100, @list.posts.__send__(:params)["max_results"]
     end
 
     def test_cursor_params
-      assert_equal 5, @list.members(max_results: 5).params["max_results"]
-      assert_equal 5, @list.followers(max_results: 5).params["max_results"]
-      assert_equal 5, @list.posts(max_results: 5).params["max_results"]
+      assert_equal 5, @list.members(max_results: 5).__send__(:params)["max_results"]
+      assert_equal 5, @list.followers(max_results: 5).__send__(:params)["max_results"]
+      assert_equal 5, @list.posts(max_results: 5).__send__(:params)["max_results"]
     end
 
     def test_offers_no_batch_lookup

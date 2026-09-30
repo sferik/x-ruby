@@ -66,8 +66,8 @@ module X
         total: ->(fresh: false) { fresh ? 2 : 1 })
 
       assert_equal [1, 2, true], [cursor.published_count, cursor.refresh.published_count, cursor.frozen?]
-      assert_equal [User, "users/1/followers", @client, 2], [cursor.resource_class, cursor.path, cursor.client, cursor.__send__(:min_results)]
-      assert_equal User::FIELDS.join(","), cursor.params["user.fields"]
+      assert_equal [User, "users/1/followers", @client, 2], [cursor.resource_class, cursor.__send__(:path), cursor.client, cursor.__send__(:min_results)]
+      assert_equal User::FIELDS.join(","), cursor.__send__(:params)["user.fields"]
     end
   end
 end

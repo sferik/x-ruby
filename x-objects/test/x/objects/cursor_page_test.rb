@@ -92,8 +92,8 @@ module X
     def test_refresh_keeps_configuration
       refreshed = @cursor.refresh
 
-      assert_equal @cursor.params, refreshed.params
-      assert_equal "users/1/followers", refreshed.path
+      assert_equal @cursor.__send__(:params), refreshed.__send__(:params)
+      assert_equal "users/1/followers", refreshed.__send__(:path)
       assert_equal User, refreshed.resource_class
       assert_same @client, refreshed.client
     end

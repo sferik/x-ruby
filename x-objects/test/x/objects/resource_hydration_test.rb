@@ -100,10 +100,10 @@ module X
       def test_cursor_merges_params
         cursor = @user.followers("user.fields": "id", max_results: 5)
 
-        assert_equal "users/1/followers", cursor.path
-        assert_equal 5, cursor.params["max_results"]
-        assert_equal "id", cursor.params["user.fields"]
-        assert_equal Post::FIELDS.join(","), cursor.params["post.fields"]
+        assert_equal "users/1/followers", cursor.__send__(:path)
+        assert_equal 5, cursor.__send__(:params)["max_results"]
+        assert_equal "id", cursor.__send__(:params)["user.fields"]
+        assert_equal Post::FIELDS.join(","), cursor.__send__(:params)["post.fields"]
         assert_same @client, cursor.client
       end
     end

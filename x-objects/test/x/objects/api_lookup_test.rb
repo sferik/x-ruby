@@ -58,9 +58,9 @@ module X
       def test_search_posts
         cursor = @client.search_posts("ruby", max_results: 10)
 
-        assert_equal "tweets/search/recent", cursor.path
-        assert_equal "ruby", cursor.params["query"]
-        assert_equal 10, cursor.params["max_results"]
+        assert_equal "tweets/search/recent", cursor.__send__(:path)
+        assert_equal "ruby", cursor.__send__(:params)["query"]
+        assert_equal 10, cursor.__send__(:params)["max_results"]
         assert_same @client, cursor.client
       end
 
@@ -71,9 +71,9 @@ module X
       def test_search_all_posts
         cursor = @client.search_all_posts("ruby", max_results: 10)
 
-        assert_equal "tweets/search/all", cursor.path
-        assert_equal "ruby", cursor.params["query"]
-        assert_equal 10, cursor.params["max_results"]
+        assert_equal "tweets/search/all", cursor.__send__(:path)
+        assert_equal "ruby", cursor.__send__(:params)["query"]
+        assert_equal 10, cursor.__send__(:params)["max_results"]
         assert_same @client, cursor.client
       end
 
@@ -102,15 +102,15 @@ module X
       def test_search_spaces
         cursor = @client.search_spaces("ruby", state: "scheduled")
 
-        assert_equal ["spaces/search", "ruby", "scheduled"], [cursor.path, cursor.params["query"], cursor.params["state"]]
+        assert_equal ["spaces/search", "ruby", "scheduled"], [cursor.__send__(:path), cursor.__send__(:params)["query"], cursor.__send__(:params)["state"]]
         assert_same @client, cursor.client
       end
 
       def test_search_tweet_aliases
-        assert_equal "tweets/search/recent", @client.search_tweets("ruby").path
-        assert_equal "tweets/search/all", @client.search_all_tweets("ruby").path
-        assert_equal "ruby", @client.search_tweets("ruby").params["query"]
-        assert_equal "ruby", @client.search_all_tweets("ruby").params["query"]
+        assert_equal "tweets/search/recent", @client.search_tweets("ruby").__send__(:path)
+        assert_equal "tweets/search/all", @client.search_all_tweets("ruby").__send__(:path)
+        assert_equal "ruby", @client.search_tweets("ruby").__send__(:params)["query"]
+        assert_equal "ruby", @client.search_all_tweets("ruby").__send__(:params)["query"]
       end
     end
 

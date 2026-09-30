@@ -22,7 +22,7 @@ module X
 
     def test_cursor_paths
       PATHS.each do |method, path|
-        assert_equal path, @user.public_send(method).path, method
+        assert_equal path, @user.public_send(method).__send__(:path), method
       end
     end
 
@@ -34,12 +34,12 @@ module X
 
     def test_user_cursors
       THOUSANDS.each do |method|
-        assert_equal [User, 1000], [@user.public_send(method).resource_class, @user.public_send(method).params["max_results"]], method
+        assert_equal [User, 1000], [@user.public_send(method).resource_class, @user.public_send(method).__send__(:params)["max_results"]], method
       end
     end
 
     def test_the_affiliates_take_parameters
-      assert_equal 5, @user.affiliates(max_results: 5).params["max_results"]
+      assert_equal 5, @user.affiliates(max_results: 5).__send__(:params)["max_results"]
     end
 
     def test_post_cursor_classes
@@ -62,19 +62,19 @@ module X
 
     def test_default_max_results
       PATHS.each_key do |method|
-        assert_equal(THOUSANDS.include?(method) ? 1000 : 100, @user.public_send(method).params["max_results"], method)
+        assert_equal(THOUSANDS.include?(method) ? 1000 : 100, @user.public_send(method).__send__(:params)["max_results"], method)
       end
     end
 
     def test_cursor_params
       PATHS.each_key do |method|
-        assert_equal 5, @user.public_send(method, max_results: 5).params["max_results"], method
+        assert_equal 5, @user.public_send(method, max_results: 5).__send__(:params)["max_results"], method
       end
     end
 
     def test_cursor_aliases
-      assert_equal "users/1/tweets", @user.tweets.path
-      assert_equal "users/1/liked_tweets", @user.liked_tweets.path
+      assert_equal "users/1/tweets", @user.tweets.__send__(:path)
+      assert_equal "users/1/liked_tweets", @user.liked_tweets.__send__(:path)
     end
   end
 end

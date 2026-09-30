@@ -76,16 +76,16 @@ module X
       cursor = DirectMessage.in(DirectMessage.new({"id" => "1", "dm_conversation_id" => "1582838223204016129"}), client: @client, event_types: "MessageCreate")
 
       assert_equal ["dm_conversations/1582838223204016129/dm_events", DirectMessage, 100, "MessageCreate"],
-        [cursor.path, cursor.resource_class, cursor.params["max_results"], cursor.params["event_types"]]
+        [cursor.__send__(:path), cursor.resource_class, cursor.__send__(:params)["max_results"], cursor.__send__(:params)["event_types"]]
       assert_same @client, cursor.client
     end
 
     def test_in_a_group_conversation_by_integer_identifier
-      assert_equal "dm_conversations/1582838223204016129/dm_events", DirectMessage.in(1_582_838_223_204_016_129, client: @client).path
+      assert_equal "dm_conversations/1582838223204016129/dm_events", DirectMessage.in(1_582_838_223_204_016_129, client: @client).__send__(:path)
     end
 
     def test_in_takes_a_page_size
-      assert_equal 10, DirectMessage.in("9-8", client: @client, max_results: 10).params["max_results"]
+      assert_equal 10, DirectMessage.in("9-8", client: @client, max_results: 10).__send__(:params)["max_results"]
     end
 
     def test_a_conversation_that_is_not_one_is_refused

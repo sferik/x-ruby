@@ -114,7 +114,7 @@ module X
         return if params.nil?
 
         params = sized(params, wanted) unless wanted.nil?
-        body = requester.get(Utils.path(@cursor.path, params), **Utils::JSON_CLASSES)
+        body = requester.get(Utils.path(@cursor.__send__(:path), params), **Utils::JSON_CLASSES)
         Page.new(resources_from(body), body.to_h["meta"].to_h, problems: Problem.all_from(body))
       end
 
@@ -129,7 +129,7 @@ module X
       # @return [Array<Resource>] the resources
       def resources_from(body)
         klass = @cursor.resource_class
-        params = @cursor.params
+        params = @cursor.__send__(:params)
         resources = klass.__send__(:collection_built_from, body, client: @cursor.client, hydrated: klass.__send__(:fully_requested_by?, params), query: params)
         id_only? ? stubs_from(resources) : resources
       end
@@ -155,7 +155,7 @@ module X
       # Check whether the cursor requests nothing but identifiers
       # @api private
       # @return [Boolean] true if the fields parameter selects only the identifier, or the endpoint gives nothing else
-      def id_only? = @cursor.__send__(:ids_only?) || @cursor.params[@cursor.resource_class.__send__(:fields_key)].eql?(@cursor.resource_class.__send__(:id_key))
+      def id_only? = @cursor.__send__(:ids_only?) || @cursor.__send__(:params)[@cursor.resource_class.__send__(:fields_key)].eql?(@cursor.resource_class.__send__(:id_key))
 
       # Build the query parameters for a page, including the previous page token
       #
@@ -166,10 +166,10 @@ module X
       # @return [Hash{String => Object}, nil] the parameters or nil if the previous page was the last
       # @raise [UnreadableResponse] if the previous page names the token of a page before it as the next
       def params_for(index)
-        return @cursor.params if index.zero?
+        return @cursor.__send__(:params) if index.zero?
 
         token = next_token(index - 1) or return
-        @cursor.params.merge(@cursor.__send__(:token_param) => token)
+        @cursor.__send__(:params).merge(@cursor.__send__(:token_param) => token)
       end
 
       # The token of the page after a page, which fetched no page before it
@@ -184,7 +184,7 @@ module X
       def next_token(index)
         pages = fetched
         token = pages.fetch(index).next_token
-        raise UnreadableResponse, format(REPEATED_TOKEN, index:, path: @cursor.path, token:) if pages.take(index).map(&:next_token).include?(token)
+        raise UnreadableResponse, format(REPEATED_TOKEN, index:, path: @cursor.__send__(:path), token:) if pages.take(index).map(&:next_token).include?(token)
 
         token
       end

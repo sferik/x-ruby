@@ -60,7 +60,7 @@ module X
 
       assert_equal [[10, 11], [10, 11]], [cursor.ids, cursor.refresh.prefetch.map(&:id)]
       assert_equal [{"max_results" => "5"}], @client.queries.uniq
-      assert_equal [{"max_results" => 5}], [cursor.stubs.params]
+      assert_equal [{"max_results" => 5}], [cursor.stubs.__send__(:params)]
     end
 
     def test_the_cursors_derived_from_the_posts_of_a_folder_hydrate_together
@@ -75,7 +75,7 @@ module X
       @client.stub(:get, "users/1/bookmarks", {"data" => [{"id" => "10", "text" => "hi"}]})
       cursor = @user.bookmarks
 
-      assert_equal [Post::FIELDS.join(",")] * 3, [cursor, cursor.refresh, cursor.prefetch].map { |derived| derived.params["post.fields"] }
+      assert_equal [Post::FIELDS.join(",")] * 3, [cursor, cursor.refresh, cursor.prefetch].map { |derived| derived.__send__(:params)["post.fields"] }
       assert_equal %w[hi hi], [cursor.refresh, cursor.prefetch].map { |derived| derived.first.text }
     end
 

@@ -51,8 +51,8 @@ module X
     def test_search
       cursor = Community.search("ruby", client: @client, max_results: 10)
 
-      assert_equal "communities/search", cursor.path
-      assert_equal ["ruby", 10, "next_token"], [cursor.params["query"], cursor.params["max_results"], cursor.__send__(:token_param)]
+      assert_equal "communities/search", cursor.__send__(:path)
+      assert_equal ["ruby", 10, "next_token"], [cursor.__send__(:params)["query"], cursor.__send__(:params)["max_results"], cursor.__send__(:token_param)]
       assert_equal Community, cursor.resource_class
       assert_same @client, cursor.client
     end
@@ -60,8 +60,8 @@ module X
     def test_search_defaults
       cursor = Community.search("ruby", client: @client)
 
-      assert_equal 100, cursor.params["max_results"]
-      assert_equal Community::FIELDS.join(","), cursor.params["community.fields"]
+      assert_equal 100, cursor.__send__(:params)["max_results"]
+      assert_equal Community::FIELDS.join(","), cursor.__send__(:params)["community.fields"]
     end
 
     def test_search_pages_with_next_token

@@ -22,29 +22,29 @@ module X
     def test_readers
       assert_equal User, @cursor.resource_class
       assert_same @client, @cursor.client
-      assert_equal "users/1/followers", @cursor.path
+      assert_equal "users/1/followers", @cursor.__send__(:path)
       refute_predicate @cursor, :prefetch?
       assert_predicate @cursor, :frozen?
     end
 
     def test_params_merge_defaults
-      assert_equal 1000, @cursor.params["max_results"]
-      assert_equal User::FIELDS.join(","), @cursor.params["user.fields"]
-      assert_equal Post::FIELDS.join(","), @cursor.params["post.fields"]
-      assert_predicate @cursor.params, :frozen?
+      assert_equal 1000, @cursor.__send__(:params)["max_results"]
+      assert_equal User::FIELDS.join(","), @cursor.__send__(:params)["user.fields"]
+      assert_equal Post::FIELDS.join(","), @cursor.__send__(:params)["post.fields"]
+      assert_predicate @cursor.__send__(:params), :frozen?
     end
 
     def test_params_default_to_resource_defaults
       cursor = Cursor.__send__(:build, User, "users/1/followers", client: @client)
 
-      assert_equal Objects.const_get(:Utils).query(User.default_params), cursor.params
+      assert_equal Objects.const_get(:Utils).query(User.default_params), cursor.__send__(:params)
     end
 
     def test_params_override_defaults
       cursor = Cursor.__send__(:build, User, "users/1/followers", client: @client, params: {"user.fields": "id", expansions: nil})
 
-      assert_equal "id", cursor.params["user.fields"]
-      refute cursor.params.key?("expansions")
+      assert_equal "id", cursor.__send__(:params)["user.fields"]
+      refute cursor.__send__(:params).key?("expansions")
     end
 
     def test_each_iterates_every_page

@@ -38,28 +38,6 @@ module X
       #   cursor.client
       attr_reader :client
 
-      # The endpoint path
-      #
-      # Internal to x-objects: the pages of a cursor are requested at it, and the endpoint a collection is read from may
-      # change within 1.x, as the API moves one.
-      #
-      # @api private
-      # @return [String] the endpoint path
-      # @example Get the path
-      #   user.followers.path # => "users/7505382/followers"
-      attr_reader :path
-
-      # The query parameters sent with every page request
-      #
-      # Internal to x-objects: the pages of a cursor are requested with them, and they hold the default fields of the
-      # resource class, which a minor release may add to, and the size of a page, which it may change.
-      #
-      # @api private
-      # @return [Hash{String => Object}] the query parameters
-      # @example Get the parameters
-      #   user.followers.params["max_results"] # => 1000
-      attr_reader :params
-
       # Build a cursor
       #
       # Internal to x-objects: a resource builds the cursors of its collections, and the searches and lookups build
@@ -397,6 +375,28 @@ module X
         @pages = Pages.new(self)
         freeze
       end
+
+      # The endpoint path
+      #
+      # Internal to x-objects: the pages of a cursor are requested at it, and the endpoint a collection is read from may
+      # change within 1.x, as the API moves one.
+      #
+      # @api private
+      # @return [String] the endpoint path
+      # @example Get the path
+      #   user.followers.__send__(:path) # => "users/7505382/followers"
+      attr_reader :path
+
+      # The query parameters sent with every page request
+      #
+      # Internal to x-objects: the pages of a cursor are requested with them, and they hold the default fields of the
+      # resource class, which a minor release may add to, and the size of a page, which it may change.
+      #
+      # @api private
+      # @return [Hash{String => Object}] the query parameters
+      # @example Get the parameters
+      #   user.followers.__send__(:params)["max_results"] # => 1000
+      attr_reader :params
 
       # The smallest page the endpoint accepts
       #

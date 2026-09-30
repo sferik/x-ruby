@@ -15,8 +15,8 @@ module X
     def test_search
       cursor = User.search("ruby", client: @client, max_results: 10)
 
-      assert_equal "users/search", cursor.path
-      assert_equal ["ruby", 10, "next_token"], [cursor.params["query"], cursor.params["max_results"], cursor.__send__(:token_param)]
+      assert_equal "users/search", cursor.__send__(:path)
+      assert_equal ["ruby", 10, "next_token"], [cursor.__send__(:params)["query"], cursor.__send__(:params)["max_results"], cursor.__send__(:token_param)]
       assert_same @client, cursor.client
     end
 
@@ -30,8 +30,8 @@ module X
       cursor = User.search("ruby", client: @client)
 
       assert_equal User, cursor.resource_class
-      assert_equal 1000, cursor.params["max_results"]
-      assert_equal User::FIELDS.join(","), cursor.params["user.fields"]
+      assert_equal 1000, cursor.__send__(:params)["max_results"]
+      assert_equal User::FIELDS.join(","), cursor.__send__(:params)["user.fields"]
     end
   end
 end

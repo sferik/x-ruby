@@ -30,8 +30,8 @@ module X
     def test_search
       cursor = Space.search("ruby", client: @client, state: "live")
 
-      assert_equal ["spaces/search", Space, "ruby", "live", 100], [cursor.path, cursor.resource_class, cursor.params["query"], cursor.params["state"], cursor.params["max_results"]]
-      assert_equal Space::FIELDS.join(","), cursor.params["space.fields"]
+      assert_equal ["spaces/search", Space, "ruby", "live", 100], [cursor.__send__(:path), cursor.resource_class, cursor.__send__(:params)["query"], cursor.__send__(:params)["state"], cursor.__send__(:params)["max_results"]]
+      assert_equal Space::FIELDS.join(","), cursor.__send__(:params)["space.fields"]
       assert_same @client, cursor.client
     end
 
@@ -86,15 +86,15 @@ module X
     end
 
     def test_posts
-      assert_equal "spaces/1/tweets", @space.posts.path
-      assert_equal "spaces/1/tweets", @space.tweets.path
+      assert_equal "spaces/1/tweets", @space.posts.__send__(:path)
+      assert_equal "spaces/1/tweets", @space.tweets.__send__(:path)
       assert_equal Post, @space.posts.resource_class
       assert_same @client, @space.posts.client
     end
 
     def test_posts_params
-      assert_equal 100, @space.posts.params["max_results"]
-      assert_equal 5, @space.posts(max_results: 5).params["max_results"]
+      assert_equal 100, @space.posts.__send__(:params)["max_results"]
+      assert_equal 5, @space.posts(max_results: 5).__send__(:params)["max_results"]
     end
 
     def test_find
