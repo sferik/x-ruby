@@ -7,7 +7,7 @@ module X
   # a request that never got a response, and the errors the gems raise for what they will not send or cannot read.
   #
   #   X::Error
-  #   ├── X::HTTPError                 a response the API refused, or one it sent that is not JSON, which the error holds
+  #   ├── X::HTTPError                 a response that failed, which the error holds, and itself a redirect not followed
   #   │   ├── X::ClientError           4xx: the request was refused, and is refused again but for a 408 or 429
   #   │   │   ├── X::BadRequest                 400
   #   │   │   ├── X::Unauthorized               401

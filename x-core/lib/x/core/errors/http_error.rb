@@ -16,6 +16,10 @@ module X
     # {#problem} the problem it describes the failure with as a whole, and {#problems} each problem it names, for code
     # that acts on the reason rather than logging it. {#http_method} and {#uri} are the request the API refused.
     #
+    # A 4xx raises a ClientError, a 5xx a ServerError, and a body that is not JSON an InvalidResponse, each a subclass
+    # of this. It is raised itself for a redirect the client does not follow: a 304 Not Modified, and a redirect whose
+    # Location is missing, is not a valid URL, or is not an HTTP or HTTPS URL.
+    #
     # @api public
     class ::X::HTTPError < Error
       include RequestContext
