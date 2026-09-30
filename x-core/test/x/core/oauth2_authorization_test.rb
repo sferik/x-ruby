@@ -130,8 +130,7 @@ module X
       token = stub_token.with(body: "#{TOKEN_BODY}&client_id=#{TEST_CLIENT_ID}") { |request| !request.headers.key?("Authorization") }
       credentials = Time.stub(:now, Time.at(1_000)) { authorization.credentials("#{REDIRECT_URI}?state=STATE&code=CODE") }
 
-      assert_equal({client_id: TEST_CLIENT_ID, access_token: "ACCESS", refresh_token: "REFRESH", expires_at: Time.at(8_200)},
-        credentials)
+      assert_equal OAuth2Tokens.new(access_token: "ACCESS", refresh_token: "REFRESH", expires_at: Time.at(8_200)), credentials
       assert_requested token
     end
 
@@ -139,28 +138,30 @@ module X
       basic = "Basic #{Base64.strict_encode64("#{TEST_CLIENT_ID}:#{TEST_CLIENT_SECRET}")}"
       token = stub_token.with(body: TOKEN_BODY, headers: {"Authorization" => basic})
 
-      refute authorization(client_secret: TEST_CLIENT_SECRET).credentials("state=STATE&code=CODE").key?(:client_secret)
+      tokens = authorization(client_secret: TEST_CLIENT_SECRET).credentials("state=STATE&code=CODE")
+
+      assert_equal %w[ACCESS REFRESH], [tokens.access_token, tokens.refresh_token]
       assert_requested token
     end
 
     def test_credentials_from_query_parameters
       stub_token
 
-      assert_equal "ACCESS", authorization.credentials({state: "STATE", code: "CODE"})[:access_token]
+      assert_equal "ACCESS", authorization.credentials({state: "STATE", code: "CODE"}).access_token
     end
 
     def test_credentials_without_a_refresh_token_are_those_of_the_user_without_one
       stub_token(body: {token_type: "bearer", access_token: "ACCESS", expires_in: 7200})
       credentials = Time.stub(:now, Time.at(1_000)) { authorization.credentials("state=STATE&code=CODE") }
 
-      assert_equal({client_id: TEST_CLIENT_ID, access_token: "ACCESS", expires_at: Time.at(8_200)}, credentials)
+      assert_equal OAuth2Tokens.new(access_token: "ACCESS", refresh_token: nil, expires_at: Time.at(8_200)), credentials
     end
 
-    def test_credentials_of_a_confidential_client_without_a_refresh_token_leave_out_its_secret
+    def test_credentials_of_a_confidential_client_without_a_refresh_token_or_a_lifetime_hold_neither
       stub_token(body: {token_type: "bearer", access_token: "ACCESS"})
 
-      assert_equal({client_id: TEST_CLIENT_ID, access_token: "ACCESS", expires_at: nil},
-        authorization(client_secret: TEST_CLIENT_SECRET).credentials("state=STATE&code=CODE"))
+      assert_equal OAuth2Tokens.new(access_token: "ACCESS", refresh_token: nil, expires_at: nil),
+        authorization(client_secret: TEST_CLIENT_SECRET).credentials("state=STATE&code=CODE")
     end
 
     def test_credentials_are_exchanged_over_the_connection

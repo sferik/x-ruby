@@ -48,7 +48,7 @@ module X
     def initialize: (client_id: String, redirect_uri: String, ?client_secret: String?, ?scopes: Array[String], ?state: String, ?code_verifier: String, ?base_url: String, ?proxy_url: (URI::Generic | String)?, ?open_timeout: (Float | Integer)?, ?read_timeout: (Float | Integer)?, ?write_timeout: (Float | Integer)?, ?keep_alive_timeout: Float | Integer, ?debug_output: _DebugOutput?) -> void
     def inspect: () -> String
     def url: () -> String
-    def credentials: (String | Hash[String | Symbol, String] callback) -> Hash[Symbol, String | Time | nil]
+    def credentials: (String | Hash[String | Symbol, String] callback) -> OAuth2Tokens
     def client: (String | Hash[String | Symbol, String] callback, ?base_url: String, ?open_timeout: (Float | Integer)?, ?read_timeout: (Float | Integer)?, ?write_timeout: (Float | Integer)?, ?keep_alive_timeout: Float | Integer, ?debug_output: _DebugOutput?, ?proxy_url: (URI::Generic | String)?, ?default_array_class: Class, ?default_object_class: object_class, ?headers: headers, ?max_redirects: Integer, ?max_rate_limit_retries: Integer, ?max_rate_limit_wait: Float | Integer, ?max_retries: Integer, ?on_response: _ResponseHook?, ?on_token_refresh: _TokenRefreshHook?, ?load_tokens: _TokenLoader?) -> Client
     def marshal_dump: () -> bot
     def encode_with: (untyped coder) -> bot

@@ -591,8 +591,9 @@ module X
     def query_of: (String | Hash[String | Symbol, String] callback) -> (String | Hash[String | Symbol, String])
     def connection_for: (Hash[Symbol, untyped] options) -> Core::Connection
     def exchange: (String | Hash[String | Symbol, String] callback, String base_url, ?Core::Connection over) -> SimpleOAuth::OAuth2::Token
-    def report_exchange: (Client client, SimpleOAuth::OAuth2::Token token) -> void
-    def credentials_from: (SimpleOAuth::OAuth2::Token token) -> Hash[Symbol, String | Time | nil]
+    def client_of: (OAuth2Tokens tokens, Hash[Symbol, untyped] options) -> Client
+    def report_exchange: (Client client, OAuth2Tokens tokens) -> void
+    def tokens_from: (SimpleOAuth::OAuth2::Token token) -> OAuth2Tokens
   end
 
   class AuthorizationError < Error

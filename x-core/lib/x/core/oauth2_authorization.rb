@@ -172,16 +172,16 @@ module X
       #
       # An authorization code works once, so call this, or {#client}, once for each redirect.
       #
-      # The credentials are those of the user, which are stored for each user, so they leave out the client secret of a
-      # confidential client, which is the app's and kept once, apart from them; pass it beside them to a client built of
-      # them, which refreshes the access token with it.
+      # The credentials are the tokens of the user, the OAuth2Tokens a client passes on_token_refresh and reads from
+      # load_tokens, which are stored for each user, so they leave out the client ID, and the client secret of a
+      # confidential client, which are the app's and kept once, apart from them; pass them beside the tokens to a
+      # client built of them, which refreshes the access token with them.
       #
       # @api public
       # @param callback [String, Hash] the redirect back from X: its URL, its query string, or its query parameters
-      # @return [Hash{Symbol => String, Time, nil}] the credentials, as Client#initialize accepts them: the client ID,
-      #   the access token, the refresh token, and the expiration time; an authorization without offline.access issues
-      #   no refresh token, so its credentials hold none, and a client built of them acts for the user until the access
-      #   token expires, and cannot authenticate as the app
+      # @return [OAuth2Tokens] the tokens: the access token, the refresh token, and the expiration time; an
+      #   authorization without offline.access issues no refresh token, so its tokens hold none, and a client built of
+      #   them acts for the user until the access token expires, and cannot authenticate as the app
       # @raise [AuthorizationError] if the user denied the app, the state does not match, X refuses the code, or the
       #   redirect is not a valid URL
       # @raise [HTTPError, InvalidResponse] if the token endpoint limits the rate of the request or fails to answer,
@@ -189,8 +189,8 @@ module X
       # @example Store the credentials of the user
       #   store.save(authorization.credentials(request.url))
       # @example Build the client of a confidential app from the credentials it stored
-      #   X::Client.new(**store.load, client_secret: ENV.fetch("X_CLIENT_SECRET"))
-      def credentials(callback) = credentials_from(exchange(callback, base_url))
+      #   X::Client.new(client_id: ENV.fetch("X_CLIENT_ID"), client_secret: ENV.fetch("X_CLIENT_SECRET"), **store.load.to_h)
+      def credentials(callback) = tokens_from(exchange(callback, base_url))
 
       # Exchange the code of the redirect back from X for a client
       #
@@ -231,8 +231,8 @@ module X
         raise ArgumentError, format(CREDENTIALS_GIVEN_MESSAGE, given.join(", ")) unless given.empty?
 
         checked = Client.new(**@settings, **options) # refuses an option before the code, which X accepts once, is spent
-        token = exchange(callback, checked.base_url, connection_for(options))
-        Client.new(**credentials_from(token), client_secret:, **@settings, **options).tap { |client| report_exchange(client, token) }
+        tokens = tokens_from(exchange(callback, checked.base_url, connection_for(options)))
+        client_of(tokens, options).tap { |client| report_exchange(client, tokens) }
       end
 
       private
@@ -333,16 +333,22 @@ module X
         over.close unless over.equal?(connection)
       end
 
+      # The client of the tokens of the exchange, built with the options given
+      # @api private
+      # @param tokens [OAuth2Tokens] the tokens of the exchange
+      # @param options [Hash] other options of Client#initialize, in place of those of the authorization
+      # @return [Client] the client
+      def client_of(tokens, options) = Client.new(client_id:, client_secret:, **tokens.to_h, **@settings, **options)
+
       # Pass the tokens of the exchange to the on_token_refresh of the client
       # @api private
       # @param client [Client] the client
-      # @param token [SimpleOAuth::OAuth2::Token] the token of the exchange
+      # @param tokens [OAuth2Tokens] the tokens of the exchange
       # @return [void]
       # @raise [TokenReportFailed] if on_token_refresh raises, with the client and tokens
-      def report_exchange(client, token)
+      def report_exchange(client, tokens)
         hook = client.on_token_refresh or return
 
-        tokens = OAuth2Tokens.new(access_token: token.access_token, refresh_token: token.refresh_token, expires_at: token.expires_at)
         begin
           hook.call(tokens)
         rescue
@@ -350,20 +356,17 @@ module X
         end
       end
 
-      # The credentials of a client from the token X returned
+      # The tokens of a user from the token X returned
       #
-      # They are OAuth 2.0 credentials whether or not X issued a refresh token, since the access token acts for the
-      # user either way: one given as a bearer token would be taken for the app's, and sent to the endpoints that take
-      # app-only authentication, which refuse it. A token issued without offline.access has no refresh token, so the
-      # credentials leave it out. They leave out the client secret, which is the app's rather than the user's.
+      # A client is built of them as OAuth 2.0 credentials whether or not X issued a refresh token, since the access
+      # token acts for the user either way: one given as a bearer token would be taken for the app's, and sent to the
+      # endpoints that take app-only authentication, which refuse it. A token issued without offline.access has no
+      # refresh token, so the tokens hold nil in its place.
       #
       # @api private
       # @param token [SimpleOAuth::OAuth2::Token] the token
-      # @return [Hash{Symbol => String, Time, nil}] the credentials, as Client#initialize accepts them
-      def credentials_from(token)
-        {client_id:, access_token: token.access_token, refresh_token: token.refresh_token}.compact
-          .merge(expires_at: token.expires_at)
-      end
+      # @return [OAuth2Tokens] the tokens
+      def tokens_from(token) = OAuth2Tokens.new(access_token: token.access_token, refresh_token: token.refresh_token, expires_at: token.expires_at)
     end
   end
 end
