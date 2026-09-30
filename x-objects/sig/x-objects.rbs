@@ -120,12 +120,14 @@ module X
     # or current_user_id is asked for them where they save a request: without app_only, an endpoint that refuses
     # the OAuth 1.0a of a user is requested with the client itself; without authenticator, the authenticated user
     # is looked up rather than read from the access token that names them; and without current_user_id, a check of
-    # whether one user follows another scans rather than reads connection_status.
+    # whether one user follows another scans rather than reads connection_status. A release within 1.x may pass any
+    # other keyword X::Client takes for the same method, such as params: or headers:, so each takes the rest of its
+    # keywords untyped.
     interface _Client
-      def get: (String endpoint, ?array_class: Class, ?object_class: untyped) -> untyped
-      def post: (String endpoint, ?(String | Hash[untyped, untyped])? body, ?array_class: Class, ?object_class: untyped) -> untyped
-      def put: (String endpoint, ?(String | Hash[untyped, untyped])? body, ?array_class: Class, ?object_class: untyped) -> untyped
-      def delete: (String endpoint, ?array_class: Class, ?object_class: untyped) -> untyped
+      def get: (String endpoint, ?array_class: Class, ?object_class: untyped, **untyped) -> untyped
+      def post: (String endpoint, ?(String | Hash[untyped, untyped])? body, ?array_class: Class, ?object_class: untyped, **untyped) -> untyped
+      def put: (String endpoint, ?(String | Hash[untyped, untyped])? body, ?array_class: Class, ?object_class: untyped, **untyped) -> untyped
+      def delete: (String endpoint, ?array_class: Class, ?object_class: untyped, **untyped) -> untyped
     end
 
     # The class side of every concrete resource class, typed with that class

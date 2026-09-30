@@ -29,6 +29,10 @@ The space endpoints take only app-only authentication, so `X::Space.find`, `find
 
 Any object that responds to `get`, `post`, `put`, and `delete` can be the client. Each method takes a path relative to the API base URL and keyword options, and returns the parsed JSON body. `post` and `put` also take the request body as an optional second argument: a Hash, which the client sends as JSON, as `X::Client` does, or a String the client sends as it is. The object layer always passes `array_class: Array, object_class: Hash`, so a client's own parsing defaults can't change what it receives. `X::Client` from `x-core` satisfies this contract.
 
+Those two are the only keywords the object layer passes, but a release within 1.x may pass any other keyword `X::Client` takes for the same method, such as `params:` or `headers:`, so take the keywords with `**options`, as below, rather than name the two alone.
+
+A client that also answers `app_only`, `authenticator`, or `current_user_id` is asked for them where they save a request, as `X::Client` is. The object layer reads the errors of `x-core`, so a client raises them for a request that fails: `X::Unauthorized` or `X::Forbidden` for credentials the API refuses, which `follows?` reads as a client that knows no authenticated user, and scans instead, and `X::UnsupportedOperation` from an `app_only` that holds no credentials of the app, which the space and count endpoints read as a client that requests as itself. Any other error ends the call it was raised in.
+
 ```ruby
 require "x/objects"
 

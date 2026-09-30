@@ -10,7 +10,8 @@ module X
     # The upload methods mixed into a client, each of which calls an uploader with the client
     #
     # The x gem includes it into X::Client. With x-core and x-uploader alone, include it yourself:
-    # X::Client.include(X::Uploader::API).
+    # X::Client.include(X::Uploader::API). Each method passes the object it is included into to an uploader as its
+    # client, which is an X::Client, so it belongs in X::Client or a subclass.
     #
     # @api public
     module API
@@ -52,7 +53,7 @@ module X
       # @example Upload media of a category no signature names
       #   client.upload_media(StringIO.new(subtitles), media_category: "subtitles")
       def upload_media(media, **options) # steep:ignore DifferentMethodParameterKind
-        MediaUpload.upload(media, client: self, **Utils.without_client(options))
+        MediaUpload.upload(media, client: _ = self, **Utils.without_client(options))
       end
 
       # Wait until media has been processed, whether its processing succeeded or failed
@@ -70,7 +71,7 @@ module X
       #   video = client.await_media_processing(video)
       #   warn video.processing_info.dig("error", "message") if video.failed?
       def await_media_processing(media, **options) # steep:ignore DifferentMethodParameterKind
-        MediaUpload.await_processing(media, client: self, **Utils.without_client(options))
+        MediaUpload.await_processing(media, client: _ = self, **Utils.without_client(options))
       end
 
       # Wait until media has been processed, raising if its processing failed
@@ -86,7 +87,7 @@ module X
       # @example Wait for a video uploaded with chunked_upload, raising if X could not process it
       #   client.await_media_processing!(video)
       def await_media_processing!(media, **options) # steep:ignore DifferentMethodParameterKind
-        MediaUpload.await_processing!(media, client: self, **Utils.without_client(options))
+        MediaUpload.await_processing!(media, client: _ = self, **Utils.without_client(options))
       end
 
       # Describe uploaded media with alt text, for people who cannot see it
@@ -102,7 +103,7 @@ module X
       # @example Describe an image as it is uploaded
       #   media = client.add_alt_text(client.upload_media("cat.jpg"), "A cat asleep on a keyboard")
       def add_alt_text(media, text)
-        Metadata.add_alt_text(media, text, client: self)
+        Metadata.add_alt_text(media, text, client: _ = self)
       end
 
       # Attach uploaded subtitles to an uploaded video
@@ -118,7 +119,7 @@ module X
       # @example Subtitle a video in English
       #   client.add_subtitles(video, subtitles, "EN", display_name: "English")
       def add_subtitles(video, subtitles, language_code, **options) # steep:ignore DifferentMethodParameterKind
-        Metadata.add_subtitles(video, subtitles, language_code, client: self, **Utils.without_client(options))
+        Metadata.add_subtitles(video, subtitles, language_code, client: _ = self, **Utils.without_client(options))
       end
 
       # Update the profile image of the authenticated user from a file
@@ -134,7 +135,7 @@ module X
       # @example Update the profile image
       #   client.update_profile_image("avatar.png")
       def update_profile_image(media)
-        Account.update_profile_image(media, client: self)
+        Account.update_profile_image(media, client: _ = self)
       end
 
       # Update the profile banner of the authenticated user from a file
@@ -150,7 +151,7 @@ module X
       # @example Update the profile banner
       #   client.update_profile_banner("banner.png", width: 1500, height: 500)
       def update_profile_banner(media, **options) # steep:ignore DifferentMethodParameterKind
-        Account.update_profile_banner(media, client: self, **Utils.without_client(options))
+        Account.update_profile_banner(media, client: _ = self, **Utils.without_client(options))
       end
     end
   end

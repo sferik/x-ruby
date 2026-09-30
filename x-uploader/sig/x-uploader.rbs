@@ -15,13 +15,7 @@ module X
     # Media to upload: a path to it, or an IO open on it
     type uploadable = String | _ToPath | _Reader
 
-    # What the uploaders ask of a client, which X::Client provides
-    interface _Client
-      def get: (String endpoint, **untyped) -> untyped
-      def post: (String endpoint, ?untyped body, **untyped) -> untyped
-    end
-
-    module API : _Client
+    module API
       def upload_media: (uploadable media, ?media_category: (String | Symbol)?, ?alt_text: String?, ?processing_timeout: Float | Integer, ?media_type: String?, ?chunk_size_mb: (Float | Integer)?, ?concurrency: Integer) -> UploadedMedia
       def await_media_processing: (media media, ?processing_timeout: Float | Integer) -> UploadedMedia
       def await_media_processing!: (media media, ?processing_timeout: Float | Integer) -> UploadedMedia
@@ -48,27 +42,27 @@ module X
       MAX_CONCURRENCY: Integer
       extend MediaUpload
 
-      def upload: (uploadable media, client: _Client, ?media_category: (String | Symbol)?, ?alt_text: String?, ?processing_timeout: Float | Integer, ?media_type: String?, ?chunk_size_mb: (Float | Integer)?, ?concurrency: Integer) -> UploadedMedia
-      def upload_binary: (String content, client: _Client, media_category: String | Symbol) -> UploadedMedia
-      def chunked_upload: (uploadable media, client: _Client, ?media_category: (String | Symbol)?, ?media_type: String?, ?chunk_size_mb: (Float | Integer)?, ?concurrency: Integer) -> UploadedMedia
-      def await_processing: (media media, client: _Client, ?processing_timeout: Float | Integer) -> UploadedMedia
-      def await_processing!: (media media, client: _Client, ?processing_timeout: Float | Integer) -> UploadedMedia
+      def upload: (uploadable media, client: ::X::Client, ?media_category: (String | Symbol)?, ?alt_text: String?, ?processing_timeout: Float | Integer, ?media_type: String?, ?chunk_size_mb: (Float | Integer)?, ?concurrency: Integer) -> UploadedMedia
+      def upload_binary: (String content, client: ::X::Client, media_category: String | Symbol) -> UploadedMedia
+      def chunked_upload: (uploadable media, client: ::X::Client, ?media_category: (String | Symbol)?, ?media_type: String?, ?chunk_size_mb: (Float | Integer)?, ?concurrency: Integer) -> UploadedMedia
+      def await_processing: (media media, client: ::X::Client, ?processing_timeout: Float | Integer) -> UploadedMedia
+      def await_processing!: (media media, client: ::X::Client, ?processing_timeout: Float | Integer) -> UploadedMedia
     end
 
     module Metadata
       extend Metadata
 
-      def add_alt_text: (media media, String text, client: _Client) -> UploadedMedia
-      def add_subtitles: (media video, media subtitles, String language_code, client: _Client, ?display_name: String?, ?media_category: String | Symbol) -> UploadedMedia
+      def add_alt_text: (media media, String text, client: ::X::Client) -> UploadedMedia
+      def add_subtitles: (media video, media subtitles, String language_code, client: ::X::Client, ?display_name: String?, ?media_category: String | Symbol) -> UploadedMedia
     end
 
     module Account
       extend Account
 
-      def update_profile_image: (uploadable media, client: _Client) -> Hash[String, untyped]?
-      def update_profile_image_binary: (String content, client: _Client) -> Hash[String, untyped]?
-      def update_profile_banner: (uploadable media, client: _Client, ?width: Integer?, ?height: Integer?, ?offset_left: Integer?, ?offset_top: Integer?) -> void
-      def update_profile_banner_binary: (String content, client: _Client, ?width: Integer?, ?height: Integer?, ?offset_left: Integer?, ?offset_top: Integer?) -> void
+      def update_profile_image: (uploadable media, client: ::X::Client) -> Hash[String, untyped]?
+      def update_profile_image_binary: (String content, client: ::X::Client) -> Hash[String, untyped]?
+      def update_profile_banner: (uploadable media, client: ::X::Client, ?width: Integer?, ?height: Integer?, ?offset_left: Integer?, ?offset_top: Integer?) -> void
+      def update_profile_banner_binary: (String content, client: ::X::Client, ?width: Integer?, ?height: Integer?, ?offset_left: Integer?, ?offset_top: Integer?) -> void
     end
   end
 

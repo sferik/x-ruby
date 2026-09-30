@@ -29,6 +29,8 @@ X::Uploader::Metadata.add_subtitles(video, subtitles, "EN", client:, display_nam
 X::Uploader::Account.update_profile_image("avatar.png", client:)
 ```
 
+The `client:` of each uploader is an `X::Client` of `x-core`, which sends the multipart and JSON bodies of an upload, resolves the v1.1 endpoints of the profile uploads against its base URL, and sends a chunk again as it sends a request again.
+
 An upload returns an `X::Uploader::UploadedMedia`, a frozen object that holds the response, or the processing status of media that X processes. It reads `id`, as an Integer, `media_key`, `bytesize`, `expires_at`, and `state`, tells `processing?`, `failed?`, and `ready?`, and still reads as the Hash an upload used to return, with `[]`, `fetch`, `dig`, `key?`, `to_h`, and `to_json`. The uploaders take it wherever they take media, as `create_post` of `x-objects` does, and `find_media(media.media_key)` of `x-objects` looks up the `X::Media` it became, with its URL and variants.
 
 ```ruby

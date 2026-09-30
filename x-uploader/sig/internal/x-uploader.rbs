@@ -97,7 +97,7 @@ module X
       def described: (Hash[String, untyped]? response, media media) -> UploadedMedia
       def media_data: (Hash[String, untyped]? response, String description) -> Hash[String, untyped]
       def subtitled_media_category: (String | Symbol media_category) -> String
-      def sending_again: [T] (_Client client) { () -> T } -> T
+      def sending_again: [T] (::X::Client client) { () -> T } -> T
       def processed!: (UploadedMedia status) -> UploadedMedia
       def seconds_from_now: (Float | Integer seconds) -> Float
       def wait_to_check: (UploadedMedia status, deadline: Float, timeout: Float | Integer) -> void
@@ -107,7 +107,7 @@ module X
       extend Multipart
 
       def headers: (String boundary) -> Hash[String, String]
-      def post: (_Client client, String url, String name, String content, **untyped fields) -> Hash[String, untyped]?
+      def post: (::X::Client client, String url, String name, String content, **untyped fields) -> Hash[String, untyped]?
       def body: (String name, String content, boundary: String, **untyped fields) -> String
     end
 
@@ -115,16 +115,16 @@ module X
       NO_MEDIA: String
       extend Chunks
 
-      def init: (client: _Client, source: Source, media_type: String, media_category: String) -> Hash[String, untyped]
-      def append: (client: _Client, source: Source, chunk_size: Integer, media: untyped, boundary: String, concurrency: Integer) -> void
-      def finalize: (client: _Client, media: Hash[String, untyped]) -> Hash[String, untyped]?
-      def complete: (client: _Client, source: Source, chunk_size: Integer, media: Hash[String, untyped], concurrency: Integer) -> UploadedMedia
+      def init: (client: ::X::Client, source: Source, media_type: String, media_category: String) -> Hash[String, untyped]
+      def append: (client: ::X::Client, source: Source, chunk_size: Integer, media: untyped, boundary: String, concurrency: Integer) -> void
+      def finalize: (client: ::X::Client, media: Hash[String, untyped]) -> Hash[String, untyped]?
+      def complete: (client: ::X::Client, source: Source, chunk_size: Integer, media: Hash[String, untyped], concurrency: Integer) -> UploadedMedia
 
       private
       def await: (Array[Thread] workers) -> void
       def chunk_queue: (Source source, Integer chunk_size) -> Thread::Queue
-      def append_worker: (Thread::Queue queue, Thread::Queue errors, client: _Client, source: Source, chunk_size: Integer, media_id: String, boundary: String) -> Thread
-      def upload_chunk: (client: _Client, media_id: String, upload_body: String, headers: Hash[String, String]) -> untyped
+      def append_worker: (Thread::Queue queue, Thread::Queue errors, client: ::X::Client, source: Source, chunk_size: Integer, media_id: String, boundary: String) -> Thread
+      def upload_chunk: (client: ::X::Client, media_id: String, upload_body: String, headers: Hash[String, String]) -> untyped
     end
 
     module MediaUpload
