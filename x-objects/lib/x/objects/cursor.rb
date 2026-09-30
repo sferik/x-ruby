@@ -124,6 +124,7 @@ module X
       # @api public
       # @param index [Integer] the zero-based page index
       # @return [Page, nil] the page or nil if the collection has fewer pages
+      # @raise [TypeError] if the index is not an Integer, such as the String "1" or the Float 1.5, which name no page
       # @raise [ArgumentError] if the index is negative, since pages are read forward from the first
       # @example Fetch the first page
       #   user.followers.page(0)

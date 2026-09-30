@@ -41,6 +41,12 @@ module X
       assert_raises(ArgumentError) { @cursor.page(-2) }
     end
 
+    def test_a_page_index_that_is_not_an_integer_is_refused
+      assert_equal '"1" is not a page index: pages are numbered by Integers', assert_raises(TypeError) { @cursor.page("1") }.message
+      assert_equal "1.5 is not a page index: pages are numbered by Integers", assert_raises(TypeError) { @cursor.page(1.5) }.message
+      assert_empty @client.requests
+    end
+
     def test_a_far_page_reads_the_pages_before_it_in_order
       assert_nil @cursor.page(1_000)
       assert_equal %w[p2 p3], @client.queries.drop(1).map { |query| query["pagination_token"] }

@@ -35,8 +35,10 @@ module X
       # @api private
       # @param index [Integer] the zero-based page index
       # @return [Page, nil] the page or nil if the collection has fewer pages
+      # @raise [TypeError] if the index is not an Integer
       # @raise [ArgumentError] if the index is negative, since pages are read forward from the first
       def at(index)
+        raise TypeError, "#{index.inspect} is not a page index: pages are numbered by Integers" unless index.instance_of?(Integer)
         raise ArgumentError, "#{index} is not a page index: pages are numbered from zero" if index.negative?
 
         current = cached(index)
