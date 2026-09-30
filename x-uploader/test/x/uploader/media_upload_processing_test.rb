@@ -19,7 +19,7 @@ module X
     def test_upload_awaits_the_processing_of_an_animated_gif
       stub_pending_upload
       stub_status(state: "succeeded")
-      response = Uploader::MediaUpload.upload(ANIMATED_GIF, client: @client)
+      response = on_fake_clock { Uploader::MediaUpload.upload(ANIMATED_GIF, client: @client) }
 
       assert_equal "succeeded", response.dig("processing_info", "state")
       assert_requested :get, STATUS_URL
@@ -29,7 +29,7 @@ module X
       stub_pending_upload
       stub_status(state: "failed")
 
-      assert_raises(MediaProcessingFailed) { Uploader::MediaUpload.upload(ANIMATED_GIF, client: @client) }
+      assert_raises(MediaProcessingFailed) { on_fake_clock { Uploader::MediaUpload.upload(ANIMATED_GIF, client: @client) } }
     end
 
     def test_upload_waits_the_processing_timeout_for_an_animated_gif

@@ -64,7 +64,7 @@ module X
       stub_video_upload_that_keeps_processing(check_after_secs: 5)
 
       assert_raises(MediaProcessingTimeout) do
-        Uploader::MediaUpload.upload("test/sample_files/sample.mp4", client: @client, processing_timeout: 4)
+        on_fake_clock { Uploader::MediaUpload.upload("test/sample_files/sample.mp4", client: @client, processing_timeout: 4) }
       end
     end
 

@@ -45,7 +45,7 @@ module X
 
     def test_upload_uploads_a_video_in_chunks_and_awaits_processing
       stub_chunked_workflow
-      response = Uploader::MediaUpload.upload("test/sample_files/sample.mp4", client: @client)
+      response = on_fake_clock { Uploader::MediaUpload.upload("test/sample_files/sample.mp4", client: @client) }
 
       assert_equal TEST_MEDIA_ID, response["id"]
       assert_equal "succeeded", response.dig("processing_info", "state")
@@ -55,7 +55,7 @@ module X
 
     def test_upload_chunks_by_category_rather_than_extension
       stub_chunked_workflow
-      Uploader::MediaUpload.upload("test/sample_files/sample.png", client: @client, media_category: "DM_VIDEO", media_type: "video/mp4")
+      on_fake_clock { Uploader::MediaUpload.upload("test/sample_files/sample.png", client: @client, media_category: "DM_VIDEO", media_type: "video/mp4") }
 
       assert_requested :post, "#{BASE_URL}/initialize", body: {media_type: "video/mp4", media_category: "dm_video", total_bytes: 68}.to_json
     end
@@ -63,7 +63,7 @@ module X
     def test_upload_raises_when_video_processing_fails
       stub_chunked_workflow(state: "failed")
 
-      assert_raises(MediaProcessingFailed) { Uploader::MediaUpload.upload("test/sample_files/sample.mp4", client: @client) }
+      assert_raises(MediaProcessingFailed) { on_fake_clock { Uploader::MediaUpload.upload("test/sample_files/sample.mp4", client: @client) } }
     end
 
     def test_upload_a_still_gif_as_an_image

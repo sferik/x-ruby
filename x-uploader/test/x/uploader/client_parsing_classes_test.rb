@@ -36,7 +36,7 @@ module X
       stub_request(:get, "#{UPLOAD_URL}?command=STATUS&media_id=#{TEST_MEDIA_ID}")
         .to_return(headers: {"content-type" => "application/json"}, body: {data: {id: TEST_MEDIA_ID, processing_info: {state: "succeeded"}}}.to_json)
 
-      assert_equal "succeeded", Uploader::MediaUpload.upload("test/sample_files/sample.mp4", client: @client).dig("processing_info", "state")
+      assert_equal "succeeded", on_fake_clock { Uploader::MediaUpload.upload("test/sample_files/sample.mp4", client: @client) }.dig("processing_info", "state")
     end
 
     def test_add_alt_text_and_subtitles
