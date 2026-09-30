@@ -53,7 +53,14 @@ module X
     def test_each
       assert_equal [1, 2], @page.map(&:id)
       assert_equal @users, @page.each.to_a
-      assert_equal @users, @page.each { |_user| nil }
+      assert_same @page, @page.each { |_user| nil }
+    end
+
+    def test_each_yields_each_resource_and_sizes_its_enumerator
+      yielded = []
+      @page.each { |user| yielded << user }
+
+      assert_equal [@users, 2], [yielded, @page.each.size]
     end
 
     def test_the_class_publishes_no_delegation_methods

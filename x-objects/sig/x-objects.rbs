@@ -295,8 +295,8 @@ module X
     attr_reader problems: Array[Problem]
 
     def initialize: (Array[R] items, Hash[untyped, untyped] meta, ?problems: Array[Problem]) -> void
-    def each: () { (R) -> void } -> Array[R]
-            | () -> Enumerator[R, Array[R]]
+    def each: () { (R) -> void } -> self
+            | () -> Enumerator[R, self]
     def to_a: () -> Array[R]
     def entries: () -> Array[R]
     def next_token: () -> String?

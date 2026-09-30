@@ -61,10 +61,15 @@ module X
     #
     # @api public
     # @yield [Resource] each resource
-    # @return [Enumerator, Array<Resource>] an enumerator without a block, otherwise the resources
+    # @return [Enumerator, Page] an enumerator without a block, otherwise self, as a cursor returns itself
     # @example Iterate over a page
     #   page.each { |user| puts user.username }
-    def each(&) = items.each(&) # steep:ignore BlockTypeMismatch
+    def each(&block)
+      return to_enum { items.size } unless block
+
+      items.each(&block)
+      self
+    end
 
     # The resources on this page, frozen, as {#items} returns them
     #
