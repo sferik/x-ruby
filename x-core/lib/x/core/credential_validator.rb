@@ -39,6 +39,18 @@ module X
         %i[api_key api_key_secret]
       ].freeze
 
+      # The credentials a client authenticates with before OAuth 2.0 credentials, when it holds both
+      OAUTH1_CREDENTIALS = CREDENTIAL_SETS.first
+      # The credentials of the least set of OAuth 2.0, which an expiration time is the expiration time of the token of
+      OAUTH2_CREDENTIALS = CREDENTIAL_SETS.fetch(4)
+      private_constant :OAUTH1_CREDENTIALS, :OAUTH2_CREDENTIALS
+
+      # The message of the error raised for an expiration time the client would leave unused
+      UNUSED_EXPIRES_AT = "expires_at is the time an OAuth 2.0 access token expires, so it is given beside the " \
+        "client_id and access_token the client authenticates with, rather than beside OAuth 1.0a credentials, a " \
+        "bearer_token, an api_key and api_key_secret, or none, which would leave it unused. Leave it out"
+      private_constant :UNUSED_EXPIRES_AT
+
       # The message of the error raised for an expiration time that is not a Time
       INVALID_EXPIRES_AT = "expires_at must be a Time, such as Time.at(seconds) for a time stored as seconds since the " \
         "epoch, or nil if it is not known"
@@ -141,23 +153,30 @@ module X
         raise ArgumentError, format(AUTHENTICATOR_AND_CREDENTIALS, given.join(", ")) unless given.empty?
       end
 
-      # Raise for credentials that do not form a complete set
+      # Raise for incomplete credentials, or ones that leave an expiration time unused
+      #
+      # An expiration time is that of an OAuth 2.0 access token, which a client reads only when it authenticates with
+      # OAuth 2.0 credentials, so one given to a client that authenticates otherwise, as with OAuth 1.0a credentials,
+      # which it authenticates with before OAuth 2.0 credentials it holds beside them, raises, as it does beside an
+      # authenticator.
       #
       # @api private
       # @param credentials [Hash{Symbol => String, Time, nil}] the credentials, as Client#initialize accepts them
       # @return [void]
-      # @raise [ArgumentError] if a credential belongs to no complete set
+      # @raise [ArgumentError] if a credential belongs to no complete set, or an expiration time is given to a client
+      #   that does not authenticate with OAuth 2.0 credentials
       # @example Check the credentials of a client
       #   X::Core::CredentialValidator.validate!(api_key: "key")
       def validate!(credentials)
         raise ArgumentError, INCOMPLETE_CREDENTIALS if incomplete?(credentials)
+        raise ArgumentError, UNUSED_EXPIRES_AT if unused_expires_at?(credentials)
       end
 
       private
 
       # Check whether a credential was given that belongs to no complete set
       #
-      # The expiration time is no credential, so it is allowed beside any.
+      # The expiration time is no credential, so it belongs to no set, and unused_expires_at? checks it.
       #
       # @api private
       # @param credentials [Hash{Symbol => String, Time, nil}] the credentials
@@ -166,6 +185,17 @@ module X
         given = credentials.except(:expires_at).compact.keys
         complete = CREDENTIAL_SETS.select { |set| (set - given).empty? }
         (given - complete.flatten).any?
+      end
+
+      # Check whether an expiration time was given that the client would leave unused
+      #
+      # @api private
+      # @param credentials [Hash{Symbol => String, Time, nil}] the credentials
+      # @return [Boolean] true if an expiration time was given, and the client authenticates with no OAuth 2.0
+      #   credentials
+      def unused_expires_at?(credentials)
+        given = credentials.compact.keys
+        given.include?(:expires_at) && ((OAUTH1_CREDENTIALS - given).empty? || !(OAUTH2_CREDENTIALS - given).empty?)
       end
     end
     private_constant :CredentialValidator

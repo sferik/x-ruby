@@ -53,7 +53,10 @@ module X
     end
 
     def test_a_copy_given_an_expiration_time_beside_the_authenticator_is_refused
-      assert_raises(ArgumentError) { @client.with(expires_at: Time.now) }
+      error = assert_raises(ArgumentError) { @client.with(expires_at: Time.now) }
+
+      assert_equal "An authenticator holds the credentials it authenticates with, so it cannot be given beside " \
+        "expires_at. Pass the authenticator, or the credentials, and leave out the other", error.message
     end
 
     def test_a_copy_given_the_credentials_the_authenticator_holds_shares_it

@@ -30,7 +30,7 @@ module X
     end
 
     def test_an_app_only_copy_holds_the_credentials_of_the_app_alone
-      client = Client.new(**test_oauth_credentials, **test_oauth2_credentials.except(:client_secret), expires_at: Time.now + 60)
+      client = Client.new(**test_oauth_credentials.slice(:api_key, :api_key_secret), **test_oauth2_credentials, expires_at: Time.now + 60)
       copy = client.app_only
 
       assert_instance_of AppOnlyAuthenticator, copy.authenticator

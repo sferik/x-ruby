@@ -73,6 +73,9 @@ TEST_INCOMPLETE_CREDENTIALS = "The credentials given do not form a complete set.
   "refreshes it and the client_secret of a confidential client, for OAuth 2.0; bearer_token for the app's bearer " \
   "token; or api_key and api_key_secret to authenticate as the app. Leave out any credential of a set that is not " \
   "complete"
+TEST_UNUSED_EXPIRES_AT = "expires_at is the time an OAuth 2.0 access token expires, so it is given beside the " \
+  "client_id and access_token the client authenticates with, rather than beside OAuth 1.0a credentials, a " \
+  "bearer_token, an api_key and api_key_secret, or none, which would leave it unused. Leave it out"
 TEST_INVALID_EXPIRES_AT = "expires_at must be a Time, such as Time.at(seconds) for a time stored as seconds since " \
   "the epoch, or nil if it is not known"
 

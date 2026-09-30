@@ -182,7 +182,8 @@ module X
       # @param client_secret [String, nil] the OAuth 2.0 client secret
       # @param refresh_token [String, nil] the OAuth 2.0 refresh token, or nil beside a client ID and access token issued
       #   without offline.access, which authenticate as the user until the access token expires, and cannot refresh
-      # @param expires_at [Time, nil] the time the OAuth 2.0 access token expires, after which a request refreshes it
+      # @param expires_at [Time, nil] the time the OAuth 2.0 access token expires, after which a request refreshes it,
+      #   given only beside the client_id and access_token the client authenticates with
       # @param authenticator [Authenticator, nil] an authenticator to authenticate with in place of credentials, such as
       #   an OAuth2Authenticator built elsewhere, or nil to build one of the credentials; see {#authenticator}
       # @param base_url [String] the base URL for API requests
@@ -241,7 +242,8 @@ module X
       #   without them, or authenticate as the app rather than a user
       # @raise [ArgumentError] if a credential is an empty String, as an environment variable that is not set is often
       #   read, which would send an Authorization header that authenticates nothing
-      # @raise [ArgumentError] if expires_at is neither a Time nor nil
+      # @raise [ArgumentError] if expires_at is neither a Time nor nil, or is given to a client that does not
+      #   authenticate with OAuth 2.0 credentials, which would leave it unused
       # @raise [ArgumentError] if an authenticator is given that is not an Authenticator, or beside credentials or
       #   expires_at, which it would leave unused
       # @raise [ArgumentError] if a timeout is neither a finite number of seconds of at least 0 nor, for any but

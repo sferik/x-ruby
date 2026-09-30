@@ -156,12 +156,6 @@ module X
       assert_equal [TEST_REFRESH_TOKEN, TEST_ACCESS_TOKEN], [internals(client).send(:refresh_token), internals(client).send(:access_token)]
     end
 
-    def test_expires_at_is_kept_without_oauth2
-      expires_at = Time.now + 60
-
-      assert_equal expires_at, Client.new(bearer_token: TEST_BEARER_TOKEN, expires_at:).expires_at
-    end
-
     def test_a_copy_with_another_credential_keeps_the_refreshed_tokens
       client = Client.new(**test_oauth2_credentials)
       client.authenticator.refresh!

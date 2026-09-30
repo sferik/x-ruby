@@ -490,6 +490,9 @@ module X
       NOT_AN_AUTHENTICATOR: String
       AUTHENTICATOR_AND_CREDENTIALS: String
       CREDENTIAL_SETS: Array[Array[Symbol]]
+      OAUTH1_CREDENTIALS: Array[Symbol]
+      OAUTH2_CREDENTIALS: Array[Symbol]
+      UNUSED_EXPIRES_AT: String
       extend CredentialValidator
 
       def validate_values!: (Hash[Symbol, String | Time | nil] credentials) -> void
@@ -500,6 +503,7 @@ module X
 
       private
       def incomplete?: (Hash[Symbol, String | Time | nil] credentials) -> bool
+      def unused_expires_at?: (Hash[Symbol, String | Time | nil] credentials) -> bool
     end
 
     class Connection

@@ -17,10 +17,6 @@ module X
       assert_instance_of Authenticator, Client.new.authenticator
     end
 
-    def test_an_expiration_time_alone_is_no_credential
-      assert_instance_of Authenticator, Client.new(expires_at: Time.now).authenticator
-    end
-
     def test_an_expiration_time_that_is_not_a_time_is_refused
       error = assert_raises(ArgumentError) { Client.new(**test_oauth2_credentials, expires_at: 1_789_600_000) }
 
@@ -86,10 +82,6 @@ module X
 
     def test_a_client_secret_without_the_rest_of_its_set_is_incomplete
       assert_incomplete(**test_oauth_credentials, client_secret: TEST_CLIENT_SECRET)
-    end
-
-    def test_an_expiration_time_is_allowed_beside_any_credentials
-      assert_instance_of BearerTokenAuthenticator, Client.new(bearer_token: TEST_BEARER_TOKEN, expires_at: Time.now).authenticator
     end
 
     def test_an_oauth2_access_token_needs_no_refresh_token
