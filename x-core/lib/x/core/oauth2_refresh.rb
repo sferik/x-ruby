@@ -173,7 +173,7 @@ module X
       # @raise [AuthorizationError] if X refused anything but the refresh token, or the store holds no other
       def adopt_in_place_of(error)
         adopted = adopt_stored_tokens if REFUSED_REFRESH_TOKEN.include?(error.code)
-        adopted or raise AuthorizationError.from(error, DEFAULT_ERROR_MESSAGE), cause: error.cause
+        adopted or raise AuthorizationError.__send__(:from, error, DEFAULT_ERROR_MESSAGE), cause: error.cause
       end
 
       # Take the stored tokens, if they hold another refresh token

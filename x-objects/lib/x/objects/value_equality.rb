@@ -31,5 +31,6 @@ module X
       #   woeids.flat_map { |woeid| X::Trend.at(woeid, client: client) }.uniq.size
       def hash = [self.class, attrs].hash
     end
+    private_constant :ValueEquality
   end
 end

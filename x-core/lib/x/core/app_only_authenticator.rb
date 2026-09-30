@@ -171,7 +171,7 @@ module X
     def fetch_bearer_token
       Core::TokenEndpoint.fetch(token_request, connection:).access_token
     rescue SimpleOAuth::OAuth2::Error => e
-      raise AuthorizationError.from(e, DEFAULT_ERROR_MESSAGE), cause: e.cause
+      raise AuthorizationError.__send__(:from, e, DEFAULT_ERROR_MESSAGE), cause: e.cause
     end
 
     # Build the client credentials request

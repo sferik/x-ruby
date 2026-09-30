@@ -4,12 +4,12 @@ require_relative "../../test_helper"
 
 module X
   class TweetNamesTest < Minitest::Test
-    cover Objects::Attributes
-    cover Objects::Shape
-    cover Objects::Includes
+    cover Objects.const_get(:Attributes)
+    cover Objects.const_get(:Shape)
+    cover Objects.const_get(:Includes)
     cover Post
     cover User
-    cover Objects::UserCollections
+    cover Objects.const_get(:UserCollections)
     cover DirectMessage
 
     POST = {"id" => "1", "text" => "short…", "author_id" => "9", "edit_history_tweet_ids" => ["1"],

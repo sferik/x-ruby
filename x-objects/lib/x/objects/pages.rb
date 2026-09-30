@@ -242,5 +242,6 @@ module X
         @monitor.synchronize { @prefetching.delete(index) }
       end
     end
+    private_constant :Pages
   end
 end

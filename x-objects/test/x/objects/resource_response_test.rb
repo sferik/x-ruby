@@ -6,7 +6,7 @@ module X
   module Objects
     class ResourceResponseTest < Minitest::Test
       cover Resource
-      cover Objects::Finders
+      cover Objects.const_get(:Finders)
 
       def setup
         @client = FakeClient.new

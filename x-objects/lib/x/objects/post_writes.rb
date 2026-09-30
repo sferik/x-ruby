@@ -133,5 +133,6 @@ module X
       # @return [Hash{Symbol => Object}] the nested field
       def merged(params, key, **field) = params[key].to_h.merge(field)
     end
+    private_constant :PostWrites
   end
 end

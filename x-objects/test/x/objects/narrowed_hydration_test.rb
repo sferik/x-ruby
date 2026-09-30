@@ -4,8 +4,8 @@ require_relative "../../test_helper"
 
 module X
   class NarrowedHydrationTest < Minitest::Test
-    cover Objects::Finders
-    cover Objects::BatchFinders
+    cover Objects.const_get(:Finders)
+    cover Objects.const_get(:BatchFinders)
     cover Resource
 
     def setup

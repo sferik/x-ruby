@@ -74,6 +74,31 @@ module X
       def_delegators :@rate_limit_handler, :max_rate_limit_retries, :max_rate_limit_wait
       def_delegators :@retry_handler, :max_retries
 
+      # Send a request that is safe to send twice again after a failure
+      #
+      # The client sends no POST again, since the API may have acted on one whose answer never arrived, and sends no
+      # request again after its answer failed to arrive, since the API bills a read it answered whether or not the
+      # answer arrived. A request that is safe to send again anyway, such as the chunk of an upload, which names the
+      # segment it is appended at and which the API bills nothing for, is sent again with this: after a ServerError, a
+      # RequestTimeout, or a NetworkError of any kind, up to max_retries times, as the client sends an idempotent
+      # request again, after the wait a response asks for, or a backoff that doubles with each retry and is cut short
+      # at random. A response that asks to be left alone for longer than a minute raises at once. The block must build
+      # its request anew each time, so that each attempt is signed afresh, as a request of the client is.
+      #
+      # Wrap a request the client sends no more than once, such as a POST: the client sends a GET, a PUT, or a DELETE
+      # again itself, so one wrapped in this is sent max_retries times more for each time this sends it, nine times in
+      # all with the defaults, rather than three.
+      #
+      # @api public
+      # @yield sends the request
+      # @return [Object] what the block returns
+      # @raise [NetworkError] if the request fails once more than the retries allow
+      # @raise [ServerError, RequestTimeout] if the API fails to answer once more than the retries allow, or asks for a
+      #   wait longer than a minute
+      # @example Append a chunk of an upload, again after a failure
+      #   client.with_retries { client.post("media/upload/1/append", body, headers:) }
+      def with_retries(&) = @retry_handler.handle(idempotent: true, resend_unanswered: true, &)
+
       private
 
       # Share the connections kept open by the client this one was copied from

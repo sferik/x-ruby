@@ -4,12 +4,12 @@ require_relative "../../test_helper"
 
 module X
   class PatternMatchingTest < Minitest::Test
-    cover Objects::Identity
-    cover Objects::Attributes
+    cover Objects.const_get(:Identity)
+    cover Objects.const_get(:Attributes)
     cover Resource
     cover Post
     cover User
-    cover Objects::UserCollections
+    cover Objects.const_get(:UserCollections)
 
     def setup
       @user = User.new({"id" => "7505382", "username" => "sferik", "created_at" => "2007-07-16T12:59:01.000Z"})
@@ -87,7 +87,7 @@ module X
 
     def test_a_resource_without_aliases_declares_none
       assert_empty Resource.__send__(:attribute_aliases)
-      assert_empty Class.new { extend Objects::Attributes }.__send__(:attribute_aliases)
+      assert_empty Class.new { extend Objects.const_get(:Attributes) }.__send__(:attribute_aliases)
       assert_empty List.__send__(:attribute_aliases)
     end
 
@@ -96,7 +96,7 @@ module X
 
       assert_equal User.__send__(:attribute_names) + [:nickname], klass.__send__(:attribute_names)
       refute_includes User.__send__(:attribute_names), :nickname
-      assert_equal [:id], Class.new { extend Objects::Attributes }.__send__(:attribute_names)
+      assert_equal [:id], Class.new { extend Objects.const_get(:Attributes) }.__send__(:attribute_names)
     end
 
     def test_every_resource_declares_its_identifier_and_its_own_attributes

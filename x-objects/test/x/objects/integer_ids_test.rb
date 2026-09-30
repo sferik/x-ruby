@@ -4,11 +4,11 @@ require_relative "../../test_helper"
 
 module X
   class IntegerIdsTest < Minitest::Test
-    cover Objects::Attributes
-    cover Objects::Utils
+    cover Objects.const_get(:Attributes)
+    cover Objects.const_get(:Utils)
     cover Resource
-    cover Objects::Finders
-    cover Objects::BatchFinders
+    cover Objects.const_get(:Finders)
+    cover Objects.const_get(:BatchFinders)
     cover Place
     cover Space
     cover Media
@@ -35,10 +35,10 @@ module X
     end
 
     def test_integer_reads_decimal_digits
-      assert_equal 10, Objects::Utils.integer("010")
-      assert_equal 7, Objects::Utils.integer(7)
-      assert_nil Objects::Utils.integer(nil)
-      assert_raises(ArgumentError) { Objects::Utils.integer("sferik") }
+      assert_equal 10, Objects.const_get(:Utils).integer("010")
+      assert_equal 7, Objects.const_get(:Utils).integer(7)
+      assert_nil Objects.const_get(:Utils).integer(nil)
+      assert_raises(ArgumentError) { Objects.const_get(:Utils).integer("sferik") }
     end
   end
 end

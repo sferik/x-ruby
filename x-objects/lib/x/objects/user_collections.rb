@@ -203,5 +203,6 @@ module X
       alias_method :tweets, :posts
       alias_method :liked_tweets, :liked_posts
     end
+    private_constant :UserCollections
   end
 end

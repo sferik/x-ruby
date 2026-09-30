@@ -5,12 +5,12 @@ require_relative "../../test_helper"
 module X
   class ListTest < Minitest::Test
     cover List
-    cover Objects::Finders
-    cover Objects::BatchFinders
+    cover Objects.const_get(:Finders)
+    cover Objects.const_get(:BatchFinders)
 
     def setup
       @client = FakeClient.new
-      includes = Objects::Includes.new({"users" => [{"id" => "9", "username" => "sferik"}]})
+      includes = Objects.const_get(:Includes).new({"users" => [{"id" => "9", "username" => "sferik"}]})
       @list = List.__send__(:build, {"id" => "1", "name" => "Ruby", "description" => "d", "created_at" => "2024-01-02T03:04:05.000Z",
                         "follower_count" => 2, "member_count" => 3, "owner_id" => "9", "private" => true},
         client: @client, includes:)

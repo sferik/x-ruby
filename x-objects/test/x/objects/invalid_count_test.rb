@@ -6,9 +6,9 @@ module X
   # A count, a date of usage, a timestamp, or the event a sent message created, that a response holds but cannot be
   # read as what the API documents it to be raises InvalidAttribute where it is read, as the attributes of a resource do
   class InvalidCountTest < Minitest::Test
-    cover Objects::PostCounts
-    cover Objects::DirectMessageConversations
-    cover Objects::Utils
+    cover Objects.const_get(:PostCounts)
+    cover Objects.const_get(:DirectMessageConversations)
+    cover Objects.const_get(:Utils)
     cover Usage
 
     def setup

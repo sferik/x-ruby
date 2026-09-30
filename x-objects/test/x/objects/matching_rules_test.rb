@@ -7,7 +7,7 @@ module X
     cover Post
     cover Resource
     cover MatchingRule
-    cover Objects::ValueEquality
+    cover Objects.const_get(:ValueEquality)
 
     LINE = {"data" => {"id" => "1", "text" => "hello", "author_id" => "2"},
             "includes" => {"users" => [{"id" => "2", "username" => "sferik"}]},

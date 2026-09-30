@@ -12,7 +12,7 @@ module X
       end
 
       def test_relationships_is_the_client_module_not_the_resource_mixin
-        refute_includes API.ancestors, Objects::Relationships
+        refute_includes API.ancestors, Objects.const_get(:Relationships)
       end
 
       def test_a_client_gains_no_constant_of_the_object_layer

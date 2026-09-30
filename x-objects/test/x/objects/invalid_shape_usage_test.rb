@@ -6,8 +6,8 @@ module X
   # The days of usage, and the periods and meta of counts, that are not lists of objects, or objects, where the API
   # documents them to be raise InvalidAttribute where they are read
   class InvalidShapeUsageTest < Minitest::Test
-    cover Objects::PostCounts
-    cover Objects::Shape
+    cover Objects.const_get(:PostCounts)
+    cover Objects.const_get(:Shape)
     cover Usage
 
     def setup

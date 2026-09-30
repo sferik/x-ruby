@@ -4,10 +4,10 @@ require_relative "../../test_helper"
 
 module X
   class NameValidationTest < Minitest::Test
-    cover Objects::Utils
-    cover Objects::UserFinders
-    cover Objects::Lookups
-    cover Objects::BatchFinders
+    cover Objects.const_get(:Utils)
+    cover Objects.const_get(:UserFinders)
+    cover Objects.const_get(:Lookups)
+    cover Objects.const_get(:BatchFinders)
 
     RAW_MESSAGE = "\"a/b?c=d\" is not an identifier: pass X::Space, or a String of word characters"
 
@@ -16,21 +16,21 @@ module X
     end
 
     def test_a_username_is_normalized
-      assert_equal %w[sferik sferik _1 abcdefghijklmno], ["@sferik", "sferik", "_1", "abcdefghijklmno"].map { |name| Objects::Utils.username!(name) }
+      assert_equal %w[sferik sferik _1 abcdefghijklmno], ["@sferik", "sferik", "_1", "abcdefghijklmno"].map { |name| Objects.const_get(:Utils).username!(name) }
     end
 
     def test_a_username_that_is_no_string_is_read_as_one
-      assert_equal "1", Objects::Utils.username!(1)
-      assert_raises(ArgumentError) { Objects::Utils.username!(nil) }
+      assert_equal "1", Objects.const_get(:Utils).username!(1)
+      assert_raises(ArgumentError) { Objects.const_get(:Utils).username!(nil) }
     end
 
     def test_a_username_of_sixteen_characters_is_refused
-      assert_raises(ArgumentError) { Objects::Utils.username!("abcdefghijklmnop") }
-      assert_raises(ArgumentError) { Objects::Utils.username!("@@sferik") }
+      assert_raises(ArgumentError) { Objects.const_get(:Utils).username!("abcdefghijklmnop") }
+      assert_raises(ArgumentError) { Objects.const_get(:Utils).username!("@@sferik") }
     end
 
     def test_what_is_not_a_username_is_refused
-      error = assert_raises(ArgumentError) { Objects::Utils.username!("bad name") }
+      error = assert_raises(ArgumentError) { Objects.const_get(:Utils).username!("bad name") }
 
       assert_equal "\"bad name\" is not a username: pass one to fifteen letters, digits, or underscores", error.message
     end
@@ -81,12 +81,12 @@ module X
     end
 
     def test_a_raw_identifier_of_word_characters_is_taken_as_it_is
-      assert_equal %w[1DXxyRYNejbKM 3_1880028106020515840 f29bbd03562e37d3 a], %w[1DXxyRYNejbKM 3_1880028106020515840 f29bbd03562e37d3 a].map { |id| Objects::Utils.id_of(id, Space) }
+      assert_equal %w[1DXxyRYNejbKM 3_1880028106020515840 f29bbd03562e37d3 a], %w[1DXxyRYNejbKM 3_1880028106020515840 f29bbd03562e37d3 a].map { |id| Objects.const_get(:Utils).id_of(id, Space) }
     end
 
     def test_a_one_to_one_conversation_identifier_is_taken_as_it_is
-      assert_equal "1-2", Objects::Utils.id_of("1-2", Space)
-      assert_raises(ArgumentError) { Objects::Utils.id_of("a-2", Space) }
+      assert_equal "1-2", Objects.const_get(:Utils).id_of("1-2", Space)
+      assert_raises(ArgumentError) { Objects.const_get(:Utils).id_of("a-2", Space) }
     end
 
     def test_find_by_username_looks_a_number_up_as_a_username

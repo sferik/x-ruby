@@ -6,11 +6,11 @@ module X
   # A resource of another class than the one a method takes the identifier of raises ArgumentError before a request,
   # rather than reach the API as the identifier of a resource of that class
   class ForeignResourceTest < Minitest::Test
-    cover Objects::Utils
+    cover Objects.const_get(:Utils)
     cover Resource
-    cover Objects::Finders
-    cover Objects::BatchFinders
-    cover Objects::UserFinders
+    cover Objects.const_get(:Finders)
+    cover Objects.const_get(:BatchFinders)
+    cover Objects.const_get(:UserFinders)
     cover Media
 
     MESSAGE = "X::List 42 is not X::User: pass X::User or its identifier"
@@ -23,33 +23,33 @@ module X
     end
 
     def test_a_resource_of_another_class_names_both_classes
-      assert_equal MESSAGE, assert_raises(ArgumentError) { Objects::Utils.id_of(@list, User) }.message
-      assert_equal "X::Space 1DX is not X::User: pass X::User or its identifier", assert_raises(ArgumentError) { Objects::Utils.id_from(Space.new({"id" => "1DX"}), User) }.message
+      assert_equal MESSAGE, assert_raises(ArgumentError) { Objects.const_get(:Utils).id_of(@list, User) }.message
+      assert_equal "X::Space 1DX is not X::User: pass X::User or its identifier", assert_raises(ArgumentError) { Objects.const_get(:Utils).id_from(Space.new({"id" => "1DX"}), User) }.message
     end
 
     def test_a_resource_of_the_class_or_of_a_subclass_of_it_is_taken
-      assert_equal "7505382", Objects::Utils.id_of(@user, User)
-      assert_equal "7", Objects::Utils.id_of(Class.new(User).new({"id" => "7"}), User)
-      assert_equal "7", Objects::Utils.id_from(Class.new(User).new({"id" => "7"}), User)
+      assert_equal "7505382", Objects.const_get(:Utils).id_of(@user, User)
+      assert_equal "7", Objects.const_get(:Utils).id_of(Class.new(User).new({"id" => "7"}), User)
+      assert_equal "7", Objects.const_get(:Utils).id_from(Class.new(User).new({"id" => "7"}), User)
     end
 
     def test_an_object_that_is_not_a_resource_is_refused_though_it_answers_id
       record = Struct.new(:id).new(7)
       message = "#{record.inspect} is not an identifier: pass X::Post, an Integer, or a String of digits"
 
-      assert_equal message, assert_raises(ArgumentError) { Objects::Utils.id_of(record, Post) }.message
-      assert_equal message, assert_raises(ArgumentError) { Objects::Utils.id_from(record, Post) }.message
+      assert_equal message, assert_raises(ArgumentError) { Objects.const_get(:Utils).id_of(record, Post) }.message
+      assert_equal message, assert_raises(ArgumentError) { Objects.const_get(:Utils).id_from(record, Post) }.message
     end
 
     def test_an_identifier_of_a_subclass_of_string_is_taken
-      assert_equal "7", Objects::Utils.id_from(Class.new(String).new("7"), Post)
+      assert_equal "7", Objects.const_get(:Utils).id_from(Class.new(String).new("7"), Post)
     end
 
     def test_an_object_that_is_not_a_resource_is_neither_a_raw_identifier_nor_taken_for_an_identifier
       record = Struct.new(:id).new("1DX")
 
-      assert_equal "#{record.inspect} is not an identifier: pass X::Space, or a String of word characters", assert_raises(ArgumentError) { Objects::Utils.id_from(record, Space) }.message
-      refute Objects::Utils.id?(record)
+      assert_equal "#{record.inspect} is not an identifier: pass X::Space, or a String of word characters", assert_raises(ArgumentError) { Objects.const_get(:Utils).id_from(record, Space) }.message
+      refute Objects.const_get(:Utils).id?(record)
     end
 
     def test_a_client_refuses_to_act_on_an_object_that_is_not_a_resource
@@ -99,9 +99,9 @@ module X
 
   # The actions and writes that take the identifier of a resource refuse a resource of another class before a request
   class ForeignResourceActionsTest < Minitest::Test
-    cover Objects::Relationships
-    cover Objects::PostWrites
-    cover Objects::DirectMessageConversations
+    cover Objects.const_get(:Relationships)
+    cover Objects.const_get(:PostWrites)
+    cover Objects.const_get(:DirectMessageConversations)
     cover DirectMessage
     cover List
 

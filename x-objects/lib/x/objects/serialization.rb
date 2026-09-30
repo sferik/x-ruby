@@ -36,5 +36,6 @@ module X
       #   Rails.cache.write("user", user.to_json)
       def to_json(state = nil) = as_json.to_json(state)
     end
+    private_constant :Serialization
   end
 end

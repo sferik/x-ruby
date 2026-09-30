@@ -4,7 +4,7 @@ require_relative "../../test_helper"
 
 module X
   class ListRelationshipsTest < Minitest::Test
-    cover Objects::Relationships
+    cover Objects.const_get(:Relationships)
 
     def setup
       @client = FakeClient.new
@@ -66,7 +66,7 @@ module X
 
   class PinnedListsTest < Minitest::Test
     cover User
-    cover Objects::UserCollections
+    cover Objects.const_get(:UserCollections)
 
     def setup
       @client = FakeClient.new

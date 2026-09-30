@@ -82,5 +82,6 @@ module X
       #   YAML.unsafe_load(YAML.dump(user)).username # => "sferik"
       def init_with(coder) = marshal_load(coder.map.values_at(*YAML_KEYS))
     end
+    private_constant :Marshalling
   end
 end

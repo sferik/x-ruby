@@ -5,9 +5,9 @@ require_relative "../../test_helper"
 module X
   class CursorPagingTest < Minitest::Test
     cover Cursor
-    cover Objects::Pages
+    cover Objects.const_get(:Pages)
     cover User
-    cover Objects::UserCollections
+    cover Objects.const_get(:UserCollections)
 
     def setup
       @client = FakeClient.new
@@ -39,7 +39,7 @@ module X
     end
 
     def test_the_pages_of_a_cursor_are_frozen
-      assert_predicate Objects::Pages.new(@user.followers), :frozen?
+      assert_predicate Objects.const_get(:Pages).new(@user.followers), :frozen?
     end
 
     private

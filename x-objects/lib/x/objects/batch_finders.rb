@@ -175,5 +175,6 @@ module X
         raise ArgumentError, format(FOREIGN_RESOURCE, self, self, foreign.class) unless foreign.nil?
       end
     end
+    private_constant :BatchFinders
   end
 end

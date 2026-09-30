@@ -5,7 +5,7 @@ require_relative "../../test_helper"
 module X
   module Objects
     class APIEngagementTest < Minitest::Test
-      cover Objects::Actions::Engagement
+      cover Objects.const_get(:Actions)::Engagement
 
       def setup
         @client = FakeClient.new

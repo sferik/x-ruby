@@ -10,41 +10,10 @@ require_relative "setting_validator"
 
 module X
   module Core
-    # Run a request that is safe to send twice, sending it again after a failure
-    #
-    # A client sends no POST again, since the API may have acted on one whose answer never arrived, and sends no
-    # request again after its answer failed to arrive, since the API bills a read it answered whether or not the
-    # answer arrived. A request that is safe to send again anyway, such as the chunk of an upload, which names the
-    # segment it is appended at and which the API bills nothing for, is sent again with this: after a ServerError, a
-    # RequestTimeout, or a NetworkError of any kind, up to max_retries times, as a client sends an idempotent request
-    # again, after the wait a response asks for, or a backoff that doubles with each retry and is cut short at
-    # random, so that the requests one failure ended are not sent again together. A response that asks to be left
-    # alone for longer than a minute raises at once. The block must build its request anew each time, so that each
-    # attempt is signed afresh, as a request of a client is.
-    #
-    # Wrap a request the client sends no more than once, such as a POST: a client sends a GET, a PUT, or a DELETE
-    # again itself, so one wrapped in this is sent max_retries times more for each time this sends it, nine times in
-    # all with the defaults, rather than three. It is public, although the rest of X::Core is internal to x-core, since
-    # a caller who knows a POST to be safe to send twice sends it with this, as x-uploader sends the chunks of an upload.
-    #
-    # @api public
-    # @param max_retries [Integer] the maximum number of times to send the request again, as X::Client takes it
-    # @yield sends the request
-    # @return [Object] what the block returns
-    # @raise [ArgumentError] if the maximum number of retries is not an Integer of at least 0
-    # @raise [NetworkError] if the request fails once more than the retries allow
-    # @raise [ServerError, RequestTimeout] if the API fails to answer once more than the retries allow, or asks for a
-    #   wait longer than a minute
-    # @example Append a chunk of an upload, again after a failure, as often as the client sends a request again
-    #   X::Core.with_retries(max_retries: client.max_retries) { client.post("media/upload/1/append", body, headers:) }
-    def self.with_retries(max_retries: RetryHandler::DEFAULT_MAX_RETRIES, &)
-      RetryHandler.new(max_retries:).handle(idempotent: true, resend_unanswered: true, &)
-    end
-
     # Sends a request again after the API failed to answer it, or after its answer never arrived
     #
-    # Internal to x-core: Client retries with it, and takes max_retries, and Core.with_retries sends a request again
-    # with it that a client sends no more than once, as it does any POST.
+    # Internal to x-core: Client retries with it, and takes max_retries, and Client#with_retries sends a request
+    # again with it that a client sends no more than once, as it does any POST.
     #
     # @api private
     class RetryHandler

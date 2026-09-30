@@ -6,12 +6,12 @@ require_relative "serialization_test"
 module X
   # Marshal writes a resource as plain data, without its client, and reads it back as it was
   class MarshalTest < Minitest::Test
-    cover Objects::Marshalling
-    cover Objects::Includes
+    cover Objects.const_get(:Marshalling)
+    cover Objects.const_get(:Includes)
 
     def setup
       @client = SerializationTest::CredentialedClient.new
-      includes = Objects::Includes.new({"users" => [{"id" => "9", "username" => "sferik"}]})
+      includes = Objects.const_get(:Includes).new({"users" => [{"id" => "9", "username" => "sferik"}]})
       @post = Post.__send__(:build, {"id" => "1", "text" => "Hello", "author_id" => "9"}, client: @client, includes:)
     end
 
@@ -45,8 +45,8 @@ module X
     end
 
     def test_a_marshalled_resource_stays_hydrated
-      query = Objects::Utils.query(Post.default_params)
-      includes = Objects::Includes.new({"users" => [{"id" => "9", "username" => "sferik"}]}, query:)
+      query = Objects.const_get(:Utils).query(Post.default_params)
+      includes = Objects.const_get(:Includes).new({"users" => [{"id" => "9", "username" => "sferik"}]}, query:)
       post = Post.__send__(:build, {"id" => "1", "author_id" => "9"}, client: @client, includes:, hydrated: true)
       loaded = Marshal.load(Marshal.dump(post))
 
@@ -56,8 +56,8 @@ module X
     end
 
     def test_a_marshalled_resource_whose_request_lacks_a_field_this_release_requests_is_not_hydrated
-      query = Objects::Utils.query(Post.default_params).merge("post.fields" => "id,text")
-      post = Post.__send__(:build, {"id" => "1", "text" => "Hello"}, client: @client, includes: Objects::Includes.new(nil, query:), hydrated: true)
+      query = Objects.const_get(:Utils).query(Post.default_params).merge("post.fields" => "id,text")
+      post = Post.__send__(:build, {"id" => "1", "text" => "Hello"}, client: @client, includes: Objects.const_get(:Includes).new(nil, query:), hydrated: true)
 
       refute_predicate Marshal.load(Marshal.dump(post)), :hydrated?
     end
@@ -70,14 +70,14 @@ module X
     end
 
     def test_a_marshalled_resource_that_was_not_hydrated_is_not_hydrated_by_its_query
-      post = Post.__send__(:build, {"id" => "1"}, client: @client, includes: Objects::Includes.new(nil, query: Objects::Utils.query(Post.default_params)))
+      post = Post.__send__(:build, {"id" => "1"}, client: @client, includes: Objects.const_get(:Includes).new(nil, query: Objects.const_get(:Utils).query(Post.default_params)))
 
       refute_predicate Marshal.load(Marshal.dump(post)), :hydrated?
     end
 
     def test_a_marshalled_resource_reports_the_problems_of_its_response
       problem = {"title" => "Not Found Error", "resource_id" => "9", "resource_type" => "user"}
-      includes = Objects::Includes.new(nil, problems: [Problem.new(problem)])
+      includes = Objects.const_get(:Includes).new(nil, problems: [Problem.new(problem)])
       post = Post.__send__(:build, {"id" => "1", "author_id" => "9"}, client: @client, includes:)
 
       assert_equal [problem], Marshal.load(Marshal.dump(post)).problems.map(&:to_h)
@@ -102,7 +102,7 @@ module X
     end
 
     def test_a_marshalled_resource_resolves_its_references_as_hydrated_as_they_were
-      includes = Objects::Includes.new({"polls" => [{"id" => "5", "voting_status" => "open"}]}, query: Objects::Utils.query(Post.default_params))
+      includes = Objects.const_get(:Includes).new({"polls" => [{"id" => "5", "voting_status" => "open"}]}, query: Objects.const_get(:Utils).query(Post.default_params))
       post = Post.__send__(:build, {"id" => "1", "attachments" => {"poll_ids" => ["5"]}}, client: @client, includes:)
 
       assert_predicate Marshal.load(Marshal.dump(post)).polls.first, :hydrated?

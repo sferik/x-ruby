@@ -8,7 +8,7 @@ module X
 
     def setup
       @client = FakeClient.new
-      includes = Objects::Includes.new({"users" => [{"id" => "9", "username" => "sferik"}]})
+      includes = Objects.const_get(:Includes).new({"users" => [{"id" => "9", "username" => "sferik"}]})
       @space = Space.__send__(:build, {"id" => "1", "title" => "Ruby", "state" => "live", "lang" => "en",
                           "created_at" => "2024-01-02T03:04:05.000Z", "started_at" => "2024-01-02T03:05:05.000Z",
                           "ended_at" => "2024-01-02T04:04:05.000Z", "scheduled_start" => "2024-01-02T03:00:00.000Z",

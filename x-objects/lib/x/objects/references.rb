@@ -114,5 +114,6 @@ module X
         resolve(Post, found["id"]) #: Post?
       end
     end
+    private_constant :References
   end
 end

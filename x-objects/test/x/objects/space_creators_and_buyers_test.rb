@@ -5,7 +5,7 @@ require_relative "../../test_helper"
 module X
   class SpaceCreatorsAndBuyersTest < Minitest::Test
     cover Space
-    cover Objects::Lookups
+    cover Objects.const_get(:Lookups)
 
     # A client with an app-only client, as an X::Client that signs with OAuth 1.0a has
     class UserClient < FakeClient
@@ -31,7 +31,7 @@ module X
       spaces = @client.find_all_spaces_by_creator([1, "2", User.from_id(3)], state: "live")
 
       assert_equal [%w[S1 1], %w[S2 2], %w[S3 3]], spaces.map { |space| [space.id, space.creator.id.to_s] }
-      assert_equal [{"user_ids" => "1,2,3", "state" => "live", **Objects::Utils.query(Space.default_params)}], @client.app.queries
+      assert_equal [{"user_ids" => "1,2,3", "state" => "live", **Objects.const_get(:Utils).query(Space.default_params)}], @client.app.queries
       assert_empty @client.requests
     end
 
@@ -68,7 +68,7 @@ module X
       buyers = Space.from_id("1DXxyRYNejbKM", client: @client).buyers
 
       assert_equal ["buyer"], buyers.map(&:username)
-      assert_equal [{"max_results" => "100", **Objects::Utils.query(User.default_params)}], @client.queries
+      assert_equal [{"max_results" => "100", **Objects.const_get(:Utils).query(User.default_params)}], @client.queries
       assert_empty @client.app.requests
       refute buyers.__send__(:app_only?)
     end

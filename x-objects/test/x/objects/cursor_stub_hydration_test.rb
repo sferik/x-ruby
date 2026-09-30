@@ -5,11 +5,11 @@ require_relative "../../test_helper"
 module X
   class CursorStubHydrationTest < Minitest::Test
     cover Cursor
-    cover Objects::Pages
-    cover Objects::Batch
+    cover Objects.const_get(:Pages)
+    cover Objects.const_get(:Batch)
     cover Resource
     cover User
-    cover Objects::UserCollections
+    cover Objects.const_get(:UserCollections)
     cover List
     cover Community
     cover DirectMessage
@@ -70,8 +70,8 @@ module X
     end
 
     def test_only_resources_with_a_batch_lookup_look_up_many_at_a_time
-      assert_equal [true, true, true, true], [User, Post, Space, Media].map { |klass| klass.is_a?(Objects::BatchFinders) }
-      assert_equal [false, false, false, false], [List, Community, DirectMessage, Poll].map { |klass| klass.is_a?(Objects::BatchFinders) }
+      assert_equal [true, true, true, true], [User, Post, Space, Media].map { |klass| klass.is_a?(Objects.const_get(:BatchFinders)) }
+      assert_equal [false, false, false, false], [List, Community, DirectMessage, Poll].map { |klass| klass.is_a?(Objects.const_get(:BatchFinders)) }
     end
 
     def test_refreshing_a_stub_of_a_page_looks_it_up_again_on_its_own
@@ -85,7 +85,7 @@ module X
     end
 
     def test_a_batch_is_frozen
-      assert_predicate Objects::Batch.new(User, [], client: @client), :frozen?
+      assert_predicate Objects.const_get(:Batch).new(User, [], client: @client), :frozen?
     end
 
     def test_a_stub_of_its_own_is_looked_up_on_its_own

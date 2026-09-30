@@ -7,8 +7,8 @@ module X
   # documents a list, raises InvalidAttribute from the reader of an attribute or a reference, as a value that cannot
   # be read does, rather than the NoMethodError or TypeError of reading into it
   class InvalidShapeTest < Minitest::Test
-    cover Objects::Attributes
-    cover Objects::Shape
+    cover Objects.const_get(:Attributes)
+    cover Objects.const_get(:Shape)
 
     def test_an_attribute_read_through_something_other_than_an_object_raises
       error = assert_raises(InvalidAttribute) { User.new({"id" => "1", "public_metrics" => "many"}).followers_count }

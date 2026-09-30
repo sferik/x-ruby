@@ -5,9 +5,9 @@ require_relative "../../test_helper"
 module X
   class BookmarkFoldersTest < Minitest::Test
     cover BookmarkFolder
-    cover Objects::UserCollections
+    cover Objects.const_get(:UserCollections)
     cover Cursor
-    cover Objects::Pages
+    cover Objects.const_get(:Pages)
     cover Resource
 
     FOLDERS = {"data" => [{"id" => "1146654567674912769", "name" => "Ruby"}, {"id" => "2", "name" => "Rails"}], "meta" => {"result_count" => 2}}.freeze

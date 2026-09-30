@@ -5,7 +5,7 @@ require_relative "../../test_helper"
 module X
   # A list the response omitted reads as empty, as a list of references does, rather than nil
   class MissingListsTest < Minitest::Test
-    cover Objects::Attributes
+    cover Objects.const_get(:Attributes)
     cover Post
 
     LISTS = {

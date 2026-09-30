@@ -6,7 +6,7 @@ require_relative "../../test_helper"
 
 module X
   class FollowsConnectionStatusTest < Minitest::Test
-    cover Objects::Relationships
+    cover Objects.const_get(:Relationships)
 
     def setup
       @client = FakeClient.new

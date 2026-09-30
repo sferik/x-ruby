@@ -5,17 +5,17 @@ require_relative "../../test_helper"
 module X
   class CursorFirstTest < Minitest::Test
     cover Cursor
-    cover Objects::Pages
+    cover Objects.const_get(:Pages)
     cover Community
-    cover Objects::PostSearch
+    cover Objects.const_get(:PostSearch)
     cover Post
-    cover Objects::PostCollections
+    cover Objects.const_get(:PostCollections)
     cover User
-    cover Objects::UserCollections
-    cover X::Objects::UserFinders
+    cover Objects.const_get(:UserCollections)
+    cover X::Objects.const_get(:UserFinders)
     cover Resource
-    cover Objects::Finders
-    cover Objects::BatchFinders
+    cover Objects.const_get(:Finders)
+    cover Objects.const_get(:BatchFinders)
 
     def setup
       @client = FakeClient.new
@@ -134,7 +134,7 @@ module X
 
   class CursorFirstCountTest < Minitest::Test
     cover Cursor
-    cover Objects::Utils
+    cover Objects.const_get(:Utils)
 
     def setup
       @client = FakeClient.new

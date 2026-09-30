@@ -163,5 +163,6 @@ module X
         end
       end
     end
+    private_constant :PostCounts
   end
 end

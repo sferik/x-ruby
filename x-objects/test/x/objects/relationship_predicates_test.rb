@@ -5,12 +5,12 @@ require_relative "../../test_helper"
 module X
   class RelationshipPredicatesTest < Minitest::Test
     cover User
-    cover Objects::UserCollections
-    cover X::Objects::UserFinders
-    cover Objects::Relationships
+    cover Objects.const_get(:UserCollections)
+    cover X::Objects.const_get(:UserFinders)
+    cover Objects.const_get(:Relationships)
     cover List
     cover Cursor
-    cover Objects::Pages
+    cover Objects.const_get(:Pages)
 
     def setup
       @client = FakeClient.new

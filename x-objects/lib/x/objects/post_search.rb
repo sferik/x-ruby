@@ -79,5 +79,6 @@ module X
         Utils.merge_params(default_params, params)["post.fields"].to_s.split(",").include?("context_annotations")
       end
     end
+    private_constant :PostSearch
   end
 end

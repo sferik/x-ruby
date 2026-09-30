@@ -11,7 +11,7 @@ module X
 
     def setup
       @client = FakeClient.new
-      @includes = Objects::Includes.new({"users" => [{"id" => "9", "username" => "sferik"}]})
+      @includes = Objects.const_get(:Includes).new({"users" => [{"id" => "9", "username" => "sferik"}]})
     end
 
     def test_new_takes_no_includes_or_batch
@@ -37,7 +37,7 @@ module X
     end
 
     def test_from_id_in_batch_builds_a_stub_of_the_batch
-      batch = Objects::Batch.new(User, [1], client: @client)
+      batch = Objects.const_get(:Batch).new(User, [1], client: @client)
       stub = User.__send__(:from_id_in_batch, 1, client: @client, batch:)
 
       assert_equal [1, true, []], [stub.id, stub.stub?, stub.problems]

@@ -5,8 +5,8 @@ require_relative "../../test_helper"
 module X
   class UserCursorsTest < Minitest::Test
     cover User
-    cover Objects::UserCollections
-    cover X::Objects::UserFinders
+    cover Objects.const_get(:UserCollections)
+    cover X::Objects.const_get(:UserFinders)
 
     PATHS = {followers: "users/1/followers", following: "users/1/following", blocking: "users/1/blocking",
              muting: "users/1/muting", posts: "users/1/tweets", home_timeline: "users/1/timelines/reverse_chronological",

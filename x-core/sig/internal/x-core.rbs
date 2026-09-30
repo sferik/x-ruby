@@ -315,6 +315,7 @@ module X
       def max_rate_limit_retries: () -> Integer
       def max_rate_limit_wait: () -> (Float | Integer)
       def max_retries: () -> Integer
+      def with_retries: [T] () { () -> T } -> T
 
       private
       def share_connection: (Connection connection) -> void

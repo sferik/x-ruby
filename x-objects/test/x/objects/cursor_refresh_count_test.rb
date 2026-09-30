@@ -8,7 +8,7 @@ module X
   class CursorRefreshCountTest < Minitest::Test
     cover Cursor
     cover Resource
-    cover Objects::PublishedCount
+    cover Objects.const_get(:PublishedCount)
 
     def setup
       @client = FakeClient.new

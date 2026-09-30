@@ -211,5 +211,6 @@ module X
         @index[klass.__send__(:includes_key)] ||= entries_of(klass).group_by { |attrs| attrs[klass.__send__(:id_key)] }.transform_values(&:first)
       end
     end
+    private_constant :Includes
   end
 end

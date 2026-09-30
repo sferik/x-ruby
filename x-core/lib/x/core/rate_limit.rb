@@ -41,13 +41,14 @@ module X
     # Every rate limit a response reports in full, in the order of TYPES
     #
     # Internal to x-core: it takes the Net::HTTP response of a request, so that it can change within 1.x, as that
-    # response may. X::Response#rate_limits and X::TooManyRequests#rate_limits read the same limits.
+    # response may, and is private, so X::Response#rate_limits and X::TooManyRequests#rate_limits, which read the
+    # same limits, call it with __send__.
     #
     # @api private
     # @param http_response [Net::HTTPResponse] the HTTP response
     # @return [Array<RateLimit>] the 15-minute limit, and the 24-hour app and user limits, when reported
     # @example Read every limit a response reports
-    #   X::RateLimit.all_from(http_response)
+    #   X::RateLimit.__send__(:all_from, http_response)
     def self.all_from(http_response) = TYPES.filter_map { |type| new(type:, http_response:) if reported?(type, http_response) }
 
     # Check whether a response has the limit, remaining, and reset of a rate limit
@@ -64,8 +65,9 @@ module X
     # @param http_response [Net::HTTPResponse] the HTTP response
     # @return [Boolean] true if the response has every header of the rate limit, each a count in base 10
     # @example Check for the 15-minute rate limit
-    #   X::RateLimit.reported?("rate-limit", response)
+    #   X::RateLimit.__send__(:reported?, "rate-limit", response)
     def self.reported?(type, http_response) = FIELDS.all? { |field| http_response["x-#{type}-#{field}"].to_s.match?(COUNT) }
+    private_class_method :all_from, :reported?
 
     # Initialize a new RateLimit
     #

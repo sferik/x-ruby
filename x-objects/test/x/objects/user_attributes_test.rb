@@ -5,8 +5,8 @@ require_relative "../../test_helper"
 module X
   class UserAttributesTest < Minitest::Test
     cover User
-    cover Objects::UserCollections
-    cover X::Objects::UserFinders
+    cover Objects.const_get(:UserCollections)
+    cover X::Objects.const_get(:UserFinders)
 
     ATTRS = {"id" => "1", "name" => "Erik Berlin", "username" => "sferik", "description" => "d",
              "location" => "SF", "url" => "https://t.co/x", "profile_image_url" => "https://pbs.twimg.com/x.jpg",

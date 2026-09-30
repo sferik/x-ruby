@@ -5,7 +5,7 @@ require_relative "../../test_helper"
 module X
   module Objects
     class APIDirectMessageLookupsTest < Minitest::Test
-      cover Objects::Lookups
+      cover Objects.const_get(:Lookups)
 
       def setup
         @client = FakeClient.new

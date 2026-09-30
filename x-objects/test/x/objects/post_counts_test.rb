@@ -4,8 +4,8 @@ require_relative "../../test_helper"
 
 module X
   class PostCountsTest < Minitest::Test
-    cover Objects::PostCounts
-    cover Objects::Lookups
+    cover Objects.const_get(:PostCounts)
+    cover Objects.const_get(:Lookups)
 
     def setup
       @client = FakeClient.new

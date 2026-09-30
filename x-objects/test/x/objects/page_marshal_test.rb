@@ -39,16 +39,16 @@ module X
     def test_the_resources_of_one_response_report_its_problems_and_resolve_as_hydrated_as_they_did
       body = {"data" => [{"id" => "1", "author_id" => "9", "attachments" => {"poll_ids" => ["5"]}}], "includes" => {"polls" => [{"id" => "5"}]},
               "errors" => [{"title" => "Not Found Error", "resource_id" => "9"}]}
-      post = Marshal.load(Marshal.dump(Page.new(Post.__send__(:collection_built_from, body, client: nil, hydrated: false, query: Objects::Utils.query(Post.default_params)), {}))).first
+      post = Marshal.load(Marshal.dump(Page.new(Post.__send__(:collection_built_from, body, client: nil, hydrated: false, query: Objects.const_get(:Utils).query(Post.default_params)), {}))).first
 
       assert_equal [["9"], true], [post.problems.map(&:resource_id), post.polls.first.hydrated?]
     end
 
     def test_a_resource_whose_request_lacks_a_field_this_release_requests_is_not_hydrated_after_a_round_trip
-      lacking = Objects::Utils.query(Post.default_params).merge("post.fields" => "id,text")
-      full = Objects::Utils.query(Post.default_params)
-      posts = [lacking, full, nil].each_with_index.map do |query, index|
-        Post.__send__(:build, {"id" => (index + 1).to_s}, client: nil, includes: Objects::Includes.new(nil, query:), hydrated: true)
+      full = Objects.const_get(:Utils).query(Post.default_params)
+      includes = Objects.const_get(:Includes)
+      posts = [full.merge("post.fields" => "id,text"), full, nil].each_with_index.map do |query, index|
+        Post.__send__(:build, {"id" => (index + 1).to_s}, client: nil, includes: includes.new(nil, query:), hydrated: true)
       end
 
       assert_equal [false, true, true], Marshal.load(Marshal.dump(Page.new(posts, {}))).map(&:hydrated?)

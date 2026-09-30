@@ -188,10 +188,11 @@ module X
       #
       # A client sends no POST again, since the API may have acted on one whose answer never arrived, but some of
       # the POSTs of an upload have the same effect sent twice as sent once, such as a chunk, which names the segment
-      # it is appended at. Those are sent again up to the max_retries of the client, after the wait a failed response
-      # asks for, or a backoff that grows with each retry and is cut short at random, so that the requests one
-      # failure ended are not sent again together. They are sent again after a timeout too, which a client sends no
-      # read again after, since the API bills an upload for nothing it sends twice.
+      # it is appended at. Those are sent again with the with_retries of the client, up to its max_retries, after the
+      # wait a failed response asks for, or a backoff that grows with each retry and is cut short at random, so that
+      # the requests one failure ended are not sent again together. They are sent again after a timeout too, which a
+      # client sends no read again after, since the API bills an upload for nothing it sends twice. A client that has
+      # no with_retries, which X::Client has, sends each request as it sends any other.
       #
       # @api private
       # @param client [Client] the X API client
@@ -200,21 +201,8 @@ module X
       # @example Append a chunk, again after a failure
       #   Uploader::Utils.sending_again(client) { client.post("media/upload/1/append", body, headers:) }
       def sending_again(client, &)
-        Core.with_retries(max_retries: max_retries_of(client), &)
-      end
-
-      # The number of times a request of an upload is sent again
-      #
-      # It is the max_retries of a client that has one, as X::Client does, and the default of a client otherwise.
-      #
-      # @api private
-      # @param client [Client] the X API client
-      # @return [Integer] the maximum number of retries
-      # @example The retries of a client
-      #   Uploader::Utils.max_retries_of(X::Client.new(max_retries: 5)) # => 5
-      def max_retries_of(client)
         retrying = client #: untyped
-        retrying.respond_to?(:max_retries) ? retrying.max_retries : Client::DEFAULT_MAX_RETRIES
+        retrying.respond_to?(:with_retries) ? retrying.with_retries(&) : yield
       end
 
       # The processing status of media, unless the media failed to process

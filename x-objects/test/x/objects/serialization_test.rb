@@ -5,7 +5,7 @@ require_relative "../../test_helper"
 module X
   class SerializationTest < Minitest::Test
     cover Resource
-    cover Objects::Serialization
+    cover Objects.const_get(:Serialization)
     cover Problem
     cover Usage
     cover Page
@@ -24,7 +24,7 @@ module X
 
     def setup
       @client = CredentialedClient.new
-      includes = Objects::Includes.new({"users" => [{"id" => "9", "username" => "sferik"}]})
+      includes = Objects.const_get(:Includes).new({"users" => [{"id" => "9", "username" => "sferik"}]})
       @post = Post.__send__(:build, {"id" => "1", "text" => "Hello", "author_id" => "9"}, client: @client, includes:)
     end
 

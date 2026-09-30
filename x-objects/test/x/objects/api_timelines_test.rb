@@ -5,9 +5,9 @@ require_relative "../../test_helper"
 module X
   module Objects
     class APITimelinesTest < Minitest::Test
-      cover Objects::Lookups
+      cover Objects.const_get(:Lookups)
       cover Post
-      cover Objects::PostSearch
+      cover Objects.const_get(:PostSearch)
 
       def setup
         @client = FakeClient.new

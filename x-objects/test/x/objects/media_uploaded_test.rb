@@ -29,7 +29,7 @@ module X
     end
 
     def test_from_id_in_batch_refers_to_what_an_upload_returned_by_its_media_key
-      batch = Objects::Batch.new(Media, [KEY], client: @client)
+      batch = Objects.const_get(:Batch).new(Media, [KEY], client: @client)
       stub = Media.__send__(:from_id_in_batch, @uploaded, client: @client, batch:)
 
       assert_equal [KEY, false], [stub.id, stub.hydrated?]

@@ -14,7 +14,7 @@ module X
     # @example Print how many requests remain in each window
     #   error.rate_limits.each { |limit| puts "#{limit.type}: #{limit.remaining}" }
     def rate_limits
-      @rate_limits ||= RateLimit.all_from(http_response)
+      @rate_limits ||= RateLimit.__send__(:all_from, http_response)
     end
 
     # The 15-minute rate limit of the endpoint, which nearly every response reports

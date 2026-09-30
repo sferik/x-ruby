@@ -64,10 +64,9 @@ module X
       @client = Client.new(max_retries: 1)
       stub_request(:post, METADATA_URL).to_return({status: 503}, {headers: JSON_HEADERS, body: {data: {id: "7"}}.to_json})
 
-      build = Core::RetryHandler.method(:new)
-      without_sleeping = ->(**options) { build.call(**options).tap { |handler| handler.define_singleton_method(:sleep) { |_seconds| nil } } }
+      retrying_without_waiting(@client)
 
-      assert_equal 7, Core::RetryHandler.stub(:new, without_sleeping) { Uploader::Metadata.add_alt_text(7, "A cat", client: @client) }.id
+      assert_equal 7, Uploader::Metadata.add_alt_text(7, "A cat", client: @client).id
       assert_requested :post, METADATA_URL, times: 2
     end
 

@@ -5,8 +5,8 @@ require_relative "../../test_helper"
 module X
   class ResourceProblemsTest < Minitest::Test
     cover Resource
-    cover Objects::Attributes
-    cover Objects::Includes
+    cover Objects.const_get(:Attributes)
+    cover Objects.const_get(:Includes)
     cover Post
     cover DirectMessage
 
@@ -99,12 +99,16 @@ module X
     def test_the_references_a_class_declares_name_the_problems_of_its_resources
       problems = [{"title" => "Owner", "resource_id" => "3"}, {"title" => "Member", "value" => "4"}, {"title" => "Other", "resource_id" => "5"},
         {"title" => "Named twice", "resource_id" => "6", "value" => "sferik"}]
+      includes = Objects.const_get(:Includes)
       widget = widget_class.__send__(:build, {"id" => "1", "owner_tweet_id" => "3", "meta" => {"member_ids" => %w[4 6]}},
-        includes: Objects::Includes.new(problems: problems.map { |problem| Problem.new(problem) }))
+        includes: includes.new(problems: problems.map { |problem| Problem.new(problem) }))
 
       assert_equal [nil, "3", "4", "6"], widget.class.__send__(:referenced_ids, widget.attrs)
       assert_equal ["Owner", "Member", "Named twice"], widget.problems.map(&:title)
-      assert_predicate Objects::Includes.new(problems: [Problem.new({})]).problems, :frozen?
+    end
+
+    def test_the_problems_the_includes_of_a_response_hold_are_frozen
+      assert_predicate Objects.const_get(:Includes).new(problems: [Problem.new({})]).problems, :frozen?
     end
 
     def test_identifiers_the_attributes_hold_as_numbers
@@ -117,7 +121,7 @@ module X
 
       assert_equal [%w[owner_id], %w[owner_tweet_id], %w[meta member_ids]], klass.__send__(:reference_keys)
       assert_equal [*klass.__send__(:reference_keys), %w[parent_id]], subclass.__send__(:reference_keys)
-      assert_empty Class.new { extend Objects::Attributes }.__send__(:reference_keys)
+      assert_empty Class.new { extend Objects.const_get(:Attributes) }.__send__(:reference_keys)
     end
 
     def test_the_keys_of_the_references_of_a_class
@@ -130,7 +134,7 @@ module X
   end
 
   class ResourceProblemValuesTest < Minitest::Test
-    cover Objects::Includes
+    cover Objects.const_get(:Includes)
 
     def details(resources) = resources.map { |resource| resource.problems.map(&:title) }
 

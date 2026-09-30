@@ -272,5 +272,6 @@ module X
         body.to_h.dig("data", state).eql?(false)
       end
     end
+    private_constant :Relationships
   end
 end

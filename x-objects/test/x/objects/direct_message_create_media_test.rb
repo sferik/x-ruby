@@ -5,9 +5,9 @@ require_relative "../../test_helper"
 module X
   class DirectMessageCreateMediaTest < Minitest::Test
     cover DirectMessage
-    cover Objects::DirectMessageConversations
-    cover Objects::Utils
-    cover Objects::MediaIds
+    cover Objects.const_get(:DirectMessageConversations)
+    cover Objects.const_get(:Utils)
+    cover Objects.const_get(:MediaIds)
 
     def setup
       @client = FakeClient.new

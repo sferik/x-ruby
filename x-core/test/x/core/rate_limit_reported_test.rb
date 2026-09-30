@@ -11,9 +11,9 @@ module X
     FULL = {"x-rate-limit-limit" => "50", "x-rate-limit-remaining" => "0", "x-rate-limit-reset" => "1"}.freeze
 
     def test_a_rate_limit_is_reported_only_with_all_three_headers
-      assert RateLimit.reported?("rate-limit", FULL)
-      FULL.each_key { |header| refute RateLimit.reported?("rate-limit", FULL.except(header)) }
-      refute RateLimit.reported?("app-limit-24hour", FULL)
+      assert RateLimit.__send__(:reported?, "rate-limit", FULL)
+      FULL.each_key { |header| refute RateLimit.__send__(:reported?, "rate-limit", FULL.except(header)) }
+      refute RateLimit.__send__(:reported?, "app-limit-24hour", FULL)
     end
 
     def test_an_exhausted_limit_without_a_reset_time_is_left_out
@@ -29,7 +29,7 @@ module X
         "x-user-limit-24hour-reset" => "2"))
 
       assert_equal [["rate-limit", 0], ["user-limit-24hour", 5]],
-        RateLimit.all_from(http_response).map { |limit| [limit.type, limit.remaining] }
+        RateLimit.__send__(:all_from, http_response).map { |limit| [limit.type, limit.remaining] }
     end
 
     def test_a_summary_leaves_out_a_limit_without_every_header
@@ -39,7 +39,7 @@ module X
     end
 
     def test_a_rate_limit_is_read_in_base_10
-      limit = RateLimit.all_from(response("x-rate-limit-limit" => "050", "x-rate-limit-remaining" => "010", "x-rate-limit-reset" => "0100")).first
+      limit = RateLimit.__send__(:all_from, response("x-rate-limit-limit" => "050", "x-rate-limit-remaining" => "010", "x-rate-limit-reset" => "0100")).first
 
       assert_equal [50, 10, Time.at(100)], [limit.limit, limit.remaining, limit.reset_at]
     end
@@ -47,7 +47,7 @@ module X
     def test_a_rate_limit_whose_header_is_not_a_count_in_base_10_is_not_reported
       FULL.each_key do |header|
         ["0x10", "1e3", "-1", "", "later", "1\n2"].each do |value|
-          refute RateLimit.reported?("rate-limit", FULL.merge(header => value)), "#{header}: #{value.inspect}"
+          refute RateLimit.__send__(:reported?, "rate-limit", FULL.merge(header => value)), "#{header}: #{value.inspect}"
         end
       end
     end

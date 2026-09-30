@@ -7,13 +7,13 @@ require_relative "serialization_test"
 module X
   # YAML writes a resource and a page as the plain data Marshal writes, without a client, and refuses a cursor
   class YAMLTest < Minitest::Test
-    cover Objects::Marshalling
+    cover Objects.const_get(:Marshalling)
     cover Page
     cover Cursor
 
     def setup
       @client = SerializationTest::CredentialedClient.new
-      includes = Objects::Includes.new({"users" => [{"id" => "9", "username" => "sferik"}]})
+      includes = Objects.const_get(:Includes).new({"users" => [{"id" => "9", "username" => "sferik"}]})
       @post = Post.__send__(:build, {"id" => "1", "text" => "Hello", "author_id" => "9"}, client: @client, includes:)
     end
 

@@ -6,8 +6,8 @@ module X
   module Objects
     class ResourceIdentityTest < Minitest::Test
       cover Resource
-      cover Objects::Finders
-      cover Objects::BatchFinders
+      cover Objects.const_get(:Finders)
+      cover Objects.const_get(:BatchFinders)
       cover Identity
 
       def setup

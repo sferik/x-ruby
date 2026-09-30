@@ -89,7 +89,7 @@ module X
     # @return [Array<RateLimit>] the 15-minute limit, and the 24-hour app and user limits when reported
     # @example Print how many requests remain in each window
     #   response.rate_limits.each { |limit| puts "#{limit.type}: #{limit.remaining}" }
-    def rate_limits = RateLimit.all_from(http_response)
+    def rate_limits = RateLimit.__send__(:all_from, http_response)
 
     # The 15-minute rate limit of the endpoint, which nearly every response reports
     #

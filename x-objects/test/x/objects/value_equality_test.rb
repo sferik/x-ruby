@@ -6,7 +6,7 @@ module X
   # A trend, a personalized trend, and the usage of a project have no identifier, so each equals another of its
   # class that holds the same attributes
   class ValueEqualityTest < Minitest::Test
-    cover Objects::ValueEquality
+    cover Objects.const_get(:ValueEquality)
 
     def test_objects_of_the_same_attributes_are_equal_and_share_a_hash
       [Trend, PersonalizedTrend, Usage].each do |klass|

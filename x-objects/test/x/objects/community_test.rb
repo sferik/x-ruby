@@ -5,8 +5,8 @@ require_relative "../../test_helper"
 module X
   class CommunityTest < Minitest::Test
     cover Community
-    cover Objects::Finders
-    cover Objects::BatchFinders
+    cover Objects.const_get(:Finders)
+    cover Objects.const_get(:BatchFinders)
 
     def setup
       @client = FakeClient.new

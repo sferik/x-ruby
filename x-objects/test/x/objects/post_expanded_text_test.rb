@@ -78,7 +78,7 @@ module X
     end
 
     def test_expanded_text_uses_only_the_links_of_the_post_itself
-      includes = Objects::Includes.new({"posts" => [{"id" => "2", "text" => "See https://t.co/abc", "entities" => {"urls" => [LINK]}}]})
+      includes = Objects.const_get(:Includes).new({"posts" => [{"id" => "2", "text" => "See https://t.co/abc", "entities" => {"urls" => [LINK]}}]})
       post = Post.__send__(:build, {"id" => "1", "text" => "RT @sferik: See https://t.co/abc", "referenced_posts" => [{"type" => "reposted", "id" => "2"}]}, includes:)
 
       assert_equal "RT @sferik: See https://t.co/abc", post.expanded_text

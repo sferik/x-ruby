@@ -5,8 +5,8 @@ require_relative "../../test_helper"
 module X
   module Objects
     class APILookupTest < Minitest::Test
-      cover Objects::Lookups
-      cover Objects::PostSearch
+      cover Objects.const_get(:Lookups)
+      cover Objects.const_get(:PostSearch)
 
       def setup
         @client = FakeClient.new
@@ -116,7 +116,7 @@ module X
 
     # The lookups of media, which the API takes the media keys of rather than identifiers
     class APIMediaLookupTest < Minitest::Test
-      cover Objects::Lookups
+      cover Objects.const_get(:Lookups)
 
       def setup
         @client = FakeClient.new

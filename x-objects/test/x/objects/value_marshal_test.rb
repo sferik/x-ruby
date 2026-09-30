@@ -6,7 +6,7 @@ module X
   # Marshal writes a trend, the usage of a project, and a rule a post matched as plain data, led by the number of their
   # format, and reads each back deep-frozen, as it was built
   class ValueMarshalTest < Minitest::Test
-    cover Objects::ValueMarshalling
+    cover Objects.const_get(:ValueMarshalling)
     cover Trend
     cover PersonalizedTrend
     cover Usage

@@ -5,7 +5,7 @@ require_relative "../../test_helper"
 module X
   # A cursor that prefetches starts a thread for a page only when no page is fetched there, and no thread is fetching it
   class CursorPrefetchThreadsTest < Minitest::Test
-    cover Objects::Pages
+    cover Objects.const_get(:Pages)
 
     def setup
       @client = FakeClient.new
@@ -48,7 +48,7 @@ module X
     end
 
     def test_a_page_is_claimed_once_until_it_is_let_go
-      pages = Objects::Pages.new(@cursor)
+      pages = Objects.const_get(:Pages).new(@cursor)
       claims = Array.new(2) { pages.__send__(:claim, 1) }
       pages.at(0)
 
@@ -56,7 +56,7 @@ module X
     end
 
     def test_a_page_is_claimed_and_let_go_holding_the_lock_of_the_pages
-      pages = Objects::Pages.new(@cursor)
+      pages = Objects.const_get(:Pages).new(@cursor)
       [-> { pages.__send__(:claim, 1) }, -> { pages.__send__(:let_go, 1) }].each do |step|
         running = nil
         pages.instance_variable_get(:@monitor).synchronize do

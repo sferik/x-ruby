@@ -5,7 +5,7 @@ require_relative "../../test_helper"
 module X
   class CursorTest < Minitest::Test
     cover Cursor
-    cover Objects::Pages
+    cover Objects.const_get(:Pages)
 
     def setup
       @client = FakeClient.new
@@ -37,7 +37,7 @@ module X
     def test_params_default_to_resource_defaults
       cursor = Cursor.__send__(:build, User, "users/1/followers", client: @client)
 
-      assert_equal Objects::Utils.query(User.default_params), cursor.params
+      assert_equal Objects.const_get(:Utils).query(User.default_params), cursor.params
     end
 
     def test_params_override_defaults

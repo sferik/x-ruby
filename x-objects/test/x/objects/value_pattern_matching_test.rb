@@ -8,7 +8,7 @@ module X
     cover Trend
     cover PersonalizedTrend
     cover Usage
-    cover Objects::Utils
+    cover Objects.const_get(:Utils)
 
     def setup
       @trend = Trend.new({"trend_name" => "#ruby", "tweet_count" => "1234"})

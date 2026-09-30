@@ -336,5 +336,6 @@ module X
         Time.iso8601(value.to_s) unless value.nil?
       end
     end
+    private_constant :Utils
   end
 end

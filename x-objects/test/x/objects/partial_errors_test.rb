@@ -10,10 +10,10 @@ module X
       cover Resource
       cover Includes
       cover Cursor
-      cover Objects::Pages
-      cover Objects::Lookups
+      cover Objects.const_get(:Pages)
+      cover Objects.const_get(:Lookups)
       cover X::User
-      cover X::Objects::UserFinders
+      cover X::Objects.const_get(:UserFinders)
       cover X::Page
 
       PINNED_MISSING = {"title" => "Not Found Error", "detail" => "Could not find tweet with pinned_tweet_id: [9].", "type" => "https://api.x.com/2/problems/resource-not-found", "resource_type" => "tweet", "resource_id" => "9", "parameter" => "pinned_tweet_id", "value" => "9"}.freeze

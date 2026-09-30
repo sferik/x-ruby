@@ -4,13 +4,13 @@ require_relative "../../test_helper"
 
 module X
   class IncludedHydrationTest < Minitest::Test
-    cover Objects::Includes
+    cover Objects.const_get(:Includes)
     cover Resource
     cover Poll
     cover Place
-    cover Objects::Pages
-    cover Objects::Finders
-    cover Objects::BatchFinders
+    cover Objects.const_get(:Pages)
+    cover Objects.const_get(:Finders)
+    cover Objects.const_get(:BatchFinders)
 
     POST = {"id" => "1", "text" => "hi", "author_id" => "9", "geo" => {"place_id" => "p1"},
             "attachments" => {"media_keys" => ["3_1"], "poll_ids" => ["7", "8"]},
@@ -74,7 +74,7 @@ module X
 
     def test_the_query_of_the_includes_is_a_frozen_copy
       query = {"poll.fields" => Poll::FIELDS.join(",")}
-      includes = Objects::Includes.new(INCLUDES, query:)
+      includes = Objects.const_get(:Includes).new(INCLUDES, query:)
       query["poll.fields"] = "id"
 
       assert_predicate includes.resolve(Poll, "7", client: @client), :hydrated?

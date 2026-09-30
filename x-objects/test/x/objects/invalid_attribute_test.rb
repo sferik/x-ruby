@@ -6,8 +6,8 @@ module X
   # A value of a response that cannot be read as what the API documents it to be raises InvalidAttribute, an
   # X::Error, where it is read, and the same value passed by a caller raises ArgumentError
   class InvalidAttributeTest < Minitest::Test
-    cover Objects::Attributes
-    cover Objects::Utils
+    cover Objects.const_get(:Attributes)
+    cover Objects.const_get(:Utils)
     cover Resource
     cover Usage
 

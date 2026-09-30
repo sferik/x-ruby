@@ -20,5 +20,6 @@ module X
     # @api private
     module Lookups
     end
+    private_constant :Lookups
   end
 end

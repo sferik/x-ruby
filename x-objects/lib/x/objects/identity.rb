@@ -62,5 +62,6 @@ module X
         names.to_h { |name| [name, public_send(name)] }
       end
     end
+    private_constant :Identity
   end
 end

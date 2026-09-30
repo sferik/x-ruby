@@ -6,8 +6,8 @@ module X
   # The text, entities, links, and referenced posts of a post, or of a message, that are not objects or lists where
   # the API documents them to be raise InvalidAttribute where they are read
   class InvalidShapePostTest < Minitest::Test
-    cover Objects::References
-    cover Objects::Shape
+    cover Objects.const_get(:References)
+    cover Objects.const_get(:Shape)
     cover DirectMessage
     cover Post
 

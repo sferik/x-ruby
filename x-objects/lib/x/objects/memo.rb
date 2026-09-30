@@ -49,5 +49,6 @@ module X
         @monitor.synchronize { @value = value }
       end
     end
+    private_constant :Memo
   end
 end

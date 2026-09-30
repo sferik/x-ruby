@@ -6,8 +6,8 @@ module X
   # A String of digits is an identifier to the finders that say so, as it is read from a response or an environment
   # variable, where find takes it for a username
   class UserFindByIdTest < Minitest::Test
-    cover X::Objects::UserFinders
-    cover X::Objects::Lookups
+    cover X::Objects.const_get(:UserFinders)
+    cover X::Objects.const_get(:Lookups)
 
     def setup
       @client = FakeClient.new
@@ -102,8 +102,8 @@ module X
     # The concurrency of each batch lookup the block made, in the order they were made
     def concurrencies_of
       given = []
-      original = Objects::Parallel.method(:map)
-      Objects::Parallel.stub(:map, ->(items, concurrency:, &block) { (given << concurrency) && original.call(items, concurrency:, &block) }) { yield }
+      original = Objects.const_get(:Parallel).method(:map)
+      Objects.const_get(:Parallel).stub(:map, ->(items, concurrency:, &block) { (given << concurrency) && original.call(items, concurrency:, &block) }) { yield }
       given
     end
   end

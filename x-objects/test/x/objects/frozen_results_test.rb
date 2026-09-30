@@ -6,10 +6,10 @@ module X
   # The resources a lookup or a cursor returns come in a frozen Array, as every collection the object layer holds does
   class FrozenResultsTest < Minitest::Test
     cover Cursor
-    cover Objects::Pages
-    cover Objects::Finders
-    cover Objects::BatchFinders
-    cover Objects::UserFinders
+    cover Objects.const_get(:Pages)
+    cover Objects.const_get(:Finders)
+    cover Objects.const_get(:BatchFinders)
+    cover Objects.const_get(:UserFinders)
 
     def setup
       @client = FakeClient.new

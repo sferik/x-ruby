@@ -61,5 +61,6 @@ module X
       alias_method :retweets, :reposts
       alias_method :quote_tweets, :quotes
     end
+    private_constant :PostCollections
   end
 end

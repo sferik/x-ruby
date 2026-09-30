@@ -5,8 +5,8 @@ require_relative "../../test_helper"
 module X
   class UserFindAllOrderTest < Minitest::Test
     cover User
-    cover Objects::UserCollections
-    cover X::Objects::UserFinders
+    cover Objects.const_get(:UserCollections)
+    cover X::Objects.const_get(:UserFinders)
 
     def setup
       @client = FakeClient.new

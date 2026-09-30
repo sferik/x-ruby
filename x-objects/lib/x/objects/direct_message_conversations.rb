@@ -135,5 +135,6 @@ module X
         resource_from_response({"data" => {"id" => data["dm_event_id"], "dm_conversation_id" => data["dm_conversation_id"]}}, client:)
       end
     end
+    private_constant :DirectMessageConversations
   end
 end

@@ -5,7 +5,7 @@ require_relative "../../test_helper"
 module X
   # What is built of attributes refuses attributes that are not a Hash where it is built, rather than from a reader
   class AttributesValidationTest < Minitest::Test
-    cover Objects::Utils
+    cover Objects.const_get(:Utils)
     cover Resource
     cover Trend
     cover PersonalizedTrend

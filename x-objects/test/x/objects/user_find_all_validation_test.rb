@@ -5,7 +5,7 @@ require_relative "../../test_helper"
 module X
   # A lookup of users by identifier and username checks every username before it looks anything up
   class UserFindAllValidationTest < Minitest::Test
-    cover Objects::UserFinders
+    cover Objects.const_get(:UserFinders)
 
     def setup
       @client = FakeClient.new

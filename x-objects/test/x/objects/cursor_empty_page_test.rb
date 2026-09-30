@@ -5,7 +5,7 @@ require_relative "../../test_helper"
 module X
   class CursorEmptyPageTest < Minitest::Test
     cover Cursor
-    cover Objects::Pages
+    cover Objects.const_get(:Pages)
 
     def setup
       @client = FakeClient.new

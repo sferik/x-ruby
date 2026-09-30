@@ -5,7 +5,7 @@ require_relative "../../test_helper"
 module X
   class PostRepostsTest < Minitest::Test
     cover Post
-    cover Objects::PostCollections
+    cover Objects.const_get(:PostCollections)
 
     def setup
       @client = FakeClient.new

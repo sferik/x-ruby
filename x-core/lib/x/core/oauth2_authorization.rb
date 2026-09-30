@@ -287,7 +287,7 @@ module X
       code = SimpleOAuth::OAuth2::AuthorizationResponse.parse(query_of(callback), state:).code
       Core::TokenEndpoint.fetch(oauth2_client.authorization_code_request(code:, redirect_uri:, code_verifier:), connection:)
     rescue SimpleOAuth::OAuth2::Error => e
-      raise AuthorizationError.from(e, DEFAULT_ERROR_MESSAGE), cause: nil
+      raise AuthorizationError.__send__(:from, e, DEFAULT_ERROR_MESSAGE), cause: nil
     end
 
     # Pass the tokens of the exchange to the on_token_refresh of the client

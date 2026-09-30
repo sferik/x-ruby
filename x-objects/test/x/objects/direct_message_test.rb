@@ -8,7 +8,7 @@ module X
 
     def setup
       @client = FakeClient.new
-      includes = Objects::Includes.new({"users" => [{"id" => "9", "username" => "sferik"}, {"id" => "8"}],
+      includes = Objects.const_get(:Includes).new({"users" => [{"id" => "9", "username" => "sferik"}, {"id" => "8"}],
                                         "posts" => [{"id" => "5", "text" => "shared"}],
                                         "media" => [{"media_key" => "3_1"}]})
       @message = DirectMessage.__send__(:build, {"id" => "1", "text" => "hi", "event_type" => "MessageCreate",

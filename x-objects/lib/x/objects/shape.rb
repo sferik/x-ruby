@@ -93,5 +93,6 @@ module X
       # @raise [ArgumentError] if the value is not a list
       def list(value) = (Array.try_convert(value) || raise(ArgumentError, "#{value.inspect} is not a list") unless value.nil?)
     end
+    private_constant :Shape
   end
 end

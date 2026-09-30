@@ -4,8 +4,8 @@ require_relative "../../test_helper"
 
 module X
   class AppClientTest < Minitest::Test
-    cover Objects::Utils
-    cover Objects::PostCounts
+    cover Objects.const_get(:Utils)
+    cover Objects.const_get(:PostCounts)
     cover Usage
 
     # A client with an app-only client, as an X::Client that signs with OAuth 1.0a has
@@ -67,21 +67,21 @@ module X
     def test_a_space_endpoint_takes_the_app_only_client_of_a_client_that_has_one
       client = UserClient.new
 
-      assert_same client.app, Objects::Utils.space_client(client)
+      assert_same client.app, Objects.const_get(:Utils).space_client(client)
     end
 
     def test_a_space_endpoint_takes_a_client_that_cannot_authenticate_as_the_app_as_it_is
       client = FakeClient.new
       def client.app_only = raise(UnsupportedOperation, "no app credentials")
 
-      assert_same client, Objects::Utils.space_client(client)
+      assert_same client, Objects.const_get(:Utils).space_client(client)
     end
 
     def test_a_space_endpoint_raises_any_other_error_of_the_app_only_client
       client = FakeClient.new
       def client.app_only = raise(Error, "refused")
 
-      assert_raises(Error) { Objects::Utils.space_client(client) }
+      assert_raises(Error) { Objects.const_get(:Utils).space_client(client) }
     end
   end
 end

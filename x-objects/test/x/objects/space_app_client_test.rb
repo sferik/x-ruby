@@ -6,9 +6,9 @@ module X
   class SpaceAppClientTest < Minitest::Test
     cover Space
     cover Cursor
-    cover Objects::Finders
-    cover Objects::BatchFinders
-    cover Objects::Pages
+    cover Objects.const_get(:Finders)
+    cover Objects.const_get(:BatchFinders)
+    cover Objects.const_get(:Pages)
     cover Resource
 
     # A client with an app-only client, as an X::Client that signs with OAuth 1.0a has

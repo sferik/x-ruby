@@ -38,5 +38,6 @@ module X
         @memo.fetch { @klass.find_all(@ids, client: @client).to_h { |resource| [resource.id, resource] } }
       end
     end
+    private_constant :Batch
   end
 end

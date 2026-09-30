@@ -124,5 +124,6 @@ module X
         body
       end
     end
+    private_constant :Finders
   end
 end

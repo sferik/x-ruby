@@ -9,6 +9,15 @@ module X
       batch_key lookup lookup_all client_for attribute_names attribute_aliases reference_keys referenced_ids resource_built_from
       collection_built_from resource_from_response collection_from_response].freeze
 
+    INTERNAL_MODULES = %i[Actions Attributes Batch BatchFinders DirectMessageConversations Finders Identity Includes Lookups
+      Marshalling MediaIds Memo Pages Parallel PostCollections PostCounts PostSearch PostWrites PublishedCount References
+      Relationships Serialization Shape UserCollections UserFinders Utils ValueEquality ValueMarshalling].freeze
+
+    def test_the_internal_modules_of_x_objects_are_private_constants
+      assert_equal %i[API Error VERSION], Objects.constants.grep_v(/Test\z/).sort
+      INTERNAL_MODULES.each { |name| assert_raises(NameError, name.to_s) { Objects.module_eval("Objects::#{name}", __FILE__, __LINE__) } }
+    end
+
     def test_no_resource_class_reads_its_lookups_publicly
       [Resource, User, Post, List, DirectMessage, Space, Community, Media, Poll, Place].each do |klass|
         RESOURCE_METHODS.each { |name| refute_respond_to klass, name, "Expected #{klass}.#{name} to be private" }
@@ -40,9 +49,14 @@ module X
 
     def test_the_sizes_of_the_pages_a_resource_asks_for_are_private
       [-> { Community::MAX_RESULTS }, -> { DirectMessage::MAX_RESULTS }, -> { List::MAX_RESULTS }, -> { Space::MAX_RESULTS },
-        -> { Trend::MAX_TRENDS }, -> { User::MAX_SEARCH_RESULTS }, -> { User::MAX_RESULTS }, -> { Post::MAX_RESULTS },
-        -> { Objects::UserCollections::MAX_FOLLOW_RESULTS }, -> { Objects::PostSearch::MAX_ARCHIVE_RESULTS },
-        -> { Objects::PostCollections::MAX_RESULTS }, -> { Objects::DirectMessageConversations::MAX_RESULTS }].each do |constant|
+        -> { Trend::MAX_TRENDS }, -> { User::MAX_SEARCH_RESULTS }, -> { User::MAX_RESULTS }, -> { Post::MAX_RESULTS }].each do |constant|
+        assert_raises(NameError, &constant)
+      end
+    end
+
+    def test_the_sizes_of_the_pages_the_internals_ask_for_are_private
+      [-> { Objects.const_get(:UserCollections)::MAX_FOLLOW_RESULTS }, -> { Objects.const_get(:PostSearch)::MAX_ARCHIVE_RESULTS },
+        -> { Objects.const_get(:PostCollections)::MAX_RESULTS }, -> { Objects.const_get(:DirectMessageConversations)::MAX_RESULTS }].each do |constant|
         assert_raises(NameError, &constant)
       end
     end
@@ -66,21 +80,21 @@ module X
     end
 
     def test_the_counts_of_posts_name_their_endpoints_and_granularity_privately
-      assert_raises(NameError) { Objects::PostCounts::RECENT_ENDPOINT }
-      assert_raises(NameError) { Objects::PostCounts::ALL_ENDPOINT }
-      assert_raises(NameError) { Objects::PostCounts::DEFAULT_GRANULARITY }
+      assert_raises(NameError) { Objects.const_get(:PostCounts)::RECENT_ENDPOINT }
+      assert_raises(NameError) { Objects.const_get(:PostCounts)::ALL_ENDPOINT }
+      assert_raises(NameError) { Objects.const_get(:PostCounts)::DEFAULT_GRANULARITY }
     end
 
     def test_the_helpers_name_the_patterns_they_read_alone_privately
-      assert_raises(NameError) { Objects::Utils::RAW_ID }
-      assert_raises(NameError) { Objects::Utils::USERNAME }
-      assert_raises(NameError) { Objects::DirectMessageConversations::CONVERSATION_ID }
+      assert_raises(NameError) { Objects.const_get(:Utils)::RAW_ID }
+      assert_raises(NameError) { Objects.const_get(:Utils)::USERNAME }
+      assert_raises(NameError) { Objects.const_get(:DirectMessageConversations)::CONVERSATION_ID }
     end
 
     def test_the_internals_of_a_resource_name_their_constants_privately
-      assert_raises(NameError) { Objects::Memo::UNSET }
-      assert_raises(NameError) { Objects::Includes::TWEET_KEYS }
-      assert_raises(NameError) { Objects::Attributes::EMPTY_LIST }
+      assert_raises(NameError) { Objects.const_get(:Memo)::UNSET }
+      assert_raises(NameError) { Objects.const_get(:Includes)::TWEET_KEYS }
+      assert_raises(NameError) { Objects.const_get(:Attributes)::EMPTY_LIST }
     end
   end
 end

@@ -5,9 +5,9 @@ require_relative "../../test_helper"
 module X
   class CursorCacheTest < Minitest::Test
     cover Cursor
-    cover Objects::Pages
+    cover Objects.const_get(:Pages)
     cover User
-    cover Objects::UserCollections
+    cover Objects.const_get(:UserCollections)
 
     def setup
       @client = FakeClient.new

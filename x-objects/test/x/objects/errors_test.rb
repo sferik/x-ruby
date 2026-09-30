@@ -7,9 +7,9 @@ module X
     class ErrorsTest < Minitest::Test
       cover MissingResource
       cover Resource
-      cover Objects::Finders
-      cover Objects::BatchFinders
-      cover Objects::Lookups
+      cover Objects.const_get(:Finders)
+      cover Objects.const_get(:BatchFinders)
+      cover Objects.const_get(:Lookups)
 
       def setup
         @client = FakeClient.new

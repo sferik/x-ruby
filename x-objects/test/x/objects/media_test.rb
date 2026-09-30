@@ -95,7 +95,7 @@ module X
       client = FakeClient.new
       client.stub(:get, "media/3_1", {"data" => {"media_key" => "3_1", "alt_text" => "A cat"}})
       post = Post.__send__(:build, {"id" => "1", "attachments" => {"media_keys" => ["3_1"]}}, client:,
-        includes: Objects::Includes.new({"media" => [{"media_key" => "3_1", "type" => "photo"}]}))
+        includes: Objects.const_get(:Includes).new({"media" => [{"media_key" => "3_1", "type" => "photo"}]}))
       media = post.media.first
 
       assert_equal [false, nil, "A cat"], [media.hydrated?, media.alt_text, media.hydrate.alt_text]

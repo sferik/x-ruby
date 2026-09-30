@@ -8,7 +8,7 @@ module X
       cover BatchFinders
       cover UserFinders
       cover X::Media
-      cover Objects::Lookups
+      cover Objects.const_get(:Lookups)
 
       def setup
         @client = FakeClient.new

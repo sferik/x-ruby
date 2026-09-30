@@ -243,5 +243,6 @@ module X
       # @return [String] the normalized username
       def normalize(username) = Utils.username(username).downcase
     end
+    private_constant :UserFinders
   end
 end

@@ -40,15 +40,19 @@ module X
     # It is raised with the cause of the failure, rather than the failure, so that its cause is the error of x-core
     # it was raised in rescue of, such as the Unauthorized that led a client to refresh, and nil for none.
     #
+    # Internal to x-core: it takes an error of simple_oauth, whose type may change within 1.x, and is private, so the
+    # authenticators and OAuth2Authorization call it with __send__.
+    #
     # @api private
     # @param error [SimpleOAuth::OAuth2::Error] the failure
     # @param default_message [String] the message when X describes no reason
     # @return [AuthorizationError] a new instance
     # @example Raise the error of a refused refresh
-    #   raise X::AuthorizationError.from(error, "Token refresh failed")
+    #   raise X::AuthorizationError.__send__(:from, error, "Token refresh failed")
     def self.from(error, default_message)
       new(error.description || error.code || default_message, error_code: error.code, status: error.status)
     end
+    private_class_method :from
 
     # Initialize a new AuthorizationError
     #

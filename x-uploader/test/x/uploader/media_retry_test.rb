@@ -30,22 +30,10 @@ module X
       stub_request(:post, finalize_url).to_return(status: 201, headers: json_headers, body: {data: media_hash}.to_json)
     end
 
+    # Upload with a client whose backoff is cut short by nothing, recording its waits
     def perform_upload
-      Core::RetryHandler.stub(:new, retry_handler_recording_waits) do
-        Uploader::MediaUpload.chunked_upload(VIDEO_FILE, client: @client, media_category: Uploader::MediaUpload::TWEET_VIDEO)
-      end
-    end
-
-    # Build the retry handlers of the chunks with a backoff cut short by nothing, and record their waits
-    def retry_handler_recording_waits
-      waits = @waits
-      build = Core::RetryHandler.method(:new)
-      lambda do |**options|
-        build.call(**options).tap do |retry_handler|
-          retry_handler.define_singleton_method(:rand) { 0.0 }
-          retry_handler.define_singleton_method(:sleep) { |seconds| waits << seconds }
-        end
-      end
+      client = retrying_without_waiting(@client, @waits)
+      Uploader::MediaUpload.chunked_upload(VIDEO_FILE, client:, media_category: Uploader::MediaUpload::TWEET_VIDEO)
     end
 
     def with_thread_exceptions_suppressed

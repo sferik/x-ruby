@@ -17,5 +17,6 @@ module X
     # @api private
     module Actions
     end
+    private_constant :Actions
   end
 end

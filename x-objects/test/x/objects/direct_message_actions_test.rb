@@ -5,12 +5,12 @@ require_relative "../../test_helper"
 module X
   class DirectMessageActionsTest < Minitest::Test
     cover DirectMessage
-    cover Objects::Finders
-    cover Objects::BatchFinders
+    cover Objects.const_get(:Finders)
+    cover Objects.const_get(:BatchFinders)
 
     def setup
       @client = FakeClient.new
-      @includes = Objects::Includes.new({"users" => [{"id" => "9", "username" => "me"}, {"id" => "8", "username" => "friend"}]})
+      @includes = Objects.const_get(:Includes).new({"users" => [{"id" => "9", "username" => "me"}, {"id" => "8", "username" => "friend"}]})
     end
 
     def test_fields_key

@@ -187,5 +187,6 @@ module X
         (Array.try_convert(found) || [found]).map { |element| Hash.try_convert(element)&.[]("id") || element }
       end
     end
+    private_constant :Attributes
   end
 end

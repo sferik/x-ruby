@@ -5,11 +5,11 @@ require_relative "../../test_helper"
 module X
   class PostReferencesTest < Minitest::Test
     cover Post
-    cover Objects::PostCollections
+    cover Objects.const_get(:PostCollections)
 
     def setup
       @client = FakeClient.new
-      includes = Objects::Includes.new({"users" => [{"id" => "9", "username" => "sferik"}],
+      includes = Objects.const_get(:Includes).new({"users" => [{"id" => "9", "username" => "sferik"}],
                                         "media" => [{"media_key" => "3_1", "url" => "https://pbs.twimg.com/1.jpg"}],
                                         "polls" => [{"id" => "7", "voting_status" => "open"}],
                                         "places" => [{"id" => "p1", "name" => "SF"}]})

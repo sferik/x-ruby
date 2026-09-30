@@ -6,7 +6,7 @@ module X
   module Objects
     class ResourceHydrateAllTest < Minitest::Test
       cover Resource
-      cover Objects::BatchFinders
+      cover Objects.const_get(:BatchFinders)
 
       def setup
         @client = FakeClient.new

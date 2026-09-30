@@ -4,7 +4,7 @@ require_relative "../../test_helper"
 
 module X
   class DirectMessageConversationsTest < Minitest::Test
-    cover Objects::DirectMessageConversations
+    cover Objects.const_get(:DirectMessageConversations)
 
     SENT = {"data" => {"dm_conversation_id" => "1582838223204016129", "dm_event_id" => "2"}}.freeze
 

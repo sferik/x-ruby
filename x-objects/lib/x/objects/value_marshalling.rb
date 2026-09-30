@@ -54,5 +54,6 @@ module X
       # @return [void]
       def restore(attrs) = initialize(attrs) # steep:ignore UnexpectedPositionalArgument
     end
+    private_constant :ValueMarshalling
   end
 end

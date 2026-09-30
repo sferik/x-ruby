@@ -5,13 +5,13 @@ require_relative "../../test_helper"
 module X
   class CursorCountTest < Minitest::Test
     cover Cursor
-    cover Objects::Pages
+    cover Objects.const_get(:Pages)
     cover Resource
-    cover Objects::PublishedCount
+    cover Objects.const_get(:PublishedCount)
     cover List
     cover Post
     cover User
-    cover Objects::UserCollections
+    cover Objects.const_get(:UserCollections)
 
     def setup
       @client = FakeClient.new

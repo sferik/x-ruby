@@ -5,8 +5,8 @@ require_relative "../../test_helper"
 module X
   class RepeatedTokenTest < Minitest::Test
     cover Cursor
-    cover Objects::Pages
-    cover Objects::PostCounts
+    cover Objects.const_get(:Pages)
+    cover Objects.const_get(:PostCounts)
 
     # An API that names the tokens of its pages in turn, from none for the first page
     def paging(path, tokens)

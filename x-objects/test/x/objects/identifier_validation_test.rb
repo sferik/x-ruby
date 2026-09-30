@@ -4,12 +4,12 @@ require_relative "../../test_helper"
 
 module X
   class IdentifierValidationTest < Minitest::Test
-    cover Objects::Utils
+    cover Objects.const_get(:Utils)
     cover Resource
-    cover Objects::Finders
-    cover Objects::BatchFinders
-    cover Objects::Relationships
-    cover Objects::Actions::Relationships
+    cover Objects.const_get(:Finders)
+    cover Objects.const_get(:BatchFinders)
+    cover Objects.const_get(:Relationships)
+    cover Objects.const_get(:Actions)::Relationships
 
     MESSAGE = "\"sferik\" is not an identifier: pass X::User, an Integer, or a String of digits"
 
@@ -18,20 +18,20 @@ module X
     end
 
     def test_an_identifier_of_digits
-      assert_equal %w[7505382 7505382 7505382], [7_505_382, "7505382", User.new({"id" => "7505382"})].map { |value| Objects::Utils.id_of(value, User) }
+      assert_equal %w[7505382 7505382 7505382], [7_505_382, "7505382", User.new({"id" => "7505382"})].map { |value| Objects.const_get(:Utils).id_of(value, User) }
     end
 
     def test_a_value_that_is_not_a_number_is_refused
-      error = assert_raises(ArgumentError) { Objects::Utils.id_of("sferik", User) }
+      error = assert_raises(ArgumentError) { Objects.const_get(:Utils).id_of("sferik", User) }
 
       assert_equal MESSAGE, error.message
-      assert_raises(ArgumentError) { Objects::Utils.id_of("12a", User) }
-      assert_raises(ArgumentError) { Objects::Utils.id_of("a12", User) }
-      assert_raises(ArgumentError) { Objects::Utils.id_of("", User) }
+      assert_raises(ArgumentError) { Objects.const_get(:Utils).id_of("12a", User) }
+      assert_raises(ArgumentError) { Objects.const_get(:Utils).id_of("a12", User) }
+      assert_raises(ArgumentError) { Objects.const_get(:Utils).id_of("", User) }
     end
 
     def test_a_raw_identifier_is_taken_as_it_is
-      assert_equal "1DXxyRYNejbKM", Objects::Utils.id_of("1DXxyRYNejbKM", Space)
+      assert_equal "1DXxyRYNejbKM", Objects.const_get(:Utils).id_of("1DXxyRYNejbKM", Space)
     end
 
     def test_from_id_refuses_a_username
