@@ -6,6 +6,7 @@ require "x/uploader/media_upload"
 module X
   class MediaTest < Minitest::Test
     cover Uploader::MediaUpload
+    cover Uploader.const_get(:Utils)
 
     UPLOAD_URL = "https://api.x.com/2/media/upload"
     SAMPLE_BINARY_CONTENT = "\x89PNG\r\n\x1A\n\x00\x00\x00...".b.freeze
@@ -31,38 +32,18 @@ module X
       assert_equal TEST_MEDIA_ID, response["id"]
     end
 
-    def test_upload_binary_sends_content_directly
+    def test_upload_sends_content_held_in_memory_in_a_single_request
       stub_upload_request
-      response = Uploader::MediaUpload.upload_binary(
-        SAMPLE_BINARY_CONTENT,
-        client: @client,
-        media_category: Uploader::MediaUpload::TWEET_IMAGE
-      )
+      response = Uploader::MediaUpload.upload(StringIO.new(SAMPLE_BINARY_CONTENT), client: @client, media_category: Uploader::MediaUpload::TWEET_IMAGE)
 
       assert_equal TEST_MEDIA_ID, response["id"]
     end
 
-    def test_upload_binary_refuses_amplify_video_before_a_request
-      error = assert_raises(ArgumentError) { Uploader::MediaUpload.upload_binary("data", client: @client, media_category: :amplify_video) }
-
-      assert_equal "amplify_video uploads in chunks alone: pass the file to upload or chunked_upload", error.message
-      assert_not_requested :post, "https://api.x.com/2/media/upload"
-    end
-
-    def test_upload_binary_refuses_every_category_the_api_takes_in_chunks_alone_before_a_request
-      messages = %w[TWEET_VIDEO dm_video subtitles].map do |media_category|
-        assert_raises(ArgumentError) { Uploader::MediaUpload.upload_binary("data", client: @client, media_category:) }.message
-      end
-
-      assert_equal %w[tweet_video dm_video subtitles].map { |category| "#{category} uploads in chunks alone: pass the file to upload or chunked_upload" }, messages
-      assert_not_requested :post, "https://api.x.com/2/media/upload"
-    end
-
-    def test_upload_binary_raises_for_an_empty_response
+    def test_upload_of_content_held_in_memory_raises_for_an_empty_response
       stub_request(:post, UPLOAD_URL).to_return(status: 204)
 
       assert_raises(MissingMediaData) do
-        Uploader::MediaUpload.upload_binary(SAMPLE_BINARY_CONTENT, client: @client, media_category: Uploader::MediaUpload::TWEET_IMAGE)
+        Uploader::MediaUpload.upload(StringIO.new(SAMPLE_BINARY_CONTENT), client: @client, media_category: Uploader::MediaUpload::TWEET_IMAGE)
       end
     end
 

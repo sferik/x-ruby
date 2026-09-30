@@ -43,7 +43,6 @@ module X
       extend MediaUpload
 
       def upload: (uploadable media, client: ::X::Client, ?media_category: (String | Symbol)?, ?alt_text: String?, ?processing_timeout: Float | Integer, ?media_type: String?, ?chunk_size: Integer?, ?concurrency: Integer) -> UploadedMedia
-      def upload_binary: (String content, client: ::X::Client, media_category: String | Symbol) -> UploadedMedia
       def chunked_upload: (uploadable media, client: ::X::Client, ?media_category: (String | Symbol)?, ?media_type: String?, ?chunk_size: Integer?, ?concurrency: Integer) -> UploadedMedia
       def await_processing: (media media, client: ::X::Client, ?processing_timeout: Float | Integer) -> UploadedMedia
       def await_processing!: (media media, client: ::X::Client, ?processing_timeout: Float | Integer) -> UploadedMedia

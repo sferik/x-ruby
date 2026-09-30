@@ -117,27 +117,6 @@ module X
         raise InvalidMedia, "#{source.description} is #{source.size} bytes, more than the #{limit} bytes the API takes of #{media_category} media"
       end
 
-      # Validate media to upload in a single request
-      #
-      # Media that holds nothing, or more than the API takes of its category or in a single request, would be refused,
-      # so it raises before the request. A GIF of more than a single request takes, which the API takes in chunks,
-      # raises too, naming the methods that upload it in chunks.
-      #
-      # @api private
-      # @param source [Source] the media to upload
-      # @param media_category [String] the media category, in lowercase
-      # @return [void]
-      # @raise [InvalidMedia] if the media is empty, or larger than the API takes of its category or in a single request
-      # @example Validate an image to upload in a single request
-      #   Uploader::Validator.validate_single_request!(source, "tweet_image")
-      def validate_single_request!(source, media_category)
-        validate_source!(source)
-        validate_size!(source, media_category)
-        return if source.size <= MAX_SIMPLE_UPLOAD_BYTES
-
-        raise InvalidMedia, "#{source.description} is #{source.size} bytes, more than the #{MAX_SIMPLE_UPLOAD_BYTES} bytes the API takes in a single request: pass it to upload or chunked_upload"
-      end
-
       # Validate that the media exists, and that it holds something to upload
       #
       # Empty media would initialize an upload in chunks and finalize it without a chunk, or send a single request

@@ -94,6 +94,7 @@ module X
       def uploaded_media: (media media) -> UploadedMedia
       def described: (Hash[String, untyped]? response, media media) -> UploadedMedia
       def media_data: (Hash[String, untyped]? response, String description) -> Hash[String, untyped]
+      def single_request: (::X::Client client, String content, String media_category) -> UploadedMedia
       def identified?: (Hash[String, untyped] media) -> bool
       def subtitled_media_category: (String | Symbol media_category) -> String
       def sending_again: [T] (::X::Client client) { () -> T } -> T
@@ -222,7 +223,6 @@ module X
       def validate_processing_timeout!: (untyped processing_timeout) -> nil
       def validate_segments!: (Source source, Integer? chunk_size) -> Integer
       def validate_size!: (Source source, String media_category) -> nil
-      def validate_single_request!: (Source source, String media_category) -> nil
       def validate_profile_image!: (Source source, Integer max_bytes, String use) -> nil
       def derived_chunk_size: (Integer file_size) -> Integer
     end

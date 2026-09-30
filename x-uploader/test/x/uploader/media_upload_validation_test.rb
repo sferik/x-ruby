@@ -92,9 +92,9 @@ module X
       assert_requested(:post, BASE_URL) { |request| request.body.include?("name=\"media_category\"\r\n\r\ntweet_image") }
     end
 
-    def test_upload_binary_takes_the_media_category_as_a_symbol
+    def test_a_single_request_takes_the_media_category_as_a_symbol
       stub_upload_request
-      Uploader::MediaUpload.upload_binary("GIF89a", client: @client, media_category: :TWEET_GIF)
+      Uploader::MediaUpload.upload(StringIO.new("GIF89a"), client: @client, media_category: :TWEET_GIF)
 
       assert_requested(:post, BASE_URL) { |request| request.body.include?("name=\"media_category\"\r\n\r\ntweet_gif") }
     end

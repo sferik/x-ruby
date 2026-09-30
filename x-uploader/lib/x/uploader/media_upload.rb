@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require "json"
-require "securerandom"
 require "x/core"
 require_relative "alt_text_failed"
 require_relative "chunked_upload_failed"
@@ -13,7 +12,6 @@ require_relative "json_classes"
 require_relative "media_processing_failed"
 require_relative "media_processing_timeout"
 require_relative "metadata"
-require_relative "multipart"
 require_relative "signature"
 require_relative "source"
 require_relative "uploaded_media"
@@ -182,40 +180,11 @@ module X
           # The media is passed on as the Source it was resolved to, which the signatures keep out of what media is
           chunked_upload(_ = source, client:, media_category:, media_type:, chunk_size:, concurrency:)
         else
-          upload_binary(Inference.single_request!(source, media_category), client:, media_category:)
+          Utils.single_request(client, Inference.single_request!(source, media_category), media_category)
         end
         uploaded = Utils.processed!(uploaded.processing? ? MediaProcessingCheckFailed.__send__(:keeping, uploaded) { await_processing(uploaded, client:, processing_timeout:) } : uploaded)
         AltTextFailed.__send__(:keeping, uploaded) { Metadata.add_alt_text(uploaded, alt_text, client:) } unless alt_text.nil?
         uploaded
-      end
-
-      # Upload binary content to the X API
-      #
-      # @api public
-      # @param content [String] the binary content to upload
-      # @param client [Client] the X API client
-      # @param media_category [String, Symbol] the media category, which content cannot be inferred from, in any case
-      # @return [UploadedMedia] the uploaded media, which holds the upload response
-      # @raise [ArgumentError] if the media category is invalid, or is that of a video or subtitles, which the API
-      #   takes in chunks alone
-      # @raise [InvalidMedia] if the content is empty, or larger than the API takes of its category or in a single
-      #   request, which takes 5 megabytes, so that a larger GIF uploads with upload or chunked_upload
-      # @raise [InvalidMediaType] if the signature of the content names a type the category does not take, or names
-      #   none for a GIF category; content no signature names is sent for an image category, for the API to type
-      # @raise [MissingMediaData] if the response holds no media, or carries no body at all
-      # @example Upload binary content
-      #   Uploader::MediaUpload.upload_binary(data, client: client, media_category: "tweet_image")
-      def upload_binary(content, client:, media_category:)
-        media_category = Validator.validate_media_category!(media_category)
-        raise ArgumentError, "#{media_category} uploads in chunks alone: pass the file to upload or chunked_upload" if CHUNKED_CATEGORIES.include?(media_category)
-
-        source = Source::Buffer.new(content)
-        Validator.validate_single_request!(source, media_category)
-        Inference.single_request!(source, media_category)
-
-        boundary = SecureRandom.hex
-        upload_body = Multipart.body("media", content, boundary:, media_category:)
-        UploadedMedia.new(Utils.media_data(client.post("media/upload", upload_body, headers: Multipart.headers(boundary), **JSON_CLASSES), "of the upload"))
       end
 
       # Perform a chunked upload for large files
@@ -421,8 +390,8 @@ module X
         # every GIF begins with its signature. Media of no known type is sent for an image category, since the API
         # types what a single request sends itself, and takes images, such as HEIC photos, no signature here names.
         #
-        # upload and upload_binary check what they send in a single request with it, upload by the name of the file
-        # as well as by its bytes, before it reads the whole of the media.
+        # upload checks what it sends in a single request with it, by the name of the file as well as by its bytes,
+        # before it reads the whole of the media.
         #
         # @api private
         # @param source [Source] the media

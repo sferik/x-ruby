@@ -9,6 +9,7 @@ module X
   class MediaRequestTest < Minitest::Test
     cover Uploader::MediaUpload
     cover Uploader.const_get(:Chunks)
+    cover Uploader.const_get(:Utils)
 
     UPLOAD_URL = "https://api.x.com/2/media/upload"
     CONTENT = "\x89PNG\r\n\x1A\n\x00\x00\x00...".b.freeze
@@ -23,8 +24,8 @@ module X
       end
     end
 
-    def test_upload_binary_body_and_headers
-      Uploader::MediaUpload.upload_binary(CONTENT, client: @client, media_category: "tweet_image")
+    def test_single_request_body_and_headers
+      Uploader::MediaUpload.upload(StringIO.new(CONTENT), client: @client, media_category: "tweet_image")
 
       assert_equal upload_body(CONTENT, "tweet_image", request_boundary), @request.body.b
     end
@@ -36,20 +37,20 @@ module X
     end
 
     def test_each_upload_has_a_boundary_of_its_own
-      Uploader::MediaUpload.upload_binary(CONTENT, client: @client, media_category: "tweet_image")
+      Uploader::MediaUpload.upload(StringIO.new(CONTENT), client: @client, media_category: "tweet_image")
       first = request_boundary
-      Uploader::MediaUpload.upload_binary(CONTENT, client: @client, media_category: "tweet_image")
+      Uploader::MediaUpload.upload(StringIO.new(CONTENT), client: @client, media_category: "tweet_image")
 
       refute_equal first, request_boundary
     end
 
-    def test_upload_binary_rejects_invalid_category_before_requesting
-      assert_raises(ArgumentError) { Uploader::MediaUpload.upload_binary(CONTENT, client: @client, media_category: "bogus") }
+    def test_a_single_request_rejects_invalid_category_before_requesting
+      assert_raises(ArgumentError) { Uploader::MediaUpload.upload(StringIO.new(CONTENT), client: @client, media_category: "bogus") }
       assert_not_requested(:post, UPLOAD_URL)
     end
 
-    def test_upload_binary_sends_the_media_category_in_lowercase
-      Uploader::MediaUpload.upload_binary(CONTENT, client: @client, media_category: "TWEET_Image")
+    def test_a_single_request_sends_the_media_category_in_lowercase
+      Uploader::MediaUpload.upload(StringIO.new(CONTENT), client: @client, media_category: "TWEET_Image")
 
       assert_equal upload_body(CONTENT, "tweet_image", request_boundary), @request.body.b
     end

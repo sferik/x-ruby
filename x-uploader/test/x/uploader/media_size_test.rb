@@ -41,32 +41,23 @@ module X
         assert_raises(InvalidMedia) { Uploader::MediaUpload.upload(path, client: @client) }
         assert_raises(InvalidMedia) { Uploader::MediaUpload.upload(path, client: @client, media_category: :dm_image) }
       end
-      assert_raises(InvalidMedia) { Uploader::MediaUpload.upload_binary("\x00".b * ((5 * MB) + 1), client: @client, media_category: "tweet_image") }
       assert_not_requested :any, /x\.com/
     end
 
-    def test_binary_content_larger_than_a_single_request_takes_uploads_nothing
-      gif = "GIF89a".b + ("\x00".b * ((5 * MB) - 5))
-      error = assert_raises(InvalidMedia) { Uploader::MediaUpload.upload_binary(gif, client: @client, media_category: :tweet_gif) }
-
-      assert_equal "the media given is #{(5 * MB) + 1} bytes, more than the #{5 * MB} bytes the API takes in a single request: pass it to upload or chunked_upload", error.message
-      assert_not_requested :any, /x\.com/
-    end
-
-    def test_binary_content_larger_than_the_api_takes_of_its_category_is_refused_for_that
-      error = assert_raises(InvalidMedia) { Uploader::MediaUpload.upload_binary("\x00".b * ((15 * MB) + 1), client: @client, media_category: :dm_gif) }
+    def test_content_held_in_memory_larger_than_the_api_takes_of_its_category_is_refused_for_that
+      error = assert_raises(InvalidMedia) { Uploader::MediaUpload.upload(StringIO.new("\x00".b * ((15 * MB) + 1)), client: @client, media_category: :dm_gif) }
 
       assert_equal "the media given is #{(15 * MB) + 1} bytes, more than the #{15 * MB} bytes the API takes of dm_gif media", error.message
     end
 
-    def test_binary_content_of_as_much_as_a_single_request_takes_uploads
+    def test_a_gif_held_in_memory_of_as_much_as_a_single_request_takes_uploads_in_one
       stub_request(:post, BASE_URL).to_return(headers: JSON_HEADERS, body: '{"data":{"id":"1"}}')
 
-      assert_equal 1, Uploader::MediaUpload.upload_binary("GIF89a".b.ljust(5 * MB, "\x00"), client: @client, media_category: :dm_gif).media_id
+      assert_equal 1, Uploader::MediaUpload.upload(StringIO.new("GIF89a".b.ljust(5 * MB, "\x00")), client: @client, media_category: :dm_gif).media_id
     end
 
-    def test_empty_binary_content_uploads_nothing
-      error = assert_raises(InvalidMedia) { Uploader::MediaUpload.upload_binary("", client: @client, media_category: :tweet_image) }
+    def test_empty_content_held_in_memory_uploads_nothing
+      error = assert_raises(InvalidMedia) { Uploader::MediaUpload.upload(StringIO.new(""), client: @client, media_category: :tweet_image) }
 
       assert_equal "the media given is empty: there is nothing to upload", error.message
       assert_not_requested :any, /x\.com/

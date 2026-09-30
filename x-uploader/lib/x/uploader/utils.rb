@@ -4,6 +4,7 @@ require "x/core"
 require_relative "media_processing_failed"
 require_relative "media_processing_timeout"
 require_relative "missing_media_data"
+require_relative "multipart"
 require_relative "uploaded_media"
 
 module X
@@ -182,6 +183,22 @@ module X
         return media if media && identified?(media)
 
         raise MissingMediaData.new(format(NO_MEDIA, description), problems: Problem.all_from(response))
+      end
+
+      # Upload media in a single request
+      #
+      # An image is uploaded so, as is a GIF a single request takes.
+      #
+      # @api private
+      # @param client [Client] the X API client
+      # @param content [String] the whole of the media, once its category is known to take it
+      # @param media_category [String] the media category, in lowercase
+      # @return [UploadedMedia] the uploaded media, which holds the upload response
+      # @raise [MissingMediaData] if the response holds no media, or carries no body at all
+      # @example Upload an image
+      #   Uploader::Utils.single_request(client, png, "tweet_image")
+      def single_request(client, content, media_category)
+        UploadedMedia.new(media_data(Multipart.post(client, "media/upload", "media", content, media_category:), "of the upload"))
       end
 
       # Check whether media the API answered with holds an identifier

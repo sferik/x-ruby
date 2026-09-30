@@ -49,15 +49,15 @@ module X
       assert_requested init.with(body: {media_type: "video/mp4", media_category: "tweet_video", total_bytes: PNG.bytesize}.to_json)
     end
 
-    def test_binary_content_of_a_type_its_category_does_not_take_is_refused_before_any_request
-      error = assert_raises(InvalidMediaType) { Uploader::MediaUpload.upload_binary(PNG, client: @client, media_category: "tweet_gif") }
+    def test_content_held_in_memory_of_a_type_its_category_does_not_take_is_refused_before_any_request
+      error = assert_raises(InvalidMediaType) { Uploader::MediaUpload.upload(StringIO.new(PNG), client: @client, media_category: "tweet_gif") }
 
       assert_match(/\Athe media given is image\/png, which tweet_gif media is not/, error.message)
       assert_not_requested :any, /x\.com/
     end
 
     def test_media_of_no_known_type_is_refused_as_a_gif
-      [-> { Uploader::MediaUpload.upload_binary("not a gif", client: @client, media_category: "dm_gif") },
+      [-> { Uploader::MediaUpload.upload(StringIO.new("not a gif"), client: @client, media_category: "dm_gif") },
         -> { Uploader::MediaUpload.upload(StringIO.new("not a gif"), client: @client, media_category: :TWEET_GIF) }].each do |upload|
         error = assert_raises(InvalidMediaType, &upload)
 
@@ -68,14 +68,14 @@ module X
 
     def test_media_of_no_known_type_uploads_as_an_image_the_api_types_itself
       heic = "\x00\x00\x00\x18ftypheic\x00\x00\x00\x00mif1heic".b
-      Uploader::MediaUpload.upload_binary(heic, client: @client, media_category: "tweet_image")
+      Uploader::MediaUpload.upload(StringIO.new(heic), client: @client, media_category: "tweet_image")
       Uploader::MediaUpload.upload(StringIO.new(heic), client: @client, media_category: "dm_image")
 
       assert_requested :post, BASE_URL, times: 2
     end
 
     def test_an_image_of_a_type_the_category_takes_uploads_in_a_single_request
-      Uploader::MediaUpload.upload_binary(File.binread("test/sample_files/sample_animated.gif"), client: @client, media_category: "tweet_gif")
+      Uploader::MediaUpload.upload(StringIO.new(File.binread("test/sample_files/sample_animated.gif")), client: @client, media_category: "tweet_gif")
       Uploader::MediaUpload.upload("test/sample_files/sample.gif", client: @client, media_category: "tweet_image")
 
       assert_requested :post, BASE_URL, times: 2
