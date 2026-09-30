@@ -76,7 +76,14 @@ module X
       end
 
       def test_media_id_of_a_response_without_an_id
-        assert_raises(KeyError) { MediaIds.media_id_of({"media_key" => "3_3"}) }
+        upload = Class.new { def fetch(key) = yield(key) }.new
+        upload.define_singleton_method(:inspect) { "#<upload>" }
+        [{"media_key" => "3_3"}, {id: "3"}, upload].each do |value|
+          error = assert_raises(ArgumentError, value.inspect) { MediaIds.media_id_of(value) }
+
+          assert_equal "media is what an upload returned, media such as X::Media, a media key, or a media identifier, not #{value.inspect}, " \
+            "which holds no \"id\"", error.message
+        end
       end
     end
   end

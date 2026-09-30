@@ -31,12 +31,13 @@ module X
       # @param value [#fetch, #media_key, String, Integer] what an upload returned, holding an id, media, a media key,
       #   or an identifier
       # @return [String] the media identifier
-      # @raise [ArgumentError] if the value is none of them, or names an identifier the API would refuse
+      # @raise [ArgumentError] if the value is none of them, such as a Hash without an "id", or names an identifier the
+      #   API would refuse
       def media_id_of(value)
         id = case value
         when String then value[MEDIA_KEY, 1] || value
         when Integer then value.to_s
-        else value.respond_to?(:fetch) ? value.fetch("id").to_s : media_key_id(value)
+        else value.respond_to?(:fetch) ? value.fetch("id") { raise ArgumentError, "#{format(NOT_MEDIA, value.inspect)}, which holds no \"id\"" }.to_s : media_key_id(value)
         end
         id.match?(MEDIA_ID) ? id : raise(ArgumentError, format(NOT_MEDIA, value.inspect))
       end
