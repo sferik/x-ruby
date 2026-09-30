@@ -26,7 +26,11 @@ module X
     #   user.followers.resource_class # => X::User
     attr_reader :resource_class
 
-    # The client the resources hold, which also fetches the pages unless app_only?
+    # The client the resources hold, which also fetches the pages
+    #
+    # The pages of an endpoint that refuses OAuth 1.0a, such as the posts of a space, are fetched with the app-only
+    # client of a client that signs with it, while the resources hold the client itself.
+    #
     # @api public
     # @return [Object] the client
     # @example Get the client

@@ -147,7 +147,7 @@ module X
       # {Resource#hydrated?}.
       #
       # @api public
-      # @return [Hash{String => String}] the default query parameters
+      # @return [Hash{String => Array<String>}] the default query parameters
       # @example Get the default parameters
       #   X::User.default_params
       def default_params = {}
