@@ -19,8 +19,9 @@ module X
         # @param user [User, String, Integer] the recipient or their identifier
         # @param text [String, nil] the text of the message, or nil for a message of attachments alone
         # @param params [Hash] additional request body fields, such as media_ids or attachments
-        # @option params [Array<String, Integer, #fetch>, String, Integer, #fetch] :media_ids the identifiers of
-        #   uploaded media to attach, or what the uploads returned, one or many
+        # @option params [Array<String, Integer, #fetch, Media>, String, Integer, #fetch, Media] :media_ids the
+        #   identifiers or media keys of uploaded media to attach, what the uploads returned, or media, such as that of
+        #   a post, one or many
         # @return [DirectMessage, nil] the sent message, holding only its identifiers
         # @raise [ArgumentError] if the message has neither text nor any other field, or has both media_ids and
         #   attachments
@@ -38,8 +39,9 @@ module X
         # @param users [Array<User, String, Integer>] the other participants or their identifiers
         # @param text [String, nil] the text of the first message, or nil for a message of attachments alone
         # @param params [Hash] additional fields of the message, such as media_ids or attachments
-        # @option params [Array<String, Integer, #fetch>, String, Integer, #fetch] :media_ids the identifiers of
-        #   uploaded media to attach, or what the uploads returned, one or many
+        # @option params [Array<String, Integer, #fetch, Media>, String, Integer, #fetch, Media] :media_ids the
+        #   identifiers or media keys of uploaded media to attach, what the uploads returned, or media, such as that of
+        #   a post, one or many
         # @return [DirectMessage, nil] the sent message, holding only its identifiers, among them the conversation's
         # @raise [ArgumentError] if the message has neither text nor any other field, or has both media_ids and
         #   attachments
@@ -59,8 +61,9 @@ module X
         # @param conversation [DirectMessage, String, Integer] a message of the conversation, or the conversation's identifier
         # @param text [String, nil] the text of the message, or nil for a message of attachments alone
         # @param params [Hash] additional request body fields, such as media_ids or attachments
-        # @option params [Array<String, Integer, #fetch>, String, Integer, #fetch] :media_ids the identifiers of
-        #   uploaded media to attach, or what the uploads returned, one or many
+        # @option params [Array<String, Integer, #fetch, Media>, String, Integer, #fetch, Media] :media_ids the
+        #   identifiers or media keys of uploaded media to attach, what the uploads returned, or media, such as that of
+        #   a post, one or many
         # @return [DirectMessage, nil] the sent message, holding only its identifiers
         # @raise [ArgumentError] if the conversation identifier is not one, the message has neither text nor any
         #   other field, or it has both media_ids and attachments
