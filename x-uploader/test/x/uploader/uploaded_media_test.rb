@@ -179,4 +179,22 @@ module X
       assert_equal JSON.pretty_generate({"media" => ATTRS}), JSON.pretty_generate({"media" => @media})
     end
   end
+
+  class UploadedMediaAttributesTest < Minitest::Test
+    cover UploadedMedia
+
+    def test_refuses_attributes_that_are_not_a_hash
+      ["x", nil, [["id", "7"]], 7].each do |attrs|
+        error = assert_raises(ArgumentError, attrs.inspect) { UploadedMedia.new(attrs) }
+
+        assert_equal "attrs must be a Hash, not #{attrs.inspect}", error.message
+      end
+    end
+
+    def test_takes_attributes_given_as_what_converts_to_a_hash
+      attrs = Struct.new(:attrs) { def to_hash = attrs }.new({"id" => "7"})
+
+      assert_equal({"id" => "7"}, UploadedMedia.new(attrs).attrs)
+    end
+  end
 end

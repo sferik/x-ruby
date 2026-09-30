@@ -37,6 +37,10 @@ module X
       assert_raises(UnsupportedMarshalFormat) { UploadedMedia.allocate.marshal_load(ATTRS) }
     end
 
+    def test_media_whose_attributes_are_not_a_hash_is_refused
+      assert_raises(ArgumentError) { UploadedMedia.allocate.marshal_load([1, "x"]) }
+    end
+
     def test_the_format_is_named_privately
       assert_raises(NameError) { UploadedMedia::MARSHAL_FORMAT }
     end

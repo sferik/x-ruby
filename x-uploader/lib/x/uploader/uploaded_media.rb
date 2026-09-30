@@ -49,10 +49,11 @@ module X
     # @api public
     # @param attrs [Hash{String => Object}] the data of an upload or status response
     # @return [UploadedMedia] a new, frozen instance
+    # @raise [ArgumentError] if the attributes are not a Hash
     # @example Refer to media that was uploaded before
     #   X::UploadedMedia.new({"id" => "1880028106020515840"})
     def initialize(attrs)
-      @attrs = deep_freeze(attrs)
+      @attrs = deep_freeze(Hash.try_convert(attrs) || raise(ArgumentError, "attrs must be a Hash, not #{attrs.inspect}"))
       freeze
     end
 
@@ -269,6 +270,7 @@ module X
     # @param state [Array] the state Marshal wrote
     # @return [void]
     # @raise [UnsupportedMarshalFormat] if the state is of a format this release does not read
+    # @raise [ArgumentError] if the attributes of the state are not a Hash
     # @example Read what an upload returned from a cache
     #   Marshal.load(Marshal.dump(media)).media_key
     def marshal_load(state)
