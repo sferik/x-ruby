@@ -7,7 +7,7 @@ module X
     cover_client
 
     def setup
-      @token_request = stub_request(:post, AppOnlyAuthenticator::TOKEN_URL)
+      @token_request = stub_request(:post, APP_ONLY_TOKEN_URL)
         .to_return(status: 200, body: {token_type: "bearer", access_token: TEST_BEARER_TOKEN}.to_json)
     end
 
@@ -21,7 +21,7 @@ module X
 
     def test_threads_that_ask_for_the_copy_together_get_one_copy_and_fetch_one_token
       WebMock.reset!
-      token_request = stub_request(:post, AppOnlyAuthenticator::TOKEN_URL).to_return do
+      token_request = stub_request(:post, APP_ONLY_TOKEN_URL).to_return do
         sleep 0.05
         {status: 200, body: {token_type: "bearer", access_token: TEST_BEARER_TOKEN}.to_json}
       end

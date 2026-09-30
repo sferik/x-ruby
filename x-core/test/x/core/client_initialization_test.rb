@@ -185,7 +185,7 @@ module X
     end
 
     def test_a_bearer_token_given_beside_the_api_key_is_sent_without_a_request
-      token_request = stub_request(:post, AppOnlyAuthenticator::TOKEN_URL)
+      token_request = stub_request(:post, APP_ONLY_TOKEN_URL)
       stub_request(:get, "https://api.x.com/2/tweets/1").with(headers: {"Authorization" => "Bearer GIVEN"})
       client = Client.new(api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET, bearer_token: "GIVEN")
       client.get("tweets/1")
@@ -195,12 +195,12 @@ module X
     end
 
     def test_requests_fetch_the_bearer_token
-      stub_request(:post, AppOnlyAuthenticator::TOKEN_URL).to_return(status: 200, body: {access_token: TEST_BEARER_TOKEN}.to_json)
+      stub_request(:post, APP_ONLY_TOKEN_URL).to_return(status: 200, body: {access_token: TEST_BEARER_TOKEN}.to_json)
       stub_request(:get, "https://api.x.com/2/tweets/1").with(headers: {"Authorization" => "Bearer #{TEST_BEARER_TOKEN}"})
       client = Client.new(api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET)
       2.times { client.get("tweets/1") }
 
-      assert_requested :post, AppOnlyAuthenticator::TOKEN_URL, times: 1
+      assert_requested :post, APP_ONLY_TOKEN_URL, times: 1
       assert_requested :get, "https://api.x.com/2/tweets/1", times: 2
     end
 

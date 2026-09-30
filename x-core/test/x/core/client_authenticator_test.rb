@@ -11,9 +11,9 @@ module X
     cover Core.const_get(:OAuth2Refresh)
 
     def setup
-      stub_request(:post, OAuth2Authenticator::TOKEN_URL)
+      stub_request(:post, OAUTH2_TOKEN_URL)
         .to_return(status: 200, body: {access_token: "NEW_ACCESS_TOKEN", refresh_token: "NEW_REFRESH_TOKEN", expires_in: 7200}.to_json)
-      @app_token_request = stub_request(:post, AppOnlyAuthenticator::TOKEN_URL)
+      @app_token_request = stub_request(:post, APP_ONLY_TOKEN_URL)
         .to_return(status: 200, body: {token_type: "bearer", access_token: TEST_BEARER_TOKEN}.to_json)
     end
 

@@ -11,7 +11,7 @@ module X
     POST_URL = "https://api.x.com/2/tweets/1"
 
     def setup
-      @token_request = stub_request(:post, AppOnlyAuthenticator::TOKEN_URL)
+      @token_request = stub_request(:post, APP_ONLY_TOKEN_URL)
         .to_return({status: 200, body: {access_token: "FIRST"}.to_json}, {status: 200, body: {access_token: "SECOND"}.to_json})
     end
 

@@ -23,7 +23,7 @@ module X
       TOKEN_URL = "https://api.x.com/oauth2/token"
       # The message raised when the token endpoint describes no reason for the failure
       DEFAULT_ERROR_MESSAGE = "Bearer token request failed"
-      private_constant :DEFAULT_ERROR_MESSAGE
+      private_constant :TOKEN_URL, :DEFAULT_ERROR_MESSAGE
 
       # The API key
       # @api public

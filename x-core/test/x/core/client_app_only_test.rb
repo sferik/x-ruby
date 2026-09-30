@@ -10,7 +10,7 @@ module X
     STREAM_URL = "https://api.x.com/2/tweets/sample/stream"
 
     def setup
-      @token_request = stub_request(:post, AppOnlyAuthenticator::TOKEN_URL)
+      @token_request = stub_request(:post, APP_ONLY_TOKEN_URL)
         .to_return(status: 200, body: {token_type: "bearer", access_token: TEST_BEARER_TOKEN}.to_json)
     end
 
@@ -49,7 +49,7 @@ module X
     def test_the_token_is_fetched_with_the_api_key_and_secret
       Client.new(**test_oauth_credentials).app_only
 
-      assert_requested :post, AppOnlyAuthenticator::TOKEN_URL,
+      assert_requested :post, APP_ONLY_TOKEN_URL,
         headers: {"Authorization" => "Basic #{["#{TEST_API_KEY}:#{TEST_API_KEY_SECRET}"].pack("m0")}"}
     end
 

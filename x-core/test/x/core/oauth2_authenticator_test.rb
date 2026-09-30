@@ -4,7 +4,7 @@ require "base64"
 require_relative "../../test_helper"
 
 module X
-  TOKEN_URL = OAuth2Authenticator::TOKEN_URL
+  TOKEN_URL = OAUTH2_TOKEN_URL
 
   class OAuth2AuthenticatorInitializationTest < Minitest::Test
     cover OAuth2Authenticator

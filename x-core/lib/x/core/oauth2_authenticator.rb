@@ -35,7 +35,7 @@ module X
       TOKEN_URL = "https://api.x.com/2/oauth2/token"
       # Buffer time in seconds to account for clock skew and network latency
       EXPIRATION_BUFFER = 30
-      private_constant :EXPIRATION_BUFFER
+      private_constant :TOKEN_URL, :EXPIRATION_BUFFER
       # The message raised for a refresh of an authenticator that holds no refresh token
       NO_REFRESH_TOKEN = "The authenticator holds no refresh token, which X issues only for an authorization with the " \
         "offline.access scope, so its access token cannot be refreshed. Ask the user to authorize the app again, with " \

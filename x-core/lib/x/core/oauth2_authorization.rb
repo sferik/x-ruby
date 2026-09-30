@@ -27,8 +27,10 @@ module X
 
       # The page that asks a user to authorize an app
       AUTHORIZATION_URL = "https://x.com/i/oauth2/authorize"
-      # The endpoint that exchanges an authorization code for tokens
-      TOKEN_URL = OAuth2Authenticator::TOKEN_URL
+      # The endpoint that exchanges an authorization code for tokens, at X, whose path is requested at the origin of
+      # the base URL of the authorization, or of the client it builds
+      TOKEN_URL = "https://api.x.com/2/oauth2/token"
+      private_constant :TOKEN_URL
       # The scopes that read posts and users, and keep a refresh token to act for the user after the access token expires
       DEFAULT_SCOPES = %w[tweet.read users.read offline.access].freeze
       # The number of random bytes in a generated state

@@ -9,7 +9,7 @@ module X
   class TokenEndpointAnswerTest < Minitest::Test
     cover Core.const_get(:TokenEndpoint)
 
-    TOKEN_URL = OAuth2Authenticator::TOKEN_URL
+    TOKEN_URL = OAUTH2_TOKEN_URL
     PAGE = {headers: {"Content-Type" => "text/html"}, body: "<html><body>Sign in to the network</body></html>"}.freeze
 
     def setup
@@ -76,7 +76,7 @@ module X
     end
 
     def test_the_bearer_token_of_an_app_raises_the_error_of_a_page_that_is_not_json
-      stub_request(:post, AppOnlyAuthenticator::TOKEN_URL).to_return(status: 403, **PAGE)
+      stub_request(:post, APP_ONLY_TOKEN_URL).to_return(status: 403, **PAGE)
 
       assert_raises(Forbidden) { AppOnlyAuthenticator.new(api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET).__send__(:bearer_token) }
     end

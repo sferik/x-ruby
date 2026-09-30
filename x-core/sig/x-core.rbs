@@ -36,7 +36,6 @@ module X
 
   class OAuth2Authorization
     AUTHORIZATION_URL: String
-    TOKEN_URL: String
     DEFAULT_SCOPES: Array[String]
 
     attr_reader client_id: String
@@ -70,7 +69,6 @@ module X
   end
 
   class AppOnlyAuthenticator < Authenticator
-    TOKEN_URL: String
 
     attr_reader api_key: String
     def initialize: (api_key: String, api_key_secret: String, ?bearer_token: String?) -> void
@@ -320,7 +318,6 @@ module X
   end
 
   class OAuth2Authenticator < Authenticator
-    TOKEN_URL: String
 
     attr_reader client_id: String
     attr_reader expires_at: Time?

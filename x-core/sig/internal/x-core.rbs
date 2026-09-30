@@ -570,6 +570,7 @@ module X
   class OAuth2Authorization
     include Core::CredentialHolder
 
+    TOKEN_URL: String
     STATE_BYTES: Integer
     DEFAULT_ERROR_MESSAGE: String
     INVALID_CALLBACK_MESSAGE: String
@@ -601,6 +602,7 @@ module X
   end
 
   class AppOnlyAuthenticator < Authenticator
+    TOKEN_URL: String
     DEFAULT_ERROR_MESSAGE: String
 
     @bearer_token: String?
@@ -759,6 +761,7 @@ module X
   class OAuth2Authenticator < Authenticator
     include Core::OAuth2Refresh
 
+    TOKEN_URL: String
     EXPIRATION_BUFFER: Integer
     NO_REFRESH_TOKEN: String
 

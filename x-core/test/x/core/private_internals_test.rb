@@ -32,6 +32,12 @@ module X
       assert_equal [:VERSION], Core.constants
     end
 
+    def test_the_token_endpoints_are_named_privately
+      [AppOnlyAuthenticator, OAuth2Authenticator, OAuth2Authorization].each do |klass|
+        assert_raises(NameError) { klass::TOKEN_URL }
+      end
+    end
+
     def test_an_internal_cannot_be_named
       %w[ClientInternals Connection RequestBuilder RetryHandler SettingValidator CallbackError].each do |name|
         assert_raises(NameError) { Core.module_eval("Core::#{name}", __FILE__, __LINE__) }

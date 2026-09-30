@@ -11,7 +11,7 @@ module X
     STREAM_URL = "https://api.x.com/2/tweets/sample/stream"
 
     def setup
-      @token_request = stub_request(:post, AppOnlyAuthenticator::TOKEN_URL)
+      @token_request = stub_request(:post, APP_ONLY_TOKEN_URL)
         .to_return(status: 200, body: {token_type: "bearer", access_token: TEST_BEARER_TOKEN}.to_json)
     end
 

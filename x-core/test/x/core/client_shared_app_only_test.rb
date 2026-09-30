@@ -12,7 +12,7 @@ module X
     USERS_URL = "https://api.x.com/2/users/1"
 
     def setup
-      @token_request = stub_request(:post, AppOnlyAuthenticator::TOKEN_URL)
+      @token_request = stub_request(:post, APP_ONLY_TOKEN_URL)
         .to_return(status: 200, body: {token_type: "bearer", access_token: TEST_BEARER_TOKEN}.to_json)
       stub_request(:get, USERS_URL).to_return(status: 200, body: "{}", headers: {"Content-Type" => "application/json"})
       @client = Client.new(api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET)

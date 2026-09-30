@@ -43,7 +43,7 @@ module X
       stub_token_request
       @authenticator.send(:bearer_token)
 
-      assert_requested :post, AppOnlyAuthenticator::TOKEN_URL, body: "grant_type=client_credentials",
+      assert_requested :post, APP_ONLY_TOKEN_URL, body: "grant_type=client_credentials",
         headers: {"Authorization" => "Basic #{Base64.strict_encode64("#{TEST_API_KEY}:#{TEST_API_KEY_SECRET}")}",
                   "Content-Type" => "application/x-www-form-urlencoded", "Accept" => "application/json"}
     end
@@ -52,7 +52,7 @@ module X
       stub_token_request
       requests = []
       connection = Minitest::Mock.new
-      connection.expect(:perform, Net::HTTP.post(URI(AppOnlyAuthenticator::TOKEN_URL), "")) { |request:| requests << request }
+      connection.expect(:perform, Net::HTTP.post(URI(APP_ONLY_TOKEN_URL), "")) { |request:| requests << request }
       authenticator = AppOnlyAuthenticator.new(api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET).send(:token_requests_over, connection, Client::DEFAULT_BASE_URL)
 
       assert_equal TEST_BEARER_TOKEN, authenticator.send(:bearer_token)
@@ -65,18 +65,18 @@ module X
       3.times { @authenticator.headers(nil) }
 
       assert_equal TEST_BEARER_TOKEN, @authenticator.send(:bearer_token)
-      assert_requested :post, AppOnlyAuthenticator::TOKEN_URL, times: 1
+      assert_requested :post, APP_ONLY_TOKEN_URL, times: 1
     end
 
     def test_bearer_token_is_fetched_once_across_threads
-      stub_request(:post, AppOnlyAuthenticator::TOKEN_URL).to_return do
+      stub_request(:post, APP_ONLY_TOKEN_URL).to_return do
         sleep 0.05
         {status: 200, body: {access_token: TEST_BEARER_TOKEN}.to_json}
       end
       tokens = Array.new(4) { Thread.new { @authenticator.send(:bearer_token) } }.map(&:value)
 
       assert_equal [TEST_BEARER_TOKEN] * 4, tokens
-      assert_requested :post, AppOnlyAuthenticator::TOKEN_URL, times: 1
+      assert_requested :post, APP_ONLY_TOKEN_URL, times: 1
     end
 
     def test_the_bearer_token_is_kept_private
@@ -90,11 +90,11 @@ module X
       authenticator = AppOnlyAuthenticator.new(api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET, bearer_token: "given")
 
       assert_equal({"Authorization" => "Bearer given"}, authenticator.headers(nil))
-      assert_not_requested :post, AppOnlyAuthenticator::TOKEN_URL
+      assert_not_requested :post, APP_ONLY_TOKEN_URL
     end
 
     def test_raises_with_the_error_description
-      stub_request(:post, AppOnlyAuthenticator::TOKEN_URL)
+      stub_request(:post, APP_ONLY_TOKEN_URL)
         .to_return(status: 403, body: {error: "invalid_client", error_description: "Unable to verify your credentials"}.to_json)
       error = assert_raises(AuthorizationError) { @authenticator.send(:bearer_token) }
 
@@ -102,28 +102,28 @@ module X
     end
 
     def test_raises_with_the_error_code_without_a_description
-      stub_request(:post, AppOnlyAuthenticator::TOKEN_URL).to_return(status: 403, body: {error: "invalid_client"}.to_json)
+      stub_request(:post, APP_ONLY_TOKEN_URL).to_return(status: 403, body: {error: "invalid_client"}.to_json)
       error = assert_raises(AuthorizationError) { @authenticator.send(:bearer_token) }
 
       assert_equal "invalid_client", error.message
     end
 
     def test_raises_with_the_default_message
-      stub_request(:post, AppOnlyAuthenticator::TOKEN_URL).to_return(status: 401, body: "Unauthorized")
+      stub_request(:post, APP_ONLY_TOKEN_URL).to_return(status: 401, body: "Unauthorized")
       error = assert_raises(AuthorizationError) { @authenticator.send(:bearer_token) }
 
       assert_equal "Bearer token request failed", error.message
     end
 
     def test_a_token_endpoint_that_fails_to_answer_raises_the_error_of_its_status
-      stub_request(:post, AppOnlyAuthenticator::TOKEN_URL).to_return({status: 503}, {status: 429})
+      stub_request(:post, APP_ONLY_TOKEN_URL).to_return({status: 503}, {status: 429})
 
       assert_raises(ServiceUnavailable) { @authenticator.send(:bearer_token) }
       assert_raises(TooManyRequests) { @authenticator.send(:bearer_token) }
     end
 
     def test_a_failed_fetch_is_retried
-      stub_request(:post, AppOnlyAuthenticator::TOKEN_URL).to_return(status: 500, body: "").then
+      stub_request(:post, APP_ONLY_TOKEN_URL).to_return(status: 500, body: "").then
         .to_return(status: 200, body: {access_token: TEST_BEARER_TOKEN}.to_json)
       assert_raises(InternalServerError) { @authenticator.send(:bearer_token) }
 
@@ -133,7 +133,7 @@ module X
     private
 
     def stub_token_request
-      stub_request(:post, AppOnlyAuthenticator::TOKEN_URL)
+      stub_request(:post, APP_ONLY_TOKEN_URL)
         .to_return(status: 200, body: {token_type: "bearer", access_token: TEST_BEARER_TOKEN}.to_json)
     end
   end

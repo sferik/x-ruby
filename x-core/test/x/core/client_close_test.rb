@@ -7,7 +7,7 @@ module X
     cover_client
 
     def setup
-      stub_request(:post, AppOnlyAuthenticator::TOKEN_URL)
+      stub_request(:post, APP_ONLY_TOKEN_URL)
         .to_return(status: 200, body: {token_type: "bearer", access_token: TEST_BEARER_TOKEN}.to_json)
       stub_request(:get, "https://api.x.com/2/tweets")
     end
