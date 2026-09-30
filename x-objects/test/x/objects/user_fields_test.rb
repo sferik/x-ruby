@@ -58,18 +58,18 @@ module X
                                                       "badge_url" => "https://pbs.twimg.com/x.png", "user_id" => ["783214"]}})
 
       assert_equal "https://pbs.twimg.com/x.png", user.affiliation.fetch("badge_url")
-      assert_equal [783_214], user.affiliated_user_ids
-      assert_empty @user.affiliated_user_ids
-      assert_equal [], User.new({"id" => "1"}).affiliated_user_ids
+      assert_equal [783_214], user.affiliated_with_ids
+      assert_empty @user.affiliated_with_ids
+      assert_equal [], User.new({"id" => "1"}).affiliated_with_ids
     end
 
-    def test_the_affiliated_users_resolve_from_the_includes
+    def test_the_accounts_a_user_is_affiliated_with_resolve_from_the_includes
       body = {"data" => {"id" => "1", "affiliation" => {"user_id" => %w[783214 9]}},
               "includes" => {"users" => [{"id" => "783214", "username" => "X"}]}}
       user = User.__send__(:resource_from_response, body, client: nil)
 
-      assert_equal [[783_214, "X", false], [9, nil, true]], user.affiliated_users.map { |affiliated| [affiliated.id, affiliated.username, affiliated.stub?] }
-      assert_empty @user.affiliated_users
+      assert_equal [[783_214, "X", false], [9, nil, true]], user.affiliated_with.map { |affiliated| [affiliated.id, affiliated.username, affiliated.stub?] }
+      assert_empty @user.affiliated_with
     end
 
     def test_a_lookup_asks_for_the_affiliation_expansion

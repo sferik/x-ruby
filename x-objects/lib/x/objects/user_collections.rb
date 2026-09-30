@@ -37,11 +37,12 @@ module X
 
       # The users affiliated with this user, such as the people of an organization
       #
-      # They are the accounts whose affiliation names this user, which affiliated_users reads of each of them.
+      # They are the accounts whose affiliation names this user, which affiliated_with reads of each of them, so they
+      # point the other way from the affiliated_with of this user.
       #
       # @api public
       # @param params [Hash] query parameters merged over the default parameters
-      # @return [Cursor] a cursor over the affiliated users
+      # @return [Cursor] a cursor over the users affiliated with this one
       # @example Print the users affiliated with an organization
       #   client.find_user!("X").affiliates.each { |user| puts user.username }
       def affiliates(**params) = cursor(User, "users/#{id}/affiliates", max_results: User::MAX_FOLLOW_RESULTS, **params)

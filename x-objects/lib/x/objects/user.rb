@@ -243,13 +243,13 @@ module X
     #     user.affiliation&.fetch("description")
     attribute :affiliation
 
-    # @!attribute [r] affiliated_user_ids
+    # @!attribute [r] affiliated_with_ids
     #   The identifiers of the accounts this account is affiliated with
     #   @api public
     #   @return [Array<Integer>] the identifiers, empty if there are none
-    #   @example Get the identifiers of the affiliated accounts
-    #     user.affiliated_user_ids
-    attribute :affiliated_user_ids, :integers, key: %w[affiliation user_id]
+    #   @example Get the identifiers of the accounts it is affiliated with
+    #     user.affiliated_with_ids
+    attribute :affiliated_with_ids, :integers, key: %w[affiliation user_id]
 
     # @!attribute [r] verified_followers_count
     #   The number of verified followers
@@ -379,13 +379,16 @@ module X
     #     user.most_recent_post
     reference :most_recent_post, :Post, key: %w[most_recent_post_id], tweet_key: %w[most_recent_tweet_id]
 
-    # @!method affiliated_users
-    #   The affiliated accounts, from the includes or as stubs holding their identifiers
+    # @!method affiliated_with
+    #   The accounts this account is affiliated with, such as its organization
+    #
+    #   They come from the includes, or as stubs holding their identifiers. They point the other way from
+    #   {#affiliates}, the accounts affiliated with this one.
     #   @api public
-    #   @return [Array<User>] the affiliated users
+    #   @return [Array<User>] the accounts it is affiliated with, empty if there are none
     #   @example Get the username of the affiliated organization
-    #     user.affiliated_users.first&.hydrate&.username
-    references :affiliated_users, :User, key: %w[affiliation user_id]
+    #     user.affiliated_with.first&.hydrate&.username
+    references :affiliated_with, :User, key: %w[affiliation user_id]
 
     attribute_alias :tweet_count, :post_count
     attribute_alias :pinned_tweet_id, :pinned_post_id
