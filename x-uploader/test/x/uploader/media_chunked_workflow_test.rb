@@ -57,7 +57,7 @@ module X
 
     def test_invalid_chunk_options_are_rejected_before_requesting
       assert_raises(ArgumentError) { Uploader::MediaUpload.chunked_upload(VIDEO_FILE, client: @client, concurrency: 0) }
-      assert_raises(ArgumentError) { Uploader::MediaUpload.chunked_upload(VIDEO_FILE, client: @client, chunk_size_mb: 0) }
+      assert_raises(ArgumentError) { Uploader::MediaUpload.chunked_upload(VIDEO_FILE, client: @client, chunk_size: 0) }
       assert_not_requested(:post, INIT_URL)
     end
 
@@ -83,7 +83,7 @@ module X
     def test_chunks_are_read_from_the_file_without_temporary_files
       stub_workflow
       Dir.stub(:mktmpdir, ->(*) { flunk "wrote a temporary file" }) do
-        Uploader::MediaUpload.chunked_upload(VIDEO_FILE, client: @client, media_category: "tweet_video", chunk_size_mb: 0.0625)
+        Uploader::MediaUpload.chunked_upload(VIDEO_FILE, client: @client, media_category: "tweet_video", chunk_size: 65_536)
       end
 
       assert_requested(:post, APPEND_URL, times: 2)

@@ -72,7 +72,7 @@ module X
       # @param source [Source] the media to upload
       # @param media_category [String, Symbol, nil] the media category, in any case, or nil to infer it
       # @param alt_text [String, nil] the alt text of the media, or nil for media described with none
-      # @param chunk_size_mb [Float, Integer, nil] the size of each chunk in megabytes, or nil to derive one
+      # @param chunk_size [Integer, nil] the size of each chunk in bytes, or nil to derive one
       # @param concurrency [Integer] the number of chunks uploaded at once, of 1 to MAX_CONCURRENCY
       # @param processing_timeout [Integer, Float] the seconds to wait for the media to process
       # @yieldreturn [String, Symbol] the media category inferred from the media, when none is given
@@ -80,15 +80,15 @@ module X
       # @raise [Errno::ENOENT] if the file does not exist
       # @raise [InvalidMedia] if the media cannot be read, is empty, or is larger than the API takes of its category
       # @raise [ArgumentError] if the media category is invalid, the alt text is empty or too long, the chunk size is
-      #   not a positive, finite number or is larger than a segment the API takes, the concurrency is not 1 to
+      #   not a positive Integer or is larger than a segment the API takes, the concurrency is not 1 to
       #   MAX_CONCURRENCY, or the processing timeout is not a number of seconds
       # @example Validate the arguments of an upload
-      #   Uploader::Validator.validate_upload!(source, :TWEET_IMAGE, alt_text: nil, chunk_size_mb: nil, concurrency: 4,
+      #   Uploader::Validator.validate_upload!(source, :TWEET_IMAGE, alt_text: nil, chunk_size: nil, concurrency: 4,
       #     processing_timeout: 300) # => "tweet_image"
-      def validate_upload!(source, media_category, alt_text:, chunk_size_mb:, concurrency:, processing_timeout:)
+      def validate_upload!(source, media_category, alt_text:, chunk_size:, concurrency:, processing_timeout:)
         validate_source!(source)
         validate_alt_text!(alt_text)
-        validate_chunks!(chunk_size_mb:, concurrency:)
+        validate_chunks!(chunk_size:, concurrency:)
         validate_processing_timeout!(processing_timeout)
         validate_media_category!(media_category || yield).tap { |category| validate_size!(source, category) }
       end
@@ -229,35 +229,35 @@ module X
 
       # Validate the chunk size and concurrency of a chunked upload
       #
-      # A chunk size above the MAX_CHUNK bytes of a segment raises too, since the server would refuse the first
-      # segment, once the upload had been initialized. Anything that is not a number, such as a String read from an environment variable, raises ArgumentError too,
-      # rather than NoMethodError from the check, as does Float::INFINITY, which no chunk is the size of, rather than
-      # FloatDomainError once the chunk size is rounded to a whole byte. A concurrency above MAX_CONCURRENCY raises
-      # as well, rather than hold a chunk and a connection for each of as many threads as it names.
+      # A chunk size is a whole number of bytes, so anything else, such as a Float or a String read from an
+      # environment variable, raises ArgumentError, rather than be rounded to one. A chunk size above the MAX_CHUNK
+      # bytes of a segment raises too, since the server would refuse the first segment, once the upload had been
+      # initialized. A concurrency above MAX_CONCURRENCY raises as well, rather than hold a chunk and a connection for
+      # each of as many threads as it names.
       #
       # @api private
-      # @param chunk_size_mb [Float, Integer, nil] the size of each chunk in megabytes, which must be positive and
-      #   finite, and at most 5, or nil for a chunk size derived from the file
+      # @param chunk_size [Integer, nil] the size of each chunk in bytes, which must be positive and at most
+      #   MAX_CHUNK, or nil for a chunk size derived from the file
       # @param concurrency [Integer] the number of chunks uploaded at once, of 1 to MAX_CONCURRENCY
       # @return [void]
-      # @raise [ArgumentError] if the chunk size is not a positive, finite number, or is larger than a segment the API
-      #   takes, or the concurrency is not an Integer of 1 to MAX_CONCURRENCY
+      # @raise [ArgumentError] if the chunk size is not a positive Integer, or is larger than a segment the API takes,
+      #   or the concurrency is not an Integer of 1 to MAX_CONCURRENCY
       # @example Validate the options of a chunked upload
-      #   Uploader::Validator.validate_chunks!(chunk_size_mb: 4, concurrency: 2)
-      def validate_chunks!(chunk_size_mb:, concurrency:)
-        raise ArgumentError, "chunk_size_mb must be a positive, finite number, not #{chunk_size_mb.inspect}" unless chunk_size_mb.nil? || positive_number?(chunk_size_mb)
-        raise ArgumentError, "chunk_size_mb must be at most #{MAX_CHUNK / BYTES_PER_MB}, the megabytes of a segment the API takes, not #{chunk_size_mb}" if chunk_size_mb && chunk_size_mb * BYTES_PER_MB > MAX_CHUNK
+      #   Uploader::Validator.validate_chunks!(chunk_size: 4_194_304, concurrency: 2)
+      def validate_chunks!(chunk_size:, concurrency:)
+        raise ArgumentError, "chunk_size must be a positive Integer of bytes, not #{chunk_size.inspect}" unless chunk_size.nil? || whole_bytes?(chunk_size)
+        raise ArgumentError, "chunk_size must be at most #{MAX_CHUNK}, the bytes of a segment the API takes, not #{chunk_size}" if chunk_size && chunk_size > MAX_CHUNK
         raise ArgumentError, "concurrency must be an Integer of 1 to #{MAX_CONCURRENCY}, not #{concurrency.inspect}" unless concurrency.instance_of?(Integer) && (1..MAX_CONCURRENCY).cover?(concurrency)
       end
 
-      # Check whether a value is a finite real number above zero
+      # Check whether a value is a whole number of bytes above zero
       #
-      # Float::INFINITY is not finite, and Float::NAN is neither finite nor above zero.
+      # A Float is not, even a whole one, nor is a Rational, so that no size is rounded to a byte.
       #
       # @api private
       # @param value [Object] the value
-      # @return [Boolean] true if the value is a positive, finite real number
-      def positive_number?(value) = value.is_a?(Numeric) && value.real? && value.positive? && value.finite?
+      # @return [Boolean] true if the value is a positive Integer
+      def whole_bytes?(value) = value.instance_of?(Integer) && value.positive?
 
       # Validate the seconds to wait for media to process
       #
@@ -288,18 +288,18 @@ module X
       #
       # @api private
       # @param source [Source] the media to upload
-      # @param chunk_size_mb [Float, Integer, nil] the size of each chunk in megabytes, or nil to derive one
-      # @return [Integer] the size of each chunk in bytes, rounded up to a whole byte
+      # @param chunk_size [Integer, nil] the size of each chunk in bytes, or nil to derive one
+      # @return [Integer] the size of each chunk in bytes
       # @raise [Errno::ENOENT] if the file does not exist
       # @raise [ArgumentError] if chunks of the size given would be more than the API numbers
       # @example Derive the chunk size of a video
       #   Uploader::Validator.validate_segments!(source, nil) # => 1048576
-      def validate_segments!(source, chunk_size_mb)
+      def validate_segments!(source, chunk_size)
         file_size = source.size
-        chunk_size = chunk_size_mb.nil? ? derived_chunk_size(file_size) : (chunk_size_mb * BYTES_PER_MB).ceil
-        return chunk_size if file_size <= chunk_size * MAX_SEGMENTS
+        size = chunk_size || derived_chunk_size(file_size)
+        return size if file_size <= size * MAX_SEGMENTS
 
-        raise ArgumentError, "chunk_size_mb of #{chunk_size_mb} uploads #{file_size} bytes in more than the #{MAX_SEGMENTS} segments the API numbers"
+        raise ArgumentError, "chunk_size of #{chunk_size} bytes uploads #{file_size} bytes in more than the #{MAX_SEGMENTS} segments the API numbers"
       end
 
       # The size in bytes of the chunks media is uploaded in when it is given none

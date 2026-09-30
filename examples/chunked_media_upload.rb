@@ -15,7 +15,7 @@ file_path = "path/to/your/media.mp4"
 # client.upload_media uploads a video in chunks and waits for it to be processed. The steps it takes can also
 # be run one at a time, to choose the media category, the size of each chunk, and how many are sent at once.
 media_category = "tweet_video" # or amplify_video or dm_video: a GIF or subtitles category refuses an MP4 video
-media = X::Uploader::MediaUpload.chunked_upload(file_path, client:, media_category:, chunk_size_mb: 4, concurrency: 2)
+media = X::Uploader::MediaUpload.chunked_upload(file_path, client:, media_category:, chunk_size: 4 * 1024 * 1024, concurrency: 2)
 
 # Wait up to five minutes, raising X::Uploader::MediaProcessingFailed if processing fails
 client.await_media_processing(media, processing_timeout: 300)

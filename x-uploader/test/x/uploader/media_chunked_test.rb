@@ -122,9 +122,8 @@ module X
     end
 
     def perform_chunked_upload
-      chunk_size_mb = (@video_size - 1) / Uploader::MediaUpload.const_get(:BYTES_PER_MB).to_f
       Uploader::MediaUpload.chunked_upload(VIDEO_FILE, client: @client,
-        media_category: Uploader::MediaUpload::TWEET_VIDEO, chunk_size_mb:)
+        media_category: Uploader::MediaUpload::TWEET_VIDEO, chunk_size: @video_size - 1)
     end
 
     def collect_request_bodies(method, url, expected_count:)

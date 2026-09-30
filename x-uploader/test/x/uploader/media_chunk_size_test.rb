@@ -32,36 +32,36 @@ module X
       assert_equal Uploader::MediaUpload.const_get(:BYTES_PER_MB), chunk_size
     end
 
-    def test_a_chunk_size_given_is_taken_whole_megabytes_or_not
-      assert_equal [2_097_152, 524_288], [2, 0.5].map { |mb| with_video(Uploader::MediaUpload.const_get(:BYTES_PER_MB)) { |path| upload(path, chunk_size_mb: mb) } }
+    def test_a_chunk_size_given_is_taken_as_the_bytes_it_names
+      assert_equal [2_097_152, 524_288, 1001], [2_097_152, 524_288, 1001].map { |bytes| with_video(Uploader::MediaUpload.const_get(:BYTES_PER_MB)) { |path| upload(path, chunk_size: bytes) } }
     end
 
     def test_a_chunk_size_that_would_need_more_segments_than_the_api_numbers_uploads_nothing
-      error = assert_raises(ArgumentError) { with_large_video { |path| upload(path, chunk_size_mb: 1) } }
+      error = assert_raises(ArgumentError) { with_large_video { |path| upload(path, chunk_size: 1_048_576) } }
 
-      assert_equal "chunk_size_mb of 1 uploads #{LARGE_VIDEO_BYTES} bytes in more than the 10000 segments the API numbers", error.message
+      assert_equal "chunk_size of 1048576 bytes uploads #{LARGE_VIDEO_BYTES} bytes in more than the 10000 segments the API numbers", error.message
       assert_not_requested :post, "#{BASE_URL}/initialize"
     end
 
     def test_a_chunked_upload_of_its_own_rejects_chunk_options_the_api_would_refuse
-      size = assert_raises(ArgumentError) { chunked_upload("test/sample_files/sample.mp4", chunk_size_mb: 0) }
+      size = assert_raises(ArgumentError) { chunked_upload("test/sample_files/sample.mp4", chunk_size: 0) }
       concurrency = assert_raises(ArgumentError) { chunked_upload("test/sample_files/sample.mp4", concurrency: 0) }
 
-      assert_equal "chunk_size_mb must be a positive, finite number, not 0", size.message
+      assert_equal "chunk_size must be a positive Integer of bytes, not 0", size.message
       assert_equal "concurrency must be an Integer of 1 to 16, not 0", concurrency.message
       assert_not_requested :post, "#{BASE_URL}/initialize"
     end
 
-    def test_a_chunk_size_that_is_not_finite_uploads_nothing
-      [Float::INFINITY, Float::NAN].each do |chunk_size_mb|
-        assert_raises(ArgumentError) { upload("test/sample_files/sample.mp4", chunk_size_mb:) }
-        assert_raises(ArgumentError) { chunked_upload("test/sample_files/sample.mp4", chunk_size_mb:) }
+    def test_a_chunk_size_that_is_not_a_whole_number_of_bytes_uploads_nothing
+      [1_048_576.0, 0.5, Rational(1, 2), Float::INFINITY, Float::NAN, "1048576"].each do |chunk_size|
+        assert_raises(ArgumentError) { upload("test/sample_files/sample.mp4", chunk_size:) }
+        assert_raises(ArgumentError) { chunked_upload("test/sample_files/sample.mp4", chunk_size:) }
       end
       assert_not_requested :post, "#{BASE_URL}/initialize"
     end
 
     def test_a_chunked_upload_of_its_own_rejects_a_chunk_size_that_would_need_more_segments
-      assert_raises(ArgumentError) { with_large_video { |path| chunked_upload(path, chunk_size_mb: 1) } }
+      assert_raises(ArgumentError) { with_large_video { |path| chunked_upload(path, chunk_size: 1_048_576) } }
       assert_not_requested :post, "#{BASE_URL}/initialize"
     end
 
@@ -79,8 +79,8 @@ module X
     end
 
     def test_a_chunk_size_larger_than_a_segment_the_api_takes_uploads_nothing
-      assert_raises(ArgumentError) { upload("test/sample_files/sample.mp4", chunk_size_mb: 6) }
-      assert_raises(ArgumentError) { chunked_upload("test/sample_files/sample.mp4", chunk_size_mb: 6) }
+      assert_raises(ArgumentError) { upload("test/sample_files/sample.mp4", chunk_size: 5_242_881) }
+      assert_raises(ArgumentError) { chunked_upload("test/sample_files/sample.mp4", chunk_size: 5_242_881) }
       assert_not_requested :post, "#{BASE_URL}/initialize"
     end
 

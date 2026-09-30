@@ -22,7 +22,7 @@ module X
     end
 
     def test_segments_carry_their_index_and_exact_content
-      upload(VIDEO_FILE, chunk_size_mb: chunk_size_mb)
+      upload(VIDEO_FILE, chunk_size: CHUNK_BYTES)
       requests = append_requests
       boundary = boundary_of(requests.first)
       content = File.binread(VIDEO_FILE)
@@ -32,7 +32,7 @@ module X
     end
 
     def test_segments_share_the_boundary_of_the_upload
-      upload(VIDEO_FILE, chunk_size_mb: chunk_size_mb)
+      upload(VIDEO_FILE, chunk_size: CHUNK_BYTES)
       content_types = append_requests.map { |request| request.headers["Content-Type"] }
 
       assert_match HEX_BOUNDARY, content_types.first
@@ -40,7 +40,7 @@ module X
     end
 
     def test_file_that_fills_its_last_chunk_exactly
-      with_file(2 * CHUNK_BYTES) { |path| upload(path, chunk_size_mb:) }
+      with_file(2 * CHUNK_BYTES) { |path| upload(path, chunk_size: CHUNK_BYTES) }
 
       assert_equal 2, append_requests.size
     end
@@ -51,15 +51,13 @@ module X
       assert_equal 2, append_requests.size
     end
 
-    def test_chunk_size_scales_with_megabytes
-      with_file((2 * Uploader::MediaUpload.const_get(:BYTES_PER_MB)) + 1) { |path| upload(path, chunk_size_mb: 2) }
+    def test_chunk_size_is_a_number_of_bytes
+      with_file((2 * Uploader::MediaUpload.const_get(:BYTES_PER_MB)) + 1) { |path| upload(path, chunk_size: 2 * Uploader::MediaUpload.const_get(:BYTES_PER_MB)) }
 
       assert_equal 2, append_requests.size
     end
 
     private
-
-    def chunk_size_mb = CHUNK_BYTES / Uploader::MediaUpload.const_get(:BYTES_PER_MB).to_f
 
     def upload(file_path, **)
       Uploader::MediaUpload.chunked_upload(file_path, client: @client, media_category: "tweet_video", **)

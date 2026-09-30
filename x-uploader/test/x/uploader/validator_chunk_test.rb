@@ -33,13 +33,13 @@ module X
     end
 
     def test_a_chunk_size_of_the_largest_segment_the_api_takes_is_taken
-      assert_nil Uploader.const_get(:Validator).validate_chunks!(chunk_size_mb: 5, concurrency: 1)
+      assert_nil Uploader.const_get(:Validator).validate_chunks!(chunk_size: MAX_CHUNK, concurrency: 1)
     end
 
     def test_a_chunk_size_larger_than_the_largest_segment_the_api_takes_is_refused
-      error = assert_raises(ArgumentError) { Uploader.const_get(:Validator).validate_chunks!(chunk_size_mb: (MAX_CHUNK + 1.0) / BYTES_PER_MB, concurrency: 1) }
+      error = assert_raises(ArgumentError) { Uploader.const_get(:Validator).validate_chunks!(chunk_size: MAX_CHUNK + 1, concurrency: 1) }
 
-      assert_equal "chunk_size_mb must be at most 5, the megabytes of a segment the API takes, not #{(MAX_CHUNK + 1.0) / BYTES_PER_MB}", error.message
+      assert_equal "chunk_size must be at most 5242880, the bytes of a segment the API takes, not 5242881", error.message
     end
 
     def test_the_largest_segment_is_five_megabytes

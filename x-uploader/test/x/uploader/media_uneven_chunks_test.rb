@@ -5,7 +5,7 @@ require_relative "../../test_helper"
 require "x/uploader/media_upload"
 
 module X
-  class MediaFractionalChunksTest < Minitest::Test
+  class MediaUnevenChunksTest < Minitest::Test
     cover Uploader::MediaUpload
 
     BASE_URL = "https://api.x.com/2/media/upload"
@@ -25,11 +25,11 @@ module X
       end
     end
 
-    def test_a_fractional_chunk_size_is_rounded_up_to_a_whole_byte_and_sends_every_byte
+    def test_a_chunk_size_that_does_not_divide_the_media_sends_every_byte
       Dir.mktmpdir do |dir|
         path = File.join(dir, "video.mp4")
         File.binwrite(path, CONTENT)
-        Uploader::MediaUpload.chunked_upload(path, client: @client, media_category: "tweet_video", chunk_size_mb: 1000.5 / Uploader::MediaUpload.const_get(:BYTES_PER_MB))
+        Uploader::MediaUpload.chunked_upload(path, client: @client, media_category: "tweet_video", chunk_size: 1001)
       end
       chunks = Array.new(@chunks.size) { @chunks.pop }.sort.map(&:last)
 

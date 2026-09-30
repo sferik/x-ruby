@@ -67,7 +67,7 @@ module X
 
     def test_a_file_that_shrinks_once_the_upload_is_initialized_fails_it_with_the_media
       once_initialized { File.truncate(@path, 100) }
-      error = failure(chunk_size_mb: 0.1, concurrency: 1)
+      error = failure(chunk_size: 104_858, concurrency: 1)
 
       assert_equal [TEST_MEDIA_ID.to_i, EOFError], [error.media.id, error.cause.class]
       assert_equal "#{@path} held #{SIZE} bytes when the upload was initialized, but chunk 0 read 100 of the 104858 it " \
@@ -83,7 +83,7 @@ module X
 
     def test_a_file_that_grows_once_the_upload_is_initialized_appends_the_bytes_it_declared
       once_initialized { File.write(@path, "GROWN", mode: "ab") }
-      upload(chunk_size_mb: 0.1)
+      upload(chunk_size: 104_858)
 
       assert_requested(:post, INIT_URL, body: DECLARED)
       assert_equal 2, @appended.size

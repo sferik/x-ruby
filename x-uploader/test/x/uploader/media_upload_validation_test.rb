@@ -36,7 +36,7 @@ module X
     end
 
     def test_upload_rejects_a_chunk_size_that_is_not_positive_whatever_the_upload
-      assert_raises(ArgumentError) { Uploader::MediaUpload.upload("test/sample_files/sample.png", client: @client, chunk_size_mb: 0) }
+      assert_raises(ArgumentError) { Uploader::MediaUpload.upload("test/sample_files/sample.png", client: @client, chunk_size: 0) }
       assert_raises(ArgumentError) { Uploader::MediaUpload.upload("test/sample_files/sample.png", client: @client, concurrency: 0) }
       assert_raises(ArgumentError) { Uploader::MediaUpload.upload("test/sample_files/sample.mp4", client: @client, concurrency: 1000) }
       assert_not_requested :post, "#{BASE_URL}/initialize"

@@ -138,9 +138,9 @@ module X
       # @param media_type [String, nil] the MIME type of media uploaded in chunks, inferred from the media and
       #   category when nil; an upload in a single request sends no type, since the API types the media itself, so
       #   one given for an image is not sent
-      # @param chunk_size_mb [Float, Integer, nil] the size of each chunk of media uploaded in chunks, in megabytes, of
-      #   at most 5, the most the API takes in a segment, derived from the size of the media when nil, so that an
-      #   upload of up to the 16 gigabytes the API takes fits the segments it numbers
+      # @param chunk_size [Integer, nil] the size of each chunk of media uploaded in chunks, in bytes, of at most
+      #   5,242,880, the 5 megabytes the API takes in a segment, derived from the size of the media when nil, so that
+      #   an upload of up to the 16 gigabytes the API takes fits the segments it numbers
       # @param concurrency [Integer] the number of chunks uploaded at once, of 1 to MAX_CONCURRENCY
       # @return [UploadedMedia] the uploaded media, which holds the upload response, or the processing status of
       #   media that X processes
@@ -151,7 +151,7 @@ module X
       # @raise [InvalidMedia] if the media is larger than the API takes of its category, whatever the account: 5
       #   megabytes of an image, 15 of a GIF, and one of subtitles, or larger than the 16 gigabytes it takes of any
       # @raise [ArgumentError] if the media category is invalid, the alt text is empty or longer than the API takes,
-      #   the chunk size is not a positive, finite number, is larger than a segment the API takes, or would need more
+      #   the chunk size is not a positive Integer, is larger than a segment the API takes, or would need more
       #   segments than the API numbers, the concurrency is not 1 to MAX_CONCURRENCY, or the processing timeout is not
       #   a number of seconds of at least 0
       # @raise [InvalidMediaType] if no media category is given for media whose type neither its bytes nor the name of
@@ -175,12 +175,12 @@ module X
       # @example Upload an image held in memory, whose category its signature names
       #   Uploader::MediaUpload.upload(StringIO.new(png), client: client)
       def upload(media, client:, media_category: nil, alt_text: nil,
-        processing_timeout: DEFAULT_PROCESSING_TIMEOUT, media_type: nil, chunk_size_mb: nil, concurrency: DEFAULT_CONCURRENCY)
+        processing_timeout: DEFAULT_PROCESSING_TIMEOUT, media_type: nil, chunk_size: nil, concurrency: DEFAULT_CONCURRENCY)
         source = Source.for(media)
-        media_category = Validator.validate_upload!(source, media_category, alt_text:, chunk_size_mb:, concurrency:, processing_timeout:) { Inference.infer_media_category(source) }
+        media_category = Validator.validate_upload!(source, media_category, alt_text:, chunk_size:, concurrency:, processing_timeout:) { Inference.infer_media_category(source) }
         uploaded = if Inference.chunked_upload?(source, media_category)
           # The media is passed on as the Source it was resolved to, which the signatures keep out of what media is
-          chunked_upload(_ = source, client:, media_category:, media_type:, chunk_size_mb:, concurrency:)
+          chunked_upload(_ = source, client:, media_category:, media_type:, chunk_size:, concurrency:)
         else
           upload_binary(Inference.single_request!(source, media_category), client:, media_category:)
         end
@@ -226,9 +226,9 @@ module X
       # @param media_category [String, Symbol, nil] the media category, in any case, inferred from the media when nil
       # @param media_type [String, nil] the MIME type of the media, sent as it is given, or inferred from the media and
       #   category when nil
-      # @param chunk_size_mb [Float, Integer, nil] the size of each chunk in megabytes, rounded up to a whole byte, of
-      #   at most 5, the most the API takes in a segment, derived from the size of the media when nil: a megabyte, or
-      #   as much more, up to 5, as the segments the API numbers ask
+      # @param chunk_size [Integer, nil] the size of each chunk in bytes, of at most 5,242,880, the 5 megabytes the API
+      #   takes in a segment, derived from the size of the media when nil: a megabyte, or as much more, up to 5, as the
+      #   segments the API numbers ask
       # @param concurrency [Integer] the number of chunks uploaded at once, of 1 to MAX_CONCURRENCY
       # @return [UploadedMedia] the uploaded media, which holds the upload response
       # @raise [ArgumentError] if the media is neither a path nor an IO, or is a String that holds a NUL byte or a
@@ -237,7 +237,7 @@ module X
       # @raise [InvalidMedia] if the media cannot be read, or is empty, which holds nothing to upload
       # @raise [InvalidMedia] if the media is larger than the API takes of its category, which is 15 megabytes of a
       #   GIF and one of subtitles, or larger than the 16 gigabytes it takes of any
-      # @raise [ArgumentError] if the media category is invalid, the chunk size is not a positive, finite number, is
+      # @raise [ArgumentError] if the media category is invalid, the chunk size is not a positive Integer, is
       #   larger than a segment the API takes, or would need more segments than the API numbers, or the concurrency is
       #   not 1 to MAX_CONCURRENCY
       # @raise [InvalidMediaType] if no media type is given and none can be inferred, or the one the media is, read
@@ -248,13 +248,13 @@ module X
       #   initialized, and the error that failed it as the cause
       # @example Upload a large video
       #   Uploader::MediaUpload.chunked_upload("video.mp4", client: client)
-      def chunked_upload(media, client:, media_category: nil, media_type: nil, chunk_size_mb: nil, concurrency: DEFAULT_CONCURRENCY)
+      def chunked_upload(media, client:, media_category: nil, media_type: nil, chunk_size: nil, concurrency: DEFAULT_CONCURRENCY)
         source = Source.for(media)
         Validator.validate_source!(source)
         media_category = Validator.validate_media_category!(media_category || Inference.infer_media_category(source))
         Validator.validate_size!(source, media_category)
-        Validator.validate_chunks!(chunk_size_mb:, concurrency:)
-        chunk_size = Validator.validate_segments!(source, chunk_size_mb)
+        Validator.validate_chunks!(chunk_size:, concurrency:)
+        chunk_size = Validator.validate_segments!(source, chunk_size)
         media_type ||= Inference.infer_media_type(source, media_category)
         uploaded = Chunks.init(client:, source:, media_type:, media_category:)
         ChunkedUploadFailed.__send__(:keeping, uploaded) { Chunks.complete(client:, source:, chunk_size:, media: uploaded, concurrency:) }

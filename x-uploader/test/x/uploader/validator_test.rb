@@ -38,53 +38,47 @@ module X
     end
 
     def test_validate_chunks
-      assert_nil Uploader.const_get(:Validator).validate_chunks!(chunk_size_mb: 0.0625, concurrency: 1)
+      assert_nil Uploader.const_get(:Validator).validate_chunks!(chunk_size: 65_536, concurrency: 1)
     end
 
     def test_validate_chunks_takes_the_chunk_size_of_a_caller_who_named_none
-      assert_nil Uploader.const_get(:Validator).validate_chunks!(chunk_size_mb: nil, concurrency: 1)
+      assert_nil Uploader.const_get(:Validator).validate_chunks!(chunk_size: nil, concurrency: 1)
     end
 
     def test_validate_chunks_raises_for_a_chunk_size_that_is_not_positive
-      error = assert_raises(ArgumentError) { Uploader.const_get(:Validator).validate_chunks!(chunk_size_mb: 0, concurrency: 1) }
+      error = assert_raises(ArgumentError) { Uploader.const_get(:Validator).validate_chunks!(chunk_size: 0, concurrency: 1) }
 
-      assert_equal "chunk_size_mb must be a positive, finite number, not 0", error.message
-      assert_raises(ArgumentError) { Uploader.const_get(:Validator).validate_chunks!(chunk_size_mb: -1, concurrency: 1) }
+      assert_equal "chunk_size must be a positive Integer of bytes, not 0", error.message
+      assert_raises(ArgumentError) { Uploader.const_get(:Validator).validate_chunks!(chunk_size: -1, concurrency: 1) }
     end
 
     def test_validate_chunks_raises_for_a_concurrency_less_than_one
-      error = assert_raises(ArgumentError) { Uploader.const_get(:Validator).validate_chunks!(chunk_size_mb: 1, concurrency: 0) }
+      error = assert_raises(ArgumentError) { Uploader.const_get(:Validator).validate_chunks!(chunk_size: 1, concurrency: 0) }
 
       assert_equal "concurrency must be an Integer of 1 to 16, not 0", error.message
-      assert_raises(ArgumentError) { Uploader.const_get(:Validator).validate_chunks!(chunk_size_mb: 1, concurrency: -1) }
+      assert_raises(ArgumentError) { Uploader.const_get(:Validator).validate_chunks!(chunk_size: 1, concurrency: -1) }
     end
 
     def test_validate_chunks_takes_a_concurrency_of_up_to_the_most_chunks_uploaded_at_once
-      assert_nil Uploader.const_get(:Validator).validate_chunks!(chunk_size_mb: 1, concurrency: 16)
+      assert_nil Uploader.const_get(:Validator).validate_chunks!(chunk_size: 1, concurrency: 16)
     end
 
     def test_validate_chunks_raises_for_a_concurrency_above_the_most_chunks_uploaded_at_once
-      messages = [17, 1000].map { |concurrency| assert_raises(ArgumentError) { Uploader.const_get(:Validator).validate_chunks!(chunk_size_mb: 1, concurrency:) }.message }
+      messages = [17, 1000].map { |concurrency| assert_raises(ArgumentError) { Uploader.const_get(:Validator).validate_chunks!(chunk_size: 1, concurrency:) }.message }
 
       assert_equal ["17", "1000"].map { |value| "concurrency must be an Integer of 1 to 16, not #{value}" }, messages
     end
 
     def test_validate_chunks_raises_for_a_concurrency_that_is_not_an_integer
-      messages = [2.5, "4", nil].map { |concurrency| assert_raises(ArgumentError) { Uploader.const_get(:Validator).validate_chunks!(chunk_size_mb: 1, concurrency:) }.message }
+      messages = [2.5, "4", nil].map { |concurrency| assert_raises(ArgumentError) { Uploader.const_get(:Validator).validate_chunks!(chunk_size: 1, concurrency:) }.message }
 
       assert_equal ["2.5", '"4"', "nil"].map { |value| "concurrency must be an Integer of 1 to 16, not #{value}" }, messages
     end
 
-    def test_validate_chunks_raises_for_a_chunk_size_that_is_not_a_real_number
-      messages = ["1", Complex(1, 0)].map { |chunk_size_mb| assert_raises(ArgumentError) { Uploader.const_get(:Validator).validate_chunks!(chunk_size_mb:, concurrency: 1) }.message }
+    def test_validate_chunks_raises_for_a_chunk_size_that_is_not_an_integer
+      messages = ["1", Complex(1, 0), 1.0, Rational(1, 1), Float::INFINITY, Float::NAN].map { |chunk_size| assert_raises(ArgumentError) { Uploader.const_get(:Validator).validate_chunks!(chunk_size:, concurrency: 1) }.message }
 
-      assert_equal ['"1"', "(1+0i)"].map { |value| "chunk_size_mb must be a positive, finite number, not #{value}" }, messages
-    end
-
-    def test_validate_chunks_raises_for_a_chunk_size_that_is_not_finite
-      messages = [Float::INFINITY, Float::NAN].map { |chunk_size_mb| assert_raises(ArgumentError) { Uploader.const_get(:Validator).validate_chunks!(chunk_size_mb:, concurrency: 1) }.message }
-
-      assert_equal %w[Infinity NaN].map { |value| "chunk_size_mb must be a positive, finite number, not #{value}" }, messages
+      assert_equal ['"1"', "(1+0i)", "1.0", "(1/1)", "Infinity", "NaN"].map { |value| "chunk_size must be a positive Integer of bytes, not #{value}" }, messages
     end
 
     def test_validate_media_category
@@ -173,21 +167,21 @@ module X
       end
     end
 
-    def test_a_chunk_size_given_is_taken_in_megabytes_and_rounded_up_to_a_whole_byte
+    def test_a_chunk_size_given_is_taken_as_the_bytes_it_names
       with_file(4000) do |path|
-        assert_equal [2_097_152, 1001], [Uploader.const_get(:Validator).validate_segments!(source(path), 2), Uploader.const_get(:Validator).validate_segments!(source(path), 1000.5 / BYTES_PER_MB)]
+        assert_equal [2_097_152, 1001], [2_097_152, 1001].map { |bytes| Uploader.const_get(:Validator).validate_segments!(source(path), bytes) }
       end
     end
 
     def test_a_chunk_size_that_uploads_a_file_in_the_segments_the_api_numbers_exactly
       with_file(10_000) do |path|
-        assert_equal 1, Uploader.const_get(:Validator).validate_segments!(source(path), 1.0 / BYTES_PER_MB)
+        assert_equal 1, Uploader.const_get(:Validator).validate_segments!(source(path), 1)
       end
     end
 
     def test_a_chunk_size_that_would_upload_a_file_in_more_segments_than_the_api_numbers
       with_file(10_001) do |path|
-        error = assert_raises(ArgumentError) { Uploader.const_get(:Validator).validate_segments!(source(path), 1.0 / BYTES_PER_MB) }
+        error = assert_raises(ArgumentError) { Uploader.const_get(:Validator).validate_segments!(source(path), 1) }
 
         assert_includes error.message, "uploads 10001 bytes in more than the 10000 segments the API numbers"
       end
@@ -195,20 +189,20 @@ module X
 
     def test_a_chunk_size_of_a_megabyte_would_upload_a_large_file_in_more_segments_than_the_api_numbers
       with_file(LARGE_FILE_BYTES) do |path|
-        error = assert_raises(ArgumentError) { Uploader.const_get(:Validator).validate_segments!(source(path), 1) }
+        error = assert_raises(ArgumentError) { Uploader.const_get(:Validator).validate_segments!(source(path), BYTES_PER_MB) }
 
-        assert_equal "chunk_size_mb of 1 uploads #{LARGE_FILE_BYTES} bytes in more than the 10000 segments the API numbers", error.message
+        assert_equal "chunk_size of #{BYTES_PER_MB} bytes uploads #{LARGE_FILE_BYTES} bytes in more than the 10000 segments the API numbers", error.message
       end
     end
 
     def test_validate_upload_gives_the_media_category_in_the_case_the_api_takes
       assert_equal "tweet_image", Uploader.const_get(:Validator).validate_upload!(source("test/sample_files/sample.png"), :TWEET_IMAGE,
-        alt_text: "A pixel", chunk_size_mb: nil, concurrency: 4, processing_timeout: 300)
+        alt_text: "A pixel", chunk_size: nil, concurrency: 4, processing_timeout: 300)
     end
 
     def test_validate_upload_infers_a_media_category_it_is_given_none_for_with_the_block
       inferred = Uploader.const_get(:Validator).validate_upload!(source("test/sample_files/sample.png"), nil,
-        alt_text: nil, chunk_size_mb: nil, concurrency: 4, processing_timeout: 300) { :TWEET_GIF }
+        alt_text: nil, chunk_size: nil, concurrency: 4, processing_timeout: 300) { :TWEET_GIF }
 
       assert_equal "tweet_gif", inferred
     end
@@ -216,7 +210,7 @@ module X
     def test_validate_upload_validates_the_file_the_alt_text_and_the_chunk_options
       assert_raises(Errno::ENOENT) { validate_upload("nope.png") }
       assert_raises(ArgumentError) { validate_upload("test/sample_files/sample.png", alt_text: "") }
-      assert_raises(ArgumentError) { validate_upload("test/sample_files/sample.png", chunk_size_mb: 0) }
+      assert_raises(ArgumentError) { validate_upload("test/sample_files/sample.png", chunk_size: 0) }
       assert_raises(ArgumentError) { validate_upload("test/sample_files/sample.png", concurrency: 0) }
       assert_raises(ArgumentError) { validate_upload("test/sample_files/sample.png", media_category: "bogus") }
     end
@@ -227,8 +221,8 @@ module X
 
     private
 
-    def validate_upload(file_path, media_category: "tweet_image", alt_text: nil, chunk_size_mb: nil, concurrency: 4, processing_timeout: 300)
-      Uploader.const_get(:Validator).validate_upload!(source(file_path), media_category, alt_text:, chunk_size_mb:, concurrency:, processing_timeout:)
+    def validate_upload(file_path, media_category: "tweet_image", alt_text: nil, chunk_size: nil, concurrency: 4, processing_timeout: 300)
+      Uploader.const_get(:Validator).validate_upload!(source(file_path), media_category, alt_text:, chunk_size:, concurrency:, processing_timeout:)
     end
 
     # The media an upload reads, which the validator takes in place of a path
