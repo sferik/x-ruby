@@ -312,8 +312,6 @@ module X
 
     attr_reader resource_class: singleton(Resource)
     attr_reader client: Objects::_Client
-    attr_reader path: String
-    attr_reader params: Objects::query
 
     def prefetch?: () -> bool
     def each: () { (R) -> void } -> self

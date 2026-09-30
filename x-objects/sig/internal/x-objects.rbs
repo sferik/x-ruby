@@ -727,6 +727,9 @@ module X
     @total: (^(?fresh: bool) -> Integer?)?
     @pages: Objects::Pages
 
+    attr_reader path: String
+    attr_reader params: Objects::query
+
     private def self.build: [R < Resource] (singleton(Resource) resource_class, String path, client: Objects::_Client, ?params: Objects::params, ?prefetch: bool, ?token_param: String, ?min_results: Integer, ?app_only: bool, ?total: (^(?fresh: bool) -> Integer?)?, ?ids_only: bool) -> Cursor[R]
 
     private
