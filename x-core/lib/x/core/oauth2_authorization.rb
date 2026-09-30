@@ -201,7 +201,8 @@ module X
       # The on_token_refresh of the client is passed the OAuth2Tokens of the exchange before the client is returned, as
       # it is passed those of each refresh after, so that a callable that stores them stores every refresh token X
       # issues, the first among them; a refresh token held by the client alone would be lost with it, and the user would
-      # have to authorize the app again. It is passed nothing without offline.access, which issues no refresh token. A
+      # have to authorize the app again. Without offline.access, which issues no refresh token, it is passed tokens whose
+      # refresh token is nil, so it stores the access token that acts for the user until it expires. A
       # callable that raises, as one whose storage is briefly down may, raises TokenReportFailed, which holds the client
       # and the tokens, so neither is lost with the code.
       #
@@ -339,11 +340,9 @@ module X
       # @return [void]
       # @raise [TokenReportFailed] if on_token_refresh raises, with the client and tokens
       def report_exchange(client, token)
-        refresh_token = token.refresh_token
-        hook = client.on_token_refresh
-        return unless refresh_token && hook
+        hook = client.on_token_refresh or return
 
-        tokens = OAuth2Tokens.new(access_token: token.access_token, refresh_token:, expires_at: token.expires_at)
+        tokens = OAuth2Tokens.new(access_token: token.access_token, refresh_token: token.refresh_token, expires_at: token.expires_at)
         begin
           hook.call(tokens)
         rescue

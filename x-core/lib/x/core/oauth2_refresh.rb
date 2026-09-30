@@ -178,7 +178,9 @@ module X
 
       # Take the stored tokens, if they hold another refresh token
       #
-      # Tokens that hold the refresh token the authenticator holds, or the one its last refresh spent, are its own,
+      # Tokens that hold no refresh token, as an authorization without offline.access stores them, are not taken, since
+      # they would take away the refresh token of an authenticator that refreshes, which a refresh never does. Tokens
+      # that hold the refresh token the authenticator holds, or the one its last refresh spent, are its own,
       # as the store holds them until on_token_refresh has stored the tokens of that refresh, which it is passed once
       # the lock is released, so they are not taken. The age of the access token taken is unknown, so it is not fresh.
       #
@@ -186,7 +188,7 @@ module X
       # @return [OAuth2Tokens, nil] a copy of the tokens taken, or nil if the store holds none, or none of another's
       def adopt_stored_tokens
         stored = stored_tokens or return
-        return if [refresh_token, @spent_refresh_token].include?(stored.refresh_token)
+        return if stored.refresh_token.nil? || [refresh_token, @spent_refresh_token].include?(stored.refresh_token)
 
         @refreshed_at = nil
         @access_token = stored.access_token

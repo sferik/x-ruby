@@ -714,6 +714,7 @@ module X
 
   class OAuth2Tokens
     NOT_A_STRING: String
+    NOT_A_STRING_OR_NIL: String
     MARSHAL_FORMAT: Integer
   end
 

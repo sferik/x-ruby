@@ -329,10 +329,10 @@ module X
 
   class OAuth2Tokens
     attr_reader access_token: String
-    attr_reader refresh_token: String
+    attr_reader refresh_token: String?
     attr_reader expires_at: Time?
-    def initialize: (access_token: String, refresh_token: String, ?expires_at: Time?) -> void
-    def to_h: () -> {access_token: String, refresh_token: String, expires_at: Time?}
+    def initialize: (access_token: String, ?refresh_token: String?, ?expires_at: Time?) -> void
+    def to_h: () -> {access_token: String, refresh_token: String?, expires_at: Time?}
     def ==: (untyped other) -> bool
     def eql?: (untyped other) -> bool
     def hash: () -> Integer

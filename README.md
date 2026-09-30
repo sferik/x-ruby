@@ -265,7 +265,7 @@ session[:code_verifier] = authorization.code_verifier
 redirect_to authorization.url
 
 # Then, where X redirects back, exchange the code for a client that acts for the user; on_token_refresh is passed the
-# tokens of the exchange, and those of each refresh after
+# tokens of the exchange, whose refresh_token is nil without offline.access, and those of each refresh after
 authorization = X::OAuth2Authorization.new(client_id: "ID", redirect_uri: "https://example.com/callback",
   state: session[:state], code_verifier: session[:code_verifier])
 user_client = authorization.client(request.url, on_token_refresh: ->(tokens) { store(tokens.refresh_token) })

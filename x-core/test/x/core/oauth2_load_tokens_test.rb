@@ -199,6 +199,16 @@ module X
       assert_equal "NEWER_REFRESH", authenticator.refresh!.refresh_token
     end
 
+    def test_stored_tokens_without_a_refresh_token_are_not_taken
+      stub_refresh(TEST_REFRESH_TOKEN)
+      stub_refresh("NEW_REFRESH", body: {access_token: "NEWER_ACCESS", refresh_token: "NEWER_REFRESH"})
+      unrefreshed = OAuth2Tokens.new(access_token: "STORED_ACCESS")
+      authenticator = OAuth2Authenticator.new(**test_oauth2_credentials, load_tokens: -> { unrefreshed })
+      authenticator.refresh!
+
+      assert_equal "NEWER_REFRESH", authenticator.refresh!.refresh_token
+    end
+
     def test_refresh_refreshes_with_the_stored_refresh_token
       refresh = stub_refresh("STORED_REFRESH")
       tokens = OAuth2Authenticator.new(**test_oauth2_credentials, load_tokens: -> { stored }).refresh!

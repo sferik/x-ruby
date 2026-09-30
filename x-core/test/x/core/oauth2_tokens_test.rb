@@ -57,19 +57,33 @@ module X
       error = assert_raises(ArgumentError) { OAuth2Tokens.new(access_token: 1, refresh_token: "REFRESH") }
 
       assert_equal "access_token must be a String, not a Integer", error.message
-      assert_equal "refresh_token must be a String, not a NilClass",
-        assert_raises(ArgumentError) { OAuth2Tokens.new(access_token: "ACCESS", refresh_token: nil) }.message
+      assert_equal "access_token must be a String, not a NilClass",
+        assert_raises(ArgumentError) { OAuth2Tokens.new(access_token: nil, refresh_token: "REFRESH") }.message
+    end
+
+    def test_a_refresh_token_that_is_neither_a_string_nor_nil_is_refused
+      assert_equal "refresh_token must be a String or nil, not a Integer",
+        assert_raises(ArgumentError) { OAuth2Tokens.new(access_token: "ACCESS", refresh_token: 1) }.message
+    end
+
+    def test_tokens_issued_without_a_refresh_token
+      tokens = OAuth2Tokens.new(access_token: "ACCESS", expires_at: @expires_at)
+
+      assert_nil tokens.refresh_token
+      assert_equal({access_token: "ACCESS", refresh_token: nil, expires_at: @expires_at}, tokens.to_h)
+      assert_equal tokens, OAuth2Tokens.new(access_token: "ACCESS", refresh_token: nil, expires_at: @expires_at)
     end
 
     def test_tokens_of_a_subclass_of_string_are_accepted
       token = Class.new(String).new("ACCESS")
 
       assert_same token, OAuth2Tokens.new(access_token: token, refresh_token: "REFRESH").access_token
+      assert_same token, OAuth2Tokens.new(access_token: "ACCESS", refresh_token: token).refresh_token
     end
 
     def test_empty_tokens_are_refused
       assert_match(/\Aaccess_token is nil or empty/, assert_raises(ArgumentError) { OAuth2Tokens.new(access_token: " ", refresh_token: "REFRESH") }.message)
-      assert_match(/\Arefresh_token is nil or empty/, assert_raises(ArgumentError) { OAuth2Tokens.new(access_token: "ACCESS", refresh_token: "") }.message)
+      assert_match(/\Arefresh_token is empty/, assert_raises(ArgumentError) { OAuth2Tokens.new(access_token: "ACCESS", refresh_token: "") }.message)
     end
 
     def test_an_expiration_time_that_is_not_a_time_is_refused

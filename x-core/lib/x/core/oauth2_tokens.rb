@@ -5,7 +5,8 @@ require_relative "errors/unsupported_marshal_format"
 
 module X
   module Core
-    # The OAuth 2.0 tokens one refresh issued, which on_token_refresh is passed to store
+    # The OAuth 2.0 tokens one refresh issued, or the exchange of an authorization code, which on_token_refresh is
+    # passed to store
     #
     # It is frozen, and taken while the refresh holds its lock, so it holds the tokens of the refresh it reports,
     # whatever refreshes follow on other threads, where the authenticator holds the tokens of the latest one.
@@ -19,6 +20,9 @@ module X
       # The message of the error raised for a token that is not a String
       NOT_A_STRING = "%s must be a String, not a %s"
       private_constant :NOT_A_STRING
+      # The message of the error raised for a token that is neither a String nor nil
+      NOT_A_STRING_OR_NIL = "%s must be a String or nil, not a %s"
+      private_constant :NOT_A_STRING_OR_NIL
 
       # The OAuth 2.0 access token the refresh issued
       # @api public
@@ -29,10 +33,12 @@ module X
 
       # The OAuth 2.0 refresh token the refresh issued
       #
-      # It is the refresh token the refresh was sent with when X issued none.
+      # It is the refresh token the refresh was sent with when X issued none. An authorization without the
+      # offline.access scope issues none, so the tokens of its exchange hold nil, and the access token acts for the
+      # user until it expires, with nothing to refresh it.
       #
       # @api public
-      # @return [String] the refresh token
+      # @return [String, nil] the refresh token, or nil for tokens issued without one
       # @example Get the refresh token
       #   tokens.refresh_token
       attr_reader :refresh_token
@@ -48,17 +54,19 @@ module X
       #
       # @api public
       # @param access_token [String] the access token
-      # @param refresh_token [String] the refresh token
+      # @param refresh_token [String, nil] the refresh token, or nil for tokens issued without one
       # @param expires_at [Time, nil] the expiration time of the access token
       # @return [OAuth2Tokens] the frozen tokens
-      # @raise [ArgumentError] if a token is not a String, or is empty, or if the expiration time is neither a Time nor
-      #   nil, as it may be for tokens read back from a store that wrote them as JSON
+      # @raise [ArgumentError] if the access token is not a String, the refresh token neither a String nor nil, or a
+      #   token is empty, or if the expiration time is neither a Time nor nil, as it may be for tokens read back from a
+      #   store that wrote them as JSON
       # @example Build the tokens of a refresh
       #   X::OAuth2Tokens.new(access_token: "token", refresh_token: "refresh", expires_at: Time.now + 7200)
-      def initialize(access_token:, refresh_token:, expires_at: nil)
-        tokens = {access_token:, refresh_token:}
-        tokens.each { |name, token| raise ArgumentError, format(NOT_A_STRING, name, token.class) unless token.is_a?(String) }
-        CredentialValidator.validate_required!(tokens, {expires_at:})
+      def initialize(access_token:, refresh_token: nil, expires_at: nil)
+        raise ArgumentError, format(NOT_A_STRING, :access_token, access_token.class) unless access_token.is_a?(String)
+        raise ArgumentError, format(NOT_A_STRING_OR_NIL, :refresh_token, refresh_token.class) unless refresh_token.nil? || refresh_token.is_a?(String)
+
+        CredentialValidator.validate_required!({access_token:}, {refresh_token:, expires_at:})
         @access_token = access_token
         @refresh_token = refresh_token
         @expires_at = expires_at
@@ -120,7 +128,7 @@ module X
       # @example Read stored tokens
       #   Marshal.load(File.binread("tokens")).expires_at
       def marshal_load(state)
-        format, tokens = state #: [Integer, {access_token: String, refresh_token: String, expires_at: Time?}]
+        format, tokens = state #: [Integer, {access_token: String, refresh_token: String?, expires_at: Time?}]
         raise UnsupportedMarshalFormat, "#{self.class} reads format #{MARSHAL_FORMAT} of Marshal, not #{format.inspect}" unless MARSHAL_FORMAT.eql?(format)
 
         initialize(**tokens)

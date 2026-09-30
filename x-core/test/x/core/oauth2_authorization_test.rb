@@ -279,12 +279,12 @@ module X
       assert_instance_of Client, client
     end
 
-    def test_on_token_refresh_is_passed_nothing_without_a_refresh_token
+    def test_on_token_refresh_is_passed_the_tokens_of_an_exchange_without_a_refresh_token
       stub_token(body: {token_type: "bearer", access_token: "ACCESS", expires_in: 7200})
       passed = []
-      client = authorization.client("state=STATE&code=CODE", on_token_refresh: ->(tokens) { passed << tokens })
+      client = Time.stub(:now, Time.at(1_000)) { authorization.client("state=STATE&code=CODE", on_token_refresh: ->(tokens) { passed << tokens }) }
 
-      assert_empty passed
+      assert_equal [OAuth2Tokens.new(access_token: "ACCESS", expires_at: Time.at(8_200))], passed
       assert_instance_of OAuth2Authenticator, client.authenticator
     end
 
