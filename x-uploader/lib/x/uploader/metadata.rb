@@ -59,16 +59,17 @@ module X
       #   key, such as X::Media, or its media identifier
       # @param subtitles [UploadedMedia, Hash, #media_key, String, Integer] the uploaded .srt file, media that has a
       #   media key, or its media identifier
-      # @param language_code [String] the two-letter language code of the subtitles, such as EN
+      # @param language_code [String] the two-letter language code of the subtitles, in any case, such as EN
       # @param client [Client] the X API client
       # @param display_name [String, nil] the name of the language shown to viewers, such as English
       # @param media_category [String, Symbol] the category the video was uploaded as, tweet_video or amplify_video,
       #   in any case, as the uploaders take it, or as the subtitles endpoint names it, TweetVideo or AmplifyVideo
       # @return [UploadedMedia] the video given, if it is uploaded media, or else uploaded media built from the upload
       #   response, the media key, or the media identifier given
-      # @raise [ArgumentError] if the media category is neither tweet_video nor amplify_video
-      # @raise [ArgumentError] if the video or the subtitles are neither media nor a media identifier, or have a media
-      #   key that names none
+      # @raise [ArgumentError] if the media category is neither tweet_video nor amplify_video, or the language code is
+      #   not two letters
+      # @raise [ArgumentError] if the video or the subtitles are neither media nor a media identifier, have a media key
+      #   that names none, or an identifier the API does not take
       # @raise [MissingMediaData] if the video or the subtitles hold no identifier, or the response holds no metadata or carries no body at all
       # @example Upload a video and its English subtitles
       #   video = Uploader::MediaUpload.upload("cat.mp4", client: client)
@@ -78,7 +79,7 @@ module X
       #   video = Uploader::MediaUpload.upload("cat.mp4", client: client, media_category: :amplify_video)
       #   Uploader::Metadata.add_subtitles(video, subtitles, "EN", client: client, media_category: :amplify_video)
       def add_subtitles(video, subtitles, language_code, client:, display_name: nil, media_category: SUBTITLED_MEDIA_CATEGORY)
-        track = {id: Utils.media_id(subtitles), language_code: language_code.upcase, display_name:}.compact
+        track = {id: Utils.media_id(subtitles), language_code: Validator.validate_language_code!(language_code), display_name:}.compact
         body = {id: Utils.media_id(video), media_category: Utils.subtitled_media_category(media_category), subtitles: track}
         Utils.described(Utils.sending_again(client) { client.post("media/subtitles", body, **JSON_CLASSES) }, video)
       end

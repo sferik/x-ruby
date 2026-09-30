@@ -32,12 +32,16 @@ module X
       NOT_MEDIA_KEY = "The media key %s names no media identifier"
       # The pattern of a media key, which names the media identifier after the number of its type and an underscore
       MEDIA_KEY = /\A\d+_(\d+)\z/
+      # The pattern of a media identifier the API takes: one to nineteen digits
+      MEDIA_ID = /\A\d{1,19}\z/
+      # The message of the error raised for a media identifier the API would refuse
+      NOT_MEDIA_ID = "The media identifier %s is none the API takes, which is 1 to 19 digits"
       # Fewest seconds to wait before a check of processing, for a status that asks for no wait
       MIN_CHECK_AFTER_SECS = 1
       # The message of the error raised for media whose processing is in no state X documents
       UNKNOWN_STATE = "Media processing is in no state X documents: %s"
-      private_constant :NO_MEDIA_ID, :NO_MEDIA, :NO_METADATA, :NOT_MEDIA, :NOT_MEDIA_KEY, :MEDIA_KEY, :MIN_CHECK_AFTER_SECS,
-        :UNKNOWN_STATE
+      private_constant :NO_MEDIA_ID, :NO_MEDIA, :NO_METADATA, :NOT_MEDIA, :NOT_MEDIA_KEY, :MEDIA_KEY, :MEDIA_ID, :NOT_MEDIA_ID,
+        :MIN_CHECK_AFTER_SECS, :UNKNOWN_STATE
 
       # The lowercase extension of a file, without its dot
       #
@@ -61,8 +65,8 @@ module X
       # @param media [UploadedMedia, Hash, #media_key, String, Integer] the uploaded media, the upload response, media
       #   that has a media key, or the media identifier
       # @return [String] the media identifier
-      # @raise [ArgumentError] if the media is neither media nor a media identifier, or its media key names no
-      #   identifier
+      # @raise [ArgumentError] if the media is neither media nor a media identifier, its media key names no
+      #   identifier, or its identifier is none the API takes, which is 1 to 19 digits
       # @raise [MissingMediaData] if the media is nil or empty, an upload response holds no identifier, or media
       #   has no media key
       # @example The identifier of uploaded media
@@ -75,7 +79,10 @@ module X
         when String, Integer, nil then media
         else media_key_id(media)
         end
-        id.to_s.then { |text| text.empty? ? raise(MissingMediaData, NO_MEDIA_ID) : text }
+        text = id.to_s
+        raise MissingMediaData, NO_MEDIA_ID if text.empty?
+
+        text.match?(MEDIA_ID) ? text : raise(ArgumentError, format(NOT_MEDIA_ID, text.inspect))
       end
 
       # The media identifier the media key of media names

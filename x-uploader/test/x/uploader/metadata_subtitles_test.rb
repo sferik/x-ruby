@@ -80,4 +80,23 @@ module X
       assert_not_requested :post, SUBTITLES_URL
     end
   end
+
+  class MetadataSubtitlesLanguageTest < Minitest::Test
+    cover Uploader::Metadata
+    cover Uploader.const_get(:Validator)
+
+    def test_add_subtitles_refuses_a_language_code_that_is_not_two_letters_before_a_request
+      [nil, "english", "E", "EN ", "e1", :en, ""].each do |code|
+        error = assert_raises(ArgumentError, code.inspect) { Uploader::Metadata.add_subtitles(7, 8, code, client: Client.new) }
+
+        assert_equal "language_code must be two letters, such as EN, not #{code.inspect}", error.message
+      end
+      assert_not_requested :post, "https://api.x.com/2/media/subtitles"
+    end
+
+    def test_validate_language_code_upcases_two_letters_in_any_case
+      assert_equal %w[EN FR PT], %w[en Fr PT].map { |code| Uploader.const_get(:Validator).validate_language_code!(code) }
+      assert_equal "EN", Uploader.const_get(:Validator).validate_language_code!(Class.new(String).new("en"))
+    end
+  end
 end

@@ -20,6 +20,8 @@ module X
       BYTES_PER_MB = 1_048_576
       # Greatest number of characters of alt text the API takes
       MAX_ALT_TEXT_LENGTH = 1000
+      # The pattern of the language code of subtitles, two letters, which the API takes in upper case
+      LANGUAGE_CODE = /\A[a-z]{2}\z/i
       # Greatest number of segments an upload in chunks can have: the OpenAPI specification of the API v2 takes a
       # segment_index of 0 to 9999, so an upload in more chunks than these would fail partway, once the media uploaded
       # so far had been billed. Chunks of MAX_CHUNK bytes upload 52 GB of media in them, more than the MAX_UPLOAD_BYTES
@@ -199,6 +201,22 @@ module X
         return if (1..MAX_ALT_TEXT_LENGTH).cover?(alt_text.length)
 
         raise ArgumentError, "alt_text must be 1 to #{MAX_ALT_TEXT_LENGTH} characters, not #{alt_text.length}"
+      end
+
+      # Validate the language code of subtitles, and upcase it, as the API takes it
+      #
+      # The code is two letters, in any case.
+      #
+      # @api private
+      # @param language_code [String] the language code, such as EN or en
+      # @return [String] the language code in upper case
+      # @raise [ArgumentError] if the language code is not two letters
+      # @example Validate a language code
+      #   Uploader::Validator.validate_language_code!("en") # => "EN"
+      def validate_language_code!(language_code)
+        return language_code.upcase if language_code.is_a?(String) && language_code.match?(LANGUAGE_CODE)
+
+        raise ArgumentError, "language_code must be two letters, such as EN, not #{language_code.inspect}"
       end
 
       # Validate the chunk size and concurrency of a chunked upload

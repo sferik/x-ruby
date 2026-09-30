@@ -140,4 +140,20 @@ module X
       assert_not_requested :any, /api\.x\.com/
     end
   end
+
+  class UploaderMediaIdentifierTest < Minitest::Test
+    cover Uploader.const_get(:Utils)
+
+    def test_media_id_refuses_an_identifier_the_api_does_not_take
+      [" 7", "-7", "7 ", "abc", "1" * 20, -7, {"id" => "abc"}, UploadedMedia.new({"id" => "7x"})].each do |media|
+        error = assert_raises(ArgumentError, media.inspect) { Uploader.const_get(:Utils).media_id(media) }
+
+        assert_match(/\AThe media identifier ".*" is none the API takes, which is 1 to 19 digits\z/, error.message)
+      end
+    end
+
+    def test_media_id_takes_the_longest_identifier_the_api_takes
+      assert_equal "9" * 19, Uploader.const_get(:Utils).media_id("9" * 19)
+    end
+  end
 end

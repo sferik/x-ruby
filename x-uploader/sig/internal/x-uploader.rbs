@@ -92,6 +92,8 @@ module X
       MIN_CHECK_AFTER_SECS: Integer
       UNKNOWN_STATE: String
       MEDIA_KEY: Regexp
+      MEDIA_ID: Regexp
+      NOT_MEDIA_ID: String
 
       def extension: (path file_path) -> String
       def media_id: (media media) -> String
@@ -192,6 +194,7 @@ module X
     module Validator
       BYTES_PER_MB: Integer
       MAX_ALT_TEXT_LENGTH: Integer
+      LANGUAGE_CODE: Regexp
       MAX_SEGMENTS: Integer
       MAX_CHUNK: Integer
       MAX_CONCURRENCY: Integer
@@ -206,6 +209,7 @@ module X
       def validate_source!: (Source source) -> nil
       def validate_extension!: (path file_path, Array[String] extensions) -> nil
       def validate_alt_text!: (String? alt_text) -> nil
+      def validate_language_code!: (untyped language_code) -> String
       def validate_media_category!: (String | Symbol media_category) -> String
       def validate_chunks!: (chunk_size_mb: (Float | Integer)?, concurrency: Integer) -> nil
       def positive_number?: (untyped value) -> bool
