@@ -2,6 +2,7 @@
 
 require "json"
 require "x/core"
+require_relative "abstract_class"
 require_relative "attributes"
 require_relative "published_count"
 require_relative "errors"
@@ -17,6 +18,7 @@ module X
     # Base class for immutable API resources with identity, references, and hydration
     # @api public
     class ::X::Resource
+      extend AbstractClass
       extend Attributes
       include PublishedCount
       include Identity
@@ -305,6 +307,7 @@ module X
         # @raise [InvalidAttribute] if the attributes hold no identifier, or hold one that is not one
         private def built(attrs, client:, includes:, hydrated:) = Utils.read("#{self}##{id_key}", Hash.try_convert(attrs)&.[](id_key)) { build(attrs, client:, includes:, hydrated:) }
       end
+      private_class_method :new, :from_id
 
       # Initialize a new immutable resource
       #

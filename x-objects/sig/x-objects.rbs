@@ -138,6 +138,7 @@ module X
 
     # The class side of every concrete resource class, typed with that class
     interface _ResourceClass[R < Resource]
+      def new: (Hash[untyped, untyped] attrs, ?client: _Client?, ?hydrated: bool) -> R
       def from_id: (id id, ?client: _Client?) -> R
       def from_response: (body body, client: _Client?, ?hydrated: bool, **untyped) -> (R | Page[R])?
     end
@@ -265,7 +266,8 @@ module X
     attr_reader client: Objects::_Client?
 
     def self.default_params: () -> Hash[String, Array[String]]
-    def self.from_id: (Objects::id id, ?client: Objects::_Client?) -> Resource
+    private def self.new: (Hash[untyped, untyped] attrs, ?client: Objects::_Client?, ?hydrated: bool) -> instance
+    private def self.from_id: (Objects::id id, ?client: Objects::_Client?) -> Resource
     def self.from_response: (Objects::body body, client: Objects::_Client?, ?hydrated: bool, **untyped) -> (Resource | Page[Resource])?
 
     def initialize: (Hash[untyped, untyped] attrs, ?client: Objects::_Client?, ?hydrated: bool) -> void
@@ -366,6 +368,7 @@ module X
     def self.find: (String | Objects::_MediaKeyHolder media, client: Objects::_Client, **untyped params) ?{ (Problem problem) -> void } -> Media?
     def self.find_all: (Array[String | Objects::_MediaKeyHolder] media, client: Objects::_Client, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[Media]
     def self.find!: (String | Objects::_MediaKeyHolder media, client: Objects::_Client, **untyped params) -> Media
+    def self.new: (Hash[untyped, untyped] attrs, ?client: Objects::_Client?, ?hydrated: bool) -> Media
     def self.from_id: (String | Objects::_MediaKeyHolder media, ?client: Objects::_Client?) -> Media
     def self.from_response: (Objects::body body, client: Objects::_Client?, ?hydrated: bool, **untyped) -> (Media | Page[Media])?
     def self.hydrate_all: (Array[Media?] resources, client: Objects::_Client, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[Media]

@@ -22,6 +22,17 @@ module X
         assert_predicate user, :stub?
       end
 
+      def test_the_base_class_builds_no_resource
+        assert_raises(NoMethodError) { Resource.new({"id" => "1"}) }
+      end
+
+      def test_a_class_that_descends_from_a_resource_builds_resources
+        subclass = Class.new(Post)
+
+        assert_equal [1, 2], [subclass.new({"id" => "1"}).id, subclass.from_id(2).id]
+        assert_instance_of subclass, subclass.from_id(2)
+      end
+
       def test_from_id_accepts_a_resource_and_a_string
         assert_equal 1, User.from_id(User.new({"id" => "1"})).id
         assert_equal 1, User.from_id("1").id

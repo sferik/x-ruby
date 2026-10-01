@@ -24,11 +24,15 @@ end
 require "yardstick/rake/measurement"
 require "yardstick/rake/verify"
 
-Yardstick::Rake::Measurement.new(:yardstick_measure) do |measurement|
+# Resource keeps from_id private, since it is no resource itself, and each class of resource makes it public, so it is
+# documented as the public API it is there
+YARDSTICK_OPTIONS = {"rules" => {"ApiTag::PrivateMethod" => {"exclude" => ["X::Resource.from_id"]}}}.freeze
+
+Yardstick::Rake::Measurement.new(:yardstick_measure, YARDSTICK_OPTIONS) do |measurement|
   measurement.output = "doc/coverage.txt"
 end
 
-Yardstick::Rake::Verify.new(:yardstick) do |verify|
+Yardstick::Rake::Verify.new(:yardstick, YARDSTICK_OPTIONS) do |verify|
   verify.threshold = 100
 end
 

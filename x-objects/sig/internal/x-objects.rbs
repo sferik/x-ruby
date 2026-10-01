@@ -225,6 +225,11 @@ module X
       def index: (singleton(Resource) klass) -> Hash[untyped, attrs]
     end
 
+    module AbstractClass : Class
+      private
+      def inherited: (Class subclass) -> void
+    end
+
     module Attributes : Class
       EMPTY_LIST: Array[untyped]
       FLAGS: Array[bool?]
@@ -673,6 +678,7 @@ module X
   end
 
   class Resource
+    extend Objects::AbstractClass
     extend Objects::Attributes
     include Objects::PublishedCount
     include Objects::Identity
