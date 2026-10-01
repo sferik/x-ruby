@@ -53,7 +53,7 @@ module X
       # Run a request, running it again after a rate limit resets
       #
       # A request is retried while retries remain and the wait the response asks for is within the maximum wait;
-      # otherwise the error is raised. A response that asks for neither a wait nor a reset time waits a minute
+      # otherwise the error is raised, as it is for the usage cap of the project, which lasts until the month ends. A response that asks for neither a wait nor a reset time waits a minute
       # before the first retry, doubling the wait for each retry after, as X recommends. The block must build its
       # request anew each time, so that each attempt is signed afresh.
       #
@@ -89,9 +89,10 @@ module X
       # @param error [TooManyRequests] the error the request raised
       # @param retries [Integer] the number of the retry, counting from one
       # @return [Float] the seconds the response asks the request to wait, and a random share of RESET_JITTER
-      # @raise [TooManyRequests] the error being rescued, if no retries remain or the wait is too long
+      # @raise [TooManyRequests] the error being rescued, if no retries remain, the wait is too long, or the project
+      #   has reached its usage cap
       def wait_before_retry(error, retries)
-        raise if retries > max_rate_limit_retries
+        raise if retries > max_rate_limit_retries || error.problem&.usage_capped?
 
         wait = error.retry_after || UNREPORTED_RESET_WAIT << (retries - 1)
         raise if wait > max_rate_limit_wait

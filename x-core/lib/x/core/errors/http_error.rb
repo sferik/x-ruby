@@ -75,7 +75,7 @@ module X
       # @example Tell a request the API found invalid from one it refused to authorize
       #   error.problem&.type # => "https://api.twitter.com/2/problems/invalid-request"
       # @example Act on the reason rather than the status
-      #   wait_for_the_next_month if error.problem&.type&.end_with?("/usage-capped")
+      #   wait_for_the_next_month if error.problem&.usage_capped?
       attr_reader :problem
 
       # Initialize a new HTTPError

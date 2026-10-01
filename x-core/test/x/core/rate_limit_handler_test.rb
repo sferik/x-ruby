@@ -6,6 +6,10 @@ module X
   class RateLimitHandlerTest < Minitest::Test
     cover Core.const_get(:RateLimitHandler)
 
+    USAGE_CAPPED = %({"title":"UsageCapExceeded","detail":"Usage cap exceeded: Monthly product cap","type":"https://api.twitter.com/2/problems/usage-capped","period":"Monthly","scope":"Product"})
+
+    RATE_LIMITED = %({"title":"Too Many Requests","detail":"Too Many Requests","type":"about:blank","status":429})
+
     def setup
       @sleeps = []
       @attempts = 0
@@ -68,6 +72,20 @@ module X
 
       assert_raises(TooManyRequests) { handle(handler, random: 1.0) { refuse(reset_in: 10) } }
       assert_equal [2, [15]], [@attempts, @sleeps]
+    end
+
+    def test_raises_the_usage_cap_of_the_project_at_once
+      handler = Core.const_get(:RateLimitHandler).new(max_rate_limit_retries: 3)
+
+      assert_raises(TooManyRequests) { handle(handler) { (@attempts += 1) && raise(TooManyRequests.new(status: 429, headers: {"content-type" => "application/problem+json"}, body: USAGE_CAPPED)) } }
+      assert_equal [1, []], [@attempts, @sleeps]
+    end
+
+    def test_retries_a_refusal_that_names_a_problem_other_than_the_usage_cap
+      handler = Core.const_get(:RateLimitHandler).new(max_rate_limit_retries: 1)
+
+      assert_raises(TooManyRequests) { handle(handler) { (@attempts += 1) && raise(TooManyRequests.new(status: 429, headers: {"content-type" => "application/problem+json"}, body: RATE_LIMITED)) } }
+      assert_equal [2, [60]], [@attempts, @sleeps]
     end
 
     private

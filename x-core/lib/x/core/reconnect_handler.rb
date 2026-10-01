@@ -94,7 +94,8 @@ module X
       # @return [nil] once the stream ends with no reconnects left
       # @raise [NetworkError, ServerError, RequestTimeout, Conflict, TooManyRequests, InvalidResponse, StreamError] if
       #   the stream fails with no reconnects left
-      # @raise [TooManyRequests] if a rate limit asks the stream to wait longer than max_rate_limit_wait
+      # @raise [TooManyRequests] if a rate limit asks the stream to wait longer than max_rate_limit_wait, or the project
+      #   has reached its usage cap
       # @example Reconnect a stream
       #   handler.handle(->(post) { puts post }) { |deliver| read_stream(&deliver) }
       def handle(consumer, &stream)
@@ -129,13 +130,18 @@ module X
 
       # Check whether a stream reconnects after an error
       #
-      # A stream reconnects after a StreamError only when each of its problems is an operational-disconnect.
+      # A stream reconnects after a StreamError only when each of its problems is an operational-disconnect, and
+      # after a TooManyRequests unless it is the usage cap of the project, which lasts until the month ends.
       #
       # @api private
       # @param error [StandardError] the error that dropped the stream
-      # @return [Boolean] true unless the error is a StreamError of any problem but a disconnect
+      # @return [Boolean] true unless the error is a StreamError of any problem but a disconnect, or the usage cap
       def reconnectable?(error)
-        !error.is_a?(StreamError) || error.problems.all?(&:disconnect?)
+        case error
+        when StreamError then error.problems.all?(&:disconnect?)
+        when TooManyRequests then !error.problem&.usage_capped?
+        else true
+        end
       end
 
       # The error a consumer raised, which a consumer error stands in for

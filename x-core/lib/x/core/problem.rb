@@ -165,6 +165,18 @@ module X
     #   error.problems.all?(&:disconnect?)
     def disconnect? = type.to_s.end_with?("/operational-disconnect")
 
+    # Check whether the problem is the usage cap of the project, reached for the month
+    #
+    # X refuses every request of a project that has used the posts its plan allows for the month with a 429 of
+    # this problem, until the month ends, so a client neither waits for it nor sends the request again, and a stream
+    # does not reconnect after it, however its rate limits are set.
+    #
+    # @api public
+    # @return [Boolean] true for a usage-capped problem
+    # @example Tell the usage cap apart from a rate limit
+    #   wait_for_the_next_month if error.problem&.usage_capped?
+    def usage_capped? = type.to_s.end_with?("/usage-capped")
+
     # Check whether another problem is the same problem
     #
     # @api public

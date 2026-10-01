@@ -114,6 +114,7 @@ module X
     def message: () -> String?
     def not_found?: () -> bool
     def disconnect?: () -> bool
+    def usage_capped?: () -> bool
     def ==: (untyped other) -> bool
     def eql?: (untyped other) -> bool
     def hash: () -> Integer

@@ -8,6 +8,10 @@ module X
   class ReconnectHandlerRateLimitTest < Minitest::Test
     cover Core.const_get(:ReconnectHandler)
 
+    USAGE_CAPPED = %({"title":"UsageCapExceeded","detail":"Usage cap exceeded: Monthly product cap","type":"https://api.twitter.com/2/problems/usage-capped","period":"Monthly","scope":"Product"})
+
+    RATE_LIMITED = %({"title":"Too Many Requests","detail":"Too Many Requests","type":"about:blank","status":429})
+
     def setup
       @sleeps = []
       @runs = 0
@@ -43,6 +47,20 @@ module X
       error = assert_raises(ArgumentError) { Core.const_get(:ReconnectHandler).new(max_rate_limit_wait: -1) }
 
       assert_match(/\Amax_rate_limit_wait /, error.message)
+    end
+
+    def test_the_usage_cap_of_the_project_raises_at_once
+      handler = Core.const_get(:ReconnectHandler).new(max_reconnects: 8, max_rate_limit_wait: 1000)
+
+      assert_raises(TooManyRequests) { stream_with(handler) { (@runs += 1) && raise(TooManyRequests.new(status: 429, headers: {"content-type" => "application/problem+json"}, body: USAGE_CAPPED)) } }
+      assert_equal [1, []], [@runs, @sleeps]
+    end
+
+    def test_a_refusal_that_names_a_problem_other_than_the_usage_cap_reconnects
+      handler = Core.const_get(:ReconnectHandler).new(max_reconnects: 1)
+
+      assert_raises(TooManyRequests) { stream_with(handler) { (@runs += 1) && raise(TooManyRequests.new(status: 429, headers: {"content-type" => "application/problem+json"}, body: RATE_LIMITED)) } }
+      assert_equal [2, [60]], [@runs, @sleeps]
     end
 
     private
