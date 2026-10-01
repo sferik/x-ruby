@@ -736,7 +736,7 @@ module X
     def participants: () -> Array[User]
     def media: () -> Array[Media]
     def references: () -> Array[Post]
-    def from?: (Objects::id user) -> bool?
+    def from?: (Objects::id user) -> bool
     def group?: () -> bool
     def peer: (Objects::id user) -> User?
     def delete: () -> bool

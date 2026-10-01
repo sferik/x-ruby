@@ -17,8 +17,8 @@ module X
       assert_equal [true, true, true, false], [message.from?("9"), message.from?(9), message.from?(User.new({"id" => "9"})), message.from?("8")]
     end
 
-    def test_from_is_unknown_without_a_sender
-      assert_nil DirectMessage.new({"id" => "1", "dm_conversation_id" => "8-9"}).from?("9")
+    def test_from_is_false_without_a_sender
+      assert_same false, DirectMessage.new({"id" => "1", "dm_conversation_id" => "8-9"}).from?("9")
     end
 
     def test_from_refuses_what_is_not_a_user_without_a_sender

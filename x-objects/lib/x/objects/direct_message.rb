@@ -235,18 +235,16 @@ module X
       # Check whether a user sent this message
       #
       # A message that does not name its sender, as the message a new direct message returns does not, or one fetched
-      # with dm_event.fields that leave sender_id out, cannot say who sent it, so it answers nil rather than false.
+      # with dm_event.fields that leave sender_id out, cannot say the user sent it, so it answers false; its sender_id
+      # is nil.
       #
       # @api public
       # @param user [User, String, Integer] the user or their identifier
-      # @return [Boolean, nil] true if the user sent the message, false if another user did, or nil if the message does
-      #   not name its sender
+      # @return [Boolean] true if the user sent the message, false if another user did, or the message does not name
+      #   its sender
       # @example Split messages into sent and received
       #   messages.partition { |message| message.from?(client.current_user!) }
-      def from?(user)
-        user_id = Utils.id_of(user, User)
-        sender_id.to_s.eql?(user_id) unless sender_id.nil?
-      end
+      def from?(user) = sender_id.to_s.eql?(Utils.id_of(user, User))
 
       # Check whether the message belongs to a group conversation
       #
@@ -278,7 +276,7 @@ module X
       #   client.direct_messages.reject(&:group?).each { |message| puts message.peer(client.current_user!).username }
       def peer(user)
         return if group?
-        return sender if from?(user).eql?(false)
+        return sender unless sender_id.nil? || from?(user)
 
         user_id = Utils.id_of(user, User)
         members = dm_conversation_id.to_s.split("-")
