@@ -65,7 +65,7 @@ module X
         #   one, before a request
         # @yieldparam problem [Problem] each problem the API reported
         # @example Print the live spaces a user created
-        #   client.find_all_spaces_by_creator([7505382], state: "live").map(&:title)
+        #   client.find_all_spaces_by_creator([7505382]).select { |space| space.state.eql?("live") }.map(&:title)
         def find_all_spaces_by_creator(users, concurrency: BatchFinders::DEFAULT_CONCURRENCY, **params, &)
           Space.find_all_by_creator(users, client: self, concurrency:, **params, &)
         end
