@@ -243,7 +243,8 @@ module X
       # @return [Boolean] true if the user sent the message, false if another user did, or the message does not name
       #   its sender
       # @example Split messages into sent and received
-      #   messages.partition { |message| message.from?(client.current_user!) }
+      #   me = client.current_user_id
+      #   messages.partition { |message| message.from?(me) }
       def from?(user) = sender_id.to_s.eql?(Utils.id_of(user, User))
 
       # Check whether the message belongs to a group conversation
@@ -274,8 +275,9 @@ module X
       # @param user [User, String, Integer] the user, usually the authenticated user, or their identifier
       # @return [User, nil] the other participant, or nil for a group conversation, one without another participant,
       #   or one the user is not a member of
-      # @example Print who each message was exchanged with
-      #   client.direct_messages.reject(&:group?).each { |message| puts message.peer(client.current_user!).username }
+      # @example Print the identifier of the user each message was exchanged with
+      #   me = client.current_user_id
+      #   client.direct_messages.reject(&:group?).each { |message| puts message.peer(me)&.id }
       def peer(user)
         user_id = Utils.id_of(user, User)
         members = dm_conversation_id.to_s.split("-")
