@@ -53,10 +53,46 @@ module X
       end
     end
 
-    def test_the_io_is_left_where_it_was_when_a_read_fails
+    def test_the_io_is_read_at_the_offset_without_moving_it
       File.open(PNG, "rb") do |file|
         file.seek(10)
         source = source_for(file)
+
+        file.stub(:seek, ->(*) { flunk "seeked" }) do
+          assert_equal File.binread(PNG, 4, 1), source.read(4, 1)
+        end
+        assert_equal 10, file.pos
+      end
+    end
+
+    def test_a_read_past_the_end_of_the_file_reads_nothing
+      File.open(PNG, "rb") do |file|
+        source = source_for(file)
+
+        assert_equal ["", File.binread(PNG, 8, File.size(PNG) - 8)], [source.read(4, File.size(PNG)), source.read(16, File.size(PNG) - 8)]
+      end
+    end
+
+    # An IO that cannot pread, as one on Windows cannot
+    def without_pread(file)
+      file.define_singleton_method(:respond_to?) { |name, include_all = false| !name.equal?(:pread) && super(name, include_all) }
+      file.define_singleton_method(:pread) { |*| raise NotImplementedError, "pread() function is unimplemented on this machine" }
+      file
+    end
+
+    def test_an_io_that_cannot_pread_is_read_from_the_offset_and_left_where_it_was
+      File.open(PNG, "rb") do |file|
+        file.seek(10)
+        source = source_for(without_pread(file))
+
+        assert_equal [File.binread(PNG, 4, 1), "", 10], [source.read(4, 1), source.read(4, File.size(PNG)), file.pos]
+      end
+    end
+
+    def test_an_io_that_cannot_pread_is_left_where_it_was_when_a_read_fails
+      File.open(PNG, "rb") do |file|
+        file.seek(10)
+        source = source_for(without_pread(file))
 
         file.stub(:read, ->(_length) { raise IOError, "closed stream" }) do
           assert_raises(IOError) { source.read(4, 1) }
@@ -90,9 +126,9 @@ module X
       end
     end
 
-    def test_the_chunks_read_through_one_io_in_turn
+    def test_the_chunks_of_an_io_that_cannot_pread_read_through_it_in_turn
       File.open(PNG, "rb") do |file|
-        source = source_for(file)
+        source = source_for(without_pread(file))
         chunks = Array.new(8) { |index| Thread.new { source.read(16, index * 16) } }.map(&:value)
 
         assert_equal File.binread(PNG, 128), chunks.join

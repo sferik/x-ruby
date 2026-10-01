@@ -243,7 +243,8 @@ module X
       # Media read through an IO open on a file, a chunk at a time
       #
       # The IO is read by position, from the start of the file, whatever position it holds, and is left at that
-      # position. Seeking flushes what the IO has written, as reading its size does, so that is read with the rest.
+      # position. Reading by position flushes what the IO has written, as reading its size does, so that is read with
+      # the rest.
       # The file need not be named by the path the IO holds: an unlinked Tempfile is read, as is one created anonymous,
       # whose path is its directory, and $stdin redirected from a file, whose path is "<STDIN>", neither of which so
       # names a file.
@@ -290,25 +291,44 @@ module X
 
         # A run of the media, which the chunks of an upload are read with, from any thread
         #
-        # The chunks read through one IO, so they read it in turn, and each gives the IO back at the position it held.
+        # It is read at its offset with pread, which leaves the position of the IO alone, so that uploads of one IO,
+        # and code of the caller's own that reads it meanwhile, never read where another moved it to. An IO that cannot
+        # pread, as one on Windows cannot, is read by seeking to the offset, with the chunks of the upload in turn,
+        # and each gives the IO back at the position it held.
         #
         # @api private
         # @param length [Integer] the number of bytes to read
         # @param offset [Integer] the byte to read from, which is within the media
-        # @return [String] the bytes
+        # @return [String] the bytes, which are fewer than length, or none, if the file has fewer past the offset
         def read(length, offset)
+          return seek_and_read(length, offset) unless @io.respond_to?(:pread)
+
+          @io.pread(length, offset)
+        rescue EOFError
+          ""
+        end
+
+        private
+
+        # Read a run of the media by seeking to its offset
+        #
+        # The IO is given back at the position it held.
+        #
+        # @api private
+        # @param length [Integer] the number of bytes to read
+        # @param offset [Integer] the byte to read from
+        # @return [String] the bytes, or none if the file ends at the offset
+        def seek_and_read(length, offset)
           @mutex.synchronize do
             position = @io.pos
             begin
               @io.seek(offset)
-              @io.read(length) #: String
+              @io.read(length).to_s
             ensure
               @io.seek(position)
             end
           end
         end
-
-        private
 
         # Whether the IO is open for reading, told by reading nothing from it
         # @api private

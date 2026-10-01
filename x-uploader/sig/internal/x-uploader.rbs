@@ -48,6 +48,7 @@ module X
         def initialize: (untyped io) -> void
 
         private
+        def seek_and_read: (Integer length, Integer offset) -> String
         def open_for_reading?: () -> bool
       end
 
