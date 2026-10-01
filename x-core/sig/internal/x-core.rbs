@@ -851,8 +851,5 @@ module X
     include Core::CredentialHolder
 
     @internals: Core::ClientInternals
-
-    private
-    def with_retries: [T] () { () -> T } -> T
   end
 end

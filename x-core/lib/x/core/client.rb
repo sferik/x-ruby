@@ -494,8 +494,6 @@ module X
       #   client.close
       def close = @internals.close
 
-      private
-
       # Send a request that is safe to send twice again after a failure
       #
       # The client sends no POST again, since the API may have acted on one whose answer never arrived, and sends no
@@ -504,24 +502,24 @@ module X
       # segment it is appended at and which the API bills nothing for, is sent again with this: after a ServerError, a
       # RequestTimeout, or a NetworkError of any kind, up to max_retries times, as the client sends an idempotent
       # request again, after the wait a response asks for, or a backoff that doubles with each retry up to a minute and
-      # is cut short at random. A response that asks to be left alone for longer than a minute raises at once. The block must build
-      # its request anew each time, so that each attempt is signed afresh, as a request of the client is.
+      # is cut short at random. A response that asks to be left alone for longer than a minute raises at once. The
+      # block must build its request anew each time, so that each attempt is signed afresh, as a request of the client
+      # is.
       #
       # Wrap a request the client sends no more than once, such as a POST: the client sends a GET, a PUT, or a DELETE
       # again itself, so one wrapped in this is sent max_retries times more for each time this sends it, nine times in
       # all with the defaults, rather than three.
       #
-      # Internal to the gems of x: x-uploader sends each chunk of an upload with it, with __send__, so that 1.x can
-      # change how the requests of an upload are sent again without a change to the public API of a client.
+      # x-uploader sends each chunk of an upload with it.
       #
-      # @api private
+      # @api public
       # @yield sends the request
       # @return [Object] what the block returns
       # @raise [NetworkError] if the request fails once more than the retries allow
       # @raise [ServerError, RequestTimeout] if the API fails to answer once more than the retries allow, or asks for a
       #   wait longer than a minute
       # @example Append a chunk of an upload, again after a failure
-      #   client.__send__(:with_retries) { client.post("media/upload/1/append", body, headers:) }
+      #   client.with_retries { client.post("media/upload/1/append", body, headers:) }
       def with_retries(&) = @internals.with_retries(&)
     end
   end

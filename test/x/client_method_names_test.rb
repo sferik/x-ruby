@@ -8,13 +8,12 @@ module X
   # which X::Client includes, takes the place of a method of the same name in a module of x-core that X::Client
   # includes before them, and a method X::Client defines itself takes the place of theirs, so a private helper of
   # either side that the other came to name would be called by code that meant the other one, and would break every
-  # request. So X::Client keeps no private methods but initialize, and with_retries, which x-uploader sends each chunk
-  # of an upload with and so names on purpose, and no name is shared either way.
+  # request. So X::Client keeps no private methods but initialize, and no name is shared either way.
   class ClientMethodNamesTest < Minitest::Test
     INCLUDED_APIS = [Objects::API, Uploader::API].freeze
 
-    def test_a_client_has_no_private_method_of_x_core_but_initialize_and_with_retries
-      assert_equal %i[initialize with_retries], x_core_ancestors.flat_map { |ancestor| ancestor.private_instance_methods(false) }.sort
+    def test_a_client_has_no_private_method_of_x_core_but_initialize
+      assert_equal %i[initialize], x_core_ancestors.flat_map { |ancestor| ancestor.private_instance_methods(false) }.sort
     end
 
     def test_no_method_of_an_included_api_takes_the_place_of_a_method_of_x_core
