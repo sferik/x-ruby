@@ -50,8 +50,8 @@ module X
       # here, rather than from its readers.
       #
       # @api public
-      # @param attrs [Hash{String => Object}] the attributes, which name the identifier as id, as an Integer or as the
-      #   String the stream sends, and the tag as tag, unless the rule has none
+      # @param attrs [Hash{String, Symbol => Object}] the attributes, which name the identifier as id, as an Integer or
+      #   as the String the stream sends, and the tag as tag, unless the rule has none
       # @return [MatchingRule] the frozen rule
       # @raise [ArgumentError] if the attributes are not a Hash, the identifier names no number, or the tag is neither a
       #   String nor nil

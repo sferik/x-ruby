@@ -60,7 +60,7 @@ module X
       # Initialize the usage from the attributes the API reported
       #
       # @api public
-      # @param attrs [Hash{String => Object}] the attributes
+      # @param attrs [Hash{String, Symbol => Object}] the attributes
       # @return [PostUsage] a new usage
       # @raise [ArgumentError] if the attributes are not a Hash
       # @example Build a usage

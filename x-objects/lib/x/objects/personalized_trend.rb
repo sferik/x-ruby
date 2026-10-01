@@ -63,7 +63,7 @@ module X
       # Initialize a trend from the attributes the API reported
       #
       # @api public
-      # @param attrs [Hash{String => Object}] the attributes
+      # @param attrs [Hash{String, Symbol => Object}] the attributes
       # @return [PersonalizedTrend] a new trend
       # @raise [ArgumentError] if the attributes are not a Hash
       # @example Build a trend

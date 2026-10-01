@@ -31,7 +31,7 @@ module X
     attr_reader attrs: Hash[String, untyped]
 
     def self.at: (Integer | String woeid, client: Objects::_Client, **untyped params) -> Array[Trend]
-    def initialize: (Hash[String, untyped] attrs) -> void
+    def initialize: (Hash[untyped, untyped] attrs) -> void
     def to_h: () -> Hash[String, untyped]
     def name: () -> String?
     def post_count: () -> Integer?
@@ -54,7 +54,7 @@ module X
     attr_reader attrs: Hash[String, untyped]
 
     def self.all: (client: Objects::_Client, **untyped params) -> Array[PersonalizedTrend]
-    def initialize: (Hash[String, untyped] attrs) -> void
+    def initialize: (Hash[untyped, untyped] attrs) -> void
     def to_h: () -> Hash[String, untyped]
     def name: () -> String?
     def category: () -> String?
@@ -78,7 +78,7 @@ module X
     attr_reader attrs: Hash[String, untyped]
 
     def self.current: (client: Objects::_Client, **untyped params) -> PostUsage
-    def initialize: (Hash[String, untyped] attrs) -> void
+    def initialize: (Hash[untyped, untyped] attrs) -> void
     def to_h: () -> Hash[String, untyped]
     def project_id: () -> Integer?
     def project_usage: () -> Integer?
@@ -635,7 +635,7 @@ module X
   class MatchingRule
     attr_reader attrs: Hash[String, untyped]
 
-    def initialize: (Hash[String, untyped] attrs) -> void
+    def initialize: (Hash[untyped, untyped] attrs) -> void
     def id: () -> Integer
     def tag: () -> String?
     def to_h: () -> Hash[String, untyped]
