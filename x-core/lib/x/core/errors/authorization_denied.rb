@@ -39,12 +39,15 @@ module X
     # Initialize a new AuthorizationDenied
     #
     # @api public
-    # @param message [String] the reason the app was not authorized
+    # @param message [String, nil] the reason the app was not authorized, or nil for the name of the class, as an
+    #   exception raised with no message is named
     # @param error_code [String, nil] the OAuth 2.0 error code, or nil for none
     # @return [AuthorizationDenied] a new instance
     # @example Create an error
     #   X::AuthorizationDenied.new("The user denied the request", error_code: "access_denied")
-    def initialize(message, error_code: nil)
+    # @example Raise the error with no message, as a test stub may
+    #   raise X::AuthorizationDenied
+    def initialize(message = nil, error_code: nil)
       super(message)
       @error_code = error_code
     end

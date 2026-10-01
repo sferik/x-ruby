@@ -60,7 +60,7 @@ module X
   class AuthorizationDenied < Error
     attr_reader error_code: String?
 
-    def initialize: (String message, ?error_code: String?) -> void
+    def initialize: (?String? message, ?error_code: String?) -> void
   end
 
   class TokenReportFailed < Error
@@ -167,7 +167,7 @@ module X
   end
 
   class NetworkError < Error
-    def initialize: (String message, ?http_method: (Symbol | String)?, ?uri: URI::Generic?) -> void
+    def initialize: (?String? message, ?http_method: (Symbol | String)?, ?uri: URI::Generic?) -> void
     def http_method: () -> Symbol?
     def uri: () -> URI::Generic?
   end
@@ -191,7 +191,7 @@ module X
   end
 
   class TooManyRedirects < Error
-    def initialize: (String message, ?http_method: (Symbol | String)?, ?uri: URI::Generic?) -> void
+    def initialize: (?String? message, ?http_method: (Symbol | String)?, ?uri: URI::Generic?) -> void
     def http_method: () -> Symbol?
     def uri: () -> URI::Generic?
   end
