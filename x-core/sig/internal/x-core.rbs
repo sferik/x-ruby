@@ -462,9 +462,12 @@ module X
       def with: (Client client, Hash[Symbol, untyped] options) -> Client
       def close: () -> void
       def execute_request: (Client client, :delete | :get | :post | :put http_method, String endpoint, params: params?, headers: headers, array_class: Class, object_class: object_class, ?body: body?, ?form: params?) ?{ (Response) -> void } -> untyped
+      def execute_stream: [T] (Client client, String endpoint, params: params?, headers: headers) { (Net::HTTPResponse) -> T } -> T
 
       private
       def perform: (Client client, :delete | :get | :post | :put http_method, URI::Generic uri, body: String?, headers: headers, array_class: Class, object_class: object_class) ?{ (Response) -> void } -> untyped
+      def perform_stream: [T] (URI::Generic uri, headers: headers) { (Net::HTTPResponse) -> T } -> T
+      def reading: [T] () { () -> T } -> T
     end
 
     # What a Response and an HTTPError hold the headers of
@@ -566,7 +569,8 @@ module X
       def initialize: (?open_timeout: (Float | Integer)?, ?read_timeout: (Float | Integer)?, ?write_timeout: (Float | Integer)?, ?keep_alive_timeout: Float | Integer, ?proxy_url: (URI::Generic | String)?, ?debug_output: _DebugOutput?) -> void
       def inspect: () -> String
       def perform: (request: Net::HTTPRequest) -> Net::HTTPResponse
-      def perform_stream: (request: Net::HTTPRequest) { (Net::HTTPResponse) -> void } -> void
+      def perform_stream: [T] (request: Net::HTTPRequest) { (Net::HTTPResponse) -> T } -> T
+      def self.network_error?: (Exception error) -> bool
 
       @pool: ConnectionPool
 

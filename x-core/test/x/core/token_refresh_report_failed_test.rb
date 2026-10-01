@@ -47,6 +47,14 @@ module X
       assert_instance_of StorageDown, error.cause
     end
 
+    def test_a_refresh_of_a_token_a_stream_was_refused_for_raises_with_the_client
+      stub_request(:get, "https://api.x.com/2/tweets/sample/stream").to_return(status: 401)
+      client = Client.new(**test_oauth2_credentials, save_tokens: @failing)
+      error = assert_raises(TokenReportFailed) { client.get_stream("tweets/sample/stream") { |_response| } }
+
+      assert_same client, error.client
+    end
+
     def test_a_refresh_of_a_rejected_token_raises_with_the_client_and_the_tokens
       stub_request(:get, USERS_ME).to_return(status: 401)
       client = Client.new(**test_oauth2_credentials, save_tokens: @failing)

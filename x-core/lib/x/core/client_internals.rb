@@ -162,7 +162,71 @@ module X
         raise e.error
       end
 
+      # Open a GET request whose body the block reads as it arrives
+      #
+      # It is what {Client#get_stream} does. An error the block raises, but for the errors of a socket, which raise a
+      # NetworkError, is tagged as a CallbackError, so that no rejected token is refreshed for it, and raised as it was
+      # once the request is left.
+      #
+      # @api private
+      # @param client [Client] the client these are the internals of
+      # @param endpoint [String] the endpoint, relative to the base URL
+      # @param params [Hash, nil] query parameters appended to the endpoint
+      # @param headers [Hash] additional headers for the request
+      # @yieldparam http_response [Net::HTTPResponse] the successful response, whose body is not yet read
+      # @return [Object] what the block returns
+      def execute_stream(client, endpoint, params:, headers:, &)
+        uri = RequestEncoding.uri_for(base_url, endpoint, params)
+        headers = headers_for(headers)
+        refreshing_rejected_token(client) { perform_stream(uri, headers:, &) }
+      rescue CallbackError => e
+        raise e.error
+      end
+
       private
+
+      # Open a GET request once, and pass its response to the block if it succeeded
+      #
+      # A request to another origin than the base URL carries none of the client's credentials, as any other does. The
+      # body of a failed response is read whole, by on_response or by its error, so it is tagged UTF-8 before either
+      # reads it, as the body of {Connection#perform} is.
+      #
+      # @api private
+      # @param uri [URI::Generic] the URI of the request
+      # @param headers [Hash] the headers of the request, beside those of the client
+      # @yieldparam http_response [Net::HTTPResponse] the successful response
+      # @return [Object] what the block returns
+      # @raise [HTTPError] if the response is not successful
+      # @raise [CallbackError] if on_response or the block raises an error that is not one of a socket
+      def perform_stream(uri, headers:)
+        authenticator, headers = Origin.credentials_for(from: URI(base_url), to: uri, authenticator: self.authenticator, headers:)
+        request = @request_builder.build(http_method: :get, uri:, headers:, authenticator:)
+        @connection.perform_stream(request:) do |response|
+          unless response.is_a?(Net::HTTPSuccess)
+            response.body_encoding = Encoding::UTF_8
+            CallbackError.tagging { report(:get, uri, response) }
+            raise @response_parser.error(response, request)
+          end
+          reading { yield response }
+        end
+      end
+
+      # Run the block of a stream, tagging its errors but those of a socket
+      #
+      # The errors of a socket are those of a body that could not be read, which the connection raises as a
+      # NetworkError, and any other error is the block's own, which is raised as it was.
+      #
+      # @api private
+      # @yield reads the body of the response
+      # @return [Object] what the block returns
+      # @raise [CallbackError] if the block raises an error that is not one of a socket
+      def reading
+        yield
+      rescue => e
+        raise if Connection.network_error?(e)
+
+        raise CallbackError, e
+      end
 
       # Perform a request once, following redirects and parsing the response
       #

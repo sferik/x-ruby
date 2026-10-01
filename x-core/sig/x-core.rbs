@@ -414,6 +414,7 @@ module X
     def post: (String endpoint, ?body? body, ?params: params?, ?form: params?, ?headers: headers, ?array_class: Class, ?object_class: object_class) ?{ (Response) -> void } -> untyped
     def put: (String endpoint, ?body? body, ?params: params?, ?form: params?, ?headers: headers, ?array_class: Class, ?object_class: object_class) ?{ (Response) -> void } -> untyped
     def delete: (String endpoint, ?params: params?, ?headers: headers, ?array_class: Class, ?object_class: object_class) ?{ (Response) -> void } -> untyped
+    def get_stream: [T] (String endpoint, ?params: params?, ?headers: headers) { (Net::HTTPResponse http_response) -> T } -> T
     def streaming: (?read_timeout: (Float | Integer)?, ?max_reconnects: Float | Integer) -> StreamingClient
     def close: () -> void
     def with_retries: [T] () { () -> T } -> T

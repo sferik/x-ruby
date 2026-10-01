@@ -559,6 +559,39 @@ module X
         @internals.execute_request(self, :delete, endpoint, params:, headers:, array_class:, object_class:, &)
       end
 
+      # Open a GET request whose body the block reads as it arrives, as a stream's is
+      #
+      # The response is passed to the block before its body is read, so the block reads it, as with read_body, for as
+      # long as it likes; the connection is opened for the request alone, with the client's timeouts and proxy, and
+      # closed once the block returns. The request carries the client's credentials and headers as any other does, and
+      # a token the API rejects is refreshed, or fetched again, and the request sent once more, as for any other. It is
+      # neither retried after a failure nor redirected, and a response that is not successful raises the HTTPError of
+      # its status, once on_response is passed it, without reaching the block. Nothing the block reads is passed to
+      # on_response, since the body is the block's to read.
+      #
+      # An error the block raises reaches the caller as it was raised, but for the errors of a socket, such as the
+      # IOError of a body that could not be read, or a read that timed out, which raise a NetworkError that names the
+      # request, as a connection that fails does, so that a stream that dropped is told apart from a block that failed.
+      #
+      # @api public
+      # @param endpoint [String] the endpoint, relative to the base URL with or without a leading slash, with or
+      #   without a query string
+      # @param params [Hash, nil] query parameters appended to the endpoint
+      # @param headers [Hash] additional headers for the request
+      # @yieldparam http_response [Net::HTTPResponse] the successful response, whose body is not yet read
+      # @return [Object] what the block returns
+      # @raise [ArgumentError] if no block is given, or the endpoint is not a valid URL, or does not resolve to an http
+      #   or https URL, before the request is sent
+      # @raise [HTTPError] if the response is not successful
+      # @raise [NetworkError] if the request cannot be sent, or its body cannot be read
+      # @example Print the body of the sample stream as it arrives
+      #   client.app_only.get_stream("tweets/sample/stream") { |response| response.read_body { |chunk| print chunk } }
+      def get_stream(endpoint, params: nil, headers: {}, &)
+        raise ArgumentError, "get_stream takes a block, which reads the body of the response" unless block_given?
+
+        @internals.execute_stream(self, endpoint, params:, headers:, &)
+      end
+
       # A client for the streaming endpoints, which reads and reconnects differently
       #
       # @api public

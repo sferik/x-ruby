@@ -151,34 +151,44 @@ module X
 
       # Perform a streaming HTTP request
       #
-      # Internal to x-core: StreamingClient opens its streams with it.
+      # Internal to x-core: Client#get_stream, and StreamingClient, open their requests with it.
       #
       # The connection is opened for this request and closed once the block returns, rather than taken from the
-      # connections kept open and given back, since a stream holds its connection for as long as it reads.
+      # connections kept open and given back, since a stream holds its connection for as long as it reads. Once the
+      # block returns, the connection is closed with what is left of the body unread, rather than read to its end, as
+      # Net::HTTP would otherwise read it, which a stream never reaches.
       #
-      # An error the block raises, which StreamParser tags as a CallbackError, is raised tagged, rather than reported
-      # as a network error: the callbacks of a stream run inside the request that reads it, and the errors a socket
-      # raises are the ones a stream reconnects after. The ReconnectHandler of the stream raises it as it was, once it no longer reconnects.
+      # An error the block raises, which the client tags as a CallbackError unless it is one of a socket, is raised
+      # tagged, rather than reported as a network error: the block of a stream runs inside the request that reads it,
+      # and the errors a socket raises are the ones a stream reconnects after.
       #
       # The body is not tagged UTF-8 here, as the body of {#perform} is: Net::HTTP tags a body it reads whole, and
-      # raises for one it passes to a block a chunk at a time, as a stream is read. StreamParser tags each line of
-      # a stream, and the body of a stream that failed, which it reads whole.
+      # raises for one it passes to a block a chunk at a time, as a stream is read.
       #
       # @api private
       # @param request [Net::HTTPRequest] the HTTP request to perform
       # @yield [Net::HTTPResponse] the HTTP response for streaming
-      # @return [void]
+      # @return [Object] what the block returns
       # @raise [NetworkError] if a network error occurs
-      # @raise [CallbackError] if a callback of the stream raises
+      # @raise [CallbackError] if the block raises an error that is not one of a socket
       # @example Perform a streaming request
       #   connection.perform_stream(request: request) { |response| response.read_body { |chunk| } }
-      def perform_stream(request:, &)
+      def perform_stream(request:)
         http_client = build_http_client(request.uri)
         http_client.use_ssl = request.uri.scheme.eql?("https")
-        http_client.request(request, &)
+        catch { |done| http_client.request(request) { |response| throw done, yield(response) } }
       rescue *NETWORK_ERRORS => e
         raise NetworkError.new("Network error: #{e}", **RequestContext.of(request))
       end
+
+      # Check whether an error is one a request raises as a NetworkError
+      #
+      # @api private
+      # @param error [Exception] the error
+      # @return [Boolean] true if the error is one of a socket
+      # @example Check an error a stream raised
+      #   X::Core::Connection.network_error?(IOError.new) # => true
+      def self.network_error?(error) = NETWORK_ERRORS.any? { |network_error| error.is_a?(network_error) }
 
       # Close the connections kept open between requests
       #
