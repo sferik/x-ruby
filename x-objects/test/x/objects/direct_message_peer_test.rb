@@ -86,6 +86,13 @@ module X
       assert_nil DirectMessage.new({"id" => "1", "sender_id" => "9", "dm_conversation_id" => "7-8"}).peer("9")
     end
 
+    def test_peer_of_a_received_message_of_a_user_outside_the_conversation
+      message = DirectMessage.__send__(:build, {"id" => "1", "sender_id" => "8", "dm_conversation_id" => "8-9"}, includes: @includes)
+
+      assert_nil message.peer("7")
+      assert_nil message.peer(User.new({"id" => "7"}))
+    end
+
     def test_peer_of_a_new_message_is_the_recipient
       @client.stub(:post, "dm_conversations/with/8/messages", {"data" => {"dm_conversation_id" => "8-9", "dm_event_id" => "99"}})
 

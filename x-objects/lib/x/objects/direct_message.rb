@@ -266,7 +266,9 @@ module X
       # The sender, when the user did not send the message, and otherwise the other member of the
       # conversation, from the includes or as a stub holding only its identifier. A message that does not name its
       # sender, as the message a new direct message returns does not, is read by its conversation alone, whose other
-      # member is the peer of a user who is one of its two. A group conversation has no one other participant.
+      # member is the peer of a user who is one of its two. A message whose conversation the user is not one of the
+      # two members of has no peer for that user, even one another user sent, so neither has a message of a group
+      # conversation, whose identifier names none of its members.
       #
       # @api public
       # @param user [User, String, Integer] the user, usually the authenticated user, or their identifier
@@ -275,12 +277,12 @@ module X
       # @example Print who each message was exchanged with
       #   client.direct_messages.reject(&:group?).each { |message| puts message.peer(client.current_user!).username }
       def peer(user)
-        return if group?
-        return sender unless sender_id.nil? || from?(user)
-
         user_id = Utils.id_of(user, User)
         members = dm_conversation_id.to_s.split("-")
-        resolve(User, members.find { |id| !id.eql?(user_id) }) if members.include?(user_id) #: User?
+        return unless members.empty? || members.include?(user_id)
+        return sender unless sender_id.nil? || from?(user_id)
+
+        resolve(User, members.find { |id| !id.eql?(user_id) }) #: User?
       end
 
       # Delete this direct message event as the authenticated user
