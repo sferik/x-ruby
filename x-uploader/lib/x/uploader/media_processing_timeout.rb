@@ -22,7 +22,7 @@ module X
     #   error.media.dig("processing_info", "progress_percent") # => 42
     # @example Wait for the media again later
     #   rescue X::MediaProcessingTimeout => e
-    #     client.await_processing(e.media)
+    #     client.await_media_processing(e.media)
     attr_reader :media
 
     # The seconds await_processing was allowed to wait

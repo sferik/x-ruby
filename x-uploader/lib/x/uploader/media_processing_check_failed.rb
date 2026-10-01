@@ -41,7 +41,7 @@ module X
     # @return [UploadedMedia, nil] the uploaded media, or nil if none was given
     # @example Await the processing of the media again later
     #   rescue X::MediaProcessingCheckFailed => e
-    #     client.await_processing(e.media)
+    #     client.await_media_processing(e.media)
     attr_reader :media
 
     # Initialize the error with the media that was uploaded
