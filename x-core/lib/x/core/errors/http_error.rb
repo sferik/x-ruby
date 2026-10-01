@@ -38,6 +38,10 @@ module X
       # The value of a Retry-After header that counts seconds, rather than naming the time to wait until
       RETRY_AFTER_SECONDS = /\A\d+\z/
       private_constant :RETRY_AFTER_SECONDS
+      # The message of the error raised for an HTTPError itself, which has no status, given neither a response nor one
+      ANY_STATUS = "X::HTTPError is raised for a response of any status, so it is built with the status: of one, or the " \
+        "http_response: itself; raise the error of the status, such as X::NotFound, to build one without either"
+      private_constant :ANY_STATUS
 
       # The response itself, as the client received it
       #
@@ -184,7 +188,8 @@ module X
 
       # The HTTP response given, or the one built of the status, headers, and body
       #
-      # A response given neither a response nor a status is built with the status of the class.
+      # A response given neither a response nor a status is built with the status of the class, and an HTTPError itself,
+      # which has none, raises.
       #
       # @api private
       # @param http_response [Net::HTTPResponse, nil] the HTTP response, or nil to build one
@@ -192,9 +197,12 @@ module X
       # @param headers [Hash{String => String}, nil] the headers of the response to build, or nil for none
       # @param body [String, nil] the body of the response to build, or nil for none
       # @return [Net::HTTPResponse] the HTTP response
-      # @raise [ArgumentError] as {BuiltResponse.of} raises
+      # @raise [ArgumentError] if the error is given neither a response nor a status, and its class has no status, or as
+      #   {BuiltResponse.of} raises
       def built_response(http_response, status:, headers:, body:)
         status ||= self.class.__send__(:default_status) if http_response.nil?
+        raise ArgumentError, ANY_STATUS if http_response.nil? && status.nil?
+
         BuiltResponse.of(http_response, status:, headers:, body:)
       end
 

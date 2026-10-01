@@ -18,9 +18,12 @@ module X
       # The message of the error raised for a status that is not one HTTP defines
       INVALID_STATUS = "status must be an Integer from 100 to 599, not %s"
       private_constant :INVALID_STATUS
-      # The message of the error raised for a response given beside what one is built of, or for neither
-      RESPONSE_OR_STATUS = "Pass the http_response:, or the status:, headers:, and body: one is built of, and not both"
-      private_constant :RESPONSE_OR_STATUS
+      # The message of the error raised for a response given beside what one is built of
+      RESPONSE_AND_STATUS = "Pass the http_response:, or the status:, headers:, and body: one is built of, not both"
+      private_constant :RESPONSE_AND_STATUS
+      # The message of the error raised for neither a response nor a status
+      NO_RESPONSE = "Pass the status: of the response, with its headers: and body: if it has any, or the http_response: itself"
+      private_constant :NO_RESPONSE
       # The statuses HTTP defines
       STATUSES = 100..599
       private_constant :STATUSES
@@ -39,7 +42,8 @@ module X
       #   X::Core::BuiltResponse.of(nil, status: 404, headers: nil, body: "{}") # => #<Net::HTTPNotFound 404 Not Found>
       def of(http_response, status:, headers:, body:)
         return build(status, headers || {}, body) if http_response.nil? && !status.nil?
-        raise ArgumentError, RESPONSE_OR_STATUS unless http_response && [status, headers, body].none?
+        raise ArgumentError, NO_RESPONSE if http_response.nil?
+        raise ArgumentError, RESPONSE_AND_STATUS unless [status, headers, body].none?
 
         http_response
       end

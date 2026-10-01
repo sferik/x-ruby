@@ -395,7 +395,8 @@ module X
 
     module BuiltResponse
       INVALID_STATUS: String
-      RESPONSE_OR_STATUS: String
+      RESPONSE_AND_STATUS: String
+      NO_RESPONSE: String
       STATUSES: Range[Integer]
       extend BuiltResponse
 
@@ -688,6 +689,7 @@ module X
     PROBLEM_KEYS: Array[String]
     RETRY_AFTER_HEADER: String
     RETRY_AFTER_SECONDS: Regexp
+    ANY_STATUS: String
 
     private def self.default_status: () -> Integer?
 

@@ -57,7 +57,7 @@ module X
     def test_a_response_and_a_status_are_refused_together
       error = assert_raises(ArgumentError) { HTTPError.new(http_response: not_found, status: 404) }
 
-      assert_equal "Pass the http_response:, or the status:, headers:, and body: one is built of, and not both", error.message
+      assert_equal "Pass the http_response:, or the status:, headers:, and body: one is built of, not both", error.message
     end
 
     def test_a_response_is_refused_beside_headers_or_a_body
@@ -68,8 +68,15 @@ module X
     def test_an_error_is_refused_without_a_response_or_a_status
       error = assert_raises(ArgumentError) { HTTPError.new }
 
-      assert_equal "Pass the http_response:, or the status:, headers:, and body: one is built of, and not both", error.message
+      assert_equal "X::HTTPError is raised for a response of any status, so it is built with the status: of one, or " \
+        "the http_response: itself; raise the error of the status, such as X::NotFound, to build one without either", error.message
       assert_raises(ArgumentError) { HTTPError.new(headers: {}, body: "{}") }
+    end
+
+    def test_a_summary_is_refused_without_a_response_or_a_status
+      error = assert_raises(ArgumentError) { Response.new(http_method: :get, uri: URI_OF_REQUEST) }
+
+      assert_equal "Pass the status: of the response, with its headers: and body: if it has any, or the http_response: itself", error.message
     end
 
     def test_a_status_http_does_not_define_is_refused
