@@ -561,7 +561,7 @@ module X
         expanded_url = link["expanded_url"] || url
         raise ArgumentError, "a link needs a url, and an expanded_url if any, that are Strings" unless [url, expanded_url].all?(String)
 
-        text&.gsub(url, expanded_url)
+        text&.gsub(url) { expanded_url }
       end
     end
   end

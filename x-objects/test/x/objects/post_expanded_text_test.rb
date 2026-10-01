@@ -26,6 +26,12 @@ module X
       assert_equal "https://github.com/sferik/x-ruby https://github.com/sferik/x-ruby", post.expanded_text
     end
 
+    def test_expanded_text_inserts_a_url_that_holds_a_backslash_as_it_is
+      post = Post.new({"id" => "1", "text" => "hi https://t.co/ax", "entities" => {"urls" => [{"url" => "https://t.co/ax", "expanded_url" => "https://ex.com/\\0\\&x"}]}})
+
+      assert_equal "hi https://ex.com/\\0\\&x", post.expanded_text
+    end
+
     def test_expanded_text_keeps_a_link_without_an_expansion
       post = Post.new({"id" => "1", "text" => "See https://t.co/abc", "entities" => {"urls" => [{"url" => "https://t.co/abc"}]}})
 
