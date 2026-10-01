@@ -199,6 +199,7 @@ module X
       def deletion: (Array[untyped] ids, Array[untyped] values) -> Hash[Symbol, Array[untyped]]
       def each_rule: (untyped rules) -> Array[untyped]
       def rules_of: (Hash[String, untyped]? body) -> Array[StreamRule]
+      def next_token: (Hash[String, untyped]? body, Array[String] spent) -> String?
       def rule_to_add: (StreamingClient::addable_rule rule) -> Hash[untyped, untyped]
       def identifier_of: (StreamingClient::rule rule) -> (String | Integer)?
       def value_of: (StreamingClient::rule rule) -> String

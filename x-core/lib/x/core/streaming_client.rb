@@ -199,7 +199,8 @@ module X
       #
       # The rules of an app are read, added, and deleted through a streaming client because they belong to the stream:
       # they are what the filtered stream delivers, and they take the app-only authentication a stream takes. The API
-      # returns the rules a page at a time, and every page is read, so the rules are all of them.
+      # returns the rules a page at a time, and every page is read, so the rules are all of them. A page that names an
+      # empty next token, or the token of a page already read, is the last, as a page that names none is.
       #
       # @api public
       # @param params [Hash, nil] query parameters appended to the endpoint of each page
@@ -212,9 +213,16 @@ module X
       # @example Read two rules by identifier
       #   streaming_client.rules(params: {ids: "1,2"})
       def rules(params: nil)
-        body = app_client.get(RULES_ENDPOINT, params:, **JSON_CLASSES)
-        token = body.to_h.dig("meta", "next_token")
-        (StreamRules.rules_of(body) + (token ? rules(params: params.to_h.merge(pagination_token: token)) : [])).freeze
+        rules = [] #: Array[StreamRule]
+        spent = [] #: Array[String]
+        loop do
+          body = app_client.get(RULES_ENDPOINT, params:, **JSON_CLASSES)
+          rules.concat(StreamRules.rules_of(body))
+          token = StreamRules.next_token(body, spent) or break
+          spent << token
+          params = params.to_h.merge(pagination_token: token)
+        end
+        rules.freeze
       end
 
       # Add rules for the filtered stream to match posts against

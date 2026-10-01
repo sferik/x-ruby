@@ -55,6 +55,20 @@ module X
         rules.map { |rule| StreamRule.new(id: rule["id"], value: rule["value"], tag: rule["tag"]) }.freeze
       end
 
+      # The token of the page of rules after a response, or nil for the last page
+      #
+      # An empty token names no page, and a token that fetched a page already would have the pages requested again for
+      # good, and the API bill each request, so the page that names either is the last, as a page that names none is.
+      #
+      # @api private
+      # @param body [Hash, nil] the parsed response body
+      # @param spent [Array<String>] the tokens that fetched the pages before it
+      # @return [String, nil] the token, or nil if the page is the last
+      def next_token(body, spent)
+        token = body.to_h.dig("meta", "next_token")
+        token unless ["", *spent].include?(token)
+      end
+
       # A rule to add, from the rule itself or the value it matches
       #
       # The API gives each rule it adds an identifier of its own, so one that a rule holds, as a rule that was read
