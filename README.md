@@ -334,7 +334,9 @@ x_client.update_profile_banner("banner.png")
 # Media is a path, or an IO open on it. Media given as a String or a Pathname is read from the file it names, and
 # media given as a File or a Tempfile through that IO, even once the Tempfile is unlinked, or from the file it names
 # once it is closed, a chunk at a time, so media of any size uploads without being held in memory. A String that holds
-# the contents of media, rather than its path, raises ArgumentError: wrap the contents in a StringIO.
+# the contents of media, rather than its path, raises ArgumentError: wrap the contents in a StringIO. A String is
+# read as a path on this machine, so never pass one a user gave, such as a parameter of a form, which could name any
+# file the process can read, and upload it to X: pass the IO of the file the user uploaded instead.
 x_client.upload_media(Pathname("cat.jpg"))
 File.open("cat.mp4", "rb") { |file| x_client.upload_media(file) }
 
