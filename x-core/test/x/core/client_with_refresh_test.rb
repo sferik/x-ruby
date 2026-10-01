@@ -84,13 +84,6 @@ module X
       refute_same client.authenticator, copy.authenticator
     end
 
-    def test_a_copy_given_other_tokens_keeps_the_expiration_time_of_the_client
-      expires_at = Time.now + 60
-      copy = Client.new(**test_oauth2_credentials, expires_at:).with(access_token: "OTHER_ACCESS_TOKEN", refresh_token: "OTHER_REFRESH_TOKEN")
-
-      assert_equal expires_at, copy.expires_at
-    end
-
     def test_a_copy_that_signs_with_oauth1_keeps_its_own_authenticator
       client = Client.new(**test_oauth2_credentials)
       copy = client.with(api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET, access_token_secret: TEST_ACCESS_TOKEN_SECRET)

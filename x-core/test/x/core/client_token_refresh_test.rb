@@ -156,21 +156,27 @@ module X
       assert_equal [TEST_REFRESH_TOKEN, TEST_ACCESS_TOKEN], [internals(client).send(:refresh_token), internals(client).send(:access_token)]
     end
 
-    def test_a_copy_with_another_credential_keeps_the_refreshed_tokens
+    def test_a_copy_with_another_credential_keeps_the_refreshed_access_token_and_none_of_the_refresh_token
       client = Client.new(**test_oauth2_credentials)
       client.authenticator.refresh!
       copy = client.with(client_secret: "NEW_CLIENT_SECRET")
 
-      assert_equal ["NEW_ACCESS_TOKEN", "NEW_REFRESH_TOKEN"], [copy.authenticator.__send__(:access_token), copy.authenticator.__send__(:refresh_token)]
+      assert_equal ["NEW_ACCESS_TOKEN", nil], [copy.authenticator.__send__(:access_token), copy.authenticator.__send__(:refresh_token)]
       refute_same client.authenticator, copy.authenticator
     end
 
-    def test_a_copy_given_a_token_replaces_the_refreshed_one
+    def test_a_copy_given_a_token_holds_none_of_the_refresh_token_of_the_client
       client = Client.new(**test_oauth2_credentials)
       client.authenticator.refresh!
       copy = client.with(access_token: "GIVEN_ACCESS_TOKEN")
 
-      assert_equal ["GIVEN_ACCESS_TOKEN", "NEW_REFRESH_TOKEN"], [copy.authenticator.__send__(:access_token), copy.authenticator.__send__(:refresh_token)]
+      assert_equal ["GIVEN_ACCESS_TOKEN", nil], [copy.authenticator.__send__(:access_token), copy.authenticator.__send__(:refresh_token)]
+    end
+
+    def test_a_copy_given_a_token_and_a_refresh_token_holds_both
+      copy = Client.new(**test_oauth2_credentials).with(access_token: "GIVEN_ACCESS_TOKEN", refresh_token: "GIVEN_REFRESH_TOKEN")
+
+      assert_equal %w[GIVEN_ACCESS_TOKEN GIVEN_REFRESH_TOKEN], [copy.authenticator.__send__(:access_token), copy.authenticator.__send__(:refresh_token)]
     end
 
     def test_an_oauth1_copy_signs_with_a_new_access_token

@@ -268,6 +268,7 @@ module X
 
     module ClientTokenRefresh : _TokenRefreshHost
       SHARED_EXPIRATION: String
+      TOKEN_OPTIONS: Array[Symbol]
 
       @authenticator: Authenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator
       @connection: Connection
@@ -289,6 +290,7 @@ module X
       def initialize_token_hooks: (save_tokens: _TokenSaver?, load_tokens: _TokenLoader?) -> void
       def share_authenticator: (Client copy, Authenticator | AppOnlyAuthenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator other, Hash[Symbol, untyped] options) -> void
       def share_oauth2: (Client copy, OAuth2Authenticator other, Hash[Symbol, untyped] options) -> void
+      def without_tokens_of_client: (Hash[Symbol, untyped] copied, Hash[Symbol, untyped] options) -> Hash[Symbol, untyped]
       def share_app_only: (AppOnlyAuthenticator other, Hash[Symbol, untyped] options) -> void
       def take: (Client client, Authenticator authenticator) -> Authenticator
       def join: (Client client, OAuth2Authenticator authenticator) -> OAuth2Authenticator

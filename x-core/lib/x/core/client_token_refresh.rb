@@ -14,6 +14,10 @@ module X
       SHARED_EXPIRATION = "A copy that shares the access token of the client shares its expiration time and scopes, " \
         "so it cannot be given %s. Pass it beside the access token and refresh token it belongs to"
       private_constant :SHARED_EXPIRATION
+      # The options that belong to the tokens of the client, which a copy that leaves its OAuth 2.0 authenticator
+      # holds only when it is given them
+      TOKEN_OPTIONS = %i[refresh_token expires_at scopes save_tokens load_tokens].freeze
+      private_constant :TOKEN_OPTIONS
 
       # The time the OAuth 2.0 access token expires, as last refreshed
       #
@@ -94,6 +98,26 @@ module X
         raise ArgumentError, format(SHARED_EXPIRATION, given.join(" or ")) unless given.empty?
 
         @authenticator = join(copy, other)
+      end
+
+      # The options of a copy, without the client's tokens unless it shares them
+      #
+      # A copy given a client ID, client secret, access token, or refresh token the authenticator does not hold, or
+      # an authenticator of its own, does not share it, and authenticates with tokens that may be another user's. It
+      # holds the refresh token, expiration time, scopes, save_tokens, and load_tokens of the client only when it is
+      # given them: a refresh of the copy would otherwise spend the refresh token the client holds, which X accepts
+      # once, read the store of the client with its load_tokens and take the client's tokens in place of its own, or
+      # pass its tokens to the save_tokens of the client, which would store them in place of the client's.
+      #
+      # @api private
+      # @param copied [Hash{Symbol => Object}] the options the copy is built with
+      # @param options [Hash{Symbol => Object}] the options the copy was given
+      # @return [Hash{Symbol => Object}] the options, without those of the tokens of the client the copy was not given
+      def without_tokens_of_client(copied, options)
+        current = oauth2_authenticator_in_use or return copied
+        return copied unless options[:authenticator] || !current.__send__(:holds?, options)
+
+        copied.except(*(TOKEN_OPTIONS - options.keys))
       end
 
       # Share the app-only authenticator of the client this one was copied from

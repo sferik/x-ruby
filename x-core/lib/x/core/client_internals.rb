@@ -127,7 +127,7 @@ module X
       # @param options [Hash{Symbol => Object}] the options to change, as accepted by initialize
       # @return [Client] a new client with the same credentials and settings, apart from the options given
       def with(client, options)
-        client.class.new(**settings, **with_credentials(options)).tap do |copy|
+        client.class.new(**without_tokens_of_client({**settings, **with_credentials(options)}, options)).tap do |copy|
           internals = ClientInternals.of(copy)
           internals.__send__(:share_authenticator, copy, authenticator, options)
           internals.__send__(:share_app_token, self)

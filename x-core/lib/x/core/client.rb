@@ -338,6 +338,10 @@ module X
       # expiration time belongs to the access token they share, so such a copy is refused one: give expires_at beside
       # the access token and refresh token it is the expiration of.
       #
+      # A copy that does not share the OAuth 2.0 authenticator, since it is given credentials the authenticator does
+      # not hold or an authenticator of its own, holds tokens that may be another user's, so it holds none of the
+      # refresh token, expiration time, scopes, save_tokens, or load_tokens of the client unless it is given them.
+      #
       # A copy of a client that was given its authenticator shares it, unless the copy is given a credential, which
       # replaces it, or an authenticator of its own, which also replaces the credentials of a client that holds them.
       #
