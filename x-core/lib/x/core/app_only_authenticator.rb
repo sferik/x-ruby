@@ -132,6 +132,18 @@ module X
         !options.key?(:bearer_token) && options.slice(:api_key, :api_key_secret) <= {api_key:, api_key_secret:}
       end
 
+      # Check whether the bearer token is fetched at the origin of a base URL
+      #
+      # A token is fetched at the origin of the client that took the authenticator first, and sent there alone, so a
+      # copy of the client pointed at another origin fetches one of its own, rather than send it the client's.
+      # Internal to x-core: Client shares the authenticator with a copy at the same origin alone, and calls it with
+      # __send__, since it is private.
+      #
+      # @api private
+      # @param base_url [String] the base URL of the copy
+      # @return [Boolean] true if the token endpoint is at the origin of the base URL
+      def fetched_for?(base_url) = Origin.same?(URI(@token_url), URI(base_url))
+
       # Run a request, again with a bearer token fetched in place of one the API rejects
       #
       # Only a rejection by the origin the token is sent to drops it; see {Core::Origin}. A token fetched for the

@@ -649,6 +649,7 @@ module X
     def bearer_token: () -> String
     attr_reader api_key_secret: String
     def holds?: (Hash[Symbol, untyped] options) -> bool
+    def fetched_for?: (String base_url) -> bool
     def retrying_rejected_token: [T] (URI::Generic origin) { () -> T } -> T
     def drop_bearer_token: (String rejected) -> void
     def fetch_bearer_token: () -> String

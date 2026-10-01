@@ -37,6 +37,23 @@ module X
       end
     end
 
+    def test_a_copy_at_another_path_of_the_origin_shares_the_authenticator
+      assert_same @client.authenticator, @client.with(base_url: "https://api.x.com/1.1/").authenticator
+    end
+
+    def test_a_copy_at_another_origin_fetches_a_token_of_its_own_there
+      @client.get("users/1")
+      staging_token = stub_request(:post, "https://staging.example/oauth2/token")
+        .to_return(status: 200, body: {token_type: "bearer", access_token: "STAGING_TOKEN"}.to_json)
+      stub_request(:get, "https://staging.example/2/users/1").to_return(status: 200, body: "{}")
+      copy = @client.with(base_url: "https://staging.example/2/")
+      copy.get("users/1")
+
+      refute_same @client.authenticator, copy.authenticator
+      assert_requested staging_token, times: 1
+      assert_requested :get, "https://staging.example/2/users/1", headers: {"Authorization" => "Bearer STAGING_TOKEN"}
+    end
+
     def test_a_copy_that_signs_as_a_user_does_not_share_it
       copy = @client.with(access_token: TEST_ACCESS_TOKEN, access_token_secret: TEST_ACCESS_TOKEN_SECRET)
 

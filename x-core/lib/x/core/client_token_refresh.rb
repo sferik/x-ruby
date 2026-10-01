@@ -122,15 +122,18 @@ module X
 
       # Share the app-only authenticator of the client this one was copied from
       #
-      # It is shared by a copy that authenticates as the app with the API key and secret the authenticator holds,
-      # and was given no bearer token of its own, so the bearer token the client fetched, or fetches, is fetched once.
+      # It is shared by a copy that authenticates as the app with the API key and secret the authenticator holds, at
+      # the origin it fetches the bearer token at, and was given no bearer token of its own, so the bearer token the
+      # client fetched, or fetches, is fetched once, and is sent to no other origin than the one that issued it.
       #
       # @api private
       # @param other [AppOnlyAuthenticator] the authenticator of the client this one was copied from
       # @param options [Hash] the options the copy was given in place of the client's
       # @return [void]
       def share_app_only(other, options)
-        @authenticator = other if AppOnlyAuthenticator === @authenticator && other.__send__(:holds?, options)
+        return unless AppOnlyAuthenticator === @authenticator && other.__send__(:holds?, options)
+
+        @authenticator = other if other.__send__(:fetched_for?, base_url)
       end
 
       # Take an authenticator the client was given, as it would one it built
