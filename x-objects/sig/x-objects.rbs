@@ -327,6 +327,8 @@ module X
   class Cursor[R < Resource = Resource]
     include Enumerable[R]
 
+    private def self.new: () -> instance
+
     attr_reader resource_class: singleton(Resource)
     attr_reader client: Objects::_Client
 
