@@ -121,6 +121,18 @@ module X
       #   client.expires_at
       def expires_at = @internals.expires_at
 
+      # The scopes X granted the OAuth 2.0 access token, as last refreshed
+      #
+      # A refresh that names no scopes keeps those the client held, as OAuth 2.0 has it. They are the ones the client
+      # was given, as the client of OAuth2Authorization#client is given those of the exchange of the code, until a
+      # refresh names others.
+      #
+      # @api public
+      # @return [Array<String>, nil] the scopes, frozen, or nil if they are not known
+      # @example Check that the user let the app post
+      #   client.scopes&.include?("tweet.write")
+      def scopes = @internals.scopes
+
       # The base URL for API requests
       # @api public
       # @return [String] the base URL for API requests, which ends with a slash
@@ -184,6 +196,8 @@ module X
       #   without offline.access, which authenticate as the user until the access token expires, and cannot refresh
       # @param expires_at [Time, nil] the time the OAuth 2.0 access token expires, after which a request refreshes it,
       #   given only beside the client_id and access_token the client authenticates with
+      # @param scopes [Array<String>, nil] the scopes X granted the OAuth 2.0 access token, as OAuth2Tokens#scopes
+      #   holds them, given only beside the client_id and access_token the client authenticates with
       # @param authenticator [Authenticator, nil] an authenticator to authenticate with in place of credentials, such as
       #   an OAuth2Authenticator built elsewhere, or nil to build one of the credentials; see {#authenticator}
       # @param base_url [String] the base URL for API requests
@@ -242,10 +256,11 @@ module X
       #   without them, or authenticate as the app rather than a user
       # @raise [ArgumentError] if a credential is an empty String, as an environment variable that is not set is often
       #   read, which would send an Authorization header that authenticates nothing
-      # @raise [ArgumentError] if expires_at is neither a Time nor nil, or is given to a client that does not
-      #   authenticate with OAuth 2.0 credentials, which would leave it unused
-      # @raise [ArgumentError] if an authenticator is given that is not an Authenticator, or beside credentials or
-      #   expires_at, which it would leave unused
+      # @raise [ArgumentError] if expires_at is neither a Time nor nil, or scopes neither an Array of Strings that each
+      #   name a scope nor nil, or either is given to a client that does not authenticate with OAuth 2.0 credentials,
+      #   which would leave it unused
+      # @raise [ArgumentError] if an authenticator is given that is not an Authenticator, or beside credentials,
+      #   expires_at, or scopes, which it would leave unused
       # @raise [ArgumentError] if a timeout is neither a finite number of seconds of at least 0 nor, for any but
       #   keep_alive_timeout, nil, or if a maximum is not a count or a number of seconds of at least 0
       # @raise [ArgumentError] if base_url is not an absolute http or https URL with no user, password, query, or
@@ -277,7 +292,8 @@ module X
       # @example Create a client that names the application in the User-Agent of every request
       #   client = X::Client.new(bearer_token: "your_bearer_token", headers: {"User-Agent" => "my-app/1.0"})
       def initialize(api_key: nil, api_key_secret: nil, access_token: nil, access_token_secret: nil,
-        bearer_token: nil, client_id: nil, client_secret: nil, refresh_token: nil, expires_at: nil, authenticator: nil,
+        bearer_token: nil, client_id: nil, client_secret: nil, refresh_token: nil, expires_at: nil, scopes: nil,
+        authenticator: nil,
         base_url: DEFAULT_BASE_URL,
         open_timeout: DEFAULT_OPEN_TIMEOUT,
         read_timeout: DEFAULT_READ_TIMEOUT,
@@ -296,7 +312,7 @@ module X
         save_tokens: nil,
         load_tokens: nil)
         @internals = ClientInternals.new(self, api_key:, api_key_secret:, access_token:, access_token_secret:, bearer_token:,
-          client_id:, client_secret:, refresh_token:, expires_at:, authenticator:, base_url:, open_timeout:, read_timeout:,
+          client_id:, client_secret:, refresh_token:, expires_at:, scopes:, authenticator:, base_url:, open_timeout:, read_timeout:,
           write_timeout:, keep_alive_timeout:, debug_output:, proxy_url:, default_array_class:, default_object_class:,
           headers:, max_redirects:, max_rate_limit_retries:, max_rate_limit_wait:, max_retries:, on_response:,
           save_tokens:, load_tokens:)

@@ -161,7 +161,7 @@ module X
         update_tokens(TokenEndpoint.fetch(oauth2_client.refresh_token_request(refresh_token: held), connection:))
         @spent_refresh_token = held
         issued = refresh_token #: String
-        @reporter.issued(OAuth2Tokens.new(access_token:, refresh_token: issued, expires_at:))
+        @reporter.issued(OAuth2Tokens.new(access_token:, refresh_token: issued, expires_at:, scopes:))
       rescue SimpleOAuth::OAuth2::Error => e
         adopt_in_place_of(e)
       end
@@ -194,6 +194,7 @@ module X
         @access_token = stored.access_token
         @refresh_token = stored.refresh_token
         @expires_at = stored.expires_at
+        @scopes = stored.scopes
         OAuth2Tokens.new(**stored.to_h)
       end
 
@@ -236,6 +237,7 @@ module X
         @access_token = token.access_token
         @refresh_token = token.refresh_token if token.refresh_token
         @expires_at = token.expires_at
+        @scopes = TokenEndpoint.scopes_of(token) || scopes
       end
 
       # Check whether a refresh issued the access token within FRESH_TOKEN_SECONDS

@@ -4,6 +4,7 @@ require "json"
 require "net/http"
 require "simple_oauth"
 require "uri"
+require_relative "credential_validator"
 require_relative "request_context"
 require_relative "response_parser"
 
@@ -42,6 +43,20 @@ module X
       def url_at(base_url, token_url)
         path = URI(token_url).path #: String
         String(URI.join(base_url, path))
+      end
+
+      # The scopes a token names
+      #
+      # A token response names the scopes it granted as one String, each scope apart from the next by a space.
+      #
+      # @api private
+      # @param token [SimpleOAuth::OAuth2::Token] the token the endpoint returned
+      # @return [Array<String>, nil] the scopes, frozen, or nil if the token names none
+      # @example Read the scopes of a token
+      #   X::Core::TokenEndpoint.scopes_of(token) # => ["tweet.read", "users.read", "offline.access"]
+      def scopes_of(token)
+        scopes = String.try_convert(token.scope).to_s.split
+        CredentialValidator.frozen_scopes(scopes) unless scopes.empty?
       end
 
       # Send a token request and read the token the endpoint returns

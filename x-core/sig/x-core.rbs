@@ -322,7 +322,8 @@ module X
 
     attr_reader client_id: String
     attr_reader expires_at: Time?
-    def initialize: (client_id: String, access_token: String, ?refresh_token: String?, ?client_secret: String?, ?expires_at: Time?, ?load_tokens: _TokenLoader?) -> void
+    attr_reader scopes: Array[String]?
+    def initialize: (client_id: String, access_token: String, ?refresh_token: String?, ?client_secret: String?, ?expires_at: Time?, ?scopes: Array[String]?, ?load_tokens: _TokenLoader?) -> void
     def inspect: () -> String
     def token_expired?: -> bool
     def refresh!: -> OAuth2Tokens
@@ -333,8 +334,9 @@ module X
     attr_reader access_token: String
     attr_reader refresh_token: String?
     attr_reader expires_at: Time?
-    def initialize: (access_token: String, ?refresh_token: String?, ?expires_at: Time?) -> void
-    def to_h: () -> {access_token: String, refresh_token: String?, expires_at: Time?}
+    attr_reader scopes: Array[String]?
+    def initialize: (access_token: String, ?refresh_token: String?, ?expires_at: Time?, ?scopes: Array[String]?) -> void
+    def to_h: () -> {access_token: String, refresh_token: String?, expires_at: Time?, scopes: Array[String]?}
     def ==: (untyped other) -> bool
     def eql?: (untyped other) -> bool
     def hash: () -> Integer
@@ -383,13 +385,14 @@ module X
     attr_reader save_tokens: _TokenSaver?
     attr_reader load_tokens: _TokenLoader?
     attr_reader authenticator: Authenticator | AppOnlyAuthenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator
-    def initialize: (?api_key: String?, ?api_key_secret: String?, ?access_token: String?, ?access_token_secret: String?, ?bearer_token: String?, ?client_id: String?, ?client_secret: String?, ?refresh_token: String?, ?expires_at: Time?, ?authenticator: Authenticator?, ?base_url: String, ?open_timeout: (Float | Integer)?, ?read_timeout: (Float | Integer)?, ?write_timeout: (Float | Integer)?, ?keep_alive_timeout: Float | Integer, ?debug_output: _DebugOutput?, ?proxy_url: (URI::Generic | String)?, ?default_array_class: Class, ?default_object_class: object_class, ?headers: headers, ?max_redirects: Integer, ?max_rate_limit_retries: Integer, ?max_rate_limit_wait: Float | Integer, ?max_retries: Integer, ?on_response: _ResponseHook?, ?save_tokens: _TokenSaver?, ?load_tokens: _TokenLoader?) -> void
+    def initialize: (?api_key: String?, ?api_key_secret: String?, ?access_token: String?, ?access_token_secret: String?, ?bearer_token: String?, ?client_id: String?, ?client_secret: String?, ?refresh_token: String?, ?expires_at: Time?, ?scopes: Array[String]?, ?authenticator: Authenticator?, ?base_url: String, ?open_timeout: (Float | Integer)?, ?read_timeout: (Float | Integer)?, ?write_timeout: (Float | Integer)?, ?keep_alive_timeout: Float | Integer, ?debug_output: _DebugOutput?, ?proxy_url: (URI::Generic | String)?, ?default_array_class: Class, ?default_object_class: object_class, ?headers: headers, ?max_redirects: Integer, ?max_rate_limit_retries: Integer, ?max_rate_limit_wait: Float | Integer, ?max_retries: Integer, ?on_response: _ResponseHook?, ?save_tokens: _TokenSaver?, ?load_tokens: _TokenLoader?) -> void
     def inspect: () -> String
-    def with: (?api_key: String?, ?api_key_secret: String?, ?access_token: String?, ?access_token_secret: String?, ?bearer_token: String?, ?client_id: String?, ?client_secret: String?, ?refresh_token: String?, ?expires_at: Time?, ?authenticator: Authenticator?, ?base_url: String, ?open_timeout: (Float | Integer)?, ?read_timeout: (Float | Integer)?, ?write_timeout: (Float | Integer)?, ?keep_alive_timeout: Float | Integer, ?debug_output: _DebugOutput?, ?proxy_url: (URI::Generic | String)?, ?default_array_class: Class, ?default_object_class: object_class, ?headers: headers, ?max_redirects: Integer, ?max_rate_limit_retries: Integer, ?max_rate_limit_wait: Float | Integer, ?max_retries: Integer, ?on_response: _ResponseHook?, ?save_tokens: _TokenSaver?, ?load_tokens: _TokenLoader?) -> Client
+    def with: (?api_key: String?, ?api_key_secret: String?, ?access_token: String?, ?access_token_secret: String?, ?bearer_token: String?, ?client_id: String?, ?client_secret: String?, ?refresh_token: String?, ?expires_at: Time?, ?scopes: Array[String]?, ?authenticator: Authenticator?, ?base_url: String, ?open_timeout: (Float | Integer)?, ?read_timeout: (Float | Integer)?, ?write_timeout: (Float | Integer)?, ?keep_alive_timeout: Float | Integer, ?debug_output: _DebugOutput?, ?proxy_url: (URI::Generic | String)?, ?default_array_class: Class, ?default_object_class: object_class, ?headers: headers, ?max_redirects: Integer, ?max_rate_limit_retries: Integer, ?max_rate_limit_wait: Float | Integer, ?max_retries: Integer, ?on_response: _ResponseHook?, ?save_tokens: _TokenSaver?, ?load_tokens: _TokenLoader?) -> Client
     def app_only: () -> (Client | self)
     def api_key: () -> String?
     def client_id: () -> String?
     def expires_at: () -> Time?
+    def scopes: () -> Array[String]?
     def base_url: () -> String
     def default_array_class: () -> Class
     def default_object_class: () -> object_class

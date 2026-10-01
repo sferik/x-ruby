@@ -56,6 +56,21 @@ module X
         "epoch, or nil if it is not known"
       private_constant :INVALID_EXPIRES_AT
 
+      # The message of the error raised for scopes the client would leave unused
+      UNUSED_SCOPES = "scopes are the scopes X granted an OAuth 2.0 access token, so they are given beside the " \
+        "client_id and access_token the client authenticates with, rather than beside OAuth 1.0a credentials, a " \
+        "bearer_token, an api_key and api_key_secret, or none, which would leave them unused. Leave them out"
+      private_constant :UNUSED_SCOPES
+
+      # The message of the error raised for scopes that are not an Array of scopes
+      INVALID_SCOPES = "scopes must be an Array of Strings that each name a scope, such as %w[tweet.read users.read], " \
+        "or nil if they are not known"
+      private_constant :INVALID_SCOPES
+
+      # A scope, which OAuth 2.0 names with printable characters other than a space, a quote, and a backslash
+      SCOPE = /\A[\x21\x23-\x5B\x5D-\x7E]+\z/
+      private_constant :SCOPE
+
       # The message of the error raised for a credential that is an empty String
       EMPTY_CREDENTIAL = "%s is empty. Pass the credential, or leave it out, since an empty one authenticates nothing"
       private_constant :EMPTY_CREDENTIAL
@@ -82,8 +97,8 @@ module X
       # @api private
       # @param credentials [Hash{Symbol => String, Time, nil}] the credentials, as Client#initialize accepts them
       # @return [void]
-      # @raise [ArgumentError] if a credential is an empty String, or one of whitespace alone, or if the expiration
-      #   time is neither a Time nor nil
+      # @raise [ArgumentError] if a credential is an empty String, or one of whitespace alone, if the expiration time
+      #   is neither a Time nor nil, or if the scopes are neither an Array of scopes nor nil
       # @example Check the credentials of a client
       #   X::Core::CredentialValidator.validate_values!(bearer_token: "", expires_at: nil)
       def validate_values!(credentials)
@@ -93,6 +108,7 @@ module X
           end
         end
         validate_expires_at!(credentials[:expires_at])
+        validate_scopes!(credentials[:scopes])
       end
 
       # Raise for a credential an authenticator requires that is nil or empty
@@ -130,6 +146,31 @@ module X
         raise ArgumentError, INVALID_EXPIRES_AT unless expires_at.nil? || expires_at.is_a?(Time)
       end
 
+      # Raise for scopes that are not an Array of scopes
+      #
+      # @api private
+      # @param scopes [Object] the scopes
+      # @return [void]
+      # @raise [ArgumentError] if the scopes are neither an Array of Strings that each name a scope nor nil
+      # @example Check scopes
+      #   X::Core::CredentialValidator.validate_scopes!(%w[tweet.read users.read])
+      def validate_scopes!(scopes)
+        return if scopes.nil?
+        raise ArgumentError, INVALID_SCOPES unless scopes.is_a?(Array) && scopes.all? { |scope| scope.is_a?(String) && SCOPE.match?(scope) }
+      end
+
+      # The scopes as the tokens, an authenticator, or a client holds them
+      #
+      # They are frozen, the Array and each String, apart from those given, so that the caller that gave them can
+      # change neither what the client holds nor what save_tokens is passed.
+      #
+      # @api private
+      # @param scopes [Array<String>, nil] the scopes, which validate_scopes! accepted
+      # @return [Array<String>, nil] the scopes, frozen, or nil for none
+      # @example Hold scopes
+      #   X::Core::CredentialValidator.frozen_scopes(%w[tweet.read]) # => ["tweet.read"]
+      def frozen_scopes(scopes) = scopes&.map { |scope| -scope }.freeze
+
       # Raise for an authenticator that is not one, or that is given beside credentials
       #
       # A client given an authenticator authenticates with it alone, so a credential given beside it, the expiration
@@ -153,49 +194,51 @@ module X
         raise ArgumentError, format(AUTHENTICATOR_AND_CREDENTIALS, given.join(", ")) unless given.empty?
       end
 
-      # Raise for incomplete credentials, or ones that leave an expiration time unused
+      # Raise for incomplete credentials, or ones that leave expires_at or scopes unused
       #
-      # An expiration time is that of an OAuth 2.0 access token, which a client reads only when it authenticates with
-      # OAuth 2.0 credentials, so one given to a client that authenticates otherwise, as with OAuth 1.0a credentials,
-      # which it authenticates with before OAuth 2.0 credentials it holds beside them, raises, as it does beside an
-      # authenticator.
+      # An expiration time and scopes are those of an OAuth 2.0 access token, which a client reads only when it
+      # authenticates with OAuth 2.0 credentials, so either given to a client that authenticates otherwise, as with
+      # OAuth 1.0a credentials, which it authenticates with before OAuth 2.0 credentials it holds beside them, raises, as
+      # it does beside an authenticator.
       #
       # @api private
-      # @param credentials [Hash{Symbol => String, Time, nil}] the credentials, as Client#initialize accepts them
+      # @param credentials [Hash{Symbol => String, Time, Array<String>, nil}] the credentials, as Client#initialize
+      #   accepts them
       # @return [void]
-      # @raise [ArgumentError] if a credential belongs to no complete set, or an expiration time is given to a client
-      #   that does not authenticate with OAuth 2.0 credentials
+      # @raise [ArgumentError] if a credential belongs to no complete set, or an expiration time or scopes are given
+      #   to a client that does not authenticate with OAuth 2.0 credentials
       # @example Check the credentials of a client
       #   X::Core::CredentialValidator.validate!(api_key: "key")
       def validate!(credentials)
         raise ArgumentError, INCOMPLETE_CREDENTIALS if incomplete?(credentials)
-        raise ArgumentError, UNUSED_EXPIRES_AT if unused_expires_at?(credentials)
+        raise ArgumentError, UNUSED_EXPIRES_AT if unused?(credentials, :expires_at)
+        raise ArgumentError, UNUSED_SCOPES if unused?(credentials, :scopes)
       end
 
       private
 
       # Check whether a credential was given that belongs to no complete set
       #
-      # The expiration time is no credential, so it belongs to no set, and unused_expires_at? checks it.
+      # The expiration time and scopes are no credentials, so they belong to no set, and unused? checks them.
       #
       # @api private
-      # @param credentials [Hash{Symbol => String, Time, nil}] the credentials
+      # @param credentials [Hash{Symbol => String, Time, Array<String>, nil}] the credentials
       # @return [Boolean] true if the credentials do not form complete sets
       def incomplete?(credentials)
-        given = credentials.except(:expires_at).compact.keys
+        given = credentials.except(:expires_at, :scopes).compact.keys
         complete = CREDENTIAL_SETS.select { |set| (set - given).empty? }
         (given - complete.flatten).any?
       end
 
-      # Check whether an expiration time was given that the client would leave unused
+      # Check whether expires_at or scopes were given that the client would leave unused
       #
       # @api private
-      # @param credentials [Hash{Symbol => String, Time, nil}] the credentials
-      # @return [Boolean] true if an expiration time was given, and the client authenticates with no OAuth 2.0
-      #   credentials
-      def unused_expires_at?(credentials)
+      # @param credentials [Hash{Symbol => String, Time, Array<String>, nil}] the credentials
+      # @param name [Symbol] the name of what was given of the access token, expires_at or scopes
+      # @return [Boolean] true if it was given, and the client authenticates with no OAuth 2.0 credentials
+      def unused?(credentials, name)
         given = credentials.compact.keys
-        given.include?(:expires_at) && ((OAUTH1_CREDENTIALS - given).empty? || !(OAUTH2_CREDENTIALS - given).empty?)
+        given.include?(name) && ((OAUTH1_CREDENTIALS - given).empty? || !(OAUTH2_CREDENTIALS - given).empty?)
       end
     end
     private_constant :CredentialValidator

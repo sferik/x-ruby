@@ -54,6 +54,15 @@ module X
       # @example Get the expiration time
       #   authenticator.expires_at
       attr_reader :expires_at
+      # The scopes X granted the access token, as last refreshed
+      #
+      # A refresh that names no scopes keeps those the authenticator held, as OAuth 2.0 has it.
+      #
+      # @api public
+      # @return [Array<String>, nil] the scopes, frozen, or nil if they are not known
+      # @example Check that the user let the app post
+      #   authenticator.scopes&.include?("tweet.write")
+      attr_reader :scopes
 
       # Initialize a new OAuth 2.0 authenticator
       #
@@ -65,13 +74,15 @@ module X
       # @param refresh_token [String, nil] the OAuth 2.0 refresh token, or nil for an access token issued without the
       #   offline.access scope, which the authenticator cannot refresh
       # @param expires_at [Time, nil] the expiration time of the access token
+      # @param scopes [Array<String>, nil] the scopes X granted the access token, or nil if they are not known
       # @param load_tokens [#call, nil] a callable that takes no arguments and returns the OAuth2Tokens in the storage
       #   the tokens of the user are shared through, or nil for none there, which a refresh reads first, as the
       #   load_tokens of X::Client#initialize describes; nil reads the load_tokens of a client that authenticates with
       #   the authenticator instead
       # @return [OAuth2Authenticator] a new authenticator instance
       # @raise [ArgumentError] if the client ID or access token is nil or empty, the refresh token or client secret is
-      #   empty, the expiration time is neither a Time nor nil, or load_tokens is neither nil nor responds to call
+      #   empty, the expiration time is neither a Time nor nil, the scopes are neither an Array of Strings that each name
+      #   a scope nor nil, or load_tokens is neither nil nor responds to call
       # @example Create an authenticator
       #   authenticator = X::OAuth2Authenticator.new(
       #     client_id: "id",
@@ -83,14 +94,14 @@ module X
       #   authenticator = X::OAuth2Authenticator.new(client_id: "id", **store.load(user).to_h,
       #     load_tokens: -> { store.load(user) })
       #   client = X::Client.new(authenticator:, save_tokens: ->(tokens) { store.save(user, tokens) })
-      def initialize(client_id:, access_token:, refresh_token: nil, client_secret: nil, expires_at: nil, load_tokens: nil)
-        CredentialValidator.validate_required!({client_id:, access_token:}, {refresh_token:, client_secret:, expires_at:})
+      def initialize(client_id:, access_token:, refresh_token: nil, client_secret: nil, expires_at: nil, scopes: nil, load_tokens: nil)
+        CredentialValidator.validate_required!({client_id:, access_token:}, {refresh_token:, client_secret:, expires_at:, scopes:})
         initialize_refresh(load_tokens)
         @client_id = client_id
         @client_secret = client_secret
         @access_token = access_token
         @refresh_token = refresh_token
-        @expires_at = expires_at
+        @expires_at, @scopes = expires_at, CredentialValidator.frozen_scopes(scopes)
         @connection = Connection.new
         @token_url = TOKEN_URL
         @clients = ObjectSpace::WeakMap.new

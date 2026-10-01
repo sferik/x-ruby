@@ -10,9 +10,9 @@ module X
     # ClientInternals
     # @api private
     module ClientTokenRefresh
-      # The message of the error raised for a copy given an expiration time for the access token it shares
-      SHARED_EXPIRATION = "A copy that shares the access token of the client shares its expiration time, so it cannot " \
-        "be given expires_at. Pass expires_at beside the access token and refresh token it is the expiration of"
+      # The message of the error raised for a copy given an expiration time or scopes for the access token it shares
+      SHARED_EXPIRATION = "A copy that shares the access token of the client shares its expiration time and scopes, " \
+        "so it cannot be given %s. Pass it beside the access token and refresh token it belongs to"
       private_constant :SHARED_EXPIRATION
 
       # The time the OAuth 2.0 access token expires, as last refreshed
@@ -24,6 +24,17 @@ module X
       def expires_at
         current = oauth2_authenticator_in_use
         current ? current.expires_at : @expires_at
+      end
+
+      # The scopes X granted the OAuth 2.0 access token, as last refreshed
+      #
+      # {Client#scopes} returns it.
+      #
+      # @api private
+      # @return [Array<String>, nil] the scopes, or nil if they are not known
+      def scopes
+        current = oauth2_authenticator_in_use
+        current ? current.scopes : @scopes
       end
 
       private
@@ -67,18 +78,20 @@ module X
       #
       # Whether the two share it is decided by the options the copy was given, not by the tokens it was built with:
       # a refresh on another thread may replace them while it is built, and a copy that held on to the ones replaced
-      # could never refresh again. The expiration time is a fact about the access token the two hold, so a copy that
-      # shares it is refused one, rather than set it for the client it was copied from.
+      # could never refresh again. The expiration time and scopes are facts about the access token the two hold, so a
+      # copy that shares it is refused either, rather than set it for the client it was copied from.
       #
       # @api private
       # @param copy [Client] the copy these are the internals of
       # @param other [OAuth2Authenticator] the authenticator of the client this one was copied from
       # @param options [Hash] the options the copy was given in place of the client's
       # @return [void]
-      # @raise [ArgumentError] if the copy shares the authenticator and was given an expiration time
+      # @raise [ArgumentError] if the copy shares the authenticator and was given an expiration time or scopes
       def share_oauth2(copy, other, options)
         return unless oauth2_authenticator_in_use && other.__send__(:holds?, options)
-        raise ArgumentError, SHARED_EXPIRATION if options.key?(:expires_at)
+
+        given = options.keys & %i[expires_at scopes]
+        raise ArgumentError, format(SHARED_EXPIRATION, given.join(" or ")) unless given.empty?
 
         @authenticator = join(copy, other)
       end
@@ -196,7 +209,7 @@ module X
       # @param refresh_token [String, nil] the OAuth 2.0 refresh token, or nil for an access token that is not refreshed
       # @return [OAuth2Authenticator] the OAuth 2.0 authenticator
       def new_oauth2_authenticator(client, client_id:, access_token:, refresh_token:)
-        authenticator = OAuth2Authenticator.new(client_id:, client_secret: @client_secret, access_token:, refresh_token:, expires_at: @expires_at)
+        authenticator = OAuth2Authenticator.new(client_id:, client_secret: @client_secret, access_token:, refresh_token:, expires_at: @expires_at, scopes: @scopes)
         join(client, authenticator.__send__(:token_requests_over, @connection, base_url))
       end
 

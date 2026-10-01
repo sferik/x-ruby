@@ -53,36 +53,55 @@ module X
       #   tokens.expires_at
       attr_reader :expires_at
 
+      # The scopes X granted the access token
+      #
+      # They are the scopes the user authorized, which may be fewer than the app asked for, since a user can leave
+      # some out on the consent screen, so an app that needs a scope checks for it here rather than learn of it from
+      # the 403 Forbidden of a request. A refresh that names no scopes keeps those it refreshed, as OAuth 2.0 has it.
+      #
+      # @api public
+      # @return [Array<String>, nil] the scopes, frozen, or nil when X named none and none were known
+      # @example Check that the user let the app post
+      #   tokens.scopes.include?("tweet.write")
+      attr_reader :scopes
+
       # Initialize the tokens of a refresh
       #
       # @api public
       # @param access_token [String] the access token
       # @param refresh_token [String, nil] the refresh token, or nil for tokens issued without one
       # @param expires_at [Time, nil] the expiration time of the access token
+      # @param scopes [Array<String>, nil] the scopes X granted the access token, or nil when they are not known
       # @return [OAuth2Tokens] the frozen tokens
       # @raise [ArgumentError] if the access token is not a String, the refresh token neither a String nor nil, or a
       #   token is empty, or if the expiration time is neither a Time nor nil, as it may be for tokens read back from a
-      #   store that wrote them as JSON
+      #   store that wrote them as JSON, or the scopes are neither an Array of Strings that each name a scope nor nil
       # @example Build the tokens of a refresh
-      #   X::OAuth2Tokens.new(access_token: "token", refresh_token: "refresh", expires_at: Time.now + 7200)
-      def initialize(access_token:, refresh_token: nil, expires_at: nil)
+      #   X::OAuth2Tokens.new(access_token: "token", refresh_token: "refresh", expires_at: Time.now + 7200,
+      #     scopes: %w[tweet.read users.read offline.access])
+      def initialize(access_token:, refresh_token: nil, expires_at: nil, scopes: nil)
         raise ArgumentError, format(NOT_A_STRING, :access_token, access_token.class) unless access_token.is_a?(String)
         raise ArgumentError, format(NOT_A_STRING_OR_NIL, :refresh_token, refresh_token.class) unless refresh_token.nil? || refresh_token.is_a?(String)
 
-        CredentialValidator.validate_required!({access_token:}, {refresh_token:, expires_at:})
+        CredentialValidator.validate_required!({access_token:}, {refresh_token:, expires_at:, scopes:})
         @access_token = access_token
         @refresh_token = refresh_token
         @expires_at = expires_at
+        @scopes = CredentialValidator.frozen_scopes(scopes)
         freeze
       end
 
-      # The tokens as a Hash, to store
+      # The tokens as a Hash, to store, and to build a client of
+      #
+      # Its keys are keywords X::Client.new and X::OAuth2Authenticator.new take, so that the tokens build a client, as
+      # in X::Client.new(client_id:, **tokens.to_h), and a later release of 1.x adds a key to it only as both take it.
       #
       # @api public
-      # @return [Hash{Symbol => String, Time, nil}] the access token, refresh token, and expiration time
+      # @return [Hash{Symbol => String, Time, Array<String>, nil}] the access token, refresh token, expiration time,
+      #   and scopes
       # @example Store the tokens
       #   store.save(**tokens.to_h)
-      def to_h = {access_token:, refresh_token:, expires_at:}
+      def to_h = {access_token:, refresh_token:, expires_at:, scopes:}
 
       # Check whether other tokens are the same tokens
       #
@@ -113,11 +132,12 @@ module X
       # The state Marshal writes
       #
       # What is written is plain data, led by the number of its format, so that tokens written by one release of 1.x are
-      # read by a later one: the tokens and their expiration time, as to_h gives them. It holds the tokens themselves,
+      # read by a later one: the tokens, their expiration time, and their scopes, as to_h gives them. It holds the tokens themselves,
       # since tokens are marshalled to be stored, so what Marshal wrote is kept as secret as the tokens are.
       #
       # @api public
-      # @return [Array(Integer, Hash{Symbol => String, Time, nil})] the number of the format, then the tokens as a Hash
+      # @return [Array(Integer, Hash{Symbol => String, Time, Array<String>, nil})] the number of the format, then the
+      #   tokens as a Hash
       # @example Store the tokens of a refresh
       #   X::Client.new(**credentials, save_tokens: ->(tokens) { File.binwrite("tokens", Marshal.dump(tokens)) })
       def marshal_dump = [MARSHAL_FORMAT, to_h]
@@ -131,10 +151,10 @@ module X
       # @example Read stored tokens
       #   Marshal.load(File.binread("tokens")).expires_at
       def marshal_load(state)
-        format, tokens = state #: [Integer, {access_token: String, refresh_token: String?, expires_at: Time?}]
+        format, tokens = state #: [Integer, {access_token: String, refresh_token: String?, expires_at: Time?, scopes: Array[String]?}]
         raise UnsupportedMarshalFormat, "#{self.class} reads format #{MARSHAL_FORMAT} of Marshal, not #{format.inspect}" unless MARSHAL_FORMAT.eql?(format)
 
-        initialize(**tokens.slice(:access_token, :refresh_token, :expires_at)) # steep:ignore InsufficientKeywordArguments
+        initialize(**tokens.slice(:access_token, :refresh_token, :expires_at, :scopes)) # steep:ignore InsufficientKeywordArguments
       end
 
       # Write the state Marshal writes as YAML

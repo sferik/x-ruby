@@ -19,8 +19,8 @@ module X
       client = Client.new(**test_oauth2_credentials, expires_at:)
       error = assert_raises(ArgumentError) { client.with(expires_at: Time.now + 3600) }
 
-      assert_equal "A copy that shares the access token of the client shares its expiration time, so it cannot be " \
-        "given expires_at. Pass expires_at beside the access token and refresh token it is the expiration of", error.message
+      assert_equal "A copy that shares the access token of the client shares its expiration time and scopes, so it " \
+        "cannot be given expires_at. Pass it beside the access token and refresh token it belongs to", error.message
       assert_equal expires_at, client.expires_at
     end
 

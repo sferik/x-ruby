@@ -15,8 +15,8 @@ module X
     end
 
     def test_marshal_dump_is_plain_data_led_by_its_format
-      assert_equal [1, {access_token: "ACCESS", refresh_token: "REFRESH", expires_at: @expires_at}], @tokens.marshal_dump
-      assert_equal [1, {access_token: "A", refresh_token: "R", expires_at: nil}], OAuth2Tokens.new(access_token: "A", refresh_token: "R").marshal_dump
+      assert_equal [1, {access_token: "ACCESS", refresh_token: "REFRESH", expires_at: @expires_at, scopes: nil}], @tokens.marshal_dump
+      assert_equal [1, {access_token: "A", refresh_token: "R", expires_at: nil, scopes: nil}], OAuth2Tokens.new(access_token: "A", refresh_token: "R").marshal_dump
     end
 
     def test_marshalled_tokens_read_back_as_they_were_frozen
@@ -39,6 +39,19 @@ module X
       assert_equal @tokens, loaded
     end
 
+    def test_tokens_with_scopes_read_back_as_they_were
+      tokens = OAuth2Tokens.new(**@tokens.to_h, scopes: %w[tweet.read users.read])
+
+      assert_equal tokens, Marshal.load(Marshal.dump(tokens))
+      assert_equal tokens, YAML.unsafe_load(YAML.dump(tokens))
+    end
+
+    def test_tokens_written_without_scopes_read_back_without_them
+      loaded = OAuth2Tokens.allocate.tap { |tokens| tokens.marshal_load([1, {access_token: "A", refresh_token: "R", expires_at: nil}]) }
+
+      assert_nil loaded.scopes
+    end
+
     def test_tokens_of_another_format_are_refused
       error = assert_raises(UnsupportedMarshalFormat) { OAuth2Tokens.allocate.marshal_load(["1", {access_token: "A", refresh_token: "R"}]) }
 
@@ -47,7 +60,7 @@ module X
     end
 
     def test_yaml_writes_the_format_and_each_token_under_its_name
-      assert_equal({"format" => 1, "access_token" => "ACCESS", "refresh_token" => "REFRESH", "expires_at" => @expires_at},
+      assert_equal({"format" => 1, "access_token" => "ACCESS", "refresh_token" => "REFRESH", "expires_at" => @expires_at, "scopes" => nil},
         YAML.unsafe_load(YAML.dump(@tokens).sub("!ruby/object:X::OAuth2Tokens", "")))
     end
 

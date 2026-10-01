@@ -44,7 +44,7 @@ module X
       private_constant :INVALID_CALLBACK_MESSAGE
       # The options of Client#initialize that the exchange of the code gives the client of #client
       CREDENTIALS = %i[api_key api_key_secret access_token access_token_secret bearer_token client_id client_secret
-        refresh_token expires_at authenticator].freeze
+        refresh_token expires_at scopes authenticator].freeze
       private_constant :CREDENTIALS
       # The message raised for credentials given to #client, which the exchange of the code gives the client
       CREDENTIALS_GIVEN_MESSAGE = "The client of an authorization authenticates with the tokens X exchanges the code " \
@@ -363,12 +363,16 @@ module X
       # A client is built of them as OAuth 2.0 credentials whether or not X issued a refresh token, since the access
       # token acts for the user either way: one given as a bearer token would be taken for the app's, and sent to the
       # endpoints that take app-only authentication, which refuse it. A token issued without offline.access has no
-      # refresh token, so the tokens hold nil in its place.
+      # refresh token, so the tokens hold nil in its place. A token that names no scopes was granted those the app
+      # asked for, as OAuth 2.0 has it, so the tokens hold those.
       #
       # @api private
       # @param token [SimpleOAuth::OAuth2::Token] the token
       # @return [OAuth2Tokens] the tokens
-      def tokens_from(token) = OAuth2Tokens.new(access_token: token.access_token, refresh_token: token.refresh_token, expires_at: token.expires_at)
+      def tokens_from(token)
+        OAuth2Tokens.new(access_token: token.access_token, refresh_token: token.refresh_token, expires_at: token.expires_at,
+          scopes: TokenEndpoint.scopes_of(token) || scopes)
+      end
     end
   end
 end

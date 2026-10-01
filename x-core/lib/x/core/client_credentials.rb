@@ -64,15 +64,15 @@ module X
 
       # The credentials, as initialize accepts them
       # @api private
-      # @return [Hash{Symbol => String, nil}] the credentials
-      def credentials = {api_key:, api_key_secret:, access_token:, access_token_secret:, bearer_token:, client_id:, client_secret:, refresh_token:, expires_at:}
+      # @return [Hash{Symbol => String, Time, Array<String>, nil}] the credentials
+      def credentials = {api_key:, api_key_secret:, access_token:, access_token_secret:, bearer_token:, client_id:, client_secret:, refresh_token:, expires_at:, scopes:}
 
       # Initialize credential instance variables
       # @api private
       # @return [void]
       def initialize_credentials(api_key:, api_key_secret:, access_token:, access_token_secret:, bearer_token:,
-        client_id:, client_secret:, refresh_token:, expires_at:)
-        CredentialValidator.validate_values!(api_key:, api_key_secret:, access_token:, access_token_secret:, bearer_token:, client_id:, client_secret:, refresh_token:, expires_at:)
+        client_id:, client_secret:, refresh_token:, expires_at:, scopes:)
+        CredentialValidator.validate_values!(api_key:, api_key_secret:, access_token:, access_token_secret:, bearer_token:, client_id:, client_secret:, refresh_token:, expires_at:, scopes:)
         @api_key = api_key
         @api_key_secret = api_key_secret
         @access_token = access_token
@@ -81,7 +81,7 @@ module X
         @client_id = client_id
         @client_secret = client_secret
         @refresh_token = refresh_token
-        @expires_at = expires_at
+        @expires_at, @scopes = expires_at, scopes
       end
 
       # Refuse an authenticator beside credentials, and credentials of no complete set
@@ -123,14 +123,14 @@ module X
       #
       # An authenticator given to the copy replaces the credentials of the client, a credential given to it replaces
       # the authenticator the client was given, and a copy given neither shares that authenticator. An expiration
-      # time is no credential, and is refused beside an authenticator, as it is when a client is built.
+      # time and scopes are no credentials, and are refused beside an authenticator, as they are when a client is built.
       #
       # @api private
       # @param options [Hash{Symbol => Object}] the options the copy is given
       # @return [Hash{Symbol => Object}] the options, beside the credentials or the authenticator the copy shares
       def with_credentials(options)
         given = @given_authenticator
-        return {authenticator: given, **options} if given && !options.keys.intersect?(credentials.except(:expires_at).keys)
+        return {authenticator: given, **options} if given && !options.keys.intersect?(credentials.except(:expires_at, :scopes).keys)
 
         options[:authenticator] ? options : {**credentials, **options}
       end

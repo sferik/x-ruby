@@ -130,7 +130,7 @@ module X
       token = stub_token.with(body: "#{TOKEN_BODY}&client_id=#{TEST_CLIENT_ID}") { |request| !request.headers.key?("Authorization") }
       tokens = Time.stub(:now, Time.at(1_000)) { authorization.tokens("#{REDIRECT_URI}?state=STATE&code=CODE") }
 
-      assert_equal OAuth2Tokens.new(access_token: "ACCESS", refresh_token: "REFRESH", expires_at: Time.at(8_200)), tokens
+      assert_equal OAuth2Tokens.new(access_token: "ACCESS", refresh_token: "REFRESH", expires_at: Time.at(8_200), scopes: OAuth2Authorization::DEFAULT_SCOPES), tokens
       assert_requested token
     end
 
@@ -144,6 +144,19 @@ module X
       assert_requested token
     end
 
+    def test_tokens_hold_the_scopes_x_granted
+      stub_token(body: {**TOKENS, scope: "tweet.read  users.read"})
+      tokens = authorization.tokens("state=STATE&code=CODE")
+
+      assert_equal [%w[tweet.read users.read], true], [tokens.scopes, tokens.scopes.frozen?]
+    end
+
+    def test_tokens_hold_the_scopes_asked_for_when_x_names_none
+      stub_token(body: {**TOKENS, scope: ""})
+
+      assert_equal %w[users.read], authorization(scopes: %w[users.read]).tokens("state=STATE&code=CODE").scopes
+    end
+
     def test_tokens_from_query_parameters
       stub_token
 
@@ -154,13 +167,13 @@ module X
       stub_token(body: {token_type: "bearer", access_token: "ACCESS", expires_in: 7200})
       tokens = Time.stub(:now, Time.at(1_000)) { authorization.tokens("state=STATE&code=CODE") }
 
-      assert_equal OAuth2Tokens.new(access_token: "ACCESS", refresh_token: nil, expires_at: Time.at(8_200)), tokens
+      assert_equal OAuth2Tokens.new(access_token: "ACCESS", refresh_token: nil, expires_at: Time.at(8_200), scopes: OAuth2Authorization::DEFAULT_SCOPES), tokens
     end
 
     def test_tokens_of_a_confidential_client_without_a_refresh_token_or_a_lifetime_hold_neither
       stub_token(body: {token_type: "bearer", access_token: "ACCESS"})
 
-      assert_equal OAuth2Tokens.new(access_token: "ACCESS", refresh_token: nil, expires_at: nil),
+      assert_equal OAuth2Tokens.new(access_token: "ACCESS", refresh_token: nil, expires_at: nil, scopes: OAuth2Authorization::DEFAULT_SCOPES),
         authorization(client_secret: TEST_CLIENT_SECRET).tokens("state=STATE&code=CODE")
     end
 
@@ -264,6 +277,18 @@ module X
         [internals(client).send(:proxy_url), client.read_timeout, client.open_timeout, client.keep_alive_timeout]
     end
 
+    def test_the_client_holds_the_scopes_x_granted
+      stub_token(body: {**TOKENS, scope: "tweet.read users.read"})
+
+      assert_equal %w[tweet.read users.read], authorization.client("state=STATE&code=CODE").scopes
+    end
+
+    def test_the_client_is_refused_scopes_of_its_own
+      error = assert_raises(ArgumentError) { authorization.client("state=STATE&code=CODE", scopes: %w[tweet.read]) }
+
+      assert_match(/cannot be given scopes/, error.message)
+    end
+
     def test_the_options_of_the_client_replace_the_settings_of_the_authorization
       stub_token
       client = authorization(read_timeout: 2).client("state=STATE&code=CODE", read_timeout: 5)
@@ -276,7 +301,7 @@ module X
       passed = []
       client = Time.stub(:now, Time.at(1_000)) { authorization.client("state=STATE&code=CODE", save_tokens: ->(tokens) { passed << tokens }) }
 
-      assert_equal [OAuth2Tokens.new(access_token: "ACCESS", refresh_token: "REFRESH", expires_at: Time.at(8_200))], passed
+      assert_equal [OAuth2Tokens.new(access_token: "ACCESS", refresh_token: "REFRESH", expires_at: Time.at(8_200), scopes: OAuth2Authorization::DEFAULT_SCOPES)], passed
       assert_instance_of Client, client
     end
 
@@ -285,7 +310,7 @@ module X
       passed = []
       client = Time.stub(:now, Time.at(1_000)) { authorization.client("state=STATE&code=CODE", save_tokens: ->(tokens) { passed << tokens }) }
 
-      assert_equal [OAuth2Tokens.new(access_token: "ACCESS", expires_at: Time.at(8_200))], passed
+      assert_equal [OAuth2Tokens.new(access_token: "ACCESS", expires_at: Time.at(8_200), scopes: OAuth2Authorization::DEFAULT_SCOPES)], passed
       assert_instance_of OAuth2Authenticator, client.authenticator
     end
 

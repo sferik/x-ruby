@@ -12,6 +12,7 @@ module X
 
       def fetch: (SimpleOAuth::OAuth2::Request token_request, connection: Connection) -> SimpleOAuth::OAuth2::Token
       def url_at: (String base_url, String token_url) -> String
+      def scopes_of: (SimpleOAuth::OAuth2::Token token) -> Array[String]?
 
       private
       def answer?: (Net::HTTPResponse response) -> bool
@@ -274,11 +275,13 @@ module X
       @access_token: String?
       @refresh_token: String?
       @expires_at: Time?
+      @scopes: Array[String]?
 
       @save_tokens: _TokenSaver?
       @load_tokens: _TokenLoader?
 
       def expires_at: () -> Time?
+      def scopes: () -> Array[String]?
 
       private
       def initialize_token_hooks: (save_tokens: _TokenSaver?, load_tokens: _TokenLoader?) -> void
@@ -347,7 +350,7 @@ module X
       def share_app_token: (ClientInternals other) -> void
       def app_credentials: () -> [String, String]?
       def authenticator: () -> (Authenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator)
-      def credentials: () -> { api_key: String?, api_key_secret: String?, access_token: String?, access_token_secret: String?, bearer_token: String?, client_id: String?, client_secret: String?, refresh_token: String?, expires_at: Time? }
+      def credentials: () -> { api_key: String?, api_key_secret: String?, access_token: String?, access_token_secret: String?, bearer_token: String?, client_id: String?, client_secret: String?, refresh_token: String?, expires_at: Time?, scopes: Array[String]? }
       def api_key: () -> String?
       def api_key_secret: () -> String?
       def bearer_token: () -> String?
@@ -363,6 +366,7 @@ module X
       @access_token: String?
       @refresh_token: String?
       @expires_at: Time?
+      @scopes: Array[String]?
       attr_reader client_id: String?
 
       private
@@ -373,8 +377,8 @@ module X
       attr_reader client_secret: String?
       def access_token: () -> String?
       def refresh_token: () -> String?
-      def credentials: () -> { api_key: String?, api_key_secret: String?, access_token: String?, access_token_secret: String?, bearer_token: String?, client_id: String?, client_secret: String?, refresh_token: String?, expires_at: Time? }
-      def initialize_credentials: (api_key: String?, api_key_secret: String?, access_token: String?, access_token_secret: String?, bearer_token: String?, client_id: String?, client_secret: String?, refresh_token: String?, expires_at: Time?) -> void
+      def credentials: () -> { api_key: String?, api_key_secret: String?, access_token: String?, access_token_secret: String?, bearer_token: String?, client_id: String?, client_secret: String?, refresh_token: String?, expires_at: Time?, scopes: Array[String]? }
+      def initialize_credentials: (api_key: String?, api_key_secret: String?, access_token: String?, access_token_secret: String?, bearer_token: String?, client_id: String?, client_secret: String?, refresh_token: String?, expires_at: Time?, scopes: Array[String]?) -> void
       def validate_credentials!: (Authenticator? authenticator) -> void
       def initialize_authenticator: (Client client, Authenticator? given) -> void
       def built_authenticator: (Client client) -> Authenticator
@@ -437,13 +441,14 @@ module X
       @access_token: String?
       @refresh_token: String?
       @expires_at: Time?
+      @scopes: Array[String]?
 
       attr_reader authenticator: Authenticator | AppOnlyAuthenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator
       attr_reader save_tokens: _TokenSaver?
       attr_reader load_tokens: _TokenLoader?
 
       def self.of: (Client client) -> ClientInternals
-      def initialize: (Client client, api_key: String?, api_key_secret: String?, access_token: String?, access_token_secret: String?, bearer_token: String?, client_id: String?, client_secret: String?, refresh_token: String?, expires_at: Time?, authenticator: Authenticator?, base_url: String, open_timeout: (Float | Integer)?, read_timeout: (Float | Integer)?, write_timeout: (Float | Integer)?, keep_alive_timeout: Float | Integer, debug_output: _DebugOutput?, proxy_url: (URI::Generic | String)?, default_array_class: Class, default_object_class: object_class, headers: headers, max_redirects: Integer, max_rate_limit_retries: Integer, max_rate_limit_wait: Float | Integer, max_retries: Integer, on_response: _ResponseHook?, save_tokens: _TokenSaver?, load_tokens: _TokenLoader?) -> void
+      def initialize: (Client client, api_key: String?, api_key_secret: String?, access_token: String?, access_token_secret: String?, bearer_token: String?, client_id: String?, client_secret: String?, refresh_token: String?, expires_at: Time?, scopes: Array[String]?, authenticator: Authenticator?, base_url: String, open_timeout: (Float | Integer)?, read_timeout: (Float | Integer)?, write_timeout: (Float | Integer)?, keep_alive_timeout: Float | Integer, debug_output: _DebugOutput?, proxy_url: (URI::Generic | String)?, default_array_class: Class, default_object_class: object_class, headers: headers, max_redirects: Integer, max_rate_limit_retries: Integer, max_rate_limit_wait: Float | Integer, max_retries: Integer, on_response: _ResponseHook?, save_tokens: _TokenSaver?, load_tokens: _TokenLoader?) -> void
       def inspect: () -> String
       def with: (Client client, Hash[Symbol, untyped] options) -> Client
       def close: () -> void
@@ -512,17 +517,22 @@ module X
       OAUTH1_CREDENTIALS: Array[Symbol]
       OAUTH2_CREDENTIALS: Array[Symbol]
       UNUSED_EXPIRES_AT: String
+      UNUSED_SCOPES: String
+      INVALID_SCOPES: String
+      SCOPE: Regexp
       extend CredentialValidator
 
-      def validate_values!: (Hash[Symbol, String | Time | nil] credentials) -> void
-      def validate_required!: (Hash[Symbol, String?] required, ?Hash[Symbol, String | Time | nil] others) -> void
+      def validate_values!: (Hash[Symbol, String | Time | Array[String] | nil] credentials) -> void
+      def validate_required!: (Hash[Symbol, String?] required, ?Hash[Symbol, String | Time | Array[String] | nil] others) -> void
       def validate_expires_at!: (untyped expires_at) -> void
-      def validate_authenticator!: (untyped authenticator, Hash[Symbol, String | Time | nil] credentials) -> void
-      def validate!: (Hash[Symbol, String | Time | nil] credentials) -> void
+      def validate_scopes!: (untyped scopes) -> void
+      def frozen_scopes: (Array[String]? scopes) -> Array[String]?
+      def validate_authenticator!: (untyped authenticator, Hash[Symbol, String | Time | Array[String] | nil] credentials) -> void
+      def validate!: (Hash[Symbol, String | Time | Array[String] | nil] credentials) -> void
 
       private
-      def incomplete?: (Hash[Symbol, String | Time | nil] credentials) -> bool
-      def unused_expires_at?: (Hash[Symbol, String | Time | nil] credentials) -> bool
+      def incomplete?: (Hash[Symbol, String | Time | Array[String] | nil] credentials) -> bool
+      def unused?: (Hash[Symbol, String | Time | Array[String] | nil] credentials, Symbol name) -> bool
     end
 
     class Connection
@@ -823,8 +833,10 @@ module X
       @access_token: String
       @refresh_token: String?
       @expires_at: Time?
+      @scopes: Array[String]?
 
       def expires_at: () -> Time?
+      def scopes: () -> Array[String]?
       def token_expired?: () -> bool
 
       private
@@ -855,6 +867,7 @@ module X
 
   interface _CredentialHost
     def authenticator: () -> (Authenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator)
+    def scopes: () -> Array[String]?
     def base_url: () -> String
     def with: (Client client, Hash[Symbol, untyped] options) -> Client
     def expires_at: () -> Time?

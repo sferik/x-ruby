@@ -93,7 +93,7 @@ module X
       # @return [ClientInternals] a new instance
       # @raise [ArgumentError] if an option is refused, as {Client#initialize} states
       def initialize(client, api_key:, api_key_secret:, access_token:, access_token_secret:, bearer_token:, client_id:,
-        client_secret:, refresh_token:, expires_at:, authenticator:, base_url:, open_timeout:, read_timeout:,
+        client_secret:, refresh_token:, expires_at:, scopes:, authenticator:, base_url:, open_timeout:, read_timeout:,
         write_timeout:, keep_alive_timeout:, debug_output:, proxy_url:, default_array_class:, default_object_class:,
         headers:, max_redirects:, max_rate_limit_retries:, max_rate_limit_wait:, max_retries:, on_response:,
         save_tokens:, load_tokens:)
@@ -102,7 +102,7 @@ module X
         @app_only_monitor = Monitor.new
         @request_builder = RequestBuilder.new
         @response_parser = ResponseParser.new
-        initialize_credentials(api_key:, api_key_secret:, access_token:, access_token_secret:, bearer_token:, client_id:, client_secret:, refresh_token:, expires_at:)
+        initialize_credentials(api_key:, api_key_secret:, access_token:, access_token_secret:, bearer_token:, client_id:, client_secret:, refresh_token:, expires_at:, scopes:)
         validate_credentials!(authenticator)
         initialize_settings(base_url:, default_array_class:, default_object_class:, headers:, on_response:, max_redirects:, max_rate_limit_retries:, max_rate_limit_wait:, max_retries:)
         initialize_token_hooks(save_tokens:, load_tokens:)

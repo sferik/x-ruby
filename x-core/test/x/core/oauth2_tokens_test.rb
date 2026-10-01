@@ -24,7 +24,43 @@ module X
     end
 
     def test_to_h
-      assert_equal({access_token: "ACCESS", refresh_token: "REFRESH", expires_at: @expires_at}, @tokens.to_h)
+      assert_equal({access_token: "ACCESS", refresh_token: "REFRESH", expires_at: @expires_at, scopes: nil}, @tokens.to_h)
+    end
+
+    def test_scopes_default_to_nil
+      assert_nil @tokens.scopes
+    end
+
+    def test_scopes_are_held_frozen_apart_from_those_given
+      given = [+"tweet.read", +"users.read"]
+      tokens = OAuth2Tokens.new(access_token: "ACCESS", scopes: given)
+      given.first << "x"
+      given << "offline.access"
+
+      assert_equal %w[tweet.read users.read], tokens.scopes
+      assert_equal [true, true], [tokens.scopes.frozen?, tokens.scopes.first.frozen?]
+      assert_equal({access_token: "ACCESS", refresh_token: nil, expires_at: nil, scopes: %w[tweet.read users.read]}, tokens.to_h)
+    end
+
+    def test_tokens_with_other_scopes_are_not_equal
+      refute_equal @tokens, OAuth2Tokens.new(**@tokens.to_h, scopes: %w[tweet.read])
+    end
+
+    def test_scopes_that_are_not_an_array_of_scopes_are_refused
+      ["tweet.read", ["tweet.read", nil], ["tweet read"], [""], [:"tweet.read"], ['tweet"read'], ["tweet\\read"]].each do |scopes|
+        error = assert_raises(ArgumentError, scopes.inspect) { OAuth2Tokens.new(access_token: "ACCESS", scopes:) }
+
+        assert_equal "scopes must be an Array of Strings that each name a scope, such as %w[tweet.read users.read], " \
+          "or nil if they are not known", error.message
+      end
+    end
+
+    def test_scopes_of_a_subclass_of_array_are_held_as_an_array
+      assert_equal [Array, %w[tweet.read]], OAuth2Tokens.new(access_token: "ACCESS", scopes: Class.new(Array).new(%w[tweet.read])).scopes.then { [it.class, it] }
+    end
+
+    def test_no_scopes_are_held_as_none
+      assert_equal [], OAuth2Tokens.new(access_token: "ACCESS", scopes: []).scopes
     end
 
     def test_tokens_with_the_same_values_are_equal
@@ -70,7 +106,7 @@ module X
       tokens = OAuth2Tokens.new(access_token: "ACCESS", expires_at: @expires_at)
 
       assert_nil tokens.refresh_token
-      assert_equal({access_token: "ACCESS", refresh_token: nil, expires_at: @expires_at}, tokens.to_h)
+      assert_equal({access_token: "ACCESS", refresh_token: nil, expires_at: @expires_at, scopes: nil}, tokens.to_h)
       assert_equal tokens, OAuth2Tokens.new(access_token: "ACCESS", refresh_token: nil, expires_at: @expires_at)
     end
 
