@@ -16,9 +16,9 @@ module X
 
   class RulesRejected < Streaming::Error
     attr_reader problems: Array[Problem]
-    attr_reader result: Array[StreamRule] | Integer
+    attr_reader result: (Array[StreamRule] | Integer)?
 
-    def initialize: (Array[Problem] problems, result: Array[StreamRule] | Integer) -> void
+    def initialize: (?String? message, ?problems: Array[Problem], ?result: (Array[StreamRule] | Integer)?) -> void
   end
 
   class StreamError < Streaming::Error
@@ -26,7 +26,7 @@ module X
     attr_reader http_method: Symbol?
     attr_reader uri: URI::Generic?
 
-    def initialize: (Array[Problem] problems, ?http_method: (Symbol | String)?, ?uri: URI::Generic?) -> void
+    def initialize: (?String? message, ?problems: Array[Problem], ?http_method: (Symbol | String)?, ?uri: URI::Generic?) -> void
   end
 
   class StreamRule

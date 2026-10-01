@@ -360,7 +360,7 @@ module X
         if block_given?
           problems.each { |problem| yield problem }
         elsif problems.any?
-          raise RulesRejected.new(problems, result:)
+          raise RulesRejected.new(problems:, result:)
         end
         result
       end

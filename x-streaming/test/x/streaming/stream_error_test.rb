@@ -52,7 +52,7 @@ module X
 
     def test_a_stream_error_freezes_a_copy_of_the_problems_it_is_given
       problems = []
-      error = StreamError.new(problems)
+      error = StreamError.new(problems:)
 
       assert_predicate error.problems, :frozen?
       refute_predicate problems, :frozen?
@@ -121,7 +121,7 @@ module X
 
     def test_the_message_joins_each_problem
       problems = [Problem.new({"title" => "A", "detail" => "first"}), Problem.new({"message" => "second"})]
-      error = StreamError.new(problems)
+      error = StreamError.new(problems:)
 
       assert_equal "A: first, second", error.message
       assert_nil error.http_method

@@ -16,6 +16,19 @@ module X
     # ArgumentError of a mistake in the arguments of a call. Rescue X::Error to catch every failure of a stream.
     #
     # @api public
-    class Error < X::Error; end
+    class Error < X::Error
+      private
+
+      # The title and detail of each problem, separated by commas
+      #
+      # It is the message of an error built of problems without a message of its own.
+      #
+      # @api private
+      # @param problems [Array<Problem>] the problems
+      # @return [String, nil] the title and detail of each problem, or nil for none
+      def describe(problems)
+        problems.map { |problem| [problem.title, problem.detail || problem.message].compact.join(": ") }.join(", ") unless problems.empty?
+      end
+    end
   end
 end

@@ -77,7 +77,7 @@ module X
       assert_raises(StreamError) do
         handle(Streaming.const_get(:ReconnectHandler).new(max_reconnects: 3)) do
           @runs += 1
-          raise StreamError.new([disconnect])
+          raise StreamError.new(problems: [disconnect])
         end
       end
       assert_equal [4, [0.0, 0.25, 0.5]], [@runs, @sleeps]
@@ -87,7 +87,7 @@ module X
       refusal = Problem.new({"type" => "https://api.x.com/2/problems/streaming-connection"})
 
       [StreamError, Class.new(StreamError)].each do |error_class|
-        assert_raises(error_class) { handle(Streaming.const_get(:ReconnectHandler).new(max_reconnects: 3)) { raise error_class.new([refusal]) } }
+        assert_raises(error_class) { handle(Streaming.const_get(:ReconnectHandler).new(max_reconnects: 3)) { raise error_class.new(problems: [refusal]) } }
       end
       assert_empty @sleeps
     end

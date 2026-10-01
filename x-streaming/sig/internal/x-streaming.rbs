@@ -1,6 +1,11 @@
 # Signatures of the internals of x-streaming, which Steep checks the gem against, and which the gem does not ship
 module X
   module Streaming
+    class Error < X::Error
+      private
+      def describe: (Array[Problem] problems) -> String?
+    end
+
     class CallbackError < StandardError
       attr_reader error: StandardError
 
@@ -84,12 +89,12 @@ module X
     @uri: URI::Generic?
 
     private
-    def naming_request: (String message) -> String
+    def naming_request: (String? message) -> String?
   end
 
   class RulesRejected < Streaming::Error
     @problems: Array[Problem]
-    @result: Array[StreamRule] | Integer
+    @result: (Array[StreamRule] | Integer)?
   end
 
   class StreamRule

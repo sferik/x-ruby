@@ -71,7 +71,7 @@ module X
       def decode_line(line, response:, array_class:, object_class:, client:)
         body = JSON.parse(line)
         problems = (Hash === body && !body.key?("data")) ? Problem.all_from(body) : [] #: Array[Problem]
-        raise StreamError.new(problems, http_method: :get, uri: response.uri) unless problems.empty?
+        raise StreamError.new(problems:, http_method: :get, uri: response.uri) unless problems.empty?
         return object_class.from_response(body, client:) if object_class.respond_to?(:from_response)
 
         JSON.parse(line, array_class:, object_class:)

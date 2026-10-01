@@ -52,35 +52,41 @@ module X
       # Initialize a new StreamError
       #
       # Public, so that code that rescues a StreamError can be tested with one built by hand, as StreamParser builds one
-      # for a line of a stream. The error names the request, when given its method and URI, as the errors of x-core
-      # name the request that raised them.
+      # for a line of a stream, and raised with a message alone, as any exception is. The message is the one given, or
+      # else the title and detail of each problem, and names the request, when given its method and URI, as the errors
+      # of x-core name the request that raised them.
       #
       # @api public
+      # @param message [String, nil] the message, or nil for the one the problems give
       # @param problems [Array<Problem>] the problems the line held
       # @param http_method [Symbol, String, nil] the method of the request of the stream, in any case
       # @param uri [URI::Generic, nil] the URI of the request of the stream
       # @return [StreamError] a new instance
       # @example Create an error
-      #   error = X::StreamError.new(X::Problem.all_from(body), http_method: :get, uri: stream_uri)
-      def initialize(problems, http_method: nil, uri: nil)
+      #   error = X::StreamError.new(problems: X::Problem.all_from(body), http_method: :get, uri: stream_uri)
+      # @example Raise the error with a message alone, as a test stub may
+      #   raise X::StreamError, "The stream dropped"
+      def initialize(message = nil, problems: [], http_method: nil, uri: nil)
         @problems = problems.dup.freeze
         @http_method = http_method&.downcase&.to_sym
         @uri = uri
-        super(naming_request(problems.map { |problem| [problem.title, problem.detail || problem.message].compact.join(": ") }.join(", ")))
+        super(naming_request(message || describe(problems)))
       end
 
       private
 
       # The message, led by the method and path of the request it names, if any
       #
-      # It names the request as an error of x-core does, as "GET /2/tweets/search/stream: operational-disconnect".
+      # It names the request as an error of x-core does, as "GET /2/tweets/search/stream: operational-disconnect". An
+      # error that says nothing of what went wrong names no request, so that its message is the name of its class, as
+      # that of any exception raised with no message is.
       #
       # @api private
-      # @param message [String] what went wrong
-      # @return [String] the message
+      # @param message [String, nil] what went wrong, or nil for nothing
+      # @return [String, nil] the message, or nil for none
       def naming_request(message)
         http_method, uri = @http_method, @uri
-        return message unless http_method && uri
+        return message unless http_method && uri && message
 
         path = uri.path #: String
         "#{http_method.upcase} #{path.empty? ? "/" : path}: #{message}"
