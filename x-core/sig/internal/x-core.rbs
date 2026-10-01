@@ -24,9 +24,13 @@ module X
     end
 
     class CallbackError < StandardError
+      UNTAGGED: ObjectSpace::WeakMap[StandardError, StandardError]
+
       attr_reader error: StandardError
 
       def self.tagging: [T] () { () -> T } -> T
+      def self.untag: (CallbackError tagged) -> StandardError
+      def self.untagged?: (StandardError error) -> bool
       def initialize: (StandardError error) -> void
     end
 

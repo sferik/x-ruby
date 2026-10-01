@@ -2,6 +2,7 @@
 
 require "net/http"
 require "socket"
+require_relative "errors/callback_error"
 require_relative "errors/http_error"
 require_relative "errors/network_error"
 require_relative "errors/request_timeout"
@@ -69,6 +70,9 @@ module X
       # whether or not the answer arrived, so sending it again could bill it again. resend_unanswered retries those
       # too, for a request the API bills nothing for, such as the chunk of an upload.
       #
+      # An error a callback of the request raised, such as on_response, is not the API's failure, and is raised as it
+      # is, so that a request Client#with_retries wraps is not sent again for it, though the API answered it.
+      #
       # @api private
       # @param idempotent [Boolean] whether sending the request again has the same effect as sending it once
       # @param resend_unanswered [Boolean] whether to send the request again after a NetworkError that may have come
@@ -100,13 +104,15 @@ module X
       #
       # A ServerError or a RequestTimeout is an answer, which says the API failed to act on the request. A NetworkError
       # says the API never received it only when its cause is among UNSENT_ERRORS; any other may have come after the
-      # API answered.
+      # API answered. None of them says so when a callback raised it, rather than the API.
       #
       # @api private
       # @param error [Error] the error the request raised
       # @param resend_unanswered [Boolean] whether a request the API may have answered is sent again
       # @return [Boolean] true if the request may be sent again
       def resendable?(error, resend_unanswered)
+        return false if CallbackError.untagged?(error)
+
         resend_unanswered || error.is_a?(HTTPError) || UNSENT_ERRORS.any? { |unsent| error.cause.is_a?(unsent) }
       end
 

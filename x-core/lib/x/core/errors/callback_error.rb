@@ -12,10 +12,16 @@ module X
     # raised would otherwise refresh a token, and the stream be opened again.
     #
     # Internal to x-core: Client#perform, ResponseParser, and the stream Client#get_stream opens tag the errors of a
-    # callback with it, and Client raises the error it holds in its place.
+    # callback with it, and Client raises the error it holds in its place, noted as a callback's, so that
+    # Client#with_retries, which runs outside the request, does not send it again for that error either.
     #
     # @api private
     class CallbackError < StandardError
+      # The errors of callbacks raised in place of the CallbackError that tagged them, each held as its own key for as
+      # long as anything else holds it
+      UNTAGGED = ObjectSpace::WeakMap.new
+      private_constant :UNTAGGED
+
       # The error the callback raised
       # @api private
       # @return [StandardError] the error the callback raised
@@ -40,6 +46,28 @@ module X
       rescue => e
         raise new(e)
       end
+
+      # The error a CallbackError holds, noted as a callback's, to raise in its place
+      #
+      # @api private
+      # @param tagged [CallbackError] the CallbackError that tagged the error
+      # @return [StandardError] the error the callback raised
+      # @example Raise the error a callback raised once the request is left
+      #   raise X::Core::CallbackError.untag(e)
+      def self.untag(tagged)
+        UNTAGGED[tagged.error] = tagged.error
+      end
+
+      # Check whether an error is one a callback raised, which a request raised untagged
+      #
+      # A request raises it in place of the CallbackError that tagged it, once its handlers are left.
+      #
+      # @api private
+      # @param error [StandardError] the error a request raised
+      # @return [Boolean] true if a callback raised it
+      # @example Check whether an error is a callback's
+      #   X::Core::CallbackError.untagged?(error) # => false
+      def self.untagged?(error) = UNTAGGED[error].equal?(error)
 
       # Initialize a new CallbackError
       #

@@ -145,7 +145,8 @@ module X
       # Execute an HTTP request to the X API
       #
       # An error a callback raised, which the request tags as a CallbackError so that no handler sends the request
-      # again, waits out a rate limit, or refreshes a token for it, is raised as it was, once the handlers are left.
+      # again, waits out a rate limit, or refreshes a token for it, is raised as it was, once the handlers are left,
+      # noted as a callback's, so that Client#with_retries does not send the request again for it either.
       #
       # @api private
       # @param client [Client] the client these are the internals of, which a response is parsed for
@@ -158,7 +159,7 @@ module X
           @rate_limit_handler.handle { refreshing_rejected_token(client) { perform(client, http_method, uri, body: RequestEncoding.encode_body(body, form), headers:, array_class:, object_class:, &block) } }
         end
       rescue CallbackError => e
-        raise e.error
+        raise CallbackError.untag(e)
       end
 
       # Open a GET request whose body the block reads as it arrives
@@ -179,7 +180,7 @@ module X
         headers = headers_for(headers)
         refreshing_rejected_token(client) { perform_stream(uri, headers:, &) }
       rescue CallbackError => e
-        raise e.error
+        raise CallbackError.untag(e)
       end
 
       private
