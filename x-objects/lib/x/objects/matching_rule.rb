@@ -11,9 +11,10 @@ module X
     # the tag it is labelled with
     #
     # The stream names a rule a post matched by its identifier and its tag alone, not by the value it matches, so this is
-    # not an X::StreamRule, which holds that value. It names the rule to X::StreamingClient#delete_rules by its
-    # identifier, as rule.id, or as rule.to_h, and it is found among the rules X::StreamingClient#rules reads by
-    # the identifier they share.
+    # not an X::StreamRule of x-streaming, which holds that value. It names the rule to X::StreamingClient#delete_rules
+    # by its identifier, as rule.id, or as rule.to_h, and it is found among the rules X::StreamingClient#rules reads by
+    # the identifier they share. x-objects depends on x-streaming for none of this: a stream builds each post with
+    # X::Post.from_response, as a request does.
     #
     # It is frozen, compares equal to a rule of the same attributes, and matches a pattern of its identifier and tag,
     # as in rule in {tag: "ruby"}. Its attributes are what the stream sent of the rule, as those of a resource are, so

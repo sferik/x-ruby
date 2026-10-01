@@ -298,7 +298,8 @@ module X
 
       # The rules of the filtered stream this post matched
       #
-      # A post the filtered stream delivers names the rules it matched, and any other post names none.
+      # A post the filtered stream delivers names the rules it matched, and any other post names none. The streaming
+      # client of x-streaming builds the posts of a stream given X::Post as its object_class.
       #
       # @api public
       # @return [Array<MatchingRule>] the rules, empty for a post that did not come from the filtered stream
