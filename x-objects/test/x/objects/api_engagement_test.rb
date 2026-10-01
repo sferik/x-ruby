@@ -40,18 +40,18 @@ module X
       end
 
       def test_repost
-        @client.stub(:post, "users/9/retweets", {"data" => {"retweeted" => true}})
+        @client.stub(:post, "users/9/retweets", {"data" => {"retweeted" => true, "rest_id" => "2"}})
 
-        assert @client.repost("1")
+        assert_equal 2, @client.repost("1")
         assert_equal({tweet_id: "1"}.to_json, @client.requests.last[:body])
         assert_equal "users/9/retweets", @client.paths.last
-        assert @client.retweet("1")
+        assert_equal 2, @client.retweet("1")
       end
 
       def test_repost_not_reposted
         @client.stub(:post, "users/9/retweets", {"data" => {"retweeted" => false}})
 
-        refute @client.repost("1")
+        assert_nil @client.repost("1")
       end
 
       def test_unrepost

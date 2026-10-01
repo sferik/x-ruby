@@ -105,13 +105,20 @@ module X
 
       # Repost a post, acting as this user, which must be the authenticated user
       #
+      # The API answers a repost with the identifier of the post, its rest_id, beside whether this user reposted it,
+      # so the identifier is returned, which is truthy, as true was, for a post this user has reposted.
+      #
       # @api public
       # @param post [Post, String, Integer] the post or its identifier
-      # @return [Boolean] true if this user has reposted the post
+      # @return [Integer, nil] the identifier the API returned as the rest_id of the repost, or nil if this user has
+      #   not reposted the post
+      # @raise [InvalidAttribute] if the response holds a rest_id that is not an identifier
       # @example Repost a post
-      #   client.current_user!.repost(post)
+      #   client.current_user!.repost(post) # => 1234567890
       def repost(post)
-        relate("retweets", "tweet_id", Utils.id_of(post, Post), "retweeted")
+        body = client!.post("users/#{id}/retweets", {"tweet_id" => Utils.id_of(post, Post)}, **Utils::JSON_CLASSES).to_h
+        retweeted, rest_id = body.dig("data", "retweeted"), body.dig("data", "rest_id")
+        Utils.read("X::User#repost", rest_id) { Utils.integer(rest_id) } if retweeted.eql?(true)
       end
 
       # Undo a repost, acting as this user, which must be the authenticated user

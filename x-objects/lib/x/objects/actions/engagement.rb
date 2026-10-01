@@ -39,9 +39,11 @@ module X
         #
         # @api public
         # @param post [Post, String, Integer] the post or its identifier
-        # @return [Boolean] true if the authenticated user has reposted the post
+        # @return [Integer, nil] the identifier the API returned as the rest_id of the repost, or nil if the
+        #   authenticated user has not reposted the post
+        # @raise [InvalidAttribute] if the response holds a rest_id that is not an identifier
         # @example Repost a post
-        #   client.repost("1234567890")
+        #   client.repost("1234567890") # => 1234567890
         def repost(post)
           User.from_id(current_user_id, client: self).repost(post)
         end
