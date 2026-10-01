@@ -7,6 +7,7 @@ require_relative "client"
 require_relative "connection"
 require_relative "credential_holder"
 require_relative "credential_validator"
+require_relative "errors/authorization_denied"
 require_relative "errors/authorization_error"
 require_relative "errors/token_report_failed"
 require_relative "oauth2_authenticator"
@@ -184,8 +185,9 @@ module X
       # @return [OAuth2Tokens] the tokens: the access token, the refresh token, and the expiration time; an
       #   authorization without offline.access issues no refresh token, so its tokens hold none, and a client built of
       #   them acts for the user until the access token expires, and cannot authenticate as the app
-      # @raise [AuthorizationError] if the user denied the app, the state does not match, X refuses the code, or the
-      #   redirect is not a valid URL
+      # @raise [AuthorizationDenied] if the user denied the app, the state does not match, or the redirect is not a
+      #   valid URL
+      # @raise [AuthorizationError] if X refuses the code, with the response that refused it
       # @raise [HTTPError, InvalidResponse] if the token endpoint limits the rate of the request or fails to answer,
       #   as a server error, a redirect, or the page of a proxy says
       # @example Store the tokens of the user
@@ -221,8 +223,9 @@ module X
       # @return [Client] a client with the user's credentials
       # @raise [ArgumentError] if an option is one Client#initialize refuses, or a credential or an authenticator,
       #   which the client is given by the exchange of the code
-      # @raise [AuthorizationError] if the user denied the app, the state does not match, X refuses the code, or the
-      #   redirect is not a valid URL
+      # @raise [AuthorizationDenied] if the user denied the app, the state does not match, or the redirect is not a
+      #   valid URL
+      # @raise [AuthorizationError] if X refuses the code, with the response that refused it
       # @raise [HTTPError, InvalidResponse] if the token endpoint limits the rate of the request or fails to answer,
       #   as a server error, a redirect, or the page of a proxy says
       # @raise [TokenReportFailed] if save_tokens raises for the tokens of the exchange, with the client and tokens
@@ -293,17 +296,6 @@ module X
           token_endpoint: TokenEndpoint.url_at(base_url, TOKEN_URL))
       end
 
-      # The query of a redirect back from X
-      # @api private
-      # @param callback [String, Hash] the redirect: its URL, its query string, or its query parameters
-      # @return [String, Hash] the query string, or the query parameters
-      # @raise [AuthorizationError] if the redirect is not a valid URL
-      def query_of(callback)
-        String.try_convert(callback)&.then { |url| URI(url).query } || callback
-      rescue URI::InvalidURIError
-        raise AuthorizationError.new(INVALID_CALLBACK_MESSAGE)
-      end
-
       # The connection that exchanges the code for a client, built with its settings
       #
       # It has the proxy, timeouts, keep-alive timeout, and debug output of the options of the client, and else those of
@@ -324,15 +316,32 @@ module X
       # @param base_url [String] the base URL of the client the code is exchanged for, at whose origin it is exchanged
       # @param over [Core::Connection] the connection to send the token request over
       # @return [SimpleOAuth::OAuth2::Token] the token
-      # @raise [AuthorizationError] if the user denied the app, the state does not match, X refuses the code, or the
-      #   redirect is not a valid URL
+      # @raise [AuthorizationDenied] if the user denied the app, the state does not match, or the redirect is not a
+      #   valid URL
+      # @raise [AuthorizationError] if X refuses the code, with the response that refused it
       def exchange(callback, base_url, over = connection)
-        code = SimpleOAuth::OAuth2::AuthorizationResponse.parse(query_of(callback), state:).code
-        TokenEndpoint.fetch(oauth2_client(base_url).authorization_code_request(code:, redirect_uri:, code_verifier:), connection: over)
-      rescue SimpleOAuth::OAuth2::Error => e
-        raise AuthorizationError.__send__(:from, e, DEFAULT_ERROR_MESSAGE), cause: nil
+        token_request = oauth2_client(base_url).authorization_code_request(code: code_of(callback), redirect_uri:, code_verifier:)
+        TokenEndpoint.fetch(token_request, connection: over, refusal: DEFAULT_ERROR_MESSAGE)
       ensure
         over.close unless over.equal?(connection)
+      end
+
+      # The authorization code of the redirect back from X
+      #
+      # The redirect is its URL, whose query is read, or else its query string or query parameters.
+      #
+      # @api private
+      # @param callback [String, Hash] the redirect back from X: its URL, its query string, or its query parameters
+      # @return [String] the code
+      # @raise [AuthorizationDenied] if the user denied the app, the state does not match, or the redirect is not a
+      #   valid URL
+      def code_of(callback)
+        query = String.try_convert(callback)&.then { |url| URI(url).query } || callback
+        SimpleOAuth::OAuth2::AuthorizationResponse.parse(query, state:).code
+      rescue URI::InvalidURIError
+        raise AuthorizationDenied.new(INVALID_CALLBACK_MESSAGE)
+      rescue SimpleOAuth::OAuth2::Error => e
+        raise AuthorizationDenied.__send__(:from, e, DEFAULT_ERROR_MESSAGE), cause: nil
       end
 
       # The client of the tokens of the exchange, built with the options given

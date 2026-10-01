@@ -98,21 +98,21 @@ module X
         .to_return(status: 403, body: {error: "invalid_client", error_description: "Unable to verify your credentials"}.to_json)
       error = assert_raises(AuthorizationError) { @authenticator.send(:bearer_token) }
 
-      assert_equal ["Unable to verify your credentials", "invalid_client", 403], [error.message, error.error_code, error.status]
+      assert_equal ["POST /oauth2/token: Unable to verify your credentials", "invalid_client", 403], [error.message, error.error_code, error.status]
     end
 
     def test_raises_with_the_error_code_without_a_description
       stub_request(:post, APP_ONLY_TOKEN_URL).to_return(status: 403, body: {error: "invalid_client"}.to_json)
       error = assert_raises(AuthorizationError) { @authenticator.send(:bearer_token) }
 
-      assert_equal "invalid_client", error.message
+      assert_equal "POST /oauth2/token: invalid_client", error.message
     end
 
     def test_raises_with_the_default_message
       stub_request(:post, APP_ONLY_TOKEN_URL).to_return(status: 401, body: "Unauthorized")
       error = assert_raises(AuthorizationError) { @authenticator.send(:bearer_token) }
 
-      assert_equal "Bearer token request failed", error.message
+      assert_equal "POST /oauth2/token: Bearer token request failed", error.message
     end
 
     def test_a_token_endpoint_that_fails_to_answer_raises_the_error_of_its_status

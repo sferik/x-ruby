@@ -10,6 +10,7 @@ module X
     cover OAuth2Authenticator
     cover Core.const_get(:OAuth2Refresh)
     cover OAuth2Authorization
+    cover Core.const_get(:TokenEndpoint)
 
     USERS_ME = "https://api.x.com/2/users/me"
     TWEET = "https://api.x.com/2/tweets/1"

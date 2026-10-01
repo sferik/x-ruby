@@ -25,8 +25,12 @@ module X
       end
     end
 
-    def test_an_authorization_error_is_no_http_error
-      assert_equal [AuthorizationError, Error, StandardError], AuthorizationError.ancestors.take_while { |ancestor| !ancestor.eql?(Exception) }
+    def test_an_authorization_error_is_a_client_error
+      assert_equal [AuthorizationError, ClientError, HTTPError], AuthorizationError.ancestors.take(3)
+    end
+
+    def test_an_authorization_denied_is_no_http_error
+      assert_equal [AuthorizationDenied, Error, StandardError], AuthorizationDenied.ancestors.take_while { |ancestor| !ancestor.eql?(Exception) }
     end
 
     [IOError, Net::HTTPBadResponse, Net::ProtocolError, OpenSSL::SSL::SSLError, SocketError, SystemCallError,

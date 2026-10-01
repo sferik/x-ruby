@@ -158,23 +158,20 @@ module X
       #   as a server error, a redirect, or the page of a proxy says
       def refresh(connection)
         held = refresh_token #: String
-        update_tokens(TokenEndpoint.fetch(oauth2_client.refresh_token_request(refresh_token: held), connection:))
+        update_tokens(TokenEndpoint.fetch(oauth2_client.refresh_token_request(refresh_token: held), connection:, refusal: DEFAULT_ERROR_MESSAGE))
         @spent_refresh_token = held
         issued = refresh_token #: String
         @reporter.issued(OAuth2Tokens.new(access_token:, refresh_token: issued, expires_at:, scopes:))
-      rescue SimpleOAuth::OAuth2::Error => e
-        adopt_in_place_of(e)
+      rescue AuthorizationError => e
+        adopt_in_place_of(e) or raise
       end
 
-      # Take the stored tokens in place of a refused refresh, or raise the refusal
+      # Take the stored tokens in place of a refused refresh
       # @api private
-      # @param error [SimpleOAuth::OAuth2::Error] the refusal
-      # @return [OAuth2Tokens] a copy of the tokens taken
-      # @raise [AuthorizationError] if X refused anything but the refresh token, or the store holds no other
-      def adopt_in_place_of(error)
-        adopted = adopt_stored_tokens if REFUSED_REFRESH_TOKEN.include?(error.code)
-        adopted or raise AuthorizationError.__send__(:from, error, DEFAULT_ERROR_MESSAGE), cause: error.cause
-      end
+      # @param error [AuthorizationError] the refusal
+      # @return [OAuth2Tokens, nil] a copy of the tokens taken, or nil if X refused anything but the refresh token, or
+      #   the store holds no other
+      def adopt_in_place_of(error) = (adopt_stored_tokens if REFUSED_REFRESH_TOKEN.include?(error.error_code))
 
       # Take the stored tokens, if they hold another refresh token
       #

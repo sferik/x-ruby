@@ -36,8 +36,13 @@ module X
       assert_raises(InvalidResponse) { @authenticator.refresh! }
     end
 
-    def test_a_successful_response_of_json_without_a_token_is_refused
-      assert_equal ["token response has no access_token", 200], refused(200, "{}").then { [it.message, it.status] }
+    def test_a_successful_response_of_json_without_a_token_raises_invalid_response_holding_it
+      stub_request(:post, TOKEN_URL).to_return(status: 200, headers: {"Content-Type" => "application/json", "X-Transaction-Id" => "1"}, body: "{}")
+      error = assert_raises(InvalidResponse) { @authenticator.refresh! }
+
+      assert_equal ["POST /2/oauth2/token: token response has no access_token", 200, "{}"], [error.message, error.status, error.body]
+      assert_equal "1", error.headers.fetch("x-transaction-id")
+      assert_equal TEST_REFRESH_TOKEN, @authenticator.__send__(:refresh_token)
     end
 
     def test_a_forbidden_page_that_is_not_json_raises_forbidden
@@ -61,7 +66,8 @@ module X
     def test_another_client_error_of_json_is_a_refusal
       error = refused(403, {error: "invalid_client", error_description: "Unable to verify your credentials"}.to_json)
 
-      assert_equal ["Unable to verify your credentials", "invalid_client", 403], [error.message, error.error_code, error.status]
+      assert_equal ["POST /2/oauth2/token: Unable to verify your credentials", "invalid_client", 403], [error.message, error.error_code, error.status]
+      assert_equal [:post, URI(TOKEN_URL)], [error.http_method, error.uri]
     end
 
     def test_a_client_error_of_json_that_is_not_an_object_raises_the_error_of_its_status

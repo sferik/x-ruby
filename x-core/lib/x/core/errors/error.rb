@@ -23,7 +23,8 @@ module X
   #   │   │   ├── X::UnsupportedMediaType       415
   #   │   │   ├── X::UnprocessableEntity        422
   #   │   │   ├── X::TooManyRequests            429
-  #   │   │   └── X::UnavailableForLegalReasons 451
+  #   │   │   ├── X::UnavailableForLegalReasons 451
+  #   │   │   └── X::AuthorizationError         X refused to issue a token, as its token endpoint answered
   #   │   ├── X::ServerError           5xx: the API failed, and the same request may pass later
   #   │   │   ├── X::InternalServerError        500
   #   │   │   ├── X::BadGateway                 502
@@ -31,7 +32,7 @@ module X
   #   │   │   └── X::GatewayTimeout             504
   #   │   └── X::InvalidResponse       2xx: a response that succeeded, whose body is not the JSON it claims
   #   ├── X::NetworkError              the request never reached the API, or its response never arrived
-  #   ├── X::AuthorizationError        X refused to issue a token, or the user did not authorize the app
+  #   ├── X::AuthorizationDenied       the redirect back from X says the app was not authorized
   #   ├── X::TokenReportFailed         save_tokens raised for the tokens of an exchange of a code or a refresh
   #   ├── X::TooManyRedirects          a response redirected more times than max_redirects allows
   #   ├── X::StreamError               a line of a stream held errors and no data

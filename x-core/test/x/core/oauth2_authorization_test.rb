@@ -111,6 +111,7 @@ module X
 
   class OAuth2AuthorizationCodeTest < Minitest::Test
     cover OAuth2Authorization
+    cover AuthorizationDenied
     cover Core.const_get(:TokenEndpoint)
 
     REDIRECT_URI = "https://example.com/callback"
@@ -191,22 +192,23 @@ module X
     end
 
     def test_a_denied_authorization_raises
-      error = assert_raises(AuthorizationError) do
+      error = assert_raises(AuthorizationDenied) do
         authorization.tokens("error=access_denied&error_description=The+user+denied+the+request&state=STATE")
       end
 
-      assert_equal ["The user denied the request", "access_denied"], [error.message, error.error_code]
+      assert_equal ["The user denied the request", "access_denied", nil], [error.message, error.error_code, error.cause]
       assert_not_requested :post, "https://api.x.com/2/oauth2/token"
     end
 
-    def test_an_error_without_a_description_raises_its_code
-      assert_equal "access_denied", assert_raises(AuthorizationError) { authorization.tokens("error=access_denied") }.message
+    def test_an_error_without_a_description_raises_its_code_or_else_the_default_message
+      assert_equal "access_denied", assert_raises(AuthorizationDenied) { authorization.tokens("error=access_denied") }.message
+      assert_equal "Authorization failed", assert_raises(AuthorizationDenied) { authorization.tokens({"error" => nil, "state" => "STATE"}) }.message
     end
 
     def test_a_redirect_for_another_authorization_raises
-      error = assert_raises(AuthorizationError) { authorization.tokens("state=OTHER&code=CODE") }
+      error = assert_raises(AuthorizationDenied) { authorization.tokens("state=OTHER&code=CODE") }
 
-      assert_equal ["The authorization response answers a different request", nil, nil], [error.message, error.error_code, error.status]
+      assert_equal ["The authorization response answers a different request", nil], [error.message, error.error_code]
       assert_not_requested :post, "https://api.x.com/2/oauth2/token"
     end
 
@@ -214,11 +216,13 @@ module X
       stub_token(status: 400, body: {error: "invalid_grant", error_description: "Value passed for the authorization code was invalid."})
       error = assert_raises(AuthorizationError) { authorization.tokens("state=STATE&code=CODE") }
 
-      assert_equal ["Value passed for the authorization code was invalid.", "invalid_grant", 400], [error.message, error.error_code, error.status]
+      assert_equal ["POST /2/oauth2/token: Value passed for the authorization code was invalid.", "invalid_grant", 400],
+        [error.message, error.error_code, error.status]
+      assert_kind_of ClientError, error
     end
 
     def test_a_redirect_that_is_not_a_valid_url_raises
-      error = assert_raises(AuthorizationError) { authorization.tokens("https://exa mple.com/callback?state=STATE&code=CODE") }
+      error = assert_raises(AuthorizationDenied) { authorization.tokens("https://exa mple.com/callback?state=STATE&code=CODE") }
 
       assert_equal ["The redirect back from X is not a valid URL", nil], [error.message, error.error_code]
       assert_not_requested :post, "https://api.x.com/2/oauth2/token"
@@ -228,7 +232,7 @@ module X
       stub_request(:post, "https://api.x.com/2/oauth2/token").to_return(status: 400, body: "")
       error = assert_raises(AuthorizationError) { authorization.tokens("state=STATE&code=CODE") }
 
-      assert_equal ["Authorization failed", nil], [error.message, error.error_code]
+      assert_equal ["POST /2/oauth2/token: Authorization failed", nil], [error.message, error.error_code]
       assert_kind_of Error, error
     end
 

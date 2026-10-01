@@ -53,11 +53,10 @@ module X
     def encode_with: (untyped coder) -> bot
   end
 
-  class AuthorizationError < Error
+  class AuthorizationDenied < Error
     attr_reader error_code: String?
-    attr_reader status: Integer?
 
-    def initialize: (String message, ?error_code: String?, ?status: Integer?) -> void
+    def initialize: (String message, ?error_code: String?) -> void
   end
 
   class TokenReportFailed < Error
@@ -86,6 +85,10 @@ module X
   end
 
   class ClientError < HTTPError
+  end
+
+  class AuthorizationError < ClientError
+    def error_code: () -> String?
   end
 
   class BadGateway < ServerError

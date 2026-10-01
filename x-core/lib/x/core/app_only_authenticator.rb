@@ -169,11 +169,7 @@ module X
       # @raise [AuthorizationError] if the token endpoint rejects the request
       # @raise [HTTPError, InvalidResponse] if the token endpoint limits the rate of the request or fails to answer,
       #   as a server error, a redirect, or the page of a proxy says
-      def fetch_bearer_token
-        TokenEndpoint.fetch(token_request, connection:).access_token
-      rescue SimpleOAuth::OAuth2::Error => e
-        raise AuthorizationError.__send__(:from, e, DEFAULT_ERROR_MESSAGE), cause: e.cause
-      end
+      def fetch_bearer_token = TokenEndpoint.fetch(token_request, connection:, refusal: DEFAULT_ERROR_MESSAGE).access_token
 
       # Build the client credentials request
       # @api private

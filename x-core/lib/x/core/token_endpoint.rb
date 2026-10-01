@@ -5,6 +5,8 @@ require "net/http"
 require "simple_oauth"
 require "uri"
 require_relative "credential_validator"
+require_relative "errors/authorization_error"
+require_relative "errors/invalid_response"
 require_relative "request_context"
 require_relative "response_parser"
 
@@ -62,33 +64,35 @@ module X
       # Send a token request and read the token the endpoint returns
       #
       # The endpoint answers a token request as OAuth 2.0 does: with the token in a successful response of JSON, or
-      # with a refusal of the request, which simple_oauth reports, in a response of 400 Bad Request or 401
+      # with a refusal of the request, which raises AuthorizationError, in a response of 400 Bad Request or 401
       # Unauthorized, or of another status of 4xx whose body is JSON, as X refuses the API key and secret of an app
       # with a 403 Forbidden. Any other response says that the endpoint failed to answer rather than that it refused the credentials, as a
       # redirect does, or the page of a proxy, firewall, or captive portal, and so does a response of 429 Too Many
       # Requests, or of a server error. It raises the error a response of the API with that status raises: the
       # HTTPError of a status that is not successful, which a client waits out or retries as it does that response,
-      # and InvalidResponse for a successful one whose body is not JSON, rather than an error that simple_oauth
-      # reports: an AuthorizationError tells a caller to ask the user to authorize the app again, which a failure of
-      # the network is no reason to.
+      # and InvalidResponse for a successful one whose body is not JSON, or holds no token, rather than
+      # AuthorizationError, which tells a caller to ask the user to authorize the app again, which a failure of the
+      # network is no reason to.
       #
       # @api private
       # @param token_request [SimpleOAuth::OAuth2::Request] the token request
       # @param connection [Connection] the connection to send it over
+      # @param refusal [String] the message of a refusal that describes no reason
       # @return [SimpleOAuth::OAuth2::Token] the token
       # @raise [TooManyRequests] if the endpoint limits the rate of the request
       # @raise [HTTPError] if the endpoint fails to answer, as a server error, a redirect, or a refusal whose body is
       #   not JSON says
-      # @raise [InvalidResponse] if the endpoint answers successfully with a body that is not JSON
-      # @raise [SimpleOAuth::OAuth2::Error] if the endpoint refuses the request, or returns no token
+      # @raise [InvalidResponse] if the endpoint answers successfully with a body that is not JSON, or holds no token
+      # @raise [AuthorizationError] if the endpoint refuses the request, with the response that refused it
       # @example Refresh a token
-      #   X::Core::TokenEndpoint.fetch(oauth2_client.refresh_token_request(refresh_token:), connection:)
-      def fetch(token_request, connection:)
+      #   X::Core::TokenEndpoint.fetch(oauth2_client.refresh_token_request(refresh_token:), connection:,
+      #     refusal: "Token refresh failed")
+      def fetch(token_request, connection:, refusal:)
         request = post(token_request)
         response = connection.perform(request:)
         raise failure(response, request) unless answer?(response)
 
-        SimpleOAuth::OAuth2::Token.from_response(status: response.code, body: response.body)
+        token_of(response, request, refusal)
       end
 
       private
@@ -116,6 +120,43 @@ module X
         JSON.parse(body).instance_of?(Hash)
       rescue JSON::ParserError
         false
+      end
+
+      # The token a response of the endpoint holds
+      #
+      # The error raised in place of it is raised with the cause of the failure simple_oauth reports, rather than the
+      # failure, so that its cause is the error of x-core it was raised in rescue of, such as the Unauthorized that led
+      # a client to refresh, and nil for none.
+      #
+      # @api private
+      # @param response [Net::HTTPResponse] the response of the endpoint, a token or a refusal
+      # @param request [Net::HTTP::Post] the token request, which the error names
+      # @param refusal [String] the message of a refusal that describes no reason
+      # @return [SimpleOAuth::OAuth2::Token] the token
+      # @raise [AuthorizationError] if the response refuses the request
+      # @raise [InvalidResponse] if the response is successful, but holds no token
+      def token_of(response, request, refusal)
+        SimpleOAuth::OAuth2::Token.from_response(status: response.code, body: response.body)
+      rescue SimpleOAuth::OAuth2::Error => e
+        raise refused(e, response, request, refusal), cause: e.cause
+      end
+
+      # Create the error of a response that holds no token
+      #
+      # Its message is the reason X described, or else the error code it reported, or else the message given.
+      #
+      # @api private
+      # @param error [SimpleOAuth::OAuth2::Error] the failure simple_oauth reports of the response
+      # @param response [Net::HTTPResponse] the response of the endpoint
+      # @param request [Net::HTTP::Post] the token request, which the error names
+      # @param refusal [String] the message of a refusal that describes no reason
+      # @return [AuthorizationError, InvalidResponse] the error of a refusal, or InvalidResponse for a successful
+      #   response that holds no token
+      def refused(error, response, request, refusal)
+        message = error.description || error.code || refusal
+        return InvalidResponse.new(message, http_response: response, body: response.body, **RequestContext.of(request)) if response.is_a?(Net::HTTPSuccess)
+
+        AuthorizationError.new(message, http_response: response, **RequestContext.of(request))
       end
 
       # Create the error of a response in which the endpoint failed to answer

@@ -10,13 +10,15 @@ module X
       REFUSALS: Array[singleton(Net::HTTPBadRequest) | singleton(Net::HTTPUnauthorized)]
       ANSWERS: Array[singleton(Net::HTTPSuccess) | singleton(Net::HTTPClientError)]
 
-      def fetch: (SimpleOAuth::OAuth2::Request token_request, connection: Connection) -> SimpleOAuth::OAuth2::Token
+      def fetch: (SimpleOAuth::OAuth2::Request token_request, connection: Connection, refusal: String) -> SimpleOAuth::OAuth2::Token
       def url_at: (String base_url, String token_url) -> String
       def scopes_of: (SimpleOAuth::OAuth2::Token token) -> Array[String]?
 
       private
       def answer?: (Net::HTTPResponse response) -> bool
       def json_object?: (String body) -> bool
+      def token_of: (Net::HTTPResponse response, Net::HTTP::Post request, String refusal) -> SimpleOAuth::OAuth2::Token
+      def refused: (SimpleOAuth::OAuth2::Error error, Net::HTTPResponse response, Net::HTTP::Post request, String refusal) -> (AuthorizationError | InvalidResponse)
       def failure: (Net::HTTPResponse response, Net::HTTP::Post request) -> HTTPError
       def post: (SimpleOAuth::OAuth2::Request token_request) -> Net::HTTP::Post
     end
@@ -618,16 +620,16 @@ module X
     def base_url: () -> String
     attr_reader connection: Core::Connection
     def oauth2_client: (String base_url) -> SimpleOAuth::OAuth2::Client
-    def query_of: (String | Hash[String | Symbol, String] callback) -> (String | Hash[String | Symbol, String])
     def connection_for: (Hash[Symbol, untyped] options) -> Core::Connection
     def exchange: (String | Hash[String | Symbol, String] callback, String base_url, ?Core::Connection over) -> SimpleOAuth::OAuth2::Token
+    def code_of: (String | Hash[String | Symbol, String] callback) -> String
     def client_of: (OAuth2Tokens tokens, Hash[Symbol, untyped] options) -> Client
     def report_exchange: (Client client, OAuth2Tokens tokens) -> void
     def tokens_from: (SimpleOAuth::OAuth2::Token token) -> OAuth2Tokens
   end
 
-  class AuthorizationError < Error
-    def self.from: (SimpleOAuth::OAuth2::Error error, String default_message) -> AuthorizationError
+  class AuthorizationDenied < Error
+    def self.from: (SimpleOAuth::OAuth2::Error error, String default_message) -> AuthorizationDenied
   end
 
   class AppOnlyAuthenticator < Authenticator
@@ -850,7 +852,7 @@ module X
       def retrying_rejected_token: [T] (URI::Generic origin, Connection connection, ?Client? client) { () -> T } -> T
       def renew: (Connection connection) -> OAuth2Tokens?
       def refresh: (Connection connection) -> OAuth2Tokens
-      def adopt_in_place_of: (SimpleOAuth::OAuth2::Error error) -> OAuth2Tokens
+      def adopt_in_place_of: (AuthorizationError error) -> OAuth2Tokens?
       def adopt_stored_tokens: () -> OAuth2Tokens?
       def stored_tokens: () -> OAuth2Tokens?
       def report_refresh: (OAuth2Tokens tokens, Client? client) -> void

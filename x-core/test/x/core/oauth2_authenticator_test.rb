@@ -365,7 +365,7 @@ module X
     def refreshes_over
       connections = []
       fetch = Core.const_get(:TokenEndpoint).method(:fetch)
-      Core.const_get(:TokenEndpoint).stub(:fetch, ->(request, connection:) { fetch.call(request, connection: connections.push(connection).last) }) { yield }
+      Core.const_get(:TokenEndpoint).stub(:fetch, ->(request, connection:, refusal:) { fetch.call(request, connection: connections.push(connection).last, refusal:) }) { yield }
       connections
     end
 
@@ -531,7 +531,7 @@ module X
         .to_return(status: 400, body: {error: "invalid_grant", error_description: "Token expired"}.to_json)
 
       error = assert_raises(AuthorizationError) { authenticator.refresh! }
-      assert_equal ["Token expired", "invalid_grant", 400], [error.message, error.error_code, error.status]
+      assert_equal ["POST /2/oauth2/token: Token expired", "invalid_grant", 400], [error.message, error.error_code, error.status]
     end
 
     def test_refresh_token_raises_on_error_without_description
@@ -541,7 +541,7 @@ module X
         .to_return(status: 400, body: {error: "invalid_grant"}.to_json)
 
       error = assert_raises(AuthorizationError) { authenticator.refresh! }
-      assert_equal "invalid_grant", error.message
+      assert_equal "POST /2/oauth2/token: invalid_grant", error.message
     end
 
     def test_refresh_token_raises_on_error_with_default_message
@@ -551,7 +551,7 @@ module X
         .to_return(status: 400, body: {}.to_json)
 
       error = assert_raises(AuthorizationError) { authenticator.refresh! }
-      assert_equal ["Token refresh failed", nil, 400], [error.message, error.error_code, error.status]
+      assert_equal ["POST /2/oauth2/token: Token refresh failed", nil, 400], [error.message, error.error_code, error.status]
     end
 
     def test_refresh_token_raises_on_invalid_json_response
@@ -561,7 +561,7 @@ module X
         .to_return(status: 401, body: "Unauthorized")
 
       error = assert_raises(AuthorizationError) { authenticator.refresh! }
-      assert_equal "Token refresh failed", error.message
+      assert_equal ["POST /2/oauth2/token: Token refresh failed", nil, "Unauthorized"], [error.message, error.error_code, error.body]
     end
 
     def test_a_token_endpoint_that_fails_to_answer_raises_the_error_of_its_status
