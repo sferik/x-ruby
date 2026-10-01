@@ -564,6 +564,7 @@ module X
     end
   end
 
-  # Alias for Post
+  # Alias for Post, the name the API gave a post before it named it a post
+  # @api public
   Tweet = Post
 end

@@ -4,8 +4,10 @@ require "rubygems/version"
 
 module X
   # The object layer of the X gem
+  # @api public
   module Objects
     # The current version of the x-objects gem
+    # @api public
     VERSION = "0.19.0"
 
     # The version as a Gem::Version, which compares one release with another
