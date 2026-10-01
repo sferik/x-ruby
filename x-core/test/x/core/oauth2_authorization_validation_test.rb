@@ -38,8 +38,26 @@ module X
     def test_scopes_that_are_not_an_array_of_strings_are_refused
       error = assert_raises(ArgumentError) { authorization(scopes: "tweet.read users.read") }
 
-      assert_equal 'scopes must be an Array of Strings, such as %w[tweet.read users.read offline.access], not "tweet.read users.read"', error.message
-      assert_raises(ArgumentError) { authorization(scopes: [:"tweet.read"]) }
+      assert_equal 'scopes must be an Array of Strings that each name a scope, such as %w[tweet.read users.read offline.access], not "tweet.read users.read"', error.message
+      [[:"tweet.read"], nil].each { |scopes| assert_raises(ArgumentError) { authorization(scopes:) } }
+    end
+
+    def test_a_string_that_names_no_scope_is_refused
+      ["tweet.read users.read", "", "tweet\"read"].each do |scope|
+        error = assert_raises(ArgumentError) { authorization(scopes: [scope]) }
+
+        assert_includes error.message, "not #{[scope].inspect}"
+      end
+    end
+
+    def test_the_scopes_are_a_frozen_copy_of_those_given
+      scopes = +"tweet.read"
+      given = [scopes]
+      authorization = authorization(scopes: given)
+      given << "users.read"
+      scopes << ".more"
+
+      assert_equal [%w[tweet.read], true, true], [authorization.scopes, authorization.scopes.frozen?, authorization.scopes.first.frozen?]
     end
 
     def test_a_base_url_that_is_not_one_a_client_takes_is_refused

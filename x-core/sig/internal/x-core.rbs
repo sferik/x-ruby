@@ -531,7 +531,9 @@ module X
       def validate_required!: (Hash[Symbol, String?] required, ?Hash[Symbol, String | Time | Array[String] | nil] others) -> void
       def validate_expires_at!: (untyped expires_at) -> void
       def validate_scopes!: (untyped scopes) -> void
-      def frozen_scopes: (Array[String]? scopes) -> Array[String]?
+      def scopes?: (untyped scopes) -> bool
+      def frozen_scopes: (Array[String] scopes) -> Array[String]
+                       | (Array[String]? scopes) -> Array[String]?
       def validate_authenticator!: (untyped authenticator, Hash[Symbol, String | Time | Array[String] | nil] credentials) -> void
       def validate!: (Hash[Symbol, String | Time | Array[String] | nil] credentials) -> void
 

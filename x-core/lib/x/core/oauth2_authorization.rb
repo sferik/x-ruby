@@ -56,7 +56,7 @@ module X
         "registered for the app"
       private_constant :INVALID_REDIRECT_URI
       # The message raised for scopes that are not an Array of Strings
-      INVALID_SCOPES = "scopes must be an Array of Strings, such as %%w[tweet.read users.read offline.access], not %s"
+      INVALID_SCOPES = "scopes must be an Array of Strings that each name a scope, such as %%w[tweet.read users.read offline.access], not %s"
       private_constant :INVALID_SCOPES
       # The message raised for a state that is nil or empty
       MISSING_STATE = "state must not be nil or empty; pass the state stored when the user was sent to X"
@@ -77,8 +77,12 @@ module X
       attr_reader :redirect_uri
 
       # The scopes the app asks the user for
+      #
+      # They are a frozen copy of the ones given, so that changing the Array the authorization was given never
+      # changes what it asks for, or the scopes of the tokens it builds when X names none.
+      #
       # @api public
-      # @return [Array<String>] the scopes
+      # @return [Array<String>] the scopes, frozen
       # @example Get the scopes
       #   authorization.scopes # => ["tweet.read", "users.read", "offline.access"]
       attr_reader :scopes
@@ -126,7 +130,8 @@ module X
       # @return [OAuth2Authorization] a new authorization
       # @raise [ArgumentError] if the client ID or redirect URI is nil or empty, or the client secret is empty, which
       #   would send the user to X with a URL it refuses
-      # @raise [ArgumentError] if the scopes are not an Array of Strings
+      # @raise [ArgumentError] if the scopes are not an Array of Strings that each name a scope, as a String that holds
+      #   a space, which names two, does not
       # @raise [ArgumentError] if the state is nil or empty, which would accept the redirect of any authorization
       # @raise [ArgumentError] if the code verifier is not 43 to 128 unreserved characters
       # @raise [ArgumentError] if the base URL is not an absolute http or https URL with no user, password, query, or
@@ -143,7 +148,7 @@ module X
         @client_id = client_id
         @client_secret = client_secret
         @redirect_uri = redirect_uri
-        @scopes = scopes
+        @scopes = CredentialValidator.frozen_scopes(scopes)
         @state = state
         @pkce = SimpleOAuth::OAuth2::PKCE.new(verifier: code_verifier)
         @code_verifier = code_verifier
@@ -258,7 +263,7 @@ module X
       def validate!(client_id:, redirect_uri:, client_secret:, scopes:, state:)
         CredentialValidator.validate_required!({client_id:}, {client_secret:})
         raise ArgumentError, INVALID_REDIRECT_URI unless String.try_convert(redirect_uri)&.match?(/\S/)
-        raise ArgumentError, format(INVALID_SCOPES, scopes.inspect) unless scopes.is_a?(Array) && scopes.all?(String)
+        raise ArgumentError, format(INVALID_SCOPES, scopes.inspect) unless CredentialValidator.scopes?(scopes)
         raise ArgumentError, MISSING_STATE if state.to_s.empty?
       end
 

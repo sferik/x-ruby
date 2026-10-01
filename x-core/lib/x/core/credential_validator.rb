@@ -155,9 +155,17 @@ module X
       # @example Check scopes
       #   X::Core::CredentialValidator.validate_scopes!(%w[tweet.read users.read])
       def validate_scopes!(scopes)
-        return if scopes.nil?
-        raise ArgumentError, INVALID_SCOPES unless scopes.is_a?(Array) && scopes.all? { |scope| scope.is_a?(String) && SCOPE.match?(scope) }
+        raise ArgumentError, INVALID_SCOPES unless scopes.nil? || scopes?(scopes)
       end
+
+      # Check whether scopes are an Array of Strings that each name a scope
+      #
+      # @api private
+      # @param scopes [Object] the scopes
+      # @return [Boolean] true if the scopes are an Array of Strings that each name a scope
+      # @example Check scopes
+      #   X::Core::CredentialValidator.scopes?(%w[tweet.read users.read]) # => true
+      def scopes?(scopes) = scopes.is_a?(Array) && scopes.all? { |scope| scope.is_a?(String) && SCOPE.match?(scope) }
 
       # The scopes as the tokens, an authenticator, or a client holds them
       #
