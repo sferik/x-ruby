@@ -204,14 +204,15 @@ module X
       attribute :edit_controls
 
       # @!attribute [r] display_text_range
-      #   The range of characters of the text that is shown
+      #   The range of characters of the text the API gives the post that is shown
       #
-      #   It leaves out the mentions a reply begins with and the link to media it ends with.
+      #   It leaves out the mentions a reply begins with and the link to media it ends with. It is a range of the text
+      #   the post holds itself, which for a long post is the text cut short, not the full text {#text} reads.
       #
       #   @api public
       #   @return [Array<Integer>] the start and end of the range, empty if the response holds none
       #   @example Read the text that is shown
-      #     post.text[Range.new(*post.display_text_range, true)]
+      #     post.attrs["text"][Range.new(*post.display_text_range, true)]
       attribute :display_text_range, :list
 
       # @!attribute [r] scopes
@@ -275,15 +276,16 @@ module X
       # The entities found in the full text
       #
       # The entities, such as links, mentions, and hashtags, come from note_post for a long post, whose note the API
-      # gives entities when the full text has any, and from the post itself otherwise, which holds the annotations of
-      # a long post as well as the entities of a short one.
+      # gives entities when the full text has any, and from the post itself for a short one, so that each lies where
+      # {#text} holds it. A long post whose note holds none has none: the entities the post holds itself, such as its
+      # annotations, lie in the text cut short, which attrs holds.
       #
       # @api public
       # @return [Hash, nil] the entities
       # @raise [InvalidAttribute] if the response holds a note_post, or entities, that is not an object
       # @example Get the entities
       #   post.entities
-      def entities = Shape.read_object("#{self.class}#entities", Shape.dig("#{self.class}#entities", note_post, %w[entities]) || attrs["entities"])
+      def entities = Shape.read_object("#{self.class}#entities", Shape.dig("#{self.class}#entities", full, %w[entities]))
 
       # The links in the full text, each with its shortened url and its expanded_url
       #
