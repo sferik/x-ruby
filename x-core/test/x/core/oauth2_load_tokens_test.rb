@@ -117,6 +117,17 @@ module X
       assert_equal 2, @loads
     end
 
+    def test_refreshes_before_save_tokens_stores_any_take_none_of_the_tokens_they_spent
+      held = OAuth2Tokens.new(access_token: TEST_ACCESS_TOKEN, refresh_token: TEST_REFRESH_TOKEN)
+      authenticator = OAuth2Authenticator.new(client_id: TEST_CLIENT_ID, **held.to_h, load_tokens: -> { held })
+      refreshes = [[TEST_REFRESH_TOKEN, "FIRST"], %w[FIRST SECOND], %w[SECOND THIRD]].map do |spent, issued|
+        stub_refresh(spent, body: {access_token: "#{issued}_ACCESS", refresh_token: issued, expires_in: 7200})
+      end
+
+      assert_equal %w[FIRST SECOND THIRD], Array.new(3) { authenticator.refresh!.refresh_token }
+      refreshes.each { |refresh| assert_requested refresh, times: 1 }
+    end
+
     def test_a_refresh_refused_for_another_reason_raises_without_reading_the_store_again
       stub_refresh(TEST_REFRESH_TOKEN, status: 401, body: {error: "invalid_client"})
 

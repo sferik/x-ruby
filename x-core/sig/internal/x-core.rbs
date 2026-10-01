@@ -837,7 +837,7 @@ module X
 
       @mutex: Thread::Mutex
       @load_tokens: _TokenLoader?
-      @spent_refresh_token: String?
+      @spent_refresh_tokens: Set[String]
       @reporter: RefreshReporter
       @refreshed_at: Float?
       @access_token: String

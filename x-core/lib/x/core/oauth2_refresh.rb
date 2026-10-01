@@ -47,6 +47,7 @@ module X
         @load_tokens = SettingValidator.callable!(:load_tokens, load_tokens)
         @mutex = Mutex.new
         @reporter = RefreshReporter.new
+        @spent_refresh_tokens = Set.new
       end
 
       # Refresh the access token if it has expired, over a connection
@@ -159,7 +160,7 @@ module X
       def refresh(connection)
         held = refresh_token #: String
         update_tokens(TokenEndpoint.fetch(oauth2_client.refresh_token_request(refresh_token: held), connection:, refusal: DEFAULT_ERROR_MESSAGE))
-        @spent_refresh_token = held
+        @spent_refresh_tokens << held
         issued = refresh_token #: String
         @reporter.issued(OAuth2Tokens.new(access_token:, refresh_token: issued, expires_at:, scopes:))
       rescue AuthorizationError => e
@@ -177,15 +178,17 @@ module X
       #
       # Tokens that hold no refresh token, as an authorization without offline.access stores them, are not taken, since
       # they would take away the refresh token of an authenticator that refreshes, which a refresh never does. Tokens
-      # that hold the refresh token the authenticator holds, or the one its last refresh spent, are its own,
-      # as the store holds them until save_tokens has stored the tokens of that refresh, which it is passed once
-      # the lock is released, so they are not taken. The age of the access token taken is unknown, so it is not fresh.
+      # that hold the refresh token the authenticator holds, or one any of its refreshes spent, are its own, as the
+      # store holds them until save_tokens has stored the tokens of a later refresh, which it is passed once the lock
+      # is released, so they are not taken: refreshes on several threads while save_tokens is slow leave the store
+      # holding tokens older than the last refresh spent, whose refresh token X no longer accepts. The age of the access token taken is unknown, so it is not fresh.
       #
       # @api private
       # @return [OAuth2Tokens, nil] a copy of the tokens taken, or nil if the store holds none, or none of another's
       def adopt_stored_tokens
         stored = stored_tokens or return
-        return if stored.refresh_token.nil? || [refresh_token, @spent_refresh_token].include?(stored.refresh_token)
+        stored_refresh_token = stored.refresh_token
+        return if stored_refresh_token.nil? || stored_refresh_token.eql?(refresh_token) || @spent_refresh_tokens.include?(stored_refresh_token)
 
         @refreshed_at = nil
         @access_token = stored.access_token
