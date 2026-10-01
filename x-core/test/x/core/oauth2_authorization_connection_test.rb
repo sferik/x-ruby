@@ -53,13 +53,29 @@ module X
       assert_predicate connection, :closed?
     end
 
-    def test_the_credentials_are_exchanged_over_the_connection_of_the_authorization
+    def test_the_credentials_are_exchanged_over_the_connection_of_the_authorization_which_is_closed_after
       stub_token
       authorization = authorization()
       connection = exchanged_over { authorization.tokens(CALLBACK) }
 
       assert_same authorization.send(:connection), connection
-      refute_predicate connection, :closed?
+      assert_predicate connection, :closed?
+    end
+
+    def test_the_connection_of_the_authorization_is_closed_when_the_exchange_fails
+      stub_token(status: 400, body: {error: "invalid_grant"})
+      authorization = authorization()
+      connection = exchanged_over { assert_raises(AuthorizationError) { authorization.tokens(CALLBACK) } }
+
+      assert_predicate connection, :closed?
+    end
+
+    def test_the_tokens_leave_no_connection_open
+      stub_token
+      authorization = authorization()
+      authorization.tokens(CALLBACK)
+
+      assert_empty authorization.send(:connection).instance_variable_get(:@pool).instance_variable_get(:@idle).values.flatten
     end
 
     private

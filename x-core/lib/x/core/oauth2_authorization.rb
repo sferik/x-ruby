@@ -313,8 +313,9 @@ module X
 
       # Exchange the code of the redirect back from X for a token
       #
-      # A connection other than the authorization's own is built for the one exchange, so it is closed once the code is
-      # exchanged rather than left open for requests the authorization never sends.
+      # The connection is closed once the code is exchanged, whether it is the authorization's own or one built for the
+      # exchange of a client, rather than left open for requests the authorization never sends, since a code is
+      # exchanged once; an authorization that exchanges another code, of another redirect, opens it again.
       #
       # @api private
       # @param callback [String, Hash] the redirect back from X: its URL, its query string, or its query parameters
@@ -328,7 +329,7 @@ module X
         token_request = oauth2_client(base_url).authorization_code_request(code: code_of(callback), redirect_uri:, code_verifier:)
         TokenEndpoint.fetch(token_request, connection: over, refusal: DEFAULT_ERROR_MESSAGE)
       ensure
-        over.close unless over.equal?(connection)
+        over.close
       end
 
       # The authorization code of the redirect back from X
