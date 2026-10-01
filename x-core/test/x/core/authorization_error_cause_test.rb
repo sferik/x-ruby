@@ -50,7 +50,7 @@ module X
     def test_a_refused_authorization_code_has_no_cause
       refuse_token(OAUTH2_TOKEN_URL)
       authorization = OAuth2Authorization.new(client_id: TEST_CLIENT_ID, redirect_uri: "https://example.com/callback", state: "STATE")
-      error = assert_raises(AuthorizationError) { authorization.credentials("state=STATE&code=CODE") }
+      error = assert_raises(AuthorizationError) { authorization.tokens("state=STATE&code=CODE") }
 
       assert_nil error.cause
     end

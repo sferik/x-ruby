@@ -126,52 +126,52 @@ module X
       stub_request(:post, "https://api.x.com/2/oauth2/token").to_return(status:, body: body.to_json)
     end
 
-    def test_credentials_of_a_public_client
+    def test_tokens_of_a_public_client
       token = stub_token.with(body: "#{TOKEN_BODY}&client_id=#{TEST_CLIENT_ID}") { |request| !request.headers.key?("Authorization") }
-      credentials = Time.stub(:now, Time.at(1_000)) { authorization.credentials("#{REDIRECT_URI}?state=STATE&code=CODE") }
+      tokens = Time.stub(:now, Time.at(1_000)) { authorization.tokens("#{REDIRECT_URI}?state=STATE&code=CODE") }
 
-      assert_equal OAuth2Tokens.new(access_token: "ACCESS", refresh_token: "REFRESH", expires_at: Time.at(8_200)), credentials
+      assert_equal OAuth2Tokens.new(access_token: "ACCESS", refresh_token: "REFRESH", expires_at: Time.at(8_200)), tokens
       assert_requested token
     end
 
-    def test_credentials_of_a_confidential_client
+    def test_tokens_of_a_confidential_client
       basic = "Basic #{Base64.strict_encode64("#{TEST_CLIENT_ID}:#{TEST_CLIENT_SECRET}")}"
       token = stub_token.with(body: TOKEN_BODY, headers: {"Authorization" => basic})
 
-      tokens = authorization(client_secret: TEST_CLIENT_SECRET).credentials("state=STATE&code=CODE")
+      tokens = authorization(client_secret: TEST_CLIENT_SECRET).tokens("state=STATE&code=CODE")
 
       assert_equal %w[ACCESS REFRESH], [tokens.access_token, tokens.refresh_token]
       assert_requested token
     end
 
-    def test_credentials_from_query_parameters
+    def test_tokens_from_query_parameters
       stub_token
 
-      assert_equal "ACCESS", authorization.credentials({state: "STATE", code: "CODE"}).access_token
+      assert_equal "ACCESS", authorization.tokens({state: "STATE", code: "CODE"}).access_token
     end
 
-    def test_credentials_without_a_refresh_token_are_those_of_the_user_without_one
+    def test_tokens_without_a_refresh_token_are_those_of_the_user_without_one
       stub_token(body: {token_type: "bearer", access_token: "ACCESS", expires_in: 7200})
-      credentials = Time.stub(:now, Time.at(1_000)) { authorization.credentials("state=STATE&code=CODE") }
+      tokens = Time.stub(:now, Time.at(1_000)) { authorization.tokens("state=STATE&code=CODE") }
 
-      assert_equal OAuth2Tokens.new(access_token: "ACCESS", refresh_token: nil, expires_at: Time.at(8_200)), credentials
+      assert_equal OAuth2Tokens.new(access_token: "ACCESS", refresh_token: nil, expires_at: Time.at(8_200)), tokens
     end
 
-    def test_credentials_of_a_confidential_client_without_a_refresh_token_or_a_lifetime_hold_neither
+    def test_tokens_of_a_confidential_client_without_a_refresh_token_or_a_lifetime_hold_neither
       stub_token(body: {token_type: "bearer", access_token: "ACCESS"})
 
       assert_equal OAuth2Tokens.new(access_token: "ACCESS", refresh_token: nil, expires_at: nil),
-        authorization(client_secret: TEST_CLIENT_SECRET).credentials("state=STATE&code=CODE")
+        authorization(client_secret: TEST_CLIENT_SECRET).tokens("state=STATE&code=CODE")
     end
 
-    def test_credentials_are_exchanged_over_the_connection
+    def test_tokens_are_exchanged_over_the_connection
       response = Net::HTTPOK.new("1.1", "200", "OK")
       response.instance_variable_set(:@body, TOKENS.to_json)
       response.instance_variable_set(:@read, true)
       authorization = authorization()
       requests = []
       authorization.send(:connection).stub(:perform, ->(request:) { requests << request.body and response }) do
-        authorization.credentials("state=STATE&code=CODE")
+        authorization.tokens("state=STATE&code=CODE")
       end
 
       assert_equal ["#{TOKEN_BODY}&client_id=#{TEST_CLIENT_ID}"], requests
@@ -179,7 +179,7 @@ module X
 
     def test_a_denied_authorization_raises
       error = assert_raises(AuthorizationError) do
-        authorization.credentials("error=access_denied&error_description=The+user+denied+the+request&state=STATE")
+        authorization.tokens("error=access_denied&error_description=The+user+denied+the+request&state=STATE")
       end
 
       assert_equal ["The user denied the request", "access_denied"], [error.message, error.error_code]
@@ -187,11 +187,11 @@ module X
     end
 
     def test_an_error_without_a_description_raises_its_code
-      assert_equal "access_denied", assert_raises(AuthorizationError) { authorization.credentials("error=access_denied") }.message
+      assert_equal "access_denied", assert_raises(AuthorizationError) { authorization.tokens("error=access_denied") }.message
     end
 
     def test_a_redirect_for_another_authorization_raises
-      error = assert_raises(AuthorizationError) { authorization.credentials("state=OTHER&code=CODE") }
+      error = assert_raises(AuthorizationError) { authorization.tokens("state=OTHER&code=CODE") }
 
       assert_equal ["The authorization response answers a different request", nil, nil], [error.message, error.error_code, error.status]
       assert_not_requested :post, "https://api.x.com/2/oauth2/token"
@@ -199,13 +199,13 @@ module X
 
     def test_a_refused_code_raises
       stub_token(status: 400, body: {error: "invalid_grant", error_description: "Value passed for the authorization code was invalid."})
-      error = assert_raises(AuthorizationError) { authorization.credentials("state=STATE&code=CODE") }
+      error = assert_raises(AuthorizationError) { authorization.tokens("state=STATE&code=CODE") }
 
       assert_equal ["Value passed for the authorization code was invalid.", "invalid_grant", 400], [error.message, error.error_code, error.status]
     end
 
     def test_a_redirect_that_is_not_a_valid_url_raises
-      error = assert_raises(AuthorizationError) { authorization.credentials("https://exa mple.com/callback?state=STATE&code=CODE") }
+      error = assert_raises(AuthorizationError) { authorization.tokens("https://exa mple.com/callback?state=STATE&code=CODE") }
 
       assert_equal ["The redirect back from X is not a valid URL", nil], [error.message, error.error_code]
       assert_not_requested :post, "https://api.x.com/2/oauth2/token"
@@ -213,7 +213,7 @@ module X
 
     def test_a_failure_without_a_reason_raises_the_default_message
       stub_request(:post, "https://api.x.com/2/oauth2/token").to_return(status: 400, body: "")
-      error = assert_raises(AuthorizationError) { authorization.credentials("state=STATE&code=CODE") }
+      error = assert_raises(AuthorizationError) { authorization.tokens("state=STATE&code=CODE") }
 
       assert_equal ["Authorization failed", nil], [error.message, error.error_code]
       assert_kind_of Error, error
@@ -222,7 +222,7 @@ module X
     def test_a_token_endpoint_that_fails_to_answer_raises_the_error_of_its_status
       stub_request(:post, "https://api.x.com/2/oauth2/token").to_return(status: 502, body: "")
 
-      assert_raises(BadGateway) { authorization.credentials("state=STATE&code=CODE") }
+      assert_raises(BadGateway) { authorization.tokens("state=STATE&code=CODE") }
     end
   end
 
@@ -371,9 +371,9 @@ module X
       assert_equal "http://localhost:3000/2/", client.base_url
     end
 
-    def test_the_credentials_are_exchanged_at_the_origin_of_the_base_url_of_the_authorization
+    def test_the_tokens_are_exchanged_at_the_origin_of_the_base_url_of_the_authorization
       stub = stub_request(:post, "http://localhost:3000/2/oauth2/token").to_return(body: TOKENS.to_json)
-      authorization(base_url: "http://localhost:3000/2/").credentials("state=STATE&code=CODE")
+      authorization(base_url: "http://localhost:3000/2/").tokens("state=STATE&code=CODE")
 
       assert_requested stub
     end

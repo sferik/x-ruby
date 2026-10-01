@@ -56,7 +56,7 @@ module X
     def test_the_credentials_are_exchanged_over_the_connection_of_the_authorization
       stub_token
       authorization = authorization()
-      connection = exchanged_over { authorization.credentials(CALLBACK) }
+      connection = exchanged_over { authorization.tokens(CALLBACK) }
 
       assert_same authorization.send(:connection), connection
       refute_predicate connection, :closed?

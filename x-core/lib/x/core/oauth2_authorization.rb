@@ -170,14 +170,14 @@ module X
         oauth2_client(base_url).authorization_url(redirect_uri:, pkce: @pkce, state:, scope: scopes)
       end
 
-      # Exchange the code of the redirect back from X for the credentials of a client
+      # Exchange the code of the redirect back from X for the tokens of the user
       #
       # An authorization code works once, so call this, or {#client}, once for each redirect.
       #
-      # The credentials are the tokens of the user, the OAuth2Tokens a client passes save_tokens and reads from
-      # load_tokens, which are stored for each user, so they leave out the client ID, and the client secret of a
-      # confidential client, which are the app's and kept once, apart from them; pass them beside the tokens to a
-      # client built of them, which refreshes the access token with them.
+      # The tokens are the OAuth2Tokens a client passes save_tokens and reads from load_tokens, which are stored for
+      # each user, so they leave out the client ID, and the client secret of a confidential client, which are the
+      # app's and kept once, apart from them; pass them beside the tokens to a client built of them, which refreshes
+      # the access token with them.
       #
       # @api public
       # @param callback [String, Hash] the redirect back from X: its URL, its query string, or its query parameters
@@ -188,11 +188,11 @@ module X
       #   redirect is not a valid URL
       # @raise [HTTPError, InvalidResponse] if the token endpoint limits the rate of the request or fails to answer,
       #   as a server error, a redirect, or the page of a proxy says
-      # @example Store the credentials of the user
-      #   store.save(authorization.credentials(request.url))
-      # @example Build the client of a confidential app from the credentials it stored
+      # @example Store the tokens of the user
+      #   store.save(authorization.tokens(request.url))
+      # @example Build the client of a confidential app from the tokens it stored
       #   X::Client.new(client_id: ENV.fetch("X_CLIENT_ID"), client_secret: ENV.fetch("X_CLIENT_SECRET"), **store.load.to_h)
-      def credentials(callback) = tokens_from(exchange(callback, base_url))
+      def tokens(callback) = tokens_from(exchange(callback, base_url))
 
       # Exchange the code of the redirect back from X for a client
       #
