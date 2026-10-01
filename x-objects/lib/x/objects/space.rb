@@ -3,6 +3,7 @@
 require_relative "batch_finders"
 require_relative "cursor"
 require_relative "resource"
+require_relative "topic"
 
 module X
   module Objects
@@ -73,14 +74,14 @@ module X
 
         private :endpoint, :id_type, :client_for, :fields_key
 
-        # The default query parameters requesting every space field and user expansion
+        # The default query parameters requesting every space field and expansion
         #
         # @api public
         # @return [Hash{String => Array<String>}] the default query parameters
         # @example Get the default parameters
         #   X::Space.default_params["space.fields"]
         def default_params
-          {"space.fields" => FIELDS, "user.fields" => User::FIELDS, "expansions" => EXPANSIONS}
+          {"space.fields" => FIELDS, "user.fields" => User::FIELDS, "topic.fields" => Topic::FIELDS, "expansions" => EXPANSIONS}
         end
 
         # Search spaces by their titles
@@ -287,6 +288,14 @@ module X
       #   @example Get the invited users
       #     space.invited_users
       references :invited_users, :User, key: %w[invited_user_ids]
+
+      # @!method topics
+      #   The topics, from the includes or as stubs holding only their identifiers
+      #   @api public
+      #   @return [Array<Topic>] the topics
+      #   @example Get the names of the topics
+      #     space.topics.map(&:name)
+      references :topics, :Topic, key: %w[topic_ids]
 
       # The posts shared in this space
       #

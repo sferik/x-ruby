@@ -8,7 +8,8 @@ module X
 
     def setup
       @client = FakeClient.new
-      includes = Objects.const_get(:Includes).new({"users" => [{"id" => "9", "username" => "sferik"}]})
+      includes = Objects.const_get(:Includes).new({"users" => [{"id" => "9", "username" => "sferik"}],
+                                                   "topics" => [{"id" => "848920371311001600", "name" => "Technology", "description" => "All about technology"}]})
       @space = Space.__send__(:build, {"id" => "1", "title" => "Ruby", "state" => "live", "lang" => "en",
                           "created_at" => "2024-01-02T03:04:05.000Z", "started_at" => "2024-01-02T03:05:05.000Z",
                           "ended_at" => "2024-01-02T04:04:05.000Z", "scheduled_start" => "2024-01-02T03:00:00.000Z",
@@ -24,7 +25,7 @@ module X
     def test_class_configuration
       assert_equal "spaces", Space.__send__(:endpoint)
       assert_nil Space.__send__(:includes_key)
-      assert_equal({"space.fields" => Space::FIELDS, "user.fields" => User::FIELDS, "expansions" => Space::EXPANSIONS}, Space.default_params)
+      assert_equal({"space.fields" => Space::FIELDS, "user.fields" => User::FIELDS, "topic.fields" => Topic::FIELDS, "expansions" => Space::EXPANSIONS}, Space.default_params)
     end
 
     def test_search
@@ -83,6 +84,10 @@ module X
       assert_equal ["sferik"], @space.hosts.map(&:username)
       assert_equal [9, 8], @space.speakers.map(&:id)
       assert_equal [7], @space.invited_users.map(&:id)
+    end
+
+    def test_topics
+      assert_equal [[848920371311001600, "Technology"]], @space.topics.map { |topic| [topic.id, topic.name] }
     end
 
     def test_posts

@@ -28,6 +28,7 @@ matcher:
   - X::Post*
   - X::Resource*
   - X::Space*
+  - X::Topic*
   - X::Trend*
   - X::PostUsage*
   - X::User*
@@ -42,6 +43,7 @@ matcher:
   - X::Poll.from_id
   - X::Post.from_id
   - X::Space.from_id
+  - X::Topic.from_id
   - X::User.from_id
 mutation:
   operators: full

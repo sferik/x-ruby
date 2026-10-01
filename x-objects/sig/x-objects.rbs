@@ -413,6 +413,19 @@ module X
     def voting_status: () -> String?
   end
 
+  class Topic < Resource
+    extend Objects::_ResourceClass[Topic]
+    include Objects::_Hydration[Topic]
+    FIELDS: Array[String]
+
+    def self.default_params: () -> Hash[String, Array[String]]
+
+    def id: () -> Integer
+
+    def name: () -> String?
+    def description: () -> String?
+  end
+
   class Place < Resource
     extend Objects::_ResourceClass[Place]
     include Objects::_Hydration[Place]
@@ -782,6 +795,7 @@ module X
     def hosts: () -> Array[User]
     def speakers: () -> Array[User]
     def invited_users: () -> Array[User]
+    def topics: () -> Array[Topic]
     def posts: (**untyped params) -> Cursor[Post]
     def tweets: (**untyped params) -> Cursor[Post]
     def buyers: (**untyped params) -> Cursor[User]

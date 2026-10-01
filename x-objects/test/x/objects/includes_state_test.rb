@@ -15,7 +15,7 @@ module X
         @data = {"users" => [{"id" => "9", "pinned_tweet_id" => "3"}, {"id" => "10"}, {"id" => "11"}],
                  "tweets" => [{"id" => "3", "author_id" => "11"}, {"id" => "2", "author_id" => "10"}, {"id" => "4"}],
                  "media" => [{"media_key" => "3_1"}, {"media_key" => "3_2"}], "polls" => [{"id" => "5"}], "places" => [{"id" => "p1"}],
-                 "topics" => [{"id" => "9"}]}
+                 "topics" => [{"id" => "848920371311001600"}]}
         @includes = Includes.new(@data, problems: [problem("9"), problem("12"), problem(nil)], query: QUERY)
       end
 

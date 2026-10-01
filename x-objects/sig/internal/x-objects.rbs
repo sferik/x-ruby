@@ -780,6 +780,10 @@ module X
     private def self.includes_key: () -> String
   end
 
+  class Topic < Resource
+    private def self.includes_key: () -> String
+  end
+
   class Place < Resource
     private def self.id_type: () -> Symbol
     private def self.includes_key: () -> String
