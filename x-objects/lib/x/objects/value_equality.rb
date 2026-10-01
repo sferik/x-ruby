@@ -6,7 +6,9 @@ module X
     #
     # A trend or the usage of a project has no identifier to tell it by, and a rule a post matched is told by its tag
     # as well as its identifier, so two are equal when they are of the same class and hold the same attributes, and
-    # equal ones share a hash, so that uniq and a Hash key tell them apart.
+    # equal ones share a hash, so that uniq and a Hash key tell them apart. Every attribute counts, so a topic that
+    # trends in two places, with a count of posts in each, is two trends that differ; compare their names to find the
+    # topics two places share, as trends.map(&:name).intersect?(other_trends.map(&:name)).
     #
     # Internal to x-objects: the methods it gives X::Trend, X::PersonalizedTrend, X::PostUsage, and X::MatchingRule are
     # public API, but the module is only how they are shared, and which classes include it can change within 1.x.
@@ -18,8 +20,8 @@ module X
       # @api public
       # @param other [Object] the other object
       # @return [Boolean] true if the other is of the same class and holds the same attributes
-      # @example Check whether a topic trends in two places
-      #   X::Trend.at(1, client: client).intersect?(X::Trend.at(23424977, client: client))
+      # @example Check whether the trends of the world changed since they were last read, a count included
+      #   X::Trend.at(1, client: client) == trends
       def ==(other) = other.instance_of?(self.class) && attrs.eql?((_ = other).attrs)
       alias_method :eql?, :==
 
@@ -27,8 +29,8 @@ module X
       #
       # @api public
       # @return [Integer] the hash
-      # @example Count the distinct topics trending in some places
-      #   woeids.flat_map { |woeid| X::Trend.at(woeid, client: client) }.uniq.size
+      # @example Collect the distinct rules the posts of a stream matched
+      #   posts.flat_map(&:matching_rules).uniq
       def hash = [self.class, attrs].hash
     end
     private_constant :ValueEquality
