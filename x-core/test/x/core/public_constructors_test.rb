@@ -15,22 +15,18 @@ module X
     cover RulesRejected
     cover Response
     cover RateLimit
-
-    def not_found
-      Net::HTTPNotFound.new("1.1", "404", "Not Found").tap do |response|
-        response["content-type"] = "application/json"
-        response.instance_variable_set(:@read, true)
-        response.instance_variable_set(:@body, '{"title":"Not Found Error","detail":"Could not find user."}')
-      end
-    end
+    cover Core.const_get(:BuiltResponse)
 
     URI_OF_REQUEST = URI("https://api.x.com/2/users/1?user.fields=id")
+    NOT_FOUND = {status: 404, headers: {"content-type" => "application/json"},
+                 body: '{"title":"Not Found Error","detail":"Could not find user."}'}.freeze
+
+    def not_found = NotFound.new(**NOT_FOUND).http_response
 
     def test_an_http_error_is_built_from_a_response
       error = NotFound.new(http_response: not_found)
 
       assert_equal [404, "Not Found Error"], [error.status, error.problem.title]
-      assert_raises(NotFound) { raise error }
     end
 
     def test_an_http_error_names_the_request_it_is_given
@@ -55,10 +51,10 @@ module X
       assert_equal [:get, URI_OF_REQUEST], InvalidResponse.new(http_response: not_found, body: "<", http_method: :get, uri: URI_OF_REQUEST).then { |error| [error.http_method, error.uri] }
     end
 
-    def test_an_invalid_response_is_built_from_a_response
+    def test_an_invalid_response_is_built_from_a_response_and_the_body_that_is_not_json
       error = InvalidResponse.new(http_response: not_found, body: "<html>")
 
-      assert_equal [404, "<html>"], [error.status, error.body]
+      assert_equal [404, "<html>", NOT_FOUND[:body]], [error.status, error.body, error.http_response.body]
     end
 
     def test_the_errors_of_problems_are_built_from_problems
@@ -71,7 +67,13 @@ module X
     def test_a_response_is_built_from_a_response
       response = Response.new(http_response: not_found, http_method: :get, uri: URI("https://api.x.com/2/users/1"))
 
-      assert_equal [:get, 404], [response.http_method, response.status]
+      assert_equal [:get, 404, NOT_FOUND[:body]], [response.http_method, response.status, response.body]
+    end
+
+    def test_a_response_summarizes_the_part_of_the_body_it_is_given
+      response = Response.new(http_response: not_found, http_method: :get, uri: URI_OF_REQUEST, body: "{}")
+
+      assert_equal ["{}", NOT_FOUND[:body]], [response.body, response.http_response.body]
     end
 
     def test_a_rate_limit_is_built_only_from_a_response

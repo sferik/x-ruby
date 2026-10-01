@@ -2,6 +2,7 @@
 
 require "json"
 require "net/http"
+require_relative "built_response"
 require_relative "rate_limit"
 require_relative "response_headers"
 
@@ -29,7 +30,8 @@ module X
       # The response itself, as the client received it
       #
       # It is an escape hatch, for what a summary does not read: the status is {#status}, the headers are
-      # {#headers}, and the body is {#body}. It is the Net::HTTP response the client sent the request with.
+      # {#headers}, and the body is {#body}. It is the Net::HTTP response the client sent the request with, or the one
+      # built of the status, headers, and body the summary was given.
       #
       # @api public
       # @return [Net::HTTPResponse] the HTTP response
@@ -39,21 +41,30 @@ module X
 
       # Summarize a response
       #
-      # Public, so that an on_response hook can be tested with a summary built from a Net::HTTP response, as the client
-      # builds one for each response it reads.
+      # Public, so that an on_response hook can be tested with a summary built from the status, headers, and body of
+      # a response, or from a Net::HTTP response, as the client builds one for each response it reads.
       #
       # @api public
-      # @param http_response [Net::HTTPResponse] the HTTP response
       # @param http_method [Symbol] the HTTP method of the request
       # @param uri [URI::Generic] the URI of the request
-      # @param body [String, nil] the part of the body summarized, such as one object of a stream, or nil for all of it
+      # @param http_response [Net::HTTPResponse, nil] the HTTP response, or nil for one built of the status, headers,
+      #   and body
+      # @param status [Integer, nil] the status of the response, from 100 to 599, when it is not given
+      # @param headers [Hash{String => String}, nil] the headers of the response, when it is not given
+      # @param body [String, nil] the part of the body summarized, such as one object of a stream, or nil for all of
+      #   it, which is the body of a response built of the status
       # @return [Response] a new summary
+      # @raise [ArgumentError] if the HTTP response is given beside a status or headers, or neither it nor a status is
+      #   given, or the status is not from 100 to 599, or the headers are not a Hash of names to values
       # @example Summarize a response
+      #   X::Response.new(http_method: :get, uri: URI("https://api.x.com/2/users/me"), status: 200,
+      #     headers: {"x-rate-limit-remaining" => "74"}, body: %({"data":{"id":"1"}}))
+      # @example Summarize a Net::HTTP response
       #   X::Response.new(http_response:, http_method: :get, uri: URI("https://api.x.com/2/users/me"))
-      def initialize(http_response:, http_method:, uri:, body: nil)
+      def initialize(http_method:, uri:, http_response: nil, status: nil, headers: nil, body: nil)
         @http_method = http_method
         @uri = uri
-        @http_response = http_response
+        @http_response = BuiltResponse.of(http_response, status:, headers:, body: (body if http_response.nil?))
         @body = body
       end
 

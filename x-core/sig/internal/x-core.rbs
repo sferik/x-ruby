@@ -382,6 +382,20 @@ module X
       def app_only_authenticator: -> AppOnlyAuthenticator?
     end
 
+    module BuiltResponse
+      INVALID_STATUS: String
+      RESPONSE_OR_STATUS: String
+      STATUSES: Range[Integer]
+      extend BuiltResponse
+
+      def of: (Net::HTTPResponse? http_response, status: Integer?, headers: Hash[String, String]?, body: String?) -> Net::HTTPResponse
+
+      private
+      def build: (Integer status, Hash[String, String] headers, String? body) -> Net::HTTPResponse
+      def response_class_of: (Integer status) -> Class
+      def reason_of: (Class response_class) -> String
+    end
+
     module RequestEncoding
       LEADING_SLASHES: Regexp
       BODY_AND_FORM: String

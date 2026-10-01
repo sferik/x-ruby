@@ -3,6 +3,7 @@
 require "json"
 require "time"
 require_relative "error"
+require_relative "../built_response"
 require_relative "../problem"
 require_relative "../request_context"
 require_relative "../response_headers"
@@ -41,7 +42,8 @@ module X
       # The response itself, as the client received it
       #
       # It is an escape hatch, for what the error does not read: the status is {#status}, the headers are
-      # {#headers}, and the body is {#body}. It is the Net::HTTP response the client sent the request with.
+      # {#headers}, and the body is {#body}. It is the Net::HTTP response the client sent the request with, or the one
+      # built of the status, headers, and body the error was given.
       #
       # @api public
       # @return [Net::HTTPResponse] the HTTP response
@@ -78,26 +80,36 @@ module X
 
       # Initialize a new HTTPError
       #
-      # Public, so that code that rescues an HTTPError, or a subclass such as NotFound, can be tested with one built from a
-      # Net::HTTP response, as x-core builds each from the response it parses. The error names the request, when given
-      # its method and URI, as x-core names the request the response answers.
+      # Public, so that code that rescues an HTTPError, or a subclass such as NotFound, can be tested with one built from
+      # the status, headers, and body of a response, or from a Net::HTTP response, as x-core builds each from the
+      # response it parses. The error names the request, when given its method and URI, as x-core names the request the
+      # response answers.
       #
       # @api public
-      # @param http_response [Net::HTTPResponse] the HTTP response
+      # @param http_response [Net::HTTPResponse, nil] the HTTP response, or nil for one built of the status, headers,
+      #   and body
+      # @param status [Integer, nil] the status of the response, from 100 to 599, when it is not given
+      # @param headers [Hash{String => String}, nil] the headers of the response, when it is not given
+      # @param body [String, nil] the body of the response, when it is not given
       # @param http_method [Symbol, String, nil] the method of the request the response answers, in any case
       # @param uri [URI::Generic, nil] the URI of the request the response answers
       # @return [HTTPError] a new instance
-      # @example Create an HTTP error
+      # @raise [ArgumentError] if the HTTP response is given beside a status, headers, or a body, or neither it nor a
+      #   status is given, or the status is not from 100 to 599, or the headers are not a Hash of names to values
+      # @example Create the error of a user that does not exist
+      #   error = X::NotFound.new(status: 404, headers: {"content-type" => "application/json"},
+      #     body: %({"title":"Not Found Error","detail":"Could not find user."}))
+      # @example Create an HTTP error from a response
       #   error = X::HTTPError.new(http_response: response, http_method: :get, uri: URI("https://api.x.com/2/users/me"))
-      def initialize(http_response:, http_method: nil, uri: nil)
-        @http_response = http_response
+      def initialize(http_response: nil, status: nil, headers: nil, body: nil, http_method: nil, uri: nil)
+        @http_response = BuiltResponse.of(http_response, status:, headers:, body:)
         name_request(http_method, uri)
         parsed = parsed_body
         errors = errors_from(parsed)
         described = (Problem.new(parsed) if describes_problem?(parsed))
         @problems = (errors.empty? ? [described].compact : errors).freeze
         @problem = described || errors.first
-        super(message_naming_request(message_from(parsed) || http_response.message))
+        super(message_naming_request(message_from(parsed) || @http_response.message))
       end
 
       # The HTTP status code, as an Integer like X::Response#status
