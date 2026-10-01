@@ -16,7 +16,7 @@ module X
     type uploadable = String | _ToPath | _Reader
 
     module API
-      def upload_media: (uploadable media, ?media_category: (String | Symbol)?, ?alt_text: String?, ?processing_timeout: Float | Integer, ?media_type: String?, ?chunk_size: Integer?, ?concurrency: Integer) -> UploadedMedia
+      def upload_media: (uploadable media, ?media_category: (String | Symbol)?, ?alt_text: String?, ?processing_timeout: Float | Integer, ?media_type: String?, ?chunk_size: Integer?, ?concurrency: Integer, ?shared: bool?, ?additional_owners: Array[Integer | String]?) -> UploadedMedia
       def await_media_processing: (media media, ?processing_timeout: Float | Integer) -> UploadedMedia
       def await_media_processing!: (media media, ?processing_timeout: Float | Integer) -> UploadedMedia
       def add_alt_text: (media media, String text) -> UploadedMedia
