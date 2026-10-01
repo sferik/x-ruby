@@ -127,7 +127,8 @@ module X
         # @api public
         # @param query [String] the search query
         # @param params [Hash] query parameters, such as granularity, which is day by default
-        # @return [Hash{Time => Integer}] the number of matching posts, keyed by the start of each period, oldest first
+        # @return [Hash{Range<Time> => Integer}] the number of matching posts, keyed by the time each period spans,
+        #   from its start up to, but not including, its end, oldest first
         # @example Count the recent posts about Ruby by hour
         #   client.count_posts_by_period("ruby", granularity: "hour")
         def count_posts_by_period(query, **params) = Post.count_by_period(query, client: self, **params)
@@ -140,7 +141,8 @@ module X
         # @api public
         # @param query [String] the search query
         # @param params [Hash] query parameters, such as granularity, which is day by default
-        # @return [Hash{Time => Integer}] the number of matching posts, keyed by the start of each period, oldest first
+        # @return [Hash{Range<Time> => Integer}] the number of matching posts, keyed by the time each period spans,
+        #   from its start up to, but not including, its end, oldest first
         # @example Count the posts about Ruby by day in 2024
         #   client.count_all_posts_by_period("ruby", start_time: "2024-01-01T00:00:00Z", end_time: "2025-01-01T00:00:00Z")
         def count_all_posts_by_period(query, **params) = Post.count_all_by_period(query, client: self, **params)

@@ -191,10 +191,10 @@ module X
       def count_tweets: (String query, **untyped params) -> Integer
       def count_all_posts: (String query, **untyped params) -> Integer
       def count_all_tweets: (String query, **untyped params) -> Integer
-      def count_posts_by_period: (String query, **untyped params) -> Hash[Time, Integer]
-      def count_tweets_by_period: (String query, **untyped params) -> Hash[Time, Integer]
-      def count_all_posts_by_period: (String query, **untyped params) -> Hash[Time, Integer]
-      def count_all_tweets_by_period: (String query, **untyped params) -> Hash[Time, Integer]
+      def count_posts_by_period: (String query, **untyped params) -> Hash[Range[Time], Integer]
+      def count_tweets_by_period: (String query, **untyped params) -> Hash[Range[Time], Integer]
+      def count_all_posts_by_period: (String query, **untyped params) -> Hash[Range[Time], Integer]
+      def count_all_tweets_by_period: (String query, **untyped params) -> Hash[Range[Time], Integer]
       def find_list: (id id, **untyped params) ?{ (Problem problem) -> void } -> List?
       def find_list!: (id id, **untyped params) -> List
       def find_space: (id id, **untyped params) ?{ (Problem problem) -> void } -> Space?
@@ -546,8 +546,8 @@ module X
     def self.retweets_of_me: (client: Objects::_Client, **untyped params) -> Cursor[Post]
     def self.count: (String query, client: Objects::_Client, **untyped params) -> Integer
     def self.count_all: (String query, client: Objects::_Client, **untyped params) -> Integer
-    def self.count_by_period: (String query, client: Objects::_Client, **untyped params) -> Hash[Time, Integer]
-    def self.count_all_by_period: (String query, client: Objects::_Client, **untyped params) -> Hash[Time, Integer]
+    def self.count_by_period: (String query, client: Objects::_Client, **untyped params) -> Hash[Range[Time], Integer]
+    def self.count_all_by_period: (String query, client: Objects::_Client, **untyped params) -> Hash[Range[Time], Integer]
     def self.create: (?String? text, client: Objects::_Client, ?reply_to: Objects::id?, ?quote: Objects::id?, ?media_ids: untyped, ?community: Objects::id?, **untyped params) -> Post?
     def self.delete: (Objects::id post, client: Objects::_Client) -> bool
     def self.hide_reply: (Objects::id post, client: Objects::_Client) -> bool

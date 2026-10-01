@@ -26,17 +26,24 @@ module X
     def test_counts_by_period
       counts = Post.count_by_period("ruby", client: @client, granularity: "hour", start_time: "2026-09-14T00:00:00Z")
 
-      assert_equal({Time.utc(2026, 9, 14) => 4, Time.utc(2026, 9, 15) => 6}, counts)
-      assert_equal [Time.utc(2026, 9, 14), Time.utc(2026, 9, 15)], counts.keys
+      assert_equal({(Time.utc(2026, 9, 14)...Time.utc(2026, 9, 15)) => 4, (Time.utc(2026, 9, 15)...Time.utc(2026, 9, 16)) => 6}, counts)
+      assert_equal [Time.utc(2026, 9, 14), Time.utc(2026, 9, 15)], counts.keys.map(&:begin)
       assert_predicate counts, :frozen?
       assert_equal({"query" => "ruby", "granularity" => "hour", "start_time" => "2026-09-14T00:00:00Z"}, @client.queries.first)
     end
 
+    def test_a_period_spans_its_start_up_to_but_not_including_its_end
+      counts = Post.count_by_period("ruby", client: @client)
+
+      assert_equal 6, counts.find { |period, _count| period.cover?(Time.utc(2026, 9, 15, 12)) }.last
+      refute counts.keys.first.cover?(Time.utc(2026, 9, 15))
+    end
+
     def test_the_full_archive
-      @client.stub(:get, "tweets/counts/all", {"data" => [{"start" => "2024-01-01T00:00:00.000Z", "tweet_count" => 3}], "meta" => {"total_tweet_count" => 3}})
+      @client.stub(:get, "tweets/counts/all", {"data" => [{"start" => "2024-01-01T00:00:00.000Z", "end" => "2024-01-02T00:00:00.000Z", "tweet_count" => 3}], "meta" => {"total_tweet_count" => 3}})
 
       assert_equal 3, Post.count_all("ruby", client: @client)
-      assert_equal({Time.utc(2024) => 3}, Post.count_all_by_period("ruby", client: @client))
+      assert_equal({(Time.utc(2024)...Time.utc(2024, 1, 2)) => 3}, Post.count_all_by_period("ruby", client: @client))
       assert_equal ["tweets/counts/all"] * 2, @client.paths
     end
 
@@ -63,14 +70,14 @@ module X
 
     def test_client_methods_and_tweet_aliases_for_recent_posts
       assert_equal [10, 10], [@client.count_posts("ruby"), @client.count_tweets("ruby")]
-      assert_equal [6, 6], [@client.count_posts_by_period("ruby"), @client.count_tweets_by_period("ruby")].map { |counts| counts[Time.utc(2026, 9, 15)] }
+      assert_equal [6, 6], [@client.count_posts_by_period("ruby"), @client.count_tweets_by_period("ruby")].map { |counts| counts[Time.utc(2026, 9, 15)...Time.utc(2026, 9, 16)] }
     end
 
     def test_client_methods_and_tweet_aliases_for_the_full_archive
-      @client.stub(:get, "tweets/counts/all", {"data" => [{"start" => "2024-01-01T00:00:00.000Z", "tweet_count" => 3}], "meta" => {"total_tweet_count" => 3}})
+      @client.stub(:get, "tweets/counts/all", {"data" => [{"start" => "2024-01-01T00:00:00.000Z", "end" => "2024-01-02T00:00:00.000Z", "tweet_count" => 3}], "meta" => {"total_tweet_count" => 3}})
 
       assert_equal [3, 3], [@client.count_all_posts("ruby"), @client.count_all_tweets("ruby")]
-      assert_equal [{Time.utc(2024) => 3}] * 2, [@client.count_all_posts_by_period("ruby"), @client.count_all_tweets_by_period("ruby")]
+      assert_equal [{(Time.utc(2024)...Time.utc(2024, 1, 2)) => 3}] * 2, [@client.count_all_posts_by_period("ruby"), @client.count_all_tweets_by_period("ruby")]
     end
   end
 end

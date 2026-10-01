@@ -11,31 +11,40 @@ module X
     cover Objects.const_get(:Utils)
     cover PostUsage
 
+    START_OF_PERIOD = "2026-01-01T00:00:00.000Z"
+    END_OF_PERIOD = "2026-01-02T00:00:00.000Z"
+
     def setup
       @client = FakeClient.new
     end
 
     def test_a_period_whose_start_cannot_be_read_raises
-      error = period_error({"start" => "yesterday", "tweet_count" => 1})
+      error = period_error({"start" => "yesterday", "end" => END_OF_PERIOD, "tweet_count" => 1})
 
-      assert_equal "A period of the counts of X::Post cannot be read from {\"start\" => \"yesterday\", \"tweet_count\" => 1}", error.message
+      assert_equal "A period of the counts of X::Post cannot be read from #{{"start" => "yesterday", "end" => END_OF_PERIOD, "tweet_count" => 1}.inspect}", error.message
       assert_instance_of ArgumentError, error.cause
-      assert_instance_of InvalidAttribute, period_error({"start" => 20_260_101, "tweet_count" => 1})
-      assert_instance_of InvalidAttribute, period_error({"tweet_count" => 1})
+      assert_instance_of InvalidAttribute, period_error({"start" => 20_260_101, "end" => END_OF_PERIOD, "tweet_count" => 1})
+      assert_instance_of InvalidAttribute, period_error({"end" => END_OF_PERIOD, "tweet_count" => 1})
+    end
+
+    def test_a_period_whose_end_cannot_be_read_raises
+      assert_instance_of InvalidAttribute, period_error({"start" => START_OF_PERIOD, "end" => "tomorrow", "tweet_count" => 1})
+      assert_instance_of InvalidAttribute, period_error({"start" => START_OF_PERIOD, "end" => 20_260_102, "tweet_count" => 1})
+      assert_instance_of InvalidAttribute, period_error({"start" => START_OF_PERIOD, "tweet_count" => 1})
     end
 
     def test_a_period_whose_count_cannot_be_read_raises
-      start = "2026-01-01T00:00:00.000Z"
+      period = {"start" => START_OF_PERIOD, "end" => END_OF_PERIOD}
 
-      assert_instance_of InvalidAttribute, period_error({"start" => start, "tweet_count" => "a"})
-      assert_instance_of InvalidAttribute, period_error({"start" => start})
-      assert_instance_of InvalidAttribute, period_error({"start" => start, "post_count" => 1.5})
+      assert_instance_of InvalidAttribute, period_error(period.merge("tweet_count" => "a"))
+      assert_instance_of InvalidAttribute, period_error(period)
+      assert_instance_of InvalidAttribute, period_error(period.merge("post_count" => 1.5))
     end
 
     def test_a_period_reads_a_count_the_api_names_for_either_as_a_number_in_base_ten
-      @client.stub(:get, "tweets/counts/recent", {"data" => [{"start" => "2026-01-01T00:00:00.000Z", "post_count" => "019"}]})
+      @client.stub(:get, "tweets/counts/recent", {"data" => [{"start" => START_OF_PERIOD, "end" => END_OF_PERIOD, "post_count" => "019"}]})
 
-      assert_equal({Time.utc(2026) => 19}, Post.count_by_period("ruby", client: @client))
+      assert_equal({(Time.utc(2026)...Time.utc(2026, 1, 2)) => 19}, Post.count_by_period("ruby", client: @client))
     end
 
     def test_a_total_that_cannot_be_read_raises

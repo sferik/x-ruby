@@ -59,8 +59,10 @@ module X
       # @param query [String] the search query
       # @param client [Object] the client used to make the requests
       # @param params [Hash] query parameters, such as granularity, which is day by default
-      # @return [Hash{Time => Integer}] the number of matching posts, keyed by the start of each period, oldest first
-      # @raise [InvalidAttribute] if the response holds a period without a start in ISO 8601, or without a count
+      # @return [Hash{Range<Time> => Integer}] the number of matching posts, keyed by the time each period spans, from
+      #   its start up to, but not including, its end, oldest first
+      # @raise [InvalidAttribute] if the response holds a period without a start and an end in ISO 8601, or without a
+      #   count
       # @raise [UnreadableResponse] if a page names the token of a page before it as the next
       # @example Count the recent posts about Ruby by hour
       #   X::Post.count_by_period("ruby", client: client, granularity: "hour")
@@ -72,8 +74,10 @@ module X
       # @param query [String] the search query
       # @param client [Object] the client used to make the requests
       # @param params [Hash] query parameters, such as granularity, which is day by default
-      # @return [Hash{Time => Integer}] the number of matching posts, keyed by the start of each period, oldest first
-      # @raise [InvalidAttribute] if the response holds a period without a start in ISO 8601, or without a count
+      # @return [Hash{Range<Time> => Integer}] the number of matching posts, keyed by the time each period spans, from
+      #   its start up to, but not including, its end, oldest first
+      # @raise [InvalidAttribute] if the response holds a period without a start and an end in ISO 8601, or without a
+      #   count
       # @raise [UnreadableResponse] if a page names the token of a page before it as the next
       # @example Count every post about Ruby by day
       #   X::Post.count_all_by_period("ruby", client: client)
@@ -147,25 +151,26 @@ module X
       #
       # @api private
       # @param bodies [Array<Hash>] the response bodies
-      # @return [Hash{Time => Integer}] the counts, keyed by the start of each period, in time order
-      # @raise [InvalidAttribute] if a period has no start in ISO 8601, or no count that is a number, or a response
-      #   holds the periods as something other than a list of objects
+      # @return [Hash{Range<Time> => Integer}] the counts, keyed by the time each period spans, in time order
+      # @raise [InvalidAttribute] if a period has no start and end in ISO 8601, or no count that is a number, or a
+      #   response holds the periods as something other than a list of objects
       def periods(bodies)
         entries = bodies.flat_map { |body| Shape.objects("A period of the counts of #{self}", body["data"]) } #: Array[Hash[String, untyped]]
-        entries.to_h { |entry| period(entry) }.sort.to_h.freeze
+        entries.map { |entry| period(entry) }.sort_by { |span, _count| span.begin }.to_h.freeze
       end
 
-      # The start of a period and the number of posts in it
+      # The time a period spans and the number of posts in it
       #
-      # The API names the number for tweets or for posts.
+      # The period spans its start up to, but not including, its end, which is the start of the period after it. The
+      # API names the number for tweets or for posts.
       #
       # @api private
-      # @param entry [Hash] the period, with its start and its count
-      # @return [Array(Time, Integer)] the start and the count
-      # @raise [InvalidAttribute] if the period has no start in ISO 8601, or no count that is a number
+      # @param entry [Hash] the period, with its start, its end, and its count
+      # @return [Array(Range<Time>, Integer)] the time it spans and the count
+      # @raise [InvalidAttribute] if the period has no start and end in ISO 8601, or no count that is a number
       def period(entry)
         Utils.read("A period of the counts of #{self}", entry) do
-          [Time.iso8601(entry["start"].to_s), Integer((entry["tweet_count"] || entry["post_count"]).to_s, 10)]
+          [Time.iso8601(entry["start"].to_s)...Time.iso8601(entry["end"].to_s), Integer((entry["tweet_count"] || entry["post_count"]).to_s, 10)]
         end
       end
     end

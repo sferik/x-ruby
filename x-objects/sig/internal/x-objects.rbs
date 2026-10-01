@@ -394,16 +394,16 @@ module X
 
       def count: (String query, client: _Client, **untyped params) -> Integer
       def count_all: (String query, client: _Client, **untyped params) -> Integer
-      def count_by_period: (String query, client: _Client, **untyped params) -> Hash[Time, Integer]
-      def count_all_by_period: (String query, client: _Client, **untyped params) -> Hash[Time, Integer]
+      def count_by_period: (String query, client: _Client, **untyped params) -> Hash[Range[Time], Integer]
+      def count_all_by_period: (String query, client: _Client, **untyped params) -> Hash[Range[Time], Integer]
 
       private
       def pages: (String path, String query, client: _Client, **untyped params) -> Array[Hash[String, untyped]]
       def next_token: (Array[Hash[String, untyped]] bodies, untyped given) -> untyped
       def total: (Array[Hash[String, untyped]] bodies) -> Integer
       def page_total: (Integer | String | nil value) -> Integer
-      def periods: (Array[Hash[String, untyped]] bodies) -> Hash[Time, Integer]
-      def period: (Hash[String, untyped] entry) -> [Time, Integer]
+      def periods: (Array[Hash[String, untyped]] bodies) -> Hash[Range[Time], Integer]
+      def period: (Hash[String, untyped] entry) -> [Range[Time], Integer]
     end
 
     module PostSearch : _ResourceClass[Post]
@@ -529,10 +529,10 @@ module X
         def count_tweets: (String query, **untyped params) -> Integer
         def count_all_posts: (String query, **untyped params) -> Integer
         def count_all_tweets: (String query, **untyped params) -> Integer
-        def count_posts_by_period: (String query, **untyped params) -> Hash[Time, Integer]
-        def count_tweets_by_period: (String query, **untyped params) -> Hash[Time, Integer]
-        def count_all_posts_by_period: (String query, **untyped params) -> Hash[Time, Integer]
-        def count_all_tweets_by_period: (String query, **untyped params) -> Hash[Time, Integer]
+        def count_posts_by_period: (String query, **untyped params) -> Hash[Range[Time], Integer]
+        def count_tweets_by_period: (String query, **untyped params) -> Hash[Range[Time], Integer]
+        def count_all_posts_by_period: (String query, **untyped params) -> Hash[Range[Time], Integer]
+        def count_all_tweets_by_period: (String query, **untyped params) -> Hash[Range[Time], Integer]
       end
 
       module Lists : _Client

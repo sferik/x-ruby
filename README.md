@@ -156,7 +156,7 @@ usage.daily_by_app                     # the same, keyed by the ID of each of th
 
 ```ruby
 x_client.count_posts("ruby")           # => 12345
-x_client.post_counts("ruby", granularity: "hour") # => {2026-09-14 12:00:00 UTC => 42, ...}
+x_client.post_counts("ruby", granularity: "hour") # => {2026-09-14 12:00:00 UTC...2026-09-14 13:00:00 UTC => 42, ...}
 X::Post.count_all("ruby", client: x_client, start_time: "2020-01-01T00:00:00Z")
 ```
 
