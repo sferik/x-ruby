@@ -83,6 +83,23 @@ module X
       assert_empty client.requests
     end
 
+    def test_credentials_that_name_a_user_by_a_string_of_digits_name_them_by_an_integer
+      client = UserClient.new("7505382")
+      client.stub(:get, "users/2", {"data" => {"id" => "2", "connection_status" => %w[following]}})
+
+      assert_equal 7_505_382, client.current_user_id
+      assert User.from_id(7_505_382, client:).follows?(2)
+      assert_equal ["users/2"], client.paths
+    end
+
+    def test_credentials_that_name_a_user_by_anything_else_are_refused
+      ["7505382-abc", "", 7.5, :id].each do |user_id|
+        error = assert_raises(ArgumentError) { UserClient.new(user_id).current_user_id }
+
+        assert_equal "invalid value for Integer(): #{user_id.to_s.inspect}", error.message
+      end
+    end
+
     def test_other_clients_look_the_user_up_once
       [FakeClient.new, ForeignClient.new, UserClient.new(nil)].each do |client|
         client.stub(:get, "users/me", {"data" => {"id" => "9"}})

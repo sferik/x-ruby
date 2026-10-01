@@ -200,14 +200,17 @@ module X
       # The client's authenticator is where a client keeps the credentials it signs with, and it answers the user
       # they act for; only an OAuth 1.0a access token names one, since it begins with the identifier of the user who
       # authorized it. The secrets a client signs with are its authenticator's to keep, so this asks for the user
-      # rather than for a credential to read it out of.
+      # rather than for a credential to read it out of. An authenticator of another's making may answer the identifier
+      # as the String of digits it read off a token, so it is read as an Integer, as every identifier is, and compared
+      # with the identifiers of users as one.
       #
       # @api private
       # @param client [Object] the client, whose credentials may name a user
       # @return [Integer, nil] the identifier, or nil if the client's credentials name no user
+      # @raise [ArgumentError] if the authenticator answers a user_id that is not an identifier
       def authenticated_user_id(client)
         authenticator = authenticator_of(client)
-        authenticator.user_id if authenticator.respond_to?(:user_id)
+        integer(authenticator.user_id) if authenticator.respond_to?(:user_id)
       end
 
       # The identifier of the user a lookup found for a client's credentials
