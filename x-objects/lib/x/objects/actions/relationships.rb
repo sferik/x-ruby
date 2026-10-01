@@ -15,9 +15,14 @@ module X
       module Relationships
         # Follow a user as the authenticated user
         #
+        # A protected user must accept a request to follow them first, so for a protected user true means the follow
+        # was requested, not that the authenticated user follows them: until they accept it, the follows? of the
+        # authenticated user, as in client.current_user!.follows?(user), answers false.
+        #
         # @api public
         # @param user [User, String, Integer] the user or their identifier
-        # @return [Boolean] true if the authenticated user now follows the user, or has asked to follow a protected user
+        # @return [Boolean] true if the authenticated user now follows the user, or, for a protected user, has requested
+        #   to follow them
         # @example Follow a user
         #   client.follow("7505382")
         def follow(user)
