@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require_relative "invalid_media"
 require_relative "utils"
 
 module X
@@ -108,19 +109,37 @@ module X
       # the type of the media leaves it to be uploaded. One that cannot, as a pipe cannot, is read from where it is to
       # its end. An IO is put in binary mode first, since media is bytes, and a pipe or $stdin reads in text mode on
       # Windows, which would turn each CRLF of the media, such as the one in the signature of a PNG, into a line feed.
+      # An IO that cannot be read, as a closed StringIO or one open for writing alone cannot, raises InvalidMedia, as
+      # a File that cannot be read does when the upload checks it.
       #
       # @api private
       # @param media [StringIO, IO, Object] the IO
       # @return [Buffer] the source
+      # @raise [InvalidMedia] if the IO cannot be read
       def self.buffered(media)
         position = position_of(media)
         media.binmode if media.is_a?(IO)
-        media.seek(0) if position
-        content = media.read.to_s.b
-        media.seek(position) if position
-        Buffer.new(content)
+        Buffer.new(read_whole(media, position))
+      rescue IOError => e
+        raise InvalidMedia, "the media given cannot be read: #{e}"
       end
       private_class_method :buffered
+
+      # Read an IO to its end, from its start if it can seek
+      #
+      # An IO that can seek is given back at its position, even if reading it raises.
+      #
+      # @api private
+      # @param media [StringIO, IO, Object] the IO
+      # @param position [Integer, nil] the position of the IO, or nil for an IO that cannot seek
+      # @return [String] the bytes read
+      def self.read_whole(media, position)
+        media.seek(0) if position
+        media.read.to_s.b
+      ensure
+        media.seek(position) if position
+      end
+      private_class_method :read_whole
 
       # The position of an IO that can seek
       # @api private

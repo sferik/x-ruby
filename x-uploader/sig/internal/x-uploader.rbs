@@ -20,6 +20,7 @@ module X
       def self.path_alone?: (untyped media) -> bool
       def self.on_file?: (untyped media) -> bool
       def self.buffered: (untyped media) -> Buffer
+      def self.read_whole: (untyped media, Integer? position) -> String
       def self.position_of: (untyped media) -> Integer?
 
       attr_reader name: String?

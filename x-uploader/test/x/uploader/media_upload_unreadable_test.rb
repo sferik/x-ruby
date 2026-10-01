@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "stringio"
 require "tmpdir"
 require "tempfile"
 require_relative "../../test_helper"
@@ -37,6 +38,24 @@ module X
           Uploader::MediaUpload.upload("test/sample_files/sample.mp4", client: @client)
         end
       end
+    end
+
+    def test_a_closed_string_io_is_refused_before_any_request
+      io = StringIO.new(File.binread("test/sample_files/sample.png")).tap(&:close)
+      error = assert_raises(InvalidMedia) { Uploader::MediaUpload.upload(io, client: @client) }
+
+      assert_equal "the media given cannot be read: closed stream", error.message
+      assert_not_requested :post, BASE_URL
+    end
+
+    def test_a_string_io_open_to_write_alone_is_refused_and_given_back_at_its_position
+      io = StringIO.new(+"0123456789", "w")
+      io.seek(4)
+      error = assert_raises(InvalidMedia) { Uploader::MediaUpload.upload(io, client: @client) }
+
+      assert_equal "the media given cannot be read: not opened for reading", error.message
+      assert_equal 4, io.pos
+      assert_not_requested :post, BASE_URL
     end
 
     def test_an_io_open_to_write_alone_is_refused_before_any_request
