@@ -34,11 +34,11 @@ module X
       attr_reader max_reconnects: Integer | Float
       attr_reader max_rate_limit_wait: Integer | Float
       def initialize: (?max_reconnects: Integer | Float, ?max_rate_limit_wait: Integer | Float) -> void
-      def handle: (^(untyped) -> void consumer) { (^(untyped) -> void) -> void } -> nil
+      def handle: (^(untyped) -> void consumer) { (^(untyped) -> void, ^() -> void) -> void } -> nil
 
       private
       def cause_of: (StandardError error) -> StandardError
-      def run_once: (^(^(untyped) -> void) -> void stream, ^(untyped) -> void deliver, state state) -> bool
+      def run_once: (^(^(untyped) -> void, ^() -> void) -> void stream, ^(untyped) -> void deliver, ^() -> void alive, state state) -> bool
       def reconnectable?: (StandardError error) -> bool
       def out_of_reconnects?: (StandardError? error, state state) -> bool
       def delivery_to: (^(untyped) -> void consumer, state state) -> ^(untyped) -> void
@@ -66,13 +66,13 @@ module X
     class StreamParser
       LINE_DELIMITER: String
 
-      def process: (response: Net::HTTPResponse, array_class: Class, object_class: untyped, client: Client, on_line: ^(String) -> void) { (untyped) -> void } -> void
+      def process: (response: Net::HTTPResponse, array_class: Class, object_class: untyped, client: Client, on_line: ^(String) -> void, on_keep_alive: ^() -> void) { (untyped) -> void } -> void
 
       private
       def decode_line: (String line, response: Net::HTTPResponse, array_class: Class, object_class: untyped, client: Client) -> untyped
       def tagging_callback_errors: [T] () { () -> T } -> T
-      def read_lines: (response: Net::HTTPResponse, decode: ^(String) -> untyped) { (untyped) -> void } -> void
-      def process_buffer: (buffer: String, decode: ^(String) -> untyped) { (untyped) -> void } -> void
+      def read_lines: (response: Net::HTTPResponse, decode: ^(String) -> untyped, on_keep_alive: ^() -> void) { (untyped) -> void } -> void
+      def process_buffer: (buffer: String, decode: ^(String) -> untyped, on_keep_alive: ^() -> void) { (untyped) -> void } -> void
       def process_remaining: (buffer: String, decode: ^(String) -> untyped) { (untyped) -> void } -> void
       def yield_json: (line: String, decode: ^(String) -> untyped) { (untyped) -> void } -> void
     end
@@ -114,7 +114,7 @@ module X
     private
     def change_rules: (Hash[Symbol, untyped] body, dry_run: bool) -> Hash[String, untyped]?
     def reporting: [T < Array[StreamRule] | Integer] (Hash[String, untyped]? body, T result) ?{ (Problem problem) -> void } -> T
-    def read: (Net::HTTPResponse response, array_class: Class, object_class: object_class) { (untyped) -> void } -> void
+    def read: (Net::HTTPResponse response, array_class: Class, object_class: object_class, alive: ^() -> void) { (untyped) -> void } -> void
     def app_client: () -> Client
     def report: (Net::HTTPResponse response, String line) -> void
   end

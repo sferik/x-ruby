@@ -37,7 +37,8 @@ module X
     class ::X::StreamingClient
       # Default timeout for reading from a stream in seconds, half again the 20-second interval of the keep-alive X sends
       DEFAULT_READ_TIMEOUT = 30 # seconds
-      # Default maximum number of times in a row to reconnect a stream that drops without delivering an object
+      # Default maximum number of times in a row to reconnect a stream that drops without delivering an object or a
+      # keep-alive
       DEFAULT_MAX_RECONNECTS = ReconnectHandler::DEFAULT_MAX_RECONNECTS
       # The message of the error raised for a stream without a block to deliver its objects to
       NO_BLOCK_MESSAGE = "stream takes a block, which receives each object the stream delivers"
@@ -70,7 +71,7 @@ module X
       # @param read_timeout [Integer, Float, nil] the timeout for reading from a stream in seconds, or nil for none,
       #   which leaves a stream X stopped sending to open until the operating system gives up on its connection
       # @param max_reconnects [Integer, Float] the maximum number of times in a row to reconnect a stream that drops
-      #   without delivering an object, or Float::INFINITY, the default, for no limit
+      #   without delivering an object or a keep-alive, or Float::INFINITY, the default, for no limit
       # @return [StreamingClient] a new instance
       # @raise [ArgumentError] if the read timeout is neither a finite number of seconds of at least 0 nor nil, or the
       #   maximum number of reconnects is neither a count nor Float::INFINITY
@@ -113,7 +114,8 @@ module X
 
       # The maximum number of times in a row to reconnect a stream
       #
-      # A stream is reconnected when it drops without delivering an object.
+      # A stream is reconnected when it drops, and the count starts over each time it delivers an object or reads the
+      # keep-alive X sends every 20 seconds, so that a stream that is quiet but connected never runs out of reconnects.
       #
       # @api public
       # @return [Integer, Float] the maximum, or Float::INFINITY for no limit
@@ -176,8 +178,8 @@ module X
         raise ArgumentError, NO_BLOCK_MESSAGE if block.nil?
 
         Validator.parsing_classes!(array_class:, object_class:)
-        @reconnect_handler.handle(block) do |deliver|
-          @stream_client.app_only.get_stream(endpoint, params:, headers:) { |response| read(response, array_class:, object_class:, &deliver) }
+        @reconnect_handler.handle(block) do |deliver, alive|
+          @stream_client.app_only.get_stream(endpoint, params:, headers:) { |response| read(response, array_class:, object_class:, alive:, &deliver) }
         end
       end
 
@@ -372,11 +374,12 @@ module X
       # @param response [Net::HTTPResponse] the response of the stream, whose body is not yet read
       # @param array_class [Class] the class for parsing JSON arrays
       # @param object_class [Class, #from_response] the class for parsing JSON objects
+      # @param alive [#call] the callable to call for each keep-alive the stream reads
       # @yield [Hash, Array] each parsed JSON object from the stream
       # @return [void]
       # @raise [NetworkError] once the stream ends
-      def read(response, array_class:, object_class:, &)
-        @stream_parser.process(response:, array_class:, object_class:, client:, on_line: ->(line) { report(response, line) }, &)
+      def read(response, array_class:, object_class:, alive:, &)
+        @stream_parser.process(response:, array_class:, object_class:, client:, on_line: ->(line) { report(response, line) }, on_keep_alive: alive, &)
         raise NetworkError.new(ENDED_MESSAGE, http_method: :get, uri: response.uri)
       end
 

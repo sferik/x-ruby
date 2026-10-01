@@ -15,7 +15,8 @@ module X
     # not JSON backs off from 5 seconds, doubling each attempt, up to 320 seconds. A rate limit backs off from a minute,
     # doubling each attempt, up to 320 seconds, as X asks, and waits longer when the limit resets later; one that would
     # wait longer than max_rate_limit_wait raises at once, rather than hold the stream closed for hours, as a limit on
-    # the requests of a day would. Delivering an object starts the count over.
+    # the requests of a day would. Delivering an object, or reading the keep-alive X sends every 20 seconds, starts the
+    # count over, so that a stream that is quiet but connected is not taken for one that keeps failing.
     #
     # Internal to x-streaming: StreamingClient reconnects with it, max_reconnects is set on the streaming client, and
     # max_rate_limit_wait is the client's, which the client checked when it was built.
@@ -48,7 +49,7 @@ module X
       #   handler.max_rate_limit_wait # => 900
       attr_reader :max_rate_limit_wait
 
-      # The maximum number of times in a row to reconnect without delivering an object
+      # The most reconnects in a row without reading an object or a keep-alive
       # @api private
       # @return [Integer, Float] the maximum number of reconnects, or Float::INFINITY for no limit
       # @example Read the maximum reconnects
@@ -83,19 +84,21 @@ module X
       #
       # @api private
       # @param consumer [Proc] the block that receives each object
-      # @yield [deliver] runs the stream once
+      # @yield [deliver, alive] runs the stream once
       # @yieldparam deliver [Proc] the block to pass each object to, which passes it on to the consumer
+      # @yieldparam alive [Proc] the callable to call for each keep-alive the stream reads
       # @return [nil] once the stream ends with no reconnects left
       # @raise [NetworkError, ServerError, RequestTimeout, Conflict, TooManyRequests, InvalidResponse, StreamError] if
       #   the stream fails with no reconnects left
       # @raise [TooManyRequests] if a rate limit asks the stream to wait longer than max_rate_limit_wait, or the project
       #   has reached its usage cap
       # @example Reconnect a stream
-      #   handler.handle(->(post) { puts post }) { |deliver| read_stream(&deliver) }
+      #   handler.handle(->(post) { puts post }) { |deliver, alive| read_stream(on_keep_alive: alive, &deliver) }
       def handle(consumer, &stream)
         state = {reconnects: 0} #: state
         deliver = delivery_to(consumer, state)
-        while run_once(stream, deliver, state); end
+        alive = -> { state[:reconnects] = 0 }
+        while run_once(stream, deliver, alive, state); end
       rescue ConsumerError => e
         raise cause_of(e)
       rescue CallbackError => e
@@ -108,12 +111,13 @@ module X
       # @api private
       # @param stream [Proc] runs the stream once
       # @param deliver [Proc] the block to pass each object to
+      # @param alive [Proc] the callable to call for each keep-alive the stream reads
       # @param state [Hash] the count of reconnects, for one call to handle
       # @return [Boolean] true to run the stream again, or false once it ends with no reconnects left
       # @raise [NetworkError, ServerError, RequestTimeout, Conflict, TooManyRequests, InvalidResponse, StreamError] if
       #   the stream fails with no reconnects left
-      def run_once(stream, deliver, state)
-        stream.call(deliver)
+      def run_once(stream, deliver, alive, state)
+        stream.call(deliver, alive)
         !out_of_reconnects?(nil, state)
       rescue *RECONNECTABLE_ERRORS, StreamError => e
         raise unless reconnectable?(e)

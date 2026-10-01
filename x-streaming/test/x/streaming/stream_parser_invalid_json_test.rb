@@ -50,7 +50,7 @@ module X
     private
 
     def process(response, &)
-      @stream_parser.process(response:, array_class: Array, object_class: Hash, client: nil, on_line: ->(_line) {}, &)
+      @stream_parser.process(response:, array_class: Array, object_class: Hash, client: nil, on_line: ->(_line) {}, on_keep_alive: -> {}, &)
     end
 
     def streaming_response(chunks:)

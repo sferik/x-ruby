@@ -49,6 +49,13 @@ module X
       assert_equal [[1, 2, 3], 4, [0.0, 0.0, 0.0]], [@delivered, @runs, @sleeps]
     end
 
+    def test_reading_a_keep_alive_starts_the_count_over
+      handler = Streaming.const_get(:ReconnectHandler).new(max_reconnects: 1)
+
+      assert_nil stream_with(handler) { |_deliver, alive| alive.call if (@runs += 1) <= 3 }
+      assert_equal [4, [0.0, 0.0, 0.0], []], [@runs, @sleeps, @delivered]
+    end
+
     def test_an_error_from_the_consumer_stops_the_stream
       consumer = ->(_) { raise NetworkError, "the consumer's own request failed" }
       handler = Streaming.const_get(:ReconnectHandler).new

@@ -28,6 +28,7 @@ module X
       #   from the whole line
       # @param client [Client] the client of the stream, which from_response is passed
       # @param on_line [#call] a callable passed each line of JSON before it is decoded
+      # @param on_keep_alive [#call] a callable called for each keep-alive, the empty line X sends a quiet stream
       # @yield [Object] each decoded JSON document from the stream
       # @return [void]
       # @raise [InvalidResponse] if a line of the stream is not JSON, which the error holds as its body
@@ -35,8 +36,8 @@ module X
       # @raise [CallbackError] if on_line, or the object_class that builds each object, raises, so that the error is
       #   not taken for one of the stream
       # @example Process a streaming response
-      #   parser.process(response:, array_class: Array, object_class: Hash, client:, on_line: ->(_) {}) { |json| puts json }
-      def process(response:, array_class:, object_class:, client:, on_line:, &block)
+      #   parser.process(response:, array_class: Array, object_class: Hash, client:, on_line: ->(_) {}, on_keep_alive: -> {}) { |json| puts json }
+      def process(response:, array_class:, object_class:, client:, on_line:, on_keep_alive:, &block)
         decode = lambda do |line|
           tagging_callback_errors do
             on_line.call(line)
@@ -45,7 +46,7 @@ module X
         rescue JSON::ParserError
           raise InvalidResponse.new(http_response: response, body: line, http_method: :get, uri: response.uri)
         end
-        read_lines(response:, decode:, &block)
+        read_lines(response:, decode:, on_keep_alive:, &block)
       end
 
       private
@@ -101,13 +102,14 @@ module X
       # @api private
       # @param response [Net::HTTPResponse] the HTTP response
       # @param decode [Proc] the lambda that decodes a line
+      # @param on_keep_alive [#call] a callable called for each empty line
       # @yield [Object] each decoded JSON document
       # @return [void]
-      def read_lines(response:, decode:, &)
+      def read_lines(response:, decode:, on_keep_alive:, &)
         buffer = +""
         response.read_body do |chunk|
           buffer << chunk
-          process_buffer(buffer:, decode:, &)
+          process_buffer(buffer:, decode:, on_keep_alive:, &)
         end
         process_remaining(buffer:, decode:, &)
       end
@@ -116,13 +118,14 @@ module X
       # @api private
       # @param buffer [String] the accumulated data buffer
       # @param decode [Proc] decodes a line of JSON
+      # @param on_keep_alive [#call] a callable called for each empty line
       # @yield [Object] each decoded JSON document
       # @return [void]
-      def process_buffer(buffer:, decode:, &)
+      def process_buffer(buffer:, decode:, on_keep_alive:, &)
         while (line_end = buffer.index(LINE_DELIMITER))
           line = buffer.slice!(0, line_end) # : String
           buffer.delete_prefix!(LINE_DELIMITER)
-          yield_json(line:, decode:, &) unless line.empty?
+          line.empty? ? on_keep_alive.call : yield_json(line:, decode:, &)
         end
       end
 

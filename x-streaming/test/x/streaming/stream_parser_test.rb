@@ -105,7 +105,7 @@ module X
       response = Net::HTTPOK.new("1.1", "200", "OK")
       response.define_singleton_method(:read_body) { |&block| chunks.each(&block) }
       results = []
-      @stream_parser.process(response:, array_class:, object_class:, client:, on_line: ->(_line) {}) { |json| results << json }
+      @stream_parser.process(response:, array_class:, object_class:, client:, on_line: ->(_line) {}, on_keep_alive: -> {}) { |json| results << json }
       results
     end
   end
