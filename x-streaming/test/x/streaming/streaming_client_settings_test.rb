@@ -45,8 +45,14 @@ module X
     end
 
     def test_a_streaming_client_checks_its_read_timeout
-      assert_equal 'read_timeout must be a finite number of seconds of at least 0, or nil for no timeout, not "30"', message_of { Client.new.streaming(read_timeout: "30") }
+      messages = ["30", 0, 0.0, -1, Float::INFINITY, Float::NAN, Complex(1, 0)].map { |value| message_of { Client.new.streaming(read_timeout: value) } }
+
+      assert_equal ['"30"', "0", "0.0", "-1", "Infinity", "NaN", "(1+0i)"].map { |value| "read_timeout must be a finite number of seconds greater than 0, or nil for no timeout, not #{value}" }, messages
       assert_nil Client.new.streaming(read_timeout: nil).read_timeout
+    end
+
+    def test_a_read_timeout_greater_than_0_is_allowed
+      assert_equal [0.5, 1, Rational(3, 2)], [0.5, 1, Rational(3, 2)].map { |value| Client.new.streaming(read_timeout: value).read_timeout }
     end
 
     def test_the_classes_of_a_stream_are_checked_before_it_is_opened

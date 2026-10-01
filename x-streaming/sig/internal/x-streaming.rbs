@@ -16,10 +16,12 @@ module X
       extend Validator
 
       INVALID_COUNT_OR_INFINITY: String
+      INVALID_READ_TIMEOUT: String
       INVALID_ARRAY_CLASS: String
       INVALID_OBJECT_CLASS: String
 
       def count_or_infinity!: (Symbol name, untyped value) -> untyped
+      def read_timeout!: (Symbol name, untyped value) -> untyped
       def parsing_classes!: (array_class: untyped, object_class: untyped) -> void
     end
 
