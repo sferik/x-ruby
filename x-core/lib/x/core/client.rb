@@ -98,18 +98,26 @@ module X
       def load_tokens = @internals.load_tokens
 
       # The API key for OAuth 1.0a authentication
+      #
+      # It is the one the client was given, or the one the OAuth1Authenticator or AppOnlyAuthenticator it was given
+      # in place of credentials holds.
+      #
       # @api public
       # @return [String, nil] the API key for OAuth 1.0a authentication
       # @example Get the API key
       #   client.api_key
-      def api_key = @internals.api_key
+      def api_key = @internals.api_key_in_use
 
       # The OAuth 2.0 client ID
+      #
+      # It is the one the client was given, or the one the OAuth2Authenticator it was given in place of credentials
+      # holds.
+      #
       # @api public
       # @return [String, nil] the OAuth 2.0 client ID
       # @example Get the client ID
       #   client.client_id
-      def client_id = @internals.client_id
+      def client_id = @internals.client_id_in_use
 
       # The time the OAuth 2.0 access token expires, as last refreshed
       #

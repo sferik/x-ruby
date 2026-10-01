@@ -373,6 +373,8 @@ module X
       @expires_at: Time?
       @scopes: Array[String]?
       attr_reader client_id: String?
+      def api_key_in_use: () -> String?
+      def client_id_in_use: () -> String?
 
       private
       def oauth2_authenticator: (Client client) -> OAuth2Authenticator?

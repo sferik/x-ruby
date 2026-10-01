@@ -10,21 +10,47 @@ module X
     #
     # @api private
     module ClientCredentials
-      # The API key for OAuth 1.0a authentication
+      # The API key for OAuth 1.0a authentication, as the client was given it
       #
-      # {Client#api_key} returns it.
+      # It is nil for a client given an authenticator in place of credentials; see {#api_key_in_use}.
       #
       # @api private
       # @return [String, nil] the API key for OAuth 1.0a authentication
       attr_reader :api_key
 
-      # The OAuth 2.0 client ID
+      # The OAuth 2.0 client ID, as the client was given it
       #
-      # {Client#client_id} returns it.
+      # It is nil for a client given an authenticator in place of credentials; see {#client_id_in_use}.
       #
       # @api private
       # @return [String, nil] the OAuth 2.0 client ID
       attr_reader :client_id
+
+      # The API key of the client, or of the authenticator it was given
+      #
+      # An OAuth1Authenticator or AppOnlyAuthenticator given in place of credentials holds the API key of the client.
+      # {Client#api_key} returns it.
+      #
+      # @api private
+      # @return [String, nil] the API key, or nil if neither holds one
+      def api_key_in_use
+        case (given = @given_authenticator)
+        when OAuth1Authenticator, AppOnlyAuthenticator then given.api_key
+        else api_key
+        end
+      end
+
+      # The OAuth 2.0 client ID of the client, or of the authenticator it was given
+      #
+      # An OAuth2Authenticator given in place of credentials holds the client ID of the client.
+      # {Client#client_id} returns it.
+      #
+      # @api private
+      # @return [String, nil] the client ID, or nil if neither holds one
+      def client_id_in_use
+        given = @given_authenticator
+        given.is_a?(OAuth2Authenticator) ? given.client_id : client_id
+      end
 
       private
 
