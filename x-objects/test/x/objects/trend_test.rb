@@ -83,7 +83,7 @@ module X
     def test_the_personalized_trends_ask_for_every_field
       trends = @client.personalized_trends
 
-      assert_equal [["#ruby", "Technology", "12.3K posts", "Trending now"]], trends.map { |trend| [trend.name, trend.category, trend.post_count_text, trend.trending_since] }
+      assert_equal [["#ruby", "Technology", "12.3K posts", "Trending now"]], trends.map { |trend| [trend.name, trend.category, trend.post_count_text, trend.trending_since_text] }
       assert_equal [{"personalized_trend.fields" => "category,post_count,trend_name,trending_since"}], @client.queries
       assert_predicate trends, :frozen?
     end
@@ -112,7 +112,7 @@ module X
     def test_a_personalized_trend
       trend = PersonalizedTrend.new({"trend_name" => +"#ruby"})
 
-      assert_equal [nil, nil, nil], [trend.category, trend.post_count_text, trend.trending_since]
+      assert_equal [nil, nil, nil], [trend.category, trend.post_count_text, trend.trending_since_text]
       assert_equal({"trend_name" => "#ruby"}, trend.to_h)
       assert_predicate trend, :frozen?
       assert_predicate trend.attrs["trend_name"], :frozen?

@@ -31,9 +31,9 @@ module X
     end
 
     def test_a_personalized_trend_matches_a_hash_pattern
-      assert_equal({name: "#ruby", category: "Technology", post_count_text: "12.3K posts", trending_since: nil}, @personalized.deconstruct_keys(nil))
+      assert_equal({name: "#ruby", category: "Technology", post_count_text: "12.3K posts", trending_since_text: nil}, @personalized.deconstruct_keys(nil))
       assert_equal({category: "Technology"}, @personalized.deconstruct_keys(%i[category post_count]))
-      assert_pattern { @personalized => {category: "Technology", trending_since: nil} }
+      assert_pattern { @personalized => {category: "Technology", trending_since_text: nil} }
     end
 
     def test_the_usage_matches_a_hash_pattern_reading_only_what_it_names

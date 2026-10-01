@@ -59,7 +59,7 @@ module X
     def name: () -> String?
     def category: () -> String?
     def post_count_text: () -> String?
-    def trending_since: () -> String?
+    def trending_since_text: () -> String?
     def ==: (untyped other) -> bool
     def eql?: (untyped other) -> bool
     def hash: () -> Integer

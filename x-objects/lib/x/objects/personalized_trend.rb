@@ -102,11 +102,14 @@ module X
 
       # How long the topic has trended, as the text X shows it
       #
+      # It is named for the text it is, as post_count_text is, so that it is not taken for a Time, which every other
+      # reader of when something happened answers.
+      #
       # @api public
       # @return [String, nil] how long the topic has trended, as text
       # @example Get how long the topic has trended
-      #   trend.trending_since # => "Trending now"
-      def trending_since = attrs["trending_since"]
+      #   trend.trending_since_text # => "Trending now"
+      def trending_since_text = attrs["trending_since"]
 
       # Deconstruct the trend into what its readers read, so it matches a hash pattern
       #
@@ -115,7 +118,7 @@ module X
       # @return [Hash{Symbol => String, nil}] what the readers read
       # @example Keep the topics of the technology category
       #   X::PersonalizedTrend.all(client: client).select { |trend| trend in {category: "Technology"} }
-      def deconstruct_keys(keys) = Utils.deconstruct(self, keys, %i[name category post_count_text trending_since])
+      def deconstruct_keys(keys) = Utils.deconstruct(self, keys, %i[name category post_count_text trending_since_text])
     end
   end
 end
