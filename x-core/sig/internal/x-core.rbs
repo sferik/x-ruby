@@ -896,7 +896,6 @@ module X
   end
 
   class Client
-    extend Forwardable
     include Core::CredentialHolder
 
     @internals: Core::ClientInternals

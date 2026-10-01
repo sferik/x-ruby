@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require "forwardable"
 require_relative "client_internals"
 require_relative "connection"
 require_relative "credential_holder"
@@ -35,7 +34,6 @@ module X
     #
     # @api public
     class ::X::Client
-      extend Forwardable
       include CredentialHolder
 
       # Default base URL for the X API
@@ -61,8 +59,68 @@ module X
       # Default maximum number of times to send an idempotent request again after a failure
       DEFAULT_MAX_RETRIES = RetryHandler::DEFAULT_MAX_RETRIES
 
-      def_delegators :@internals, :open_timeout, :read_timeout, :write_timeout, :keep_alive_timeout, :debug_output,
-        :max_redirects, :max_rate_limit_retries, :max_rate_limit_wait, :max_retries
+      # The timeout for opening connections, in seconds
+      # @api public
+      # @return [Integer, Float, nil] the timeout, or nil for none
+      # @example Get the open timeout
+      #   client.open_timeout # => 10
+      def open_timeout = @internals.open_timeout
+
+      # The timeout for reading responses, in seconds
+      # @api public
+      # @return [Integer, Float, nil] the timeout, or nil for none
+      # @example Get the read timeout
+      #   client.read_timeout # => 60
+      def read_timeout = @internals.read_timeout
+
+      # The timeout for writing requests, in seconds
+      # @api public
+      # @return [Integer, Float, nil] the timeout, or nil for none
+      # @example Get the write timeout
+      #   client.write_timeout # => 60
+      def write_timeout = @internals.write_timeout
+
+      # The time to keep an idle connection open for the next request, in seconds
+      # @api public
+      # @return [Integer, Float] the timeout
+      # @example Get the keep-alive timeout
+      #   client.keep_alive_timeout # => 30
+      def keep_alive_timeout = @internals.keep_alive_timeout
+
+      # The IO debug output is written to
+      # @api public
+      # @return [IO, #<<, nil] the IO, or anything else that takes a String with <<, or nil for none
+      # @example Get the debug output
+      #   client.debug_output
+      def debug_output = @internals.debug_output
+
+      # The maximum number of redirects to follow
+      # @api public
+      # @return [Integer] the maximum number of redirects
+      # @example Get the maximum number of redirects
+      #   client.max_redirects # => 10
+      def max_redirects = @internals.max_redirects
+
+      # The maximum number of times to retry a request refused for a rate limit
+      # @api public
+      # @return [Integer] the maximum number of retries
+      # @example Get the maximum number of rate limit retries
+      #   client.max_rate_limit_retries # => 0
+      def max_rate_limit_retries = @internals.max_rate_limit_retries
+
+      # The maximum number of seconds to wait for a rate limit to reset
+      # @api public
+      # @return [Integer, Float] the maximum wait, in seconds
+      # @example Get the maximum rate limit wait
+      #   client.max_rate_limit_wait # => 900
+      def max_rate_limit_wait = @internals.max_rate_limit_wait
+
+      # The maximum number of times to send an idempotent request again after a failure
+      # @api public
+      # @return [Integer] the maximum number of retries
+      # @example Get the maximum number of retries
+      #   client.max_retries # => 2
+      def max_retries = @internals.max_retries
 
       # The authenticator for API requests
       #
