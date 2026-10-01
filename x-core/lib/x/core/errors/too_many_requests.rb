@@ -9,12 +9,15 @@ module X
   class TooManyRequests < ClientError
     # The rate limits the response reports in its headers, as X::Response reports them
     #
+    # They are read once and frozen, since the other readers of the error, and the wait before a request is sent
+    # again, read them too, so that a caller changing them changes none of those.
+    #
     # @api public
-    # @return [Array<RateLimit>] the 15-minute limit, and the 24-hour app and user limits when reported
+    # @return [Array<RateLimit>] the 15-minute limit, and the 24-hour app and user limits when reported, frozen
     # @example Print how many requests remain in each window
     #   error.rate_limits.each { |limit| puts "#{limit.type}: #{limit.remaining}" }
     def rate_limits
-      @rate_limits ||= RateLimit.__send__(:all_from, http_response)
+      @rate_limits ||= RateLimit.__send__(:all_from, http_response).freeze
     end
 
     # The 15-minute rate limit of the endpoint, which nearly every response reports

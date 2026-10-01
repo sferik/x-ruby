@@ -91,6 +91,10 @@ module X
       assert_same @exception.rate_limits, @exception.rate_limits
     end
 
+    def test_rate_limits_are_frozen
+      assert_predicate @exception.rate_limits, :frozen?
+    end
+
     def test_exhausted_rate_limits_leave_out_the_limits_with_requests_left
       @exception.http_response["x-rate-limit-remaining"] = "3"
 
