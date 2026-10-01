@@ -311,6 +311,31 @@ module X
       #   YAML.dump({"read_timeout" => streaming_client.read_timeout})
       def encode_with(_coder) = raise(TypeError, format(REFUSAL_MESSAGE, self.class, "YAML"))
 
+      # Refuse to be read as JSON, which would write its credentials
+      #
+      # ActiveSupport's Object#as_json reads every instance variable of an object that does not say how it is read,
+      # the client and its credentials among them, so it is refused as YAML is.
+      #
+      # @api public
+      # @return [void]
+      # @raise [TypeError] always
+      # @example Render the settings of a stream, rather than the streaming client
+      #   render json: {read_timeout: streaming_client.read_timeout}
+      def as_json(*) = raise(TypeError, format(REFUSAL_MESSAGE, self.class, "JSON"))
+
+      # Refuse to be written as JSON, which would write its credentials
+      #
+      # It raises as {#as_json} does, for the reason that says, so that JSON.generate refuses a streaming client within
+      # what it writes as well.
+      #
+      # @api public
+      # @param _state [JSON::State, nil] the state JSON would write the streaming client with
+      # @return [void]
+      # @raise [TypeError] always
+      # @example Log the settings of a stream, rather than the streaming client
+      #   logger.info(JSON.generate(read_timeout: streaming_client.read_timeout))
+      def to_json(_state = nil) = raise(TypeError, format(REFUSAL_MESSAGE, self.class, "JSON"))
+
       private
 
       # Send a change of the rules, as the app

@@ -1,10 +1,11 @@
 # frozen_string_literal: true
 
+require "json"
 require "yaml"
 require_relative "../../test_helper"
 
 module X
-  # What holds credentials refuses Marshal and YAML, which would write them in the clear wherever it is kept
+  # What holds credentials refuses Marshal, YAML, and JSON, which would write them in the clear wherever it is kept
   class CredentialMarshalTest < Minitest::Test
     cover Core.const_get(:CredentialHolder)
 
@@ -42,6 +43,20 @@ module X
     def test_what_holds_credentials_refuses_yaml_within_what_is_written
       assert_raises(TypeError) { YAML.dump({"client" => Client.new(bearer_token: "BEARER")}) }
       assert_raises(TypeError) { Client.new(bearer_token: "BEARER").to_yaml }
+    end
+
+    def test_what_holds_credentials_refuses_json
+      holders.product([[:as_json], [:as_json, {only: "id"}], [:to_json], [:to_json, JSON::State.new]]).each do |holder, call|
+        error = assert_raises(TypeError) { holder.public_send(*call) }
+
+        assert_equal "#{holder.class} holds credentials, which JSON would write in the clear wherever it is kept; keep the credentials " \
+          "in a secret store, and the X::OAuth2Tokens save_tokens is passed, and build it again from them", error.message
+      end
+    end
+
+    def test_what_holds_credentials_refuses_json_within_what_is_written
+      assert_raises(TypeError) { JSON.generate({"client" => Client.new(bearer_token: "BEARER")}) }
+      assert_raises(TypeError) { JSON.generate([BearerTokenAuthenticator.new(bearer_token: "BEARER")]) }
     end
 
     def test_the_tokens_of_a_refresh_still_marshal

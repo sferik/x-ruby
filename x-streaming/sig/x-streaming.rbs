@@ -67,5 +67,7 @@ module X
     def delete_rules: (Array[rule] | rule rules, ?dry_run: bool) ?{ (Problem problem) -> void } -> Integer
     def marshal_dump: () -> bot
     def encode_with: (untyped coder) -> bot
+    def as_json: (*untyped) -> bot
+    def to_json: (?JSON::State? state) -> bot
   end
 end

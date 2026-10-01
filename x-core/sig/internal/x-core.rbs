@@ -35,6 +35,8 @@ module X
 
       def marshal_dump: () -> bot
       def encode_with: (untyped _coder) -> bot
+      def as_json: (*untyped) -> bot
+      def to_json: (?JSON::State? _state) -> bot
     end
 
     module ProxySetting

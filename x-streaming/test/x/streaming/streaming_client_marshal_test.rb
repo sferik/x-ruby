@@ -1,10 +1,11 @@
 # frozen_string_literal: true
 
+require "json"
 require "yaml"
 require_relative "../../test_helper"
 
 module X
-  # A streaming client holds the client it streams for, and its credentials, so it refuses Marshal and YAML, which would
+  # A streaming client holds the client it streams for, and its credentials, so it refuses Marshal, YAML, and JSON, which would
   # write them in the clear wherever it is kept, as the client does
   class StreamingClientMarshalTest < Minitest::Test
     cover StreamingClient
@@ -25,6 +26,16 @@ module X
 
       assert_equal "X::StreamingClient holds credentials, which YAML would write in the clear wherever it is kept; keep the " \
         "credentials in a secret store, and the X::OAuth2Tokens save_tokens is passed, and build it again from them", error.message
+    end
+
+    def test_a_streaming_client_refuses_json
+      [[:as_json], [:as_json, {only: "client"}], [:to_json], [:to_json, JSON::State.new]].each do |call|
+        error = assert_raises(TypeError) { @streaming_client.public_send(*call) }
+
+        assert_equal "X::StreamingClient holds credentials, which JSON would write in the clear wherever it is kept; keep the " \
+          "credentials in a secret store, and the X::OAuth2Tokens save_tokens is passed, and build it again from them", error.message
+      end
+      assert_raises(TypeError) { JSON.generate([@streaming_client]) }
     end
   end
 end
