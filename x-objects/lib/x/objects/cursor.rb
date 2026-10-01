@@ -309,6 +309,20 @@ module X
       #   user.followers.first(10).as_json
       def as_json(*) = raise(UnsupportedOperation, SERIALIZATION_MESSAGE)
 
+      # A Hash of the pair a block returns for each resource, reading every page
+      #
+      # Without a block it raises as {#as_json} does, before it reads a page, since a page of the collection is read as
+      # a Hash only by its as_json, rather than raise TypeError from the to_h of Enumerable once it has read one.
+      #
+      # @api public
+      # @yieldparam resource [Resource] each resource
+      # @yieldreturn [Array(Object, Object)] the key and value of the resource
+      # @return [Hash] the pairs the block returns
+      # @raise [UnsupportedOperation] if no block is given
+      # @example Index the members of a list by username
+      #   list.members.to_h { |user| [user.username, user] }
+      def to_h(&block) = block ? super() : raise(UnsupportedOperation, SERIALIZATION_MESSAGE)
+
       # Refuse to write the collection as a JSON array, which would read every page
       #
       # It raises as {#as_json} does, for the reason that says.
@@ -355,9 +369,7 @@ module X
       # @return [String] the class name, resource class, and path
       # @example Inspect a cursor
       #   user.followers.inspect # => #<X::Cursor resource_class=X::User path="users/7505382/followers">
-      def inspect
-        "#<#{self.class} resource_class=#{resource_class} path=#{path.inspect}>"
-      end
+      def inspect = "#<#{self.class} resource_class=#{resource_class} path=#{path.inspect}>"
 
       private
 

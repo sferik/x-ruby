@@ -193,6 +193,22 @@ module X
         json.freeze
       end
 
+      # This page as a Hash in the shape of its response, or of a pair for each resource
+      #
+      # Without a block it is {#as_json}, as the to_h of a resource is its attributes, rather than the to_h of
+      # Enumerable, which raises TypeError for resources that are not pairs. With a block it is the to_h of Enumerable,
+      # which builds a Hash of the pair the block returns for each resource.
+      #
+      # @api public
+      # @yieldparam resource [Resource] each resource
+      # @yieldreturn [Array(Object, Object)] the key and value of the resource
+      # @return [Hash] the data, meta, and errors of the page, frozen, or the pairs the block returns
+      # @example Get the page in the shape of its response
+      #   page.to_h # => {"data" => [{"id" => "7505382"}], "meta" => {"next_token" => "abc"}}
+      # @example Index the users of a page by username
+      #   page.to_h { |user| [user.username, user] }
+      def to_h(&block) = block ? super() : as_json
+
       # This page as a JSON object in the shape of the response it came from
       #
       # @api public
