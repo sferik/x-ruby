@@ -29,7 +29,7 @@ module X
       def test_a_class_that_descends_from_a_resource_builds_resources
         subclass = Class.new(Post)
 
-        assert_equal [1, 2], [subclass.new({"id" => "1"}).id, subclass.from_id(2).id]
+        assert_equal [1, 2, 3], [subclass.new({"id" => "1"}).id, subclass.from_id(2).id, subclass.from_response({"data" => {"id" => "3"}}, client: nil).id]
         assert_instance_of subclass, subclass.from_id(2)
       end
 

@@ -226,6 +226,8 @@ module X
     end
 
     module AbstractClass : Class
+      BUILDERS: Array[Symbol]
+
       private
       def inherited: (Class subclass) -> void
     end

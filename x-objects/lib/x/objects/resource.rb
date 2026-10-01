@@ -307,7 +307,7 @@ module X
         # @raise [InvalidAttribute] if the attributes hold no identifier, or hold one that is not one
         private def built(attrs, client:, includes:, hydrated:) = Utils.read("#{self}##{id_key}", Hash.try_convert(attrs)&.[](id_key)) { build(attrs, client:, includes:, hydrated:) }
       end
-      private_class_method :new, :from_id
+      private_class_method(*AbstractClass::BUILDERS)
 
       # Initialize a new immutable resource
       #

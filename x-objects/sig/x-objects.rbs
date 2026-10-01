@@ -268,7 +268,7 @@ module X
     def self.default_params: () -> Hash[String, Array[String]]
     private def self.new: (Hash[untyped, untyped] attrs, ?client: Objects::_Client?, ?hydrated: bool) -> instance
     private def self.from_id: (Objects::id id, ?client: Objects::_Client?) -> Resource
-    def self.from_response: (Objects::body body, client: Objects::_Client?, ?hydrated: bool, **untyped) -> (Resource | Page[Resource])?
+    private def self.from_response: (Objects::body body, client: Objects::_Client?, ?hydrated: bool, **untyped) -> (Resource | Page[Resource])?
 
     def initialize: (Hash[untyped, untyped] attrs, ?client: Objects::_Client?, ?hydrated: bool) -> void
     def id: () -> (Integer | String)

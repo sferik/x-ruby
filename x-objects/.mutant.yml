@@ -32,8 +32,9 @@ matcher:
   - X::Trend*
   - X::PostUsage*
   - X::User*
-  # Each class of resource makes X::Resource.from_id, which X::Resource keeps private, public on itself, which mutant
-  # would match as a method of that class, but is the one X::Resource.from_id, which is mutated as such
+  # Each class of resource makes X::Resource.from_id and X::Resource.from_response, which X::Resource keeps private,
+  # public on itself, which mutant would match as methods of that class, but are the ones of X::Resource, which are
+  # mutated as such
   ignore:
   - X::BookmarkFolder.from_id
   - X::Community.from_id
@@ -45,6 +46,17 @@ matcher:
   - X::Space.from_id
   - X::Topic.from_id
   - X::User.from_id
+  - X::BookmarkFolder.from_response
+  - X::Community.from_response
+  - X::DirectMessage.from_response
+  - X::List.from_response
+  - X::Media.from_response
+  - X::Place.from_response
+  - X::Poll.from_response
+  - X::Post.from_response
+  - X::Space.from_response
+  - X::Topic.from_response
+  - X::User.from_response
 mutation:
   operators: full
   timeout: 10.0
