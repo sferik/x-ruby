@@ -12,12 +12,17 @@ module X
       assert_equal "image/gif", inference.infer_media_type("a.gif", "dm_gif")
     end
 
-    def test_gif_and_image_categories_refuse_media_of_no_known_type
-      %w[tweet_gif dm_gif tweet_image dm_image].each do |category|
+    def test_gif_categories_refuse_media_of_no_known_type
+      %w[tweet_gif dm_gif].each do |category|
         error = assert_raises(InvalidMediaType) { inference.infer_media_type("a.bin", category) }
 
         assert_equal "unable to determine the MIME type of a.bin", error.message
       end
+    end
+
+    def test_image_categories
+      assert_equal "image/jpeg", inference.infer_media_type("a.bin", "tweet_image")
+      assert_equal "image/jpeg", inference.infer_media_type("a.bin", "dm_image")
     end
 
     def test_video_categories
@@ -101,13 +106,13 @@ module X
     end
 
     def test_unknown_extension_message
-      error = assert_raises(InvalidMediaType) { inference.infer_media_type("/tmp/tempfile123", "tweet_image") }
+      error = assert_raises(InvalidMediaType) { inference.infer_media_type("/tmp/tempfile123", "tweet_gif") }
 
       assert_equal "unable to determine the MIME type of /tmp/tempfile123", error.message
     end
 
     def test_unknown_extension_message_of_a_pathname
-      error = assert_raises(InvalidMediaType) { inference.infer_media_type(Pathname("/tmp/tempfile123"), "tweet_image") }
+      error = assert_raises(InvalidMediaType) { inference.infer_media_type(Pathname("/tmp/tempfile123"), "tweet_gif") }
 
       assert_equal "unable to determine the MIME type of /tmp/tempfile123", error.message
     end

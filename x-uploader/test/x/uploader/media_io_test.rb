@@ -54,7 +54,7 @@ module X
     end
 
     def test_the_media_type_of_media_neither_a_name_nor_a_signature_names
-      error = assert_raises(InvalidMediaType) { inference.infer_media_type(StringIO.new("not media at all"), "tweet_image") }
+      error = assert_raises(InvalidMediaType) { inference.infer_media_type(StringIO.new("not media at all"), "tweet_gif") }
 
       assert_equal "unable to determine the MIME type of the media given", error.message
     end

@@ -51,7 +51,7 @@ module X
     end
 
     def test_the_media_type_of_a_missing_file_whose_extension_names_no_type_cannot_be_read
-      error = assert_raises(InvalidMediaType) { inference.infer_media_type("missing", "tweet_image") }
+      error = assert_raises(InvalidMediaType) { inference.infer_media_type("missing", "tweet_gif") }
 
       assert_equal "unable to determine the MIME type of missing", error.message
     end

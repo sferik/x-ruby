@@ -79,6 +79,8 @@ module X
       VIDEO_CATEGORIES = [AMPLIFY_VIDEO, DM_VIDEO, TWEET_VIDEO].freeze
       # Media categories uploaded in chunks: videos, and subtitles, which the API takes no other way
       CHUNKED_CATEGORIES = [*VIDEO_CATEGORIES, SUBTITLES].freeze
+      # Media categories of images, which upload in a single request unless they are shared
+      IMAGE_CATEGORIES = [DM_IMAGE, TWEET_IMAGE].freeze
       # Media categories of animated GIFs, which upload in chunks only when a single request cannot take them
       GIF_CATEGORIES = [DM_GIF, TWEET_GIF].freeze
       # Greatest number of bytes the API takes of a GIF, which one is read no further than
@@ -108,8 +110,8 @@ module X
       private_constant :MIME_TYPES, :BMP_MIME_TYPE, :GIF_MIME_TYPE, :JPEG_MIME_TYPE, :PJPEG_MIME_TYPE, :PNG_MIME_TYPE,
         :TIFF_MIME_TYPE, :WEBP_MIME_TYPE, :SUBRIP_MIME_TYPE, :WEBVTT_MIME_TYPE, :MPEG_TS_MIME_TYPE, :MP4_MIME_TYPE,
         :QUICKTIME_MIME_TYPE, :WEBM_MIME_TYPE, :MIME_TYPE_MAP, :IMAGE_MIME_TYPES, :VIDEO_MIME_TYPES, :SUBTITLES_MIME_TYPES,
-        :SIGNED_MIME_TYPES, :STATUS_COMMAND, :VIDEO_CATEGORIES, :CHUNKED_CATEGORIES, :GIF_CATEGORIES, :TYPE_CATEGORIES,
-        :CATEGORY_MIME_TYPES, :MAX_GIF_BYTES, :UNDOCUMENTED_VIDEOS, :UNDOCUMENTED_MODELS, :BYTES_PER_MB, :MAX_SIMPLE_UPLOAD_BYTES
+        :SIGNED_MIME_TYPES, :STATUS_COMMAND, :VIDEO_CATEGORIES, :CHUNKED_CATEGORIES, :IMAGE_CATEGORIES, :GIF_CATEGORIES,
+        :TYPE_CATEGORIES, :CATEGORY_MIME_TYPES, :MAX_GIF_BYTES, :UNDOCUMENTED_VIDEOS, :UNDOCUMENTED_MODELS, :BYTES_PER_MB, :MAX_SIMPLE_UPLOAD_BYTES
 
       # Upload media, in chunks when the API needs them, awaiting any processing
       #
@@ -374,7 +376,9 @@ module X
         # Media is uploaded as its type, which {media_type_of} reads, when the category takes that type, and raises
         # when it does not, rather than be sent as a type it is not, such as an MP4 video as a GIF. Media whose type
         # cannot be read is uploaded as the first type of a video or subtitles category, MP4 or SubRip, which may
-        # begin with no signature that names them, and raises for any other category.
+        # begin with no signature that names them, and as JPEG for an image category, which X takes images, such as
+        # HEIC photos, no signature here names under, as a single request sends them untyped; it raises for a GIF
+        # category, since every GIF begins with its signature.
         #
         # A chunked upload infers the type of media it is given none for with it.
         #
@@ -390,6 +394,7 @@ module X
           documented!(source)
           category = media_category.to_s.downcase
           taken_type(source, category) ||
+            (JPEG_MIME_TYPE if IMAGE_CATEGORIES.include?(category)) ||
             (CATEGORY_MIME_TYPES.fetch(category).first if CHUNKED_CATEGORIES.include?(category)) ||
             raise(InvalidMediaType, "unable to determine the MIME type of #{source.description}")
         end

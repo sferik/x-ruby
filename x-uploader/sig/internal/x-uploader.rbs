@@ -156,6 +156,7 @@ module X
       VIDEO_CATEGORIES: Array[String]
       CHUNKED_CATEGORIES: Array[String]
       GIF_CATEGORIES: Array[String]
+      IMAGE_CATEGORIES: Array[String]
       MAX_GIF_BYTES: Integer
       TYPE_CATEGORIES: Hash[String, String]
       UNDOCUMENTED_VIDEOS: Hash[String, String]

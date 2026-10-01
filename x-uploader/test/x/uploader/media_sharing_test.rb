@@ -66,6 +66,13 @@ module X
       assert_not_requested(:post, BASE_URL)
     end
 
+    def test_a_shared_image_of_no_known_type_is_initialized_as_jpeg
+      stub_chunks
+      Uploader::MediaUpload.upload(StringIO.new("not an image X knows"), client: @client, media_category: "dm_image", shared: true)
+
+      assert_requested(:post, INIT_URL, body: {media_type: "image/jpeg", media_category: "dm_image", total_bytes: 20, shared: true}.to_json)
+    end
+
     def test_shared_that_is_not_true_false_or_nil_is_refused_before_a_request
       %w[true false].push(1).each do |shared|
         error = assert_raises(ArgumentError) { Uploader::MediaUpload.upload(VIDEO, client: @client, shared:) }
