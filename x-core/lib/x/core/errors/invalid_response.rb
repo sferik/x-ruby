@@ -29,25 +29,40 @@ module X
       # and body of a response, or from a Net::HTTP response, as ResponseParser and StreamParser build one. The error
       # names the request, when given its method and URI, as x-core names the request the response answers.
       #
+      # It can be raised as any other exception is, as in raise X::InvalidResponse, and is built with a status of 200
+      # when it is given neither a response nor a status, as HTTPError states.
+      #
       # @api public
+      # @param message [String, nil] the message, or nil for the one that names the status and content type
       # @param http_response [Net::HTTPResponse, nil] the HTTP response, or nil for one built of the status, headers,
       #   and body
-      # @param status [Integer, nil] the status of the response, from 100 to 599, when it is not given
+      # @param status [Integer, nil] the status of the response, from 100 to 599, when it is not given, or nil for 200
       # @param headers [Hash{String => String}, nil] the headers of the response, when it is not given
       # @param body [String, nil] the body that is not JSON, which is the body of a response built of the status
       # @param http_method [Symbol, String, nil] the method of the request the response answers, in any case
       # @param uri [URI::Generic, nil] the URI of the request the response answers
       # @return [InvalidResponse] a new instance
-      # @raise [ArgumentError] if the HTTP response is given beside a status or headers, or neither it nor a status is
-      #   given, or the status is not from 100 to 599, or the headers are not a Hash of names to values
+      # @raise [ArgumentError] if the HTTP response is given beside a status or headers, or the status is not from 100
+      #   to 599, or the headers are not a Hash of names to values
       # @example Create the error of a page a proxy answered with
       #   error = X::InvalidResponse.new(status: 200, headers: {"content-type" => "text/html"}, body: "<html></html>")
       # @example Create an error for a line of a stream
       #   error = X::InvalidResponse.new(http_response: response, body: line, http_method: :get, uri: stream_uri)
-      def initialize(http_response: nil, status: nil, headers: nil, body: nil, http_method: nil, uri: nil)
+      def initialize(message = nil, http_response: nil, status: nil, headers: nil, body: nil, http_method: nil, uri: nil)
         @body = body
-        super(http_response:, status:, headers:, body: (body if http_response.nil?), http_method:, uri:)
+        super(message, http_response:, status:, headers:, body: (body if http_response.nil?), http_method:, uri:)
       end
+
+      # The status an InvalidResponse is built with by default
+      #
+      # It is the status one given neither a response nor a status is built with. A body that is not JSON is raised for a response that succeeded, so it is 200 OK.
+      #
+      # @api private
+      # @return [Integer] the status, 200
+      # @example Get the status of an InvalidResponse
+      #   X::InvalidResponse.__send__(:default_status) # => 200
+      def self.default_status = 200
+      private_class_method :default_status
 
       private
 

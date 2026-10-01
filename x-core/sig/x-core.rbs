@@ -132,7 +132,7 @@ module X
     attr_reader problems: Array[Problem]
     attr_reader problem: Problem?
 
-    def initialize: (?http_response: Net::HTTPResponse?, ?status: Integer?, ?headers: Hash[String, String]?, ?body: String?, ?http_method: (Symbol | String)?, ?uri: URI::Generic?) -> void
+    def initialize: (?String? message, ?http_response: Net::HTTPResponse?, ?status: Integer?, ?headers: Hash[String, String]?, ?body: String?, ?http_method: (Symbol | String)?, ?uri: URI::Generic?) -> void
     def http_method: () -> Symbol?
     def uri: () -> URI::Generic?
     def headers: () -> Hash[String, String]
@@ -219,7 +219,7 @@ module X
   class InvalidResponse < HTTPError
     attr_reader body: String?
 
-    def initialize: (?http_response: Net::HTTPResponse?, ?status: Integer?, ?headers: Hash[String, String]?, ?body: String?, ?http_method: (Symbol | String)?, ?uri: URI::Generic?) -> void
+    def initialize: (?String? message, ?http_response: Net::HTTPResponse?, ?status: Integer?, ?headers: Hash[String, String]?, ?body: String?, ?http_method: (Symbol | String)?, ?uri: URI::Generic?) -> void
   end
 
   class TooManyRequests < ClientError

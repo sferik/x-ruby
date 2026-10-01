@@ -26,6 +26,7 @@ module X
       error = assert_raises(InvalidResponse) { @authenticator.refresh! }
 
       assert_equal [200, PAGE.fetch(:body), :post, URI(TOKEN_URL)], [error.status, error.body, error.http_method, error.uri]
+      assert_equal "text/html", error.headers.fetch("content-type")
       assert_equal TEST_REFRESH_TOKEN, @authenticator.__send__(:refresh_token)
     end
 

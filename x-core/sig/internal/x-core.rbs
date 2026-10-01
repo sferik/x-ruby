@@ -671,7 +671,10 @@ module X
     RETRY_AFTER_HEADER: String
     RETRY_AFTER_SECONDS: Regexp
 
+    private def self.default_status: () -> Integer?
+
     private
+    def built_response: (Net::HTTPResponse? http_response, status: Integer?, headers: Hash[String, String]?, body: String?) -> Net::HTTPResponse
     def seconds_until: (String value) -> Integer?
     def parsed_body: () -> Hash[String, untyped]
     def errors_from: (Hash[String, untyped] body) -> Array[Problem]
@@ -702,6 +705,8 @@ module X
   end
 
   class InvalidResponse < HTTPError
+    private def self.default_status: () -> Integer
+
     private
     def message_from: (Hash[String, untyped] _body) -> String
   end

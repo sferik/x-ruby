@@ -85,32 +85,62 @@ module X
       # response it parses. The error names the request, when given its method and URI, as x-core names the request the
       # response answers.
       #
+      # It can be raised as any other exception is, as in raise X::NotFound, or raise X::NotFound, "gone", for a test
+      # double that stands in for a client: an error of a status, such as NotFound, given neither a response nor a
+      # status, is built with the status x-core raises it for, a ClientError or ServerError with the first of its kind,
+      # 400 or 500, and an InvalidResponse with 200. An HTTPError itself, which is raised for a status of any kind, must
+      # be given one. A message given is the message of the error, in place of the one read from the body.
+      #
       # @api public
+      # @param message [String, nil] the message, or nil for the one the body describes the failure with
       # @param http_response [Net::HTTPResponse, nil] the HTTP response, or nil for one built of the status, headers,
       #   and body
-      # @param status [Integer, nil] the status of the response, from 100 to 599, when it is not given
+      # @param status [Integer, nil] the status of the response, from 100 to 599, when it is not given, or nil for the
+      #   status of the class
       # @param headers [Hash{String => String}, nil] the headers of the response, when it is not given
       # @param body [String, nil] the body of the response, when it is not given
       # @param http_method [Symbol, String, nil] the method of the request the response answers, in any case
       # @param uri [URI::Generic, nil] the URI of the request the response answers
       # @return [HTTPError] a new instance
       # @raise [ArgumentError] if the HTTP response is given beside a status, headers, or a body, or neither it nor a
-      #   status is given, or the status is not from 100 to 599, or the headers are not a Hash of names to values
+      #   status is given to an HTTPError itself, or the status is not from 100 to 599, or the headers are not a Hash of
+      #   names to values
       # @example Create the error of a user that does not exist
       #   error = X::NotFound.new(status: 404, headers: {"content-type" => "application/json"},
       #     body: %({"title":"Not Found Error","detail":"Could not find user."}))
+      # @example Raise the error of a rate limit from a test double
+      #   raise X::TooManyRequests, "Too Many Requests"
       # @example Create an HTTP error from a response
       #   error = X::HTTPError.new(http_response: response, http_method: :get, uri: URI("https://api.x.com/2/users/me"))
-      def initialize(http_response: nil, status: nil, headers: nil, body: nil, http_method: nil, uri: nil)
-        @http_response = BuiltResponse.of(http_response, status:, headers:, body:)
+      def initialize(message = nil, http_response: nil, status: nil, headers: nil, body: nil, http_method: nil, uri: nil)
+        @http_response = built_response(http_response, status:, headers:, body:)
         name_request(http_method, uri)
         parsed = parsed_body
         errors = errors_from(parsed)
         described = (Problem.new(parsed) if describes_problem?(parsed))
         @problems = (errors.empty? ? [described].compact : errors).freeze
         @problem = described || errors.first
-        super(message_naming_request(message_from(parsed) || @http_response.message))
+        super(message_naming_request(message || message_from(parsed) || @http_response.message))
       end
+
+      # The status an error of this class is built with by default
+      #
+      # It is the status an error given neither a response nor a status is built with: the status x-core raises the class, or the nearest class it descends from, for, or the first status of
+      # the kind of a ClientError or ServerError, 400 or 500.
+      #
+      # @api private
+      # @return [Integer, nil] the status, or nil for an HTTPError itself, which is raised for a status of any kind
+      # @example Get the status of a NotFound
+      #   X::NotFound.__send__(:default_status) # => 404
+      def self.default_status
+        parser = Core.const_get(:ResponseParser)
+        ancestors.each do |ancestor|
+          status = parser::ERROR_MAP.key(ancestor) || parser::STATUS_CLASS_ERRORS.key(ancestor)&.*(100)
+          return status if status
+        end
+        nil
+      end
+      private_class_method :default_status
 
       # The HTTP status code, as an Integer like X::Response#status
       #
@@ -151,6 +181,22 @@ module X
       end
 
       private
+
+      # The HTTP response given, or the one built of the status, headers, and body
+      #
+      # A response given neither a response nor a status is built with the status of the class.
+      #
+      # @api private
+      # @param http_response [Net::HTTPResponse, nil] the HTTP response, or nil to build one
+      # @param status [Integer, nil] the status of the response to build, or nil for the status of the class
+      # @param headers [Hash{String => String}, nil] the headers of the response to build, or nil for none
+      # @param body [String, nil] the body of the response to build, or nil for none
+      # @return [Net::HTTPResponse] the HTTP response
+      # @raise [ArgumentError] as {BuiltResponse.of} raises
+      def built_response(http_response, status:, headers:, body:)
+        status ||= self.class.__send__(:default_status) if http_response.nil?
+        BuiltResponse.of(http_response, status:, headers:, body:)
+      end
 
       # The seconds until the time an HTTP date names
       # @api private
