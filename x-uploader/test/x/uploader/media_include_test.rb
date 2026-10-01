@@ -45,6 +45,15 @@ module X
       assert_requested(:post, "#{BASE_URL}/#{TEST_MEDIA_ID}/append")
     end
 
+    def test_a_class_that_defines_its_own_chunked_upload_uploads_a_video_without_it
+      stub_chunked_upload
+      uploader = Class.new(MediaUploader) { def chunked_upload(media, **) = raise("chunked_upload is the caller's own, given #{media.inspect}") }
+      media = uploader.new.upload("test/sample_files/sample.mp4", client: Client.new)
+
+      assert_equal TEST_MEDIA_ID, media["id"]
+      assert_requested(:post, "#{BASE_URL}/#{TEST_MEDIA_ID}/finalize")
+    end
+
     def test_a_class_with_methods_of_its_own_uploads_an_image_and_describes_it
       stub_request(:post, BASE_URL).to_return(JSON)
       stub_request(:post, "https://api.x.com/2/media/metadata").to_return(JSON)

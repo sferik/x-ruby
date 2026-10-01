@@ -116,6 +116,7 @@ module X
       CHANGED: String
       extend Chunks
 
+      def upload: (client: ::X::Client, source: Source, media_type: String, media_category: String, chunk_size: Integer?, concurrency: Integer) -> UploadedMedia
       def init: (client: ::X::Client, source: Source, media_type: String, media_category: String) -> Hash[String, untyped]
       def append: (client: ::X::Client, source: Source, chunk_size: Integer, media: untyped, boundary: String, concurrency: Integer) -> void
       def finalize: (client: ::X::Client, media: Hash[String, untyped]) -> Hash[String, untyped]?

@@ -1,11 +1,13 @@
 # frozen_string_literal: true
 
 require "securerandom"
+require_relative "chunked_upload_failed"
 require_relative "json_classes"
 require_relative "missing_media_data"
 require_relative "multipart"
 require_relative "uploaded_media"
 require_relative "utils"
+require_relative "validator"
 
 module X
   module Uploader
@@ -24,6 +26,33 @@ module X
       CHANGED = "%s held %d bytes when the upload was initialized, but chunk %d read %d of the %d it began with at " \
         "byte %d: the media changed while it was uploaded"
       private_constant :NO_MEDIA, :CHANGED
+
+      # Upload media in chunks: initialize, append each chunk, and finalize
+      #
+      # MediaUpload.upload and MediaUpload.chunked_upload both upload with it, once each has checked its other
+      # arguments, so that upload calls no method a class that includes MediaUpload could define in place of its own.
+      # The chunk size is checked against the segments the API numbers before the upload is initialized.
+      #
+      # @api private
+      # @param client [Client] the X API client
+      # @param source [Source] the media
+      # @param media_type [String] the MIME type
+      # @param media_category [String] the media category
+      # @param chunk_size [Integer, nil] the chunk size in bytes, or nil for one derived from the size of the media
+      # @param concurrency [Integer] the number of chunks uploaded at once
+      # @return [UploadedMedia] the uploaded media, as the response that finalizes the upload describes it
+      # @raise [ArgumentError] if the chunk size would need more segments than the API numbers
+      # @raise [MissingMediaData] if the response that initializes the upload holds no media to append the chunks to
+      # @raise [ChunkedUploadFailed] if the upload is initialized, but a chunk cannot be appended, or it cannot be
+      #   finalized, or the response that finalizes it holds no media, with the media it initialized
+      # @example Upload a video in chunks
+      #   Uploader::Chunks.upload(client:, source:, media_type: "video/mp4", media_category: "tweet_video",
+      #     chunk_size: 1_048_576, concurrency: 4)
+      def upload(client:, source:, media_type:, media_category:, chunk_size:, concurrency:)
+        chunk_size = Validator.validate_segments!(source, chunk_size)
+        media = init(client:, source:, media_type:, media_category:)
+        ChunkedUploadFailed.__send__(:keeping, media) { complete(client:, source:, chunk_size:, media:, concurrency:) }
+      end
 
       # Initialize a chunked upload
       #

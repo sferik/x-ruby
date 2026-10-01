@@ -3,7 +3,6 @@
 require "json"
 require "x/core"
 require_relative "alt_text_failed"
-require_relative "chunked_upload_failed"
 require_relative "media_processing_check_failed"
 require_relative "chunks"
 require_relative "gif"
@@ -177,8 +176,7 @@ module X
         source = Source.for(media)
         media_category = Validator.validate_upload!(source, media_category, alt_text:, chunk_size:, concurrency:, processing_timeout:) { Inference.infer_media_category(source) }
         uploaded = if Inference.chunked_upload?(source, media_category)
-          # The media is passed on as the Source it was resolved to, which the signatures keep out of what media is
-          chunked_upload(_ = source, client:, media_category:, media_type:, chunk_size:, concurrency:)
+          Chunks.upload(client:, source:, media_type: media_type || Inference.infer_media_type(source, media_category), media_category:, chunk_size:, concurrency:)
         else
           Utils.single_request(client, Inference.single_request!(source, media_category), media_category)
         end
@@ -223,10 +221,7 @@ module X
         media_category = Validator.validate_media_category!(media_category || Inference.infer_media_category(source))
         Validator.validate_size!(source, media_category)
         Validator.validate_chunks!(chunk_size:, concurrency:)
-        chunk_size = Validator.validate_segments!(source, chunk_size)
-        media_type ||= Inference.infer_media_type(source, media_category)
-        uploaded = Chunks.init(client:, source:, media_type:, media_category:)
-        ChunkedUploadFailed.__send__(:keeping, uploaded) { Chunks.complete(client:, source:, chunk_size:, media: uploaded, concurrency:) }
+        Chunks.upload(client:, source:, media_type: media_type || Inference.infer_media_type(source, media_category), media_category:, chunk_size:, concurrency:)
       end
 
       # Wait for media processing to complete

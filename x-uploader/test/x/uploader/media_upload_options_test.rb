@@ -11,14 +11,14 @@ module X
       @client = Client.new
     end
 
-    def test_upload_passes_the_chunk_options_to_the_chunked_upload
+    def test_upload_passes_the_chunk_options_to_the_chunks
       options = chunk_options_of(media_type: "video/webm", chunk_size: 2_097_152, concurrency: 3)
 
       assert_equal({media_category: "tweet_video", media_type: "video/webm", chunk_size: 2_097_152, concurrency: 3}, options)
     end
 
-    def test_upload_passes_the_default_chunk_options_to_the_chunked_upload
-      assert_equal({media_category: "tweet_video", media_type: nil, chunk_size: nil, concurrency: 4}, chunk_options_of)
+    def test_upload_passes_the_default_chunk_options_and_the_type_it_infers_to_the_chunks
+      assert_equal({media_category: "tweet_video", media_type: "video/mp4", chunk_size: nil, concurrency: 4}, chunk_options_of)
     end
 
     def test_the_default_concurrency_is_a_constant_of_media
@@ -45,7 +45,7 @@ module X
     def chunk_options_of(**)
       options = nil
       uploaded = UploadedMedia.new({"id" => TEST_MEDIA_ID})
-      Uploader::MediaUpload.stub(:chunked_upload, ->(*, **kwargs) { (options = kwargs.except(:client)) && uploaded }) do
+      Uploader.const_get(:Chunks).stub(:upload, ->(**kwargs) { (options = kwargs.except(:client, :source)) && uploaded }) do
         Uploader::MediaUpload.upload("test/sample_files/sample.mp4", client: @client, **)
       end
       options
