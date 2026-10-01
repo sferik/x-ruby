@@ -334,6 +334,7 @@ module X
 
       @app_only: Client?
       @app_only_monitor: Monitor
+      @app_token: AppOnlyAuthenticator?
       @connection: Connection
 
       def app_only: (Client client) -> Client
@@ -342,6 +343,8 @@ module X
       def app_only_copy: (Client client) -> Client
       def build_app_only: (Client client) -> Client
       def app_bearer_token: () -> String
+      def app_token: () -> AppOnlyAuthenticator
+      def share_app_token: (ClientInternals other) -> void
       def app_credentials: () -> [String, String]?
       def authenticator: () -> (Authenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator)
       def credentials: () -> { api_key: String?, api_key_secret: String?, access_token: String?, access_token_secret: String?, bearer_token: String?, client_id: String?, client_secret: String?, refresh_token: String?, expires_at: Time? }

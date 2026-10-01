@@ -347,8 +347,10 @@ module X
       # A client that authenticates as a user, signing with OAuth 1.0a or with OAuth 2.0, returns a copy that
       # authenticates with the app's bearer token: the one it was given, or one it fetches with its API key and secret
       # the first time. It returns the same copy, with the connections it keeps open, from then on, since the
-      # credentials and settings of a client never change; threads that ask for the copy together get one. A client
-      # with a bearer token or an API key and secret alone already authenticates as the app, and is returned as it is,
+      # credentials and settings of a client never change; threads that ask for the copy together get one. A copy of
+      # the client made with {#with} that holds the same API key and secret, and the same base URL, builds a copy of
+      # its own, but sends the token the client fetched, or fetches, rather than fetch one of its own from the token
+      # endpoint, which X limits the rate of. A client with a bearer token or an API key and secret alone already authenticates as the app, and is returned as it is,
       # as is one given an authenticator that authenticates as the app, or as no one. A client given an
       # OAuth1Authenticator fetches the token with the API key and secret it signs with. A client that authenticates
       # with OAuth 2.0 as a user and holds neither the app's bearer token nor its API key and secret, as a client

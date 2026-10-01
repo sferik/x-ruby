@@ -130,6 +130,7 @@ module X
         client.class.new(**settings, **with_credentials(options)).tap do |copy|
           internals = ClientInternals.of(copy)
           internals.__send__(:share_authenticator, copy, authenticator, options)
+          internals.__send__(:share_app_token, self)
           internals.__send__(:share_connection, @connection)
         end
       end

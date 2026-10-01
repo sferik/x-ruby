@@ -61,9 +61,37 @@ module X
       # The app-only bearer token, the client's own or one it fetches
       # @api private
       # @return [String] the bearer token
-      def app_bearer_token
-        key, secret = app_credentials #: [String, String]
-        bearer_token || AppOnlyAuthenticator.new(api_key: key, api_key_secret: secret).__send__(:token_requests_over, @connection, base_url).__send__(:bearer_token)
+      def app_bearer_token = bearer_token || app_token.__send__(:bearer_token)
+
+      # The authenticator that fetches the app-only bearer token, shared with copies
+      #
+      # It is built once, and fetches the token when it is first asked for it, and holds it from then on, so the client,
+      # and each copy of it that {#share_app_token} gave it to, fetch it once between them.
+      #
+      # @api private
+      # @return [AppOnlyAuthenticator] the authenticator
+      def app_token
+        @app_only_monitor.synchronize do
+          @app_token ||= begin
+            key, secret = app_credentials #: [String, String]
+            AppOnlyAuthenticator.new(api_key: key, api_key_secret: secret).__send__(:token_requests_over, @connection, base_url)
+          end
+        end
+      end
+
+      # Share the app-only bearer token of the client this one was copied from
+      #
+      # A copy that holds the same credentials of the app, and the same base URL, would fetch the same token, from an
+      # endpoint X limits the rate of, so it takes the authenticator that fetches the token of the client it was
+      # copied from, rather than fetch one of its own for each copy, as a copy made for each request would. The
+      # internals of the client copied call it on those of the copy with __send__, since it is private.
+      #
+      # @api private
+      # @param other [ClientInternals] the internals of the client this one was copied from
+      # @return [void]
+      def share_app_token(other)
+        credentials = app_credentials or return
+        @app_token = other.__send__(:app_token) if credentials.eql?(other.__send__(:app_credentials)) && base_url.eql?(other.base_url)
       end
 
       # The API key and secret of the app
