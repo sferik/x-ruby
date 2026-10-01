@@ -1,0 +1,35 @@
+# frozen_string_literal: true
+
+require "rake/testtask"
+
+Rake::TestTask.new(:test) do |t|
+  t.libs << "test"
+  t.pattern = "test/**/*_test.rb"
+end
+
+desc "Run mutation tests"
+task :mutant do
+  sh "bundle exec mutant run"
+end
+
+# Steep is in the bundle of CRuby alone, where the steep job of CI runs, so the task is defined only where it can run
+begin
+  require "steep/rake_task"
+rescue LoadError
+  task(:steep) { abort "steep is not in the bundle of #{RUBY_ENGINE}; type check with CRuby" }
+else
+  Steep::RakeTask.new(:steep)
+end
+
+require "yardstick/rake/measurement"
+require "yardstick/rake/verify"
+
+Yardstick::Rake::Measurement.new(:yardstick_measure) do |measurement|
+  measurement.output = "doc/coverage.txt"
+end
+
+Yardstick::Rake::Verify.new(:yardstick) do |verify|
+  verify.threshold = 100
+end
+
+task default: %i[test mutant steep yardstick]

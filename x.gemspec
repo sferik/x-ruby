@@ -39,5 +39,6 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
   spec.add_dependency("x-core", sibling_requirement)
   spec.add_dependency("x-uploader", sibling_requirement)
+  spec.add_dependency("x-streaming", sibling_requirement)
   spec.add_dependency("x-objects", sibling_requirement)
 end

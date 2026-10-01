@@ -17,7 +17,7 @@ module X
   module Core
     # Manages HTTP connections to the X API
     #
-    # Internal to x-core: Client, StreamingClient, and the authenticators and authorization that fetch tokens send
+    # Internal to x-core: Client, and the authenticators and authorization that fetch tokens send
     # their requests with it, so that it can change within 1.x. Configure it through the settings of Client, such as
     # proxy_url and the timeouts.
     #
@@ -151,7 +151,7 @@ module X
 
       # Perform a streaming HTTP request
       #
-      # Internal to x-core: Client#get_stream, and StreamingClient, open their requests with it.
+      # Internal to x-core: Client#get_stream opens its requests with it.
       #
       # The connection is opened for this request and closed once the block returns, rather than taken from the
       # connections kept open and given back, since a stream holds its connection for as long as it reads. Once the

@@ -8,11 +8,11 @@ module X
     # objects with, inside the handlers that send it again, wait out a rate limit, and refresh a rejected token, where
     # an X::ServerError, an X::TooManyRequests, or an X::Unauthorized a callback raised, such as one of a request it
     # made itself, would otherwise send the request again, reading what the API billed again, or spend a refresh
-    # token. A stream runs its callbacks inside the request that reads it, where an IOError, a SystemCallError, or
-    # another of the errors a socket raises would otherwise be reported as a NetworkError and reconnected.
+    # token. The block of Client#get_stream runs inside the request that reads its body, where an X::Unauthorized it
+    # raised would otherwise refresh a token, and the stream be opened again.
     #
-    # Internal to x-core: Client#perform, ResponseParser, and StreamParser tag the errors of a callback with it, and
-    # Client and Connection#perform_stream raise the error it holds in its place.
+    # Internal to x-core: Client#perform, ResponseParser, and the stream Client#get_stream opens tag the errors of a
+    # callback with it, and Client raises the error it holds in its place.
     #
     # @api private
     class CallbackError < StandardError

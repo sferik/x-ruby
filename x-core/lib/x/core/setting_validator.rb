@@ -24,8 +24,8 @@ module X
     # one, such as the String "Hash", raised once the API had answered, and billed, the request. So the default
     # classes of a client are checked when the client is built, and the classes of a request before it is sent.
     #
-    # Internal to x-core: the handlers of redirects, rate limits, retries, and reconnects, a connection, and a client
-    # check their settings with it.
+    # Internal to x-core: the handlers of redirects, rate limits, and retries, a connection, and a client check their
+    # settings with it.
     #
     # @api private
     module SettingValidator
@@ -33,8 +33,6 @@ module X
 
       # The message of the error raised for a count that is not an Integer of at least 0
       INVALID_COUNT = "%s must be an Integer of at least 0, not %s"
-      # The message of the error raised for a count that is neither an Integer of at least 0 nor Float::INFINITY
-      INVALID_COUNT_OR_INFINITY = "%s must be an Integer of at least 0, or Float::INFINITY for no limit, not %s"
       # The message of the error raised for seconds that are not a number of at least 0
       INVALID_SECONDS = "%s must be a number of seconds of at least 0, not %s"
       # The message of the error raised for seconds that are not a finite number of at least 0
@@ -63,7 +61,7 @@ module X
       # The message of the error raised for keywords a request takes none of, as the fields of a body given without
       # the braces of a Hash are read
       UNKNOWN_KEYWORDS = "unknown keyword%s: %s; pass a body as a Hash in braces, as %s(%s, %s)"
-      private_constant :INVALID_COUNT, :INVALID_COUNT_OR_INFINITY, :INVALID_SECONDS, :INVALID_FINITE_SECONDS, :INVALID_TIMEOUT,
+      private_constant :INVALID_COUNT, :INVALID_SECONDS, :INVALID_FINITE_SECONDS, :INVALID_TIMEOUT,
         :INVALID_BASE_URL, :INVALID_HEADERS, :INVALID_HEADER, :INVALID_CALLABLE, :INVALID_ARRAY_CLASS, :INVALID_OBJECT_CLASS,
         :UNKNOWN_KEYWORDS
 
@@ -80,21 +78,6 @@ module X
         return value if count?(value)
 
         raise ArgumentError, format(INVALID_COUNT, name, value.inspect)
-      end
-
-      # Check that a count is an Integer of at least 0, or Float::INFINITY for no limit
-      #
-      # @api private
-      # @param name [Symbol] the name of the setting, which the error names
-      # @param value [Object] the value of the setting
-      # @return [Integer, Float] the value
-      # @raise [ArgumentError] if the value is neither an Integer of at least 0 nor Float::INFINITY
-      # @example Check the reconnects of a stream
-      #   X::Core::SettingValidator.count_or_infinity!(:max_reconnects, Float::INFINITY) # => Infinity
-      def count_or_infinity!(name, value)
-        return value if count?(value) || Float::INFINITY.eql?(value)
-
-        raise ArgumentError, format(INVALID_COUNT_OR_INFINITY, name, value.inspect)
       end
 
       # Check that seconds are a real number of at least 0

@@ -1,0 +1,23 @@
+---
+coverage_criteria:
+  process_abort: true
+fail_fast: true
+includes:
+- lib
+integration:
+  name: minitest
+matcher:
+  # x-core is loaded too, and is mutated in its own suite, so the classes x-streaming declares directly under X are
+  # named one by one rather than matched by X*
+  subjects:
+  - X::Streaming*
+  - X::StreamingClient*
+  - X::StreamRule*
+  - X::StreamError*
+  - X::RulesRejected*
+mutation:
+  operators: full
+  timeout: 10.0
+requires:
+- x/streaming
+usage: opensource

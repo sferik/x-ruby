@@ -35,8 +35,6 @@ module X
   #   ├── X::AuthorizationDenied       the redirect back from X says the app was not authorized
   #   ├── X::TokenReportFailed         save_tokens raised for the tokens of an exchange of a code or a refresh
   #   ├── X::TooManyRedirects          a response redirected more times than max_redirects allows
-  #   ├── X::StreamError               a line of a stream held errors and no data
-  #   ├── X::RulesRejected             the API left rules of the filtered stream unchanged, and no block took them
   #   ├── X::UnsupportedOperation      the API offers no way to do what was asked
   #   ├── X::UnsupportedMarshalFormat  Marshal or YAML read a state written in a format this release does not read
   #   ├── X::Objects::Error            the failures of the object layer, from x-objects
@@ -44,6 +42,9 @@ module X
   #   │   ├── X::UnreadableResponse            a response that succeeded says what the API does not document
   #   │   │   └── X::InvalidAttribute          a response holds a value that is not what the API documents it to be
   #   │   └── X::MissingClient                 a resource that holds no client was asked to make a request
+  #   ├── X::Streaming::Error          the failures of a stream, from x-streaming
+  #   │   ├── X::StreamError                   a line of a stream held errors and no data
+  #   │   └── X::RulesRejected                 the API left rules of the filtered stream unchanged, and no block took them
   #   └── X::Uploader::Error           the failures of an upload, from x-uploader
   #       ├── X::InvalidMedia                  the media does not exist, cannot be read, is empty, or is too large
   #       │   └── X::InvalidMediaType          the media is of a type the API does not take

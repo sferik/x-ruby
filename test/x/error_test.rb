@@ -3,8 +3,8 @@
 require_relative "../test_helper"
 
 module X
-  # x-core and x-objects each define X::Error, since x-objects does not depend on x-core, so the meta-gem, which loads
-  # both, checks that the two definitions agree
+  # x-core declares X::Error, which every error of every gem descends from, so the meta-gem, which loads them all,
+  # checks that each does
   class MetaErrorTest < Minitest::Test
     def test_error_descends_from_standard_error
       assert_equal StandardError, Error.superclass
@@ -14,7 +14,13 @@ module X
       assert_operator HTTPError, :<, Error
       assert_operator MissingResource, :<, Error
       assert_operator Uploader::Error, :<, Error
+      assert_operator Streaming::Error, :<, Error
       assert_operator UnsupportedMarshalFormat, :<, Error
+    end
+
+    def test_the_errors_of_a_stream_descend_from_the_error_of_x_streaming
+      assert_operator StreamError, :<, Streaming::Error
+      assert_operator RulesRejected, :<, Streaming::Error
     end
   end
 end

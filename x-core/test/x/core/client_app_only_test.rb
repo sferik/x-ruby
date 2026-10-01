@@ -5,7 +5,6 @@ require_relative "../../test_helper"
 module X
   class ClientAppOnlyTest < Minitest::Test
     cover_client
-    cover StreamingClient
 
     STREAM_URL = "https://api.x.com/2/tweets/sample/stream"
 
@@ -93,23 +92,6 @@ module X
         "nor its API key and secret, cannot authenticate as the app. Pass the client one of them, beside the OAuth 2.0 " \
         "credentials rather than an OAuth2Authenticator, which is given alone", error.message
       assert_not_requested @token_request
-    end
-
-    def test_an_oauth2_user_client_cannot_stream
-      stream = stub_request(:get, STREAM_URL)
-      client = Client.new(**test_oauth2_credentials)
-
-      assert_raises(UnsupportedOperation) { client.streaming.stream("tweets/sample/stream") { |_post| flunk "unexpected yield" } }
-      assert_not_requested stream
-    end
-
-    def test_an_oauth1_client_streams_with_the_bearer_token_and_builds_objects_with_itself
-      client = Client.new(**test_oauth_credentials)
-      stub_request(:get, STREAM_URL).with(headers: {"Authorization" => "Bearer #{TEST_BEARER_TOKEN}"}).to_return(body: "{\"data\":{\"id\":\"1\"}}\r\n")
-      built = []
-      until_the_stream_ends { client.streaming(max_reconnects: 0).stream("tweets/sample/stream", object_class: ResponseBuilder) { |object| built << object } }
-
-      assert_same client, built.first[:client]
     end
   end
 end

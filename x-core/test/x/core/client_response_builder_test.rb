@@ -4,10 +4,7 @@ require_relative "../../test_helper"
 
 module X
   class ClientResponseBuilderTest < Minitest::Test
-    include StreamHelpers
-
     cover_client
-    cover StreamingClient
 
     def setup
       @client = Client.new(bearer_token: TEST_BEARER_TOKEN)
@@ -22,15 +19,6 @@ module X
         assert_equal({"data" => {"id" => "1"}}, built[:body])
         assert_same @client, built[:client]
       end
-    end
-
-    def test_stream_passes_itself_to_a_response_builder
-      results = with_stubbed_stream(chunks: ["{\"data\":{\"id\":\"1\"}}\r\n"]) do
-        stream_and_collect("tweets/search/stream", object_class: ResponseBuilder)
-      end
-
-      assert_equal({"data" => {"id" => "1"}}, results.first[:body])
-      assert_same @client, results.first[:client]
     end
   end
 end

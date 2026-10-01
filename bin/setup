@@ -6,4 +6,5 @@ set -vx
 bundle install
 (cd x-core && bundle install)
 (cd x-uploader && bundle install)
+(cd x-streaming && bundle install)
 (cd x-objects && bundle install)

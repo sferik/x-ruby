@@ -26,7 +26,7 @@ module X
       # Initialize a new InvalidResponse
       #
       # Public, so that code that rescues an InvalidResponse can be tested with one built from the status, headers,
-      # and body of a response, or from a Net::HTTP response, as ResponseParser and StreamParser build one. The error
+      # and body of a response, or from a Net::HTTP response, as ResponseParser and the stream of x-streaming build one. The error
       # names the request, when given its method and URI, as x-core names the request the response answers.
       #
       # It can be raised as any other exception is, as in raise X::InvalidResponse, and is built with a status of 200

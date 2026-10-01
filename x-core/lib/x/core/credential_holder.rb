@@ -2,8 +2,8 @@
 
 module X
   module Core
-    # Refuses Marshal and YAML for what holds credentials, included into a client and its internals, a streaming
-    # client, an authenticator, and an authorization
+    # Refuses Marshal and YAML for what holds credentials, included into a client and its internals, an
+    # authenticator, and an authorization
     #
     # Marshal and YAML would write the credentials such an object holds, in the clear, wherever what they write is
     # kept, such as a cache, where a client in a Hash that is cached would carry them without a word, or the arguments

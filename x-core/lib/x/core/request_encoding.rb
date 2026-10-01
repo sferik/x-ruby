@@ -7,8 +7,8 @@ module X
   module Core
     # Encodes the query strings and bodies of requests
     #
-    # Internal to x-core: a client resolves the endpoint of each request, and encodes its body, with it, and a
-    # streaming client resolves the endpoint of each stream.
+    # Internal to x-core: a client resolves the endpoint of each request, and of each stream it opens, and encodes
+    # the body of a request, with it.
     #
     # @api private
     module RequestEncoding

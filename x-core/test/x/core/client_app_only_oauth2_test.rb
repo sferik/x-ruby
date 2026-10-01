@@ -32,14 +32,5 @@ module X
       assert_instance_of OAuth2Authenticator, client.authenticator
       assert_requested @token_request, times: 1
     end
-
-    def test_an_oauth2_client_with_a_bearer_token_streams_as_the_app
-      stub_request(:get, STREAM_URL).with(headers: {"Authorization" => "Bearer APP_BEARER_TOKEN"}).to_return(body: "{\"data\":{\"id\":\"1\"}}\r\n")
-      client = Client.new(**test_oauth2_credentials, bearer_token: "APP_BEARER_TOKEN")
-      objects = []
-      until_the_stream_ends { client.streaming(max_reconnects: 0).stream("tweets/sample/stream") { |object| objects << object } }
-
-      assert_equal [{"data" => {"id" => "1"}}], objects
-    end
   end
 end

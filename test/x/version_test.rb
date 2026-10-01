@@ -2,6 +2,7 @@
 
 require_relative "../test_helper"
 require "x/uploader/version"
+require "x/streaming/version"
 
 module X
   class MetaVersionTest < Minitest::Test
@@ -32,12 +33,14 @@ module X
     def test_lockstep_versions
       assert_equal VERSION, Core::VERSION
       assert_equal VERSION, Uploader::VERSION
+      assert_equal VERSION, Streaming::VERSION
       assert_equal VERSION, Objects::VERSION
     end
 
     def test_lockstep_gem_versions
       assert_equal X.gem_version, Core.gem_version
       assert_equal X.gem_version, Uploader.gem_version
+      assert_equal X.gem_version, Streaming.gem_version
       assert_equal X.gem_version, Objects.gem_version
     end
   end

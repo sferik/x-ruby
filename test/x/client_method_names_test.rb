@@ -3,14 +3,15 @@
 require_relative "../test_helper"
 
 module X
-  # x-core, x-objects, and x-uploader are released apart, and a client is built of all three, so a method one of them
-  # adds within 1.x must take the name of no method of another. A method of X::Objects::API or X::Uploader::API,
-  # which X::Client includes, takes the place of a method of the same name in a module of x-core that X::Client
-  # includes before them, and a method X::Client defines itself takes the place of theirs, so a private helper of
-  # either side that the other came to name would be called by code that meant the other one, and would break every
-  # request. So X::Client keeps no private methods but initialize, and no name is shared either way.
+  # x-core, x-objects, x-uploader, and x-streaming are released apart, and a client is built of all four, so a method
+  # one of them adds within 1.x must take the name of no method of another. A method of X::Objects::API,
+  # X::Uploader::API, or X::Streaming::API, which X::Client includes, takes the place of a method of the same name in a
+  # module of x-core that X::Client includes before them, and a method X::Client defines itself takes the place of
+  # theirs, so a private helper of either side that the other came to name would be called by code that meant the
+  # other one, and would break every request. So X::Client keeps no private methods but initialize, and no name is
+  # shared either way.
   class ClientMethodNamesTest < Minitest::Test
-    INCLUDED_APIS = [Objects::API, Uploader::API].freeze
+    INCLUDED_APIS = [Objects::API, Uploader::API, Streaming::API].freeze
 
     def test_a_client_has_no_private_method_of_x_core_but_initialize
       assert_equal %i[initialize], x_core_ancestors.flat_map { |ancestor| ancestor.private_instance_methods(false) }.sort

@@ -180,25 +180,10 @@ module X
   class RequestTimeout < ClientError
   end
 
-  class RulesRejected < Error
-    attr_reader problems: Array[Problem]
-    attr_reader result: Array[StreamRule] | Integer
-
-    def initialize: (Array[Problem] problems, result: Array[StreamRule] | Integer) -> void
-  end
-
   class ServerError < HTTPError
   end
 
   class ServiceUnavailable < ServerError
-  end
-
-  class StreamError < Error
-    attr_reader problems: Array[Problem]
-
-    def initialize: (Array[Problem] problems, ?http_method: (Symbol | String)?, ?uri: URI::Generic?) -> void
-    def http_method: () -> Symbol?
-    def uri: () -> URI::Generic?
   end
 
   class TooManyRedirects < Error
@@ -279,46 +264,6 @@ module X
     def exhausted?: -> bool
     def reset_at: -> Time
     def reset_in: -> Integer
-  end
-
-  class StreamRule
-    attr_reader id: Integer?
-    attr_reader value: String
-    attr_reader tag: String?
-    def initialize: (value: String, ?tag: String?, ?id: (Integer | String)?) -> void
-    def to_h: () -> {id: Integer?, value: String, tag: String?}
-    def deconstruct_keys: (Array[Symbol]? _keys) -> {id: Integer?, value: String, tag: String?}
-    def ==: (untyped other) -> bool
-    def eql?: (untyped other) -> bool
-    def hash: () -> Integer
-    def inspect: () -> String
-    def marshal_dump: () -> untyped
-    def marshal_load: (untyped state) -> void
-    def encode_with: (untyped coder) -> void
-    def init_with: (untyped coder) -> void
-  end
-
-  class StreamingClient
-    DEFAULT_READ_TIMEOUT: Float | Integer
-    DEFAULT_MAX_RECONNECTS: Float | Integer
-
-    type addable_rule = StreamRule | Hash[untyped, untyped] | String
-    type rule = addable_rule | Integer
-
-    attr_reader client: Client
-    def initialize: (Client client, ?read_timeout: (Float | Integer)?, ?max_reconnects: Integer | Float) -> void
-    def inspect: () -> String
-    def stream: (String endpoint, ?params: params?, ?headers: headers, ?array_class: Class, ?object_class: object_class) { (untyped) -> void } -> untyped
-    def open_timeout: () -> (Float | Integer)?
-    def read_timeout: () -> (Float | Integer)?
-    def write_timeout: () -> (Float | Integer)?
-    def debug_output: () -> _DebugOutput?
-    def max_reconnects: () -> (Integer | Float)
-    def rules: (?params: params?) -> Array[StreamRule]
-    def add_rules: (Array[addable_rule] | addable_rule rules, ?dry_run: bool) ?{ (Problem problem) -> void } -> Array[StreamRule]
-    def delete_rules: (Array[rule] | rule rules, ?dry_run: bool) ?{ (Problem problem) -> void } -> Integer
-    def marshal_dump: () -> bot
-    def encode_with: (untyped coder) -> bot
   end
 
   class OAuth2Authenticator < Authenticator
@@ -415,7 +360,6 @@ module X
     def put: (String endpoint, ?body? body, ?params: params?, ?form: params?, ?headers: headers, ?array_class: Class, ?object_class: object_class) ?{ (Response) -> void } -> untyped
     def delete: (String endpoint, ?params: params?, ?headers: headers, ?array_class: Class, ?object_class: object_class) ?{ (Response) -> void } -> untyped
     def get_stream: [T] (String endpoint, ?params: params?, ?headers: headers) { (Net::HTTPResponse http_response) -> T } -> T
-    def streaming: (?read_timeout: (Float | Integer)?, ?max_reconnects: Float | Integer) -> StreamingClient
     def close: () -> void
     def with_retries: [T] () { () -> T } -> T
     def marshal_dump: () -> bot

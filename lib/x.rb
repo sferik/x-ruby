@@ -2,10 +2,12 @@
 
 require "x/core"
 require "x/uploader"
+require "x/streaming"
 require "x/objects"
 require_relative "x/version"
 
 module X
   Client.include(Objects::API)
   Client.include(Uploader::API)
+  Client.include(Streaming::API)
 end

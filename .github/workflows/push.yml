@@ -55,7 +55,7 @@ jobs:
           # since `rake update_versions` writes the version into a version.rb of every gem, and the linter runs on any
           # Ruby file; a commit after it that changes documentation alone triggers none, and each is run on it by hand,
           # as CONTRIBUTING.md says. This workflow is left out, since it is the one running.
-          REQUIRED_WORKFLOWS: x-core x-uploader x-objects x linter
+          REQUIRED_WORKFLOWS: x-core x-uploader x-streaming x-objects x linter
         run: |
           deadline=$((SECONDS + 1800))
           while :; do
@@ -93,7 +93,7 @@ jobs:
       - name: Sign, push, and await each gem in dependency order
         run: |
           version=$(cat VERSION)
-          for name in x-core x-uploader x-objects x; do
+          for name in x-core x-uploader x-streaming x-objects x; do
             file=pkg/$name-$version.gem
             # A rerun after a failed push skips the gems the failed run already published
             if curl --silent --fail --output /dev/null "https://rubygems.org/api/v2/rubygems/$name/versions/$version.json"; then

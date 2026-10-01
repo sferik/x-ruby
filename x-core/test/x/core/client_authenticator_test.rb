@@ -103,7 +103,6 @@ module X
       client = Client.new(authenticator: OAuth2Authenticator.new(**test_oauth2_credentials))
 
       assert_raises(UnsupportedOperation) { client.app_only }
-      assert_raises(UnsupportedOperation) { client.streaming.stream("tweets/search/stream") { |_| } }
     end
   end
 end

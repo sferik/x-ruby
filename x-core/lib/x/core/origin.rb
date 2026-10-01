@@ -13,7 +13,7 @@ module X
     # the authenticator, which signs the Authorization header of a request, and any Authorization, Cookie, or
     # Proxy-Authorization header of the client or the request itself.
     #
-    # Internal to x-core: Client, StreamingClient, and RedirectHandler decide with it what a request carries.
+    # Internal to x-core: Client and RedirectHandler decide with it what a request carries.
     #
     # @api private
     module Origin

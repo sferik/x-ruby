@@ -4,19 +4,15 @@ require_relative "../../test_helper"
 
 module X
   class RequestContextTest < Minitest::Test
-    include StreamHelpers
-
     # The errors that name the request they were raised for, and the parsers and the connection that build them
     cover Core.const_get(:RequestContext)
     cover Core.const_get(:ResponseParser)
-    cover Core.const_get(:StreamParser)
     cover Core.const_get(:Connection)
     cover HTTPError
     cover InvalidResponse
     cover NetworkError
     cover TooManyRedirects
     cover Core.const_get(:RedirectHandler)
-    cover StreamingClient
 
     def setup
       # A client that raises at once, since these tests are about the error a failure raises rather than the
@@ -62,29 +58,6 @@ module X
 
       assert_equal "GET /2/users/1: The body of the 200 response is not JSON (application/json)", error.message
       assert_equal [:get, URI("https://api.x.com/2/users/1")], [error.http_method, error.uri]
-    end
-
-    def test_the_error_of_a_stream_the_api_refused_names_the_request
-      stub_request(:get, "https://api.x.com/2/tweets/search/stream")
-        .to_return(status: 401, body: '{"errors":[{"message":"Unauthorized"}]}', headers: {"Content-Type" => "application/json"})
-      error = assert_raises(Unauthorized) { stream_and_collect("tweets/search/stream") }
-
-      assert_equal "GET /2/tweets/search/stream: Unauthorized", error.message
-      assert_equal [:get, URI("https://api.x.com/2/tweets/search/stream")], [error.http_method, error.uri]
-    end
-
-    def parse_stream(response, request)
-      Core.const_get(:StreamParser).new.process(response:, response_parser: Core.const_get(:ResponseParser).new, request:) { flunk "unexpected yield" }
-    end
-
-    def test_the_error_of_a_stream_line_that_is_not_json_names_the_request
-      response = Net::HTTPOK.new("1.1", "200", "OK")
-      response.define_singleton_method(:read_body) { |&block| block.call("<html>\r\n") }
-      request = Net::HTTP::Get.new(URI("https://api.x.com/2/tweets/search/stream?expansions=author_id"))
-      error = assert_raises(InvalidResponse) { parse_stream(response, request) }
-
-      assert_equal "GET /2/tweets/search/stream: The body of the 200 response is not JSON (no content type)", error.message
-      assert_equal [:get, URI("https://api.x.com/2/tweets/search/stream?expansions=author_id")], [error.http_method, error.uri]
     end
 
     def test_the_error_of_too_many_redirects_names_the_request_redirected_last

@@ -8,17 +8,16 @@ module X
   # so that a caller cannot name one
   class PrivateInternalsTest < Minitest::Test
     def test_no_class_of_x_core_has_a_protected_method
-      [Client, StreamingClient, Core.const_get(:Connection), OAuth2Authenticator].each do |klass|
+      [Client, Core.const_get(:Connection), OAuth2Authenticator].each do |klass|
         assert_empty klass.protected_instance_methods, "Expected #{klass} to have no protected methods"
       end
     end
 
-    def test_what_a_copy_or_a_stream_reads_of_the_internals_of_a_client_is_private
+    def test_what_a_copy_reads_of_the_internals_of_a_client_is_private
       %i[proxy_url settings share_authenticator share_connection refreshing_rejected_token oauth2_authenticator
         oauth2_authenticator_in_use].each do |name|
         assert_includes Core.const_get(:ClientInternals).private_instance_methods, name
       end
-      assert_includes StreamingClient.private_instance_methods, :proxy_url
     end
 
     def test_a_client_has_no_private_method_but_initialize

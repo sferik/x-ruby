@@ -76,8 +76,7 @@ module X
 
       # The internals of a client
       #
-      # A copy of a client, which {#with} builds, and a streaming client, which reads the proxy of the client it
-      # streams for, read the internals of another client with this.
+      # A copy of a client, which {#with} builds, reads the internals of the client it copies with this.
       #
       # @api private
       # @param client [Client] the client

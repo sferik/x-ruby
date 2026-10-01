@@ -1,0 +1,121 @@
+# Signatures of the internals of x-streaming, which Steep checks the gem against, and which the gem does not ship
+module X
+  module Streaming
+    class CallbackError < StandardError
+      attr_reader error: StandardError
+
+      def initialize: (StandardError error) -> void
+    end
+
+    module Validator
+      extend Validator
+
+      INVALID_COUNT_OR_INFINITY: String
+      INVALID_ARRAY_CLASS: String
+      INVALID_OBJECT_CLASS: String
+
+      def count_or_infinity!: (Symbol name, untyped value) -> untyped
+      def parsing_classes!: (array_class: untyped, object_class: untyped) -> void
+    end
+
+    class ReconnectHandler
+      DEFAULT_MAX_RECONNECTS: Float
+      NETWORK_BACKOFF_STEP: Float
+      MAX_NETWORK_BACKOFF: Integer
+      HTTP_BACKOFF_START: Integer
+      RATE_LIMIT_BACKOFF_START: Integer
+      MAX_HTTP_BACKOFF: Integer
+      RECONNECTABLE_ERRORS: Array[singleton(NetworkError) | singleton(ServerError) | singleton(RequestTimeout) | singleton(Conflict) | singleton(TooManyRequests) | singleton(InvalidResponse)]
+
+      ConsumerError: singleton(StandardError)
+
+      type state = {reconnects: Integer}
+
+      attr_reader max_reconnects: Integer | Float
+      attr_reader max_rate_limit_wait: Integer | Float
+      def initialize: (?max_reconnects: Integer | Float, ?max_rate_limit_wait: Integer | Float) -> void
+      def handle: (^(untyped) -> void consumer) { (^(untyped) -> void) -> void } -> nil
+
+      private
+      def cause_of: (StandardError error) -> StandardError
+      def run_once: (^(^(untyped) -> void) -> void stream, ^(untyped) -> void deliver, state state) -> bool
+      def reconnectable?: (StandardError error) -> bool
+      def out_of_reconnects?: (StandardError? error, state state) -> bool
+      def delivery_to: (^(untyped) -> void consumer, state state) -> ^(untyped) -> void
+      def backoff: (StandardError error, Integer reconnects) -> (Float | Integer)
+      def network_backoff: (Integer reconnects) -> (Float | Integer)
+      def http_backoff: (Integer reconnects) -> Integer
+      def rate_limit_backoff: (TooManyRequests error, Integer reconnects) -> Integer
+    end
+
+    module StreamRules
+      extend StreamRules
+
+      NOT_A_RULE: String
+      NOT_A_RULE_TO_ADD: String
+
+      def deletion: (Array[untyped] ids, Array[untyped] values) -> Hash[Symbol, Array[untyped]]
+      def each_rule: (untyped rules) -> Array[untyped]
+      def rules_of: (Hash[String, untyped]? body) -> Array[StreamRule]
+      def next_token: (Hash[String, untyped]? body, Array[String] spent) -> String?
+      def rule_to_add: (StreamingClient::addable_rule rule) -> Hash[untyped, untyped]
+      def identifier_of: (StreamingClient::rule rule) -> (String | Integer)?
+      def value_of: (StreamingClient::rule rule) -> String
+    end
+
+    class StreamParser
+      LINE_DELIMITER: String
+
+      def process: (response: Net::HTTPResponse, array_class: Class, object_class: untyped, client: Client, on_line: ^(String) -> void) { (untyped) -> void } -> void
+
+      private
+      def decode_line: (String line, response: Net::HTTPResponse, array_class: Class, object_class: untyped, client: Client) -> untyped
+      def tagging_callback_errors: [T] () { () -> T } -> T
+      def read_lines: (response: Net::HTTPResponse, decode: ^(String) -> untyped) { (untyped) -> void } -> void
+      def process_buffer: (buffer: String, decode: ^(String) -> untyped) { (untyped) -> void } -> void
+      def process_remaining: (buffer: String, decode: ^(String) -> untyped) { (untyped) -> void } -> void
+      def yield_json: (line: String, decode: ^(String) -> untyped) { (untyped) -> void } -> void
+    end
+  end
+
+  class StreamError < Streaming::Error
+    @problems: Array[Problem]
+    @http_method: Symbol?
+    @uri: URI::Generic?
+
+    private
+    def naming_request: (String message) -> String
+  end
+
+  class RulesRejected < Streaming::Error
+    @problems: Array[Problem]
+    @result: Array[StreamRule] | Integer
+  end
+
+  class StreamRule
+    NOT_A_STRING: String
+    MARSHAL_FORMAT: Integer
+
+    private
+    def string!: (Symbol name, untyped string) -> String
+  end
+
+  class StreamingClient
+    NO_BLOCK_MESSAGE: String
+    ENDED_MESSAGE: String
+    RULES_ENDPOINT: String
+    JSON_CLASSES: Hash[Symbol, Class]
+    REFUSAL_MESSAGE: String
+
+    @stream_client: Client
+    @reconnect_handler: Streaming::ReconnectHandler
+    @stream_parser: Streaming::StreamParser
+
+    private
+    def change_rules: (Hash[Symbol, untyped] body, dry_run: bool) -> Hash[String, untyped]?
+    def reporting: [T < Array[StreamRule] | Integer] (Hash[String, untyped]? body, T result) ?{ (Problem problem) -> void } -> T
+    def read: (Net::HTTPResponse response, array_class: Class, object_class: object_class) { (untyped) -> void } -> void
+    def app_client: () -> Client
+    def report: (Net::HTTPResponse response, String line) -> void
+  end
+end

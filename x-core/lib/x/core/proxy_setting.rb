@@ -2,11 +2,11 @@
 
 module X
   module Core
-    # The proxy URL a connection, the internals of a client, or a streaming client was built with, included into each
+    # The proxy URL a connection, or the internals of a client, was built with, included into each
     #
-    # A proxy URL can hold the user and password of the proxy, so none of the three reveals it to a caller, as a
-    # client reveals none of its secrets. The reader is private, and a streaming client, which builds its connection
-    # with the proxy of the client it streams for, calls it on the internals of that client with __send__.
+    # A proxy URL can hold the user and password of the proxy, so neither reveals it to a caller, as a client reveals
+    # none of its secrets. The reader is private, and a copy of a client, which opens its connections with the proxy
+    # of the client it copies, calls it on the internals of that client with __send__.
     #
     # @api private
     module ProxySetting

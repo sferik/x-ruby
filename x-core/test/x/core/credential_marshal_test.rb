@@ -10,7 +10,7 @@ module X
 
     def holders
       client = Client.new(api_key: "KEY", api_key_secret: "SECRET", bearer_token: "BEARER")
-      [client, client.streaming, BearerTokenAuthenticator.new(bearer_token: "BEARER"),
+      [client, BearerTokenAuthenticator.new(bearer_token: "BEARER"),
         OAuth1Authenticator.new(api_key: "KEY", api_key_secret: "SECRET", access_token: "1-TOKEN", access_token_secret: "TOKEN_SECRET"),
         OAuth2Authenticator.new(client_id: "CLIENT", access_token: "ACCESS", refresh_token: "REFRESH"),
         AppOnlyAuthenticator.new(api_key: "KEY", api_key_secret: "SECRET"), Class.new(Authenticator).new,

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Update the root bundle and the separate bundles of x-core, x-uploader, and x-objects
+# Update the root bundle and the separate bundles of x-core, x-uploader, x-streaming, and x-objects
 set -euo pipefail
 IFS=$'\n\t'
 set -vx
@@ -7,4 +7,5 @@ set -vx
 bundle update --all
 (cd x-core && bundle update --all)
 (cd x-uploader && bundle update --all)
+(cd x-streaming && bundle update --all)
 (cd x-objects && bundle update --all)

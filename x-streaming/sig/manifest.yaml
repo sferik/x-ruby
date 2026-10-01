@@ -1,0 +1,6 @@
+# The standard libraries the signatures of x-streaming refer to, which rbs collection loads for code that depends on it
+#
+# rbs collection reads every library named here as a standard library, so the gems x-streaming depends on are left to
+# its gemspec, from which it installs their signatures.
+dependencies:
+  - name: uri

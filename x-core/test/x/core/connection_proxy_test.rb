@@ -31,11 +31,10 @@ module X
       end
     end
 
-    def test_neither_a_client_nor_a_streaming_client_reveals_its_proxy
+    def test_a_client_does_not_reveal_its_proxy
       client = Client.new(proxy_url: "http://user:pass@example.com:8080")
 
       refute_respond_to client, :proxy_url
-      refute_respond_to client.streaming, :proxy_url
     end
 
     def test_invalid_proxy_url

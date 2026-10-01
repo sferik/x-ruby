@@ -160,51 +160,6 @@ module X
       def backoff: (Integer retries) -> Float
     end
 
-    class ReconnectHandler
-      DEFAULT_MAX_RECONNECTS: Float
-      NETWORK_BACKOFF_STEP: Float
-      MAX_NETWORK_BACKOFF: Integer
-      HTTP_BACKOFF_START: Integer
-      RATE_LIMIT_BACKOFF_START: Integer
-      MAX_HTTP_BACKOFF: Integer
-      RECONNECTABLE_ERRORS: Array[singleton(NetworkError) | singleton(ServerError) | singleton(RequestTimeout) | singleton(Conflict) | singleton(TooManyRequests) | singleton(InvalidResponse)]
-
-      ConsumerError: singleton(StandardError)
-
-      type state = {reconnects: Integer}
-
-      attr_reader max_reconnects: Integer | Float
-      attr_reader max_rate_limit_wait: Integer | Float
-      def initialize: (?max_reconnects: Integer | Float, ?max_rate_limit_wait: Integer | Float) -> void
-      def handle: (^(untyped) -> void consumer) { (^(untyped) -> void) -> void } -> nil
-
-      private
-      def cause_of: (StandardError error) -> StandardError
-      def run_once: (^(^(untyped) -> void) -> void stream, ^(untyped) -> void deliver, state state) -> bool
-      def reconnectable?: (StandardError error) -> bool
-      def out_of_reconnects?: (StandardError? error, state state) -> bool
-      def delivery_to: (^(untyped) -> void consumer, state state) -> ^(untyped) -> void
-      def backoff: (StandardError error, Integer reconnects) -> (Float | Integer)
-      def network_backoff: (Integer reconnects) -> (Float | Integer)
-      def http_backoff: (Integer reconnects) -> Integer
-      def rate_limit_backoff: (TooManyRequests error, Integer reconnects) -> Integer
-    end
-
-    module StreamRules
-      extend StreamRules
-
-      NOT_A_RULE: String
-      NOT_A_RULE_TO_ADD: String
-
-      def deletion: (Array[untyped] ids, Array[untyped] values) -> Hash[Symbol, Array[untyped]]
-      def each_rule: (untyped rules) -> Array[untyped]
-      def rules_of: (Hash[String, untyped]? body) -> Array[StreamRule]
-      def next_token: (Hash[String, untyped]? body, Array[String] spent) -> String?
-      def rule_to_add: (StreamingClient::addable_rule rule) -> Hash[untyped, untyped]
-      def identifier_of: (StreamingClient::rule rule) -> (String | Integer)?
-      def value_of: (StreamingClient::rule rule) -> String
-    end
-
     module Origin
       extend Origin
 
@@ -252,21 +207,6 @@ module X
       def error_class: (Net::HTTPResponse response) -> (singleton(HTTPError) | singleton(BadGateway) | singleton(BadRequest) | singleton(Conflict) | singleton(Forbidden) | singleton(GatewayTimeout) | singleton(Gone) | singleton(InternalServerError) | singleton(MethodNotAllowed) | singleton(NotAcceptable) | singleton(NotFound) | singleton(PayloadTooLarge) | singleton(PaymentRequired) | singleton(RequestTimeout) | singleton(ServiceUnavailable) | singleton(TooManyRequests) | singleton(Unauthorized) | singleton(UnavailableForLegalReasons) | singleton(UnprocessableEntity) | singleton(UnsupportedMediaType))
     end
 
-    class StreamParser
-      LINE_DELIMITER: String
-
-      def process: (response: Net::HTTPResponse, response_parser: ResponseParser, ?array_class: Class?, ?object_class: untyped, ?client: Client?, ?on_body: _BodyHook?, ?request: Net::HTTPRequest?) { (untyped) -> void } -> void
-
-      private
-      def raise_unless_successful: (response: Net::HTTPResponse, response_parser: ResponseParser, on_body: _BodyHook?, request: Net::HTTPRequest?) -> void
-      def decode_line: (String line, response_parser: ResponseParser, array_class: Class?, object_class: untyped, client: Client?, request: Net::HTTPRequest?) -> untyped
-      def tagging_callback_errors: [T] () { () -> T } -> T
-      def read_lines: (response: Net::HTTPResponse, decode: ^(String) -> untyped) { (untyped) -> void } -> void
-      def process_buffer: (buffer: String, decode: ^(String) -> untyped) { (untyped) -> void } -> void
-      def process_remaining: (buffer: String, decode: ^(String) -> untyped) { (untyped) -> void } -> void
-      def yield_json: (line: String, decode: ^(String) -> untyped) { (untyped) -> void } -> void
-    end
-
     module ClientTokenRefresh : _TokenRefreshHost
       SHARED_EXPIRATION: String
       TOKEN_OPTIONS: Array[Symbol]
@@ -301,7 +241,7 @@ module X
       def access_token: () -> String?
       def refresh_token: () -> String?
       def new_oauth2_authenticator: (Client client, client_id: String, access_token: String, refresh_token: String?) -> OAuth2Authenticator
-      def refreshing_rejected_token: [T] (?Client? client) { () -> T } -> T
+      def refreshing_rejected_token: [T] (Client client) { () -> T } -> T
     end
 
     module ClientSettings : _SettingsHost
@@ -497,7 +437,6 @@ module X
       extend SettingValidator
 
       def count!: (Symbol name, untyped value) -> untyped
-      def count_or_infinity!: (Symbol name, untyped value) -> untyped
       def seconds!: (Symbol name, untyped value) -> untyped
       def finite_seconds!: (Symbol name, untyped value) -> untyped
       def timeout!: (Symbol name, untyped value) -> untyped
@@ -716,17 +655,6 @@ module X
     include Core::RequestContext
   end
 
-  class StreamError < Error
-    include Core::RequestContext
-
-    @problems: Array[Problem]
-  end
-
-  class RulesRejected < Error
-    @problems: Array[Problem]
-    @result: Array[StreamRule] | Integer
-  end
-
   class TooManyRedirects < Error
     include Core::RequestContext
   end
@@ -740,11 +668,6 @@ module X
 
   class TooManyRequests < ClientError
     @rate_limits: Array[RateLimit]
-  end
-
-  # What a stream passes each line of its body, and the body of a failed response before it raises
-  interface _BodyHook
-    def call: (?String body) -> untyped
   end
 
   class Response
@@ -775,38 +698,6 @@ module X
     NOT_A_STRING: String
     NOT_A_STRING_OR_NIL: String
     MARSHAL_FORMAT: Integer
-  end
-
-  class StreamRule
-    NOT_A_STRING: String
-    MARSHAL_FORMAT: Integer
-
-    private
-    def string!: (Symbol name, untyped string) -> String
-  end
-
-  class StreamingClient
-    include Core::CredentialHolder
-    include Core::ProxySetting
-
-    NO_BLOCK_MESSAGE: String
-    ENDED_MESSAGE: String
-    RULES_ENDPOINT: String
-    JSON_CLASSES: Hash[Symbol, Class]
-
-    @connection: Core::Connection
-    @reconnect_handler: Core::ReconnectHandler
-    @request_builder: Core::RequestBuilder
-    @response_parser: Core::ResponseParser
-    @stream_parser: Core::StreamParser
-
-    private
-    def change_rules: (Hash[Symbol, untyped] body, dry_run: bool) -> Hash[String, untyped]?
-    def reporting: [T < Array[StreamRule] | Integer] (Hash[String, untyped]? body, T result) ?{ (Problem problem) -> void } -> T
-    def open_stream: (URI::Generic uri, headers headers, array_class: Class, object_class: object_class) { (untyped) -> void } -> void
-    def app_client: () -> Client
-    def request_for: (URI::Generic uri, headers headers) -> Net::HTTPRequest
-    def report: (URI::Generic uri, Net::HTTPResponse response, String? body) -> void
   end
 
   class OAuth2Authenticator < Authenticator

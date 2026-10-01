@@ -60,11 +60,9 @@ module X
 
     def test_a_stream_is_opened_with_it
       stub_request(:get, "https://api.x.com/2/tweets/sample/stream").with(headers: {"Authorization" => "Signed get /2/tweets/sample/stream"})
-        .to_return(body: "{\"data\":{\"id\":\"1\"}}\r\n")
-      streamed = []
-      until_the_stream_ends { @client.streaming(max_reconnects: 0).stream("tweets/sample/stream") { |object| streamed << object } }
+        .to_return(body: "{}")
 
-      assert_equal [{"data" => {"id" => "1"}}], streamed
+      assert_equal "{}", @client.get_stream("tweets/sample/stream") { |response| response.read_body { |chunk| break chunk } }
     end
   end
 end

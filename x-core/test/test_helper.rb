@@ -121,15 +121,6 @@ end
 
 # A class that builds objects from a whole response, as the object layer's resources do, accepting the keywords
 # later versions of x-core may pass it
-# Run a stream that reconnects no more to its end, which the server ending it raises for; any other error is raised
-def until_the_stream_ends
-  yield
-
-  flunk "the stream returned rather than raise once it ended"
-rescue X::NetworkError => e
-  raise unless e.message.end_with?("The stream ended")
-end
-
 class ResponseBuilder
   # Return what it was given, so a test can see the body and the client
   def self.from_response(body, client:, **) = {body:, client:}
@@ -160,45 +151,5 @@ module LocalServer
     WebMock.disable_net_connect!
     thread&.kill
     server&.close
-  end
-end
-
-# Stub a streaming client's connection and collect what it yields
-module StreamHelpers
-  # The streaming client of a client, which reconnects no stream, since a stub delivers its chunks once
-  def streaming(client: @client)
-    @streaming ||= {}
-    @streaming[client] ||= client.streaming(max_reconnects: 0)
-  end
-
-  def stream_and_collect(endpoint, client: @client, **options)
-    results = []
-    until_the_stream_ends { streaming(client:).stream(endpoint, **options) { |json| results << json } }
-    results
-  end
-
-  def with_stubbed_stream(chunks:, client: @client, &test_block)
-    mock_response = mock_streaming_response(chunks:)
-    connection = streaming(client:).instance_variable_get(:@connection)
-    connection.stub(:perform_stream, ->(**_, &block) { block.call(mock_response) }, &test_block)
-  end
-
-  def with_stream_request(mock_response, client: @client, &test_block)
-    captured_request = nil
-    connection = streaming(client:).instance_variable_get(:@connection)
-    connection.stub(:perform_stream, lambda { |request:, &block|
-      captured_request = request
-      block.call(mock_response)
-    }, &test_block)
-    captured_request
-  end
-
-  def mock_streaming_response(chunks:)
-    response = Minitest::Mock.new
-    response.expect(:is_a?, true, [Net::HTTPSuccess])
-    response.expect(:read_body, nil) do |&block|
-      chunks.each { |chunk| block.call(chunk) }
-    end
-    response
   end
 end

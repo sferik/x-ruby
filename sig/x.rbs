@@ -6,5 +6,6 @@ module X
   class Client
     include Objects::API
     include Uploader::API
+    include Streaming::API
   end
 end

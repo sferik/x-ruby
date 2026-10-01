@@ -243,15 +243,15 @@ module X
       # Run a request, again if a refresh replaces an OAuth 2.0 token the API rejects
       #
       # Only a rejection by the origin of the base URL, which the token is sent to, refreshes it; see {Origin}. An
-      # app-only bearer token the API rejects is fetched again the same way; see {AppOnlyAuthenticator}. A streaming
-      # client runs each stream through it, and calls it with __send__, since it is private.
+      # app-only bearer token the API rejects is fetched again the same way; see {AppOnlyAuthenticator}. A stream
+      # that Client#get_stream opens runs through it too.
       #
       # @api private
-      # @param client [Client, nil] the client these are the internals of, which a refresh that fails to report is
-      #   raised with, or nil for a stream, which authenticates as the app and so refreshes no OAuth 2.0 token
+      # @param client [Client] the client these are the internals of, which a refresh that fails to report is raised
+      #   with
       # @yield runs the request
       # @return [Object] what the block returns
-      def refreshing_rejected_token(client = nil, &)
+      def refreshing_rejected_token(client, &)
         case (current = @authenticator)
         when OAuth2Authenticator then current.__send__(:retrying_rejected_token, URI(base_url), @connection, client, &)
         when AppOnlyAuthenticator then current.__send__(:retrying_rejected_token, URI(base_url), &)

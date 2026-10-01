@@ -5,7 +5,6 @@ require_relative "../../test_helper"
 module X
   class ClientEndpointValidationTest < Minitest::Test
     cover_client
-    cover StreamingClient
 
     NOT_A_URL = "it is not a valid URL; escape what a URL may not hold, such as a space"
     NOT_HTTP = "it does not name an http or https URL"
@@ -58,17 +57,6 @@ module X
       @client.get("https://upload.x.com/1.1/media/upload.json", params: {command: "STATUS"})
 
       assert_requested :get, "https://upload.x.com/1.1/media/upload.json?command=STATUS"
-    end
-
-    def test_a_stream_of_an_invalid_endpoint_raises_before_it_connects
-      streaming = @client.streaming
-      invalid = {"tweets/search/stream?query=a%zz" => NOT_A_URL, "tweets/search stream" => NOT_A_URL, "foo:bar" => NOT_HTTP}
-      invalid.each do |endpoint, reason|
-        error = assert_raises(ArgumentError) { streaming.stream(endpoint) { flunk "unexpected yield" } }
-
-        assert_equal "Invalid endpoint #{endpoint.inspect}: #{reason}", error.message
-      end
-      assert_not_requested :any, /api\.x\.com/
     end
   end
 end

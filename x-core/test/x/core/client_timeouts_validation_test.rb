@@ -7,7 +7,6 @@ module X
     cover_client
     cover Core.const_get(:Connection)
     cover Core.const_get(:SettingValidator)
-    cover StreamingClient
     cover OAuth2Authorization
 
     TIMEOUTS = %i[open_timeout read_timeout write_timeout].freeze
@@ -40,11 +39,6 @@ module X
 
     def test_a_copy_checks_the_timeouts_it_is_given
       assert_equal 'open_timeout must be a finite number of seconds of at least 0, or nil for no timeout, not "5"', message_of { Client.new.with(open_timeout: "5") }
-    end
-
-    def test_a_streaming_client_checks_its_read_timeout
-      assert_equal 'read_timeout must be a finite number of seconds of at least 0, or nil for no timeout, not "30"', message_of { Client.new.streaming(read_timeout: "30") }
-      assert_nil Client.new.streaming(read_timeout: nil).read_timeout
     end
 
     def test_an_authorization_checks_its_timeouts

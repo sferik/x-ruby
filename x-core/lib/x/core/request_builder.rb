@@ -10,7 +10,7 @@ module X
   module Core
     # Builds HTTP requests for the X API
     #
-    # Internal to x-core: Client and StreamingClient build their requests with it.
+    # Internal to x-core: Client builds its requests with it.
     #
     # @api private
     class RequestBuilder

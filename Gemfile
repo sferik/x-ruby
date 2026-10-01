@@ -7,6 +7,7 @@ gemspec
 
 gem "x-core", path: "x-core"
 gem "x-uploader", path: "x-uploader"
+gem "x-streaming", path: "x-streaming"
 gem "x-objects", path: "x-objects"
 
 gem "fiddle", ">= 1.1.2"

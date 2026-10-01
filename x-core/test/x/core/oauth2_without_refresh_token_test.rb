@@ -11,7 +11,6 @@ module X
     cover OAuth2Authenticator
     cover Core.const_get(:OAuth2Refresh)
     cover OAuth2Authorization
-    cover StreamingClient
 
     TOKEN_URL = "https://api.x.com/2/oauth2/token"
     CREDENTIALS = {client_id: TEST_CLIENT_ID, access_token: TEST_ACCESS_TOKEN}.freeze
@@ -27,13 +26,6 @@ module X
 
     def test_a_client_cannot_authenticate_as_the_app
       assert_raises(UnsupportedOperation) { Client.new(**CREDENTIALS).app_only }
-    end
-
-    def test_a_stream_raises_before_it_sends_the_token_of_the_user
-      error = assert_raises(UnsupportedOperation) { Client.new(**CREDENTIALS).streaming.stream("tweets/search/stream") { flunk "unexpected yield" } }
-
-      assert_match(/OAuth 2.0 as a user/, error.message)
-      assert_not_requested :get, "https://api.x.com/2/tweets/search/stream"
     end
 
     def test_an_expired_token_is_sent_as_it_is_rather_than_refreshed

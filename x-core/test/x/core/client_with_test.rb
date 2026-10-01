@@ -12,18 +12,6 @@ module X
         default_object_class: OpenStruct, max_redirects: 3)
     end
 
-    def test_a_streaming_client_takes_a_read_timeout_and_reconnects
-      streaming = Client.new.streaming(read_timeout: 5, max_reconnects: 2)
-
-      assert_equal [5, 2], [streaming.read_timeout, streaming.max_reconnects]
-    end
-
-    def test_a_streaming_client_defaults_its_read_timeout_and_reconnects
-      streaming = Client.new.streaming
-
-      assert_equal [StreamingClient::DEFAULT_READ_TIMEOUT, StreamingClient::DEFAULT_MAX_RECONNECTS], [streaming.read_timeout, streaming.max_reconnects]
-    end
-
     def test_a_copy_keeps_the_credentials
       copy = @client.with(base_url: "https://api.x.com/1.1/")
 

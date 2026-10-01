@@ -4,8 +4,6 @@ require_relative "../../test_helper"
 
 module X
   class ClientOriginTest < Minitest::Test
-    include StreamHelpers
-
     cover_client
     cover Core.const_get(:Origin)
 
@@ -81,20 +79,6 @@ module X
       client.get("users/me")
 
       assert_equal AUTHORIZATION, authorization_sent_to("https://example.com:443/v1/users/me")
-    end
-
-    def test_a_stream_of_the_base_url_carries_the_credentials
-      stub_request(:get, "https://api.x.com/2/tweets/search/stream").to_return(body: "")
-      stream_and_collect("tweets/search/stream")
-
-      assert_equal AUTHORIZATION, authorization_sent_to("https://api.x.com:443/2/tweets/search/stream")
-    end
-
-    def test_a_stream_of_another_origin_carries_none
-      stub_request(:get, "https://example.com/stream").to_return(body: "")
-      stream_and_collect("https://example.com/stream")
-
-      assert_nil authorization_sent_to("https://example.com:443/stream")
     end
   end
 end

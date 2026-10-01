@@ -5,7 +5,6 @@ require_relative "../../test_helper"
 module X
   class ClientOnResponseTest < Minitest::Test
     cover_client
-    cover StreamingClient
 
     def setup
       @responses = []
@@ -44,23 +43,6 @@ module X
 
       assert_equal [:get, "https://api.x.com/2/new"], [error.http_method, error.uri.to_s]
       assert_match(%r{\AGET /2/new: }, error.message)
-    end
-
-    def test_on_response_receives_each_object_a_stream_delivers_before_it_is_yielded
-      stub_request(:get, "https://api.x.com/2/tweets/sample/stream")
-        .to_return(body: "{\"data\":{\"id\":\"1\"},\"includes\":{\"users\":[{\"id\":\"2\"}]}}\r\n\r\n{\"data\":{\"id\":\"3\"}}\r\n", headers: {"x-rate-limit-limit" => "50", "x-rate-limit-remaining" => "49", "x-rate-limit-reset" => "1"})
-      events = []
-      client = Client.new(on_response: ->(response) { events << [response.resource_count, response.rate_limit.remaining, response.uri.path] })
-      until_the_stream_ends { client.streaming(max_reconnects: 0).stream("tweets/sample/stream") { |post| events << post.dig("data", "id") } }
-
-      assert_equal [[2, 49, "/2/tweets/sample/stream"], "1", [1, 49, "/2/tweets/sample/stream"], "3"], events
-    end
-
-    def test_on_response_receives_a_failed_stream_before_the_error
-      stub_request(:get, "https://api.x.com/2/tweets/search/stream").to_return(status: 429, body: '{"title":"Too Many Requests"}', headers: {"Content-Type" => "application/json"})
-
-      assert_raises(TooManyRequests) { @client.streaming(max_reconnects: 0).stream("tweets/search/stream") { flunk "unexpected yield" } }
-      assert_equal [[:get, 429, '{"title":"Too Many Requests"}']], @responses.map { |response| [response.http_method, response.status, response.body] }
     end
 
     def test_on_response_is_optional_and_a_copy_can_add_one

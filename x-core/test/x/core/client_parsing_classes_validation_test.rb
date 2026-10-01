@@ -7,7 +7,6 @@ module X
   # than once the API has answered it
   class ClientParsingClassesValidationTest < Minitest::Test
     cover_client
-    cover StreamingClient
     cover Core.const_get(:SettingValidator)
 
     ARRAY_CLASS_MESSAGE = "%s must be a Class that JSON.parse builds each array into, such as Array, not %s"
@@ -48,15 +47,6 @@ module X
       assert_equal format(OBJECT_CLASS_MESSAGE, :object_class, '"Hash"'), message_of { client.post("tweets", object_class: "Hash") }
       assert_raises(ArgumentError) { client.put("tweets/1", array_class: nil) }
       assert_raises(ArgumentError) { client.delete("tweets/1", object_class: nil) }
-      assert_not_requested :any, /api\.x\.com/
-    end
-
-    def test_the_classes_of_a_stream_are_checked_before_it_is_opened
-      streaming_client = Client.new(bearer_token: TEST_BEARER_TOKEN).streaming
-
-      assert_equal format(ARRAY_CLASS_MESSAGE, :array_class, "5"), message_of { streaming_client.stream("tweets/search/stream", array_class: 5) { nil } }
-      assert_equal format(OBJECT_CLASS_MESSAGE, :object_class, '"Hash"'),
-        message_of { streaming_client.stream("tweets/search/stream", object_class: "Hash") { nil } }
       assert_not_requested :any, /api\.x\.com/
     end
   end

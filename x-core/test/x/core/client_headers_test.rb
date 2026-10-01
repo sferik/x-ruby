@@ -5,7 +5,6 @@ require_relative "../../test_helper"
 module X
   class ClientHeadersTest < Minitest::Test
     cover_client
-    cover StreamingClient
 
     def test_a_client_sends_no_headers_of_its_own_by_default
       assert_empty Client.new.headers
@@ -81,30 +80,6 @@ module X
 
     def test_a_copy_can_replace_the_headers
       assert_equal({"X-Trace" => "xyz"}, Client.new(headers: {"X-Trace" => "abc"}).with(headers: {"X-Trace" => "xyz"}).headers)
-    end
-
-    def test_a_stream_sends_the_headers_of_its_client
-      client = Client.new(bearer_token: TEST_BEARER_TOKEN, headers: {"X-Trace" => "abc"})
-      stub_request(:get, "https://api.x.com/2/tweets/search/stream").to_return(body: "")
-      until_the_stream_ends { client.streaming(max_reconnects: 0).stream("tweets/search/stream") { |object| object } }
-
-      assert_requested :get, "https://api.x.com/2/tweets/search/stream", headers: {"X-Trace" => "abc"}
-    end
-
-    def test_a_header_of_a_stream_replaces_one_of_the_client
-      client = Client.new(bearer_token: TEST_BEARER_TOKEN, headers: {"X-Trace" => "client"})
-      stub_request(:get, "https://api.x.com/2/tweets/search/stream").to_return(body: "")
-      until_the_stream_ends { client.streaming(max_reconnects: 0).stream("tweets/search/stream", headers: {"X-Trace" => "stream"}) { |object| object } }
-
-      assert_requested :get, "https://api.x.com/2/tweets/search/stream", headers: {"X-Trace" => "stream"}
-    end
-
-    def test_a_header_of_a_stream_replaces_one_of_the_client_named_in_another_case
-      client = Client.new(bearer_token: TEST_BEARER_TOKEN, headers: {"x-trace" => "client"})
-      stub_request(:get, "https://api.x.com/2/tweets/search/stream").to_return(body: "")
-      until_the_stream_ends { client.streaming(max_reconnects: 0).stream("tweets/search/stream", headers: {"X-Trace" => "stream"}) { |object| object } }
-
-      assert_requested :get, "https://api.x.com/2/tweets/search/stream", headers: {"X-Trace" => "stream"}
     end
 
     def test_a_redirect_to_another_origin_drops_a_header_of_the_client_that_carries_credentials

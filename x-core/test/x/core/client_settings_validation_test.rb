@@ -9,7 +9,6 @@ module X
     cover Core.const_get(:RedirectHandler)
     cover Core.const_get(:RateLimitHandler)
     cover Core.const_get(:RetryHandler)
-    cover Core.const_get(:ReconnectHandler)
 
     def message_of(&) = assert_raises(ArgumentError, &).message
 
@@ -93,16 +92,6 @@ module X
       assert_equal 'max_retries must be an Integer of at least 0, not "1"', message_of { Client.new.with(max_retries: "1") }
     end
 
-    def test_reconnects_that_are_neither_a_count_nor_infinity_are_refused_when_the_stream_is_built
-      messages = ["5", nil, 1.5, -1, -Float::INFINITY].map { |value| message_of { Client.new.streaming(max_reconnects: value) } }
-
-      assert_equal ['"5"', "nil", "1.5", "-1", "-Infinity"].map { |value| "max_reconnects must be an Integer of at least 0, or Float::INFINITY for no limit, not #{value}" }, messages
-    end
-
-    def test_reconnects_of_zero_or_infinity_are_allowed
-      assert_equal [0, Float::INFINITY], [0, Float::INFINITY].map { |value| Client.new.streaming(max_reconnects: value).max_reconnects }
-    end
-
     def test_hooks_that_do_not_respond_to_call_are_refused_without_revealing_them
       messages = %i[on_response save_tokens].map { |name| message_of { Client.new(name => "SECRET") } }
 
@@ -121,7 +110,7 @@ module X
     def test_the_validator_returns_what_it_checked
       validator = Core.const_get(:SettingValidator)
 
-      assert_equal [2, 900, Float::INFINITY], [validator.count!(:max_retries, 2), validator.seconds!(:max_rate_limit_wait, 900), validator.count_or_infinity!(:max_reconnects, Float::INFINITY)]
+      assert_equal [2, 900], [validator.count!(:max_retries, 2), validator.seconds!(:max_rate_limit_wait, 900)]
       refute_respond_to validator, :count?
     end
   end

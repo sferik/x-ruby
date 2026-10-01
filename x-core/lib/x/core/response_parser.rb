@@ -30,7 +30,7 @@ module X
   module Core
     # Parses HTTP responses from the X API
     #
-    # Internal to x-core: Client and StreamingClient parse responses with it.
+    # Internal to x-core: Client parses responses with it.
     #
     # @api private
     class ResponseParser

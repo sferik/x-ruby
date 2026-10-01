@@ -10,9 +10,7 @@ module X
     cover HTTPError
     cover NetworkError
     cover InvalidResponse
-    cover StreamError
     cover TooManyRedirects
-    cover RulesRejected
     cover Response
     cover RateLimit
     cover Core.const_get(:BuiltResponse)
@@ -44,10 +42,7 @@ module X
       end
     end
 
-    def test_the_errors_of_a_line_of_a_stream_name_the_request_of_the_stream
-      problems = [Problem.new({"title" => "operational-disconnect"})]
-
-      assert_equal "GET /2/users/1: operational-disconnect", StreamError.new(problems, http_method: :get, uri: URI_OF_REQUEST).message
+    def test_the_error_of_a_line_of_a_stream_names_the_request_of_the_stream
       assert_equal [:get, URI_OF_REQUEST], InvalidResponse.new(http_response: not_found, body: "<", http_method: :get, uri: URI_OF_REQUEST).then { |error| [error.http_method, error.uri] }
     end
 
@@ -55,13 +50,6 @@ module X
       error = InvalidResponse.new(http_response: not_found, body: "<html>")
 
       assert_equal [404, "<html>", NOT_FOUND[:body]], [error.status, error.body, error.http_response.body]
-    end
-
-    def test_the_errors_of_problems_are_built_from_problems
-      problems = [Problem.new({"title" => "Invalid Rule", "detail" => "Too long"})]
-
-      assert_equal problems, StreamError.new(problems).problems
-      assert_equal [problems, 0], RulesRejected.new(problems, result: 0).then { |error| [error.problems, error.result] }
     end
 
     def test_a_response_is_built_from_a_response

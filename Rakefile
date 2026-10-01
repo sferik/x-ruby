@@ -3,14 +3,14 @@
 require "bundler/gem_tasks"
 
 # The gems in this repository, in dependency order, released in lockstep
-GEMS = {"x-core" => "x-core", "x-uploader" => "x-uploader", "x-objects" => "x-objects", "x" => "."}.freeze
+GEMS = {"x-core" => "x-core", "x-uploader" => "x-uploader", "x-streaming" => "x-streaming", "x-objects" => "x-objects", "x" => "."}.freeze
 
 # The one file that holds the version, which every gemspec reads
 VERSION_FILE = File.expand_path("VERSION", __dir__)
 
 # The files that hold each gem's runtime version constant, written from VERSION_FILE
 VERSION_CONSTANT_FILES = %w[lib/x/version.rb x-core/lib/x/core/version.rb x-uploader/lib/x/uploader/version.rb
-  x-objects/lib/x/objects/version.rb].map { |path| File.expand_path(path, __dir__) }.freeze
+  x-streaming/lib/x/streaming/version.rb x-objects/lib/x/objects/version.rb].map { |path| File.expand_path(path, __dir__) }.freeze
 
 # The version in VERSION_FILE
 def version
@@ -37,7 +37,7 @@ end
 
 # Build every gem into the pkg directory (gem push is handled by GitHub Actions with attestations)
 Rake::Task["build"].clear
-desc "Build x-core, x-uploader, x-objects, and x into the pkg directory"
+desc "Build x-core, x-uploader, x-streaming, x-objects, and x into the pkg directory"
 task :build do
   mkdir_p "pkg"
   GEMS.each do |name, dir|
@@ -55,12 +55,12 @@ end
 # it depends on from RubyGems rather than pkg, and push only x
 %w[install install:local build:checksum release:rubygem_push].each { |name| Rake::Task[name].clear }
 
-desc "Build and install x-core, x-uploader, x-objects, and x into system gems"
+desc "Build and install x-core, x-uploader, x-streaming, x-objects, and x into system gems"
 task install: :build do
   GEMS.each_key { |name| Bundler.with_original_env { sh "gem", "install", gem_path(name) } }
 end
 
-desc "Build and install x-core, x-uploader, x-objects, and x into system gems without network access"
+desc "Build and install x-core, x-uploader, x-streaming, x-objects, and x into system gems without network access"
 task "install:local" => :build do
   GEMS.each_key { |name| Bundler.with_original_env { sh "gem", "install", gem_path(name), "--local" } }
 end
@@ -78,7 +78,7 @@ task release: %w[check_versions release:guard_main build release:guard_clean rel
 require "rake/testtask"
 
 # The gems with their own directory, Gemfile, test suite, and mutation config
-SUBGEMS = %w[x-core x-uploader x-objects].freeze
+SUBGEMS = %w[x-core x-uploader x-streaming x-objects].freeze
 
 # Run a command inside a gem's directory with that gem's own bundle, installing the bundle if needed
 def in_gem(dir, *command)
@@ -145,7 +145,7 @@ task steep: SUBGEMS.map { |name| "steep:#{name}" } + ["steep:x"]
 require "yard"
 
 YARD::Rake::YardocTask.new(:yard) do |t|
-  t.files = ["lib/**/*.rb", "x-core/lib/**/*.rb", "x-uploader/lib/**/*.rb", "x-objects/lib/**/*.rb"]
+  t.files = ["lib/**/*.rb", "x-core/lib/**/*.rb", "x-uploader/lib/**/*.rb", "x-streaming/lib/**/*.rb", "x-objects/lib/**/*.rb"]
   t.options = ["--no-private"]
 end
 
