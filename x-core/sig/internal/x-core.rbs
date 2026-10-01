@@ -264,6 +264,8 @@ module X
     end
 
     module ClientTokenRefresh : _TokenRefreshHost
+      SHARED_EXPIRATION: String
+
       @authenticator: Authenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator
       @connection: Connection
       @given_authenticator: Authenticator?
@@ -778,7 +780,6 @@ module X
     attr_reader clients: _ClientRegistry
     def token_requests_over: (Core::Connection connection, String base_url) -> self
     def holds?: (Hash[Symbol, untyped] options) -> bool
-    def update_expires_at: (Time? expires_at) -> void
     def report_refreshes_to: (^() -> Array[_TokenSaver] hooks) -> ^() -> Array[_TokenSaver]
     attr_reader client_secret: String?
     def oauth2_client: -> SimpleOAuth::OAuth2::Client

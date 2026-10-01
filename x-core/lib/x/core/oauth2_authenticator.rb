@@ -258,19 +258,6 @@ module X
         options.slice(:client_id, :client_secret, :access_token, :refresh_token) <= {client_id:, client_secret:, access_token:, refresh_token:}
       end
 
-      # Set the expiration time of the access token, holding the lock
-      #
-      # Internal to x-core: Client sets the expiration time it is given on the authenticator that it and its copies
-      # share, rather than build an authenticator of its own with the same refresh token, and calls it with __send__,
-      # since it is private: a caller that set it would change the expiration every copy of the client reads.
-      #
-      # @api private
-      # @param expires_at [Time, nil] the expiration time, or nil if it is not known
-      # @return [void]
-      def update_expires_at(expires_at)
-        @mutex.synchronize { @expires_at = expires_at }
-      end
-
       # Pass each refresh to the callables another reads
       #
       # Internal to x-core: Client passes the refreshes of the authenticator it builds to the save_tokens of each

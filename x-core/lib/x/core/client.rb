@@ -318,7 +318,9 @@ module X
       # client reaches the other, since X accepts a refresh token once, unless it is given a client ID, client secret,
       # access token, or refresh token that the authenticator does not hold. It shares it whatever the tokens are when
       # it is built, so a refresh on another thread while it is built reaches it too. A refresh then passes the
-      # tokens it issued to the save_tokens of each client that shares it, once for each distinct callable.
+      # tokens it issued to the save_tokens of each client that shares it, once for each distinct callable. The
+      # expiration time belongs to the access token they share, so such a copy is refused one: give expires_at beside
+      # the access token and refresh token it is the expiration of.
       #
       # A copy of a client that was given its authenticator shares it, unless the copy is given a credential, which
       # replaces it, or an authenticator of its own, which also replaces the credentials of a client that holds them.
@@ -331,6 +333,7 @@ module X
       # @api public
       # @param options [Hash] the options to change, as accepted by initialize
       # @return [Client] a new client with the same credentials and settings, apart from the options given
+      # @raise [ArgumentError] if the copy shares the OAuth 2.0 authenticator of the client and is given expires_at
       # @example Derive an API v1.1 client
       #   v1_client = client.with(base_url: "https://api.x.com/1.1/")
       # @example Derive an app-only client from the API key and secret

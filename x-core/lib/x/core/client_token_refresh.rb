@@ -10,6 +10,11 @@ module X
     # ClientInternals
     # @api private
     module ClientTokenRefresh
+      # The message of the error raised for a copy given an expiration time for the access token it shares
+      SHARED_EXPIRATION = "A copy that shares the access token of the client shares its expiration time, so it cannot " \
+        "be given expires_at. Pass expires_at beside the access token and refresh token it is the expiration of"
+      private_constant :SHARED_EXPIRATION
+
       # The time the OAuth 2.0 access token expires, as last refreshed
       #
       # {Client#expires_at} returns it.
@@ -62,18 +67,19 @@ module X
       #
       # Whether the two share it is decided by the options the copy was given, not by the tokens it was built with:
       # a refresh on another thread may replace them while it is built, and a copy that held on to the ones replaced
-      # could never refresh again. The expiration time is a fact about the access token the two hold, so a copy given
-      # another sets it for both.
+      # could never refresh again. The expiration time is a fact about the access token the two hold, so a copy that
+      # shares it is refused one, rather than set it for the client it was copied from.
       #
       # @api private
       # @param copy [Client] the copy these are the internals of
       # @param other [OAuth2Authenticator] the authenticator of the client this one was copied from
       # @param options [Hash] the options the copy was given in place of the client's
       # @return [void]
+      # @raise [ArgumentError] if the copy shares the authenticator and was given an expiration time
       def share_oauth2(copy, other, options)
         return unless oauth2_authenticator_in_use && other.__send__(:holds?, options)
+        raise ArgumentError, SHARED_EXPIRATION if options.key?(:expires_at)
 
-        other.__send__(:update_expires_at, options.fetch(:expires_at)) if options.key?(:expires_at)
         @authenticator = join(copy, other)
       end
 
