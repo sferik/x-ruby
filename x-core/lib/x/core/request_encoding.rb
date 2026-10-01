@@ -50,7 +50,8 @@ module X
 
       # Encode a form as form fields, a String body as given, and any other body as JSON
       #
-      # A body that is not a String, such as a Hash or an Array, is encoded as JSON, since Net::HTTP sends nothing but a
+      # Form fields are encoded as query parameters are, so a field of nil is dropped, an Array is joined with commas,
+      # and a Time is given in UTC in the ISO 8601 form the API takes. A body that is not a String, such as a Hash or an Array, is encoded as JSON, since Net::HTTP sends nothing but a
       # String, which it would raise NoMethodError for once the connection was open.
       #
       # @api private
@@ -60,7 +61,7 @@ module X
       # @raise [ArgumentError] if both a body and form fields are given, which would send one and drop the other
       def encode_body(body, form)
         raise ArgumentError, BODY_AND_FORM if body && form
-        return URI.encode_www_form(form) unless form.nil?
+        return encode_fields(form) unless form.nil?
 
         case body
         when nil, String then body
@@ -81,13 +82,22 @@ module X
       # @return [String] the endpoint, without leading slashes, with the parameters in its query string
       def endpoint_with(endpoint, params)
         endpoint = endpoint.sub(LEADING_SLASHES, "")
-        query = URI.encode_www_form(params.to_h.compact.transform_values { |value| query_value(value) })
+        query = encode_fields(params.to_h)
         return endpoint if query.empty?
 
         "#{endpoint}#{endpoint.include?("?") ? "&" : "?"}#{query}"
       end
 
-      # Encode a query parameter value
+      # Encode query parameters or form fields
+      #
+      # A field of nil is dropped, and the others are encoded with query_value.
+      #
+      # @api private
+      # @param fields [Hash] the parameters or fields
+      # @return [String] the encoded fields
+      def encode_fields(fields) = URI.encode_www_form(fields.compact.transform_values { |value| query_value(value) })
+
+      # Encode a query parameter or form field value
       #
       # An Array is joined with commas, and a Time is given in UTC in the ISO 8601 form the API takes.
       #

@@ -76,6 +76,13 @@ module X
         headers: {"Content-Type" => "application/x-www-form-urlencoded; charset=utf-8"}
     end
 
+    def test_post_encodes_a_form_as_it_encodes_query_parameters
+      stub_request(:post, "https://api.x.com/1.1/statuses/update.json")
+      @client.post("https://api.x.com/1.1/statuses/update.json", form: {media_ids: [1, 2], since: Time.utc(2024, 1, 1), place_id: nil})
+
+      assert_requested :post, "https://api.x.com/1.1/statuses/update.json", body: "media_ids=1%2C2&since=2024-01-01T00%3A00%3A00Z"
+    end
+
     def test_a_body_beside_a_form_is_refused_before_any_request
       error = assert_raises(ArgumentError) { @client.put("settings", {dropped: true}, form: {lang: "en"}) }
 

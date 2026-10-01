@@ -419,7 +419,8 @@ module X
       # @param body [String, Hash, Array, nil] the request body; a body that is not a String, such as a Hash or an
       #   Array, is encoded as JSON
       # @param params [Hash, nil] query parameters appended to the endpoint
-      # @param form [Hash, nil] fields to send as a form-encoded body, in place of a body
+      # @param form [Hash, nil] fields to send as a form-encoded body, in place of a body; as with params, nil values
+      #   are dropped and arrays are joined with commas
       # @param headers [Hash] additional headers for the request
       # @param array_class [Class] the class for parsing JSON arrays
       # @param object_class [Class, #from_response] the class for parsing JSON objects, or one that responds to
@@ -449,7 +450,8 @@ module X
       # @param body [String, Hash, Array, nil] the request body; a body that is not a String, such as a Hash or an
       #   Array, is encoded as JSON
       # @param params [Hash, nil] query parameters appended to the endpoint
-      # @param form [Hash, nil] fields to send as a form-encoded body, in place of a body
+      # @param form [Hash, nil] fields to send as a form-encoded body, in place of a body; as with params, nil values
+      #   are dropped and arrays are joined with commas
       # @param headers [Hash] additional headers for the request
       # @param array_class [Class] the class for parsing JSON arrays
       # @param object_class [Class, #from_response] the class for parsing JSON objects, or one that responds to

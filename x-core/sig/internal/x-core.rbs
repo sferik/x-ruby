@@ -418,6 +418,7 @@ module X
 
       private
       def endpoint_with: (String endpoint, params? params) -> String
+      def encode_fields: (Hash[untyped, untyped] fields) -> String
       def query_value: (untyped value) -> untyped
     end
 
