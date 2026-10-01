@@ -341,7 +341,7 @@ module X
       # @!attribute [r] coordinates
       #   The longitude and latitude the post was tagged with
       #   @api public
-      #   @return [Array<Float>, nil] the longitude and latitude
+      #   @return [Array<Numeric>, nil] the longitude and latitude, each an Integer when the API gives a whole number
       #   @example Get the coordinates
       #     post.coordinates # => [-122.4, 37.8]
       attribute :coordinates, key: %w[geo coordinates coordinates]
