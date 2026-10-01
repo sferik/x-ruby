@@ -55,18 +55,23 @@ module X
       # Internal to x-objects: the finders and hydrate call it with the path of an endpoint, which names the API's
       # own resources and can change within 1.x as the API does.
       #
+      # Data that holds no identifier is no resource: X answers the lookup of a user that does not exist, when it asks
+      # for a field the client may not read, such as parody for a client that authenticates as the app, with data that
+      # holds only the defaults of the fields it may, and the errors of those it may not, but no identifier.
+      #
       # @api private
       # @param path [String] the endpoint path
       # @param client [Object] the client used to make the request
       # @param params [Hash] query parameters merged over the default parameters; one that overrides a default field
       #   or expansion parameter to leave some out builds resources that are not hydrated, so hydrate fetches the rest
-      # @return [Resource, nil] the resource or nil if the response has no data
+      # @return [Resource, nil] the resource or nil if the response has no data, or data that holds no identifier
       # @yieldparam problem [Problem] each problem the API reported
       # @example Fetch the authenticated user
       #   X::User.__send__(:lookup, "users/me", client: client)
       def lookup(path, client:, **params, &)
         query = Utils.merge_params(default_params, params)
-        resource_built_from(reporting(get(path, client:, query:), &), client:, hydrated: fully_requested_by?(query), query:)
+        body = reporting(get(path, client:, query:), &)
+        resource_built_from(body, client:, hydrated: fully_requested_by?(query), query:) unless resourceless?(body)
       end
 
       # Fetch a list of resources from an endpoint without paginating
@@ -113,6 +118,15 @@ module X
       def get(path, client:, query:)
         client_for(client).get(Utils.path(path, query), **Utils::JSON_CLASSES)
       end
+
+      # Whether a response body holds no resource
+      #
+      # It holds none when it holds no data, data that is no object, or an object with no identifier.
+      #
+      # @api private
+      # @param body [Hash, nil] the parsed response body
+      # @return [Boolean] true if the body holds no object with an identifier as its data
+      def resourceless?(body) = Hash.try_convert(body.to_h["data"]).to_h[id_key].nil?
 
       # Pass the problems a response body reports to a block, if there is one
       # @api private

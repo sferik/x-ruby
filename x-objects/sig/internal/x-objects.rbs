@@ -326,9 +326,11 @@ module X
       def client_for: (_Client client) -> _Client
       def get: (String path, client: _Client, query: Hash[String, untyped]) -> body
       def reporting: (body body) ?{ (Problem problem) -> void } -> body
+      def resourceless?: (body body) -> bool
 
       # The private class methods of the resource class that extends it, which it reads
       def endpoint!: () -> String
+      def id_key: () -> String
       def fully_requested_by?: (Hash[String, untyped] query) -> bool
       def resource_built_from: (body body, client: _Client?, hydrated: bool, query: Hash[String, untyped]?) -> Resource?
       def collection_built_from: (body body, client: _Client?, hydrated: bool, query: Hash[String, untyped]?) -> Array[Resource]
