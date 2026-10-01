@@ -35,6 +35,10 @@ module X
       # @raise [InvalidMedia] if the media cannot be read, or is empty, which holds nothing to upload
       # @raise [InvalidMedia] if the media is larger than the API takes of its category, whatever the account: 5
       #   megabytes of an image, 15 of a GIF, and one of subtitles, or larger than the 16 gigabytes it takes of any
+      # @raise [ArgumentError] if the media category is invalid, the alt text is empty or longer than the API takes,
+      #   the chunk size is not a positive Integer, is larger than a segment the API takes, or would need more
+      #   segments than the API numbers, the concurrency is not 1 to MAX_CONCURRENCY, or the processing timeout is not
+      #   a number of seconds of at least 0
       # @raise [InvalidMediaType] if no media category is given for media whose type neither its bytes nor the name of
       #   its file names, or the category does not take the type of the media
       # @raise [MissingMediaData] if a response of the upload holds no media, or carries no body at all
@@ -67,8 +71,12 @@ module X
       #   such as X::Media, the media key, or the media identifier
       # @param options [Hash] the options of {MediaUpload.await_processing}, such as processing_timeout
       # @return [UploadedMedia] the uploaded media, which holds the processing status, failed or not
+      # @raise [ArgumentError] if the processing timeout is not a number of seconds of at least 0
+      # @raise [ArgumentError] if the media given is nil, holds no identifier, or is neither media, a media key, nor a
+      #   media identifier, or its media key names none
+      # @raise [MissingMediaData] if a status response holds no media or carries no body at all
       # @raise [MediaProcessingTimeout] if the media is still processing once the processing timeout would pass
-      # @example Wait for a video uploaded with chunked_upload
+      # @example Wait for a video uploaded with MediaUpload.chunked_upload
       #   video = client.await_media_processing(video)
       #   warn video.processing_info.dig("error", "message") if video.failed?
       def await_media_processing(media, **options) # steep:ignore DifferentMethodParameterKind
@@ -82,10 +90,14 @@ module X
       #   such as X::Media, the media key, or the media identifier
       # @param options [Hash] the options of {MediaUpload.await_processing!}, such as processing_timeout
       # @return [UploadedMedia] the uploaded media, which holds the processing status
+      # @raise [ArgumentError] if the processing timeout is not a number of seconds of at least 0
+      # @raise [ArgumentError] if the media given is nil, holds no identifier, or is neither media, a media key, nor a
+      #   media identifier, or its media key names none
+      # @raise [MissingMediaData] if a status response holds no media or carries no body at all
       # @raise [MediaProcessingFailed] if media processing failed, or ended in no state X documents, with the status X
       #   reported
       # @raise [MediaProcessingTimeout] if the media is still processing once the processing timeout would pass
-      # @example Wait for a video uploaded with chunked_upload, raising if X could not process it
+      # @example Wait for a video uploaded with MediaUpload.chunked_upload, raising if X could not process it
       #   client.await_media_processing!(video)
       def await_media_processing!(media, **options) # steep:ignore DifferentMethodParameterKind
         MediaUpload.await_processing!(media, client: _ = self, **Utils.without_client(options))
@@ -99,6 +111,9 @@ module X
       # @param text [String] the alt text, of 1 to 1,000 characters
       # @return [UploadedMedia] the media given, as uploaded media, which a call can be chained to
       # @raise [ArgumentError] if the alt text is empty or longer than the API takes, before a request
+      # @raise [ArgumentError] if the media given is nil, holds no identifier, or is neither media, a media key, nor a
+      #   media identifier, or its media key names none
+      # @raise [MissingMediaData] if the response holds no metadata or carries no body at all
       # @example Describe an image
       #   client.add_alt_text(media, "A cat asleep on a keyboard")
       # @example Describe an image as it is uploaded
@@ -117,6 +132,11 @@ module X
       # @param language_code [String] the language of the subtitles, such as EN
       # @param options [Hash] the options of {Metadata.add_subtitles}: display_name and media_category
       # @return [UploadedMedia] the video given, as uploaded media, which a call can be chained to
+      # @raise [ArgumentError] if the media category is neither tweet_video nor amplify_video, or the language code is
+      #   not two letters
+      # @raise [ArgumentError] if the video or the subtitles are nil, hold no identifier, are neither media, a media
+      #   key, nor a media identifier, have a media key that names none, or an identifier the API does not take
+      # @raise [MissingMediaData] if the response holds no metadata or carries no body at all
       # @example Subtitle a video in English
       #   client.add_subtitles(video, subtitles, "EN", display_name: "English")
       def add_subtitles(video, subtitles, language_code, **options) # steep:ignore DifferentMethodParameterKind
