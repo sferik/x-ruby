@@ -26,7 +26,8 @@ module X
       #
       # @api public
       # @param media [String, Pathname, IO, StringIO] the path to the media to upload, or an IO open on it
-      # @param options [Hash] the options of {MediaUpload.upload}, such as media_category, alt_text, and processing_timeout
+      # @param options [Hash] the options of {MediaUpload.upload}, such as media_category, alt_text, processing_timeout,
+      #   shared, and additional_owners
       # @return [UploadedMedia] the uploaded media, which holds the upload response, or the processing status of
       #   media that X processes
       # @raise [ArgumentError] if the media is neither a path nor an IO, or is a String that holds a NUL byte or a
@@ -37,8 +38,9 @@ module X
       #   megabytes of an image, 15 of a GIF, and one of subtitles, or larger than the 16 gigabytes it takes of any
       # @raise [ArgumentError] if the media category is invalid, the alt text is empty or longer than the API takes,
       #   the chunk size is not a positive Integer, is larger than a segment the API takes, or would need more
-      #   segments than the API numbers, the concurrency is not 1 to MAX_CONCURRENCY, or the processing timeout is not
-      #   a number of seconds of at least 0
+      #   segments than the API numbers, the concurrency is not 1 to MAX_CONCURRENCY, the processing timeout is not a
+      #   number of seconds of at least 0, shared is neither true, false, nor nil, or additional_owners is neither nil
+      #   nor an Array of at least one user identifier
       # @raise [InvalidMediaType] if no media category is given for media whose type neither its bytes nor the name of
       #   its file names, or the category does not take the type of the media
       # @raise [MissingMediaData] if a response of the upload holds no media, or carries no body at all

@@ -12,13 +12,13 @@ module X
     end
 
     def test_upload_passes_the_chunk_options_to_the_chunks
-      options = chunk_options_of(media_type: "video/webm", chunk_size: 2_097_152, concurrency: 3)
+      options = chunk_options_of(media_type: "video/webm", chunk_size: 2_097_152, concurrency: 3, shared: true, additional_owners: [1])
 
-      assert_equal({media_category: "tweet_video", media_type: "video/webm", chunk_size: 2_097_152, concurrency: 3}, options)
+      assert_equal({media_category: "tweet_video", media_type: "video/webm", chunk_size: 2_097_152, concurrency: 3, shared: true, additional_owners: [1]}, options)
     end
 
     def test_upload_passes_the_default_chunk_options_and_the_type_it_infers_to_the_chunks
-      assert_equal({media_category: "tweet_video", media_type: "video/mp4", chunk_size: nil, concurrency: 4}, chunk_options_of)
+      assert_equal({media_category: "tweet_video", media_type: "video/mp4", chunk_size: nil, concurrency: 4, shared: nil, additional_owners: nil}, chunk_options_of)
     end
 
     def test_the_default_concurrency_is_a_constant_of_media

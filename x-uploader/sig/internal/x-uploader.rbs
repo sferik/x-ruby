@@ -94,7 +94,7 @@ module X
       def uploaded_media: (media media) -> UploadedMedia
       def described: (Hash[String, untyped]? response, media media) -> UploadedMedia
       def media_data: (Hash[String, untyped]? response, String description) -> Hash[String, untyped]
-      def single_request: (::X::Client client, String content, String media_category) -> UploadedMedia
+      def single_request: (::X::Client client, String content, String media_category, additional_owners: Array[Integer | String]?) -> UploadedMedia
       def identified?: (Hash[String, untyped] media) -> bool
       def subtitled_media_category: (String | Symbol media_category) -> String
       def sending_again: [T] (::X::Client client) { () -> T } -> T
@@ -116,8 +116,8 @@ module X
       CHANGED: String
       extend Chunks
 
-      def upload: (client: ::X::Client, source: Source, media_type: String, media_category: String, chunk_size: Integer?, concurrency: Integer) -> UploadedMedia
-      def init: (client: ::X::Client, source: Source, media_type: String, media_category: String) -> Hash[String, untyped]
+      def upload: (client: ::X::Client, source: Source, media_type: String, media_category: String, chunk_size: Integer?, concurrency: Integer, shared: bool?, additional_owners: Array[Integer | String]?) -> UploadedMedia
+      def init: (client: ::X::Client, source: Source, media_type: String, media_category: String, ?shared: bool?, ?additional_owners: Array[Integer | String]?) -> Hash[String, untyped]
       def append: (client: ::X::Client, source: Source, chunk_size: Integer, media: untyped, boundary: String, concurrency: Integer) -> void
       def finalize: (client: ::X::Client, media: Hash[String, untyped]) -> Hash[String, untyped]?
       def complete: (client: ::X::Client, source: Source, chunk_size: Integer, media: Hash[String, untyped], concurrency: Integer) -> UploadedMedia
@@ -199,6 +199,7 @@ module X
       BYTES_PER_MB: Integer
       MAX_ALT_TEXT_LENGTH: Integer
       LANGUAGE_CODE: Regexp
+      USER_ID: Regexp
       MAX_SEGMENTS: Integer
       MAX_CHUNK: Integer
       MAX_CONCURRENCY: Integer
@@ -212,8 +213,10 @@ module X
       MAX_SIMPLE_UPLOAD_BYTES: Integer
       extend Validator
 
-      def validate_upload!: (Source source, (String | Symbol)? media_category, alt_text: String?, chunk_size: Integer?, concurrency: Integer, processing_timeout: Float | Integer) ?{ () -> (String | Symbol) } -> String
+      def validate_upload!: (Source source, (String | Symbol)? media_category, alt_text: String?, chunk_size: Integer?, concurrency: Integer, processing_timeout: Float | Integer, ?shared: untyped, ?additional_owners: untyped) ?{ () -> (String | Symbol) } -> String
       def validate_source!: (Source source) -> nil
+      def validate_sharing!: (untyped shared, untyped additional_owners) -> void
+      def user_id?: (untyped value) -> bool
       def validate_alt_text!: (String? alt_text) -> nil
       def utf8?: (String text) -> bool
       def validate_language_code!: (untyped language_code) -> String

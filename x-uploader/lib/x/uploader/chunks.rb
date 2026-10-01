@@ -40,6 +40,9 @@ module X
       # @param media_category [String] the media category
       # @param chunk_size [Integer, nil] the chunk size in bytes, or nil for one derived from the size of the media
       # @param concurrency [Integer] the number of chunks uploaded at once
+      # @param shared [Boolean, nil] whether the media is shared, or nil to send none
+      # @param additional_owners [Array<Integer, String>, nil] the identifiers of the users who may use the media, or
+      #   nil for none
       # @return [UploadedMedia] the uploaded media, as the response that finalizes the upload describes it
       # @raise [ArgumentError] if the chunk size would need more segments than the API numbers
       # @raise [MissingMediaData] if the response that initializes the upload holds no media to append the chunks to
@@ -48,9 +51,9 @@ module X
       # @example Upload a video in chunks
       #   Uploader::Chunks.upload(client:, source:, media_type: "video/mp4", media_category: "tweet_video",
       #     chunk_size: 1_048_576, concurrency: 4)
-      def upload(client:, source:, media_type:, media_category:, chunk_size:, concurrency:)
+      def upload(client:, source:, media_type:, media_category:, chunk_size:, concurrency:, shared:, additional_owners:)
         chunk_size = Validator.validate_segments!(source, chunk_size)
-        media = init(client:, source:, media_type:, media_category:)
+        media = init(client:, source:, media_type:, media_category:, shared:, additional_owners:)
         ChunkedUploadFailed.__send__(:keeping, media) { complete(client:, source:, chunk_size:, media:, concurrency:) }
       end
 
@@ -65,12 +68,15 @@ module X
       # @param source [Source] the media
       # @param media_type [String] the MIME type
       # @param media_category [String] the media category
+      # @param shared [Boolean, nil] whether the media is shared, or nil to send none
+      # @param additional_owners [Array<Integer, String>, nil] the identifiers of the users who may use the media, or
+      #   nil for none
       # @return [Hash] the media the chunks are appended to
       # @raise [MissingMediaData] if the response holds no media to append the chunks to
       # @example Initialize the upload of a video
       #   Uploader::Chunks.init(client:, source:, media_type: "video/mp4", media_category: "tweet_video")
-      def init(client:, source:, media_type:, media_category:)
-        body = {media_type:, media_category:, total_bytes: source.size}
+      def init(client:, source:, media_type:, media_category:, shared: nil, additional_owners: nil)
+        body = {media_type:, media_category:, total_bytes: source.size, shared:, additional_owners: additional_owners&.map(&:to_s)}.compact
         response = client.post("media/upload/initialize", body, **JSON_CLASSES)
         media = Hash.try_convert(response.to_h["data"])
         raise MissingMediaData.new(NO_MEDIA, problems: Problem.all_from(response)) unless media && Utils.identified?(media)

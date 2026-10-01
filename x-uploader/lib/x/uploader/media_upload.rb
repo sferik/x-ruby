@@ -139,6 +139,11 @@ module X
       #   5,242,880, the 5 megabytes the API takes in a segment, derived from the size of the media when nil, so that
       #   an upload of up to the 16 gigabytes the API takes fits the segments it numbers
       # @param concurrency [Integer] the number of chunks uploaded at once, of 1 to MAX_CONCURRENCY
+      # @param shared [Boolean, nil] whether the media is shared, so that it can be sent in more than one direct
+      #   message, or nil to leave it to the API; media
+      #   that is shared uploads in chunks, since a single request takes no shared
+      # @param additional_owners [Array<Integer, String>, nil] the identifiers of the users, other than the one who
+      #   uploads it, who may use the media, or nil for none
       # @return [UploadedMedia] the uploaded media, which holds the upload response, or the processing status of
       #   media that X processes
       # @raise [ArgumentError] if the media is neither a path nor an IO, or is a String that holds a NUL byte or a
@@ -149,8 +154,9 @@ module X
       #   megabytes of an image, 15 of a GIF, and one of subtitles, or larger than the 16 gigabytes it takes of any
       # @raise [ArgumentError] if the media category is invalid, the alt text is empty or longer than the API takes,
       #   the chunk size is not a positive Integer, is larger than a segment the API takes, or would need more
-      #   segments than the API numbers, the concurrency is not 1 to MAX_CONCURRENCY, or the processing timeout is not
-      #   a number of seconds of at least 0
+      #   segments than the API numbers, the concurrency is not 1 to MAX_CONCURRENCY, the processing timeout is not a
+      #   number of seconds of at least 0, shared is neither true, false, nor nil, or additional_owners is neither nil
+      #   nor an Array of at least one user identifier
       # @raise [InvalidMediaType] if no media category is given for media whose type neither its bytes nor the name of
       #   its file names, if media uploaded in chunks is given no media type and none can be inferred, if the category does not
       #   take the type of the media, such as an MP4 video uploaded as a GIF, or if the file is named as a type every
@@ -171,14 +177,16 @@ module X
       #   Uploader::MediaUpload.upload("video.mp4", client: client)
       # @example Upload an image held in memory, whose category its signature names
       #   Uploader::MediaUpload.upload(StringIO.new(png), client: client)
-      def upload(media, client:, media_category: nil, alt_text: nil,
-        processing_timeout: DEFAULT_PROCESSING_TIMEOUT, media_type: nil, chunk_size: nil, concurrency: DEFAULT_CONCURRENCY)
+      # @example Upload an image another account may post too
+      #   Uploader::MediaUpload.upload("cat.jpg", client: client, additional_owners: [7_505_382])
+      def upload(media, client:, media_category: nil, alt_text: nil, processing_timeout: DEFAULT_PROCESSING_TIMEOUT,
+        media_type: nil, chunk_size: nil, concurrency: DEFAULT_CONCURRENCY, shared: nil, additional_owners: nil)
         source = Source.for(media)
-        media_category = Validator.validate_upload!(source, media_category, alt_text:, chunk_size:, concurrency:, processing_timeout:) { Inference.infer_media_category(source) }
-        uploaded = if Inference.chunked_upload?(source, media_category)
-          Chunks.upload(client:, source:, media_type: media_type || Inference.infer_media_type(source, media_category), media_category:, chunk_size:, concurrency:)
+        media_category = Validator.validate_upload!(source, media_category, alt_text:, chunk_size:, concurrency:, processing_timeout:, shared:, additional_owners:) { Inference.infer_media_category(source) }
+        uploaded = if shared || Inference.chunked_upload?(source, media_category)
+          Chunks.upload(client:, source:, media_type: media_type || Inference.infer_media_type(source, media_category), media_category:, chunk_size:, concurrency:, shared:, additional_owners:)
         else
-          Utils.single_request(client, Inference.single_request!(source, media_category), media_category)
+          Utils.single_request(client, Inference.single_request!(source, media_category), media_category, additional_owners:)
         end
         uploaded = Utils.processed!(uploaded.processing? ? MediaProcessingCheckFailed.__send__(:keeping, uploaded) { await_processing(uploaded, client:, processing_timeout:) } : uploaded)
         AltTextFailed.__send__(:keeping, uploaded) { Metadata.add_alt_text(uploaded, alt_text, client:) } unless alt_text.nil?
@@ -197,6 +205,10 @@ module X
       #   takes in a segment, derived from the size of the media when nil: a megabyte, or as much more, up to 5, as the
       #   segments the API numbers ask
       # @param concurrency [Integer] the number of chunks uploaded at once, of 1 to MAX_CONCURRENCY
+      # @param shared [Boolean, nil] whether the media is shared, so that it can be sent in more than one direct
+      #   message, or nil to leave it to the API
+      # @param additional_owners [Array<Integer, String>, nil] the identifiers of the users, other than the one who
+      #   uploads it, who may use the media, or nil for none
       # @return [UploadedMedia] the uploaded media, which holds the upload response
       # @raise [ArgumentError] if the media is neither a path nor an IO, or is a String that holds a NUL byte or a
       #   line break, as the contents of media given in place of its path do
@@ -205,8 +217,9 @@ module X
       # @raise [InvalidMedia] if the media is larger than the API takes of its category, which is 15 megabytes of a
       #   GIF and one of subtitles, or larger than the 16 gigabytes it takes of any
       # @raise [ArgumentError] if the media category is invalid, the chunk size is not a positive Integer, is
-      #   larger than a segment the API takes, or would need more segments than the API numbers, or the concurrency is
-      #   not 1 to MAX_CONCURRENCY
+      #   larger than a segment the API takes, or would need more segments than the API numbers, the concurrency is not
+      #   1 to MAX_CONCURRENCY, shared is neither true, false, nor nil, or additional_owners is neither nil nor an
+      #   Array of at least one user identifier
       # @raise [InvalidMediaType] if no media type is given and none can be inferred, or the one the media is, read
       #   from its bytes or else from the name of its file, is not one the category takes
       # @raise [MissingMediaData] if the response that initializes the upload holds no media to append the chunks to
@@ -215,13 +228,15 @@ module X
       #   initialized, and the error that failed it as the cause
       # @example Upload a large video
       #   Uploader::MediaUpload.chunked_upload("video.mp4", client: client)
-      def chunked_upload(media, client:, media_category: nil, media_type: nil, chunk_size: nil, concurrency: DEFAULT_CONCURRENCY)
+      def chunked_upload(media, client:, media_category: nil, media_type: nil, chunk_size: nil, concurrency: DEFAULT_CONCURRENCY,
+        shared: nil, additional_owners: nil)
         source = Source.for(media)
+        Validator.validate_sharing!(shared, additional_owners)
         Validator.validate_source!(source)
         media_category = Validator.validate_media_category!(media_category || Inference.infer_media_category(source))
         Validator.validate_size!(source, media_category)
         Validator.validate_chunks!(chunk_size:, concurrency:)
-        Chunks.upload(client:, source:, media_type: media_type || Inference.infer_media_type(source, media_category), media_category:, chunk_size:, concurrency:)
+        Chunks.upload(client:, source:, media_type: media_type || Inference.infer_media_type(source, media_category), media_category:, chunk_size:, concurrency:, shared:, additional_owners:)
       end
 
       # Wait for media processing to complete

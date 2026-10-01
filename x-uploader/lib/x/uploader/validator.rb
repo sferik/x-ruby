@@ -21,6 +21,8 @@ module X
       MAX_ALT_TEXT_LENGTH = 1000
       # The pattern of the language code of subtitles, two letters, which the API takes in upper case
       LANGUAGE_CODE = /\A[a-z]{2}\z/i
+      # The identifier of a user, as the API takes it among the additional owners of media
+      USER_ID = /\A[0-9]{1,19}\z/
       # Greatest number of segments an upload in chunks can have: the OpenAPI specification of the API v2 takes a
       # segment_index of 0 to 9999, so an upload in more chunks than these would fail partway, once the media uploaded
       # so far had been billed. Chunks of MAX_CHUNK bytes upload 52 GB of media in them, more than the MAX_UPLOAD_BYTES
@@ -78,17 +80,22 @@ module X
       # @param chunk_size [Integer, nil] the size of each chunk in bytes, or nil to derive one
       # @param concurrency [Integer] the number of chunks uploaded at once, of 1 to MAX_CONCURRENCY
       # @param processing_timeout [Integer, Float] the seconds to wait for the media to process
+      # @param shared [Boolean, nil] whether the media is shared, or nil to leave it to the API
+      # @param additional_owners [Array<Integer, String>, nil] the identifiers of the users who may use the media, or
+      #   nil for none
       # @yieldreturn [String, Symbol] the media category inferred from the media, when none is given
       # @return [String] the media category in lowercase
       # @raise [InvalidMedia] if the file does not exist
       # @raise [InvalidMedia] if the media cannot be read, is empty, or is larger than the API takes of its category
       # @raise [ArgumentError] if the media category is invalid, the alt text is empty or too long, the chunk size is
       #   not a positive Integer or is larger than a segment the API takes, the concurrency is not 1 to
-      #   MAX_CONCURRENCY, or the processing timeout is not a number of seconds
+      #   MAX_CONCURRENCY, the processing timeout is not a number of seconds, shared is neither true, false, nor nil,
+      #   or additional_owners is neither nil nor an Array of at least one user identifier
       # @example Validate the arguments of an upload
       #   Uploader::Validator.validate_upload!(source, :TWEET_IMAGE, alt_text: nil, chunk_size: nil, concurrency: 4,
       #     processing_timeout: 300) # => "tweet_image"
-      def validate_upload!(source, media_category, alt_text:, chunk_size:, concurrency:, processing_timeout:)
+      def validate_upload!(source, media_category, alt_text:, chunk_size:, concurrency:, processing_timeout:, shared: nil, additional_owners: nil)
+        validate_sharing!(shared, additional_owners)
         validate_source!(source)
         validate_alt_text!(alt_text)
         validate_chunks!(chunk_size:, concurrency:)
@@ -182,6 +189,36 @@ module X
           raise ArgumentError, "#{name} must be an Integer of pixels of at least #{least}, or nil, not #{pixels.inspect}"
         end
       end
+
+      # Validate whether media is shared, and the users given access to it
+      #
+      # Media is shared, or not, with true or false, so that a value read from a String, such as "false", which is
+      # truthy, does not share it by accident. The users given access to it are named by their identifiers, each an
+      # Integer or a String of digits, as the API takes them, of at least one user, since a list of none names no one.
+      #
+      # @api private
+      # @param shared [Boolean, nil] whether the media is shared, or nil to leave it to the API
+      # @param additional_owners [Array<Integer, String>, nil] the identifiers of the users who may use the media, or
+      #   nil for none
+      # @return [void]
+      # @raise [ArgumentError] if shared is neither true, false, nor nil, or additional_owners is neither nil nor an
+      #   Array of at least one user identifier
+      # @example Validate media shared with another user
+      #   Uploader::Validator.validate_sharing!(true, [7_505_382])
+      def validate_sharing!(shared, additional_owners)
+        raise ArgumentError, "shared must be true, false, or nil, not #{shared.inspect}" unless [true, false, nil].include?(shared)
+        return if additional_owners.nil?
+        return if additional_owners.is_a?(Array) && !additional_owners.empty? && additional_owners.all? { |owner| user_id?(owner) }
+
+        raise ArgumentError, "additional_owners must be an Array of the identifiers of users, or nil for none, not #{additional_owners.inspect}"
+      end
+
+      # Check whether a value is the identifier of a user, as the API takes it
+      #
+      # @api private
+      # @param value [Object] the value
+      # @return [Boolean] true for an Integer, or a String of digits, of 1 to 19 digits
+      def user_id?(value) = (value.instance_of?(Integer) || value.is_a?(String)) && value.to_s.match?(USER_ID)
 
       # Validate the alt text of an upload, of up to MAX_ALT_TEXT_LENGTH characters
       #

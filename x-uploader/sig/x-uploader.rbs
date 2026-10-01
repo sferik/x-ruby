@@ -42,8 +42,8 @@ module X
       MAX_CONCURRENCY: Integer
       extend MediaUpload
 
-      def upload: (uploadable media, client: ::X::Client, ?media_category: (String | Symbol)?, ?alt_text: String?, ?processing_timeout: Float | Integer, ?media_type: String?, ?chunk_size: Integer?, ?concurrency: Integer) -> UploadedMedia
-      def chunked_upload: (uploadable media, client: ::X::Client, ?media_category: (String | Symbol)?, ?media_type: String?, ?chunk_size: Integer?, ?concurrency: Integer) -> UploadedMedia
+      def upload: (uploadable media, client: ::X::Client, ?media_category: (String | Symbol)?, ?alt_text: String?, ?processing_timeout: Float | Integer, ?media_type: String?, ?chunk_size: Integer?, ?concurrency: Integer, ?shared: bool?, ?additional_owners: Array[Integer | String]?) -> UploadedMedia
+      def chunked_upload: (uploadable media, client: ::X::Client, ?media_category: (String | Symbol)?, ?media_type: String?, ?chunk_size: Integer?, ?concurrency: Integer, ?shared: bool?, ?additional_owners: Array[Integer | String]?) -> UploadedMedia
       def await_processing: (media media, client: ::X::Client, ?processing_timeout: Float | Integer) -> UploadedMedia
       def await_processing!: (media media, client: ::X::Client, ?processing_timeout: Float | Integer) -> UploadedMedia
     end
