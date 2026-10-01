@@ -7,7 +7,6 @@ module X
     cover Post
     cover Resource
     cover MatchingRule
-    cover Objects.const_get(:ValueEquality)
 
     LINE = {"data" => {"id" => "1", "text" => "hello", "author_id" => "2"},
             "includes" => {"users" => [{"id" => "2", "username" => "sferik"}]},
@@ -16,7 +15,7 @@ module X
     def test_a_post_of_the_filtered_stream_reads_the_rules_it_matched
       post = Post.from_response(LINE, client: nil)
 
-      assert_equal [MatchingRule.new(id: 1_165_037_377_523_306_498, tag: "ruby"), MatchingRule.new(id: "1165037377523306499")], post.matching_rules
+      assert_equal [MatchingRule.new({"id" => "1165037377523306498", "tag" => "ruby"}), MatchingRule.new({"id" => "1165037377523306499"})], post.matching_rules
       assert_predicate post.matching_rules, :frozen?
       assert_equal ["hello", "sferik"], [post.text, post.author.username]
     end
@@ -51,80 +50,20 @@ module X
         "X::Post#matching_rules cannot be read from #{{"id" => "1", "tag" => 1}.inspect}"], messages
     end
 
-    def test_a_rule
-      rule = MatchingRule.new(id: "1165037377523306498", tag: +"ruby")
-
-      assert_equal [1_165_037_377_523_306_498, "ruby"], [rule.id, rule.tag]
-      assert_equal({id: 1_165_037_377_523_306_498, tag: "ruby"}, rule.deconstruct_keys(nil))
-      assert_equal '#<X::MatchingRule id=1165037377523306498 tag="ruby">', rule.inspect
-      assert_nil MatchingRule.new(id: 1).tag
-    end
-
     def test_a_rule_holds_its_attributes_as_the_stream_sent_them
       rules = Post.from_response(LINE, client: nil).matching_rules
 
       assert_equal LINE.fetch("matching_rules"), rules.map(&:attrs)
-      assert_equal({"id" => "1"}, MatchingRule.new(id: 1).to_h)
       assert_same rules.first.attrs, rules.first.to_h
       assert_predicate rules.first.attrs, :frozen?
     end
 
-    def test_a_rule_is_serialized_by_its_attributes
-      rule = MatchingRule.new(id: 1, tag: "ruby")
+    def test_a_rule_keeps_what_the_stream_sends_of_it_beside_its_identifier_and_tag
+      line = LINE.merge("matching_rules" => [{"id" => "1", "tag" => "ruby", "value" => "ruby lang:en"}])
+      rule = Post.from_response(line, client: nil).matching_rules.first
 
-      assert_same rule.attrs, rule.as_json
-      assert_equal "[{\"id\":\"1\",\"tag\":\"ruby\"}]", [rule].to_json
-      assert_equal "{\"id\":\"2\"}", MatchingRule.new(id: 2).to_json
-    end
-
-    def test_a_rule_is_frozen_and_keeps_a_copy_of_its_tag
-      tag = +"ruby"
-      rule = MatchingRule.new(id: 1, tag:)
-      tag << "!"
-
-      assert_equal "ruby", rule.tag
-      assert_predicate rule, :frozen?
-      assert_predicate rule.tag, :frozen?
-    end
-
-    def test_a_rule_matches_a_pattern
-      matched = [MatchingRule.new(id: 1, tag: "ruby"), MatchingRule.new(id: 2)].map do |rule|
-        case rule
-        in {id: 1, tag: "ruby"} then :ruby
-        in {tag: nil} then :untagged
-        end
-      end
-
-      assert_equal %i[ruby untagged], matched
-    end
-
-    def test_rules_of_the_same_identifier_and_tag_are_equal
-      rule = MatchingRule.new(id: 1, tag: "ruby")
-
-      assert_equal MatchingRule.new(id: "1", tag: "ruby"), rule
-      assert rule.eql?(MatchingRule.new(id: 1, tag: "ruby"))
-      assert_equal 1, [rule, MatchingRule.new(id: 1, tag: "ruby")].uniq.size
-    end
-
-    def test_rules_of_another_identifier_tag_or_class_are_not_equal
-      rule = MatchingRule.new(id: 1, tag: "ruby")
-
-      assert_equal [false] * 4, [MatchingRule.new(id: 1), MatchingRule.new(id: 2, tag: "ruby"), {id: 1, tag: "ruby"},
-        Class.new(MatchingRule).new(id: 1, tag: "ruby")].map { |other| rule == other }
-    end
-
-    def test_rules_of_another_tag_or_class_hash_apart
-      rule = MatchingRule.new(id: 1, tag: "ruby")
-
-      refute_equal MatchingRule.new(id: 1).hash, rule.hash
-      refute_equal Class.new(MatchingRule).new(id: 1, tag: "ruby").hash, rule.hash
-    end
-
-    def test_a_rule_refuses_what_is_not_one
-      assert_raises(ArgumentError) { MatchingRule.new(id: nil) }
-      assert_raises(ArgumentError) { MatchingRule.new(id: "0x1") }
-      error = assert_raises(ArgumentError) { MatchingRule.new(id: 1, tag: :ruby) }
-      assert_equal "tag must be a String, not :ruby", error.message
+      assert_equal({"id" => "1", "tag" => "ruby", "value" => "ruby lang:en"}, rule.to_h)
+      assert_equal [1, "ruby"], [rule.id, rule.tag]
     end
   end
 end

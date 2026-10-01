@@ -628,13 +628,13 @@ module X
   class Tweet = Post
 
   class MatchingRule
-    attr_reader attrs: Hash[String, String]
-    attr_reader id: Integer
-    attr_reader tag: String?
+    attr_reader attrs: Hash[String, untyped]
 
-    def initialize: (id: Integer | String, ?tag: String?) -> void
-    def to_h: () -> Hash[String, String]
-    def deconstruct_keys: (Array[Symbol]? _keys) -> {id: Integer, tag: String?}
+    def initialize: (Hash[String, untyped] attrs) -> void
+    def id: () -> Integer
+    def tag: () -> String?
+    def to_h: () -> Hash[String, untyped]
+    def deconstruct_keys: (Array[Symbol]? keys) -> Hash[Symbol, Integer | String | nil]
     def ==: (untyped other) -> bool
     def eql?: (untyped other) -> bool
     def hash: () -> Integer

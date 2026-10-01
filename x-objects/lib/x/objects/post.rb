@@ -306,7 +306,7 @@ module X
       #   streaming_client.stream("tweets/search/stream", object_class: X::Post) { |post| p post.matching_rules.map(&:tag) }
       def matching_rules
         reader = "#{self.class}#matching_rules"
-        Shape.objects(reader, attrs["matching_rules"]).map { |rule| Utils.read(reader, rule) { MatchingRule.new(id: rule["id"], tag: rule["tag"]) } }.freeze
+        Shape.objects(reader, attrs["matching_rules"]).map { |rule| Utils.read(reader, rule) { MatchingRule.new(rule) } }.freeze
       end
 
       attribute_names.push(:text, :entities, :urls, :matching_rules)

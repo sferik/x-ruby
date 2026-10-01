@@ -17,7 +17,7 @@ module X
       @values = [Trend.new({"trend_name" => "#ruby", "tweet_count" => 1234}),
         PersonalizedTrend.new({"trend_name" => "#ruby", "category" => "Technology", "post_count" => "12.3K posts"}),
         PostUsage.new({"project_usage" => "1234", "daily_project_usage" => {"usage" => [{"date" => "2026-09-28T00:00:00.000Z", "usage" => "5"}]}}),
-        MatchingRule.new(id: 1_165_037_377_523_306_498, tag: "ruby"), MatchingRule.new(id: 1)]
+        MatchingRule.new({"id" => "1165037377523306498", "tag" => "ruby"}), MatchingRule.new({"id" => "1"})]
     end
 
     def test_marshal_dump_is_plain_data_led_by_its_format
