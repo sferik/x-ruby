@@ -72,7 +72,7 @@ module X
     end
 
     def test_a_page_is_written_without_the_clients_of_its_resources
-      page = Page.new([@post], {"result_count" => 1, "next_token" => "p2"}, problems: [Problem.new({"title" => "Not Found Error", "resource_id" => "8"})])
+      page = Page.new([@post], meta: {"result_count" => 1, "next_token" => "p2"}, problems: [Problem.new({"title" => "Not Found Error", "resource_id" => "8"})])
       yaml = YAML.dump(page)
       loaded = YAML.unsafe_load(yaml)
 
@@ -82,19 +82,19 @@ module X
     end
 
     def test_a_page_is_written_as_the_state_marshal_writes_under_its_names
-      page = Page.new([@post], {"result_count" => 1})
+      page = Page.new([@post], meta: {"result_count" => 1})
 
       assert_equal %w[format resources meta problems includes], YAML.unsafe_load(YAML.dump(page).sub("!ruby/object:X::Page", "")).keys
     end
 
     def test_a_page_a_later_release_added_to_reads_back_as_it_was
-      page = Page.new([@post], {"result_count" => 1})
+      page = Page.new([@post], meta: {"result_count" => 1})
 
       assert_equal page, YAML.unsafe_load("#{YAML.dump(page)}added: true\n")
     end
 
     def test_a_page_of_another_format_raises
-      yaml = YAML.dump(Page.new([@post], {})).sub("format: 1", "format: 2")
+      yaml = YAML.dump(Page.new([@post])).sub("format: 1", "format: 2")
 
       error = assert_raises(UnsupportedMarshalFormat) { YAML.unsafe_load(yaml) }
       assert_equal "X::Page reads format 1 of Marshal, not 2", error.message

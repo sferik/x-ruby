@@ -118,7 +118,7 @@ module X
 
         params = sized(params, wanted) unless wanted.nil?
         body = requester.get(Utils.path(@cursor.__send__(:path), params), **Utils::JSON_CLASSES)
-        Page.new(resources_from(body), Page.__send__(:meta_of, body), problems: Problem.all_from(body))
+        Page.new(resources_from(body), meta: Page.__send__(:meta_of, body), problems: Problem.all_from(body))
       end
 
       # The client that fetches the pages, as the app for a space endpoint

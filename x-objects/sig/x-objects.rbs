@@ -298,7 +298,7 @@ module X
     attr_reader meta: Hash[String, untyped]
     attr_reader problems: Array[Problem]
 
-    def initialize: (Array[R] items, Hash[untyped, untyped] meta, ?problems: Array[Problem]) -> void
+    def initialize: (Array[R] items, ?meta: Hash[untyped, untyped], ?problems: Array[Problem]) -> void
     def each: () { (R) -> void } -> self
             | () -> Enumerator[R, self]
     def to_a: () -> Array[R]

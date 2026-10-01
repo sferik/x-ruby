@@ -75,7 +75,7 @@ module X
     end
 
     def test_a_page_serializes_in_the_shape_of_its_response
-      page = Page.new([@post], {"result_count" => 1, "next_token" => "abc"})
+      page = Page.new([@post], meta: {"result_count" => 1, "next_token" => "abc"})
       json = {"data" => [@post.attrs], "meta" => {"result_count" => 1, "next_token" => "abc"}}
 
       assert_equal json, page.as_json
@@ -85,7 +85,7 @@ module X
 
     def test_a_page_is_built_again_from_what_it_serialized_to
       problem = {"title" => "Not Found Error", "resource_type" => "post", "resource_id" => "3"}
-      page = Page.new([@post], {"next_token" => "abc"}, problems: [Problem.new(problem)])
+      page = Page.new([@post], meta: {"next_token" => "abc"}, problems: [Problem.new(problem)])
       again = Post.from_response(JSON.parse(page.to_json), client: nil)
 
       assert_equal [problem], page.as_json["errors"]
@@ -93,7 +93,7 @@ module X
     end
 
     def test_a_page_is_serialized_as_plain_data
-      as_json = Page.new([@post], {"result_count" => 1}).as_json
+      as_json = Page.new([@post], meta: {"result_count" => 1}).as_json
 
       assert_same @post.attrs, as_json["data"].first
       assert_predicate as_json, :frozen?

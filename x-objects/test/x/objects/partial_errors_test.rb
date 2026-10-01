@@ -131,7 +131,7 @@ module X
 
         assert_equal ["ids"], page.problems.map(&:parameter)
         assert_empty page.first.problems
-        assert_empty X::Page.new([], {}).problems
+        assert_empty X::Page.new([]).problems
         assert_predicate page.problems, :frozen?
       end
     end

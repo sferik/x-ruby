@@ -43,8 +43,8 @@ module X
     end
 
     def test_the_result_count_of_a_page_is_read_as_an_integer
-      assert_equal [3, 3, nil], [{"result_count" => 3}, {"result_count" => "3"}, {}].map { |meta| Page.new([], meta).result_count }
-      error = assert_raises(InvalidAttribute) { Page.new([], {"result_count" => "3.0"}).result_count }
+      assert_equal [3, 3, nil], [{"result_count" => 3}, {"result_count" => "3"}, {}].map { |meta| Page.new([], meta:).result_count }
+      error = assert_raises(InvalidAttribute) { Page.new([], meta: {"result_count" => "3.0"}).result_count }
 
       assert_equal "X::Page#result_count cannot be read from \"3.0\"", error.message
     end

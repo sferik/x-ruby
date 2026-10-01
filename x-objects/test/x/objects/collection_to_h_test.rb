@@ -15,14 +15,14 @@ module X
     end
 
     def test_a_page_is_a_hash_in_the_shape_of_its_response
-      page = Page.new([@post], {"next_token" => "abc"})
+      page = Page.new([@post], meta: {"next_token" => "abc"})
 
       assert_equal page.as_json, page.to_h
       assert_predicate page.to_h, :frozen?
     end
 
     def test_a_page_builds_a_hash_of_the_pairs_a_block_returns
-      assert_equal({1 => "Hello"}, Page.new([@post], {}).to_h { |post| [post.id, post.text] })
+      assert_equal({1 => "Hello"}, Page.new([@post]).to_h { |post| [post.id, post.text] })
     end
 
     def test_a_cursor_refuses_to_be_a_hash_before_it_reads_a_page

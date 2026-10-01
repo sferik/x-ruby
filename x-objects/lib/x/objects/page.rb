@@ -52,14 +52,14 @@ module X
       #
       # @api public
       # @param items [Array<Resource>] the resources on the page
-      # @param meta [Hash] the pagination metadata
+      # @param meta [Hash] the pagination metadata, empty by default, as for a page whose response holds none
       # @param problems [Array<Problem>] the problems the page's response reported
       # @return [Page] a new page, which holds frozen copies of the arrays it is given, leaving them as they are
       # @raise [ArgumentError] if the items are not an Array of resources, the metadata is not a Hash, or the problems
       #   are not an Array of problems
       # @example Create a page
-      #   X::Page.new([user], {"result_count" => 1})
-      def initialize(items, meta, problems: [])
+      #   X::Page.new([user], meta: {"result_count" => 1})
+      def initialize(items, meta: {}, problems: [])
         @items = resources!(items).dup.freeze
         @meta = Utils.deep_freeze(Hash.try_convert(meta) || raise(ArgumentError, "meta must be a Hash, not #{meta.inspect}"))
         @problems = problems!(problems).dup.freeze
@@ -284,7 +284,7 @@ module X
         raise UnsupportedMarshalFormat, "#{self.class} reads format #{MARSHAL_FORMAT} of Marshal, not #{format.inspect}" unless MARSHAL_FORMAT.eql?(format)
 
         responses = responses.map { |data, about, query| Includes.new(data, problems: about, query:) }
-        initialize(resources.map { |klass, attrs, hydrated, response| read(klass, attrs, hydrated, responses.fetch(response)) }, meta, problems:)
+        initialize(resources.map { |klass, attrs, hydrated, response| read(klass, attrs, hydrated, responses.fetch(response)) }, meta:, problems:)
       end
 
       # Write the state Marshal writes as YAML, without the clients of the resources

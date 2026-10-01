@@ -10,7 +10,7 @@ module X
     def setup
       @user = User.new({"id" => "7", "username" => "sferik"}, client: FakeClient.new)
       @problem = Problem.new({"title" => "Not Found Error", "resource_id" => "9"})
-      @page = Page.new([@user], {"result_count" => 1, "next_token" => "p2"}, problems: [@problem])
+      @page = Page.new([@user], meta: {"result_count" => 1, "next_token" => "p2"}, problems: [@problem])
     end
 
     def test_marshal_dump_is_plain_data_led_by_its_format
@@ -39,7 +39,7 @@ module X
     def test_the_resources_of_one_response_report_its_problems_and_resolve_as_hydrated_as_they_did
       body = {"data" => [{"id" => "1", "author_id" => "9", "attachments" => {"poll_ids" => ["5"]}}], "includes" => {"polls" => [{"id" => "5"}]},
               "errors" => [{"title" => "Not Found Error", "resource_id" => "9"}]}
-      post = Marshal.load(Marshal.dump(Page.new(Post.__send__(:collection_built_from, body, client: nil, hydrated: false, query: Objects.const_get(:Utils).query(Post.default_params)), {}))).first
+      post = Marshal.load(Marshal.dump(Page.new(Post.__send__(:collection_built_from, body, client: nil, hydrated: false, query: Objects.const_get(:Utils).query(Post.default_params))))).first
 
       assert_equal [["9"], true], [post.problems.map(&:resource_id), post.polls.first.hydrated?]
     end
@@ -51,11 +51,11 @@ module X
         Post.__send__(:build, {"id" => (index + 1).to_s}, client: nil, includes: includes.new(nil, query:), hydrated: true)
       end
 
-      assert_equal [false, true, true], Marshal.load(Marshal.dump(Page.new(posts, {}))).map(&:hydrated?)
+      assert_equal [false, true, true], Marshal.load(Marshal.dump(Page.new(posts))).map(&:hydrated?)
     end
 
     def test_the_resources_of_several_responses_keep_what_each_response_held
-      page = Page.new([by_author("sferik"), by_author("gem")].then { |first, second| [first, second, first] }, {})
+      page = Page.new([by_author("sferik"), by_author("gem")].then { |first, second| [first, second, first] })
       loaded = Marshal.load(Marshal.dump(page))
 
       assert_equal [0, 1, 0], page.marshal_dump[1].map(&:last)
@@ -63,7 +63,7 @@ module X
     end
 
     def test_the_resources_of_several_responses_share_what_one_response_held
-      first, second, third = Marshal.load(Marshal.dump(Page.new([by_author("sferik"), by_author("gem")].then { |one, other| [one, other, one] }, {}))).map(&:author)
+      first, second, third = Marshal.load(Marshal.dump(Page.new([by_author("sferik"), by_author("gem")].then { |one, other| [one, other, one] }))).map(&:author)
 
       refute_same first, second
       assert_same first, third

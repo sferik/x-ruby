@@ -255,7 +255,7 @@ module X
         #   or a meta that is not an object
         # @example Build users from a response
         #   X::User.__send__(:collection_from_response, {"data" => [{"id" => "7505382"}]}, client: client)
-        private def collection_from_response(body, client:, hydrated: false) = Page.new(collection_built_from(body, client:, hydrated:, query: nil), Page.__send__(:meta_of, body), problems: Problem.all_from(body))
+        private def collection_from_response(body, client:, hydrated: false) = Page.new(collection_built_from(body, client:, hydrated:, query: nil), meta: Page.__send__(:meta_of, body), problems: Problem.all_from(body))
 
         # Build a resource from a response, knowing the query of its request
         #
