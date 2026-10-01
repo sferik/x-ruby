@@ -23,8 +23,8 @@ module X
     # Uploads media files to the X API
     #
     # Its methods can be called on the module, or on an instance of a class that includes it, which gains its public
-    # methods alone: what they call besides each other belongs to modules of its own, so no method the class defines
-    # under another name can change an upload.
+    # methods alone: what they call belongs to modules of its own, or is called on the module, as upload calls
+    # await_processing, so no method the class defines, under any name, can change an upload.
     #
     # @api public
     module MediaUpload
@@ -190,7 +190,7 @@ module X
         else
           Utils.single_request(client, Inference.single_request!(source, media_category), media_category, additional_owners:)
         end
-        uploaded = Utils.processed!(uploaded.processing? ? MediaProcessingCheckFailed.__send__(:keeping, uploaded) { await_processing(uploaded, client:, processing_timeout:) } : uploaded)
+        uploaded = Utils.processed!(uploaded.processing? ? MediaProcessingCheckFailed.__send__(:keeping, uploaded) { MediaUpload.await_processing(uploaded, client:, processing_timeout:) } : uploaded)
         AltTextFailed.__send__(:keeping, uploaded) { Metadata.add_alt_text(uploaded, alt_text, client:) } unless alt_text.nil?
         uploaded
       end
@@ -309,7 +309,7 @@ module X
       # @example Wait for processing with error handling
       #   Uploader::MediaUpload.await_processing!(media, client: client)
       def await_processing!(media, client:, processing_timeout: DEFAULT_PROCESSING_TIMEOUT)
-        Utils.processed!(await_processing(media, client:, processing_timeout:))
+        Utils.processed!(MediaUpload.await_processing(media, client:, processing_timeout:))
       end
 
       # Infers how media uploads: in chunks or whole, in which category, and as which type

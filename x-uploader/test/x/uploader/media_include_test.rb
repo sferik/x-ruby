@@ -17,6 +17,11 @@ module X
       include X::Uploader::MediaUpload
     end
 
+    # A class whose own await_processing is not the uploader's
+    class AwaitingUploader < MediaUploader
+      def await_processing(media, **) = raise("await_processing is the caller's own, given #{media.inspect}")
+    end
+
     # A class whose own methods have the names of what the uploaders call internally, none of which takes an argument
     class Attachment
       include X::Uploader::MediaUpload
@@ -52,6 +57,20 @@ module X
 
       assert_equal TEST_MEDIA_ID, media["id"]
       assert_requested(:post, "#{BASE_URL}/#{TEST_MEDIA_ID}/finalize")
+    end
+
+    def test_a_class_that_defines_its_own_await_processing_uploads_a_video_without_it
+      stub_chunked_upload(processing_info: {state: "pending", check_after_secs: 1})
+      stub_status_check
+      media = on_fake_clock { AwaitingUploader.new.upload("test/sample_files/sample.mp4", client: Client.new) }
+
+      assert_equal "succeeded", media.state
+    end
+
+    def test_a_class_that_defines_its_own_await_processing_awaits_processing_without_it
+      stub_status_check
+
+      assert_equal "succeeded", AwaitingUploader.new.await_processing!({"id" => TEST_MEDIA_ID}, client: Client.new).state
     end
 
     def test_a_class_with_methods_of_its_own_uploads_an_image_and_describes_it
@@ -99,10 +118,16 @@ module X
 
     private
 
-    def stub_chunked_upload
+    def stub_status_check
+      stub_request(:get, "#{BASE_URL}?command=STATUS&media_id=#{TEST_MEDIA_ID}")
+        .to_return(headers: JSON[:headers], body: {data: {id: TEST_MEDIA_ID, processing_info: {state: "succeeded"}}}.to_json)
+    end
+
+    def stub_chunked_upload(processing_info: nil)
       stub_request(:post, "#{BASE_URL}/initialize").to_return(JSON)
       stub_request(:post, "#{BASE_URL}/#{TEST_MEDIA_ID}/append").to_return(status: 204)
-      stub_request(:post, "#{BASE_URL}/#{TEST_MEDIA_ID}/finalize").to_return(JSON)
+      stub_request(:post, "#{BASE_URL}/#{TEST_MEDIA_ID}/finalize")
+        .to_return(headers: JSON[:headers], body: {data: {id: TEST_MEDIA_ID, processing_info:}.compact}.to_json)
     end
   end
 end
