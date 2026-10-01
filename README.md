@@ -381,7 +381,7 @@ end
 first = x_client.streaming.stream("tweets/search/stream") { |post| break post }
 
 # Give up after five reconnects in a row, and notice a quiet connection sooner
-streaming_client = x_client.streaming(max_reconnects: 5, read_timeout: 10)
+streaming_client = x_client.streaming(max_reconnects: 5, read_timeout: 25)
 
 # Delete the rules that were read, or the ones that match a value
 streaming.delete_stream_rules(streaming.stream_rules) # => 2

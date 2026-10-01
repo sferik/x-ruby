@@ -10,9 +10,9 @@ module X
 
     def test_a_client_builds_a_streaming_client_of_itself
       client = Client.new(bearer_token: TEST_BEARER_TOKEN)
-      streaming = client.streaming(read_timeout: 5, max_reconnects: 2)
+      streaming = client.streaming(read_timeout: 25, max_reconnects: 2)
 
-      assert_equal [StreamingClient, client, 5, 2], [streaming.class, streaming.client, streaming.read_timeout, streaming.max_reconnects]
+      assert_equal [StreamingClient, client, 25, 2], [streaming.class, streaming.client, streaming.read_timeout, streaming.max_reconnects]
     end
   end
 end

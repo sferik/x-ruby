@@ -48,7 +48,7 @@ module X
     def test_reads_with_a_short_timeout_of_its_own
       client = Client.new(read_timeout: 60)
 
-      assert_equal [30, 5], [client.streaming.read_timeout, client.streaming(read_timeout: 5).read_timeout]
+      assert_equal [30, 45], [client.streaming.read_timeout, client.streaming(read_timeout: 45).read_timeout]
       assert_equal [Float::INFINITY, 3], [client.streaming.max_reconnects, client.streaming(max_reconnects: 3).max_reconnects]
       assert_equal 60, client.read_timeout
     end

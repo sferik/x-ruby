@@ -15,6 +15,7 @@ module X
     module Validator
       extend Validator
 
+      MINIMUM_READ_TIMEOUT: Integer
       INVALID_COUNT_OR_INFINITY: String
       INVALID_READ_TIMEOUT: String
       INVALID_ARRAY_CLASS: String

@@ -21,7 +21,7 @@ module X
       # @param max_reconnects [Integer, Float] the maximum number of times in a row to reconnect a stream that drops, as
       #   {StreamingClient#initialize} takes it
       # @return [StreamingClient] a streaming client that shares this client's credentials and settings
-      # @raise [ArgumentError] if the read timeout is neither a finite number of seconds greater than 0 nor nil, or the
+      # @raise [ArgumentError] if the read timeout is neither a finite number of seconds of at least 20 nor nil, or the
       #   maximum number of reconnects is neither a count nor Float::INFINITY
       # @example Stream filtered posts, giving up after five reconnects in a row
       #   client.streaming(max_reconnects: 5).stream("tweets/search/stream") { |post| puts post }

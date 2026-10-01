@@ -23,9 +23,9 @@ module X
     def message_of(&) = assert_raises(ArgumentError, &).message
 
     def test_a_streaming_client_takes_a_read_timeout_and_reconnects
-      streaming = Client.new.streaming(read_timeout: 5, max_reconnects: 2)
+      streaming = Client.new.streaming(read_timeout: 25, max_reconnects: 2)
 
-      assert_equal [5, 2], [streaming.read_timeout, streaming.max_reconnects]
+      assert_equal [25, 2], [streaming.read_timeout, streaming.max_reconnects]
     end
 
     def test_a_streaming_client_defaults_its_read_timeout_and_reconnects
@@ -45,14 +45,14 @@ module X
     end
 
     def test_a_streaming_client_checks_its_read_timeout
-      messages = ["30", 0, 0.0, -1, Float::INFINITY, Float::NAN, Complex(1, 0)].map { |value| message_of { Client.new.streaming(read_timeout: value) } }
+      messages = ["30", 0, 0.0, -1, 19, 19.999, Rational(39, 2), Float::INFINITY, Float::NAN, Complex(30, 0)].map { |value| message_of { Client.new.streaming(read_timeout: value) } }
 
-      assert_equal ['"30"', "0", "0.0", "-1", "Infinity", "NaN", "(1+0i)"].map { |value| "read_timeout must be a finite number of seconds greater than 0, or nil for no timeout, not #{value}" }, messages
+      assert_equal ['"30"', "0", "0.0", "-1", "19", "19.999", "(39/2)", "Infinity", "NaN", "(30+0i)"].map { |value| "read_timeout must be a finite number of seconds of at least 20, the interval of the keep-alive X sends a quiet stream, or nil for no timeout, not #{value}" }, messages
       assert_nil Client.new.streaming(read_timeout: nil).read_timeout
     end
 
-    def test_a_read_timeout_greater_than_0_is_allowed
-      assert_equal [0.5, 1, Rational(3, 2)], [0.5, 1, Rational(3, 2)].map { |value| Client.new.streaming(read_timeout: value).read_timeout }
+    def test_a_read_timeout_of_at_least_20_is_allowed
+      assert_equal [20, 20.0, 20.5, Rational(41, 2), 600], [20, 20.0, 20.5, Rational(41, 2), 600].map { |value| Client.new.streaming(read_timeout: value).read_timeout }
     end
 
     def test_the_classes_of_a_stream_are_checked_before_it_is_opened

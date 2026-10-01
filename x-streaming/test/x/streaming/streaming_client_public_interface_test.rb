@@ -22,9 +22,9 @@ module X
     def test_the_settings_are_read_from_the_connection_and_the_reconnect_handler
       debug_output = StringIO.new
       client = Client.new(bearer_token: TEST_BEARER_TOKEN, open_timeout: 3, write_timeout: 4, debug_output:)
-      streaming_client = client.streaming(read_timeout: 5, max_reconnects: 6)
+      streaming_client = client.streaming(read_timeout: 25, max_reconnects: 6)
 
-      assert_equal [3, 5, 4, 6], [streaming_client.open_timeout, streaming_client.read_timeout, streaming_client.write_timeout, streaming_client.max_reconnects]
+      assert_equal [3, 25, 4, 6], [streaming_client.open_timeout, streaming_client.read_timeout, streaming_client.write_timeout, streaming_client.max_reconnects]
       assert_same debug_output, streaming_client.debug_output
     end
   end
