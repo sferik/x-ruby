@@ -46,11 +46,11 @@ module X
     attr_reader state: String
     attr_reader code_verifier: String
 
-    def initialize: (client_id: String, redirect_uri: String, ?client_secret: String?, ?scopes: Array[String], ?state: String, ?code_verifier: String, ?base_url: String, ?proxy_url: (URI::Generic | String)?, ?open_timeout: (Float | Integer)?, ?read_timeout: (Float | Integer)?, ?write_timeout: (Float | Integer)?, ?keep_alive_timeout: Float | Integer, ?debug_output: _DebugOutput?) -> void
+    def initialize: (client_id: String, redirect_uri: String, ?client_secret: String?, ?scopes: Array[String], ?state: String, ?code_verifier: String, ?base_url: String, ?proxy_url: (URI::Generic | String)?, ?open_timeout: Numeric?, ?read_timeout: Numeric?, ?write_timeout: Numeric?, ?keep_alive_timeout: Numeric, ?debug_output: _DebugOutput?) -> void
     def inspect: () -> String
     def url: () -> String
     def tokens: (String | Hash[String | Symbol, String] callback) -> OAuth2Tokens
-    def client: (String | Hash[String | Symbol, String] callback, ?base_url: String, ?open_timeout: (Float | Integer)?, ?read_timeout: (Float | Integer)?, ?write_timeout: (Float | Integer)?, ?keep_alive_timeout: Float | Integer, ?debug_output: _DebugOutput?, ?proxy_url: (URI::Generic | String)?, ?default_array_class: Class, ?default_object_class: object_class, ?headers: headers, ?max_redirects: Integer, ?max_rate_limit_retries: Integer, ?max_rate_limit_wait: Float | Integer, ?max_retries: Integer, ?on_response: _ResponseHook?, ?save_tokens: _TokenSaver?, ?load_tokens: _TokenLoader?) -> Client
+    def client: (String | Hash[String | Symbol, String] callback, ?base_url: String, ?open_timeout: Numeric?, ?read_timeout: Numeric?, ?write_timeout: Numeric?, ?keep_alive_timeout: Numeric, ?debug_output: _DebugOutput?, ?proxy_url: (URI::Generic | String)?, ?default_array_class: Class, ?default_object_class: object_class, ?headers: headers, ?max_redirects: Integer, ?max_rate_limit_retries: Integer, ?max_rate_limit_wait: Numeric, ?max_retries: Integer, ?on_response: _ResponseHook?, ?save_tokens: _TokenSaver?, ?load_tokens: _TokenLoader?) -> Client
     def marshal_dump: () -> bot
     def encode_with: (untyped coder) -> bot
     def as_json: (*untyped) -> bot
@@ -109,7 +109,7 @@ module X
 
     def self.from: (Hash[String, untyped]? attrs) -> Problem?
     def self.all_from: (Hash[String, untyped]? body) -> Array[Problem]
-    def initialize: (Hash[String, untyped] attrs) -> void
+    def initialize: (Hash[String | Symbol, untyped] attrs) -> void
     def to_h: () -> Hash[String, untyped]
     def title: () -> String?
     def detail: () -> String?
@@ -139,7 +139,7 @@ module X
     attr_reader problems: Array[Problem]
     attr_reader problem: Problem?
 
-    def initialize: (?String? message, ?http_response: Net::HTTPResponse?, ?status: Integer?, ?headers: Hash[String, String]?, ?body: String?, ?http_method: (Symbol | String)?, ?uri: URI::Generic?) -> void
+    def initialize: (?String? message, ?http_response: Net::HTTPResponse?, ?status: Integer?, ?headers: Hash[String | Symbol, String]?, ?body: String?, ?http_method: (Symbol | String)?, ?uri: URI::Generic?) -> void
     def http_method: () -> Symbol?
     def uri: () -> URI::Generic?
     def headers: () -> Hash[String, String]
@@ -211,7 +211,7 @@ module X
   class InvalidResponse < HTTPError
     attr_reader body: String?
 
-    def initialize: (?String? message, ?http_response: Net::HTTPResponse?, ?status: Integer?, ?headers: Hash[String, String]?, ?body: String?, ?http_method: (Symbol | String)?, ?uri: URI::Generic?) -> void
+    def initialize: (?String? message, ?http_response: Net::HTTPResponse?, ?status: Integer?, ?headers: Hash[String | Symbol, String]?, ?body: String?, ?http_method: (Symbol | String)?, ?uri: URI::Generic?) -> void
   end
 
   class TooManyRequests < ClientError
@@ -245,7 +245,7 @@ module X
     attr_reader uri: URI::Generic
     attr_reader http_response: Net::HTTPResponse
 
-    def initialize: (http_method: Symbol, uri: URI::Generic, ?http_response: Net::HTTPResponse?, ?status: Integer?, ?headers: Hash[String, String]?, ?body: String?) -> void
+    def initialize: (http_method: Symbol, uri: URI::Generic, ?http_response: Net::HTTPResponse?, ?status: Integer?, ?headers: Hash[String | Symbol, String]?, ?body: String?) -> void
     def headers: () -> Hash[String, String]
     def body: () -> String?
     def status: () -> Integer
@@ -337,9 +337,9 @@ module X
     attr_reader save_tokens: _TokenSaver?
     attr_reader load_tokens: _TokenLoader?
     attr_reader authenticator: Authenticator | AppOnlyAuthenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator
-    def initialize: (?api_key: String?, ?api_key_secret: String?, ?access_token: String?, ?access_token_secret: String?, ?bearer_token: String?, ?client_id: String?, ?client_secret: String?, ?refresh_token: String?, ?expires_at: Time?, ?scopes: Array[String]?, ?authenticator: Authenticator?, ?base_url: String, ?open_timeout: (Float | Integer)?, ?read_timeout: (Float | Integer)?, ?write_timeout: (Float | Integer)?, ?keep_alive_timeout: Float | Integer, ?debug_output: _DebugOutput?, ?proxy_url: (URI::Generic | String)?, ?default_array_class: Class, ?default_object_class: object_class, ?headers: headers, ?max_redirects: Integer, ?max_rate_limit_retries: Integer, ?max_rate_limit_wait: Float | Integer, ?max_retries: Integer, ?on_response: _ResponseHook?, ?save_tokens: _TokenSaver?, ?load_tokens: _TokenLoader?) -> void
+    def initialize: (?api_key: String?, ?api_key_secret: String?, ?access_token: String?, ?access_token_secret: String?, ?bearer_token: String?, ?client_id: String?, ?client_secret: String?, ?refresh_token: String?, ?expires_at: Time?, ?scopes: Array[String]?, ?authenticator: Authenticator?, ?base_url: String, ?open_timeout: Numeric?, ?read_timeout: Numeric?, ?write_timeout: Numeric?, ?keep_alive_timeout: Numeric, ?debug_output: _DebugOutput?, ?proxy_url: (URI::Generic | String)?, ?default_array_class: Class, ?default_object_class: object_class, ?headers: headers, ?max_redirects: Integer, ?max_rate_limit_retries: Integer, ?max_rate_limit_wait: Numeric, ?max_retries: Integer, ?on_response: _ResponseHook?, ?save_tokens: _TokenSaver?, ?load_tokens: _TokenLoader?) -> void
     def inspect: () -> String
-    def with: (?api_key: String?, ?api_key_secret: String?, ?access_token: String?, ?access_token_secret: String?, ?bearer_token: String?, ?client_id: String?, ?client_secret: String?, ?refresh_token: String?, ?expires_at: Time?, ?scopes: Array[String]?, ?authenticator: Authenticator?, ?base_url: String, ?open_timeout: (Float | Integer)?, ?read_timeout: (Float | Integer)?, ?write_timeout: (Float | Integer)?, ?keep_alive_timeout: Float | Integer, ?debug_output: _DebugOutput?, ?proxy_url: (URI::Generic | String)?, ?default_array_class: Class, ?default_object_class: object_class, ?headers: headers, ?max_redirects: Integer, ?max_rate_limit_retries: Integer, ?max_rate_limit_wait: Float | Integer, ?max_retries: Integer, ?on_response: _ResponseHook?, ?save_tokens: _TokenSaver?, ?load_tokens: _TokenLoader?) -> Client
+    def with: (?api_key: String?, ?api_key_secret: String?, ?access_token: String?, ?access_token_secret: String?, ?bearer_token: String?, ?client_id: String?, ?client_secret: String?, ?refresh_token: String?, ?expires_at: Time?, ?scopes: Array[String]?, ?authenticator: Authenticator?, ?base_url: String, ?open_timeout: Numeric?, ?read_timeout: Numeric?, ?write_timeout: Numeric?, ?keep_alive_timeout: Numeric, ?debug_output: _DebugOutput?, ?proxy_url: (URI::Generic | String)?, ?default_array_class: Class, ?default_object_class: object_class, ?headers: headers, ?max_redirects: Integer, ?max_rate_limit_retries: Integer, ?max_rate_limit_wait: Numeric, ?max_retries: Integer, ?on_response: _ResponseHook?, ?save_tokens: _TokenSaver?, ?load_tokens: _TokenLoader?) -> Client
     def app_only: () -> (Client | self)
     def api_key: () -> String?
     def client_id: () -> String?
@@ -350,14 +350,14 @@ module X
     def default_object_class: () -> object_class
     def on_response: () -> _ResponseHook?
     def headers: () -> headers
-    def open_timeout: () -> (Float | Integer)?
-    def read_timeout: () -> (Float | Integer)?
-    def write_timeout: () -> (Float | Integer)?
-    def keep_alive_timeout: () -> (Float | Integer)
+    def open_timeout: () -> Numeric?
+    def read_timeout: () -> Numeric?
+    def write_timeout: () -> Numeric?
+    def keep_alive_timeout: () -> Numeric
     def debug_output: () -> _DebugOutput?
     def max_redirects: () -> Integer
     def max_rate_limit_retries: () -> Integer
-    def max_rate_limit_wait: () -> (Float | Integer)
+    def max_rate_limit_wait: () -> Numeric
     def max_retries: () -> Integer
     def get: (String endpoint, ?params: params?, ?headers: headers, ?array_class: Class, ?object_class: object_class) ?{ (Response) -> void } -> untyped
     def post: (String endpoint, ?body? body, ?params: params?, ?form: params?, ?headers: headers, ?array_class: Class, ?object_class: object_class) ?{ (Response) -> void } -> untyped

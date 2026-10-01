@@ -39,8 +39,8 @@ module X
       type state = {reconnects: Integer}
 
       attr_reader max_reconnects: Integer | Float
-      attr_reader max_rate_limit_wait: Integer | Float
-      def initialize: (?max_reconnects: Integer | Float, ?max_rate_limit_wait: Integer | Float) -> void
+      attr_reader max_rate_limit_wait: Numeric
+      def initialize: (?max_reconnects: Integer | Float, ?max_rate_limit_wait: Numeric) -> void
       def handle: (^(untyped) -> void consumer) { (^(untyped) -> void, ^() -> void) -> void } -> nil
 
       private

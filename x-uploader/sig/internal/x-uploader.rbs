@@ -101,8 +101,8 @@ module X
       def subtitled_media_category: (String | Symbol media_category) -> String
       def sending_again: [T] (::X::Client client) { () -> T } -> T
       def processed!: (UploadedMedia status) -> UploadedMedia
-      def seconds_from_now: (Float | Integer seconds) -> Float
-      def wait_to_check: (UploadedMedia status, deadline: Float, timeout: Float | Integer) -> void
+      def seconds_from_now: (Numeric seconds) -> Float
+      def wait_to_check: (UploadedMedia status, deadline: Float, timeout: Numeric) -> void
     end
 
     module Multipart
@@ -216,7 +216,7 @@ module X
       MAX_SIMPLE_UPLOAD_BYTES: Integer
       extend Validator
 
-      def validate_upload!: (Source source, (String | Symbol)? media_category, alt_text: String?, chunk_size: Integer?, concurrency: Integer, processing_timeout: Float | Integer, ?shared: untyped, ?additional_owners: untyped) ?{ () -> (String | Symbol) } -> String
+      def validate_upload!: (Source source, (String | Symbol)? media_category, alt_text: String?, chunk_size: Integer?, concurrency: Integer, processing_timeout: Numeric, ?shared: untyped, ?additional_owners: untyped) ?{ () -> (String | Symbol) } -> String
       def validate_source!: (Source source) -> nil
       def validate_sharing!: (untyped shared, untyped additional_owners) -> void
       def user_id?: (untyped value) -> bool

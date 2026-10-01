@@ -130,8 +130,8 @@ module X
       RESET_JITTER: Integer
 
       attr_reader max_rate_limit_retries: Integer
-      attr_reader max_rate_limit_wait: Float | Integer
-      def initialize: (?max_rate_limit_retries: Integer, ?max_rate_limit_wait: Float | Integer) -> void
+      attr_reader max_rate_limit_wait: Numeric
+      def initialize: (?max_rate_limit_retries: Integer, ?max_rate_limit_wait: Numeric) -> void
       def handle: [T] () { () -> T } -> T
 
       private
@@ -263,14 +263,14 @@ module X
       attr_reader default_object_class: object_class
       attr_reader on_response: _ResponseHook?
       attr_reader headers: headers
-      def open_timeout: () -> (Float | Integer)?
-      def read_timeout: () -> (Float | Integer)?
-      def write_timeout: () -> (Float | Integer)?
-      def keep_alive_timeout: () -> (Float | Integer)
+      def open_timeout: () -> Numeric?
+      def read_timeout: () -> Numeric?
+      def write_timeout: () -> Numeric?
+      def keep_alive_timeout: () -> Numeric
       def debug_output: () -> _DebugOutput?
       def max_redirects: () -> Integer
       def max_rate_limit_retries: () -> Integer
-      def max_rate_limit_wait: () -> (Float | Integer)
+      def max_rate_limit_wait: () -> Numeric
       def max_retries: () -> Integer
       def with_retries: [T] () { () -> T } -> T
 
@@ -278,7 +278,7 @@ module X
       def share_connection: (Connection connection) -> void
       def settings: () -> Hash[Symbol, untyped]
       def proxy_url: () -> (URI::Generic | String)?
-      def initialize_settings: (base_url: String, default_array_class: Class, default_object_class: object_class, headers: headers, on_response: _ResponseHook?, max_redirects: Integer, max_rate_limit_retries: Integer, max_rate_limit_wait: Float | Integer, max_retries: Integer) -> void
+      def initialize_settings: (base_url: String, default_array_class: Class, default_object_class: object_class, headers: headers, on_response: _ResponseHook?, max_redirects: Integer, max_rate_limit_retries: Integer, max_rate_limit_wait: Numeric, max_retries: Integer) -> void
       def headers_for: (headers request_headers) -> headers
       def report: (Symbol http_method, URI::Generic uri, Net::HTTPResponse response) ?{ (Response) -> void } -> void
     end
@@ -349,10 +349,10 @@ module X
       STATUSES: Range[Integer]
       extend BuiltResponse
 
-      def of: (Net::HTTPResponse? http_response, status: Integer?, headers: Hash[String, String]?, body: String?) -> Net::HTTPResponse
+      def of: (Net::HTTPResponse? http_response, status: Integer?, headers: Hash[String | Symbol, String]?, body: String?) -> Net::HTTPResponse
 
       private
-      def build: (Integer status, Hash[String, String] headers, String? body) -> Net::HTTPResponse
+      def build: (Integer status, Hash[String | Symbol, String] headers, String? body) -> Net::HTTPResponse
       def response_class_of: (Integer status) -> Class
       def reason_of: (Class response_class) -> String
     end
@@ -403,7 +403,7 @@ module X
       attr_reader load_tokens: _TokenLoader?
 
       def self.of: (Client client) -> ClientInternals
-      def initialize: (Client client, api_key: String?, api_key_secret: String?, access_token: String?, access_token_secret: String?, bearer_token: String?, client_id: String?, client_secret: String?, refresh_token: String?, expires_at: Time?, scopes: Array[String]?, authenticator: Authenticator?, base_url: String, open_timeout: (Float | Integer)?, read_timeout: (Float | Integer)?, write_timeout: (Float | Integer)?, keep_alive_timeout: Float | Integer, debug_output: _DebugOutput?, proxy_url: (URI::Generic | String)?, default_array_class: Class, default_object_class: object_class, headers: headers, max_redirects: Integer, max_rate_limit_retries: Integer, max_rate_limit_wait: Float | Integer, max_retries: Integer, on_response: _ResponseHook?, save_tokens: _TokenSaver?, load_tokens: _TokenLoader?) -> void
+      def initialize: (Client client, api_key: String?, api_key_secret: String?, access_token: String?, access_token_secret: String?, bearer_token: String?, client_id: String?, client_secret: String?, refresh_token: String?, expires_at: Time?, scopes: Array[String]?, authenticator: Authenticator?, base_url: String, open_timeout: Numeric?, read_timeout: Numeric?, write_timeout: Numeric?, keep_alive_timeout: Numeric, debug_output: _DebugOutput?, proxy_url: (URI::Generic | String)?, default_array_class: Class, default_object_class: object_class, headers: headers, max_redirects: Integer, max_rate_limit_retries: Integer, max_rate_limit_wait: Numeric, max_retries: Integer, on_response: _ResponseHook?, save_tokens: _TokenSaver?, load_tokens: _TokenLoader?) -> void
       def inspect: () -> String
       def with: (Client client, Hash[Symbol, untyped] options) -> Client
       def close: () -> void
@@ -505,13 +505,13 @@ module X
       include ConnectionRequest
       include ProxySetting
 
-      attr_reader open_timeout : (Float | Integer)?
-      attr_reader read_timeout : (Float | Integer)?
-      attr_reader write_timeout : (Float | Integer)?
-      attr_reader keep_alive_timeout : Float | Integer
+      attr_reader open_timeout : Numeric?
+      attr_reader read_timeout : Numeric?
+      attr_reader write_timeout : Numeric?
+      attr_reader keep_alive_timeout : Numeric
       attr_reader debug_output : _DebugOutput?
 
-      def initialize: (?open_timeout: (Float | Integer)?, ?read_timeout: (Float | Integer)?, ?write_timeout: (Float | Integer)?, ?keep_alive_timeout: Float | Integer, ?proxy_url: (URI::Generic | String)?, ?debug_output: _DebugOutput?) -> void
+      def initialize: (?open_timeout: Numeric?, ?read_timeout: Numeric?, ?write_timeout: Numeric?, ?keep_alive_timeout: Numeric, ?proxy_url: (URI::Generic | String)?, ?debug_output: _DebugOutput?) -> void
       def inspect: () -> String
       def perform: (request: Net::HTTPRequest) -> Net::HTTPResponse
       def perform_stream: [T] (request: Net::HTTPRequest) { (Net::HTTPResponse) -> T } -> T
@@ -570,7 +570,7 @@ module X
     MISSING_STATE: String
 
     @pkce: SimpleOAuth::OAuth2::PKCE
-    @settings: {base_url: String, proxy_url: (URI::Generic | String)?, open_timeout: (Float | Integer)?, read_timeout: (Float | Integer)?, write_timeout: (Float | Integer)?, keep_alive_timeout: Float | Integer, debug_output: _DebugOutput?}
+    @settings: {base_url: String, proxy_url: (URI::Generic | String)?, open_timeout: Numeric?, read_timeout: Numeric?, write_timeout: Numeric?, keep_alive_timeout: Numeric, debug_output: _DebugOutput?}
 
     private
     def validate!: (client_id: String, redirect_uri: String, client_secret: String?, scopes: Array[String], state: String) -> void
@@ -646,7 +646,7 @@ module X
     private def self.default_status: () -> Integer?
 
     private
-    def built_response: (Net::HTTPResponse? http_response, status: Integer?, headers: Hash[String, String]?, body: String?) -> Net::HTTPResponse
+    def built_response: (Net::HTTPResponse? http_response, status: Integer?, headers: Hash[String | Symbol, String]?, body: String?) -> Net::HTTPResponse
     def seconds_until: (String value) -> Integer?
     def parsed_body: () -> Hash[String, untyped]
     def errors_from: (Hash[String, untyped] body) -> Array[Problem]
