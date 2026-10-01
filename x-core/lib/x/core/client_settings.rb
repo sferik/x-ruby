@@ -125,7 +125,7 @@ module X
         @base_url = base_url.end_with?("/") ? base_url : "#{base_url}/"
         @default_array_class = SettingValidator.array_class!(:default_array_class, default_array_class)
         @default_object_class = SettingValidator.object_class!(:default_object_class, default_object_class)
-        @headers = SettingValidator.headers!(headers).dup.freeze
+        @headers = SettingValidator.headers!(headers).transform_keys(&:to_s).freeze
         @on_response = SettingValidator.callable!(:on_response, on_response)
         @redirect_handler = RedirectHandler.new(connection: @connection, request_builder: @request_builder, max_redirects:)
         @rate_limit_handler = RateLimitHandler.new(max_rate_limit_retries:, max_rate_limit_wait:)

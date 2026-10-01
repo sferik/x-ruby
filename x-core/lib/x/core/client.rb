@@ -241,8 +241,11 @@ module X
       # carries credentials, such as Authorization or Cookie, is dropped by a redirect to another origin, as one
       # passed to a request is.
       #
+      # Each is named by a String, a header the client was given by a Symbol among them, so that a header is read by
+      # the name it is sent with, whichever the client was given.
+      #
       # @api public
-      # @return [Hash{String, Symbol => String}] the headers, frozen, each named as it was given, a String or a Symbol
+      # @return [Hash{String => String}] the headers, frozen, each named by a String
       # @example Read the headers a client sends
       #   client.headers # => {"User-Agent" => "my-app/1.0"}
       def headers = @internals.headers

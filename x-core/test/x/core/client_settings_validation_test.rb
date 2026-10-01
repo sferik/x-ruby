@@ -64,7 +64,15 @@ module X
 
     def test_headers_named_by_a_string_or_a_symbol_are_allowed
       assert_equal({"User-Agent" => "MyApp/1.0"}, Client.new(headers: {"User-Agent" => "MyApp/1.0"}).headers)
-      assert_equal({accept: "application/json"}, Client.new(headers: {accept: "application/json"}).headers)
+      assert_equal({"accept" => "application/json"}, Client.new(headers: {accept: "application/json"}).headers)
+    end
+
+    def test_headers_named_by_a_symbol_are_read_by_a_string
+      client = Client.new(headers: {"User-Agent": "MyApp/1.0", "X-Trace": "abc"})
+
+      assert_equal "MyApp/1.0", client.headers["User-Agent"]
+      assert_equal({"User-Agent" => "MyApp/1.0", "X-Trace" => "abc"}, client.with(max_redirects: 1).headers)
+      assert_predicate client.headers, :frozen?
     end
 
     def test_headers_of_subclasses_of_hash_and_string_are_allowed

@@ -262,7 +262,7 @@ module X
       attr_reader default_array_class: Class
       attr_reader default_object_class: object_class
       attr_reader on_response: _ResponseHook?
-      attr_reader headers: headers
+      attr_reader headers: Hash[String, String]
       def open_timeout: () -> Numeric?
       def read_timeout: () -> Numeric?
       def write_timeout: () -> Numeric?
