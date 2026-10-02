@@ -45,8 +45,8 @@ module X
       assert_equal 2, append_requests.size
     end
 
-    def test_default_chunk_size_is_one_megabyte
-      with_file(Uploader::MediaUpload.const_get(:BYTES_PER_MB) + 1) { |path| upload(path) }
+    def test_default_chunk_size_is_four_megabytes
+      with_file(Uploader::MediaUpload::DEFAULT_CHUNK_SIZE + 1) { |path| upload(path) }
 
       assert_equal 2, append_requests.size
     end

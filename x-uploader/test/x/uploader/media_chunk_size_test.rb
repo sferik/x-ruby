@@ -19,17 +19,17 @@ module X
       stub_request(:post, "#{BASE_URL}/#{TEST_MEDIA_ID}/finalize").to_return(headers: JSON_HEADERS, body: {data: {id: TEST_MEDIA_ID}}.to_json)
     end
 
-    def test_a_video_larger_than_ten_thousand_megabytes_uploads_in_the_segments_the_api_numbers
+    def test_a_video_larger_than_ten_thousand_megabytes_uploads_in_chunks_of_four_megabytes
       chunk_size = with_large_video { |path| upload(path) }
 
-      assert_equal 1_153_434, chunk_size
+      assert_equal 4_194_304, chunk_size
       assert_operator (LARGE_VIDEO_BYTES.to_f / chunk_size).ceil, :<=, 10_000
     end
 
-    def test_a_video_of_a_megabyte_uploads_in_chunks_of_a_megabyte
+    def test_a_video_of_a_megabyte_uploads_in_chunks_of_the_default_size
       chunk_size = with_video(Uploader::MediaUpload.const_get(:BYTES_PER_MB)) { |path| upload(path) }
 
-      assert_equal Uploader::MediaUpload.const_get(:BYTES_PER_MB), chunk_size
+      assert_equal Uploader::MediaUpload::DEFAULT_CHUNK_SIZE, chunk_size
     end
 
     def test_a_chunk_size_given_is_taken_as_the_bytes_it_names
@@ -66,7 +66,7 @@ module X
     end
 
     def test_a_video_of_the_most_the_api_takes_of_an_upload_uploads_in_the_segments_it_numbers
-      assert_equal 1_717_987, with_video(16 * 1024**3) { |path| upload(path) }
+      assert_equal 4_194_304, with_video(16 * 1024**3) { |path| upload(path) }
     end
 
     def test_a_video_larger_than_the_api_takes_of_an_upload_uploads_nothing

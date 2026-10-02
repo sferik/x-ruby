@@ -152,18 +152,18 @@ module X
       assert_equal "alt_text must be 1 to 1000 characters, not 1001", error.message
     end
 
-    def test_a_chunk_size_of_a_megabyte_is_derived_for_a_file_the_api_numbers_the_segments_of
+    def test_a_chunk_size_of_four_megabytes_is_derived_for_a_file_the_api_numbers_the_segments_of
       with_file(BYTES_PER_MB + 1) do |path|
-        assert_equal BYTES_PER_MB, Uploader.const_get(:Validator).validate_segments!(source(path), nil)
+        assert_equal 4 * BYTES_PER_MB, Uploader.const_get(:Validator).validate_segments!(source(path), nil)
       end
     end
 
     def test_the_chunk_size_derived_for_a_large_file_uploads_it_in_the_segments_the_api_numbers
-      with_file(LARGE_FILE_BYTES) do |path|
+      with_file(45_000 * BYTES_PER_MB) do |path|
         chunk_size = Uploader.const_get(:Validator).validate_segments!(source(path), nil)
 
-        assert_equal 1_153_434, chunk_size
-        assert_operator (LARGE_FILE_BYTES.to_f / chunk_size).ceil, :<=, 10_000
+        assert_equal 4_718_592, chunk_size
+        assert_operator (45_000 * BYTES_PER_MB.to_f / chunk_size).ceil, :<=, 10_000
       end
     end
 

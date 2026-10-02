@@ -205,6 +205,7 @@ module X
       USER_ID: Regexp
       MAX_SEGMENTS: Integer
       MAX_CHUNK: Integer
+      DEFAULT_CHUNK: Integer
       MAX_CONCURRENCY: Integer
       MEDIA_CATEGORIES: Array[String]
       MAX_MEDIA_BYTES: Hash[String, Integer]

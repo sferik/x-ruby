@@ -71,6 +71,9 @@ module X
       DEFAULT_PROCESSING_TIMEOUT = 600
       # Default number of chunks uploaded at once
       DEFAULT_CONCURRENCY = 4
+      # Default number of bytes in each chunk of an upload in chunks, 4 megabytes, unless the media needs larger ones
+      # to fit the segments the API numbers
+      DEFAULT_CHUNK_SIZE = Validator::DEFAULT_CHUNK
       # Greatest number of chunks uploaded at once, each of which holds a chunk of up to 5 megabytes and a connection
       MAX_CONCURRENCY = Validator::MAX_CONCURRENCY
       # The command that asks the upload endpoint how far the processing of media has got
@@ -132,6 +135,12 @@ module X
       # kept for the thread that called, such as a Rails CurrentAttributes or a logger of its own, reads that of
       # another thread.
       #
+      # Each chunk is a request of its own, which a rate limit can refuse, and a chunk refused raises
+      # ChunkedUploadFailed, since the client retries a request refused for a rate limit only max_rate_limit_retries
+      # times, which is 0 by default. A large video, uploaded in many chunks, should be uploaded with a client whose
+      # max_rate_limit_retries is set, such as X::Client.new(max_rate_limit_retries: 3), so that a rate limit is waited
+      # out, up to the max_rate_limit_wait of the client, rather than fail the upload.
+      #
       # @api public
       # @param media [String, Pathname, IO, StringIO] the path to the media to upload, or an IO open on it
       # @param client [Client] the X API client
@@ -145,8 +154,8 @@ module X
       #   category when nil; an upload in a single request sends no type, since the API types the media itself, so
       #   one given for an image is not sent
       # @param chunk_size [Integer, nil] the size of each chunk of media uploaded in chunks, in bytes, of at most
-      #   5,242,880, the 5 megabytes the API takes in a segment, derived from the size of the media when nil, so that
-      #   an upload of up to the 16 gigabytes the API takes fits the segments it numbers
+      #   5,242,880, the 5 megabytes the API takes in a segment, or nil for DEFAULT_CHUNK_SIZE, 4,194,304 bytes, or as
+      #   much more as the media needs to fit the segments the API numbers
       # @param concurrency [Integer] the number of chunks uploaded at once, of 1 to MAX_CONCURRENCY
       # @param shared [Boolean, nil] whether the media is shared, so that it can be sent in more than one direct
       #   message, or nil to leave it to the API; media
@@ -209,6 +218,12 @@ module X
       # kept for the thread that called, such as a Rails CurrentAttributes or a logger of its own, reads that of
       # another thread.
       #
+      # Each chunk is a request of its own, which a rate limit can refuse, and a chunk refused raises
+      # ChunkedUploadFailed, since the client retries a request refused for a rate limit only max_rate_limit_retries
+      # times, which is 0 by default. A large video, uploaded in many chunks, should be uploaded with a client whose
+      # max_rate_limit_retries is set, such as X::Client.new(max_rate_limit_retries: 3), so that a rate limit is waited
+      # out, up to the max_rate_limit_wait of the client, rather than fail the upload.
+      #
       # @api public
       # @param media [String, Pathname, IO, StringIO] the path to the media to upload, or an IO open on it
       # @param client [Client] the X API client
@@ -216,8 +231,8 @@ module X
       # @param media_type [String, nil] the MIME type of the media, sent as it is given, or inferred from the media and
       #   category when nil
       # @param chunk_size [Integer, nil] the size of each chunk in bytes, of at most 5,242,880, the 5 megabytes the API
-      #   takes in a segment, derived from the size of the media when nil: a megabyte, or as much more, up to 5, as the
-      #   segments the API numbers ask
+      #   takes in a segment, or nil for DEFAULT_CHUNK_SIZE, 4,194,304 bytes, or as much more as the media needs to fit
+      #   the segments the API numbers
       # @param concurrency [Integer] the number of chunks uploaded at once, of 1 to MAX_CONCURRENCY
       # @param shared [Boolean, nil] whether the media is shared, so that it can be sent in more than one direct
       #   message, or nil to leave it to the API

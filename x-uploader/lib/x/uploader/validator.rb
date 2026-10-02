@@ -25,13 +25,18 @@ module X
       USER_ID = /\A[0-9]{1,19}\z/
       # Greatest number of segments an upload in chunks can have: the OpenAPI specification of the API v2 takes a
       # segment_index of 0 to 9999, so an upload in more chunks than these would fail partway, once the media uploaded
-      # so far had been billed. Chunks of MAX_CHUNK bytes upload 52 GB of media in them, more than the MAX_UPLOAD_BYTES
-      # the API takes of any upload
+      # so far had been billed. Chunks of DEFAULT_CHUNK bytes upload 41 GB of media in them, more than the
+      # MAX_UPLOAD_BYTES the API takes of any upload
       MAX_SEGMENTS = 10_000
       # Greatest number of bytes in a segment of an upload in chunks: the guide to chunked uploads says to keep each
       # segment at or below 5 MB, of the 8 MB the server takes at most, so a chunk is 5 megabytes at most, which is
       # below 8 MB whether a megabyte is read as 1,000,000 bytes or as 1,048,576
       MAX_CHUNK = 5 * BYTES_PER_MB
+      # Number of bytes in a chunk of an upload given no chunk size, unless the media needs larger ones to fit the
+      # MAX_SEGMENTS the API numbers: each chunk is a request, any of which a rate limit can refuse, which fails the
+      # upload unless the client waits it out, so a chunk is 4 megabytes, within the MAX_CHUNK of a segment, which
+      # sends a quarter of the requests chunks of a megabyte did
+      DEFAULT_CHUNK = 4 * BYTES_PER_MB
       # Greatest number of chunks uploaded at once: each holds a chunk of up to MAX_CHUNK bytes in memory and a
       # connection of its own, so 16 hold 80 megabytes on the 16 connections a client keeps open to a host, and more
       # would hold more of both than an upload gains from, since the connections the client does not keep are opened
@@ -334,9 +339,9 @@ module X
       # The API numbers no more than MAX_SEGMENTS segments, of no more than MAX_CHUNK bytes each, which an upload in
       # more chunks, or in larger ones, would fail partway of.
       #
-      # A chunk size of nil is derived from the size of the media: a megabyte, as every upload in chunks used, or the
-      # size that uploads the media in MAX_SEGMENTS chunks, whichever is larger, which media no larger than the
-      # MAX_UPLOAD_BYTES validate_size! takes uploads in chunks of less than MAX_CHUNK bytes.
+      # A chunk size of nil is derived from the size of the media: DEFAULT_CHUNK bytes, or the size that uploads the
+      # media in MAX_SEGMENTS chunks, whichever is larger, which media no larger than the MAX_UPLOAD_BYTES
+      # validate_size! takes uploads in chunks of DEFAULT_CHUNK bytes.
       #
       # @api private
       # @param source [Source] the media to upload
@@ -345,7 +350,7 @@ module X
       # @raise [Errno::ENOENT] if the file does not exist
       # @raise [ArgumentError] if chunks of the size given would be more than the API numbers
       # @example Derive the chunk size of a video
-      #   Uploader::Validator.validate_segments!(source, nil) # => 1048576
+      #   Uploader::Validator.validate_segments!(source, nil) # => 4194304
       def validate_segments!(source, chunk_size)
         file_size = source.size
         size = chunk_size || derived_chunk_size(file_size)
@@ -356,14 +361,14 @@ module X
 
       # The size in bytes of the chunks media is uploaded in when it is given none
       #
-      # It is a megabyte, or the size that uploads the media in MAX_SEGMENTS chunks, whichever is larger.
+      # It is DEFAULT_CHUNK bytes, or the size that uploads the media in MAX_SEGMENTS chunks, whichever is larger.
       #
       # @api private
       # @param file_size [Integer] the size of the media in bytes
       # @return [Integer] the size of each chunk in bytes
       # @example The chunk size of a video of sixteen gigabytes
-      #   Uploader::Validator.derived_chunk_size(16 * 1024**3) # => 1717987
-      def derived_chunk_size(file_size) = [(file_size.to_f / MAX_SEGMENTS).ceil, BYTES_PER_MB].max
+      #   Uploader::Validator.derived_chunk_size(16 * 1024**3) # => 4194304
+      def derived_chunk_size(file_size) = [(file_size.to_f / MAX_SEGMENTS).ceil, DEFAULT_CHUNK].max
 
       # Validate a media category, and give it in the lowercase the API takes
       #

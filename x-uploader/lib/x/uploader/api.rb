@@ -26,6 +26,10 @@ module X
       # media_category says what it is. The chunks are sent by threads of their own, so the on_response of the client
       # runs on those threads for the response of each chunk.
       #
+      # Each chunk is a request a rate limit can refuse, which fails the upload with ChunkedUploadFailed unless the
+      # client retries it, which it does only max_rate_limit_retries times, 0 by default, so upload a large video with
+      # a client whose max_rate_limit_retries is set, such as X::Client.new(max_rate_limit_retries: 3).
+      #
       # @api public
       # @param media [String, Pathname, IO, StringIO] the path to the media to upload, or an IO open on it
       # @param options [Hash] the options of {MediaUpload.upload}, such as media_category, alt_text, processing_timeout,
@@ -72,6 +76,10 @@ module X
       # video, and wait for it with {#await_media_processing} or {#await_media_processing!} when it needs it. The
       # chunks are sent by threads of their own, so the on_response of the client runs on those threads for the
       # response of each chunk.
+      #
+      # Each chunk is a request a rate limit can refuse, which fails the upload with ChunkedUploadFailed unless the
+      # client retries it, which it does only max_rate_limit_retries times, 0 by default, so upload a large video with
+      # a client whose max_rate_limit_retries is set, such as X::Client.new(max_rate_limit_retries: 3).
       #
       # @api public
       # @param media [String, Pathname, IO, StringIO] the path to the media to upload, or an IO open on it

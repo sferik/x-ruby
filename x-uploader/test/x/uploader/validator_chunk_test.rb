@@ -12,13 +12,23 @@ module X
     # The most bytes a segment of an upload in chunks holds
     MAX_CHUNK = Uploader.const_get(:Validator)::MAX_CHUNK
 
-    def test_the_chunk_size_derived_for_a_file_of_the_most_the_api_takes_fits_the_segments_it_numbers
+    def test_the_chunk_size_derived_for_a_file_of_the_most_the_api_takes_is_the_default
       with_file(16 * 1024**3) do |path|
         chunk_size = Uploader.const_get(:Validator).validate_segments!(source(path), nil)
 
-        assert_equal 1_717_987, chunk_size
+        assert_equal 4_194_304, chunk_size
         assert_operator chunk_size, :<, MAX_CHUNK
       end
+    end
+
+    def test_the_chunk_size_derived_for_a_file_larger_than_default_chunks_fit_uploads_it_in_the_segments_the_api_numbers
+      [[41_943_040_000, 4_194_304], [41_943_040_001, 4_194_305], [52_428_800_000, MAX_CHUNK]].each do |size, chunk_size|
+        with_file(size) { |path| assert_equal chunk_size, Uploader.const_get(:Validator).validate_segments!(source(path), nil) }
+      end
+    end
+
+    def test_the_default_chunk_is_four_megabytes
+      assert_equal [4 * 1_048_576] * 2, [Uploader.const_get(:Validator)::DEFAULT_CHUNK, Uploader::MediaUpload::DEFAULT_CHUNK_SIZE]
     end
 
     def test_a_video_of_the_most_the_api_takes_of_an_upload_is_taken_and_a_byte_more_refused

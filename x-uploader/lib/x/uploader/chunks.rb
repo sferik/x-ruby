@@ -50,7 +50,7 @@ module X
       #   finalized, or the response that finalizes it holds no media, with the media it initialized
       # @example Upload a video in chunks
       #   Uploader::Chunks.upload(client:, source:, media_type: "video/mp4", media_category: "tweet_video",
-      #     chunk_size: 1_048_576, concurrency: 4)
+      #     chunk_size: 4_194_304, concurrency: 4)
       def upload(client:, source:, media_type:, media_category:, chunk_size:, concurrency:, shared:, additional_owners:)
         chunk_size = Validator.validate_segments!(source, chunk_size)
         media = init(client:, source:, media_type:, media_category:, shared:, additional_owners:)
@@ -100,7 +100,7 @@ module X
       # @param concurrency [Integer] the number of chunks uploaded at once
       # @return [void]
       # @example Append the chunks of a video
-      #   Uploader::Chunks.append(client:, source:, chunk_size: 1_048_576, media:, boundary:, concurrency: 4)
+      #   Uploader::Chunks.append(client:, source:, chunk_size: 4_194_304, media:, boundary:, concurrency: 4)
       def append(client:, source:, chunk_size:, media:, boundary:, concurrency:)
         queue = chunk_queue(source, chunk_size)
         errors = Queue.new
@@ -120,7 +120,7 @@ module X
       # @return [UploadedMedia] the uploaded media, as the response that finalizes the upload describes it
       # @raise [MissingMediaData] if the response that finalizes the upload holds no media or carries no body at all
       # @example Upload the chunks of a video and finalize it
-      #   Uploader::Chunks.complete(client:, source:, chunk_size: 1_048_576, media:, concurrency: 4)
+      #   Uploader::Chunks.complete(client:, source:, chunk_size: 4_194_304, media:, concurrency: 4)
       def complete(client:, source:, chunk_size:, media:, concurrency:)
         append(client:, source:, chunk_size:, media:, boundary: SecureRandom.hex, concurrency:)
         UploadedMedia.new(Utils.media_data(finalize(client:, media:), "that finalizes the upload"))

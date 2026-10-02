@@ -35,7 +35,7 @@ module X
     end
 
     def test_media_holds_none_of_the_constants_of_the_chunked_upload
-      assert_equal %i[AMPLIFY_VIDEO DEFAULT_CONCURRENCY DEFAULT_PROCESSING_TIMEOUT DM_GIF DM_IMAGE DM_VIDEO MAX_CONCURRENCY SUBTITLES
+      assert_equal %i[AMPLIFY_VIDEO DEFAULT_CHUNK_SIZE DEFAULT_CONCURRENCY DEFAULT_PROCESSING_TIMEOUT DM_GIF DM_IMAGE DM_VIDEO MAX_CONCURRENCY SUBTITLES
         TWEET_GIF TWEET_IMAGE TWEET_VIDEO], Uploader::MediaUpload.constants.sort
       assert_empty Uploader.const_get(:Chunks).constants
     end
