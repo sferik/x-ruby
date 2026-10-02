@@ -125,7 +125,7 @@ module X
       def complete: (client: ::X::Client, source: Source, chunk_size: Integer, media: Hash[String, untyped], concurrency: Integer) -> UploadedMedia
 
       private
-      def await: (Array[Thread] workers) -> void
+      def await: (Integer count) { () -> Thread } -> void
       def chunk_queue: (Source source, Integer chunk_size) -> Thread::Queue
       def append_worker: (Thread::Queue queue, Thread::Queue errors, client: ::X::Client, source: Source, chunk_size: Integer, media_id: String, boundary: String) -> Thread
       def chunk: (Source source, Integer chunk_size, Integer index, Integer offset) -> String

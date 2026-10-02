@@ -105,7 +105,7 @@ module X
         queue = chunk_queue(source, chunk_size)
         errors = Queue.new
         media_id = media.fetch("id")
-        await Array.new([concurrency, queue.size].min) { append_worker(queue, errors, client:, source:, chunk_size:, media_id:, boundary:) }
+        await([concurrency, queue.size].min) { append_worker(queue, errors, client:, source:, chunk_size:, media_id:, boundary:) }
         raise errors.deq unless errors.empty?
       end
 
@@ -145,19 +145,26 @@ module X
 
       private
 
-      # Wait for the workers to finish, stopping them if the wait is cut short
+      # Start the workers and wait for them, stopping them if the wait is cut short
       #
       # Every worker has finished when the wait ends on its own, so there is nothing left to stop. When an exception
       # is raised in the waiting thread, the workers are killed, which closes the connection of a request under way,
-      # and waited for, so that none outlives the call.
+      # and waited for, so that none outlives the call. The workers are started inside the wait, so that one that
+      # cannot be started, as a thread the system refuses raises ThreadError, or an exception raised in the caller
+      # while they are started, stops those started before it as well.
       #
       # @api private
-      # @param workers [Array<Thread>] the threads that upload the chunks
+      # @param count [Integer] the number of workers to start
+      # @yieldreturn [Thread] a worker it started, a thread that uploads chunks
       # @return [void]
-      def await(workers)
-        workers.each(&:join)
-      ensure
-        workers.each(&:kill).each(&:join)
+      def await(count)
+        workers = [] #: Array[Thread]
+        begin
+          count.times { workers << yield }
+          workers.each(&:join)
+        ensure
+          workers.each(&:kill).each(&:join)
+        end
       end
 
       # A closed queue of the index and byte offset of each chunk of the media, in order
