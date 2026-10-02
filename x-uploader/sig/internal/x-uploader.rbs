@@ -243,6 +243,7 @@ module X
 
   class UploadedMedia
     PROCESSING_STATES: Array[String]
+    IDENTIFYING_KEYS: Array[String]
     NO_MEDIA_ID: String
     MARSHAL_FORMAT: Integer
     YAML_KEYS: Array[String]

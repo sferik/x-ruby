@@ -18,6 +18,8 @@ module X
   class UploadedMedia
     # The states of processing that has not ended, which X asks to be checked again
     PROCESSING_STATES = %w[pending in_progress].freeze
+    # The attributes that name media, which media known by its identifier or media key alone holds, and nothing more
+    IDENTIFYING_KEYS = %w[id media_key].freeze
     # The message of the error raised for media that holds no identifier
     NO_MEDIA_ID = "The media holds no identifier"
     # The number of the format of the state Marshal writes, which every release of 1.x writes
@@ -27,7 +29,7 @@ module X
     MARSHAL_FORMAT = 1
     # The name YAML writes each part of the state under, in the order Marshal writes them
     YAML_KEYS = %w[format attrs].freeze
-    private_constant :PROCESSING_STATES, :NO_MEDIA_ID, :MARSHAL_FORMAT, :YAML_KEYS
+    private_constant :PROCESSING_STATES, :IDENTIFYING_KEYS, :NO_MEDIA_ID, :MARSHAL_FORMAT, :YAML_KEYS
 
     # The response data the media was built from
     # @api public
@@ -151,13 +153,15 @@ module X
     # Check whether the media can be attached to a post
     #
     # Media whose processing information names no state, or a state X does not document, is not ready, since X has
-    # not said that its processing succeeded.
+    # not said that its processing succeeded. Neither is media that holds its identifier and media key alone, as media
+    # built from an identifier does, such as the media add_alt_text returns for one, since it holds no response of X
+    # to say whether X processes it; await_media_processing checks it.
     #
     # @api public
-    # @return [Boolean] true if X does not process the media, or its processing succeeded
+    # @return [Boolean] true if a response of X holds no processing of the media, or its processing succeeded
     # @example Check whether a video can be posted
     #   media.ready?
-    def ready? = processing_info.nil? || state.eql?("succeeded")
+    def ready? = processing_info.nil? ? !attrs.except(*IDENTIFYING_KEYS).empty? : state.eql?("succeeded")
 
     # Read an attribute of the response, as from the Hash an upload used to return
     #

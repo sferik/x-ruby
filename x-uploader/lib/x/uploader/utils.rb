@@ -240,7 +240,7 @@ module X
       #
       # Media whose processing names no state, or a state X does not document, is neither processing nor ready, and
       # X gives no time to check it again at, so it raises too, naming the state, rather than be returned as media a
-      # post can attach.
+      # post can attach. A response that holds no processing is of media X does not process, whatever else it holds.
       #
       # @api private
       # @param status [UploadedMedia] the processing status X reported, or the response of an upload
@@ -250,9 +250,9 @@ module X
       #   Uploader::Utils.processed!(status) # => status
       def processed!(status)
         raise MediaProcessingFailed.new(media: status) if status.failed?
-        raise MediaProcessingFailed.new(format(UNKNOWN_STATE, status.state.inspect), media: status) unless status.ready? || status.processing?
+        return status if status.processing_info.nil? || status.ready? || status.processing?
 
-        status
+        raise MediaProcessingFailed.new(format(UNKNOWN_STATE, status.state.inspect), media: status)
       end
 
       # Wait as long as the status of media still processing asks

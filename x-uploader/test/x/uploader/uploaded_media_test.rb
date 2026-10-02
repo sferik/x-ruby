@@ -56,6 +56,12 @@ module X
       assert_equal [false, false, true], [@media.processing?, @media.failed?, @media.ready?]
     end
 
+    def test_media_known_by_its_identifiers_alone_is_not_ready
+      media = [{"id" => "7"}, {"id" => "7", "media_key" => "7_7"}, {"id" => "7", "size" => 1}, {"media_key" => "7_7", "expires_after_secs" => 1}]
+
+      assert_equal [false, false, true, true], media.map { |attrs| UploadedMedia.new(attrs).ready? }
+    end
+
     def test_media_with_null_processing_information_is_ready
       media = UploadedMedia.new({"id" => "7", "processing_info" => nil})
 
