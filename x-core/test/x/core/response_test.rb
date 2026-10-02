@@ -90,6 +90,12 @@ module X
       assert_equal 0, summarize(Net::HTTPOK, body: "[1, 2]").resource_count
     end
 
+    def test_resource_counts_of_includes_that_are_not_an_object
+      assert_equal({"data" => 1}, summarize(Net::HTTPOK, body: {data: {id: "1"}, includes: [1]}.to_json).resource_counts)
+      assert_equal({"data" => 0}, summarize(Net::HTTPOK, body: {includes: [["users", [{id: "1"}]]]}.to_json).resource_counts)
+      assert_equal({"data" => 0}, summarize(Net::HTTPOK, body: {includes: "users"}.to_json).resource_counts)
+    end
+
     def test_the_body_is_parsed_once_however_many_counts_are_read
       response = summarize(Net::HTTPOK, body: {data: [{id: "1"}, {id: "2"}]}.to_json)
       parses = 0

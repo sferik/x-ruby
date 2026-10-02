@@ -124,7 +124,8 @@ module X
       # The number of resources the body holds, as data and as each kind of include
       #
       # The API bills reads by the resource, so these counts are the units a request consumed. The body is parsed
-      # once, however many times a summary is asked what it holds.
+      # once, however many times a summary is asked what it holds. A body whose includes is not an object holds no
+      # includes to count.
       #
       # @api public
       # @return [Hash{String => Integer}] the count of data and of each include, such as users and posts
@@ -134,7 +135,7 @@ module X
         body = parsed_body
         data = body["data"]
         counts = {"data" => Array.try_convert(data)&.size || [data].compact.size}
-        body["includes"].to_h.each { |key, resources| counts[key] = Array(resources).size }
+        Hash.try_convert(body["includes"])&.each { |key, resources| counts[key] = Array(resources).size }
         counts
       end
 
