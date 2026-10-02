@@ -16,9 +16,10 @@ module X
 
   class RulesRejected < Streaming::Error
     attr_reader problems: Array[Problem]
-    attr_reader result: (Array[StreamRule] | Integer)?
+    attr_reader added: Array[StreamRule]?
+    attr_reader deleted_count: Integer?
 
-    def initialize: (?String? message, ?problems: Array[Problem], ?result: (Array[StreamRule] | Integer)?) -> void
+    def initialize: (?String? message, ?problems: Array[Problem], ?added: Array[StreamRule]?, ?deleted_count: Integer?) -> void
   end
 
   class StreamError < Streaming::Error

@@ -25,7 +25,7 @@ module X
       stub_rules({"data" => [RUBY_RULE], "errors" => [duplicate], "meta" => {"summary" => {"created" => 1, "not_created" => 1}}})
       error = assert_raises(RulesRejected) { @streaming_client.add_rules(%w[ruby crystal]) }
 
-      assert_equal [[StreamRule.new(id: 1, value: "ruby -is:retweet", tag: "ruby")], ["crystal"]], [error.result, error.problems.map(&:value)]
+      assert_equal [[StreamRule.new(id: 1, value: "ruby -is:retweet", tag: "ruby")], nil, ["crystal"]], [error.added, error.deleted_count, error.problems.map(&:value)]
       assert_equal "DuplicateRule: Duplicate rule", error.message
     end
 
@@ -34,7 +34,7 @@ module X
       stub_request(:post, "#{RULES_URL}?dry_run=true").to_return(body: {"errors" => [invalid]}.to_json, headers: {"Content-Type" => "application/json"})
       error = assert_raises(RulesRejected) { @streaming_client.add_rules("from:", dry_run: true) }
 
-      assert_equal [[], ["from:"]], [error.result, error.problems.map(&:value)]
+      assert_equal [[], ["from:"]], [error.added, error.problems.map(&:value)]
     end
 
     def test_rules_the_api_does_not_delete_raise_without_a_block
@@ -43,7 +43,7 @@ module X
       stub_rules({"errors" => [missing], "meta" => {"summary" => {"deleted" => 1, "not_deleted" => 1}}})
       error = assert_raises(RulesRejected) { @streaming_client.delete_rules([RUBY_RULE, {"id" => "2"}]) }
 
-      assert_equal [1, [missing]], [error.result, error.problems.map(&:to_h)]
+      assert_equal [nil, 1, [missing]], [error.added, error.deleted_count, error.problems.map(&:to_h)]
     end
 
     def test_a_block_takes_the_problems_in_place_of_the_error

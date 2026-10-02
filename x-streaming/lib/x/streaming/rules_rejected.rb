@@ -10,7 +10,8 @@ module X
   # response that otherwise succeeds. StreamingClient#add_rules and StreamingClient#delete_rules yield each of them
   # to a block, and, without one, raise this error rather than drop them, so that a rule that was not added, or a
   # rule a dry run found invalid, is never passed over in silence. The rules that were changed stay changed, so the
-  # error holds what the method would have returned, in {#result}, beside the {#problems} the API reported.
+  # error holds what the method would have returned, the rules add_rules added in {#added} or the number of rules
+  # delete_rules deleted in {#deleted_count}, beside the {#problems} the API reported.
   #
   # @api public
   # @example Report the rules that were not added
@@ -18,7 +19,7 @@ module X
   #     streaming_client.add_rules(%w[ruby crystal])
   #   rescue X::RulesRejected => e
   #     warn e.problems.map(&:title).join(", ")
-  #     added = e.result
+  #     added = e.added
   #   end
   class RulesRejected < Streaming::Error
     # The problems the API reported of the rules it did not change
@@ -29,14 +30,27 @@ module X
     #   error.problems.map(&:title) # => ["DuplicateRule"]
     attr_reader :problems
 
-    # What the method would have returned, had it been given a block
+    # The rules add_rules added
+    #
+    # They are what add_rules would have returned, had it been given a block.
     #
     # @api public
-    # @return [Array<StreamRule>, Integer, nil] the rules add_rules added, or the number of rules delete_rules deleted,
-    #   or nil for an error built without one, such as one a test built
+    # @return [Array<StreamRule>, nil] the rules, frozen, or nil for an error delete_rules raised, or one built without
+    #   them, such as one a test built
     # @example Read the rules that were added
-    #   error.result.map(&:value) # => ["crystal"]
-    attr_reader :result
+    #   error.added.map(&:value) # => ["crystal"]
+    attr_reader :added
+
+    # The number of rules delete_rules deleted
+    #
+    # It is what delete_rules would have returned, had it been given a block.
+    #
+    # @api public
+    # @return [Integer, nil] the number, or nil for an error add_rules raised, or one built without it, such as one a
+    #   test built
+    # @example Read the number of rules that were deleted
+    #   error.deleted_count # => 1
+    attr_reader :deleted_count
 
     # Initialize a new RulesRejected
     #
@@ -47,15 +61,17 @@ module X
     # @api public
     # @param message [String, nil] the message, or nil for the one the problems give
     # @param problems [Array<Problem>] the problems the API reported
-    # @param result [Array<StreamRule>, Integer, nil] what the method would have returned
+    # @param added [Array<StreamRule>, nil] the rules add_rules added
+    # @param deleted_count [Integer, nil] the number of rules delete_rules deleted
     # @return [RulesRejected] a new instance
     # @example Create an error
-    #   error = X::RulesRejected.new(problems: X::Problem.all_from(body), result: [])
+    #   error = X::RulesRejected.new(problems: X::Problem.all_from(body), added: [])
     # @example Raise the error with a message alone, as a test stub may
     #   raise X::RulesRejected, "The rules were not added"
-    def initialize(message = nil, problems: [], result: nil)
+    def initialize(message = nil, problems: [], added: nil, deleted_count: nil)
       @problems = problems.dup.freeze
-      @result = result
+      @added = added.dup.freeze
+      @deleted_count = deleted_count
       super(message || describe(problems))
     end
   end

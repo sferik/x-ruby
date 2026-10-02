@@ -203,8 +203,8 @@ module X
       # The API adds the rules it can and reports the rest, such as a rule the app already has, as errors of a
       # response that otherwise succeeds. The rules that were added are returned, and each rule that was not is
       # yielded as the Problem the API reported, as a finder of x-objects yields the problems of a lookup. Without a
-      # block, a rule that was not added raises RulesRejected, which holds the rules that were, so that neither a
-      # rule the app already has nor one a dry run found invalid is passed over in silence.
+      # block, a rule that was not added raises RulesRejected, which holds the rules that were as added, so that
+      # neither a rule the app already has nor one a dry run found invalid is passed over in silence.
       #
       # @api public
       # @param rules [Array<StreamRule, Hash, String>, StreamRule, Hash, String] the rules to add
@@ -227,7 +227,9 @@ module X
       def add_rules(rules, dry_run: false, &)
         rules = StreamRules.each_rule(rules)
         body = change_rules({add: rules.map { |rule| StreamRules.rule_to_add(rule) }}, dry_run:) unless rules.empty?
-        reporting(body, StreamRules.rules_of(body), &)
+        added = StreamRules.rules_of(body)
+        reporting(body, {added:}, &)
+        added
       end
 
       # Delete rules of the filtered stream
@@ -241,7 +243,7 @@ module X
       # The API deletes the rules it can and reports the rest, such as a rule the app does not have, as errors of a
       # response that otherwise succeeds. The number of rules that were deleted is returned, and each problem the API
       # reported is yielded, as add_rules yields the rules it did not add, or, without a block, raises RulesRejected,
-      # which holds the number.
+      # which holds the number as deleted_count.
       #
       # @api public
       # @param rules [Array<StreamRule, Hash, String, Integer>, StreamRule, Hash, String, Integer] the rules to delete,
@@ -268,7 +270,9 @@ module X
 
         ids, values = rules.partition { |rule| StreamRules.identifier_of(rule) }
         body = change_rules({delete: StreamRules.deletion(ids, values)}, dry_run:)
-        reporting(body, body.to_h.dig("meta", "summary", "deleted").to_i, &)
+        deleted_count = body.to_h.dig("meta", "summary", "deleted").to_i
+        reporting(body, {deleted_count:}, &)
+        deleted_count
       end
 
       # Refuse to be written with Marshal, which would write its credentials
@@ -331,18 +335,18 @@ module X
       #
       # @api private
       # @param body [Hash, nil] the parsed response body, or nil when no rules were given
-      # @param result [Array<StreamRule>, Integer] what the change returns
+      # @param changed [Hash{Symbol => Object}] what the change returns, as the error holds it: the rules added, or the
+      #   number of rules deleted
       # @yieldparam problem [Problem] each problem the API reported
-      # @return [Array<StreamRule>, Integer] the result
+      # @return [void]
       # @raise [RulesRejected] if the API reported a problem and no block was given
-      def reporting(body, result)
+      def reporting(body, changed)
         problems = Problem.all_from(body)
         if block_given?
           problems.each { |problem| yield problem }
         elsif problems.any?
-          raise RulesRejected.new(problems:, result:)
+          raise RulesRejected.new(problems:, **changed)
         end
-        result
       end
 
       # Read a stream once, and deliver each object it sends until it ends
