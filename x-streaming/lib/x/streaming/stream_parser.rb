@@ -41,7 +41,7 @@ module X
         decode = lambda do |line|
           tagging_callback_errors { on_line.call(line) }
           body = parse_line(line, response:)
-          tagging_callback_errors { build(line, body, array_class:, object_class:, client:) }
+          tagging_callback_errors { build(body, array_class:, object_class:, client:) }
         end
         read_lines(response:, decode:, on_keep_alive:, &block)
       end
@@ -76,18 +76,39 @@ module X
 
       # Build the object a line delivers, as the body of a request is decoded
       #
+      # The line was parsed once already, into Hashes and Arrays, so it is built from what that parse gave rather than
+      # parsed again.
+      #
       # @api private
-      # @param line [String] the line, tagged UTF-8
       # @param body [Object] the line, parsed
       # @param array_class [Class] the class for parsing JSON arrays
       # @param object_class [Class, #from_response] the class for parsing JSON objects, or one that builds each object
       #   from the whole line
       # @param client [Client] the client of the stream, which from_response is passed
       # @return [Object] the object
-      def build(line, body, array_class:, object_class:, client:)
+      def build(body, array_class:, object_class:, client:)
         return object_class.from_response(body, client:) if object_class.respond_to?(:from_response)
 
-        JSON.parse(line, array_class:, object_class:)
+        rebuild(body, array_class:, object_class:)
+      end
+
+      # Build a parsed value into the array_class and object_class given
+      #
+      # Each is built as JSON.parse builds it: an object into a new object_class, which is given each of its pairs with
+      # []=, in order, and an array into a new array_class, which is given each of its elements with <<, in order,
+      # each built in turn. Any other value is what the parse gave.
+      #
+      # @api private
+      # @param value [Object] the parsed value
+      # @param array_class [Class] the class for parsing JSON arrays
+      # @param object_class [Class] the class for parsing JSON objects
+      # @return [Object] the value, built
+      def rebuild(value, array_class:, object_class:)
+        case value
+        when Hash then value.each_with_object(object_class.new) { |(key, item), object| object[key] = rebuild(item, array_class:, object_class:) }
+        when Array then value.each_with_object(array_class.new) { |item, array| array << rebuild(item, array_class:, object_class:) }
+        else value
+        end
       end
 
       # Run a callback of a line, tagging the error it raises
