@@ -19,14 +19,6 @@ module X
         Core.const_get(:RequestBuilder).merge_headers({"X-Trace" => "a", "User-Agent" => "x"}, {"user-agent" => "b"}))
     end
 
-    def test_merge_headers_replaces_a_header_named_by_a_symbol
-      assert_equal({"User-Agent" => "b"}, Core.const_get(:RequestBuilder).merge_headers({"user-agent": "x"}, {"User-Agent" => "b"}))
-    end
-
-    def test_merge_headers_replaces_a_header_with_one_named_by_a_symbol
-      assert_equal({"user-agent": "b"}, Core.const_get(:RequestBuilder).merge_headers({"User-Agent" => "x"}, {"user-agent": "b"}))
-    end
-
     def test_merge_headers_keeps_the_headers_that_are_not_overridden
       assert_equal({"X-Trace" => "a", "X-Other" => "b"}, Core.const_get(:RequestBuilder).merge_headers({"X-Trace" => "a"}, {"X-Other" => "b"}))
     end

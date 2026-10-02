@@ -30,7 +30,7 @@ module X
       # @param from [URI::Generic] the URI the credentials were given for, such as the base URL of a client
       # @param to [URI::Generic] the URI the request is sent to
       # @param authenticator [Authenticator] the authenticator of the request
-      # @param headers [Hash{String, Symbol => String}] the headers of the request
+      # @param headers [Hash{String => String}] the headers of the request
       # @return [Array(Authenticator, Hash{String, Symbol => String})] the authenticator that signs the request,
       #   and the headers it is sent with
       # @example Keep the credentials of a request to the API
@@ -84,10 +84,10 @@ module X
       # names them.
       #
       # @api private
-      # @param headers [Hash{String, Symbol => String}] the headers
-      # @return [Hash{String, Symbol => String}] the headers that carry no credentials
+      # @param headers [Hash{String => String}] the headers
+      # @return [Hash{String => String}] the headers that carry no credentials
       def without_credentials(headers)
-        headers.reject { |name, _| CREDENTIAL_HEADERS.any? { |header| name.to_s.casecmp?(header) } }
+        headers.reject { |name, _| CREDENTIAL_HEADERS.any? { |header| name.casecmp?(header) } }
       end
     end
     private_constant :Origin

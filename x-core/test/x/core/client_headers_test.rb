@@ -65,6 +65,15 @@ module X
         headers: {"Content-Type" => "application/x-www-form-urlencoded; charset=utf-8"}
     end
 
+    def test_a_header_named_by_a_symbol_names_the_header_its_underscores_name_with_hyphens
+      stub_request(:post, "https://api.x.com/2/settings")
+      Client.new(headers: {user_agent: "my-app/1.0"}).post("settings", "a=1", headers: {content_type: "text/plain"})
+
+      assert_requested(:post, "https://api.x.com/2/settings", headers: {"User-Agent" => "my-app/1.0", "Content-Type" => "text/plain"}) do |request|
+        request.headers.keys.none? { |name| name.include?("_") }
+      end
+    end
+
     def test_headers_of_a_request_that_are_not_a_hash_are_refused_before_it_is_sent
       client = Client.new(bearer_token: TEST_BEARER_TOKEN)
       [->(headers) { client.get("users/me", headers:) }, ->(headers) { client.post("tweets", headers:) },

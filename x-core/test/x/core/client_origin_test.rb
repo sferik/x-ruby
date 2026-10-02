@@ -63,6 +63,15 @@ module X
       end
     end
 
+    def test_a_request_to_another_origin_drops_a_header_that_carries_credentials_named_by_a_symbol
+      stub_request(:get, "https://example.com/steal")
+      @client.get("https://example.com/steal", headers: {proxy_authorization: "Basic proxy", x_custom: "kept"})
+
+      assert_requested(:get, "https://example.com/steal", headers: {"X-Custom" => "kept"}) do |request|
+        request.headers.keys.none? { |name| name.downcase.start_with?("proxy") }
+      end
+    end
+
     def test_a_request_to_another_origin_drops_the_headers_of_the_client_that_carry_credentials
       client = Client.new(bearer_token: TEST_BEARER_TOKEN, headers: {"Cookie" => "session=secret", "X-Custom" => "kept"})
       stub_request(:get, "https://example.com/steal")

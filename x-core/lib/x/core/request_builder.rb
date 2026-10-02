@@ -47,13 +47,13 @@ module X
       # "user-agent" is sent in place of "User-Agent", where Hash#merge would keep both and send whichever came last.
       #
       # @api private
-      # @param headers [Hash{String, Symbol => String}] the headers overridden
-      # @param overrides [Hash{String, Symbol => String}] the headers sent in place of those of the same name
-      # @return [Hash{String, Symbol => String}] the headers of both, those of overrides in place of the others
+      # @param headers [Hash{String => String}] the headers overridden
+      # @param overrides [Hash{String => String}] the headers sent in place of those of the same name
+      # @return [Hash{String => String}] the headers of both, those of overrides in place of the others
       # @example Replace the User-Agent of a client with one named in lowercase
       #   X::Core::RequestBuilder.merge_headers({"User-Agent" => "a"}, {"user-agent" => "b"}) # => {"user-agent" => "b"}
       def self.merge_headers(headers, overrides)
-        headers.reject { |name, _| overrides.any? { |override, _| override.to_s.casecmp?(name.to_s) } }.merge(overrides)
+        headers.reject { |name, _| overrides.any? { |override, _| override.casecmp?(name) } }.merge(overrides)
       end
 
       # Build an HTTP request

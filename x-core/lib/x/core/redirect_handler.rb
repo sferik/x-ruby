@@ -180,7 +180,7 @@ module X
       def headers_for(preserve, headers)
         return headers if preserve
 
-        headers.reject { |name, _| name.to_s.casecmp?("Content-Type") }
+        headers.reject { |name, _| name.casecmp?("Content-Type") }
       end
 
       # Build a new request for the redirect

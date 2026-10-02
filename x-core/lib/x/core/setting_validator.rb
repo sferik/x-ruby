@@ -150,22 +150,26 @@ module X
 
       # Check that headers are a Hash of header names to String values
       #
-      # Each header must be named with a String or a Symbol. The error names the class of what is not a Hash, and the
-      # name of a header whose name or value is not what a header takes with the class of its value, rather than
-      # inspect either, since headers carry credentials, such as an Authorization header.
+      # The headers are returned with each named by a String. Each header must be named with a String or a Symbol. A Symbol names the header its underscores name with
+      # hyphens, as :content_type names Content-Type, so that it replaces the header of that name, and is dropped where
+      # that header is, rather than being sent beside it as a header no one sends. The error names the class of what is
+      # not a Hash, and the name of a header whose name or value is not what a header takes with the class of its
+      # value, rather than inspect either, since headers carry credentials, such as an Authorization header.
       #
       # @api private
       # @param value [Object] the headers
-      # @return [Hash{String, Symbol => String}] the headers
+      # @return [Hash{String => String}] the headers, each named by a String
       # @raise [ArgumentError] if the headers are not a Hash, or name a header with anything but a String or a
       #   Symbol, or give one anything but a String
       # @example Check headers that name the application
       #   X::Core::SettingValidator.headers!("User-Agent" => "MyApp/1.0") # => {"User-Agent" => "MyApp/1.0"}
+      # @example Name a header with a Symbol
+      #   X::Core::SettingValidator.headers!(content_type: "text/plain") # => {"content-type" => "text/plain"}
       def headers!(value)
         raise ArgumentError, format(INVALID_HEADERS, value.class) unless value.is_a?(Hash)
 
         invalid = value.find { |name, header| !header_name?(name) || !header.is_a?(String) }
-        invalid ? invalid_header!(*invalid) : value
+        invalid ? invalid_header!(*invalid) : value.transform_keys { |name| header_name(name) }
       end
 
       # Check that a callable responds to call, or is nil
@@ -270,6 +274,15 @@ module X
       def invalid_header!(name, header)
         raise ArgumentError, format(INVALID_HEADER, name: header_name?(name) ? name.inspect : "a #{name.class}", value: header.class)
       end
+
+      # The String a header is named by
+      #
+      # A String names itself, and a Symbol the header its underscores name with hyphens.
+      #
+      # @api private
+      # @param name [String, Symbol] the name of the header
+      # @return [String] the name of the header
+      def header_name(name) = name.instance_of?(Symbol) ? name.name.tr("_", "-") : name
 
       # Check whether a value names a header, as a String or a Symbol does
       # @api private

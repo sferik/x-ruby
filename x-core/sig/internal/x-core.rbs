@@ -112,13 +112,13 @@ module X
       IDEMPOTENT_METHODS: Array[Symbol]
 
       def self.idempotent?: (Symbol http_method) -> bool
-      def self.merge_headers: (headers headers, headers overrides) -> headers
-      def build: (http_method: Symbol, uri: URI::Generic, ?body: String?, ?headers: headers, ?authenticator: Authenticator) -> (Net::HTTPRequest)
+      def self.merge_headers: (Hash[String, String] headers, Hash[String, String] overrides) -> Hash[String, String]
+      def build: (http_method: Symbol, uri: URI::Generic, ?body: String?, ?headers: Hash[String, String], ?authenticator: Authenticator) -> (Net::HTTPRequest)
 
       private
       def create_request: (http_method: Symbol, uri: URI::Generic, body: String?) -> (Net::HTTPRequest)
       def add_authentication: (request: Net::HTTPRequest, authenticator: Authenticator) -> void
-      def add_headers: (request: Net::HTTPRequest, headers: headers, body: String?) -> void
+      def add_headers: (request: Net::HTTPRequest, headers: Hash[String, String], body: String?) -> void
       def escape_query_params: (URI::Generic uri) -> URI::Generic
       def query_pairs: (String query) -> Array[[String, String?]]
     end
@@ -171,13 +171,13 @@ module X
 
       CREDENTIAL_HEADERS: Array[String]
 
-      def credentials_for: [K < _ToS] (from: URI::Generic, to: URI::Generic, authenticator: Authenticator, headers: Hash[K, String]) -> [Authenticator, Hash[K, String]]
+      def credentials_for: (from: URI::Generic, to: URI::Generic, authenticator: Authenticator, headers: Hash[String, String]) -> [Authenticator, Hash[String, String]]
       def same?: (URI::Generic uri, URI::Generic other) -> bool
       def answered?: (HTTPError error, URI::Generic origin) -> bool
 
       private
       def of: (URI::Generic uri) -> [String?, String?, Integer?]
-      def without_credentials: [K < _ToS] (Hash[K, String] headers) -> Hash[K, String]
+      def without_credentials: (Hash[String, String] headers) -> Hash[String, String]
     end
 
     class RedirectHandler
@@ -190,16 +190,16 @@ module X
       attr_reader request_builder: RequestBuilder
       attr_reader max_redirects: Integer
       def initialize: (?connection: Connection, ?request_builder: RequestBuilder, ?max_redirects: Integer) -> void
-      def handle: (response: Net::HTTPResponse, request: Net::HTTPRequest, ?headers: headers, ?authenticator: Authenticator, ?redirect_count: Integer) -> Net::HTTPResponse
-      def follow: (response: Net::HTTPResponse, request: Net::HTTPRequest, ?headers: headers, ?authenticator: Authenticator, ?redirect_count: Integer) -> [Net::HTTPResponse, Net::HTTPRequest]
+      def handle: (response: Net::HTTPResponse, request: Net::HTTPRequest, ?headers: Hash[String, String], ?authenticator: Authenticator, ?redirect_count: Integer) -> Net::HTTPResponse
+      def follow: (response: Net::HTTPResponse, request: Net::HTTPRequest, ?headers: Hash[String, String], ?authenticator: Authenticator, ?redirect_count: Integer) -> [Net::HTTPResponse, Net::HTTPRequest]
 
       private
       def followed?: (Net::HTTPResponse response) -> bool
       def check_redirect_count: (Net::HTTPRequest request, Integer redirect_count) -> void
       def build_new_uri: (Net::HTTPResponse response, URI::Generic uri) -> URI::Generic?
       def preserves_method?: (Net::HTTPRequest request, Integer response_code) -> bool
-      def headers_for: (bool preserve, headers headers) -> headers
-      def build_request: (Net::HTTPRequest request, URI::Generic new_uri, bool preserve, headers headers, Authenticator authenticator) -> Net::HTTPRequest
+      def headers_for: (bool preserve, Hash[String, String] headers) -> Hash[String, String]
+      def build_request: (Net::HTTPRequest request, URI::Generic new_uri, bool preserve, Hash[String, String] headers, Authenticator authenticator) -> Net::HTTPRequest
     end
 
     class ResponseParser
@@ -281,7 +281,7 @@ module X
       def settings: () -> Hash[Symbol, untyped]
       def proxy_url: () -> (URI::Generic | String)?
       def initialize_settings: (base_url: String, default_array_class: Class, default_object_class: object_class, headers: headers, on_response: _ResponseHook?, max_redirects: Integer, max_rate_limit_retries: Integer, max_rate_limit_wait: Numeric, max_retries: Integer) -> void
-      def headers_for: (headers request_headers) -> headers
+      def headers_for: (Hash[String, String] request_headers) -> Hash[String, String]
       def report: (Symbol | String http_method, URI::Generic uri, Net::HTTPResponse response) ?{ (Response) -> void } -> void
     end
 
@@ -413,8 +413,8 @@ module X
       def execute_stream: [T] (Client client, String endpoint, params: params?, headers: headers) { (Net::HTTPResponse) -> T } -> T
 
       private
-      def perform: (Client client, :delete | :get | :post | :put http_method, URI::Generic uri, body: String?, headers: headers, array_class: Class, object_class: object_class) ?{ (Response) -> void } -> untyped
-      def perform_stream: [T] (URI::Generic uri, headers: headers) { (Net::HTTPResponse) -> T } -> T
+      def perform: (Client client, :delete | :get | :post | :put http_method, URI::Generic uri, body: String?, headers: Hash[String, String], array_class: Class, object_class: object_class) ?{ (Response) -> void } -> untyped
+      def perform_stream: [T] (URI::Generic uri, headers: Hash[String, String]) { (Net::HTTPResponse) -> T } -> T
       def stream_failed: (URI::Generic uri, Net::HTTPResponse response, Net::HTTPRequest request) -> bot
       def reading: [T] (Net::HTTPResponse response) { (Net::HTTPResponse) -> T } -> T
     end
@@ -450,7 +450,7 @@ module X
       def finite_seconds!: (Symbol name, untyped value) -> untyped
       def timeout!: (Symbol name, untyped value) -> untyped
       def base_url!: (untyped value) -> String
-      def headers!: (untyped value) -> headers
+      def headers!: (untyped value) -> Hash[String, String]
       def callable!: (Symbol name, untyped value) -> untyped
       def array_class!: (Symbol name, untyped value) -> Class
       def object_class!: (Symbol name, untyped value) -> object_class
@@ -459,6 +459,7 @@ module X
 
       private
       def invalid_header!: (untyped name, untyped header) -> bot
+      def header_name: (String | Symbol name) -> String
       def header_name?: (untyped value) -> bool
       def http_url?: (String value) -> bool
       def count?: (untyped value) -> bool

@@ -242,7 +242,8 @@ module X
       # passed to a request is.
       #
       # Each is named by a String, a header the client was given by a Symbol among them, so that a header is read by
-      # the name it is sent with, whichever the client was given.
+      # the name it is sent with, whichever the client was given: a Symbol names the header its underscores name with
+      # hyphens, as :user_agent names User-Agent.
       #
       # @api public
       # @return [Hash{String => String}] the headers, frozen, each named by a String
@@ -284,7 +285,8 @@ module X
       #   responds to from_response and builds the result from the whole body; see {Client}
       # @param headers [Hash{String, Symbol => String}] headers sent with every request the client makes, as defaults: a
       #   header of the same name passed to a request is sent in place of one of these, and each of these is sent in
-      #   place of a default of the gem, such as its User-Agent
+      #   place of a default of the gem, such as its User-Agent; a Symbol names the header its underscores name with
+      #   hyphens, as :user_agent names User-Agent
       # @param max_redirects [Integer] the maximum number of redirects to follow, beyond which a redirect raises
       #   TooManyRedirects; 0 follows none, and raises for each redirect that could be followed
       # @param max_rate_limit_retries [Integer] the maximum number of times to retry a request refused for a rate limit,

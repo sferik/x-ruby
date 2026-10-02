@@ -154,7 +154,7 @@ module X
       # @return [Object, nil] the parsed response body, or what an object_class that responds to from_response builds
       def execute_request(client, http_method, endpoint, params:, headers:, array_class:, object_class:, body: nil, form: nil, &block)
         SettingValidator.parsing_classes!(array_class:, object_class:)
-        SettingValidator.headers!(headers)
+        headers = SettingValidator.headers!(headers)
         uri = RequestEncoding.uri_for(base_url, endpoint, params)
         headers = headers_for(form.nil? ? headers : RequestBuilder.merge_headers({"Content-Type" => FORM_CONTENT_TYPE}, headers))
         @retry_handler.handle(idempotent: RequestBuilder.idempotent?(http_method)) do

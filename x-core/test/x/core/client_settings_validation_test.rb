@@ -75,6 +75,14 @@ module X
       assert_predicate client.headers, :frozen?
     end
 
+    def test_a_header_of_the_client_named_by_a_symbol_is_read_by_the_name_it_is_sent_with
+      assert_equal({"user-agent" => "my-app/1.0", "x-trace" => "abc"}, Client.new(headers: {user_agent: "my-app/1.0", x_trace: "abc"}).headers)
+    end
+
+    def test_a_header_named_by_a_string_keeps_its_underscores
+      assert_equal({"X_Trace" => "abc"}, Client.new(headers: {"X_Trace" => "abc"}).headers)
+    end
+
     def test_headers_of_subclasses_of_hash_and_string_are_allowed
       assert_equal({"Accept" => "application/json"}, Client.new(headers: {Class.new(String).new("Accept") => "application/json"}).headers)
       assert_equal({"Accept" => "application/json"}, Client.new(headers: Class.new(Hash).new.merge!("Accept" => Class.new(String).new("application/json"))).headers)
