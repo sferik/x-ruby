@@ -7,6 +7,7 @@ require_relative "authenticator"
 require_relative "bearer_token_authenticator"
 require_relative "client_app_only"
 require_relative "client_credentials"
+require_relative "client_memo"
 require_relative "client_settings"
 require_relative "client_token_refresh"
 require_relative "connection"
@@ -42,6 +43,7 @@ module X
     class ClientInternals
       include ClientAppOnly
       include ClientCredentials
+      include ClientMemo
       include ClientSettings
       include CredentialHolder
       include ClientTokenRefresh
@@ -99,9 +101,7 @@ module X
         save_tokens:, load_tokens:)
         @proxy_url = proxy_url
         @connection = Connection.new(open_timeout:, read_timeout:, write_timeout:, keep_alive_timeout:, debug_output:, proxy_url:)
-        @app_only_monitor = Monitor.new
-        @request_builder = RequestBuilder.new
-        @response_parser = ResponseParser.new
+        initialize_state
         initialize_credentials(api_key:, api_key_secret:, access_token:, access_token_secret:, bearer_token:, client_id:, client_secret:, refresh_token:, expires_at:, scopes:)
         validate_credentials!(authenticator)
         initialize_settings(base_url:, default_array_class:, default_object_class:, headers:, on_response:, max_redirects:, max_rate_limit_retries:, max_rate_limit_wait:, max_retries:)
@@ -186,6 +186,20 @@ module X
       end
 
       private
+
+      # Build what the client keeps beside its options
+      #
+      # They are the helpers that build its requests and parse its responses, and the locks of what it builds once
+      # and keeps: its app-only copy, and the values of its memo.
+      #
+      # @api private
+      # @return [void]
+      def initialize_state
+        @app_only_monitor = Monitor.new
+        @request_builder = RequestBuilder.new
+        @response_parser = ResponseParser.new
+        initialize_memo
+      end
 
       # Open a GET request once, and pass its response to the block if it succeeded
       #

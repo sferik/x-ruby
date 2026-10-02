@@ -31,7 +31,9 @@ module X
 
       # The message of the error raised for a resource of another class than the one an identifier was expected of
       FOREIGN_RESOURCE = "%<given>s %<id>s is not %<expected>s: pass %<expected>s or its identifier"
-      private_constant :FOREIGN_RESOURCE
+      # The key a client keeps the identifier of the authenticated user under, named for this gem
+      CURRENT_USER_ID = :x_objects_current_user_id
+      private_constant :FOREIGN_RESOURCE, :CURRENT_USER_ID
 
       extend self
 
@@ -215,27 +217,35 @@ module X
 
       # The identifier of the user a lookup found for a client's credentials
       #
-      # It is kept on the client in an instance variable named for this gem, since any class can include
-      # X::Objects::API, and one named @current_user_id, as an application often names its own, would be overwritten.
+      # X::Client keeps it with memoize, under a lock, for the authenticator it holds, and a frozen client keeps it
+      # too. Any class can include X::Objects::API, so a client that does not memoize keeps it in an instance variable
+      # named for this gem, rather than one named @current_user_id, as an application often names its own, which
+      # would be overwritten.
       #
       # @api private
       # @param client [Object] the client
       # @return [Integer, nil] the identifier, or nil if none was found for the authenticator the client holds
       def remembered_user_id(client)
+        return client.memoized(CURRENT_USER_ID) if client.respond_to?(:memoized)
+
         owner, id = client.instance_variable_get(:@x_objects_current_user_id)
         id if owner.equal?(authenticator_of(client))
       end
 
       # Keep the identifier of the authenticated user, with the authenticator
       #
-      # A frozen client keeps nothing.
+      # A frozen client that does not memoize keeps nothing.
       #
       # @api private
       # @param client [Object] the client
       # @param id [Integer] the identifier
       # @return [void]
       def remember_user_id(client, id)
-        client.instance_variable_set(:@x_objects_current_user_id, [authenticator_of(client), id]) unless client.frozen?
+        if client.respond_to?(:memoize)
+          client.memoize(CURRENT_USER_ID, id)
+        elsif !client.frozen?
+          client.instance_variable_set(:@x_objects_current_user_id, [authenticator_of(client), id])
+        end
       end
 
       # The authenticator of a client, which is replaced whenever its credentials change

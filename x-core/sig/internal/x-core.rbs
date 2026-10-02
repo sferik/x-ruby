@@ -286,6 +286,18 @@ module X
       def report: (Symbol | String http_method, URI::Generic uri, Net::HTTPResponse response) ?{ (Response) -> void } -> void
     end
 
+    module ClientMemo
+      @memo: Hash[Symbol, [untyped, untyped]]
+      @memo_lock: Thread::Mutex
+
+      def memoized: (Symbol key) -> untyped
+      def memoize: [T] (Symbol key, T value) -> T
+
+      private
+      def initialize_memo: () -> void
+      def authenticator: () -> (Authenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator)
+    end
+
     module ClientAppOnly : _CredentialHost
       NO_APP_CREDENTIALS: String
 
@@ -379,6 +391,7 @@ module X
     class ClientInternals
       include ClientAppOnly
       include ClientCredentials
+      include ClientMemo
       include ClientSettings
       include CredentialHolder
       include ClientTokenRefresh
@@ -415,6 +428,7 @@ module X
       def execute_stream: [T] (Client client, String endpoint, params: params?, headers: headers) { (Net::HTTPResponse) -> T } -> T
 
       private
+      def initialize_state: () -> void
       def perform: (Client client, :delete | :get | :post | :put http_method, URI::Generic uri, body: String?, headers: Hash[String, String], array_class: Class, object_class: object_class) ?{ (Response) -> void } -> untyped
       def perform_stream: [T] (URI::Generic uri, headers: Hash[String, String]) { (Net::HTTPResponse) -> T } -> T
       def stream_failed: (URI::Generic uri, Net::HTTPResponse response, Net::HTTPRequest request) -> bot
@@ -836,5 +850,7 @@ module X
     @internals: Core::ClientInternals
 
     def with_retries: [T] () { () -> T } -> T
+    def memoized: (Symbol key) -> untyped
+    def memoize: [T] (Symbol key, T value) -> T
   end
 end

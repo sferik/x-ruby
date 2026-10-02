@@ -39,6 +39,36 @@ module X
       attr_accessor :authenticator
     end
 
+    # An X::Client that includes the object layer, and answers each request with the same user, recording its path
+    class LookingUpClient < Client
+      include Objects::API
+
+      def initialize(paths)
+        super(bearer_token: "TOKEN")
+        @paths = paths
+      end
+
+      def get(endpoint, **)
+        @paths << URI(endpoint).path
+        {"data" => {"id" => "9"}}
+      end
+    end
+
+    def test_an_x_client_keeps_the_identifier_in_its_memo
+      client = LookingUpClient.new(paths = [])
+
+      assert_equal [9, 9], [client.current_user_id, client.current_user_id]
+      assert_equal [["users/me"], 9], [paths, client.memoized(:x_objects_current_user_id)]
+      refute client.instance_variable_defined?(:@x_objects_current_user_id)
+    end
+
+    def test_a_frozen_x_client_looks_the_user_up_once
+      client = LookingUpClient.new(paths = []).freeze
+      client.current_user!
+
+      assert_equal [9, ["users/me"]], [client.current_user_id, paths]
+    end
+
     def test_the_identifier_is_kept_apart_from_a_current_user_id_of_the_class_that_includes_the_api
       client = FakeClient.new
       client.instance_variable_set(:@current_user_id, :the_application_user)

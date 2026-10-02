@@ -94,6 +94,7 @@ module X
       ID_DESCRIPTIONS: Hash[Symbol, String]
       USERNAME: Regexp
       FOREIGN_RESOURCE: String
+      CURRENT_USER_ID: Symbol
 
       def deep_freeze: (untyped value) -> untyped
       def count!: (untyped count) -> Integer
