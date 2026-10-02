@@ -162,6 +162,21 @@ module X
         token unless token.eql?("")
       end
 
+      # The token used to fetch the page before this one
+      #
+      # Most endpoints that page, such as the followers of a user, the members of a list, and the events of a direct
+      # message conversation, name the page before each page after the first. An empty token names no page, as an
+      # empty next_token does.
+      #
+      # @api public
+      # @return [String, nil] the token or nil if this is the first page, or the endpoint names none
+      # @example Fetch the page before this one
+      #   client.get("users/7505382/followers?pagination_token=#{page.previous_token}", object_class: X::User)
+      def previous_token
+        token = meta["previous_token"]
+        token unless token.eql?("")
+      end
+
       # The number of results reported by the API
       #
       # @api public

@@ -321,6 +321,7 @@ module X
     def last: () -> R?
             | (Integer count) -> Array[R]
     def next_token: () -> String?
+    def previous_token: () -> String?
     def result_count: () -> Integer?
     def ==: (untyped other) -> bool
     def eql?: (untyped other) -> bool
