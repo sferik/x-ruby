@@ -33,9 +33,9 @@ module X
       # below 8 MB whether a megabyte is read as 1,000,000 bytes or as 1,048,576
       MAX_CHUNK = 5 * BYTES_PER_MB
       # Greatest number of chunks uploaded at once: each holds a chunk of up to MAX_CHUNK bytes in memory and a
-      # connection of its own, so 16 hold 80 megabytes on twice the 8 connections a client keeps open to a host,
-      # and more would hold more of both than an upload gains from, since the connections the client does not keep
-      # are opened again for each chunk
+      # connection of its own, so 16 hold 80 megabytes on the 16 connections a client keeps open to a host, and more
+      # would hold more of both than an upload gains from, since the connections the client does not keep are opened
+      # again for each chunk
       MAX_CONCURRENCY = 16
       # Greatest number of bytes the API takes in a single upload request, above which an animated GIF, which it
       # takes in chunks of up to 15 MB, uploads in chunks

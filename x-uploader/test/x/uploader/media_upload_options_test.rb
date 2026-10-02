@@ -25,6 +25,10 @@ module X
       assert_equal [4, 16], [Uploader::MediaUpload::DEFAULT_CONCURRENCY, Uploader::MediaUpload::MAX_CONCURRENCY]
     end
 
+    def test_a_client_keeps_open_a_connection_for_each_chunk_uploaded_at_once
+      assert_operator Core.const_get(:ConnectionPool)::MAX_IDLE, :>=, Uploader::MediaUpload::MAX_CONCURRENCY
+    end
+
     def test_the_limits_of_an_upload_are_constants
       assert_equal [1_048_576, 5_242_880], [Uploader::MediaUpload.const_get(:BYTES_PER_MB), Uploader::MediaUpload.const_get(:MAX_SIMPLE_UPLOAD_BYTES)]
       assert_equal [10_000, 1000], [Uploader.const_get(:Validator)::MAX_SEGMENTS, Uploader.const_get(:Validator)::MAX_ALT_TEXT_LENGTH]

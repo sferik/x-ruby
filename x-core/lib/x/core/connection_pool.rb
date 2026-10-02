@@ -13,8 +13,9 @@ module X
     #
     # @api private
     class ConnectionPool
-      # Most idle connections kept open to each host
-      MAX_IDLE = 8
+      # Most idle connections kept open to each host, as many as the chunks x-uploader sends at once at most, so that
+      # each sender of an upload keeps its connection from one chunk to the next
+      MAX_IDLE = 16
 
       # Initialize an empty pool
       #
