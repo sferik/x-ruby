@@ -20,11 +20,11 @@ module X
     PROCESSING_STATES = %w[pending in_progress].freeze
     # The attributes that name media, which media known by its identifier or media key alone holds, and nothing more
     IDENTIFYING_KEYS = %w[id media_key].freeze
-    # The pattern of a media ID, as a String: digits alone
-    MEDIA_ID = /\A\d+\z/
+    # The pattern of a media ID, as a String: one to nineteen digits, as the API takes it and the uploaders check it
+    MEDIA_ID = /\A\d{1,19}\z/
     # The message of the error raised for media that holds no identifier
-    NO_MEDIA_ID = "attrs must hold the \"id\" of the media, an Integer or a String of digits, as an upload returns " \
-      "it, not %s"
+    NO_MEDIA_ID = "attrs must hold the \"id\" of the media, an Integer or a String of 1 to 19 digits, as an upload " \
+      "returns it, not %s"
     # The number of the format of the state Marshal writes, which every release of 1.x writes
     #
     # A later release of 1.x adds to the state only what an earlier one ignores, parts after those it reads and keys of a
@@ -44,15 +44,14 @@ module X
 
     # Initialize uploaded media
     #
-    # @api public
     # The media must hold its identifier under the String key "id", as every upload and status response does, so that
     # the media can be attached to a post, and {id} raises for none.
     #
     # @api public
     # @param attrs [Hash{String => Object}] the data of an upload or status response
     # @return [UploadedMedia] a new, frozen instance
-    # @raise [ArgumentError] if the attributes are not a Hash, or hold no "id" that is an Integer that is not negative
-    #   or a String of digits
+    # @raise [ArgumentError] if the attributes are not a Hash, or hold no "id" that is a media ID the API takes: an
+    #   Integer that is not negative, or a String of digits, of 1 to 19 digits
     # @example Refer to media that was uploaded before
     #   X::UploadedMedia.new({"id" => "1880028106020515840"})
     def initialize(attrs)

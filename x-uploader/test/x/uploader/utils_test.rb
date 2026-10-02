@@ -159,7 +159,7 @@ module X
     end
 
     def test_media_id_refuses_an_identifier_the_api_does_not_take
-      [" 7", "-7", "7 ", "abc", "1" * 20, -7, {"id" => "abc"}, UploadedMedia.new({"id" => "1" * 20})].each do |media|
+      [" 7", "-7", "7 ", "abc", "1" * 20, -7, {"id" => "abc"}, {"id" => "1" * 20}].each do |media|
         error = assert_raises(ArgumentError, media.inspect) { Uploader.const_get(:Utils).media_id(media) }
 
         assert_match(/\AThe media identifier ".*" is none the API takes, which is 1 to 19 digits\z/, error.message)

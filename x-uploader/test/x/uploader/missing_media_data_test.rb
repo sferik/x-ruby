@@ -68,7 +68,7 @@ module X
     def test_media_built_by_hand_without_an_identifier_is_a_mistake_of_the_caller
       error = assert_raises(ArgumentError) { UploadedMedia.new({}) }
 
-      assert_equal "attrs must hold the \"id\" of the media, an Integer or a String of digits, as an upload returns it, not nil", error.message
+      assert_equal "attrs must hold the \"id\" of the media, an Integer or a String of 1 to 19 digits, as an upload returns it, not nil", error.message
       assert_raises(ArgumentError) { UploadedMedia.new({"media_key" => "3_7"}) }
     end
 
