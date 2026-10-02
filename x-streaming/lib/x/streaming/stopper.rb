@@ -8,8 +8,9 @@ module X
     # one that delivers nothing. Each stream runs in a thread the stopper knows, and stop raises Stopped in each, which
     # is delivered only as the stream waits on the API, ending a read, a connection, or a wait to reconnect, and never
     # the code around them, nor the block of the stream or the on_response of its client, which guard runs, so that
-    # what either does with an object is never cut short. A stopper that was stopped stays stopped, so a stream that
-    # had not begun when stop was called, as one a thread started just before it may not have, never begins.
+    # what either does with an object, or on_response with a failed response, is never cut short. A stopper that was
+    # stopped stays stopped, so a stream that had not begun when stop was called, as one a thread started just before
+    # it may not have, never begins.
     #
     # Internal to x-streaming: StreamingClient#stop stops the streams it runs with it.
     #
@@ -28,6 +29,18 @@ module X
       # @example Pass an object to the block of a stream
       #   X::Streaming::Stopper.guard { block.call(post) }
       def self.guard(&) = Thread.handle_interrupt(Stopped => :never, &)
+
+      # A callable that calls another with guard, or nil for no callable
+      #
+      # stop does not cut short the callable it calls, as it does not the block of guard.
+      #
+      #
+      # @api private
+      # @param callable [#call, nil] the callable
+      # @return [Proc, nil] the callable that guards it, or nil if it is nil
+      # @example Guard the on_response of a client
+      #   X::Streaming::Stopper.guarding(client.on_response)
+      def self.guarding(callable) = callable && ->(*arguments) { guard { callable.call(*arguments) } }
 
       # Initialize a stopper that knows no stream, and was not stopped
       #

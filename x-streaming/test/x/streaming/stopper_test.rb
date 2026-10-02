@@ -91,7 +91,31 @@ module X
       assert_equal [nil, [true]], [runner.value, finished]
     end
 
+    def test_a_guarding_callable_runs_its_callable_to_its_end_before_the_stop
+      started, resume, finished = Queue.new, Queue.new, []
+      guarding = STOPPER.guarding(->(object) { (started << true) && resume.pop && (finished << object) })
+      runner = start { @stopper.run { guarding.call(:object) && sleep } }
+
+      assert_equal [nil, [:object]], [stop_once(started, resume, runner), finished]
+    end
+
+    def test_a_guarding_callable_passes_its_callable_what_it_is_passed_and_returns_what_it_returns
+      assert_equal [1, 2], STOPPER.guarding(->(*arguments) { arguments }).call(1, 2)
+    end
+
+    def test_no_callable_is_guarded_by_none
+      assert_nil STOPPER.guarding(nil)
+    end
+
     private
+
+    # Stop the stopper once a run has started, resume the run, and return what it returned
+    def stop_once(started, resume, runner)
+      started.pop
+      @stopper.stop
+      resume << true
+      runner.value
+    end
 
     # A thread whose run has ended, and waits for the lock, which this holds, to end it
     def waiting_to_end

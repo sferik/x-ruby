@@ -84,7 +84,7 @@ module X
       #   streaming_client = X::StreamingClient.new(client, max_reconnects: 5)
       def initialize(client, read_timeout: DEFAULT_READ_TIMEOUT, max_reconnects: DEFAULT_MAX_RECONNECTS)
         @client = client
-        @stream_client = client.with(read_timeout: Validator.read_timeout!(:read_timeout, read_timeout))
+        @stream_client = client.with(read_timeout: Validator.read_timeout!(:read_timeout, read_timeout), on_response: Stopper.guarding(client.on_response))
         @reconnect_handler = ReconnectHandler.new(max_reconnects:, max_rate_limit_wait: client.max_rate_limit_wait)
         @stream_parser = StreamParser.new
         @stopper = Stopper.new
@@ -179,7 +179,7 @@ module X
       # nothing. This stops each stream running in another thread, or in this one, the next time it waits on the API,
       # at once for a stream waiting now, closing its connection, and the stream returns nil. A block, or the
       # on_response of the client, that is running when a stream is stopped runs to its end first, so that what it
-      # does with an object is never cut short.
+      # does with an object, or on_response with a failed response, is never cut short.
       #
       # A streaming client that was stopped stays stopped: a stream it is asked to run later, as one a thread started
       # just before stop may not yet have opened, returns nil at once, without a request. {Client#streaming} builds a
@@ -426,14 +426,18 @@ module X
         client
       end
 
-      # Pass one object of a stream to the client's on_response
+      # Pass one object of a stream to the client's on_response, guarded from stop
+      #
+      # The stream is opened with a copy of the client whose on_response calls the client's with Stopper.guard, which
+      # X::Client#get_stream passes a failed response, as this passes it each object.
+      #
       # @api private
       # @param response [Net::HTTPResponse] the response of the stream
       # @param line [String] the object the stream delivered
       # @return [void]
       def report(response, line)
         uri = response.uri #: URI::Generic
-        Stopper.guard { client.on_response&.call(Response.new(http_response: response, http_method: :get, uri:, body: line)) }
+        @stream_client.on_response&.call(Response.new(http_response: response, http_method: :get, uri:, body: line))
       end
     end
   end

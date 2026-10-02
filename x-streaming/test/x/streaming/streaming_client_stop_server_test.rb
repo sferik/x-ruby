@@ -4,20 +4,23 @@ require_relative "../../test_helper"
 
 module X
   # A stream is stopped as it reads from a socket of a server on the loopback interface, which holds the stream open and
-  # sends nothing, from another thread or from the trap of a signal, and a stream a stopped streaming client is asked to
-  # run never connects
+  # sends nothing, from another thread or from the trap of a signal, a stream a stopped streaming client is asked to run
+  # never connects, and an on_response the server's failed response is passed runs to its end
   class StreamingClientStopServerTest < Minitest::Test
     cover StreamingClient
     cover Streaming.const_get(:Stopper)
 
     # The head of a stream, whose body the server never sends
     HEAD = "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nTransfer-Encoding: chunked\r\n\r\n"
+    # A failed response, which a stream reconnects after
+    UNAVAILABLE = "HTTP/1.1 503 Service Unavailable\r\nContent-Type: application/json\r\nContent-Length: 2\r\n\r\n{}"
 
     def setup
       @server = TCPServer.new("127.0.0.1", 0)
-      @sockets, @threads, @opened = Queue.new, [], Queue.new
+      @sockets, @threads, @opened, @response = Queue.new, [], Queue.new, HEAD
+      @started, @resume = Queue.new, Queue.new
       @threads << Thread.new { loop { serve(@server.accept) } }
-      @streaming = Client.new(bearer_token: TEST_BEARER_TOKEN, base_url: "http://127.0.0.1:#{@server.addr[1]}/2/").streaming
+      @streaming = client.streaming
       WebMock.disable!
     end
 
@@ -67,13 +70,36 @@ module X
       end
     end
 
+    def test_an_on_response_that_runs_for_a_failed_response_when_the_stream_is_stopped_runs_to_its_end
+      @response, finished = UNAVAILABLE, []
+      streaming = client(on_response: pausing { |response| finished << response.status }).streaming
+      reader = start { streaming.stream("tweets/sample/stream") { |_post| flunk "unexpected yield" } }
+      stop_while_paused(streaming)
+
+      assert_equal [nil, [503]], [reader.join(5)&.value, finished]
+    end
+
     private
 
-    # Answer a request with the head of a stream, and hold its socket open, sending nothing more
+    # A callable that says it started, waits to be resumed, and passes what it was passed to the block given
+    def pausing(&finish) = ->(object) { (@started << true) && @resume.pop && finish.call(object) }
+
+    # Stop a streaming client while the callable that pauses it runs, and resume it
+    def stop_while_paused(streaming)
+      @started.pop
+      streaming.stop
+      @resume << true
+    end
+
+    # A client of the server
+    def client(**) = Client.new(bearer_token: TEST_BEARER_TOKEN, base_url: "http://127.0.0.1:#{@server.addr[1]}/2/", **)
+
+    # Answer a request with the response of the test, the head of a stream unless it says otherwise, and hold its socket
+    # open, sending nothing more
     def serve(socket)
       @sockets << socket
       socket.gets("\r\n\r\n")
-      socket.write(HEAD)
+      socket.write(@response)
       @opened << true
     end
 

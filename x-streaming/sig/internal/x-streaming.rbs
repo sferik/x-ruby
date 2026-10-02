@@ -122,6 +122,7 @@ module X
       @stopped: bool
 
       def self.guard: [T] () { () -> T } -> T
+      def self.guarding: (untyped callable) -> untyped
       def initialize: () -> void
       def stopped?: () -> bool
       def run: [T] () { () -> T } -> T?
