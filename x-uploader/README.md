@@ -57,6 +57,7 @@ media.expires_at  # => 2026-09-19 12:00:00 UTC
 X::Client.include(X::Uploader::API)
 
 media = client.upload_media("cat.jpg", alt_text: "A cat asleep on a keyboard")
+video = client.chunked_upload_media("talk.mp4")  # returns once uploaded, before X processes it
 client.upload_media_binary(File.binread("cat.png"), media_category: "tweet_image")
 client.await_media_processing(video)      # returns the status, failed or not
 client.await_media_processing!(video)     # raises X::Uploader::MediaProcessingFailed if processing failed

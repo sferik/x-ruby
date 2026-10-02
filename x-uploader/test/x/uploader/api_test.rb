@@ -9,7 +9,8 @@ module X
     cover Uploader.const_get(:Utils)
 
     # Each method of a client that takes options, the uploader it calls, and the arguments it is given before them
-    REFUSING = {upload_media: [Uploader::MediaUpload, :upload, ["cat.jpg"]], await_media_processing: [Uploader::MediaUpload, :await_processing, [7]],
+    REFUSING = {upload_media: [Uploader::MediaUpload, :upload, ["cat.jpg"]], chunked_upload_media: [Uploader::MediaUpload, :chunked_upload, ["cat.mp4"]],
+                await_media_processing: [Uploader::MediaUpload, :await_processing, [7]],
                 await_media_processing!: [Uploader::MediaUpload, :await_processing!, [7]], add_subtitles: [Uploader::Metadata, :add_subtitles, [1, 2, "en"]],
                 update_profile_banner: [Uploader::Account, :update_profile_banner, ["banner.png"]]}.freeze
 
@@ -21,6 +22,12 @@ module X
     def test_upload_media_uploads_a_file_with_the_client_and_its_options
       Uploader::MediaUpload.stub(:upload, @called) do
         assert_equal [["cat.jpg"], {client: @client, alt_text: "A cat"}], @client.upload_media("cat.jpg", alt_text: "A cat")
+      end
+    end
+
+    def test_chunked_upload_media_uploads_a_file_in_chunks_with_the_client_and_its_options
+      Uploader::MediaUpload.stub(:chunked_upload, @called) do
+        assert_equal [["cat.mp4"], {client: @client, concurrency: 8}], @client.chunked_upload_media("cat.mp4", concurrency: 8)
       end
     end
 
@@ -71,8 +78,8 @@ module X
 
     def test_a_client_gains_nothing_until_it_includes_the_methods
       refute_includes Client.ancestors, Uploader::API
-      assert_equal %i[add_alt_text add_subtitles await_media_processing await_media_processing! update_profile_banner update_profile_image
-        upload_media], Uploader::API.public_instance_methods.sort
+      assert_equal %i[add_alt_text add_subtitles await_media_processing await_media_processing! chunked_upload_media update_profile_banner
+        update_profile_image upload_media], Uploader::API.public_instance_methods.sort
     end
 
     def test_await_media_processing_reports_a_failure_and_the_bang_raises_it

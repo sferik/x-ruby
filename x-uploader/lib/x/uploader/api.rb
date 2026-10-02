@@ -64,6 +64,40 @@ module X
         MediaUpload.upload(media, client: _ = self, **Utils.without_client(options))
       end
 
+      # Upload media in chunks, without waiting for it to be processed
+      #
+      # It uploads the media as {#upload_media} uploads a video, a chunk at a time, but returns once the upload is
+      # finalized, rather than wait for X to process the media, so that the caller can go on while X processes a long
+      # video, and wait for it with {#await_media_processing} or {#await_media_processing!} when it needs it. The
+      # chunks are sent by threads of their own, so the on_response of the client runs on those threads for the
+      # response of each chunk.
+      #
+      # @api public
+      # @param media [String, Pathname, IO, StringIO] the path to the media to upload, or an IO open on it
+      # @param options [Hash] the options of {MediaUpload.chunked_upload}, such as media_category, media_type,
+      #   chunk_size, concurrency, shared, and additional_owners
+      # @return [UploadedMedia] the uploaded media, which holds the response that finalized the upload, and the
+      #   processing status of media that X processes
+      # @raise [ArgumentError] if the media is neither a path nor an IO, or is a String that holds a NUL byte or a
+      #   line break, as the contents of media given in place of its path do
+      # @raise [InvalidMedia] if the file does not exist, the media cannot be read, or is empty, or it is larger than
+      #   the API takes of its category
+      # @raise [ArgumentError] if the media category is invalid, the chunk size is not a positive Integer, is larger
+      #   than a segment the API takes, or would need more segments than the API numbers, the concurrency is not 1 to
+      #   MAX_CONCURRENCY, shared is neither true, false, nor nil, or additional_owners is neither nil nor an Array of
+      #   at least one user identifier
+      # @raise [InvalidMediaType] if no media type is given and none can be inferred, or the one the media is, read
+      #   from its bytes or else from the name of its file, is not one the category takes
+      # @raise [MissingMediaData] if the response that initializes the upload holds no media to append the chunks to
+      # @raise [ChunkedUploadFailed] if the upload is initialized, but a chunk cannot be appended, or it cannot be
+      #   finalized, with the media it initialized
+      # @example Upload a long video, and wait for X to process it once it is needed
+      #   video = client.chunked_upload_media("talk.mp4", concurrency: 8)
+      #   client.create_post("Watch the talk", media_ids: [client.await_media_processing!(video)])
+      def chunked_upload_media(media, **options) # steep:ignore DifferentMethodParameterKind
+        MediaUpload.chunked_upload(media, client: _ = self, **Utils.without_client(options))
+      end
+
       # Wait until media has been processed, whether its processing succeeded or failed
       #
       # It returns the status X reported, which failed? tells a failure by, and ready? a success by, since a status
@@ -79,7 +113,7 @@ module X
       #   media identifier, or its media key names none
       # @raise [MissingMediaData] if a status response holds no media or carries no body at all
       # @raise [MediaProcessingTimeout] if the media is still processing once the processing timeout would pass
-      # @example Wait for a video uploaded with MediaUpload.chunked_upload
+      # @example Wait for a video uploaded with chunked_upload_media
       #   video = client.await_media_processing(video)
       #   warn video.processing_info.dig("error", "message") if video.failed?
       def await_media_processing(media, **options) # steep:ignore DifferentMethodParameterKind
@@ -100,7 +134,7 @@ module X
       # @raise [MediaProcessingFailed] if media processing failed, or ended in no state X documents, with the status X
       #   reported
       # @raise [MediaProcessingTimeout] if the media is still processing once the processing timeout would pass
-      # @example Wait for a video uploaded with MediaUpload.chunked_upload, raising if X could not process it
+      # @example Wait for a video uploaded with chunked_upload_media, raising if X could not process it
       #   client.await_media_processing!(video)
       def await_media_processing!(media, **options) # steep:ignore DifferentMethodParameterKind
         MediaUpload.await_processing!(media, client: _ = self, **Utils.without_client(options))

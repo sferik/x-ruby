@@ -17,6 +17,7 @@ module X
 
     module API
       def upload_media: (uploadable media, ?media_category: (String | Symbol)?, ?alt_text: String?, ?processing_timeout: Numeric?, ?media_type: String?, ?chunk_size: Integer?, ?concurrency: Integer, ?shared: bool?, ?additional_owners: Array[Integer | String]?) -> UploadedMedia
+      def chunked_upload_media: (uploadable media, ?media_category: (String | Symbol)?, ?media_type: String?, ?chunk_size: Integer?, ?concurrency: Integer, ?shared: bool?, ?additional_owners: Array[Integer | String]?) -> UploadedMedia
       def await_media_processing: (media media, ?processing_timeout: Numeric?) -> UploadedMedia
       def await_media_processing!: (media media, ?processing_timeout: Numeric?) -> UploadedMedia
       def add_alt_text: (media media, String text) -> UploadedMedia
