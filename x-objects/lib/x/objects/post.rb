@@ -502,12 +502,19 @@ module X
       # A link the API expanded to no URL is left as it is. A link without a url to replace is not one the API
       # documents, so it raises, as any value of a response that cannot be read does, rather than being passed over.
       #
+      # Every link is replaced in one pass over the text, so a URL a link stands for is never read for the links
+      # after it, and holds what it holds, even the shortened url of another link of the post. A url that begins
+      # another, longer one is not read in it.
+      #
       # @api public
       # @return [String, nil] the text with expanded links
       # @raise [InvalidAttribute] if the response holds a link that is not an object with a url that is a String
       # @example Display a post with its links in full
       #   post.expanded_text
-      def expanded_text = urls.reduce(text) { |expanded, link| Utils.read("#{self.class}#expanded_text", link) { expand(expanded, link) } }
+      def expanded_text
+        expansions = urls.to_h { |link| Utils.read("#{self.class}#expanded_text", link) { expansion(link) } }
+        text&.gsub(Regexp.union(expansions.keys.sort_by { |url| -url.length }), expansions)
+      end
 
       # Delete this post as the authenticated user
       #
@@ -549,21 +556,20 @@ module X
       # @return [Hash] the attributes
       def full = note_post || attrs
 
-      # Replace the shortened url of a link in a text by the URL it stands for
+      # The shortened url of a link, and the URL it stands for
       #
       # A link the API expanded to no URL stands for its url itself.
       #
       # @api private
-      # @param text [String, nil] the text
       # @param link [Hash] the link
-      # @return [String, nil] the text with the link expanded, or nil for no text
+      # @return [Array(String, String)] the shortened url and the URL it stands for
       # @raise [ArgumentError] if the link has no url, or names a URL that is not a String
-      def expand(text, link)
+      def expansion(link)
         url = link["url"]
         expanded_url = link["expanded_url"] || url
         raise ArgumentError, "a link needs a url, and an expanded_url if any, that are Strings" unless [url, expanded_url].all?(String)
 
-        text&.gsub(url) { expanded_url }
+        [url, expanded_url]
       end
     end
   end

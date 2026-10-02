@@ -830,7 +830,7 @@ module X
 
     private
     def full: () -> Hash[String, untyped]
-    def expand: (String? text, Hash[String, untyped] link) -> String?
+    def expansion: (Hash[String, untyped] link) -> [String, String]
   end
 
   class Community < Resource

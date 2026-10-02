@@ -32,6 +32,20 @@ module X
       assert_equal "hi https://ex.com/\\0\\&x", post.expanded_text
     end
 
+    def test_expanded_text_replaces_each_link_once_however_its_url_reads
+      links = [{"url" => "https://t.co/abc", "expanded_url" => "https://example.com/?next=https://t.co/def"}, {"url" => "https://t.co/def", "expanded_url" => "https://x.com"}]
+      post = Post.new({"id" => "1", "text" => "See https://t.co/abc and https://t.co/def", "entities" => {"urls" => links}})
+
+      assert_equal "See https://example.com/?next=https://t.co/def and https://x.com", post.expanded_text
+    end
+
+    def test_expanded_text_replaces_a_url_that_starts_another_apart_from_it
+      links = [{"url" => "https://t.co/a", "expanded_url" => "https://a.example"}, {"url" => "https://t.co/ab", "expanded_url" => "https://ab.example"}]
+      post = Post.new({"id" => "1", "text" => "https://t.co/ab https://t.co/a", "entities" => {"urls" => links}})
+
+      assert_equal "https://ab.example https://a.example", post.expanded_text
+    end
+
     def test_expanded_text_keeps_a_link_without_an_expansion
       post = Post.new({"id" => "1", "text" => "See https://t.co/abc", "entities" => {"urls" => [{"url" => "https://t.co/abc"}]}})
 
