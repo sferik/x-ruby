@@ -45,14 +45,6 @@ module X
       attr_reader :includes
       private :includes
 
-      # @!method to_h
-      #   Alias for attrs, returns the frozen attributes
-      #   @api public
-      #   @return [Hash{String => Object}] the attributes
-      #   @example Convert a resource to a hash
-      #     user.to_h
-      alias_method :to_h, :attrs
-
       class << self
         # The API endpoint used to look up this resource by identifier
         #

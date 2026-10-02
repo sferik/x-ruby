@@ -35,14 +35,6 @@ module X
       #   trend.attrs # => {"trend_name" => "#ruby", "category" => "Technology", ...}
       attr_reader :attrs
 
-      # @!method to_h
-      #   Alias for attrs, returns the raw attributes
-      #   @api public
-      #   @return [Hash{String => Object}] the attributes
-      #   @example Convert a trend to a hash
-      #     trend.to_h
-      alias_method :to_h, :attrs
-
       # The topics trending for the authenticated user
       #
       # The endpoint names no user, so these are always the trends of the user the client authenticates as, and it

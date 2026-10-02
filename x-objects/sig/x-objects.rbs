@@ -33,6 +33,7 @@ module X
     def self.at: (Integer | String woeid, client: Objects::_Client, **untyped params) -> Array[Trend]
     def initialize: (Hash[untyped, untyped] attrs) -> void
     def to_h: () -> Hash[String, untyped]
+            | [K, V] () { (String key, untyped value) -> [K, V] } -> Hash[K, V]
     def name: () -> String?
     def post_count: () -> Integer?
     def tweet_count: () -> Integer?
@@ -56,6 +57,7 @@ module X
     def self.all: (client: Objects::_Client, **untyped params) -> Array[PersonalizedTrend]
     def initialize: (Hash[untyped, untyped] attrs) -> void
     def to_h: () -> Hash[String, untyped]
+            | [K, V] () { (String key, untyped value) -> [K, V] } -> Hash[K, V]
     def name: () -> String?
     def category: () -> String?
     def post_count_text: () -> String?
@@ -80,6 +82,7 @@ module X
     def self.current: (client: Objects::_Client, **untyped params) -> PostUsage
     def initialize: (Hash[untyped, untyped] attrs) -> void
     def to_h: () -> Hash[String, untyped]
+            | [K, V] () { (String key, untyped value) -> [K, V] } -> Hash[K, V]
     def project_id: () -> Integer?
     def project_usage: () -> Integer?
     def project_cap: () -> Integer?
@@ -273,6 +276,7 @@ module X
     def initialize: (Hash[untyped, untyped] attrs, ?client: Objects::_Client?, ?hydrated: bool) -> void
     def id: () -> (Integer | String)
     def to_h: () -> Objects::attrs
+            | [K, V] () { (String key, untyped value) -> [K, V] } -> Hash[K, V]
     def problems: () -> Array[Problem]
     def hydrated?: () -> bool
     def stub?: () -> bool
@@ -656,6 +660,7 @@ module X
     def id: () -> Integer
     def tag: () -> String?
     def to_h: () -> Hash[String, untyped]
+            | [K, V] () { (String key, untyped value) -> [K, V] } -> Hash[K, V]
     def deconstruct_keys: (Array[Symbol]? keys) -> Hash[Symbol, Integer | String | nil]
     def ==: (untyped other) -> bool
     def eql?: (untyped other) -> bool

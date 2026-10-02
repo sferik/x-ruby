@@ -46,6 +46,8 @@ module X
     end
 
     module Serialization : _Attributed
+      def to_h: () -> Hash[String, untyped]
+              | [K, V] () { (String key, untyped value) -> [K, V] } -> Hash[K, V]
       def as_json: (*untyped) -> Hash[String, untyped]
       def to_json: (?JSON::State? state) -> String
     end

@@ -32,14 +32,6 @@ module X
       #   usage.attrs # => {"project_usage" => "1234", "project_cap" => "3000000", ...}
       attr_reader :attrs
 
-      # @!method to_h
-      #   Alias for attrs, returns the raw attributes
-      #   @api public
-      #   @return [Hash{String => Object}] the attributes
-      #   @example Convert the usage to a hash
-      #     usage.to_h
-      alias_method :to_h, :attrs
-
       # Look up the current post usage of the project the client's app belongs to
       #
       # A project has one usage, so it is looked up by no identifier, as X::User.current looks up the one user a

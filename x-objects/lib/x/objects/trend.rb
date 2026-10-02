@@ -34,14 +34,6 @@ module X
       #   trend.attrs # => {"trend_name" => "#ruby", "tweet_count" => 1234}
       attr_reader :attrs
 
-      # @!method to_h
-      #   Alias for attrs, returns the raw attributes
-      #   @api public
-      #   @return [Hash{String => Object}] the attributes
-      #   @example Convert a trend to a hash
-      #     trend.to_h
-      alias_method :to_h, :attrs
-
       # The topics trending in a place
       #
       # The endpoint takes app-only authentication, or OAuth 2.0 as a user, so a client that signs with OAuth 1.0a

@@ -37,14 +37,6 @@ module X
       #   rule.attrs # => {"id" => "1165037377523306498", "tag" => "ruby"}
       attr_reader :attrs
 
-      # @!method to_h
-      #   Alias for attrs, returns the attributes of the rule, which X::StreamingClient#delete_rules takes
-      #   @api public
-      #   @return [Hash{String => Object}] the attributes
-      #   @example Delete the rule a post matched
-      #     streaming_client.delete_rules(post.matching_rules.first.to_h)
-      alias_method :to_h, :attrs
-
       # Initialize a rule a post matched from the attributes the stream sent of it
       #
       # The identifier and tag are read as it is built, so that a rule that holds either as something else raises
