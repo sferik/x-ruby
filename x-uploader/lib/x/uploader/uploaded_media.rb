@@ -51,12 +51,12 @@ module X
     # @param attrs [Hash{String => Object}] the data of an upload or status response
     # @return [UploadedMedia] a new, frozen instance
     # @raise [ArgumentError] if the attributes are not a Hash, or hold no "id" that is a media ID the API takes: an
-    #   Integer that is not negative, or a String of digits, of 1 to 19 digits
+    #   Integer that is not negative, or a String of digits alone, of 1 to 19 digits
     # @example Refer to media that was uploaded before
     #   X::UploadedMedia.new({"id" => "1880028106020515840"})
     def initialize(attrs)
       @attrs = deep_freeze(Hash.try_convert(attrs) || raise(ArgumentError, "attrs must be a Hash, not #{attrs.inspect}"))
-      raise ArgumentError, format(NO_MEDIA_ID, self["id"].inspect) unless MEDIA_ID.match?(self["id"].to_s)
+      raise ArgumentError, format(NO_MEDIA_ID, self["id"].inspect) unless media_id?(self["id"])
 
       freeze
     end
@@ -67,11 +67,17 @@ module X
     # x-objects, the media of a post as the object layer reads it, is identified by its media key instead, so its id
     # is the media key, which {media_key} reads here; both classes answer media_id and media_key alike.
     #
+    # It is read as strictly as x-objects reads an identifier: an Integer as it is, and a String of digits alone, with
+    # no sign, underscore, or whitespace, as a decimal number, so that " 1_0 " is no identifier, rather than 10.
+    #
     # @api public
     # @return [Integer] the media ID, whether the response held it as a String or an Integer
     # @example Get the media ID
     #   media.id # => 1880028106020515840
-    def id = Integer(fetch("id").to_s, 10)
+    def id
+      value = fetch("id")
+      value.instance_of?(Integer) ? value : Integer(value, 10)
+    end
 
     # The numeric media ID, as the X::Media of x-objects names it
     #
@@ -305,6 +311,16 @@ module X
     def init_with(coder) = marshal_load(coder.map.values_at(*YAML_KEYS))
 
     private
+
+    # Check whether a value is a media ID the API takes
+    #
+    # It is an Integer, or a String, of 1 to 19 digits alone, so that an Integer that is negative, a String with a
+    # sign, an underscore, or whitespace, and anything else whose to_s reads as digits, such as a Symbol, is none.
+    #
+    # @api private
+    # @param value [Object] the value
+    # @return [Boolean] true if the value is a media ID the API takes
+    def media_id?(value) = (Integer === value || String === value) && MEDIA_ID.match?(value.to_s)
 
     # Copy and freeze a value of a response, and what it holds
     # @api private

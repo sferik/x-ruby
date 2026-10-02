@@ -159,10 +159,11 @@ module X
     end
 
     def test_media_id_refuses_an_identifier_the_api_does_not_take
-      [" 7", "-7", "7 ", "abc", "1" * 20, -7, {"id" => "abc"}, {"id" => "1" * 20}].each do |media|
+      [" 7", "-7", "7 ", "abc", "1" * 20, -7, {"id" => "abc"}, {"id" => "1" * 20}, {"id" => " 1_0 "}, {"id" => :"7"}, {"id" => 7.0}].each do |media|
         error = assert_raises(ArgumentError, media.inspect) { Uploader.const_get(:Utils).media_id(media) }
+        id = media.is_a?(Hash) ? media.fetch("id") : media
 
-        assert_match(/\AThe media identifier ".*" is none the API takes, which is 1 to 19 digits\z/, error.message)
+        assert_equal "The media identifier #{id.inspect} is none the API takes, which is 1 to 19 digits", error.message
       end
     end
 

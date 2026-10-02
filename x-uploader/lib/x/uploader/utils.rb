@@ -79,7 +79,9 @@ module X
       # Nil, or an empty identifier, names no media, and would reach the API as an identifier that is not there, so it
       # raises ArgumentError, as a mistake of the caller: every response an upload builds media from holds an
       # identifier, or raises MissingMediaData where it is read. Anything else raises rather than reach the API as
-      # whatever its to_s reads, such as the inspection of an object.
+      # whatever its to_s reads, such as the inspection of an object, and an identifier is read as strictly as
+      # UploadedMedia reads one: an Integer, or a String of digits alone, with no sign, underscore, or whitespace, so
+      # that the identifier of a Hash that is a Symbol or a Float raises too.
       #
       # @api private
       # @param media [UploadedMedia, Hash, #media_key, String, Integer] the uploaded media, the upload response, media
@@ -101,10 +103,24 @@ module X
         when Integer, nil then media
         else media_key_id(media)
         end
+        checked_media_id(id)
+      end
+
+      # A media identifier, as the String the API takes, once it is checked
+      #
+      # @api private
+      # @param id [Object] the identifier media holds, or its media key names
+      # @return [String] the media identifier
+      # @raise [ArgumentError] if the identifier is nil or empty, or is neither an Integer nor a String of 1 to 19
+      #   digits alone
+      # @example Check the identifier of uploaded media
+      #   Uploader::Utils.checked_media_id(7) # => "7"
+      def checked_media_id(id)
         text = id.to_s
         raise ArgumentError, NO_MEDIA_ID if text.empty?
+        return text if (Integer === id || String === id) && text.match?(MEDIA_ID)
 
-        text.match?(MEDIA_ID) ? text : raise(ArgumentError, format(NOT_MEDIA_ID, text.inspect))
+        raise ArgumentError, format(NOT_MEDIA_ID, id.inspect)
       end
 
       # The media identifier the media key of media names

@@ -92,6 +92,7 @@ module X
       def extension: (path file_path) -> String
       def without_client: (Hash[Symbol, untyped] options) -> Hash[Symbol, untyped]
       def media_id: (media media) -> String
+      def checked_media_id: (untyped id) -> String
       def media_key_id: (untyped media) -> String?
       def uploaded_media: (media media) -> UploadedMedia
       def described: (Hash[String, untyped]? response, media media) -> UploadedMedia
@@ -252,6 +253,7 @@ module X
     YAML_KEYS: Array[String]
 
     private
+    def media_id?: (untyped value) -> bool
     def deep_freeze: (untyped value) -> untyped
   end
 
