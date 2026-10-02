@@ -57,9 +57,11 @@ module X
       client = Client.new(open_timeout: 5, read_timeout: 60, write_timeout: 7, debug_output: $stderr, proxy_url: "https://proxy.example.com:8080")
       streaming_client = client.streaming
 
-      assert_equal [5, 30, 7], [streaming_client.open_timeout, streaming_client.read_timeout, streaming_client.write_timeout]
-      assert_same $stderr, streaming_client.debug_output
-      assert_equal "https://proxy.example.com:8080", streaming_client.instance_variable_get(:@stream_client).instance_variable_get(:@internals).send(:proxy_url)
+      stream_client = streaming_client.instance_variable_get(:@stream_client)
+
+      assert_equal [5, 30, 7], [stream_client.open_timeout, stream_client.read_timeout, stream_client.write_timeout]
+      assert_same $stderr, stream_client.debug_output
+      assert_equal "https://proxy.example.com:8080", stream_client.instance_variable_get(:@internals).send(:proxy_url)
     end
 
     def test_a_stream_that_drops_reconnects

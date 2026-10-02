@@ -29,9 +29,9 @@ module X
     #
     # A streaming client keeps the settings it was built with for as long as it lives, as a client does, so a stream
     # that runs for hours never reads a setting another thread is halfway through changing. {Client#streaming} builds
-    # one whose read_timeout or max_reconnects differ, and it takes the rest of its settings from the client it is
-    # built from, so a stream that connects differently is opened from a copy of that client:
-    # client.with(open_timeout: 2).streaming.
+    # one whose read_timeout or max_reconnects differ, the two settings a streaming client reads, and it takes the rest
+    # of its settings from the client it is built from, which {#client} reads, so a stream that connects differently is
+    # opened from a copy of that client: client.with(open_timeout: 2).streaming.
     #
     # @api public
     class ::X::StreamingClient
@@ -85,33 +85,12 @@ module X
         @stream_parser = StreamParser.new
       end
 
-      # The timeout for opening a stream's connection, in seconds, which is the client's
-      # @api public
-      # @return [Integer, Float, nil] the timeout, or nil for none
-      # @example Get the open timeout
-      #   streaming_client.open_timeout # => 10
-      def open_timeout = @stream_client.open_timeout
-
       # The timeout for reading from a stream, in seconds
       # @api public
       # @return [Integer, Float, nil] the timeout, or nil for none
       # @example Get the read timeout
       #   streaming_client.read_timeout # => 30
       def read_timeout = @stream_client.read_timeout
-
-      # The timeout for writing a stream's request, in seconds, which is the client's
-      # @api public
-      # @return [Integer, Float, nil] the timeout, or nil for none
-      # @example Get the write timeout
-      #   streaming_client.write_timeout # => 60
-      def write_timeout = @stream_client.write_timeout
-
-      # The IO debug output is written to, which is the client's
-      # @api public
-      # @return [IO, #<<, nil] the IO, or anything else that takes a String with <<, or nil for none
-      # @example Get the debug output
-      #   streaming_client.debug_output
-      def debug_output = @stream_client.debug_output
 
       # The maximum number of times in a row to reconnect a stream
       #

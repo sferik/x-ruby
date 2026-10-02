@@ -57,10 +57,7 @@ module X
     def initialize: (Client client, ?read_timeout: Numeric?, ?max_reconnects: Integer | Float) -> void
     def inspect: () -> String
     def stream: (String endpoint, ?params: params?, ?headers: headers, ?array_class: Class, ?object_class: object_class) { (untyped) -> void } -> untyped
-    def open_timeout: () -> Numeric?
     def read_timeout: () -> Numeric?
-    def write_timeout: () -> Numeric?
-    def debug_output: () -> _DebugOutput?
     def max_reconnects: () -> (Integer | Float)
     def rules: (?params: params?) -> Array[StreamRule]
     def add_rules: (Array[addable_rule] | addable_rule rules, ?dry_run: bool) ?{ (Problem problem) -> void } -> Array[StreamRule]
