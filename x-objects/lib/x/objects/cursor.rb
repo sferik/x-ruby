@@ -214,7 +214,8 @@ module X
 
       # Check whether the collection holds any resource, requesting one
       #
-      # Without a pattern or a block, this asks for a single resource rather than a full page.
+      # Without a pattern or a block, this asks for a single resource, raised to the endpoint's minimum, rather than a
+      # full page.
       #
       # @api public
       # @param pattern [Object] a pattern each resource is matched against
@@ -230,7 +231,8 @@ module X
 
       # Check whether the collection holds no resource, requesting one
       #
-      # Without a pattern or a block, this asks for a single resource rather than a full page.
+      # Without a pattern or a block, this asks for a single resource, raised to the endpoint's minimum, rather than a
+      # full page.
       #
       # @api public
       # @param pattern [Object] a pattern each resource is matched against
@@ -246,7 +248,8 @@ module X
 
       # Check whether the collection is empty, requesting one resource
       #
-      # Like none? without a pattern or a block, this asks for a single resource rather than a full page.
+      # Like none? without a pattern or a block, this asks for a single resource, raised to the endpoint's minimum,
+      # rather than a full page.
       #
       # @api public
       # @return [Boolean] true if the collection holds no resource
@@ -256,7 +259,8 @@ module X
 
       # Check whether the collection holds one resource, requesting two
       #
-      # Without a pattern or a block, this asks for two resources rather than a full page.
+      # Without a pattern or a block, this asks for two resources, raised to the endpoint's minimum, rather than a full
+      # page.
       #
       # @api public
       # @param pattern [Object] a pattern each resource is matched against
