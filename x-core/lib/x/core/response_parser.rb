@@ -85,7 +85,7 @@ module X
         begin
           decode(body, array_class:, object_class:, client:)
         rescue JSON::ParserError
-          raise InvalidResponse.new(http_response: response, body:, **RequestContext.of(request))
+          raise InvalidResponse.new(http_response: response, **RequestContext.of(request))
         end
       end
 

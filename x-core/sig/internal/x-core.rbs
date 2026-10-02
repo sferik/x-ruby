@@ -686,9 +686,12 @@ module X
   end
 
   class InvalidResponse < HTTPError
+    @body: String?
+
     private def self.default_status: () -> Integer
 
     private
+    def body_read: () -> String?
     def message_from: (Hash[String, untyped] _body) -> String
   end
 

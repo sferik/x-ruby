@@ -17,11 +17,16 @@ module X
       # The body of a stream can be read only as it arrives, so an error raised for a line of a stream holds that line.
       # It is tagged UTF-8, as {Response#body} is, and keeps the bytes of a body that is not valid UTF-8.
       #
+      # An error given no body holds the body of its response, as {HTTPError#body} does, once that response has been
+      # read whole. The body of a response that has not been read, as that of a stream still arriving, is never read
+      # for it, since reading it would wait for the rest of the stream, or take the lines the stream has yet to read.
+      #
       # @api public
-      # @return [String, nil] the body, or the line of a stream, tagged UTF-8, or nil for an error built without one
+      # @return [String, nil] the body, or the line of a stream, tagged UTF-8, or else the body of the response once it
+      #   has been read whole, or nil for an error of a response that has not been, or that has none
       # @example Read the body that could not be parsed
       #   error.body
-      attr_reader :body
+      def body = @body || body_read
 
       # Initialize a new InvalidResponse
       #
@@ -65,6 +70,17 @@ module X
       private_class_method :default_status
 
       private
+
+      # The body of the response, if it has been read whole
+      #
+      # A response read whole holds its body as a String, where one read in chunks, as a stream is, holds what it read
+      # them with, and one not yet read reads its body when asked for it, which this never asks it.
+      #
+      # @api private
+      # @return [String, nil] the body, or nil for a response not yet read, read in chunks, or without one
+      def body_read
+        String.try_convert(http_response.body) if http_response.instance_variable_get(:@read)
+      end
 
       # The message of the error, which says the body is not JSON
       #

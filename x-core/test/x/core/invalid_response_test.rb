@@ -38,6 +38,20 @@ module X
       assert_nil InvalidResponse.new(http_response: @response).body
     end
 
+    def test_an_error_without_a_body_holds_the_body_of_a_response_read_whole
+      @response.instance_variable_set(:@body, "<html>")
+      @response.instance_variable_set(:@read, true)
+
+      assert_equal "<html>", InvalidResponse.new(http_response: @response).body
+    end
+
+    def test_an_error_without_a_body_holds_none_of_a_response_read_in_chunks
+      @response.instance_variable_set(:@body, Net::ReadAdapter.new(proc {}))
+      @response.instance_variable_set(:@read, true)
+
+      assert_nil InvalidResponse.new(http_response: @response).body
+    end
+
     def test_the_error_is_an_http_error_that_describes_no_problem
       @response["content-type"] = "application/json"
       @response.instance_variable_set(:@body, '{"title": "Not JSON after all", "detail": "no"}')

@@ -209,7 +209,7 @@ module X
   end
 
   class InvalidResponse < HTTPError
-    attr_reader body: String?
+    def body: () -> String?
 
     def initialize: (?String? message, ?http_response: Net::HTTPResponse?, ?status: Integer?, ?headers: Hash[String | Symbol, String]?, ?body: String?, ?http_method: (Symbol | String)?, ?uri: URI::Generic?) -> void
   end

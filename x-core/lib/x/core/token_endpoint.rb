@@ -168,7 +168,7 @@ module X
       #   response that holds no token
       def refused(error, response, request, refusal)
         message = error.description || error.code || refusal
-        return InvalidResponse.new(message, http_response: response, body: response.body, **RequestContext.of(request)) if response.is_a?(Net::HTTPSuccess)
+        return InvalidResponse.new(message, http_response: response, **RequestContext.of(request)) if response.is_a?(Net::HTTPSuccess)
 
         AuthorizationError.new(message, http_response: response, **RequestContext.of(request))
       end
@@ -182,7 +182,7 @@ module X
       def failure(response, request)
         return ResponseParser.new.error(response, request) unless response.is_a?(Net::HTTPSuccess)
 
-        InvalidResponse.new(http_response: response, body: response.body, **RequestContext.of(request))
+        InvalidResponse.new(http_response: response, **RequestContext.of(request))
       end
 
       # Build the POST that sends a token request
