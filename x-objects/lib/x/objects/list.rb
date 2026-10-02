@@ -3,6 +3,7 @@
 require "uri"
 require_relative "cursor"
 require_relative "finders"
+require_relative "page_limit"
 require_relative "resource"
 
 module X
@@ -209,18 +210,24 @@ module X
       # the user is on. A private list scans its members, since a user's memberships leave private lists
       # out. A public list scans the lists the user is on when there are fewer of them than members, as its
       # member_count and the user's listed_count tell, looking up the list or the user first when either is
-      # a stub. The API bills every resource a scan returns.
+      # a stub. The API bills every resource a scan returns, so max_pages limits the pages it reads, raising
+      # PageLimitReached rather than read past them.
       #
       # @api public
       # @param user [User, String, Integer] the user or their identifier
+      # @param max_pages [Integer, nil] the most pages of members or memberships to read, or nil for no limit
       # @return [Boolean] true if the user is a member
+      # @raise [ArgumentError] if max_pages is neither an Integer of at least 1 nor nil, before a request
+      # @raise [PageLimitReached] if the scan reads max_pages pages without the user, and the API names another
       # @example Check whether a user is on a list
       #   list.member?(user)
-      def member?(user)
-        member = User.from_id(user)
-        return members.stubs.include?(member) unless fewer_memberships?(user)
+      # @example Read no more than ten pages to tell
+      #   list.member?(user, max_pages: 10)
+      def member?(user, max_pages: nil)
+        member, max_pages = User.from_id(user), PageLimit.check!(max_pages)
+        return PageLimit.scan(members.stubs, member, what: "List#member?", max_pages:) unless fewer_memberships?(user)
 
-        User.from_id(member, client: client!).list_memberships.stubs.include?(self)
+        PageLimit.scan(User.from_id(member, client: client!).list_memberships.stubs, self, what: "List#member?", max_pages:)
       end
 
       # The permalink of the list

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "x/core"
+require_relative "page_limit"
 require_relative "utils"
 
 module X
@@ -201,21 +202,27 @@ module X
       #
       # When either user is the authenticated user, one lookup of the other's connection_status answers.
       # Otherwise the users this user follows are scanned until one matches, up to 1,000 a page, and the
-      # API bills every user returned, so checking an account that follows thousands can cost dollars. A client
-      # that authenticates as the app alone has no authenticated user, which the API refuses to look up, so it scans.
+      # API bills every user returned, so checking an account that follows thousands can cost dollars, and max_pages
+      # limits the pages the scan reads, raising PageLimitReached rather than read past them. A client that
+      # authenticates as the app alone has no authenticated user, which the API refuses to look up, so it scans.
       # Any other failure to look the authenticated user up raises, rather than scan every user this one follows.
       #
       # @api public
       # @param user [User, String, Integer] the user or their identifier
+      # @param max_pages [Integer, nil] the most pages of followed users to scan, or nil for no limit
       # @return [Boolean] true if this user follows the user
+      # @raise [ArgumentError] if max_pages is neither an Integer of at least 1 nor nil, before a request
+      # @raise [PageLimitReached] if the scan reads max_pages pages without the user, and the API names another
       # @example Check whether the authenticated user follows someone, in one lookup
       #   client.current_user!.follows?(other)
-      def follows?(user)
-        target = User.from_id(user)
+      # @example Scan no more than five pages of the users another user follows
+      #   X::User.find("jack", client: client).follows?(other, max_pages: 5)
+      def follows?(user, max_pages: nil)
+        target, max_pages = User.from_id(user), PageLimit.check!(max_pages)
         case authenticated_user_id
         when id then connection_status_of(target).include?("following")
         when target.id then connection_status_of(self).include?("followed_by")
-        else following.stubs.include?(target)
+        else PageLimit.scan(following.stubs, target, what: "User#follows?", max_pages:)
         end
       end
 

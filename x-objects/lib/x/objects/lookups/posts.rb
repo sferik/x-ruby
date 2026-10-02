@@ -114,7 +114,8 @@ module X
         #
         # @api public
         # @param query [String] the search query
-        # @param params [Hash] query parameters, such as start_time and end_time
+        # @param params [Hash] query parameters, such as start_time and end_time, and the max_pages of
+        #   {Post.count_all}, which limits the pages of counts requested
         # @return [Integer] the number of matching posts
         # @example Count every post about Ruby from 2024
         #   client.count_all_posts("ruby", start_time: "2024-01-01T00:00:00Z", end_time: "2025-01-01T00:00:00Z")
@@ -142,7 +143,8 @@ module X
         #
         # @api public
         # @param query [String] the search query
-        # @param params [Hash] query parameters, such as granularity, which is day by default
+        # @param params [Hash] query parameters, such as granularity, which is day by default, and the max_pages of
+        #   {Post.count_all_by_period}, which limits the pages of counts requested
         # @return [Hash{Range<Time> => Integer}] the number of matching posts, keyed by the time each period spans,
         #   from its start up to, but not including, its end, oldest first
         # @example Count the posts about Ruby by day in 2024

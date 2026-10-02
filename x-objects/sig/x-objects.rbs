@@ -25,6 +25,9 @@ module X
   class MissingClient < Objects::Error
   end
 
+  class PageLimitReached < Objects::Error
+  end
+
   class Trend
     FIELDS: Array[String]
 
@@ -552,7 +555,7 @@ module X
     def unfollow_list: (Objects::id list) -> bool
     def pin_list: (Objects::id list) -> bool
     def unpin_list: (Objects::id list) -> bool
-    def follows?: (Objects::id user) -> bool
+    def follows?: (Objects::id user, ?max_pages: Integer?) -> bool
   end
 
   class Post < Resource
@@ -724,7 +727,7 @@ module X
     def tweets: (**untyped params) -> Cursor[Post]
     def permalink: () -> String
     def uri: () -> URI::Generic
-    def member?: (Objects::id user) -> bool
+    def member?: (Objects::id user, ?max_pages: Integer?) -> bool
     def add_member: (Objects::id user) -> bool
     def update: (**untyped params) -> bool
     def remove_member: (Objects::id user) -> bool

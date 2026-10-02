@@ -74,6 +74,17 @@ module X
       def attrs: () -> Hash[String, untyped]
     end
 
+    module PageLimit
+      extend PageLimit
+
+      INVALID_MAX_PAGES: String
+      PAGE_LIMIT_REACHED: String
+
+      def check!: (untyped max_pages) -> Integer?
+      def reached!: (String what, read: Integer, max_pages: Integer?, next_token: String?) -> void
+      def scan: [R < Resource] (Cursor[R] cursor, R resource, what: String, max_pages: Integer?) -> bool
+    end
+
     module Utils
       extend Utils
 
@@ -291,7 +302,7 @@ module X
       def unfollow_list: (id list) -> bool
       def pin_list: (id list) -> bool
       def unpin_list: (id list) -> bool
-      def follows?: (id user) -> bool
+      def follows?: (id user, ?max_pages: Integer?) -> bool
 
       private
       def authenticated_user_id: () -> Integer?
@@ -403,13 +414,13 @@ module X
       DEFAULT_GRANULARITY: String
 
       def count: (String query, client: _Client, **untyped params) -> Integer
-      def count_all: (String query, client: _Client, **untyped params) -> Integer
+      def count_all: (String query, client: _Client, ?max_pages: Integer?, **untyped params) -> Integer
       def count_by_period: (String query, client: _Client, **untyped params) -> Hash[Range[Time], Integer]
-      def count_all_by_period: (String query, client: _Client, **untyped params) -> Hash[Range[Time], Integer]
+      def count_all_by_period: (String query, client: _Client, ?max_pages: Integer?, **untyped params) -> Hash[Range[Time], Integer]
 
       private
-      def pages: (String path, String query, client: _Client, **untyped params) -> Array[Hash[String, untyped]]
-      def next_token: (Array[Hash[String, untyped]] bodies, untyped given) -> untyped
+      def pages: (String path, String query, client: _Client, ?max_pages: Integer?, **untyped params) -> Array[Hash[String, untyped]]
+      def next_token: (Array[Hash[String, untyped]] bodies, untyped given, Integer? max_pages) -> untyped
       def total: (Array[Hash[String, untyped]] bodies) -> Integer
       def page_total: (Integer | String | nil value) -> Integer
       def periods: (Array[Hash[String, untyped]] bodies) -> Hash[Range[Time], Integer]

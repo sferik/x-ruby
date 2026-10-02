@@ -80,4 +80,20 @@ module X
   # @example Hydrate a resource that has a client
   #   X::User.from_id(7_505_382, client: client).hydrate
   class MissingClient < Objects::Error; end
+
+  # Raised when a scan or a count reads the pages its max_pages allows, and the API names a page after them
+  #
+  # A check that pages through a collection, such as List#member? or User#follows?, and a count of the full archive,
+  # such as X::Post.count_all, read as many pages as the answer takes, and the API bills each one. Given max_pages,
+  # each reads no more pages than that, and raises this rather than answer from the pages it read, which would be
+  # wrong: a member on a page it did not read, or posts counted on one, would go unseen.
+  #
+  # @api public
+  # @example Give up on a check that would read more than ten pages
+  #   begin
+  #     list.member?(user, max_pages: 10)
+  #   rescue X::PageLimitReached
+  #     nil
+  #   end
+  class PageLimitReached < Objects::Error; end
 end

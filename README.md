@@ -126,7 +126,7 @@ X::User.hydrate_all(posts.map(&:author), client: x_client) # looks up the stubs 
 message.peer(x_client.current_user)    # the other participant of a direct message
 ```
 
-**Costs.** The X API bills each resource a request returns, so the size of a page is the size of the bill. `first(n)` and `take(n)` read only what they return. Iterating a cursor, `to_a`, and `ids` read the whole collection, up to 1,000 users a page for followers and following. `count` and `size` read the whole collection too, a request per page, billed for every resource, so counting a user with a million followers reads a million users in a thousand requests. `published_count` reads the number the API publishes instead, for a user's followers, followed users, and list memberships, and for a list's members and followers, which costs nothing when the user or list holds it and one lookup when it is a stub, and it returns nil for any other collection. The published number counts what the collection holds, which can differ from what reading it finds, since the API leaves out what the authenticated user cannot see. Other `Enumerable` methods, such as `find`, `include?`, and `lazy`, cannot know how much they will read, so they request the largest page too; pass `max_results:` to read less per request. `user.follows?(other)` takes one lookup when either user is the authenticated user, by reading the other's `connection_status`, and otherwise scans the users `user` follows. The API has no lookup for a list membership, so `list.member?(user)` scans: the members of a private list, and for a public list, whichever is smaller of its members and the lists the user is on, as `member_count` and `listed_count` tell.
+**Costs.** The X API bills each resource a request returns, so the size of a page is the size of the bill. `first(n)` and `take(n)` read only what they return. Iterating a cursor, `to_a`, and `ids` read the whole collection, up to 1,000 users a page for followers and following. `count` and `size` read the whole collection too, a request per page, billed for every resource, so counting a user with a million followers reads a million users in a thousand requests. `published_count` reads the number the API publishes instead, for a user's followers, followed users, and list memberships, and for a list's members and followers, which costs nothing when the user or list holds it and one lookup when it is a stub, and it returns nil for any other collection. The published number counts what the collection holds, which can differ from what reading it finds, since the API leaves out what the authenticated user cannot see. Other `Enumerable` methods, such as `find`, `include?`, and `lazy`, cannot know how much they will read, so they request the largest page too; pass `max_results:` to read less per request. `user.follows?(other)` takes one lookup when either user is the authenticated user, by reading the other's `connection_status`, and otherwise scans the users `user` follows. The API has no lookup for a list membership, so `list.member?(user)` scans: the members of a private list, and for a public list, whichever is smaller of its members and the lists the user is on, as `member_count` and `listed_count` tell. Pass either scan `max_pages:` to read no more pages than that: one that reaches the limit with pages left raises `X::PageLimitReached`, rather than answer from the pages it read.
 
 ```ruby
 user.followers.first(10)               # ten users
@@ -136,6 +136,7 @@ user.muting.published_count            # => nil, since the API publishes no numb
 x_client.current_user.follows?(other)  # one lookup
 other.follows?(x_client.current_user)  # one lookup
 other.follows?(someone)                # scans everyone other follows
+other.follows?(someone, max_pages: 5)  # scans five pages at most, or raises X::PageLimitReached
 user.followers(max_results: 100).find { |follower| follower.verified? }
 ```
 
@@ -152,12 +153,13 @@ usage.daily                            # => {2026-09-14 00:00:00 UTC => 1234, ..
 usage.daily_by_app                     # the same, keyed by the ID of each of the project's apps
 ```
 
-**Counting posts.** `count_posts` counts the posts from the last seven days that match a query, and `count_all_posts` counts every post, which needs full-archive access. Each costs one request per page of periods, whatever the count. The counts and usage endpoints refuse OAuth 1.0a, so a client that signs with it makes those requests through `app_only`, a copy of itself that authenticates as the app. The client fetches the app's bearer token the first time and reuses it.
+**Counting posts.** `count_posts` counts the posts from the last seven days that match a query, and `count_all_posts` counts every post, which needs full-archive access. Each costs one request per page of periods, whatever the count, and a count of many years of the archive takes many pages, so `count_all_posts` and `count_all_posts_by_period` take `max_pages:`, past which they raise `X::PageLimitReached`. The counts and usage endpoints refuse OAuth 1.0a, so a client that signs with it makes those requests through `app_only`, a copy of itself that authenticates as the app. The client fetches the app's bearer token the first time and reuses it.
 
 ```ruby
 x_client.count_posts("ruby")           # => 12345
 x_client.post_counts("ruby", granularity: "hour") # => {2026-09-14 12:00:00 UTC...2026-09-14 13:00:00 UTC => 42, ...}
 X::Post.count_all("ruby", client: x_client, start_time: "2020-01-01T00:00:00Z")
+X::Post.count_all("ruby", client: x_client, max_pages: 3) # three requests at most
 ```
 
 **Missing resources.** A finder returns nil when the resource does not exist, and its bang form raises `X::ResourceNotFound`, an `X::Error`.
