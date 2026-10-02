@@ -125,6 +125,11 @@ module X
       # the response says has already failed to process raises MediaProcessingFailed with that response, and media it
       # says has finished is returned as it is, without a check of its status.
       #
+      # The chunks of an upload in chunks are sent by threads of their own, as many as the concurrency, so the
+      # on_response of the client runs on those threads for the response of each chunk, and a hook that reads state
+      # kept for the thread that called, such as a Rails CurrentAttributes or a logger of its own, reads that of
+      # another thread.
+      #
       # @api public
       # @param media [String, Pathname, IO, StringIO] the path to the media to upload, or an IO open on it
       # @param client [Client] the X API client
@@ -196,6 +201,11 @@ module X
       end
 
       # Perform a chunked upload for large files
+      #
+      # The chunks of an upload in chunks are sent by threads of their own, as many as the concurrency, so the
+      # on_response of the client runs on those threads for the response of each chunk, and a hook that reads state
+      # kept for the thread that called, such as a Rails CurrentAttributes or a logger of its own, reads that of
+      # another thread.
       #
       # @api public
       # @param media [String, Pathname, IO, StringIO] the path to the media to upload, or an IO open on it
