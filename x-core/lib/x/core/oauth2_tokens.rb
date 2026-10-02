@@ -41,10 +41,11 @@ module X
       # Read tokens back from the JSON that to_json wrote, or the Hash that as_json gave
       #
       # A store that holds JSON, such as Redis or a JSON column, holds the tokens as as_json gives them: the number of
-      # their format, each token, and the expiration time as an ISO 8601 String, which this reads back as a Time.
+      # their format, each token, and the expiration time as an ISO 8601 String, which this reads back as a Time. The
+      # Hash may be keyed by Symbol, as JSON.parse(json, symbolize_names: true) and many caches give it back.
       #
       # @api public
-      # @param json [String, Hash{String => Object}] the JSON to_json wrote, or the Hash as_json gave
+      # @param json [String, Hash{String, Symbol => Object}] the JSON to_json wrote, or the Hash as_json gave
       # @return [OAuth2Tokens] the frozen tokens
       # @raise [JSON::ParserError] if the String is not JSON
       # @raise [ArgumentError] if the JSON is not an object, its expiration time is not an ISO 8601 String or nil, or
@@ -61,14 +62,15 @@ module X
       # The Hash of the JSON of tokens, of the format this release reads
       #
       # @api private
-      # @param json [String, Hash{String => Object}] the JSON to_json wrote, or the Hash as_json gave
-      # @return [Hash{String => Object}] the Hash
+      # @param json [String, Hash{String, Symbol => Object}] the JSON to_json wrote, or the Hash as_json gave
+      # @return [Hash{String => Object}] the Hash, keyed by String
       # @raise [ArgumentError] if the JSON is not an object
       # @raise [UnsupportedMarshalFormat] if the JSON is of a format this release does not read
       def self.json_state(json)
         state = json.is_a?(String) ? JSON.parse(json) : json
         raise ArgumentError, format(NOT_AN_OBJECT, state.class) unless state.is_a?(Hash)
 
+        state = state.transform_keys(&:to_s)
         format = state["format"]
         raise UnsupportedMarshalFormat, "#{self} reads format #{MARSHAL_FORMAT} of JSON, not #{format.inspect}" unless MARSHAL_FORMAT.eql?(format)
 

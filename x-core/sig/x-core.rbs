@@ -283,7 +283,7 @@ module X
   end
 
   class OAuth2Tokens
-    def self.from_json: (String | Hash[String, untyped] json) -> OAuth2Tokens
+    def self.from_json: (String | Hash[String | Symbol, untyped] json) -> OAuth2Tokens
     attr_reader access_token: String
     attr_reader refresh_token: String?
     attr_reader expires_at: Time?

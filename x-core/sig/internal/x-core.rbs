@@ -724,7 +724,7 @@ module X
     FRACTION_DIGITS: Integer
     MARSHAL_FORMAT: Integer
 
-    def self.json_state: (String | Hash[String, untyped] json) -> Hash[String, untyped]
+    def self.json_state: (String | Hash[String | Symbol, untyped] json) -> Hash[String, untyped]
     def self.json_time: (String? expires_at) -> Time?
   end
 

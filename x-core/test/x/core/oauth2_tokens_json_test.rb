@@ -56,6 +56,11 @@ module X
       assert_equal @tokens, OAuth2Tokens.from_json(@tokens.as_json.merge("expires_at" => Class.new(String).new(@tokens.as_json["expires_at"])))
     end
 
+    def test_tokens_read_back_from_a_hash_keyed_by_symbol
+      assert_equal @tokens, OAuth2Tokens.from_json(@tokens.as_json.transform_keys(&:to_sym))
+      assert_equal @tokens, OAuth2Tokens.from_json(JSON.parse(@tokens.to_json, symbolize_names: true))
+    end
+
     def test_tokens_a_later_release_added_to_read_back_as_they_were
       assert_equal @tokens, OAuth2Tokens.from_json(@tokens.as_json.merge("token_type" => "bearer"))
     end
