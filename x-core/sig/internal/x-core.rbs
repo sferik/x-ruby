@@ -413,6 +413,7 @@ module X
       private
       def perform: (Client client, :delete | :get | :post | :put http_method, URI::Generic uri, body: String?, headers: headers, array_class: Class, object_class: object_class) ?{ (Response) -> void } -> untyped
       def perform_stream: [T] (URI::Generic uri, headers: headers) { (Net::HTTPResponse) -> T } -> T
+      def stream_failed: (URI::Generic uri, Net::HTTPResponse response, Net::HTTPRequest request) -> bot
       def reading: [T] (Net::HTTPResponse response) { (Net::HTTPResponse) -> T } -> T
     end
 

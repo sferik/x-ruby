@@ -188,9 +188,7 @@ module X
 
       # Open a GET request once, and pass its response to the block if it succeeded
       #
-      # A request to another origin than the base URL carries none of the client's credentials, as any other does. The
-      # body of a failed response is read whole, by on_response or by its error, so it is tagged UTF-8 before either
-      # reads it, as the body of {Connection#perform} is.
+      # A request to another origin than the base URL carries none of the client's credentials, as any other does.
       #
       # @api private
       # @param uri [URI::Generic] the URI of the request
@@ -203,13 +201,28 @@ module X
         authenticator, headers = Origin.credentials_for(from: URI(base_url), to: uri, authenticator: self.authenticator, headers:)
         request = @request_builder.build(http_method: :get, uri:, headers:, authenticator:)
         @connection.perform_stream(request:) do |response|
-          unless response.is_a?(Net::HTTPSuccess)
-            response.body_encoding = Encoding::UTF_8
-            CallbackError.tagging { report(:get, uri, response) }
-            raise @response_parser.error(response, request)
-          end
+          stream_failed(uri, response, request) unless response.is_a?(Net::HTTPSuccess)
           reading(response) { |body| yield body }
         end
+      end
+
+      # Raise the error of a stream that failed
+      #
+      # Its body is read whole, tagged UTF-8 as the body of {Connection#perform} is, before the block of the request
+      # ends, so that on_response and the error can read it however long after it was raised.
+      #
+      # @api private
+      # @param uri [URI::Generic] the URI of the request
+      # @param response [Net::HTTPResponse] the failed response, whose body is not yet read
+      # @param request [Net::HTTPRequest] the request the response answers
+      # @return [void]
+      # @raise [HTTPError] the error of the response
+      # @raise [CallbackError] if on_response raises
+      def stream_failed(uri, response, request)
+        response.body_encoding = Encoding::UTF_8
+        response.body
+        CallbackError.tagging { report(:get, uri, response) }
+        raise @response_parser.error(response, request)
       end
 
       # Run the block of a stream, tagging its errors but those of its socket

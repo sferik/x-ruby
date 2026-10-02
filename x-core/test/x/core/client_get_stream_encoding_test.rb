@@ -11,6 +11,7 @@ module X
     cover_client
 
     BODY = '{"title":"Invalid","detail":"café"}'
+    HTML = "<html>Service Unavailable — try later</html>"
 
     def test_the_body_of_a_stream_that_failed_is_utf_8
       bodies = []
@@ -23,12 +24,21 @@ module X
       assert_equal [Encoding::UTF_8], bodies.map(&:encoding)
     end
 
+    def test_the_body_of_a_stream_that_failed_is_read_after_the_stream_ends_with_no_on_response
+      error = with_failed_stream(content_type: "text/html", body: HTML) do |port|
+        assert_raises(ServiceUnavailable) { Client.new(base_url: "http://127.0.0.1:#{port}/").get_stream("stream") { |_response| } }
+      end
+
+      assert_equal [HTML, Encoding::UTF_8], [error.body, error.body.encoding]
+    end
+
     private
 
-    # Yield the port of a server that answers a stream with a failure whose body is not ASCII, with webmock disabled
-    def with_failed_stream(&)
+    # Yield the port of a server that answers a stream with a failure, with webmock disabled
+    def with_failed_stream(content_type: "application/json", body: BODY, &)
+      status = content_type.eql?("text/html") ? "503 Service Unavailable" : "400 Bad Request"
       WebMock.disable!
-      with_local_server(response: "HTTP/1.1 400 Bad Request\r\nContent-Type: application/json\r\nContent-Length: #{BODY.bytesize}\r\n\r\n#{BODY}", &)
+      with_local_server(response: "HTTP/1.1 #{status}\r\nContent-Type: #{content_type}\r\nContent-Length: #{body.bytesize}\r\n\r\n#{body}", &)
     ensure
       WebMock.enable!
     end
