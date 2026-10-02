@@ -703,7 +703,13 @@ module X
   class OAuth2Tokens
     NOT_A_STRING: String
     NOT_A_STRING_OR_NIL: String
+    NOT_AN_OBJECT: String
+    NOT_A_TIME_STRING: String
+    FRACTION_DIGITS: Integer
     MARSHAL_FORMAT: Integer
+
+    def self.json_state: (String | Hash[String, untyped] json) -> Hash[String, untyped]
+    def self.json_time: (String? expires_at) -> Time?
   end
 
   class OAuth2Authenticator < Authenticator
