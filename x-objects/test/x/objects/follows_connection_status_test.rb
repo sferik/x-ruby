@@ -74,7 +74,7 @@ module X
 
     def test_connection_status_attribute
       assert_equal %w[following followed_by], User.new({"id" => "5", "connection_status" => %w[following followed_by]}).connection_status
-      assert_empty User.new({"id" => "5"}).connection_status
+      assert_nil User.new({"id" => "5"}).connection_status
     end
   end
 end

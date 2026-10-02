@@ -267,11 +267,16 @@ module X
 
       # @!attribute [r] connection_status
       #   How the authenticated user and this user are connected
+      #
+      #   No lookup asks for it unless user.fields names it, so a user looked up otherwise holds none, and reads nil
+      #   rather than an empty list, which would say the users are not connected.
+      #
       #   @api public
-      #   @return [Array<String>] following, followed_by, blocking, muting, follow_request_sent, or follow_request_received, empty if there are none
+      #   @return [Array<String>, nil] following, followed_by, blocking, muting, follow_request_sent, or
+      #     follow_request_received, or nil when the response holds none
       #   @example Check whether this user follows the authenticated user
       #     client.find_user("sferik", "user.fields": "connection_status").connection_status.include?("followed_by")
-      attribute :connection_status, :list
+      attribute :connection_status, :requested_list
 
       # @!attribute [r] pinned_post_id
       #   The identifier of the pinned post

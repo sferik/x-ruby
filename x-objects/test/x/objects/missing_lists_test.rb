@@ -12,7 +12,6 @@ module X
       Post => %i[edit_history_post_ids urls context_annotations referenced_posts media polls],
       Space => %i[host_ids speaker_ids invited_user_ids topic_ids hosts speakers invited_users],
       DirectMessage => %i[participant_ids referenced_posts participants media],
-      User => %i[connection_status],
       Poll => %i[options],
       Place => %i[contained_within],
       Media => %i[variants]
@@ -26,6 +25,16 @@ module X
           assert_predicate resource.public_send(name), :frozen?, "Expected #{klass}##{name} to be frozen"
         end
       end
+    end
+
+    def test_a_requested_list_the_response_omitted_reads_as_nil
+      assert_nil User.new({"id" => "1"}).connection_status
+    end
+
+    def test_a_requested_list_the_response_holds_reads_as_it_is
+      assert_equal [[], %w[muting]], [User.new({"id" => "1", "connection_status" => []}).connection_status,
+        User.new({"id" => "1", "connection_status" => %w[muting]}).connection_status]
+      assert_raises(InvalidAttribute) { User.new({"id" => "1", "connection_status" => "muting"}).connection_status }
     end
 
     def test_a_list_of_identifiers_the_response_holds_reads_as_integers_frozen

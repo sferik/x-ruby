@@ -491,7 +491,7 @@ module X
     def affiliated_with_ids: () -> Array[Integer]
     def verified_followers_count: () -> Integer?
     def subscriber_count: () -> Integer?
-    def connection_status: () -> Array[String]
+    def connection_status: () -> Array[String]?
     def pinned_post_id: () -> Integer?
     def pinned_tweet_id: () -> Integer?
     def most_recent_post_id: () -> Integer?
