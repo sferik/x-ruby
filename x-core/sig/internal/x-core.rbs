@@ -11,7 +11,7 @@ module X
       ANSWERS: Array[singleton(Net::HTTPSuccess) | singleton(Net::HTTPClientError)]
       API_VERSION: Regexp
 
-      def fetch: (SimpleOAuth::OAuth2::Request token_request, connection: Connection, refusal: String) -> SimpleOAuth::OAuth2::Token
+      def fetch: (SimpleOAuth::OAuth2::Request token_request, connection: Connection, refusal: String, headers: Hash[String, String]) -> SimpleOAuth::OAuth2::Token
       def url_at: (String base_url, String token_url) -> String
       def scopes_of: (SimpleOAuth::OAuth2::Token token) -> Array[String]?
 
@@ -21,7 +21,7 @@ module X
       def token_of: (Net::HTTPResponse response, Net::HTTP::Post request, String refusal) -> SimpleOAuth::OAuth2::Token
       def refused: (SimpleOAuth::OAuth2::Error error, Net::HTTPResponse response, Net::HTTP::Post request, String refusal) -> (AuthorizationError | InvalidResponse)
       def failure: (Net::HTTPResponse response, Net::HTTP::Post request) -> HTTPError
-      def post: (SimpleOAuth::OAuth2::Request token_request) -> Net::HTTP::Post
+      def post: (SimpleOAuth::OAuth2::Request token_request, Hash[String, String] headers) -> Net::HTTP::Post
     end
 
     class CallbackError < StandardError
@@ -589,7 +589,7 @@ module X
     MISSING_STATE: String
 
     @pkce: SimpleOAuth::OAuth2::PKCE
-    @settings: {base_url: String, proxy_url: (URI::Generic | String)?, open_timeout: Numeric?, read_timeout: Numeric?, write_timeout: Numeric?, keep_alive_timeout: Numeric, debug_output: _DebugOutput?}
+    @settings: {base_url: String, proxy_url: (URI::Generic | String)?, open_timeout: Numeric?, read_timeout: Numeric?, write_timeout: Numeric?, keep_alive_timeout: Numeric, debug_output: _DebugOutput?, headers: Hash[String, String]}
 
     private
     def validate!: (client_id: String, redirect_uri: String, client_secret: String?, scopes: Array[String], state: String) -> void
@@ -598,7 +598,7 @@ module X
     attr_reader connection: Core::Connection
     def oauth2_client: (String base_url) -> SimpleOAuth::OAuth2::Client
     def connection_for: (Hash[Symbol, untyped] options) -> Core::Connection
-    def exchange: (String | Hash[String | Symbol, String] callback, String base_url, ?Core::Connection over) -> SimpleOAuth::OAuth2::Token
+    def exchange: (String | Hash[String | Symbol, String] callback, String base_url, Hash[String, String] headers, ?Core::Connection over) -> SimpleOAuth::OAuth2::Token
     def code_of: (String | Hash[String | Symbol, String] callback) -> String
     def client_of: (OAuth2Tokens tokens, Hash[Symbol, untyped] options) -> Client
     def report_exchange: (Client client, OAuth2Tokens tokens) -> void
@@ -617,10 +617,11 @@ module X
     @mutex: Thread::Mutex
     @taken: bool
     @token_url: String
+    @token_headers: Hash[String, String]
 
     private
     attr_reader connection: Core::Connection
-    def token_requests_over: (Core::Connection connection, String base_url) -> self
+    def token_requests_over: (Core::Connection connection, String base_url, Hash[String, String] headers) -> self
     def bearer_token: () -> String
     attr_reader api_key_secret: String
     def holds?: (Hash[Symbol, untyped] options) -> bool
@@ -739,6 +740,7 @@ module X
     NO_REFRESH_TOKEN: String
 
     @token_url: String
+    @token_headers: Hash[String, String]
     @mutex: Thread::Mutex
     @reporter: Core::RefreshReporter
     @refreshed_at: Float?
@@ -749,7 +751,7 @@ module X
     attr_reader refresh_token: String?
     attr_reader connection: Core::Connection
     attr_reader clients: _ClientRegistry
-    def token_requests_over: (Core::Connection connection, String base_url) -> self
+    def token_requests_over: (Core::Connection connection, String base_url, Hash[String, String] headers) -> self
     def holds?: (Hash[Symbol, untyped] options) -> bool
     def report_refreshes_to: (^() -> Array[_TokenSaver] hooks) -> ^() -> Array[_TokenSaver]
     attr_reader client_secret: String?
@@ -773,6 +775,7 @@ module X
       @refresh_token: String?
       @expires_at: Time?
       @scopes: Array[String]?
+      @token_headers: Hash[String, String]
 
       def expires_at: () -> Time?
       def scopes: () -> Array[String]?
@@ -787,8 +790,9 @@ module X
       def refresh_expired_token: (Connection connection, ?Client? client) -> void
       def refresh_rejected_token!: (String rejected_token, Connection connection, ?Client? client) -> bool
       def retrying_rejected_token: [T] (URI::Generic origin, Connection connection, ?Client? client) { () -> T } -> T
-      def renew: (Connection connection) -> OAuth2Tokens?
-      def refresh: (Connection connection) -> OAuth2Tokens
+      def renew: (Connection connection, Hash[String, String] headers) -> OAuth2Tokens?
+      def refresh: (Connection connection, Hash[String, String] headers) -> OAuth2Tokens
+      def token_headers: (Client? client) -> Hash[String, String]
       def adopt_in_place_of: (AuthorizationError error) -> OAuth2Tokens?
       def adopt_stored_tokens: () -> OAuth2Tokens?
       def stored_tokens: () -> OAuth2Tokens?
@@ -808,12 +812,14 @@ module X
     def authenticator: () -> (Authenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator)
     def scopes: () -> Array[String]?
     def base_url: () -> String
+    def headers: () -> Hash[String, String]
     def with: (Client client, Hash[Symbol, untyped] options) -> Client
     def expires_at: () -> Time?
   end
 
   interface _TokenRefreshHost
     def base_url: () -> String
+    def headers: () -> Hash[String, String]
   end
 
   interface _SettingsHost

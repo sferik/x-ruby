@@ -180,7 +180,7 @@ module X
       def app_only_authenticator
         return unless api_key && api_key_secret
 
-        AppOnlyAuthenticator.new(api_key:, api_key_secret:, bearer_token:).__send__(:token_requests_over, @connection, base_url)
+        AppOnlyAuthenticator.new(api_key:, api_key_secret:, bearer_token:).__send__(:token_requests_over, @connection, base_url, headers)
       end
 
       # Build a bearer token authenticator if credentials are available

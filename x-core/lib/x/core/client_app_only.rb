@@ -74,7 +74,7 @@ module X
         @app_only_monitor.synchronize do
           @app_token ||= begin
             key, secret = app_credentials #: [String, String]
-            AppOnlyAuthenticator.new(api_key: key, api_key_secret: secret).__send__(:token_requests_over, @connection, base_url)
+            AppOnlyAuthenticator.new(api_key: key, api_key_secret: secret).__send__(:token_requests_over, @connection, base_url, headers)
           end
         end
       end

@@ -46,7 +46,7 @@ module X
     attr_reader state: String
     attr_reader code_verifier: String
 
-    def initialize: (client_id: String, redirect_uri: String, ?client_secret: String?, ?scopes: Array[String], ?state: String, ?code_verifier: String, ?base_url: String, ?proxy_url: (URI::Generic | String)?, ?open_timeout: Numeric?, ?read_timeout: Numeric?, ?write_timeout: Numeric?, ?keep_alive_timeout: Numeric, ?debug_output: _DebugOutput?) -> void
+    def initialize: (client_id: String, redirect_uri: String, ?client_secret: String?, ?scopes: Array[String], ?state: String, ?code_verifier: String, ?base_url: String, ?proxy_url: (URI::Generic | String)?, ?open_timeout: Numeric?, ?read_timeout: Numeric?, ?write_timeout: Numeric?, ?keep_alive_timeout: Numeric, ?debug_output: _DebugOutput?, ?headers: headers) -> void
     def inspect: () -> String
     def url: () -> String
     def tokens: (String | Hash[String | Symbol, String] callback) -> OAuth2Tokens

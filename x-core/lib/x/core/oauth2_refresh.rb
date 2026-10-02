@@ -56,14 +56,14 @@ module X
       #
       # @api private
       # @param connection [Core::Connection] the connection to send the refresh over
-      # @param client [Client, nil] the client whose request refreshes, or nil for none
+      # @param client [Client, nil] the client whose request refreshes, whose headers it is sent with, or nil for none
       # @return [void]
       # @raise [AuthorizationError] if X refuses to refresh the token
       # @raise [HTTPError, InvalidResponse] if the token endpoint limits the rate of the request or fails to answer,
       #   as a server error, a redirect, or the page of a proxy says
       # @raise [TokenReportFailed] if save_tokens raises for the tokens of the refresh
       def refresh_expired_token(connection, client = nil)
-        tokens = @mutex.synchronize { renew(connection) if refresh_token && token_expired? }
+        tokens = @mutex.synchronize { renew(connection, token_headers(client)) if refresh_token && token_expired? }
         report_refresh(tokens, client) if tokens
       end
 
@@ -78,7 +78,8 @@ module X
       # @api private
       # @param rejected_token [String] the access token the API rejected
       # @param connection [Core::Connection] the connection to send the refresh over
-      # @param client [Client, nil] the client whose request the API rejected, or nil for none
+      # @param client [Client, nil] the client whose request the API rejected, whose headers the refresh is sent with,
+      #   or nil for none
       # @return [Boolean] true if the access token is no longer the one rejected
       # @raise [AuthorizationError] if X refuses to refresh the token
       # @raise [HTTPError, InvalidResponse] if the token endpoint limits the rate of the request or fails to answer,
@@ -86,7 +87,7 @@ module X
       # @raise [TokenReportFailed] if save_tokens raises for the tokens of the refresh
       def refresh_rejected_token!(rejected_token, connection, client = nil)
         tokens, replaced = @mutex.synchronize do
-          [(renew(connection) if refresh_token && access_token.eql?(rejected_token) && !fresh?), !access_token.eql?(rejected_token)]
+          [(renew(connection, token_headers(client)) if refresh_token && access_token.eql?(rejected_token) && !fresh?), !access_token.eql?(rejected_token)]
         end
         report_refresh(tokens, client) if tokens
         replaced
@@ -100,9 +101,9 @@ module X
       # nothing: X accepts a refresh token once, and a refresh would replace the tokens for a rejection of no token.
       #
       # A token that has expired is refreshed before the request, and one the API rejects after it, over the
-      # connection given, which is the one of the client that sends the request: the copies of a client share its
-      # authenticator, and a copy given another proxy, other timeouts, or other debug output refreshes the tokens it
-      # shares with them, as it sends its requests with them.
+      # connection given, which is the one of the client that sends the request, with the headers of that client: the
+      # copies of a client share its authenticator, and a copy given another proxy, other timeouts, other debug output,
+      # or other headers refreshes the tokens it shares with them, as it sends its requests with them.
       #
       # Internal to x-core: Client runs each request it sends with an OAuth 2.0 authenticator through it, and calls it
       # with __send__, since it is private.
@@ -135,13 +136,14 @@ module X
       #
       # @api private
       # @param connection [Core::Connection] the connection to send the refresh over
+      # @param headers [Hash{String => String}] the headers of the client to send the refresh with
       # @return [OAuth2Tokens, nil] the tokens the refresh issued, or those it took from the store in place of a
       #   refusal, or nil for tokens taken from the store that need no refresh
       # @raise [AuthorizationError] if X refuses to refresh the token
       # @raise [HTTPError, InvalidResponse] if the token endpoint limits the rate of the request or fails to answer,
       #   as a server error, a redirect, or the page of a proxy says
-      def renew(connection)
-        refresh(connection) unless adopt_stored_tokens && !token_expired?
+      def renew(connection, headers)
+        refresh(connection, headers) unless adopt_stored_tokens && !token_expired?
       end
 
       # Refresh the access token, holding the lock
@@ -152,20 +154,32 @@ module X
       #
       # @api private
       # @param connection [Core::Connection] the connection to send the refresh over
+      # @param headers [Hash{String => String}] the headers of the client to send the refresh with
       # @return [OAuth2Tokens] the tokens the refresh issued, once the authenticator holds them, or those it took from
       #   the store in place of a refusal
       # @raise [AuthorizationError] if X refuses to refresh the token, and the store holds no other
       # @raise [HTTPError, InvalidResponse] if the token endpoint limits the rate of the request or fails to answer,
       #   as a server error, a redirect, or the page of a proxy says
-      def refresh(connection)
+      def refresh(connection, headers)
         held = refresh_token #: String
-        update_tokens(TokenEndpoint.fetch(oauth2_client.refresh_token_request(refresh_token: held), connection:, refusal: DEFAULT_ERROR_MESSAGE))
+        update_tokens(TokenEndpoint.fetch(oauth2_client.refresh_token_request(refresh_token: held), connection:, refusal: DEFAULT_ERROR_MESSAGE, headers:))
         @spent_refresh_tokens << held
         issued = refresh_token #: String
         @reporter.issued(OAuth2Tokens.new(access_token:, refresh_token: issued, expires_at:, scopes:))
       rescue AuthorizationError => e
         adopt_in_place_of(e) or raise
       end
+
+      # The headers a refresh is sent with
+      #
+      # A refresh a client's request makes is sent with the headers of that client, over its connection, and one made
+      # for no client, as refresh! and a request signed with the authenticator alone make, with the headers of the
+      # client that took the authenticator first, over its connection.
+      #
+      # @api private
+      # @param client [Client, nil] the client whose request refreshes, or nil for none
+      # @return [Hash{String => String}] the headers
+      def token_headers(client) = client ? client.headers : @token_headers
 
       # Take the stored tokens in place of a refused refresh
       # @api private

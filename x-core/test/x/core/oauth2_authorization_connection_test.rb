@@ -82,11 +82,11 @@ module X
 
     # Record the connection each token request is sent over, which then answers closed?
     def record(connections, fetch)
-      lambda do |request, connection:, refusal:|
+      lambda do |request, connection:, refusal:, headers:|
         connections << connection
         connection.define_singleton_method(:close) { (@closed = true) && super() }
         connection.define_singleton_method(:closed?) { @closed.eql?(true) }
-        fetch.call(request, connection:, refusal:)
+        fetch.call(request, connection:, refusal:, headers:)
       end
     end
 

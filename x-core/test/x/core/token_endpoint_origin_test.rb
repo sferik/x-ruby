@@ -68,8 +68,8 @@ module X
 
     def test_an_authenticator_requests_its_token_endpoint_at_the_origin_of_the_first_client_that_takes_it
       authenticator = AppOnlyAuthenticator.new(api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET)
-      authenticator.__send__(:token_requests_over, Core.const_get(:Connection).new, TEST_SERVER)
-      authenticator.__send__(:token_requests_over, Core.const_get(:Connection).new, Client::DEFAULT_BASE_URL)
+      authenticator.__send__(:token_requests_over, Core.const_get(:Connection).new, TEST_SERVER, {})
+      authenticator.__send__(:token_requests_over, Core.const_get(:Connection).new, Client::DEFAULT_BASE_URL, {})
 
       assert_equal "http://localhost:3000/oauth2/token", authenticator.__send__(:token_request).url
     end

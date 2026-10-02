@@ -12,6 +12,7 @@ require_relative "errors/authorization_error"
 require_relative "errors/token_report_failed"
 require_relative "oauth2_authenticator"
 require_relative "oauth2_tokens"
+require_relative "setting_validator"
 require_relative "token_endpoint"
 
 module X
@@ -104,8 +105,8 @@ module X
       # Initialize an authorization
       #
       # A new state and code verifier are generated unless they are given. The authorization code is exchanged for
-      # tokens at the origin of the base URL given, with the proxy, timeouts, keep-alive timeout, and debug output given,
-      # which a client built with {#client} is given too.
+      # tokens at the origin of the base URL given, with the proxy, timeouts, keep-alive timeout, debug output, and
+      # headers given, which a client built with {#client} is given too.
       #
       # @api public
       # @param client_id [String] the OAuth 2.0 client ID of the app
@@ -127,6 +128,10 @@ module X
       #   such as a StringIO. It is written every request and response whole, in the clear: the Authorization header,
       #   the client secret a token request sends, and the tokens a token response holds. Send it to a file you
       #   control while debugging, never to a log that is shipped elsewhere, and leave it nil in production.
+      # @param headers [Hash{String, Symbol => String}] the headers the code is exchanged with, beside the User-Agent of
+      #   the gem, which one of them of that name replaces, as the headers of a client are sent, such as one a gateway
+      #   the base URL names requires; an Authorization header is not sent, since the exchange carries its own
+      #   credentials
       # @return [OAuth2Authorization] a new authorization
       # @raise [ArgumentError] if the client ID or redirect URI is nil or empty, or the client secret is empty, which
       #   would send the user to X with a URL it refuses
@@ -138,12 +143,14 @@ module X
       #   fragment
       # @raise [ArgumentError] if a timeout is neither a finite number of seconds of at least 0 nor nil, or the
       #   keep-alive timeout is not a finite number of seconds of at least 0
+      # @raise [ArgumentError] if the headers are not a Hash that names each header with a String or a Symbol and gives
+      #   it a String
       # @example Start an authorization
       #   authorization = X::OAuth2Authorization.new(client_id: "id", redirect_uri: "https://example.com/callback")
       def initialize(client_id:, redirect_uri:, client_secret: nil, scopes: DEFAULT_SCOPES, state: SecureRandom.urlsafe_base64(STATE_BYTES),
         code_verifier: SimpleOAuth::OAuth2::PKCE.generate.verifier, base_url: Client::DEFAULT_BASE_URL, proxy_url: nil,
         open_timeout: Client::DEFAULT_OPEN_TIMEOUT, read_timeout: Client::DEFAULT_READ_TIMEOUT,
-        write_timeout: Client::DEFAULT_WRITE_TIMEOUT, keep_alive_timeout: Client::DEFAULT_KEEP_ALIVE_TIMEOUT, debug_output: nil)
+        write_timeout: Client::DEFAULT_WRITE_TIMEOUT, keep_alive_timeout: Client::DEFAULT_KEEP_ALIVE_TIMEOUT, debug_output: nil, headers: {})
         validate!(client_id:, redirect_uri:, client_secret:, scopes:, state:)
         @client_id = client_id
         @client_secret = client_secret
@@ -152,8 +159,8 @@ module X
         @state = state
         @pkce = SimpleOAuth::OAuth2::PKCE.new(verifier: code_verifier)
         @code_verifier = code_verifier
-        @settings = {base_url: SettingValidator.base_url!(base_url), proxy_url:, open_timeout:, read_timeout:, write_timeout:, keep_alive_timeout:, debug_output:}
-        @connection = Connection.new(**@settings.except(:base_url))
+        @settings = {base_url: SettingValidator.base_url!(base_url), proxy_url:, open_timeout:, read_timeout:, write_timeout:, keep_alive_timeout:, debug_output:, headers: SettingValidator.headers!(headers)}
+        @connection = Connection.new(**@settings.except(:base_url, :headers))
       end
 
       # Summarize the authorization for the console without revealing its secrets
@@ -199,7 +206,7 @@ module X
       #   store.save(authorization.tokens(request.url))
       # @example Build the client of a confidential app from the tokens it stored
       #   X::Client.new(client_id: ENV.fetch("X_CLIENT_ID"), client_secret: ENV.fetch("X_CLIENT_SECRET"), **store.load.to_h)
-      def tokens(callback) = tokens_from(exchange(callback, base_url))
+      def tokens(callback) = tokens_from(exchange(callback, base_url, @settings.fetch(:headers)))
 
       # Exchange the code of the redirect back from X for a client
       #
@@ -217,14 +224,14 @@ module X
       #
       # The code is exchanged at the origin of the base URL of the client, the base_url of the options or else that of
       # the authorization, as the client refreshes its tokens there, and through the proxy, with the timeouts,
-      # keep-alive timeout, and debug output of the client, so a client given a proxy reaches X through it from the
-      # first request of its tokens.
+      # keep-alive timeout, debug output, and headers of the client, so a client given a proxy reaches X through it
+      # from the first request of its tokens.
       #
       # @api public
       # @param callback [String, Hash] the redirect back from X: its URL, its query string, or its query parameters
       # @param options [Hash] other options of Client#initialize, such as save_tokens, which it is built with
-      #   beside the base URL, proxy, timeouts, keep-alive timeout, and debug output of the authorization, and in place
-      #   of them
+      #   beside the base URL, proxy, timeouts, keep-alive timeout, debug output, and headers of the authorization, and
+      #   in place of them
       # @return [Client] a client with the user's credentials
       # @raise [ArgumentError] if an option is one Client#initialize refuses, or a credential or an authenticator,
       #   which the client is given by the exchange of the code
@@ -241,7 +248,7 @@ module X
         raise ArgumentError, format(CREDENTIALS_GIVEN_MESSAGE, given.join(", ")) unless given.empty?
 
         checked = Client.new(**@settings, **options) # refuses an option before the code, which X accepts once, is spent
-        tokens = tokens_from(exchange(callback, checked.base_url, connection_for(options)))
+        tokens = tokens_from(exchange(callback, checked.base_url, checked.headers, connection_for(options)))
         client_of(tokens, options).tap { |client| report_exchange(client, tokens) }
       end
 
@@ -309,7 +316,7 @@ module X
       # @api private
       # @param options [Hash] the options of Client#initialize the client is built with
       # @return [Core::Connection] the connection
-      def connection_for(options) = Connection.new(**@settings.merge(options.slice(*@settings.keys)).except(:base_url))
+      def connection_for(options) = Connection.new(**@settings.merge(options.slice(*@settings.keys)).except(:base_url, :headers))
 
       # Exchange the code of the redirect back from X for a token
       #
@@ -320,14 +327,16 @@ module X
       # @api private
       # @param callback [String, Hash] the redirect back from X: its URL, its query string, or its query parameters
       # @param base_url [String] the base URL of the client the code is exchanged for, at whose origin it is exchanged
+      # @param headers [Hash{String => String}] the headers of the client the code is exchanged for, which the token
+      #   request is sent with
       # @param over [Core::Connection] the connection to send the token request over
       # @return [SimpleOAuth::OAuth2::Token] the token
       # @raise [AuthorizationDenied] if the user denied the app, the state does not match, or the redirect is not a
       #   valid URL
       # @raise [AuthorizationError] if X refuses the code, with the response that refused it
-      def exchange(callback, base_url, over = connection)
+      def exchange(callback, base_url, headers, over = connection)
         token_request = oauth2_client(base_url).authorization_code_request(code: code_of(callback), redirect_uri:, code_verifier:)
-        TokenEndpoint.fetch(token_request, connection: over, refusal: DEFAULT_ERROR_MESSAGE)
+        TokenEndpoint.fetch(token_request, connection: over, refusal: DEFAULT_ERROR_MESSAGE, headers:)
       ensure
         over.close
       end

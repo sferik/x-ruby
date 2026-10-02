@@ -102,8 +102,7 @@ module X
         @access_token = access_token
         @refresh_token = refresh_token
         @expires_at, @scopes = expires_at, CredentialValidator.frozen_scopes(scopes)
-        @connection = Connection.new
-        @token_url = TOKEN_URL
+        @connection, @token_url, @token_headers = Connection.new, TOKEN_URL, {}
         @clients = ObjectSpace::WeakMap.new
       end
 
@@ -174,7 +173,7 @@ module X
 
         tokens = @mutex.synchronize do
           adopt_stored_tokens
-          refresh(connection)
+          refresh(connection, @token_headers)
         end
         report_refresh(tokens, nil)
         tokens
@@ -209,9 +208,10 @@ module X
 
       # The connection for making token requests
       #
-      # refresh! sends its request over it, as does a request signed with the authenticator alone. A client refreshes
-      # over its own connection instead, so that the copies of a client that share its authenticator, but were given
-      # another proxy, other timeouts, or other debug output, refresh with those.
+      # refresh! sends its request over it, as does a request signed with the authenticator alone, with the headers of
+      # the client that took the authenticator first. A client refreshes over its own connection, with its own headers,
+      # instead, so that the copies of a client that share its authenticator, but were given another proxy, other
+      # timeouts, other debug output, or other headers, refresh with those.
       #
       # @api private
       # @return [Core::Connection] the connection
@@ -236,18 +236,20 @@ module X
       # The authenticator is shared by the copies of the client that takes it, and may be given to other clients
       # besides, so a client that takes it after the first leaves it sending them over the connection of the first,
       # as a copy of a client leaves the authenticator of that client. Internal to x-core: a client sends the token
-      # requests of the authenticator it builds, or is given, over its own connection, with its proxy, timeouts, and
-      # debug output, and calls it with __send__, since it is private.
+      # requests of the authenticator it builds, or is given, over its own connection, with its proxy, timeouts, debug
+      # output, and headers, and calls it with __send__, since it is private.
       #
       # @api private
       # @param connection [Core::Connection] the connection to send the token requests over
       # @param base_url [String] the base URL of the client, at whose origin the token endpoint is requested
+      # @param headers [Hash{String => String}] the headers of the client, which the token requests are sent with
       # @return [OAuth2Authenticator] the authenticator
-      def token_requests_over(connection, base_url)
+      def token_requests_over(connection, base_url, headers)
         @mutex.synchronize do
           unless @taken
             @connection = connection
             @token_url = TokenEndpoint.url_at(base_url, TOKEN_URL)
+            @token_headers = headers
           end
           @taken = true
         end

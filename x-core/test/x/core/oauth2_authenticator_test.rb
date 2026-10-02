@@ -30,7 +30,7 @@ module X
       connection = Core.const_get(:Connection).new(open_timeout: 5)
       authenticator = OAuth2Authenticator.new(**test_oauth2_credentials)
 
-      assert_same authenticator, authenticator.send(:token_requests_over, connection, Client::DEFAULT_BASE_URL)
+      assert_same authenticator, authenticator.send(:token_requests_over, connection, Client::DEFAULT_BASE_URL, {})
       assert_same connection, authenticator.send(:connection)
     end
 
@@ -365,7 +365,7 @@ module X
     def refreshes_over
       connections = []
       fetch = Core.const_get(:TokenEndpoint).method(:fetch)
-      Core.const_get(:TokenEndpoint).stub(:fetch, ->(request, connection:, refusal:) { fetch.call(request, connection: connections.push(connection).last, refusal:) }) { yield }
+      Core.const_get(:TokenEndpoint).stub(:fetch, ->(request, connection:, refusal:, headers:) { fetch.call(request, connection: connections.push(connection).last, refusal:, headers:) }) { yield }
       connections
     end
 

@@ -100,7 +100,7 @@ module X
     def connections_of_refreshes
       connections = []
       fetch = Core.const_get(:TokenEndpoint).method(:fetch)
-      Core.const_get(:TokenEndpoint).stub(:fetch, ->(request, connection:, refusal:) { fetch.call(request, connection: connections.push(connection).last, refusal:) }) { yield }
+      Core.const_get(:TokenEndpoint).stub(:fetch, ->(request, connection:, refusal:, headers:) { fetch.call(request, connection: connections.push(connection).last, refusal:, headers:) }) { yield }
       connections
     end
   end

@@ -7,6 +7,8 @@ require "uri"
 require_relative "credential_validator"
 require_relative "errors/authorization_error"
 require_relative "errors/invalid_response"
+require_relative "authenticator"
+require_relative "request_builder"
 require_relative "request_context"
 require_relative "response_parser"
 
@@ -15,7 +17,7 @@ module X
     # Sends the token requests that simple_oauth builds over a client's connection
     #
     # Internal to x-core: the app-only and OAuth 2.0 authenticators, and OAuth2Authorization, fetch tokens with it,
-    # so that the proxy, timeouts, and debug output of a client apply to token requests too.
+    # so that the proxy, timeouts, debug output, and headers of a client apply to token requests too.
     #
     # @api private
     module TokenEndpoint
@@ -89,6 +91,7 @@ module X
       # @param token_request [SimpleOAuth::OAuth2::Request] the token request
       # @param connection [Connection] the connection to send it over
       # @param refusal [String] the message of a refusal that describes no reason
+      # @param headers [Hash{String => String}] the headers of the client that sends it; see {#post}
       # @return [SimpleOAuth::OAuth2::Token] the token
       # @raise [TooManyRequests] if the endpoint limits the rate of the request
       # @raise [HTTPError] if the endpoint fails to answer, as a server error, a redirect, or a refusal whose body is
@@ -97,9 +100,9 @@ module X
       # @raise [AuthorizationError] if the endpoint refuses the request, with the response that refused it
       # @example Refresh a token
       #   X::Core::TokenEndpoint.fetch(oauth2_client.refresh_token_request(refresh_token:), connection:,
-      #     refusal: "Token refresh failed")
-      def fetch(token_request, connection:, refusal:)
-        request = post(token_request)
+      #     refusal: "Token refresh failed", headers: client.headers)
+      def fetch(token_request, connection:, refusal:, headers:)
+        request = post(token_request, headers)
         response = connection.perform(request:)
         raise failure(response, request) unless answer?(response)
 
@@ -183,12 +186,23 @@ module X
       end
 
       # Build the POST that sends a token request
+      #
+      # It is sent with the headers a request of the API is sent with: the User-Agent of the gem, and the headers of
+      # the client, which replace it, so that a gateway the base URL names, which may require a header of its own, is
+      # sent it with the token requests of the client too. The headers of the token request itself replace both, as
+      # its credentials and its form content type, and the client's Authorization header is never sent, since a token
+      # request carries its own credentials, or none, as the refresh of a public client does.
+      #
       # @api private
       # @param token_request [SimpleOAuth::OAuth2::Request] the token request
+      # @param headers [Hash{String => String}] the headers of the client that sends it
       # @return [Net::HTTP::Post] the request
-      def post(token_request)
+      def post(token_request, headers)
         request = Net::HTTP::Post.new(URI(token_request.url))
-        token_request.headers.each { |name, value| request[name] = value }
+        client_headers = headers.reject { |name, _| name.casecmp?(Authenticator::AUTHENTICATION_HEADER) }
+        [RequestBuilder::DEFAULT_HEADERS, client_headers, token_request.headers].each do |sent|
+          sent.each { |name, value| request[name] = value }
+        end
         request.body = token_request.body
         request
       end

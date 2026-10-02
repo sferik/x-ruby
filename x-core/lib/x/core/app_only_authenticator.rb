@@ -47,8 +47,7 @@ module X
         @api_key = api_key
         @api_key_secret = api_key_secret
         @bearer_token = bearer_token
-        @connection = Connection.new
-        @token_url = TOKEN_URL
+        @connection, @token_url, @token_headers = Connection.new, TOKEN_URL, {}
         @mutex = Mutex.new
       end
 
@@ -95,18 +94,20 @@ module X
       # TOKEN_URL, so that a client pointed at another host sends the API key and secret there, as it sends its
       # requests. A client that takes it after the first leaves it fetching over the connection of the first; see
       # {OAuth2Authenticator}. Internal to x-core: a client fetches the token of the authenticator it builds, or is
-      # given, over its own connection, with its proxy, timeouts, and debug output, and calls it with __send__, since it
-      # is private.
+      # given, over its own connection, with its proxy, timeouts, debug output, and headers, and calls it with
+      # __send__, since it is private.
       #
       # @api private
       # @param connection [Core::Connection] the connection to fetch the token over
       # @param base_url [String] the base URL of the client, at whose origin the token endpoint is requested
+      # @param headers [Hash{String => String}] the headers of the client, which the token request is sent with
       # @return [AppOnlyAuthenticator] the authenticator
-      def token_requests_over(connection, base_url)
+      def token_requests_over(connection, base_url, headers)
         @mutex.synchronize do
           unless @taken
             @connection = connection
             @token_url = TokenEndpoint.url_at(base_url, TOKEN_URL)
+            @token_headers = headers
           end
           @taken = true
         end
@@ -181,7 +182,9 @@ module X
       # @raise [AuthorizationError] if the token endpoint rejects the request
       # @raise [HTTPError, InvalidResponse] if the token endpoint limits the rate of the request or fails to answer,
       #   as a server error, a redirect, or the page of a proxy says
-      def fetch_bearer_token = TokenEndpoint.fetch(token_request, connection:, refusal: DEFAULT_ERROR_MESSAGE).access_token
+      def fetch_bearer_token
+        TokenEndpoint.fetch(token_request, connection:, refusal: DEFAULT_ERROR_MESSAGE, headers: @token_headers).access_token
+      end
 
       # Build the client credentials request
       # @api private

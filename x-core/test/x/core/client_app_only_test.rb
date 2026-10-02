@@ -40,7 +40,7 @@ module X
       client = Client.new(**test_oauth_credentials)
       connections = []
       fetch = Core.const_get(:TokenEndpoint).method(:fetch)
-      Core.const_get(:TokenEndpoint).stub(:fetch, ->(request, connection:, refusal:) { fetch.call(request, connection: connections.push(connection).last, refusal:) }) { client.app_only }
+      Core.const_get(:TokenEndpoint).stub(:fetch, ->(request, connection:, refusal:, headers:) { fetch.call(request, connection: connections.push(connection).last, refusal:, headers:) }) { client.app_only }
 
       assert_equal [internals(client).instance_variable_get(:@connection)], connections
     end
