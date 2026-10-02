@@ -82,6 +82,7 @@ module X
       def next_token: (Hash[String, untyped]? body, Array[String] spent) -> String?
       def rule_to_add: (StreamingClient::addable_rule rule) -> Hash[untyped, untyped]
       def identifier_of: (untyped rule) -> untyped
+      def matching_rule?: (untyped rule) -> bool?
       def value_of: (untyped rule) -> String
     end
 

@@ -52,11 +52,13 @@ module X
     DEFAULT_MAX_RECONNECTS: Float | Integer
 
     type addable_rule = StreamRule | Hash[untyped, untyped] | String
-    type rule = addable_rule | Integer | _Identified
+    type rule = addable_rule | Integer | _MatchingRule
 
-    # Anything that names a rule by its identifier, such as the X::MatchingRule of x-objects
-    interface _Identified
-      def id: () -> (Integer | String)?
+    # The X::MatchingRule of x-objects, which x-streaming does not depend on, and which names a rule by its identifier;
+    # anything else with an id raises ArgumentError
+    interface _MatchingRule
+      def id: () -> Integer
+      def tag: () -> String?
     end
 
     # The callable passed the error that dropped a stream and its wait to reconnect, before each wait; every release

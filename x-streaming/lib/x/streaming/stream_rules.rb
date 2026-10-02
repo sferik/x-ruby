@@ -7,8 +7,8 @@ module X
   module Streaming
     # The rules of the filtered stream, read from what a caller gives and what the API returns
     #
-    # A rule is given as a StreamRule, a Hash, a String, or, to delete it, an Integer or anything with an id, and each
-    # of the rules methods of a streaming client reads it here into what the API takes.
+    # A rule is given as a StreamRule, a Hash, a String, or, to delete it, an Integer or the X::MatchingRule of a post
+    # of x-objects, and each of the rules methods of a streaming client reads it here into what the API takes.
     #
     # Internal to x-streaming: StreamingClient reads the rules it adds and deletes with it.
     #
@@ -17,7 +17,7 @@ module X
       extend self
 
       # The message of the error raised for something that is neither a rule nor the identifier of one
-      NOT_A_RULE = "a rule is a StreamRule, a Hash holding an id or a value, anything with an id, the value it matches, " \
+      NOT_A_RULE = "a rule is a StreamRule, a Hash holding an id or a value, an X::MatchingRule, the value it matches, " \
         "or its identifier, not %s"
       # The message of the error raised for something that is neither a rule to add nor the value one matches
       NOT_A_RULE_TO_ADD = "a rule to add is a StreamRule, a Hash holding a value, or the value it matches, not %s"
@@ -95,19 +95,30 @@ module X
       # The identifier of a rule, if it is one or holds one
       #
       # A String is the value a rule matches, as add_rules reads it, so an identifier is an Integer, held by a Hash,
-      # or read from the id of anything else that has one, such as the X::MatchingRule each post of x-objects names
-      # in matching_rules, which x-streaming does not depend on, and which holds no value.
+      # or read from the id of an X::MatchingRule, which each post of x-objects names in matching_rules, and which holds
+      # no value. Anything else with an id is not read for one, since a post, a user, or any other resource has an id
+      # too, which would delete whichever rule shared it.
       #
       # @api private
-      # @param rule [Hash, String, Integer, #id] the rule, the value it matches, or its identifier
+      # @param rule [Hash, String, Integer, X::MatchingRule] the rule, the value it matches, or its identifier
       # @return [Object, nil] the identifier, or nil for a rule that holds none
       def identifier_of(rule)
         hash = Hash.try_convert(rule)
         return hash["id"] || hash[:id] if hash
         return rule if rule.instance_of?(Integer)
 
-        rule.id if rule.respond_to?(:id)
+        rule.id if matching_rule?(rule)
       end
+
+      # Check whether a rule is an X::MatchingRule
+      #
+      # x-streaming does not depend on x-objects, which defines X::MatchingRule, so no rule is one until x-objects is
+      # loaded.
+      #
+      # @api private
+      # @param rule [Object] the rule
+      # @return [Boolean, nil] true if x-objects is loaded and the rule is an X::MatchingRule
+      def matching_rule?(rule) = defined?(X::MatchingRule) && rule.is_a?(X::MatchingRule) # steep:ignore UnknownConstant
 
       # The value a rule matches, which deletes a rule holding no identifier
       # @api private

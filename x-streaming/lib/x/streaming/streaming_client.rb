@@ -319,10 +319,12 @@ module X
       # Delete rules of the filtered stream
       #
       # A rule is deleted by its identifier, or by the value it matches: a StreamRule the API returned, a Hash that holds
-      # an id, an Integer, or anything else with an id is deleted by identifier, so what {#rules} returned deletes
-      # itself, as do the rules a post of x-objects matched, which its matching_rules holds, and a StreamRule or a Hash
-      # that holds a value and no identifier, or a String, is deleted by value, so what add_rules was given deletes
-      # what it added. No rules delete none, and send no request, since the API refuses a deletion that names no rule.
+      # an id, an Integer, or an X::MatchingRule is deleted by identifier, so what {#rules} returned deletes itself, as
+      # do the rules a post of x-objects matched, which its matching_rules holds, and a StreamRule or a Hash that holds
+      # a value and no identifier, or a String, is deleted by value, so what add_rules was given deletes what it added.
+      # Anything else raises before a request, even something else with an id, such as a post, whose identifier would
+      # delete whichever rule shared it. No rules delete none, and send no request, since the API refuses a deletion
+      # that names no rule.
       #
       # The API deletes the rules it can and reports the rest, such as a rule the app does not have, as errors of a
       # response that otherwise succeeds. The number of rules that were deleted is returned, and each problem the API
@@ -330,8 +332,8 @@ module X
       # which holds the number as deleted_count.
       #
       # @api public
-      # @param rules [Array<StreamRule, Hash, String, Integer, #id>, StreamRule, Hash, String, Integer, #id] the rules
-      #   to delete, the values they match, or their identifiers
+      # @param rules [Array<StreamRule, Hash, String, Integer, X::MatchingRule>, StreamRule, Hash, String, Integer,
+      #   X::MatchingRule] the rules to delete, the values they match, or their identifiers
       # @param dry_run [Boolean] true to have the API check the rules and delete none of them
       # @yieldparam problem [Problem] each problem the API reported of the rules it did not delete
       # @return [Integer] the number of rules deleted, or that a dry run would delete, 0 if none were given
