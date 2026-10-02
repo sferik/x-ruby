@@ -81,6 +81,11 @@ module X
       # caller as it was raised, as an error of the block of the stream does. A stop does not cut it short, as it does
       # not the block of the stream.
       #
+      # It is called with these two arguments and no others, the error, which is never nil, since a stream reconnects
+      # only after one, and the wait, and every release of 1.x calls it so, so a lambda that takes exactly two, as
+      # ->(error, wait) does, serves each of them. What a later release of 1.x tells of a reconnect beside them, it
+      # passes to a hook of its own rather than to this one.
+      #
       # @api public
       # @return [#call, nil] the callable, or nil for none
       # @example Read the callable passed each reconnect

@@ -54,7 +54,8 @@ module X
     type addable_rule = StreamRule | Hash[untyped, untyped] | String
     type rule = addable_rule | Integer
 
-    # The callable passed the error that dropped a stream and its wait to reconnect, before each wait
+    # The callable passed the error that dropped a stream and its wait to reconnect, before each wait; every release
+    # of 1.x passes these two arguments and no others
     interface _ReconnectHook
       def call: (StandardError error, Integer | Float wait) -> untyped
     end

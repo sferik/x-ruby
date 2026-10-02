@@ -16,9 +16,11 @@ module X
       assert_equal Float::INFINITY, Streaming.const_get(:ReconnectHandler).new.max_reconnects
     end
 
-    def test_a_stream_that_ends_reconnects_at_once_then_backs_off_linearly
+    # A stream ends by raising, as StreamingClient raises a NetworkError for one the server ended, so one that returns
+    # is done, and every reconnect follows an error
+    def test_a_stream_that_returns_is_not_reconnected
       assert_nil stream_with(Streaming.const_get(:ReconnectHandler).new(max_reconnects: 3)) { @runs += 1 }
-      assert_equal [4, [0.0, 0.25, 0.5]], [@runs, @sleeps]
+      assert_equal [1, []], [@runs, @sleeps]
     end
 
     def test_a_dropped_connection_backs_off_linearly_up_to_16_seconds_then_raises
@@ -46,24 +48,21 @@ module X
       assert_equal [0.0, 0.25, 0.5, 0.75, 5, 1.0], @sleeps
     end
 
-    def test_a_stream_that_ends_backs_off_on_the_count_of_dropped_connections
-      assert_raises(NetworkError) { stream_with(Streaming.const_get(:ReconnectHandler).new(max_reconnects: 3)) { (@runs += 1).odd? ? nil : raise(NetworkError) } }
-      assert_equal [0.0, 0.25, 0.5], @sleeps
-    end
-
     def test_reading_a_keep_alive_starts_every_count_over
       errors = [ServiceUnavailable, NetworkError, nil, ServiceUnavailable, NetworkError]
       handler = Streaming.const_get(:ReconnectHandler).new(max_reconnects: 2)
 
-      assert_raises(NetworkError) { stream_with(handler) { |_deliver, alive| (error = errors.fetch(@runs)) ? fail_with(error) : (@runs += 1) && alive.call } }
+      assert_raises(NetworkError) { stream_with(handler) { |_deliver, alive| fail_with(errors.fetch(@runs) || alive.call && NetworkError) } }
       assert_equal [5, 0.0, 0.0, 5], @sleeps
     end
 
     def test_delivering_an_object_starts_the_count_over
       handler = Streaming.const_get(:ReconnectHandler).new(max_reconnects: 1)
-      stream_with(handler) do |deliver|
-        @runs += 1
-        deliver.call(@runs) if @runs <= 3
+      assert_raises(NetworkError) do
+        stream_with(handler) do |deliver|
+          deliver.call(@runs + 1) if @runs < 3
+          fail_with(NetworkError)
+        end
       end
 
       assert_equal [[1, 2, 3], 4, [0.0, 0.0, 0.0]], [@delivered, @runs, @sleeps]
@@ -72,7 +71,13 @@ module X
     def test_reading_a_keep_alive_starts_the_count_over
       handler = Streaming.const_get(:ReconnectHandler).new(max_reconnects: 1)
 
-      assert_nil stream_with(handler) { |_deliver, alive| alive.call if (@runs += 1) <= 3 }
+      assert_raises(NetworkError) do
+        stream_with(handler) do |_deliver, alive|
+          alive.call if @runs < 3
+          fail_with(NetworkError)
+        end
+      end
+
       assert_equal [4, [0.0, 0.0, 0.0], []], [@runs, @sleeps, @delivered]
     end
 

@@ -45,11 +45,21 @@ module X
       assert_equal [0.0, 5], @sleeps
     end
 
-    def test_on_reconnect_is_passed_no_error_for_a_stream_that_ended_without_one
+    # A stream that returns rather than raise is done, so on_reconnect is never passed nil for the error
+    def test_on_reconnect_is_not_called_for_a_stream_that_returned
       handler = HANDLER.new(max_reconnects: 1, on_reconnect: ->(error, wait) { @reconnects << [error, wait] })
 
       assert_nil stream_with(handler) { nil }
-      assert_equal [[nil, 0.0]], @reconnects
+      assert_empty @reconnects
+    end
+
+    def test_on_reconnect_is_passed_the_network_error_of_a_stream_the_server_ended
+      stub_request(:get, "https://api.x.com/2/tweets/search/stream").to_return(body: "")
+      streaming = nil
+      streaming = Client.new(bearer_token: TEST_BEARER_TOKEN).streaming(on_reconnect: ->(error, wait) { (@reconnects << [error.class, error.message, wait]) && streaming.stop })
+
+      assert_nil streaming.stream("tweets/search/stream") { |_post| flunk "unexpected yield" }
+      assert_equal [[NetworkError, "GET /2/tweets/search/stream: The stream ended", 0.0]], @reconnects
     end
 
     def test_an_error_on_reconnect_raises_stops_the_stream_and_reaches_the_caller_as_it_was_raised
@@ -60,11 +70,11 @@ module X
       assert_empty @sleeps
     end
 
-    def test_an_error_on_reconnect_raises_for_a_stream_that_ended_without_one_is_not_reconnected_after
+    def test_an_error_on_reconnect_raises_is_not_reconnected_after_even_one_a_stream_reconnects_after
       runs = []
       handler = HANDLER.new(max_reconnects: 2, on_reconnect: ->(_error, _wait) { raise DROPPED if (@reconnects << 1).one? })
 
-      assert_same DROPPED, assert_raises(NetworkError) { stream_with(handler) { runs << 1 } }
+      assert_same DROPPED, assert_raises(NetworkError) { stream_with(handler) { (runs << 1) && raise(UNAVAILABLE) } }
       assert_equal [[1], []], [runs, @sleeps]
     end
 
