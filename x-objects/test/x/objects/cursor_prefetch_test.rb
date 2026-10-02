@@ -68,12 +68,29 @@ module X
       assert_equal [3], @cursor.page(1).map(&:id)
     end
 
-    def test_prefetch_error_resurfaces_when_page_is_requested
+    def test_prefetch_error_resurfaces_when_page_is_requested_without_requesting_it_again
       stub_failing_second_page
       inline_threads { @cursor.page(0) }
 
+      assert_equal "boom", assert_raises(RuntimeError) { @cursor.page(1) }.message
+      assert_equal [nil, "p2"], tokens
+    end
+
+    def test_prefetch_error_resurfaces_once
+      stub_failing_second_page
+      inline_threads { @cursor.page(0) }
       assert_raises(RuntimeError) { @cursor.page(1) }
-      assert_equal 3, @client.requests.size
+
+      assert_raises(RuntimeError) { @cursor.page(1) }
+      assert_equal [nil, "p2", "p2"], tokens
+    end
+
+    def test_prefetch_error_resurfaces_when_the_page_is_read
+      stub_failing_second_page
+      inline_threads { @cursor.page(0) }
+
+      assert_equal "boom", assert_raises(RuntimeError) { @cursor.first(2) }.message
+      assert_equal [nil, "p2"], tokens
     end
 
     def test_prefetch_errors_do_not_escape_the_thread
@@ -81,7 +98,9 @@ module X
       thread = nil
       Thread.stub(:new, ->(&block) { thread = Thread.start(&block) }) { @cursor.page(0) }
 
-      assert_nil thread.value
+      assert_same thread, thread.join
+      assert_equal "boom", assert_raises(RuntimeError) { @cursor.page(1) }.message
+      assert_equal [nil, "p2"], tokens
     end
 
     private

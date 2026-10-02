@@ -165,6 +165,7 @@ module X
       @monitor: Monitor
       @pages: Array[Page[untyped]?]
       @prefetching: Set[Integer]
+      @failures: Hash[Integer, StandardError]
 
       def initialize: (Cursor[untyped] cursor) -> void
       def at: (Integer index) -> Page[untyped]?
@@ -185,7 +186,6 @@ module X
       def sized: (query params, Integer wanted) -> query
       def prefetch: (Integer index) -> Thread?
       def claim: (Integer index) -> bool
-      def let_go: (Integer index) -> void
     end
 
     class Batch

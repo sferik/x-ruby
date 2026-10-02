@@ -25,8 +25,7 @@ module X
       def initialize(cursor)
         @cursor = cursor
         @monitor = Monitor.new
-        @pages = []
-        @prefetching = Set.new
+        @pages, @prefetching, @failures = [], Set.new, {}
         freeze
       end
 
@@ -105,14 +104,22 @@ module X
         end
       end
 
-      # Fetch a page from the API
+      # Fetch a page from the API, unless a background thread failed to fetch it
+      #
+      # The error the thread failed with is raised in place of a request, once, so a page whose request failed is not
+      # requested again as soon as it is asked for, and one asked for after that error is requested again.
+      #
       # @api private
       # @param index [Integer] the zero-based page index
       # @param wanted [Integer, nil] the number of resources wanted from the page, or nil for the page size
       # @return [Page, nil] the page or nil if the previous page was the last
+      # @raise [StandardError] the error a background thread failed to fetch the page with
       # @raise [UnreadableResponse] if the previous page names the token of a page before it as the next
       # @raise [InvalidAttribute] if the response holds a meta that is not an object
       def fetch(index, wanted = nil)
+        failure = @failures.delete(index)
+        raise failure unless failure.nil?
+
         params = params_for(index)
         return if params.nil?
 
@@ -225,7 +232,10 @@ module X
       # Fetch a page in a background thread; errors resurface when the page is requested
       #
       # A page already fetched, or being fetched by another thread, starts no thread, so reading the pages a cursor
-      # holds, or reading one page again, starts none.
+      # holds, or reading one page again, starts none. An error the thread fails with is kept, holding the lock of the
+      # pages, so no caller requests the page between the failure and its keeping, and raised to the caller that asks
+      # for the page, in place of a request for it; until then, a thread started for the page keeps it again rather
+      # than request the page.
       #
       # @api private
       # @param index [Integer] the zero-based page index
@@ -234,28 +244,23 @@ module X
         return unless claim(index)
 
         Thread.new do
-          cached(index)
-        rescue
-          nil
-        ensure
-          let_go(index)
+          @monitor.synchronize do
+            cached(index)
+          rescue => e
+            @failures[index] = e
+          ensure
+            @prefetching.delete(index)
+          end
         end
       end
 
       # Claim a page for a background thread to fetch
       # @api private
       # @param index [Integer] the zero-based page index
-      # @return [Boolean] true if the page was claimed, which no other thread fetches until it is let go
+      # @return [Boolean] true if the page was claimed, which no other thread fetches until the thread that claimed it
+      #   is done
       def claim(index)
         @monitor.synchronize { !@pages.at(index) && !@prefetching.add?(index).nil? }
-      end
-
-      # Let go of a page a background thread claimed, once it is done
-      # @api private
-      # @param index [Integer] the zero-based page index
-      # @return [void]
-      def let_go(index)
-        @monitor.synchronize { @prefetching.delete(index) }
       end
     end
     private_constant :Pages

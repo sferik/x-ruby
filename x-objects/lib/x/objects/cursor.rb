@@ -143,6 +143,9 @@ module X
 
       # Return a new cursor over the same collection with prefetching enabled
       #
+      # A page the background thread fails to fetch is not requested again when it is reached: the error the thread
+      # failed with is raised there, once, and a page asked for again after it is requested again.
+      #
       # @api public
       # @return [Cursor] a new cursor
       # @example Fetch every follower while overlapping requests with processing

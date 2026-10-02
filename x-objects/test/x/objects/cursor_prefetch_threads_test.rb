@@ -40,9 +40,15 @@ module X
       assert_equal [1, [nil, "p2"]], [started.size, tokens]
     end
 
-    def test_a_prefetch_that_failed_is_started_again
+    def test_a_page_a_prefetch_failed_to_fetch_is_requested_again_once_its_error_is_raised
       stub_failing_second_page
-      inline_threads { 2.times { @cursor.page(0) } }
+      inline_threads do
+        2.times { @cursor.page(0) }
+
+        assert_equal [nil, "p2"], tokens
+        assert_raises(RuntimeError) { @cursor.page(1) }
+        @cursor.page(0)
+      end
 
       assert_equal [nil, "p2", "p2"], tokens
     end
@@ -55,22 +61,50 @@ module X
       assert_equal [true, false, false], claims + [pages.__send__(:claim, 0)]
     end
 
-    def test_a_page_is_claimed_and_let_go_holding_the_lock_of_the_pages
+    def test_a_page_is_claimed_holding_the_lock_of_the_pages
       pages = Objects.const_get(:Pages).new(@cursor)
-      [-> { pages.__send__(:claim, 1) }, -> { pages.__send__(:let_go, 1) }].each do |step|
-        running = nil
-        pages.instance_variable_get(:@monitor).synchronize do
-          running = Thread.start(&step)
+      running = nil
+      pages.instance_variable_get(:@monitor).synchronize do
+        running = Thread.start { pages.__send__(:claim, 1) }
 
-          assert_nil running.join(0.05)
-        end
-        running.join
+        assert_nil running.join(0.05)
       end
 
-      assert pages.__send__(:claim, 1)
+      assert running.value
+    end
+
+    def test_a_page_is_let_go_once_its_thread_is_done
+      pages = Objects.const_get(:Pages).new(@cursor)
+      started = []
+      Thread.stub(:new, ->(&block) { started << block }) { pages.at(0) }
+
+      refute pages.__send__(:claim, 1)
+      started.each(&:call)
+
+      assert_empty pages.instance_variable_get(:@prefetching)
+    end
+
+    def test_a_failure_is_kept_and_its_page_let_go_holding_the_lock_of_the_pages
+      stub_failing_second_page
+      pages = Objects.const_get(:Pages).new(@cursor)
+      owned = []
+      watch(pages, owned, :@failures, :[]=)
+      watch(pages, owned, :@prefetching, :delete)
+      inline_threads { pages.at(0) }
+
+      assert_equal [true, true], owned
     end
 
     private
+
+    # Record whether the lock of the pages is held each time a method of one of their instance variables is called
+    def watch(pages, owned, variable, method)
+      monitor = pages.instance_variable_get(:@monitor)
+      pages.instance_variable_get(variable).define_singleton_method(method) do |*args|
+        owned << monitor.mon_owned?
+        super(*args)
+      end
+    end
 
     def inline_threads(&)
       Thread.stub(:new, ->(&block) { block.call }, &)
