@@ -79,7 +79,8 @@ module X
       def process: (response: Net::HTTPResponse, array_class: Class, object_class: untyped, client: Client, on_line: ^(String) -> void, on_keep_alive: ^() -> void) { (untyped) -> void } -> void
 
       private
-      def decode_line: (String line, response: Net::HTTPResponse, array_class: Class, object_class: untyped, client: Client) -> untyped
+      def parse_line: (String line, response: Net::HTTPResponse) -> untyped
+      def build: (String line, untyped body, array_class: Class, object_class: untyped, client: Client) -> untyped
       def tagging_callback_errors: [T] () { () -> T } -> T
       def read_lines: (response: Net::HTTPResponse, decode: ^(String) -> untyped, on_keep_alive: ^() -> void) { (untyped) -> void } -> void
       def process_buffer: (buffer: String, decode: ^(String) -> untyped, on_keep_alive: ^() -> void) { (untyped) -> void } -> void

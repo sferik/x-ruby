@@ -51,6 +51,38 @@ module X
       assert_raises(StopIteration) { Client.new(bearer_token: TEST_BEARER_TOKEN).streaming.stream("tweets/sample/stream", object_class: builder) { |_post| flunk "unexpected yield" } }
     end
 
+    def test_a_json_parser_error_of_an_on_response_hook_stops_the_stream_rather_than_reconnect_it
+      stub_request(:get, STREAM_URL).to_return(body: "{\"data\":{\"id\":\"1\"}}\r\n")
+      streaming_client = Client.new(bearer_token: TEST_BEARER_TOKEN, on_response: ->(_response) { JSON.parse("x") }).streaming(max_reconnects: 2)
+
+      without_sleeping(streaming_client) do
+        assert_raises(JSON::ParserError) { streaming_client.stream("tweets/sample/stream") { |_post| flunk "unexpected yield" } }
+      end
+
+      assert_requested(:get, STREAM_URL, times: 1)
+    end
+
+    def test_a_json_parser_error_of_an_object_class_stops_the_stream_rather_than_reconnect_it
+      stub_request(:get, STREAM_URL).to_return(body: "{\"data\":{\"id\":\"1\"}}\r\n")
+      builder = Class.new { def self.from_response(*, **) = JSON.parse("x") }
+      streaming_client = Client.new(bearer_token: TEST_BEARER_TOKEN).streaming(max_reconnects: 2)
+
+      without_sleeping(streaming_client) do
+        assert_raises(JSON::ParserError) { streaming_client.stream("tweets/sample/stream", object_class: builder) { |_post| flunk "unexpected yield" } }
+      end
+
+      assert_requested(:get, STREAM_URL, times: 1)
+    end
+
+    def test_a_stream_error_of_an_object_class_reaches_the_caller_as_it_was_raised
+      stub_request(:get, STREAM_URL).to_return(body: "{\"data\":{\"id\":\"1\"}}\r\n")
+      raised = StreamError.new(problems: [])
+      builder = Class.new { define_singleton_method(:from_response) { |*, **| raise raised } }
+      error = assert_raises(StreamError) { Client.new(bearer_token: TEST_BEARER_TOKEN).streaming.stream("tweets/sample/stream", object_class: builder) { |_post| flunk "unexpected yield" } }
+
+      assert_same raised, error
+    end
+
     def test_an_object_class_that_raises_stops_the_stream_rather_than_reconnect_it
       stub_request(:get, STREAM_URL).to_return(body: "{\"data\":{\"id\":\"1\"}}\r\n")
       client = Client.new(bearer_token: TEST_BEARER_TOKEN)

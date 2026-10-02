@@ -39,61 +39,69 @@ module X
       #   parser.process(response:, array_class: Array, object_class: Hash, client:, on_line: ->(_) {}, on_keep_alive: -> {}) { |json| puts json }
       def process(response:, array_class:, object_class:, client:, on_line:, on_keep_alive:, &block)
         decode = lambda do |line|
-          tagging_callback_errors do
-            on_line.call(line)
-            decode_line(line, response:, array_class:, object_class:, client:)
-          end
-        rescue JSON::ParserError
-          raise InvalidResponse.new(http_response: response, body: line, http_method: :get, uri: response.uri)
+          tagging_callback_errors { on_line.call(line) }
+          body = parse_line(line, response:)
+          tagging_callback_errors { build(line, body, array_class:, object_class:, client:) }
         end
         read_lines(response:, decode:, on_keep_alive:, &block)
       end
 
       private
 
-      # Decode a line of the stream, raising for one that holds errors alone
+      # Parse a line of the stream, raising for one not JSON or holding errors alone
       #
       # A line that holds errors and no data, such as the operational-disconnect X sends before it closes a stream,
       # is not an object the stream delivers, so it raises StreamError, which holds the problems, whatever the
       # objects are built as, rather than reach the block as a Hash that holds no data, or build nothing of it with
-      # an object_class that responds to from_response. A line is otherwise decoded as the body of a request is.
+      # an object_class that responds to from_response.
+      #
+      # Only this parse is the stream's own, so only a line it cannot parse raises InvalidResponse, which a stream
+      # reconnects after: a JSON::ParserError of on_line or of the object_class is theirs, and stops the stream.
       #
       # @api private
       # @param line [String] the line, tagged UTF-8
-      # @param response [Net::HTTPResponse] the response of the stream, whose request the error names
+      # @param response [Net::HTTPResponse] the response of the stream, whose request the errors name
+      # @return [Object] the parsed line
+      # @raise [InvalidResponse] if the line is not JSON, which the error holds as its body
+      # @raise [StreamError] if the line holds errors and no data
+      def parse_line(line, response:)
+        body = JSON.parse(line)
+        problems = (Hash === body && !body.key?("data")) ? Problem.all_from(body) : [] #: Array[Problem]
+        raise StreamError.new(problems:, http_method: :get, uri: response.uri) unless problems.empty?
+
+        body
+      rescue JSON::ParserError
+        raise InvalidResponse.new(http_response: response, body: line, http_method: :get, uri: response.uri)
+      end
+
+      # Build the object a line delivers, as the body of a request is decoded
+      #
+      # @api private
+      # @param line [String] the line, tagged UTF-8
+      # @param body [Object] the line, parsed
       # @param array_class [Class] the class for parsing JSON arrays
       # @param object_class [Class, #from_response] the class for parsing JSON objects, or one that builds each object
       #   from the whole line
       # @param client [Client] the client of the stream, which from_response is passed
-      # @return [Object] the decoded line
-      # @raise [JSON::ParserError] if the line is not JSON
-      # @raise [StreamError] if the line holds errors and no data
-      def decode_line(line, response:, array_class:, object_class:, client:)
-        body = JSON.parse(line)
-        problems = (Hash === body && !body.key?("data")) ? Problem.all_from(body) : [] #: Array[Problem]
-        raise StreamError.new(problems:, http_method: :get, uri: response.uri) unless problems.empty?
+      # @return [Object] the object
+      def build(line, body, array_class:, object_class:, client:)
         return object_class.from_response(body, client:) if object_class.respond_to?(:from_response)
 
         JSON.parse(line, array_class:, object_class:)
       end
 
-      # Run the callbacks of a line, tagging the error one of them raises
+      # Run a callback of a line, tagging the error it raises
       #
-      # The errors a socket raises are the errors a stream reconnects after, so a callback that raises one of them is
-      # told apart from a connection that dropped. A JSON::ParserError is left as it is, so that a line that is not
-      # JSON still raises InvalidResponse, which a stream reconnects after, and so is a StreamError, which the stream
-      # raised rather than a callback, and which reaches the caller.
+      # The errors a socket raises are the errors a stream reconnects after, as is the InvalidResponse of a line that
+      # is not JSON, so a callback that raises one of them, or a JSON::ParserError of its own, is told apart from a
+      # connection that dropped.
       #
       # @api private
-      # @yield [] runs the callbacks
-      # @return [Object] what the callbacks returned
-      # @raise [JSON::ParserError] if the line is not JSON
-      # @raise [StreamError] if the line holds errors alone
-      # @raise [CallbackError] if a callback raised any other error
+      # @yield [] runs the callback
+      # @return [Object] what the callback returned
+      # @raise [CallbackError] if the callback raised an error
       def tagging_callback_errors
         yield
-      rescue JSON::ParserError, StreamError
-        raise
       rescue => e
         raise CallbackError, e
       end
