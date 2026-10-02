@@ -22,6 +22,16 @@ module X
       assert_equal [60, 120, 240, 1000, 1000, 1000, 1000, 1000], @sleeps
     end
 
+    def test_a_rate_limit_after_other_errors_backs_off_from_a_minute
+      unavailable = ServiceUnavailable.new(http_response: Net::HTTPServiceUnavailable.new("1.1", "503", "Service Unavailable"))
+      errors = [NetworkError.new("dropped"), unavailable, NetworkError.new("dropped")]
+
+      assert_raises(TooManyRequests) do
+        stream_with(Streaming.const_get(:ReconnectHandler).new(max_reconnects: 5)) { (error = errors[@runs]) ? (@runs += 1) && raise(error) : refused(nil) }
+      end
+      assert_equal [0.0, 5, 0.25, 60, 120], @sleeps
+    end
+
     def test_a_rate_limit_that_resets_sooner_still_backs_off_from_a_minute
       assert_raises(TooManyRequests) { stream_with(Streaming.const_get(:ReconnectHandler).new(max_reconnects: 2)) { refused(10) } }
       assert_equal [60, 120], @sleeps

@@ -35,9 +35,10 @@ module X
       MAX_HTTP_BACKOFF: Integer
       RECONNECTABLE_ERRORS: Array[singleton(NetworkError) | singleton(ServerError) | singleton(RequestTimeout) | singleton(Conflict) | singleton(TooManyRequests) | singleton(InvalidResponse)]
 
+      FIRST_STATE: state
       ConsumerError: singleton(StandardError)
 
-      type state = {reconnects: Integer}
+      type state = Hash[Symbol, Integer]
 
       attr_reader max_reconnects: Integer | Float
       attr_reader max_rate_limit_wait: Numeric
@@ -49,8 +50,9 @@ module X
       def run_once: (^(^(untyped) -> void, ^() -> void) -> void stream, ^(untyped) -> void deliver, ^() -> void alive, state state) -> bool
       def reconnectable?: (StandardError error) -> bool
       def out_of_reconnects?: (StandardError? error, state state) -> bool
-      def delivery_to: (^(untyped) -> void consumer, state state) -> ^(untyped) -> void
-      def backoff: (StandardError error, Integer reconnects) -> (Float | Integer)
+      def delivery_to: (^(untyped) -> void consumer, ^() -> void restart) -> ^(untyped) -> void
+      def backoff: (StandardError? error, state state) -> (Float | Integer)
+      def count: (state state, Symbol name) -> Integer
       def network_backoff: (Integer reconnects) -> (Float | Integer)
       def http_backoff: (Integer reconnects) -> Integer
       def rate_limit_backoff: (TooManyRequests error, Integer reconnects) -> Integer

@@ -15,8 +15,10 @@ module X
     # not JSON backs off from 5 seconds, doubling each attempt, up to 320 seconds. A rate limit backs off from a minute,
     # doubling each attempt, up to 320 seconds, as X asks, and waits longer when the limit resets later; one that would
     # wait longer than max_rate_limit_wait raises at once, rather than hold the stream closed for hours, as a limit on
-    # the requests of a day would. Delivering an object, or reading the keep-alive X sends every 20 seconds, starts the
-    # count over, so that a stream that is quiet but connected is not taken for one that keeps failing.
+    # the requests of a day would. Each of the three backs off on a count of its own, as X asks, so that the dropped
+    # connections before a server error do not lengthen the wait after it. Delivering an object, or reading the
+    # keep-alive X sends every 20 seconds, starts every count over, so that a stream that is quiet but connected is not
+    # taken for one that keeps failing.
     #
     # Internal to x-streaming: StreamingClient reconnects with it, max_reconnects is set on the streaming client, and
     # max_rate_limit_wait is the client's, which the client checked when it was built.
@@ -37,6 +39,9 @@ module X
       RATE_LIMIT_BACKOFF_START = 60
       # The errors a stream reconnects after, which come from the server or the connection rather than the request
       RECONNECTABLE_ERRORS = [NetworkError, ServerError, RequestTimeout, Conflict, TooManyRequests, InvalidResponse].freeze
+      # The counts a stream starts with, and starts over at: the reconnects in a row, which max_reconnects limits, and
+      # the reconnects after each kind of error, which the wait before the next reconnect after that kind grows with
+      FIRST_STATE = {reconnects: 0, network: 0, http: 0, rate_limit: 0}.freeze
 
       # Raised in place of an error the consumer of a stream raised, which is its cause, so that the stream stops
       ConsumerError = Class.new(StandardError) #: singleton(StandardError)
@@ -95,9 +100,9 @@ module X
       # @example Reconnect a stream
       #   handler.handle(->(post) { puts post }) { |deliver, alive| read_stream(on_keep_alive: alive, &deliver) }
       def handle(consumer, &stream)
-        state = {reconnects: 0} #: state
-        deliver = delivery_to(consumer, state)
-        alive = -> { state[:reconnects] = 0 }
+        state = FIRST_STATE.dup
+        alive = -> { state.replace(FIRST_STATE) }
+        deliver = delivery_to(consumer, alive)
         while run_once(stream, deliver, alive, state); end
       rescue ConsumerError => e
         raise cause_of(e)
@@ -112,7 +117,7 @@ module X
       # @param stream [Proc] runs the stream once
       # @param deliver [Proc] the block to pass each object to
       # @param alive [Proc] the callable to call for each keep-alive the stream reads
-      # @param state [Hash] the count of reconnects, for one call to handle
+      # @param state [Hash{Symbol => Integer}] the counts of reconnects, for one call to handle
       # @return [Boolean] true to run the stream again, or false once it ends with no reconnects left
       # @raise [NetworkError, ServerError, RequestTimeout, Conflict, TooManyRequests, InvalidResponse, StreamError] if
       #   the stream fails with no reconnects left
@@ -153,24 +158,23 @@ module X
       # Check whether the reconnects are spent, waiting for the next if not
       # @api private
       # @param error [StandardError, nil] the error that dropped the stream, or nil if the stream ended
-      # @param state [Hash] the count of reconnects, for one call to handle
+      # @param state [Hash{Symbol => Integer}] the counts of reconnects, for one call to handle
       # @return [Boolean] true if no reconnects remain, or false once it has waited for the next
       def out_of_reconnects?(error, state)
-        reconnects = state[:reconnects] += 1
-        return true if reconnects > max_reconnects
+        return true if count(state, :reconnects) > max_reconnects
 
-        sleep(error ? backoff(error, reconnects) : network_backoff(reconnects))
+        sleep(backoff(error, state))
         false
       end
 
-      # A block that passes an object to the consumer and starts the count over
+      # A block that passes an object to the consumer and starts the counts over
       # @api private
       # @param consumer [Proc] the block that receives each object
-      # @param state [Hash] the count of reconnects, for one call to handle
+      # @param restart [Proc] the callable that starts the counts of reconnects over
       # @return [Proc] the block
-      def delivery_to(consumer, state)
+      def delivery_to(consumer, restart)
         lambda do |object|
-          state[:reconnects] = 0
+          restart.call
           consumer.call(object)
         rescue
           raise ConsumerError
@@ -178,17 +182,27 @@ module X
       end
 
       # The wait before a reconnect, by the kind of error
+      #
+      # The wait grows with the count of reconnects after errors of the same kind, which this counts one more of.
+      #
       # @api private
-      # @param error [StandardError] the error that dropped the stream
-      # @param reconnects [Integer] the number of the reconnect, counting from one
+      # @param error [StandardError, nil] the error that dropped the stream, or nil if the stream ended
+      # @param state [Hash{Symbol => Integer}] the counts of reconnects, for one call to handle
       # @return [Float, Integer] the seconds to wait
-      def backoff(error, reconnects)
+      def backoff(error, state)
         case error
-        when NetworkError, StreamError then network_backoff(reconnects)
-        when TooManyRequests then rate_limit_backoff(error, reconnects)
-        else http_backoff(reconnects)
+        when nil, NetworkError, StreamError then network_backoff(count(state, :network))
+        when TooManyRequests then rate_limit_backoff(error, count(state, :rate_limit))
+        else http_backoff(count(state, :http))
         end
       end
+
+      # Count one more reconnect
+      # @api private
+      # @param state [Hash{Symbol => Integer}] the counts of reconnects, for one call to handle
+      # @param name [Symbol] the name of the count
+      # @return [Integer] the count, counting this reconnect
+      def count(state, name) = state[name] = state.fetch(name) + 1
 
       # The wait before a reconnect after a rate limit, at least until it resets
       #

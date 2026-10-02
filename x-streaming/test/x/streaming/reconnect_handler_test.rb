@@ -39,6 +39,26 @@ module X
       assert_equal [4, [5, 10, 20]], [@runs, @sleeps]
     end
 
+    def test_each_kind_of_error_backs_off_on_a_count_of_its_own
+      errors = [NetworkError] * 4 + [ServiceUnavailable, NetworkError, ServiceUnavailable]
+
+      assert_raises(ServiceUnavailable) { stream_with(Streaming.const_get(:ReconnectHandler).new(max_reconnects: 6)) { fail_with(errors.fetch(@runs)) } }
+      assert_equal [0.0, 0.25, 0.5, 0.75, 5, 1.0], @sleeps
+    end
+
+    def test_a_stream_that_ends_backs_off_on_the_count_of_dropped_connections
+      assert_raises(NetworkError) { stream_with(Streaming.const_get(:ReconnectHandler).new(max_reconnects: 3)) { (@runs += 1).odd? ? nil : raise(NetworkError) } }
+      assert_equal [0.0, 0.25, 0.5], @sleeps
+    end
+
+    def test_reading_a_keep_alive_starts_every_count_over
+      errors = [ServiceUnavailable, NetworkError, nil, ServiceUnavailable, NetworkError]
+      handler = Streaming.const_get(:ReconnectHandler).new(max_reconnects: 2)
+
+      assert_raises(NetworkError) { stream_with(handler) { |_deliver, alive| (error = errors.fetch(@runs)) ? fail_with(error) : (@runs += 1) && alive.call } }
+      assert_equal [5, 0.0, 0.0, 5], @sleeps
+    end
+
     def test_delivering_an_object_starts_the_count_over
       handler = Streaming.const_get(:ReconnectHandler).new(max_reconnects: 1)
       stream_with(handler) do |deliver|

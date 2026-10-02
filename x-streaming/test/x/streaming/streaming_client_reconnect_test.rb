@@ -69,7 +69,7 @@ module X
       streaming_client = @client.streaming(max_reconnects: 2)
 
       assert_raises(NetworkError) { without_sleeping(streaming_client) { streaming_client.stream("tweets/sample/stream") { |post| posts << post.dig("data", "id") } } }
-      assert_equal [%w[1 2], [0.0, 10, 0.0, 0.25], 2], [posts, @sleeps, streaming_client.max_reconnects]
+      assert_equal [%w[1 2], [0.0, 5, 0.0, 0.25], 2], [posts, @sleeps, streaming_client.max_reconnects]
     end
 
     def test_a_quiet_stream_that_reads_keep_alives_starts_the_count_over
@@ -79,7 +79,7 @@ module X
 
       post = without_sleeping(streaming_client) { streaming_client.stream("tweets/sample/stream") { |json| break json.dig("data", "id") } }
 
-      assert_equal ["1", [0.0, 10, 0.0, 10]], [post, @sleeps]
+      assert_equal ["1", [0.0, 5, 0.0, 5]], [post, @sleeps]
     end
 
     def test_inspect_names_the_client_it_streams_with
