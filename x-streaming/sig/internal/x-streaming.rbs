@@ -9,6 +9,7 @@ module X
     class CallbackError < StandardError
       attr_reader error: StandardError
 
+      def self.tagging: (untyped callable) -> untyped
       def initialize: (StandardError error) -> void
     end
 
@@ -154,6 +155,7 @@ module X
     JSON_CLASSES: Hash[Symbol, Class]
     REFUSAL_MESSAGE: String
 
+    @on_response: untyped
     @stream_client: Client
     @reconnect_handler: Streaming::ReconnectHandler
     @stream_parser: Streaming::StreamParser

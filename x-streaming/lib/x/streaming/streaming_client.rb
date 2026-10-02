@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "x/core"
+require_relative "callback_error"
 require_relative "reconnect_handler"
 require_relative "rules_rejected"
 require_relative "stream_parser"
@@ -116,7 +117,8 @@ module X
       #   end)
       def initialize(client, read_timeout: DEFAULT_READ_TIMEOUT, max_reconnects: DEFAULT_MAX_RECONNECTS, on_reconnect: nil)
         @client = client
-        @stream_client = client.with(read_timeout: Validator.read_timeout!(:read_timeout, read_timeout), on_response: Stopper.guarding(client.on_response))
+        @on_response = Stopper.guarding(client.on_response)
+        @stream_client = client.with(read_timeout: Validator.read_timeout!(:read_timeout, read_timeout), on_response: CallbackError.tagging(@on_response))
         @on_reconnect = Validator.callable!(:on_reconnect, on_reconnect)
         @reconnect_handler = ReconnectHandler.new(max_reconnects:, max_rate_limit_wait: client.max_rate_limit_wait, on_reconnect: Stopper.guarding(@on_reconnect))
         @stream_parser = StreamParser.new
@@ -485,7 +487,11 @@ module X
       # Pass one object of a stream to the client's on_response, guarded from stop
       #
       # The stream is opened with a copy of the client whose on_response calls the client's with Stopper.guard, which
-      # X::Client#get_stream passes a failed response, as this passes it each object.
+      # X::Client#get_stream passes a failed response, as this passes it each object. That copy tags the error the
+      # client's raises as a CallbackError, since X::Client#get_stream raises it as it was, where an
+      # X::ServiceUnavailable or an X::NetworkError would be taken for the stream's own and reconnected after, so this
+      # calls the client's on_response, guarded, rather than that copy's, whose error StreamParser tags as it tags the
+      # error of the object_class.
       #
       # @api private
       # @param response [Net::HTTPResponse] the response of the stream
@@ -493,7 +499,7 @@ module X
       # @return [void]
       def report(response, line)
         uri = response.uri #: URI::Generic
-        @stream_client.on_response&.call(Response.new(http_response: response, http_method: :get, uri:, body: line))
+        @on_response&.call(Response.new(http_response: response, http_method: :get, uri:, body: line))
       end
     end
   end

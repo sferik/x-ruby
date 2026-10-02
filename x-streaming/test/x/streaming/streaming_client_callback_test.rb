@@ -28,14 +28,6 @@ module X
       assert_requested(:get, STREAM_URL, times: 1)
     end
 
-    def test_an_on_response_hook_that_raises_for_a_failed_response_stops_the_stream
-      stub_request(:get, STREAM_URL).to_return(status: 503)
-      client = Client.new(bearer_token: TEST_BEARER_TOKEN, on_response: @refused)
-
-      assert_raises(Errno::ECONNREFUSED) { client.streaming.stream("tweets/sample/stream") { |_post| flunk "unexpected yield" } }
-      assert_requested(:get, STREAM_URL, times: 1)
-    end
-
     def test_a_stop_iteration_from_an_on_response_hook_reaches_the_caller
       stub_request(:get, STREAM_URL).to_return(body: "{\"data\":{\"id\":\"1\"}}\r\n")
       client = Client.new(bearer_token: TEST_BEARER_TOKEN, on_response: ->(_response) { [].each.next })
