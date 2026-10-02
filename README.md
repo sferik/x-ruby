@@ -501,7 +501,7 @@ The gems follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html), and 
 
 Anything documented `@api private` is internal to the gem that declares it, even where Ruby lets you call it, as is every private constant, and either may change or go away in any release. Most of it sits in the module of its gem, such as `X::Core`, beside mixins that are public, such as `X::Objects::API` and `X::Uploader::MediaUpload`, so it is the documentation, not the namespace, that says which is which.
 
-The four gems are released together at the same version, and each depends on the ones it needs, `x-uploader` and `x-objects` on `x-core` and `x` on all three, with a pessimistic constraint on that version, such as `~> 1.0` for 1.0.0, so a later release of 1.x of one installs beside the others. They are built and tested together at each version, so upgrade them together, as depending on `x` does.
+The four gems are released together at the same version, and each depends on the ones it needs, `x-uploader` and `x-objects` on `x-core` and `x` on all three, with a constraint of that version or a later one of the same major version, such as `>= 1.0.0, < 2` for 1.0.0, so a later release of 1.x of one installs beside the others, but never an earlier release than its own. They are built and tested together at each version, so upgrade them together, as depending on `x` does.
 
 ## Sponsorship
 

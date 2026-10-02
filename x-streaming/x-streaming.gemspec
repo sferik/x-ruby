@@ -2,8 +2,9 @@
 
 # The version every gem in this repository is released at
 version = File.read(File.expand_path("../VERSION", __dir__)).strip
-# The requirement on the other gems of this repository, such as "~> 1.0" for 1.0.0, which any later 1.x satisfies
-sibling_requirement = Gem::Version.new(version).approximate_recommendation
+# The requirement on the other gems of this repository, such as ">= 1.0.0" and "< 2" for 1.0.0, which this version and
+# any later 1.x satisfy, so a gem never installs beside an earlier release of the gems it depends on than its own
+sibling_requirement = [">= #{version}", "< #{Gem::Version.new(version).segments.first.succ}"]
 
 Gem::Specification.new do |spec|
   spec.name = "x-streaming"
@@ -37,5 +38,5 @@ Gem::Specification.new do |spec|
     "LICENSE.txt"
   ], base: __dir__)
   spec.require_paths = ["lib"]
-  spec.add_dependency("x-core", sibling_requirement)
+  spec.add_dependency("x-core", *sibling_requirement)
 end
