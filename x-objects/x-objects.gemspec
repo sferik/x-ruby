@@ -32,6 +32,7 @@ Gem::Specification.new do |spec|
     "lib/**/*.rb",
     "sig/*.rbs",
     "sig/manifest.yaml",
+    ".yardopts",
     "*.md",
     "LICENSE.txt"
   ], base: __dir__)

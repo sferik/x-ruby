@@ -11,7 +11,7 @@ module X
       # includes API, but the module is only how they are grouped, and some of them need the methods of another,
       # so include API rather than this module alone.
       #
-      # @api private
+      # @api semipublic
       module Communities
         # Look up a community by identifier
         #

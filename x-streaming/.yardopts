@@ -1,0 +1,6 @@
+--markup markdown
+--hide-api private
+--embed-mixins
+lib/**/*.rb
+-
+LICENSE.txt
