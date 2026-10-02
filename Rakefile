@@ -144,9 +144,15 @@ task steep: SUBGEMS.map { |name| "steep:#{name}" } + ["steep:x"]
 
 require "yard"
 
+# The documentation of every gem together, published at https://sferik.github.io/x-ruby/api/, written to the
+# directory YARD_OUTPUT_DIR names, or doc. The .yardopts of the x gem documents the meta-gem alone, so the options of
+# each gem's .yardopts are given here, and the extra files are those of the repository, as each gem names its own
+# README.md and CHANGELOG.md.
 YARD::Rake::YardocTask.new(:yard) do |t|
-  t.files = ["lib/**/*.rb", "x-core/lib/**/*.rb", "x-uploader/lib/**/*.rb", "x-streaming/lib/**/*.rb", "x-objects/lib/**/*.rb"]
-  t.options = ["--no-private"]
+  t.files = ["lib/**/*.rb", "x-core/lib/**/*.rb", "x-uploader/lib/**/*.rb", "x-streaming/lib/**/*.rb", "x-objects/lib/**/*.rb",
+    "-", "UPGRADING.md", "CHANGELOG.md", "LICENSE.txt"]
+  t.options = ["--no-yardopts", "--no-save", "--markup", "markdown", "--readme", "README.md", "--hide-api", "private",
+    "--embed-mixins", "--title", "X API Ruby gems", "--output-dir", ENV.fetch("YARD_OUTPUT_DIR", "doc")]
 end
 
 require "yardstick/rake/measurement"

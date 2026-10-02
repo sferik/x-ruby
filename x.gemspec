@@ -21,7 +21,7 @@ Gem::Specification.new do |spec|
     "allowed_push_host" => "https://rubygems.org",
     "bug_tracker_uri" => "https://github.com/sferik/x-ruby/issues",
     "changelog_uri" => "https://github.com/sferik/x-ruby/blob/main/CHANGELOG.md",
-    "documentation_uri" => "https://rubydoc.info/gems/x/",
+    "documentation_uri" => "https://sferik.github.io/x-ruby/api/",
     "funding_uri" => "https://github.com/sponsors/sferik/",
     "homepage_uri" => spec.homepage,
     "rubygems_mfa_required" => "true",

@@ -34,6 +34,19 @@ jobs:
         with:
           source: ./
           destination: ./_site
+      # The API documentation of every gem, built after the site, so that Jekyll does not read the bundle the gems are
+      # installed into, and outside it, as the Jekyll action writes _site as root
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.4"
+          bundler-cache: true
+      - name: Build the API documentation with YARD
+        run: bundle exec rake yard
+        env:
+          YARD_OUTPUT_DIR: ${{ runner.temp }}/api
+      - name: Add the API documentation to the site under api/
+        run: sudo cp -R "$RUNNER_TEMP/api" _site/api
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v5
 
