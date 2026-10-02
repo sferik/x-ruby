@@ -33,6 +33,7 @@ module X
         # @param list [List, String, Integer] the list or its identifier
         # @param params [Hash] the request body fields to change: name, description, and private
         # @return [Boolean] true if the list was updated
+        # @raise [ArgumentError] if no field is given to change, before any request
         # @example Make a list private
         #   client.update_list("1234567890", private: true)
         def update_list(list, **params)

@@ -80,9 +80,12 @@ module X
         # @param client [Object] the client used to make the request
         # @param params [Hash] the request body fields to change: name, description, and private
         # @return [Boolean] true if the list was updated
+        # @raise [ArgumentError] if no field is given to change, before any request
         # @example Rename a list and make it private
         #   X::List.update("1234567890", client: client, name: "Rubyists", private: true)
         def update(list, client:, **params)
+          raise ArgumentError, "a list update needs a field to change, such as name, description, or private" if params.empty?
+
           body = client.put("lists/#{Utils.id_of(list, self)}", params, **Utils::JSON_CLASSES)
           body.to_h.dig("data", "updated").eql?(true)
         end
@@ -278,6 +281,7 @@ module X
       # @api public
       # @param params [Hash] the request body fields to change: name, description, and private
       # @return [Boolean] true if the list was updated
+      # @raise [ArgumentError] if no field is given to change, before any request
       # @example Change the description of a list
       #   list.update(description: "People who write Ruby")
       def update(**params)

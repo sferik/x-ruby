@@ -27,6 +27,15 @@ module X
       refute List.update(1, client: @client, description: "Ruby")
     end
 
+    def test_update_without_a_field_to_change_is_refused
+      error = assert_raises(ArgumentError) { List.update(1, client: @client) }
+
+      assert_equal "a list update needs a field to change, such as name, description, or private", error.message
+      assert_raises(ArgumentError) { @list.update }
+      assert_raises(ArgumentError) { @client.update_list(1) }
+      assert_empty @client.requests
+    end
+
     def test_update_this_list
       @client.stub(:put, "lists/1", {"data" => {"updated" => true}})
 
