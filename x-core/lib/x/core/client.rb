@@ -633,9 +633,10 @@ module X
       # again itself, so one wrapped in this is sent max_retries times more for each time this sends it, nine times in
       # all with the defaults, rather than three.
       #
-      # x-uploader sends each chunk of an upload with it.
+      # Internal to x-core and x-uploader, which sends each chunk of an upload with it, so that it can change within
+      # 1.x; it is public to Ruby so that x-uploader can call it.
       #
-      # @api public
+      # @api private
       # @yield sends the request
       # @return [Object] what the block returns
       # @raise [NetworkError] if the request fails once more than the retries allow

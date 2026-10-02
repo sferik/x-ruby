@@ -368,7 +368,6 @@ module X
     def delete: (String endpoint, ?params: params?, ?headers: headers, ?array_class: Class, ?object_class: object_class) ?{ (Response) -> void } -> untyped
     def get_stream: [T] (String endpoint, ?params: params?, ?headers: headers) { (Net::HTTPResponse http_response) -> T } -> T
     def close: () -> void
-    def with_retries: [T] () { () -> T } -> T
     def marshal_dump: () -> bot
     def encode_with: (untyped coder) -> bot
     def as_json: (*untyped) -> bot
