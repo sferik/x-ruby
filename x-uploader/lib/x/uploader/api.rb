@@ -26,14 +26,35 @@ module X
       # media_category says what it is. The chunks are sent by threads of their own, so the on_response of the client
       # runs on those threads for the response of each chunk.
       #
+      # An image, and a GIF that a single request takes, upload in a single request, which takes no chunks and no
+      # media type, so chunk_size, concurrency, and media_type are ignored for them: a chunk_size or a concurrency
+      # that is not valid still raises, but none is sent. Media given shared: true uploads in chunks, and uses all
+      # three.
+      #
       # Each chunk is a request a rate limit can refuse, which fails the upload with ChunkedUploadFailed unless the
       # client retries it, which it does only max_rate_limit_retries times, 0 by default, so upload a large video with
       # a client whose max_rate_limit_retries is set, such as X::Client.new(max_rate_limit_retries: 3).
       #
       # @api public
       # @param media [String, Pathname, IO, StringIO] the path to the media to upload, or an IO open on it
-      # @param options [Hash] the options of {MediaUpload.upload}, such as media_category, alt_text, processing_timeout,
-      #   shared, and additional_owners
+      # @param options [Hash] the options of {MediaUpload.upload}
+      # @option options [String, Symbol, nil] :media_category (nil) the media category, in any case, inferred when nil
+      #   from the bytes the media begins with, or else from the name of its file
+      # @option options [String, nil] :alt_text (nil) alt text describing the media, of 1 to 1,000 characters, added
+      #   once the media is uploaded and processed, or nil for none
+      # @option options [Integer, Float, nil] :processing_timeout (600) the seconds to wait for media that X processes,
+      #   such as a video, to process, of at least 0, or nil to wait for as long as processing takes
+      # @option options [String, nil] :media_type (nil) the MIME type of media uploaded in chunks, inferred from the
+      #   media and category when nil; ignored for media uploaded in a single request, such as an image
+      # @option options [Integer, nil] :chunk_size (nil) the size of each chunk in bytes, of at most 5,242,880, or nil
+      #   for MediaUpload::DEFAULT_CHUNK_SIZE, or as much more as the media needs; ignored for media uploaded in a
+      #   single request, such as an image
+      # @option options [Integer] :concurrency (4) the number of chunks uploaded at once, of 1 to
+      #   MediaUpload::MAX_CONCURRENCY; ignored for media uploaded in a single request, such as an image
+      # @option options [Boolean, nil] :shared (nil) whether the media can be sent in more than one direct message, or
+      #   nil to leave it to the API; media that is shared uploads in chunks
+      # @option options [Array<Integer, String>, nil] :additional_owners (nil) the identifiers of the users, other than
+      #   the one who uploads it, who may use the media, or nil for none
       # @return [UploadedMedia] the uploaded media, which holds the upload response, or the processing status of
       #   media that X processes
       # @raise [ArgumentError] if the media is neither a path nor an IO, or is a String that holds a NUL byte or a
@@ -71,9 +92,11 @@ module X
 
       # Upload media in chunks, without waiting for it to be processed
       #
-      # It uploads the media as {#upload_media} uploads a video, a chunk at a time, but returns once the upload is
-      # finalized, rather than wait for X to process the media, so that the caller can go on while X processes a long
-      # video, and wait for it with {#await_media_processing} or {#await_media_processing!} when it needs it. The
+      # It is the way to upload media without waiting for X to process it: {#upload_media} waits for the processing of
+      # media X processes, such as a video, and this does not. It uploads the media as {#upload_media} uploads a video,
+      # a chunk at a time, but returns once the upload is finalized, so that the caller can go on while X processes a
+      # long video, and wait for it with {#await_media_processing} or {#await_media_processing!} when it needs it. It
+      # uploads in chunks whatever the media, an image as well, and adds no alt text. The
       # chunks are sent by threads of their own, so the on_response of the client runs on those threads for the
       # response of each chunk.
       #
@@ -83,8 +106,19 @@ module X
       #
       # @api public
       # @param media [String, Pathname, IO, StringIO] the path to the media to upload, or an IO open on it
-      # @param options [Hash] the options of {MediaUpload.chunked_upload}, such as media_category, media_type,
-      #   chunk_size, concurrency, shared, and additional_owners
+      # @param options [Hash] the options of {MediaUpload.chunked_upload}
+      # @option options [String, Symbol, nil] :media_category (nil) the media category, in any case, inferred when nil
+      #   from the bytes the media begins with, or else from the name of its file
+      # @option options [String, nil] :media_type (nil) the MIME type of the media, sent as it is given, or inferred
+      #   from the media and category when nil
+      # @option options [Integer, nil] :chunk_size (nil) the size of each chunk in bytes, of at most 5,242,880, or nil
+      #   for MediaUpload::DEFAULT_CHUNK_SIZE, or as much more as the media needs
+      # @option options [Integer] :concurrency (4) the number of chunks uploaded at once, of 1 to
+      #   MediaUpload::MAX_CONCURRENCY
+      # @option options [Boolean, nil] :shared (nil) whether the media can be sent in more than one direct message, or
+      #   nil to leave it to the API
+      # @option options [Array<Integer, String>, nil] :additional_owners (nil) the identifiers of the users, other than
+      #   the one who uploads it, who may use the media, or nil for none
       # @return [UploadedMedia] the uploaded media, which holds the response that finalized the upload, and the
       #   processing status of media that X processes
       # @raise [ArgumentError] if the media is neither a path nor an IO, or is a String that holds a NUL byte or a
@@ -117,7 +151,9 @@ module X
       # @api public
       # @param media [UploadedMedia, Hash, #media_key, String, Integer] the uploaded media, media that has a media key,
       #   such as X::Media, the media key, or the media identifier
-      # @param options [Hash] the options of {MediaUpload.await_processing}, such as processing_timeout
+      # @param options [Hash] the options of {MediaUpload.await_processing}
+      # @option options [Integer, Float, nil] :processing_timeout (600) the seconds from now to wait for processing to
+      #   finish, checks and all, of at least 0, or nil to wait for as long as processing takes
       # @return [UploadedMedia] the uploaded media, which holds the processing status, failed or not, or the media
       #   given, as uploaded media, if its processing has already ended
       # @raise [ArgumentError] if the processing timeout is neither nil nor a finite number of seconds of at least 0
@@ -137,7 +173,9 @@ module X
       # @api public
       # @param media [UploadedMedia, Hash, #media_key, String, Integer] the uploaded media, media that has a media key,
       #   such as X::Media, the media key, or the media identifier
-      # @param options [Hash] the options of {MediaUpload.await_processing!}, such as processing_timeout
+      # @param options [Hash] the options of {MediaUpload.await_processing!}
+      # @option options [Integer, Float, nil] :processing_timeout (600) the seconds from now to wait for processing to
+      #   finish, checks and all, of at least 0, or nil to wait for as long as processing takes
       # @return [UploadedMedia] the uploaded media, which holds the processing status, or the media given, as uploaded
       #   media, if its processing has already succeeded
       # @raise [ArgumentError] if the processing timeout is neither nil nor a finite number of seconds of at least 0
@@ -180,7 +218,11 @@ module X
       # @param subtitles [UploadedMedia, Hash, #media_key, String, Integer] the uploaded subtitles, media that has a
       #   media key, or their media identifier
       # @param language_code [String] the language of the subtitles, such as EN
-      # @param options [Hash] the options of {Metadata.add_subtitles}: display_name and media_category
+      # @param options [Hash] the options of {Metadata.add_subtitles}
+      # @option options [String, nil] :display_name (nil) the name of the language shown to viewers, such as English,
+      #   or nil for none
+      # @option options [String, Symbol] :media_category ("tweet_video") the category the video was uploaded as,
+      #   tweet_video or amplify_video, in any case, or TweetVideo or AmplifyVideo, as the subtitles endpoint names them
       # @return [UploadedMedia] the video given, as uploaded media, which a call can be chained to
       # @raise [ArgumentError] if the media category is neither tweet_video nor amplify_video, or the language code is
       #   not two letters
@@ -212,7 +254,13 @@ module X
       #
       # @api public
       # @param media [String, Pathname, IO, StringIO] the path to the image, or an IO that reads it
-      # @param options [Hash] the options of {Account.update_profile_banner}: width, height, offset_left, and offset_top
+      # @param options [Hash] the options of {Account.update_profile_banner}, which give the region of the image to use
+      # @option options [Integer, nil] :width (nil) the width of the region, in pixels, of at least 1
+      # @option options [Integer, nil] :height (nil) the height of the region, in pixels, of at least 1
+      # @option options [Integer, nil] :offset_left (nil) the pixels by which the region is offset from the left, of at
+      #   least 0
+      # @option options [Integer, nil] :offset_top (nil) the pixels by which the region is offset from the top, of at
+      #   least 0
       # @return [void]
       # @raise [InvalidMedia] if the file does not exist
       # @raise [ArgumentError] if the media is neither a path nor an IO, or a width, height, or offset is neither nil

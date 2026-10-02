@@ -126,6 +126,11 @@ module X
       # argument is validated before the first request, so that no media is uploaded, and billed, for an upload
       # that cannot finish.
       #
+      # An image, and a GIF that a single request takes, upload in a single request, which takes no chunks and no
+      # media type, so chunk_size, concurrency, and media_type are ignored for them: a chunk_size or a concurrency
+      # that is not valid still raises, but none is sent. Media given shared: true uploads in chunks, and uses all
+      # three. Upload with {chunked_upload} to send an image in chunks too.
+      #
       # Media the response of the upload says is still processing is awaited as {await_processing!} awaits it. Media
       # the response says has already failed to process raises MediaProcessingFailed with that response, and media it
       # says has finished is returned as it is, without a check of its status.
@@ -212,6 +217,11 @@ module X
       end
 
       # Perform a chunked upload for large files
+      #
+      # It is the way to upload media without waiting for X to process it: {upload} waits for the processing of media
+      # X processes, such as a video, and this returns once the upload is finalized, so that the caller can go on while
+      # X processes a long video, and wait for it with {await_processing} or {await_processing!} when it needs it. It
+      # uploads in chunks whatever the media, an image as well.
       #
       # The chunks of an upload in chunks are sent by threads of their own, as many as the concurrency, so the
       # on_response of the client runs on those threads for the response of each chunk, and a hook that reads state
