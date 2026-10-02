@@ -42,9 +42,13 @@ module X
     def test_attributes
       assert_equal "hi", @post.text
       assert_equal "en", @post.lang
-      assert_equal "app", @post.source
       assert_equal Time.utc(2024, 1, 2, 3, 4, 5), @post.created_at
       assert_equal 9, @post.author_id
+    end
+
+    def test_the_deprecated_source_is_left_in_the_attributes
+      refute_respond_to @post, :source
+      assert_equal "app", @post.attrs["source"]
     end
 
     def test_more_attributes

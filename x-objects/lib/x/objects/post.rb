@@ -24,7 +24,8 @@ module X
       # promoted_metrics, are left out, since a field that depends on who is authenticated would make every request
       # fail for a client that cannot read it, as are the fields of Community Notes and of suggested sources, which the
       # API gives to the programs they belong to. So is source, which the API has deprecated: a field it stops taking
-      # would make every request that asks for it fail.
+      # would make every request that asks for it fail. Nor does a post read it; a request that names it in its
+      # post.fields finds it in {Resource#attrs}.
       #
       # A minor release may add to it the fields the API adds, so that a lookup asks for them too; see
       # {Resource#hydrated?} for what that means for a resource looked up with a list of fields of its own.
@@ -107,18 +108,6 @@ module X
       #   @example Get the language
       #     post.lang
       attribute :lang
-
-      # @!attribute [r] source
-      #   The name of the app used to create the post
-      #
-      #   The API has deprecated the field, so a lookup does not ask for it, and it is nil unless a request names it
-      #   in its post.fields and the API still sends it.
-      #
-      #   @api public
-      #   @return [String, nil] the source
-      #   @example Get the source
-      #     post.source
-      attribute :source
 
       # @!attribute [r] created_at
       #   The time when the post was created

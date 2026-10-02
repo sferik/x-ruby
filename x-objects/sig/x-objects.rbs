@@ -592,7 +592,6 @@ module X
 
     def text: () -> String?
     def lang: () -> String?
-    def source: () -> String?
     def created_at: () -> Time?
     def author_id: () -> Integer?
     def conversation_id: () -> Integer?
