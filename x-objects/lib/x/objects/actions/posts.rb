@@ -21,8 +21,9 @@ module X
         # @api public
         # @param text [String, nil] the text of the post, or nil for a post without text, such as one of media alone
         # @param params [Hash] additional request body fields, such as reply_to, quote, media_ids, or poll
-        # @return [Post, nil] the created post, holding only its identifier and text
+        # @return [Post] the created post, holding only its identifier and text
         # @raise [ArgumentError] if the post has neither text nor any other field
+        # @raise [MissingResource] if the API answers without the post
         # @example Create a post
         #   client.create_post("Hello, World!")
         # @example Post an image without text

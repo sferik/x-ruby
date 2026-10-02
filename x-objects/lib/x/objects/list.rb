@@ -64,12 +64,13 @@ module X
         # @param name [String] the name of the list
         # @param client [Object] the client used to make the request
         # @param params [Hash] additional request body fields: description and private
-        # @return [List, nil] the created list, holding only its identifier and name
+        # @return [List] the created list, holding only its identifier and name
+        # @raise [MissingResource] if the API answers without the list
         # @example Create a private list
         #   X::List.create("Rubyists", client: client, description: "People who write Ruby", private: true)
         def create(name, client:, **params)
           body = client.post("lists", {name:, **params}, **Utils::JSON_CLASSES)
-          resource_from_response(body, client:)
+          created_from_response(body, "POST lists", client:)
         end
 
         # Update the name, description, or privacy of a list as the authenticated user

@@ -97,22 +97,10 @@ module X
       assert_equal 2, DirectMessage.create(8, "yo", client: @client).id
     end
 
-    def test_create_without_data
-      @client.stub(:post, "dm_conversations/with/8/messages", {"errors" => []})
-
-      assert_nil DirectMessage.create("8", "yo", client: @client)
-    end
-
     def test_references_skip_those_without_id
       message = DirectMessage.new({"id" => "1", "referenced_posts" => [{}, {"id" => "5"}]})
 
       assert_equal [5], message.references.map(&:id)
-    end
-
-    def test_create_with_array_data
-      @client.stub(:post, "dm_conversations/with/8/messages", {"data" => []})
-
-      assert_nil DirectMessage.create("8", "yo", client: @client)
     end
 
     def test_create_accepts_hash_subclasses
@@ -134,12 +122,6 @@ module X
       error = assert_raises(InvalidAttribute) { DirectMessage.create("8", "yo", client: @client) }
 
       assert_equal "X::DirectMessage#id cannot be read from nil", error.message
-    end
-
-    def test_create_with_nil_body
-      @client.stub(:post, "dm_conversations/with/8/messages", nil)
-
-      assert_nil DirectMessage.create("8", "yo", client: @client)
     end
   end
 end

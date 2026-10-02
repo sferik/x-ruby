@@ -66,12 +66,6 @@ module X
       assert_equal 3, DirectMessage.create_in(DirectMessage.new({"id" => "1", "dm_conversation_id" => "9-8"}), "Hi", client: @client).id
     end
 
-    def test_create_in_without_data
-      @client.stub(:post, "dm_conversations/9-8/messages", {"errors" => []})
-
-      assert_nil DirectMessage.create_in("9-8", "Hi", client: @client)
-    end
-
     def test_in
       cursor = DirectMessage.in(DirectMessage.new({"id" => "1", "dm_conversation_id" => "1582838223204016129"}), client: @client, event_types: "MessageCreate")
 

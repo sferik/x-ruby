@@ -28,8 +28,9 @@ module X
       # @param community [Community, String, Integer, nil] the community to post in or its identifier
       # @param params [Hash] additional request body fields, such as poll or reply_settings, among them reply and
       #   media, whose other fields reply_to and media_ids are merged into
-      # @return [Post, nil] the created post, holding only its identifier and text
+      # @return [Post] the created post, holding only its identifier and text
       # @raise [ArgumentError] if the post has neither text nor any other field, which an empty media_ids is not
+      # @raise [MissingResource] if the API answers without the post
       # @example Create a post
       #   X::Post.create("Hello, World!", client: client)
       # @example Post an image without text
@@ -46,7 +47,7 @@ module X
         fields = {text:, **params, **referenced(params, reply_to:, quote:, media_ids:, community:)}.compact
         raise ArgumentError, "a post needs text, or something else to show, such as media_ids" if fields.empty?
 
-        resource_from_response(client.post("tweets", fields, **Utils::JSON_CLASSES), client:)
+        created_from_response(client.post("tweets", fields, **Utils::JSON_CLASSES), "POST tweets", client:)
       end
 
       # Delete a post as the authenticated user

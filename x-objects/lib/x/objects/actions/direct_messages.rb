@@ -22,9 +22,10 @@ module X
         # @option params [Array<String, Integer, #fetch, Media>, String, Integer, #fetch, Media] :media_ids the
         #   identifiers or media keys of uploaded media to attach, what the uploads returned, or media, such as that of
         #   a post, one or many
-        # @return [DirectMessage, nil] the sent message, holding only its identifiers
+        # @return [DirectMessage] the sent message, holding only its identifiers
         # @raise [ArgumentError] if the message has neither text nor any other field, or has both media_ids and
         #   attachments
+        # @raise [MissingResource] if the API answers without the message
         # @example Send a direct message
         #   client.create_direct_message(user, "Hello!")
         # @example Send an image without text
@@ -42,9 +43,10 @@ module X
         # @option params [Array<String, Integer, #fetch, Media>, String, Integer, #fetch, Media] :media_ids the
         #   identifiers or media keys of uploaded media to attach, what the uploads returned, or media, such as that of
         #   a post, one or many
-        # @return [DirectMessage, nil] the sent message, holding only its identifiers, among them the conversation's
+        # @return [DirectMessage] the sent message, holding only its identifiers, among them the conversation's
         # @raise [ArgumentError] if the message has neither text nor any other field, or has both media_ids and
         #   attachments
+        # @raise [MissingResource] if the API answers without the message
         # @example Start a group conversation
         #   client.create_group_direct_message([alice, bob], "Hello, both of you!")
         # @example Start a group conversation with an image
@@ -64,9 +66,10 @@ module X
         # @option params [Array<String, Integer, #fetch, Media>, String, Integer, #fetch, Media] :media_ids the
         #   identifiers or media keys of uploaded media to attach, what the uploads returned, or media, such as that of
         #   a post, one or many
-        # @return [DirectMessage, nil] the sent message, holding only its identifiers
+        # @return [DirectMessage] the sent message, holding only its identifiers
         # @raise [ArgumentError] if the conversation identifier is not one, the message has neither text nor any
         #   other field, or it has both media_ids and attachments
+        # @raise [MissingResource] if the API answers without the message
         # @example Reply to the conversation of a message
         #   client.create_direct_message_in(message, "Sounds good")
         # @example Reply with an image

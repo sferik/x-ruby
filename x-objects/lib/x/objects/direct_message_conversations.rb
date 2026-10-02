@@ -29,16 +29,17 @@ module X
       #   media keys of uploaded media to attach, what the uploads returned, or media, such as that of a post, one or
       #   many
       # @param params [Hash] additional fields of the message, such as attachments
-      # @return [DirectMessage, nil] the sent message, holding only its identifiers, among them the new conversation's
+      # @return [DirectMessage] the sent message, holding only its identifiers, among them the new conversation's
       # @raise [ArgumentError] if the message has neither text nor any other field, or has both media_ids and
       #   attachments
+      # @raise [MissingResource] if the API answers without the message
       # @example Start a group conversation
       #   X::DirectMessage.create_group([alice, bob], "Hello, both of you!", client: client)
       # @example Start a group conversation with an image
       #   X::DirectMessage.create_group([alice, bob], client: client, media_ids: media)
       def create_group(users, text = nil, client:, media_ids: nil, **params)
         body = {conversation_type: "Group", participant_ids: users.map { |user| Utils.id_of(user, User) }, message: message(text, params, media_ids)}
-        sent(client.post("dm_conversations", body, **Utils::JSON_CLASSES), client:)
+        sent(client.post("dm_conversations", body, **Utils::JSON_CLASSES), "dm_conversations", client:)
       end
 
       # Send a direct message to a conversation as the authenticated user
@@ -51,16 +52,17 @@ module X
       #   media keys of uploaded media to attach, what the uploads returned, or media, such as that of a post, one or
       #   many
       # @param params [Hash] additional request body fields, such as attachments
-      # @return [DirectMessage, nil] the sent message, holding only its identifiers
+      # @return [DirectMessage] the sent message, holding only its identifiers
       # @raise [ArgumentError] if the conversation identifier is not one, the message has neither text nor any other
       #   field, or it has both media_ids and attachments
+      # @raise [MissingResource] if the API answers without the message
       # @example Reply to the conversation of a message
       #   X::DirectMessage.create_in(message, "Sounds good", client: client)
       # @example Reply with an image
       #   X::DirectMessage.create_in(message, client: client, media_ids: media)
       def create_in(conversation, text = nil, client:, media_ids: nil, **params)
         path = "dm_conversations/#{conversation_id_of(conversation)}/messages"
-        sent(client.post(path, message(text, params, media_ids), **Utils::JSON_CLASSES), client:)
+        sent(client.post(path, message(text, params, media_ids), **Utils::JSON_CLASSES), path, client:)
       end
 
       # The direct message events of a conversation, one-to-one or group
@@ -121,18 +123,21 @@ module X
 
       # The message a send created, from the identifiers the API returned
       #
-      # It is built as the resources of any response are, so an identifier the response lacks raises where it is read.
+      # It is built as the resources of any response are, so an identifier the response lacks raises where it is read,
+      # and a response without the message raises, as any request that creates a resource does.
       #
       # @api private
       # @param body [Hash, nil] the response body
+      # @param path [String] the path the message was sent to
       # @param client [Object] the client used to make the request
-      # @return [DirectMessage, nil] the message, or nil if the response holds no data
+      # @return [DirectMessage] the message
+      # @raise [MissingResource] if the response holds no data
       # @raise [InvalidAttribute] if the response holds no event identifier, or one that is not one
-      def sent(body, client:)
-        data = body.to_h["data"]
-        return unless data.is_a?(Hash)
-
-        resource_from_response({"data" => {"id" => data["dm_event_id"], "dm_conversation_id" => data["dm_conversation_id"]}}, client:)
+      def sent(body, path, client:)
+        body = body.to_h
+        data = body["data"]
+        data = {"id" => data["dm_event_id"], "dm_conversation_id" => data["dm_conversation_id"]} if data.is_a?(Hash)
+        created_from_response(body.merge("data" => data), "POST #{path}", client:)
       end
     end
     private_constant :DirectMessageConversations

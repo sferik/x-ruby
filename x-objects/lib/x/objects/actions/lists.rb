@@ -19,7 +19,8 @@ module X
         # @api public
         # @param name [String] the name of the list
         # @param params [Hash] additional request body fields: description and private
-        # @return [List, nil] the created list, holding only its identifier and name
+        # @return [List] the created list, holding only its identifier and name
+        # @raise [MissingResource] if the API answers without the list
         # @example Create a private list
         #   client.create_list("Rubyists", private: true)
         def create_list(name, **params)

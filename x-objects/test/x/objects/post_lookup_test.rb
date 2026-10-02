@@ -78,12 +78,6 @@ module X
       assert_equal [{method: :post, path: "tweets", query: {}, body: {text: "Hello"}.to_json}], @client.requests
     end
 
-    def test_create_without_data
-      @client.stub(:post, "tweets", {"errors" => []})
-
-      assert_nil Post.create("Hello", client: @client)
-    end
-
     def test_delete
       @client.stub(:delete, "tweets/1", {"data" => {"deleted" => true}})
 

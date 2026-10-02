@@ -379,14 +379,14 @@ module X
     end
 
     module PostWrites : _ResourceClass[Post]
-      def create: (?String? text, client: _Client, ?reply_to: id?, ?quote: id?, ?media_ids: untyped, ?community: id?, **untyped params) -> Post?
+      def create: (?String? text, client: _Client, ?reply_to: id?, ?quote: id?, ?media_ids: untyped, ?community: id?, **untyped params) -> Post
       def delete: (id post, client: _Client) -> bool
       def hide_reply: (id post, client: _Client) -> bool
       def unhide_reply: (id post, client: _Client) -> bool
 
       private
       # The private class method of Post that extends it, which it reads
-      def resource_from_response: (body body, client: _Client?, ?hydrated: bool) -> Post?
+      def created_from_response: (body body, String request, client: _Client) -> Post
       def change_visibility: (id post, bool hidden, client: _Client) -> bool?
       def referenced: (Hash[Symbol, untyped] params, reply_to: id?, quote: id?, media_ids: untyped, community: id?) -> Hash[Symbol, untyped]
       def merged: (Hash[Symbol, untyped] params, Symbol key, **untyped field) -> Hash[Symbol, untyped]
@@ -396,16 +396,16 @@ module X
       MAX_RESULTS: Integer
       CONVERSATION_ID: Regexp
 
-      def create_group: (Array[id] users, ?String? text, client: _Client, ?media_ids: untyped, **untyped params) -> DirectMessage?
-      def create_in: (DirectMessage | String | Integer conversation, ?String? text, client: _Client, ?media_ids: untyped, **untyped params) -> DirectMessage?
+      def create_group: (Array[id] users, ?String? text, client: _Client, ?media_ids: untyped, **untyped params) -> DirectMessage
+      def create_in: (DirectMessage | String | Integer conversation, ?String? text, client: _Client, ?media_ids: untyped, **untyped params) -> DirectMessage
       def `in`: (DirectMessage | String | Integer conversation, client: _Client, **untyped params) -> Cursor[DirectMessage]
 
       private
       # The private class method of DirectMessage that extends it, which it reads
-      def resource_from_response: (body body, client: _Client?, ?hydrated: bool) -> DirectMessage?
+      def created_from_response: (body body, String request, client: _Client) -> DirectMessage
       def conversation_id_of: (DirectMessage | String | Integer conversation) -> String
       def message: (String? text, Hash[Symbol, untyped] params, untyped media_ids) -> Hash[Symbol, untyped]
-      def sent: (body body, client: _Client) -> DirectMessage?
+      def sent: (body body, String path, client: _Client) -> DirectMessage
     end
 
     module PostCounts
@@ -602,8 +602,8 @@ module X
 
     module Actions
       module Posts : _Client
-        def create_post: (?String? text, ?reply_to: Objects::id?, ?quote: Objects::id?, ?media_ids: untyped, ?community: Objects::id?, **untyped params) -> Post?
-        def create_tweet: (?String? text, ?reply_to: Objects::id?, ?quote: Objects::id?, ?media_ids: untyped, ?community: Objects::id?, **untyped params) -> Post?
+        def create_post: (?String? text, ?reply_to: Objects::id?, ?quote: Objects::id?, ?media_ids: untyped, ?community: Objects::id?, **untyped params) -> Post
+        def create_tweet: (?String? text, ?reply_to: Objects::id?, ?quote: Objects::id?, ?media_ids: untyped, ?community: Objects::id?, **untyped params) -> Post
         def delete_post: (id post) -> bool
         def delete_tweet: (id post) -> bool
         def hide_reply: (id post) -> bool
@@ -611,7 +611,7 @@ module X
       end
 
       module Lists : _Client, _CurrentUser
-        def create_list: (String name, **untyped params) -> List?
+        def create_list: (String name, **untyped params) -> List
         def update_list: (id list, **untyped params) -> bool
         def delete_list: (id list) -> bool
         def add_list_member: (id list, id user) -> bool
@@ -623,12 +623,12 @@ module X
       end
 
       module DirectMessages : _Client
-        def create_direct_message: (id user, ?String? text, ?media_ids: untyped, **untyped params) -> DirectMessage?
-        def create_dm: (id user, ?String? text, ?media_ids: untyped, **untyped params) -> DirectMessage?
-        def create_group_direct_message: (Array[id] users, ?String? text, ?media_ids: untyped, **untyped params) -> DirectMessage?
-        def create_group_dm: (Array[id] users, ?String? text, ?media_ids: untyped, **untyped params) -> DirectMessage?
-        def create_direct_message_in: (DirectMessage | String | Integer conversation, ?String? text, ?media_ids: untyped, **untyped params) -> DirectMessage?
-        def create_dm_in: (DirectMessage | String | Integer conversation, ?String? text, ?media_ids: untyped, **untyped params) -> DirectMessage?
+        def create_direct_message: (id user, ?String? text, ?media_ids: untyped, **untyped params) -> DirectMessage
+        def create_dm: (id user, ?String? text, ?media_ids: untyped, **untyped params) -> DirectMessage
+        def create_group_direct_message: (Array[id] users, ?String? text, ?media_ids: untyped, **untyped params) -> DirectMessage
+        def create_group_dm: (Array[id] users, ?String? text, ?media_ids: untyped, **untyped params) -> DirectMessage
+        def create_direct_message_in: (DirectMessage | String | Integer conversation, ?String? text, ?media_ids: untyped, **untyped params) -> DirectMessage
+        def create_dm_in: (DirectMessage | String | Integer conversation, ?String? text, ?media_ids: untyped, **untyped params) -> DirectMessage
         def delete_direct_message: (id message) -> bool
         def delete_dm: (id message) -> bool
       end
@@ -712,6 +712,7 @@ module X
     private def self.fields_key: () -> String?
     private def self.fully_requested_by?: (Hash[String, untyped] query) -> bool
     private def self.resource_from_response: (Objects::body body, client: Objects::_Client?, ?hydrated: bool) -> Resource?
+    private def self.created_from_response: (Objects::body body, String request, client: Objects::_Client?) -> Resource
     private def self.collection_from_response: (Objects::body body, client: Objects::_Client?, ?hydrated: bool) -> Page[Resource]
     private def self.resource_built_from: (Objects::body body, client: Objects::_Client?, hydrated: bool, query: Hash[String, untyped]?) -> Resource?
     private def self.collection_built_from: (Objects::body body, client: Objects::_Client?, hydrated: bool, query: Hash[String, untyped]?) -> Array[Resource]
@@ -845,7 +846,7 @@ module X
 
     private def self.endpoint: () -> String
     private def self.fields_key: () -> String
-    private def self.resource_from_response: (Objects::body body, client: Objects::_Client?, ?hydrated: bool) -> List?
+    private def self.created_from_response: (Objects::body body, String request, client: Objects::_Client?) -> List
 
     private
     def fewer_memberships?: (Objects::id user) -> bool

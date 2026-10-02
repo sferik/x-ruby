@@ -19,6 +19,9 @@ module X
   # The API answers a lookup of a resource that is not there with 200 OK and no data, so this is not the NotFound of
   # a 404 response, which an endpoint that is not there raises, and which holds the response that named it.
   #
+  # It is raised as well when a request that creates a resource, such as X::Post.create, succeeds without returning
+  # it, as X::User.current! raises it when users/me returns no user, holding the problems the response reported.
+  #
   # @api public
   class MissingResource < Objects::Error
     # The problems the API reported about the resource

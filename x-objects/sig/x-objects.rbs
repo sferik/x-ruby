@@ -227,13 +227,13 @@ module X
       def dms_with: (id user, **untyped params) -> Cursor[DirectMessage]
       def direct_messages_in: (DirectMessage | String | Integer conversation, **untyped params) -> Cursor[DirectMessage]
       def dms_in: (DirectMessage | String | Integer conversation, **untyped params) -> Cursor[DirectMessage]
-      def create_post: (?String? text, ?reply_to: Objects::id?, ?quote: Objects::id?, ?media_ids: untyped, ?community: Objects::id?, **untyped params) -> Post?
-      def create_tweet: (?String? text, ?reply_to: Objects::id?, ?quote: Objects::id?, ?media_ids: untyped, ?community: Objects::id?, **untyped params) -> Post?
+      def create_post: (?String? text, ?reply_to: Objects::id?, ?quote: Objects::id?, ?media_ids: untyped, ?community: Objects::id?, **untyped params) -> Post
+      def create_tweet: (?String? text, ?reply_to: Objects::id?, ?quote: Objects::id?, ?media_ids: untyped, ?community: Objects::id?, **untyped params) -> Post
       def delete_post: (id post) -> bool
       def delete_tweet: (id post) -> bool
       def hide_reply: (id post) -> bool
       def unhide_reply: (id post) -> bool
-      def create_list: (String name, **untyped params) -> List?
+      def create_list: (String name, **untyped params) -> List
       def update_list: (id list, **untyped params) -> bool
       def delete_list: (id list) -> bool
       def add_list_member: (id list, id user) -> bool
@@ -242,12 +242,12 @@ module X
       def unfollow_list: (id list) -> bool
       def pin_list: (id list) -> bool
       def unpin_list: (id list) -> bool
-      def create_direct_message: (id user, ?String? text, ?media_ids: untyped, **untyped params) -> DirectMessage?
-      def create_dm: (id user, ?String? text, ?media_ids: untyped, **untyped params) -> DirectMessage?
-      def create_group_direct_message: (Array[id] users, ?String? text, ?media_ids: untyped, **untyped params) -> DirectMessage?
-      def create_group_dm: (Array[id] users, ?String? text, ?media_ids: untyped, **untyped params) -> DirectMessage?
-      def create_direct_message_in: (DirectMessage | String | Integer conversation, ?String? text, ?media_ids: untyped, **untyped params) -> DirectMessage?
-      def create_dm_in: (DirectMessage | String | Integer conversation, ?String? text, ?media_ids: untyped, **untyped params) -> DirectMessage?
+      def create_direct_message: (id user, ?String? text, ?media_ids: untyped, **untyped params) -> DirectMessage
+      def create_dm: (id user, ?String? text, ?media_ids: untyped, **untyped params) -> DirectMessage
+      def create_group_direct_message: (Array[id] users, ?String? text, ?media_ids: untyped, **untyped params) -> DirectMessage
+      def create_group_dm: (Array[id] users, ?String? text, ?media_ids: untyped, **untyped params) -> DirectMessage
+      def create_direct_message_in: (DirectMessage | String | Integer conversation, ?String? text, ?media_ids: untyped, **untyped params) -> DirectMessage
+      def create_dm_in: (DirectMessage | String | Integer conversation, ?String? text, ?media_ids: untyped, **untyped params) -> DirectMessage
       def delete_direct_message: (id message) -> bool
       def delete_dm: (id message) -> bool
       def follow: (id user) -> bool
@@ -577,7 +577,7 @@ module X
     def self.count_all: (String query, client: Objects::_Client, **untyped params) -> Integer
     def self.count_by_period: (String query, client: Objects::_Client, **untyped params) -> Hash[Range[Time], Integer]
     def self.count_all_by_period: (String query, client: Objects::_Client, **untyped params) -> Hash[Range[Time], Integer]
-    def self.create: (?String? text, client: Objects::_Client, ?reply_to: Objects::id?, ?quote: Objects::id?, ?media_ids: untyped, ?community: Objects::id?, **untyped params) -> Post?
+    def self.create: (?String? text, client: Objects::_Client, ?reply_to: Objects::id?, ?quote: Objects::id?, ?media_ids: untyped, ?community: Objects::id?, **untyped params) -> Post
     def self.delete: (Objects::id post, client: Objects::_Client) -> bool
     def self.hide_reply: (Objects::id post, client: Objects::_Client) -> bool
     def self.unhide_reply: (Objects::id post, client: Objects::_Client) -> bool
@@ -708,7 +708,7 @@ module X
     def id: () -> Integer
 
     def self.default_params: () -> Hash[String, Array[String]]
-    def self.create: (String name, client: Objects::_Client, **untyped params) -> List?
+    def self.create: (String name, client: Objects::_Client, **untyped params) -> List
     def self.update: (Objects::id list, client: Objects::_Client, **untyped params) -> bool
     def self.delete: (Objects::id list, client: Objects::_Client) -> bool
 
@@ -746,9 +746,9 @@ module X
     def self.default_params: () -> Hash[String, Array[String]]
     def self.all: (client: Objects::_Client, **untyped params) -> Cursor[DirectMessage]
     def self.with: (Objects::id user, client: Objects::_Client, **untyped params) -> Cursor[DirectMessage]
-    def self.create: (Objects::id user, ?String? text, client: Objects::_Client, ?media_ids: untyped, **untyped params) -> DirectMessage?
-    def self.create_group: (Array[Objects::id] users, ?String? text, client: Objects::_Client, ?media_ids: untyped, **untyped params) -> DirectMessage?
-    def self.create_in: (DirectMessage | String | Integer conversation, ?String? text, client: Objects::_Client, ?media_ids: untyped, **untyped params) -> DirectMessage?
+    def self.create: (Objects::id user, ?String? text, client: Objects::_Client, ?media_ids: untyped, **untyped params) -> DirectMessage
+    def self.create_group: (Array[Objects::id] users, ?String? text, client: Objects::_Client, ?media_ids: untyped, **untyped params) -> DirectMessage
+    def self.create_in: (DirectMessage | String | Integer conversation, ?String? text, client: Objects::_Client, ?media_ids: untyped, **untyped params) -> DirectMessage
     def self.`in`: (DirectMessage | String | Integer conversation, client: Objects::_Client, **untyped params) -> Cursor[DirectMessage]
     def self.delete: (Objects::id message, client: Objects::_Client) -> bool
 

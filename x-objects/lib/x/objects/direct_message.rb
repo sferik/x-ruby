@@ -96,16 +96,17 @@ module X
         #   media keys of uploaded media to attach, what the uploads returned, or media, such as that of a post, one or
         #   many
         # @param params [Hash] additional request body fields, such as attachments
-        # @return [DirectMessage, nil] the sent message, holding only its identifiers
+        # @return [DirectMessage] the sent message, holding only its identifiers
         # @raise [ArgumentError] if the message has neither text nor any other field, or has both media_ids and
         #   attachments
+        # @raise [MissingResource] if the API answers without the message
         # @example Send a direct message
         #   X::DirectMessage.create(user, "Hello!", client: client)
         # @example Send an image without text
         #   X::DirectMessage.create(user, client: client, media_ids: media)
         def create(user, text = nil, client:, media_ids: nil, **params)
           path = "dm_conversations/with/#{Utils.id_of(user, User)}/messages"
-          sent(client.post(path, message(text, params, media_ids), **Utils::JSON_CLASSES), client:)
+          sent(client.post(path, message(text, params, media_ids), **Utils::JSON_CLASSES), path, client:)
         end
 
         # Delete a direct message event as the authenticated user
