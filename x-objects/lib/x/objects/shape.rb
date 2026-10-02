@@ -93,6 +93,24 @@ module X
       # @raise [ArgumentError] if the value is not a list
       def list(value) = (Array.try_convert(value) || raise(ArgumentError, "#{value.inspect} is not a list") unless value.nil?)
 
+      # Read a range of characters, which the response may leave out
+      #
+      # The API gives a range as a list of its start and its end, which the range leaves out.
+      #
+      # @api private
+      # @param value [Array<Integer>, nil] the start and end of the range
+      # @return [Range<Integer>, nil] the range, which leaves out its end, or nil if the value is missing
+      # @raise [ArgumentError] if the value is not a list of two Integers that are not negative
+      # @example Read the range of the text a post shows
+      #   X::Objects::Shape.range([8, 10]) # => 8...10
+      def range(value)
+        bounds = list(value)
+        return if bounds.nil?
+        raise ArgumentError, "#{bounds} is not the start and end of a range" unless bounds.size.eql?(2) && bounds.all? { |bound| Integer === bound && !bound.negative? }
+
+        Range.new(bounds.first, bounds.last, true)
+      end
+
       # Read a numeric identifier or a count as an Integer, if it is there
       #
       # It is read as strictly as an identifier is checked: an Integer that is not negative, or a String of digits

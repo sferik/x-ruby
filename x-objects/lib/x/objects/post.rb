@@ -210,10 +210,11 @@ module X
       #   the post holds itself, which for a long post is the text cut short, not the full text {#text} reads.
       #
       #   @api public
-      #   @return [Array<Integer>] the start and end of the range, empty if the response holds none
+      #   @return [Range<Integer>, nil] the range, which leaves out its end, or nil if the response holds none
+      #   @raise [InvalidAttribute] if the response holds something other than the start and end of a range
       #   @example Read the text that is shown
-      #     post.attrs["text"][Range.new(*post.display_text_range, true)]
-      attribute :display_text_range, :list
+      #     post.display_text_range&.then { |range| post.attrs["text"][range] }
+      attribute :display_text_range, :range
 
       # @!attribute [r] scopes
       #   Who may see the post

@@ -24,6 +24,7 @@ module X
         integer: ->(value) { Shape.integer(value) },
         integers: ->(value) { (Shape.list(value) || EMPTY_LIST).map { |id| Shape.integer(id) }.freeze },
         list: ->(value) { Shape.list(value) || EMPTY_LIST },
+        range: ->(value) { Shape.range(value) },
         requested_list: ->(value) { Shape.list(value) }
       }.freeze
 

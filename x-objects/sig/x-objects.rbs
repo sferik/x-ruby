@@ -596,7 +596,7 @@ module X
     def edit_history_post_ids: () -> Array[Integer]
     def edit_history_tweet_ids: () -> Array[Integer]
     def edit_controls: () -> Hash[String, untyped]?
-    def display_text_range: () -> Array[Integer]
+    def display_text_range: () -> Range[Integer]?
     def scopes: () -> Hash[String, untyped]?
     def card_uri: () -> String?
     def article: () -> Hash[String, untyped]?

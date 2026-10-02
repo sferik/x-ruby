@@ -140,6 +140,7 @@ module X
       def object: (untyped value) -> Hash[untyped, untyped]?
       def object!: (untyped value) -> Hash[untyped, untyped]
       def list: (untyped value) -> Array[untyped]?
+      def range: (untyped value) -> Range[Integer]?
       def integer: (untyped value) -> Integer?
     end
 
