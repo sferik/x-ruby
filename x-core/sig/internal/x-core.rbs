@@ -184,6 +184,7 @@ module X
       DEFAULT_MAX_REDIRECTS: Integer
       METHOD_PRESERVING_CODES: Array[Integer]
       MOVED_CODES: Array[Integer]
+      FOLLOWED_CODES: Array[Integer]
 
       attr_reader connection: Connection
       attr_reader request_builder: RequestBuilder
@@ -193,6 +194,7 @@ module X
       def follow: (response: Net::HTTPResponse, request: Net::HTTPRequest, ?headers: headers, ?authenticator: Authenticator, ?redirect_count: Integer) -> [Net::HTTPResponse, Net::HTTPRequest]
 
       private
+      def followed?: (Net::HTTPResponse response) -> bool
       def check_redirect_count: (Net::HTTPRequest request, Integer redirect_count) -> void
       def build_new_uri: (Net::HTTPResponse response, URI::Generic uri) -> URI::Generic?
       def preserves_method?: (Net::HTTPRequest request, Integer response_code) -> bool

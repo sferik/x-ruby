@@ -24,7 +24,9 @@ module X
       METHOD_PRESERVING_CODES = [307, 308].freeze
       # The redirects that keep the method and the body of a request other than a POST, which is followed with a GET
       MOVED_CODES = [301, 302].freeze
-      private_constant :METHOD_PRESERVING_CODES, :MOVED_CODES
+      # The redirects that are followed: those that move the request, and 303 See Other, which is followed with a GET
+      FOLLOWED_CODES = [*MOVED_CODES, 303, *METHOD_PRESERVING_CODES].freeze
+      private_constant :METHOD_PRESERVING_CODES, :MOVED_CODES, :FOLLOWED_CODES
 
       # The maximum number of redirects to follow
       # @api private
@@ -71,14 +73,14 @@ module X
       # the method and the body of the request, so a request whose body holds something private replays it to the
       # host it is redirected to, whatever its origin. A 301 or 302 keeps them too, as RFC 9110 Section 15.4 has it,
       # but for a POST, which it lets a client follow with a GET, so a PUT or a DELETE is not answered by a GET that
-      # reads as its success. Any other, such as 303 See Other, is followed with a GET, which sends no body, so it
-      # sends no Content-Type either, such as the form type of a request given form:.
+      # reads as its success. A 303 See Other is followed with a GET, which sends no body, so it sends no Content-Type
+      # either, such as the form type of a request given form:.
       #
-      # A redirect that cannot be followed, such as 304 Not Modified or one whose location is missing, is not a
-      # valid URL, or is not an HTTP or HTTPS URL, is returned as it is, so that the client raises an HTTPError for it,
-      # however many redirects were followed before it. A redirect that can be followed once max_redirects have been
-      # raises TooManyRedirects, which names the request that redirect answered, so a max_redirects of 0 follows none,
-      # and raises for every one that could be.
+      # A redirect that cannot be followed, a 300 Multiple Choices, 304 Not Modified, or 305 Use Proxy whatever its
+      # Location, or one whose location is missing, is not a valid URL, or is not an HTTP or HTTPS URL, is returned as
+      # it is, so that the client raises an HTTPError for it, however many redirects were followed before it. A
+      # redirect that can be followed once max_redirects have been raises TooManyRedirects, which names the request
+      # that redirect answered, so a max_redirects of 0 follows none, and raises for every one that could be.
       #
       # @api private
       # @param response [Net::HTTPResponse] the HTTP response to handle
@@ -111,7 +113,7 @@ module X
       # @example Follow a response
       #   response, request = handler.follow(response: resp, request: req)
       def follow(response:, request:, headers: {}, authenticator: Authenticator.new, redirect_count: 0)
-        return [response, request] unless response.is_a?(Net::HTTPRedirection)
+        return [response, request] unless followed?(response)
 
         uri = request.uri #: URI::Generic
         new_uri = build_new_uri(response, uri)
@@ -126,6 +128,12 @@ module X
       end
 
       private
+
+      # Whether a response is a redirect that is followed, given a location that can be
+      # @api private
+      # @param response [Net::HTTPResponse] the response
+      # @return [Boolean] whether the status of the response is one that is followed
+      def followed?(response) = FOLLOWED_CODES.include?(Integer(response.code))
 
       # Raise for a redirect that would be one more than max_redirects allows
       # @api private

@@ -34,6 +34,27 @@ module X
       assert_same response, @redirect_handler.handle(response:, request: @request)
     end
 
+    def test_not_modified_is_returned_whatever_its_location
+      response = Net::HTTPNotModified.new("1.1", "304", "Not Modified").tap { |not_modified| not_modified["Location"] = "https://example.com/next" }
+
+      assert_same response, @redirect_handler.handle(response:, request: @request)
+      assert_not_requested :get, "https://example.com/next"
+    end
+
+    def test_multiple_choices_is_returned_whatever_its_location
+      response = Net::HTTPMultipleChoices.new("1.1", "300", "Multiple Choices").tap { |choices| choices["Location"] = "https://example.com/next" }
+
+      assert_same response, @redirect_handler.handle(response:, request: @request)
+      assert_not_requested :get, "https://example.com/next"
+    end
+
+    def test_use_proxy_is_returned_whatever_its_location
+      response = Net::HTTPUseProxy.new("1.1", "305", "Use Proxy").tap { |use_proxy| use_proxy["Location"] = "https://proxy.example.com/" }
+
+      assert_same response, @redirect_handler.handle(response:, request: @request)
+      assert_not_requested :get, "https://proxy.example.com/"
+    end
+
     def test_a_redirect_to_a_url_that_is_not_http_is_returned
       response = found("ftp://example.com/file")
 
