@@ -50,7 +50,7 @@ module X
       #   X::Trend.at(1, client: client).each { |trend| puts trend.name }
       def self.at(woeid, client:, **params)
         path = "trends/by/woeid/#{woeid_of(woeid)}"
-        body = Utils.space_client(client).get(Utils.path(path, {"trend.fields" => FIELDS, "max_trends" => MAX_TRENDS}.merge(params)), **Utils::JSON_CLASSES)
+        body = Utils.app_client(client).get(Utils.path(path, {"trend.fields" => FIELDS, "max_trends" => MAX_TRENDS}.merge(params)), **Utils::JSON_CLASSES)
         Shape.objects("#{self}.at", body.to_h["data"]).map { |attrs| new(attrs) }.freeze
       end
 

@@ -10,9 +10,9 @@ module X
     # Counts of the posts that match a query, which the API bills by the request rather than by the post
     #
     # The counts endpoints refuse OAuth 1.0a, so a client that signs with it counts with a copy that authenticates as
-    # the app. The count of recent posts also takes OAuth 2.0 user authentication, so a client signed in with OAuth 2.0
-    # as a user that holds no credentials of the app counts recent posts as the user; the count of the full archive
-    # takes app-only authentication alone.
+    # the app. A client signed in with OAuth 2.0 as a user that holds no credentials of the app counts as the user,
+    # which the count of recent posts takes, and the count of the full archive, which takes app-only authentication
+    # alone, refuses with 403 Forbidden, raising X::Forbidden.
     #
     # Internal to x-objects: the methods it gives Post, such as X::Post.count, are public API, but the module is only
     # how they are shared, and which classes extend or include it can change within 1.x.
@@ -96,7 +96,7 @@ module X
       # @raise [UnreadableResponse] if a response names the token of a page before it as the next
       def pages(path, query, client:, **params)
         params = {query:, granularity: DEFAULT_GRANULARITY}.merge(params)
-        client = RECENT_ENDPOINT.eql?(path) ? Utils.space_client(client) : Utils.app_client(client)
+        client = Utils.app_client(client)
         bodies = [] #: Array[Hash[String, untyped]]
         given = params[:next_token]
         loop do

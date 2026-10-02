@@ -109,7 +109,8 @@ module X
         # Count the posts from the full archive that match a query, without reading them
         #
         # The API bills a count by the request, not by the post, and refuses OAuth 1.0a for it, so a client that signs
-        # with OAuth 1.0a counts with a copy that authenticates as the app.
+        # with OAuth 1.0a counts with a copy that authenticates as the app. A client signed in with OAuth 2.0 as a user
+        # that holds no credentials of the app counts as the user, which the full archive refuses with X::Forbidden.
         #
         # @api public
         # @param query [String] the search query
@@ -136,7 +137,8 @@ module X
         # Count the posts from the full archive that match a query, by period
         #
         # The API bills a count by the request, not by the post, and refuses OAuth 1.0a for it, so a client that signs
-        # with OAuth 1.0a counts with a copy that authenticates as the app.
+        # with OAuth 1.0a counts with a copy that authenticates as the app. A client signed in with OAuth 2.0 as a user
+        # that holds no credentials of the app counts as the user, which the full archive refuses with X::Forbidden.
         #
         # @api public
         # @param query [String] the search query
@@ -148,6 +150,10 @@ module X
         def count_all_posts_by_period(query, **params) = Post.count_all_by_period(query, client: self, **params)
 
         # Look up how many posts the app's project has read
+        #
+        # The usage endpoint takes app-only authentication alone, so a client that signs with OAuth 1.0a looks it up
+        # with a copy that authenticates as the app, and one signed in with OAuth 2.0 as a user that holds no
+        # credentials of the app is refused with X::Forbidden.
         #
         # @api public
         # @param params [Hash] query parameters, such as days, the number of days to report, which is 7 by default

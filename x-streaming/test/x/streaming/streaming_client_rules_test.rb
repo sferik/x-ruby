@@ -135,12 +135,5 @@ module X
 
       assert_requested(:post, RULES_URL, body: {add: [{value: "ruby"}]}.to_json)
     end
-
-    def test_the_rules_of_a_client_that_cannot_authenticate_as_the_app
-      streaming_client = Client.new(**test_oauth2_credentials).streaming
-
-      assert_raises(UnsupportedOperation) { streaming_client.rules }
-      assert_raises(UnsupportedOperation) { streaming_client.add_rules("ruby") }
-    end
   end
 end

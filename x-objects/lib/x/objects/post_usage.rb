@@ -36,7 +36,8 @@ module X
       #
       # A project has one usage, so it is looked up by no identifier, as X::User.current looks up the one user a
       # client signs in as. The usage endpoint takes app-only authentication, so a client that signs its requests with OAuth 1.0a
-      # looks the usage up with a copy that authenticates as the app.
+      # looks the usage up with a copy that authenticates as the app. A client signed in with OAuth 2.0 as a user that
+      # holds no credentials of the app requests as the user, which the endpoint refuses with X::Forbidden.
       #
       # @api public
       # @param client [Object] the client used to make the request

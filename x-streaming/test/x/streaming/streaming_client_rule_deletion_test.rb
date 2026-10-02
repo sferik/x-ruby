@@ -136,10 +136,11 @@ module X
       assert_not_requested(:post, RULES_URL)
     end
 
-    def test_a_client_that_cannot_authenticate_as_the_app_deletes_none
+    def test_a_client_that_cannot_authenticate_as_the_app_is_refused_with_forbidden
+      stub_request(:post, RULES_URL).with(headers: {"Authorization" => "Bearer #{TEST_ACCESS_TOKEN}"}).to_return(status: 403)
       streaming_client = Client.new(**test_oauth2_credentials).streaming
 
-      assert_raises(UnsupportedOperation) { streaming_client.delete_rules(1) }
+      assert_raises(Forbidden) { streaming_client.delete_rules(1) }
     end
   end
 end

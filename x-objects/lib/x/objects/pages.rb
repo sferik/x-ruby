@@ -124,7 +124,7 @@ module X
       # The client that fetches the pages, as the app for a space endpoint
       # @api private
       # @return [Object] the client
-      def requester = @cursor.__send__(:app_only?) ? Utils.space_client(@cursor.client) : @cursor.client
+      def requester = @cursor.__send__(:app_only?) ? Utils.app_client(@cursor.client) : @cursor.client
 
       # Build the resources of a page, as stubs for a cursor of identifiers
       # @api private

@@ -115,8 +115,9 @@ module X
       #
       # The stream endpoints take app-only authentication, so a client that authenticates as a user streams with the
       # bearer token its app_only client holds. A client that authenticates with OAuth 2.0 as a user and holds neither
-      # the app's bearer token nor its API key and secret raises UnsupportedOperation before it connects, rather than
-      # open a stream X would refuse with 403 Forbidden. A bearer token X rejects with 401 Unauthorized, as it does one
+      # the app's bearer token nor its API key and secret has no app_only client, so it opens the stream as the user,
+      # which X refuses with 403 Forbidden, raising Forbidden, as any request X refuses the credentials of a client
+      # for does. A bearer token X rejects with 401 Unauthorized, as it does one
       # that was invalidated, is fetched again with the API key and secret the app_only client holds, as it is for a
       # request, and the stream is opened once more with it. A stream that drops, or that X disconnects with an
       # operational-disconnect, reconnects, backing off as X recommends, up to max_reconnects times in a row. The API bills
@@ -143,8 +144,6 @@ module X
       #   https URL, before the stream is opened
       # @raise [ArgumentError] if array_class is not a Class, or object_class is neither a Class nor responds to
       #   from_response, before the stream is opened
-      # @raise [UnsupportedOperation] if the client authenticates with OAuth 2.0 as a user and holds no credentials of
-      #   the app, before the stream is opened
       # @raise [NetworkError] if the stream ends or drops, or cannot connect, with no reconnects left
       # @raise [HTTPError] if the response is not successful and the stream may not reconnect
       # @raise [StreamError] if a line holds errors and no data, which the stream reconnects after only when each is an
@@ -159,7 +158,7 @@ module X
 
         Validator.parsing_classes!(array_class:, object_class:)
         @reconnect_handler.handle(block) do |deliver, alive|
-          @stream_client.app_only.get_stream(endpoint, params:, headers:) { |response| read(response, array_class:, object_class:, alive:, &deliver) }
+          app_only(@stream_client).get_stream(endpoint, params:, headers:) { |response| read(response, array_class:, object_class:, alive:, &deliver) }
         end
       end
 
@@ -173,8 +172,6 @@ module X
       # @api public
       # @param params [Hash, nil] query parameters appended to the endpoint of each page
       # @return [Array<StreamRule>] the rules, frozen, empty if the app has none
-      # @raise [UnsupportedOperation] if the client authenticates with OAuth 2.0 as a user and holds no credentials of
-      #   the app
       # @raise [HTTPError] if the API refuses the request
       # @example Print the rules of the app
       #   streaming_client.rules.each { |rule| puts "#{rule.tag}: #{rule.value}" }
@@ -213,8 +210,6 @@ module X
       # @return [Array<StreamRule>] the rules that were added, frozen, each holding the id the API gave it, empty if
       #   none were given
       # @raise [ArgumentError] if something is neither a StreamRule, a Hash that holds a value, nor a String
-      # @raise [UnsupportedOperation] if the client authenticates with OAuth 2.0 as a user and holds no credentials of
-      #   the app
       # @raise [HTTPError] if the API refuses the request, which adds none of the rules
       # @raise [RulesRejected] if the API did not add a rule, and no block was given for it
       # @example Add a rule with a tag
@@ -252,8 +247,6 @@ module X
       # @yieldparam problem [Problem] each problem the API reported of the rules it did not delete
       # @return [Integer] the number of rules deleted, or that a dry run would delete, 0 if none were given
       # @raise [ArgumentError] if something is neither a rule nor the identifier of one
-      # @raise [UnsupportedOperation] if the client authenticates with OAuth 2.0 as a user and holds no credentials of
-      #   the app
       # @raise [HTTPError] if the API refuses the request
       # @raise [RulesRejected] if the API reported a problem of a rule, and no block was given for it
       # @example Delete every rule
@@ -367,10 +360,25 @@ module X
         raise NetworkError.new(ENDED_MESSAGE, http_method: :get, uri: response.uri)
       end
 
-      # The client the rules are read and changed with, which authenticates as the app
+      # The client the rules are read and changed with, as the app where it can
       # @api private
-      # @return [Client] the app-only client
-      def app_client = client.app_only
+      # @return [Client] the app-only client, or the client itself
+      def app_client = app_only(client)
+
+      # The app-only client of a client, or the client itself for one that has none
+      #
+      # A client that authenticates with OAuth 2.0 as a user and holds no credentials of the app has no app-only
+      # client, so it requests as the user, and X answers as it answers those credentials, refusing them with 403
+      # Forbidden, rather than be refused before the request.
+      #
+      # @api private
+      # @param client [Client] the client
+      # @return [Client] the app-only client, or the client itself
+      def app_only(client)
+        client.app_only
+      rescue UnsupportedOperation
+        client
+      end
 
       # Pass one object of a stream to the client's on_response
       # @api private

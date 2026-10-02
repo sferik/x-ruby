@@ -37,7 +37,7 @@ Any object that responds to `get`, `post`, `put`, and `delete` can be the client
 
 Those two are the only keywords the object layer passes, but a release within 1.x may pass any other keyword `X::Client` takes for the same method, such as `params:` or `headers:`, so take the keywords with `**options`, as below, rather than name the two alone.
 
-A client that also answers `app_only`, `authenticator`, or `current_user_id` is asked for them where they save a request, as `X::Client` is. The object layer reads the errors of `x-core`, so a client raises them for a request that fails: `X::Unauthorized` or `X::Forbidden` for credentials the API refuses, which `follows?` reads as a client that knows no authenticated user, and scans instead, and `X::UnsupportedOperation` from an `app_only` that holds no credentials of the app, which the space and count endpoints read as a client that requests as itself. Any other error ends the call it was raised in.
+A client that also answers `app_only`, `authenticator`, or `current_user_id` is asked for them where they save a request, as `X::Client` is. The object layer reads the errors of `x-core`, so a client raises them for a request that fails: `X::Unauthorized` or `X::Forbidden` for credentials the API refuses, which `follows?` reads as a client that knows no authenticated user, and scans instead, and `X::UnsupportedOperation` from an `app_only` that holds no credentials of the app, which the space, count, and usage endpoints read as a client that requests as itself, so an endpoint that takes app-only authentication alone, such as the count of the full archive, raises the `X::Forbidden` of the 403 Forbidden the API answers it with. Any other error ends the call it was raised in.
 
 ```ruby
 require "x/objects"

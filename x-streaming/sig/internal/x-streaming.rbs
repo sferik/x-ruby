@@ -128,6 +128,7 @@ module X
     def reporting: (Hash[String, untyped]? body, { added: Array[StreamRule] } | { deleted_count: Integer } changed) ?{ (Problem problem) -> void } -> void
     def read: (Net::HTTPResponse response, array_class: Class, object_class: object_class, alive: ^() -> void) { (untyped) -> void } -> void
     def app_client: () -> Client
+    def app_only: (Client client) -> Client
     def report: (Net::HTTPResponse response, String line) -> void
   end
 end

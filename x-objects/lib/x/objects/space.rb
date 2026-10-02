@@ -62,7 +62,7 @@ module X
         # @return [Object] the client's app-only client, or the client itself
         # @example Get the client a space lookup requests with
         #   X::Space.__send__(:client_for, client)
-        def client_for(client) = Utils.space_client(client)
+        def client_for(client) = Utils.app_client(client)
 
         # The query parameter that selects space fields
         #

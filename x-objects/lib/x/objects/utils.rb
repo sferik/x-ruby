@@ -247,27 +247,20 @@ module X
         client.authenticator if client.respond_to?(:authenticator)
       end
 
-      # The client for an endpoint that takes app-only authentication
+      # The client for an endpoint that refuses OAuth 1.0a
+      #
+      # A space endpoint refuses it, and so does one that takes app-only authentication alone, as the count of the
+      # full archive does. A client that signs with OAuth 1.0a requests as the app, with a copy that reuses its bearer token, as one
+      # signed in with OAuth 2.0 as a user that holds the app's credentials does. One that holds none, and so has no
+      # app-only client, requests as the user, and the API answers as it answers those credentials: an endpoint that
+      # takes OAuth 2.0 user authentication answers it, and one that takes app-only authentication alone refuses it
+      # with 403 Forbidden, which raises X::Forbidden, as any request refused for its credentials does.
       #
       # @api private
       # @param client [Object] the client
       # @return [Object] the client's app-only client, which reuses its bearer token, or the client itself
       def app_client(client)
         client.respond_to?(:app_only) ? client.app_only : client
-      end
-
-      # The client for an endpoint that refuses OAuth 1.0a, as a space endpoint does
-      #
-      # The endpoint takes app-only or OAuth 2.0 user authentication, as the count of recent posts does too.
-      # A client that signs with OAuth 1.0a requests as the app, with a copy that reuses its bearer token, as one
-      # signed in with OAuth 2.0 as a user that holds the app's credentials does. One that holds none, and so has no
-      # app-only client, requests as the user.
-      #
-      # @api private
-      # @param client [Object] the client
-      # @return [Object] the client's app-only client, or the client itself
-      def space_client(client)
-        app_client(client)
       rescue UnsupportedOperation
         client
       end
