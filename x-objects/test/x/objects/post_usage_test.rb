@@ -68,7 +68,37 @@ module X
       usage = PostUsage.new({})
 
       assert_equal [nil, nil, nil, nil, {}, {}], [usage.project_id, usage.project_usage, usage.project_cap, usage.cap_reset_day, usage.daily, usage.daily_by_app]
-      assert_empty PostUsage.current(client: FakeClient.new.stub(:get, "usage/tweets", nil)).to_h
+    end
+
+    def test_a_response_whose_usage_is_empty_or_not_an_object
+      assert_empty PostUsage.current(client: FakeClient.new.stub(:get, "usage/tweets", {"data" => {}})).to_h
+      assert_nil PostUsage.current(client: FakeClient.new.stub(:get, "usage/tweets", {"data" => []}))
+    end
+
+    def test_a_response_without_usage_returns_nil_and_reports_its_problems
+      @client.stub(:get, "usage/tweets", {"errors" => [{"title" => "Forbidden", "detail" => "Usage is not available."}]})
+      titles = []
+
+      assert_nil PostUsage.current(client: @client) { |problem| titles << problem.title }
+      assert_nil @client.post_usage { |problem| titles << problem.detail }
+      assert_nil PostUsage.current(client: @client)
+      assert_nil PostUsage.current(client: FakeClient.new.stub(:get, "usage/tweets", nil))
+      assert_equal ["Forbidden", "Usage is not available."], titles
+    end
+
+    def test_current_bang_returns_the_usage
+      assert_equal DATA, PostUsage.current!(client: @client).to_h
+      assert_equal DATA, @client.post_usage!(days: 2).to_h
+      assert_equal [{"usage.fields" => PostUsage::FIELDS.join(","), "days" => "2"}], @client.queries.drop(1)
+    end
+
+    def test_current_bang_raises_with_the_problems_of_a_response_without_usage
+      @client.stub(:get, "usage/tweets", {"errors" => [{"title" => "Forbidden", "detail" => "Usage is not available."}]})
+
+      error = assert_raises(MissingResource) { @client.post_usage! }
+
+      assert_equal "usage/tweets returned no usage: Usage is not available.", error.message
+      assert_equal ["Forbidden"], error.problems.map(&:title)
     end
   end
 end

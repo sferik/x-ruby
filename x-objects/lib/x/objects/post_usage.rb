@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require_relative "errors"
 require_relative "serialization"
 require_relative "shape"
 require_relative "utils"
@@ -39,15 +40,36 @@ module X
       # looks the usage up with a copy that authenticates as the app. A client signed in with OAuth 2.0 as a user that
       # holds no credentials of the app requests as the user, which the endpoint refuses with X::Forbidden.
       #
+      # A response that holds no usage returns nil, as X::User.current does for a users/me that holds no user, and
+      # passes the problems it reported to the block, if there is one.
+      #
+      # @api public
+      # @param client [Object] the client used to make the request
+      # @param params [Hash] query parameters, such as days, the number of days to report, which is 7 by default
+      # @return [PostUsage, nil] the usage, or nil if the response holds none
+      # @yieldparam problem [Problem] each problem the API reported
+      # @example Look up the usage of the last 30 days
+      #   X::PostUsage.current(client: client, days: 30)&.project_usage
+      # @example Log why the API returned no usage
+      #   X::PostUsage.current(client: client) { |problem| warn problem.detail }
+      def self.current(client:, **params)
+        body = Utils.app_client(client).get(Utils.path(ENDPOINT, {"usage.fields" => FIELDS}.merge(params)), **Utils::JSON_CLASSES)
+        Problem.all_from(body).each { |problem| yield problem } if block_given?
+        Hash.try_convert(body.to_h["data"])&.then { |data| new(data) }
+      end
+
+      # Look up the current post usage of the project, which must be returned
+      #
       # @api public
       # @param client [Object] the client used to make the request
       # @param params [Hash] query parameters, such as days, the number of days to report, which is 7 by default
       # @return [PostUsage] the usage
+      # @raise [MissingResource] if the API returns no usage
       # @example Look up the usage of the last 30 days
-      #   X::PostUsage.current(client: client, days: 30).project_usage
-      def self.current(client:, **params)
-        body = Utils.app_client(client).get(Utils.path(ENDPOINT, {"usage.fields" => FIELDS}.merge(params)), **Utils::JSON_CLASSES)
-        new(body.to_h["data"].to_h)
+      #   X::PostUsage.current!(client: client, days: 30).project_usage
+      def self.current!(client:, **params)
+        problems = [] #: Array[Problem]
+        current(client:, **params) { |problem| problems << problem } || raise(MissingResource.new("#{ENDPOINT} returned no usage", problems:))
       end
 
       # Initialize the usage from the attributes the API reported

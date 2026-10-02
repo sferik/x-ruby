@@ -157,13 +157,28 @@ module X
         # with a copy that authenticates as the app, and one signed in with OAuth 2.0 as a user that holds no
         # credentials of the app is refused with X::Forbidden.
         #
+        # A response that holds no usage returns nil, as current_user does for a users/me that holds no user, and
+        # passes the problems it reported to the block, if there is one.
+        #
+        # @api public
+        # @param params [Hash] query parameters, such as days, the number of days to report, which is 7 by default
+        # @return [PostUsage, nil] the usage, or nil if the response holds none
+        # @yieldparam problem [Problem] each problem the API reported
+        # @example Check how much of the monthly cap remains
+        #   usage = client.post_usage
+        #   usage.project_cap - usage.project_usage if usage
+        def post_usage(**params, &) = PostUsage.current(client: self, **params, &)
+
+        # Look up how many posts the app's project has read, which must be returned
+        #
         # @api public
         # @param params [Hash] query parameters, such as days, the number of days to report, which is 7 by default
         # @return [PostUsage] the usage
+        # @raise [MissingResource] if the API returns no usage
         # @example Check how much of the monthly cap remains
-        #   usage = client.post_usage
+        #   usage = client.post_usage!
         #   usage.project_cap - usage.project_usage
-        def post_usage(**params) = PostUsage.current(client: self, **params)
+        def post_usage!(**params) = PostUsage.current!(client: self, **params)
 
         alias_method :find_tweet, :find_post
         alias_method :find_tweet!, :find_post!
