@@ -484,7 +484,7 @@ If this entire library is implemented in under 3,000 lines of code, why should y
 * HTTP error handling
 * Rate limit handling
 * Retrying a request after waiting for its rate limit to reset
-* Streaming (filtered stream, volume stream)
+* Streaming (filtered stream, sample stream)
 * Reconnecting a dropped stream
 * Immutable resource objects with identity, references, and hydration
 * Lazy, cached, Enumerable cursors that request the maximum page size
