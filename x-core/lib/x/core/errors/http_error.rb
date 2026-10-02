@@ -141,9 +141,9 @@ module X
         @http_response = built_response(http_response, status:, headers:, body:)
         name_request(http_method, uri)
         parsed = parsed_body
-        errors = errors_from(parsed)
+        errors = Problem.all_from(parsed)
         described = (Problem.new(parsed) if describes_problem?(parsed))
-        @problems = (errors.empty? ? [described].compact : errors).freeze
+        @problems = errors.empty? ? [described].compact.freeze : errors
         @problem = described || errors.first
         super(message_naming_request(message || message_from(parsed) || @http_response.message))
       end
@@ -250,15 +250,6 @@ module X
         Hash.try_convert(JSON.parse(body.to_s)) || {}
       rescue JSON::ParserError
         {}
-      end
-
-      # The problems of the errors a body names
-      #
-      # @api private
-      # @param body [Hash{String => Object}] the parsed body
-      # @return [Array<Problem>] a problem for each error the body names that is a JSON object, none if it names none
-      def errors_from(body)
-        Array(body["errors"]).filter_map { |error| Problem.from(Hash.try_convert(error)) }
       end
 
       # Check whether a body describes a problem itself, rather than only naming errors

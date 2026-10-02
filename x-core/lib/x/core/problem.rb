@@ -37,17 +37,6 @@ module X
     #     problem.to_h
     alias_method :to_h, :attrs
 
-    # Build a problem from the attributes the API reported, if it reported any
-    #
-    # @api public
-    # @param attrs [Hash, nil] the attributes, or nil for a response that described no problem
-    # @return [Problem, nil] the problem, or nil for no attributes
-    # @example Build a problem from what a body described
-    #   X::Problem.from(body["errors"]&.first)
-    def self.from(attrs)
-      new(attrs) unless attrs.nil?
-    end
-
     # The problems a response body reports
     #
     # @api public

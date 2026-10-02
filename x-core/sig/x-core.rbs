@@ -112,7 +112,6 @@ module X
   class Problem
     attr_reader attrs: Hash[String, untyped]
 
-    def self.from: (Hash[String, untyped]? attrs) -> Problem?
     def self.all_from: (Hash[String, untyped]? body) -> Array[Problem]
     def initialize: (Hash[String | Symbol, untyped] attrs) -> void
     def to_h: () -> Hash[String, untyped]

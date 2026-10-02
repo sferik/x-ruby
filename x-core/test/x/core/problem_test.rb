@@ -104,14 +104,6 @@ module X
       refute_predicate problem, :not_found?
     end
 
-    def test_from
-      problem = Problem.from(NOT_FOUND)
-
-      assert_instance_of Problem, problem
-      assert_equal NOT_FOUND, problem.to_h
-      assert_nil Problem.from(nil)
-    end
-
     def test_all_from
       problems = Problem.all_from({"data" => {"id" => "1"}, "errors" => [NOT_FOUND, "not a problem"]})
 

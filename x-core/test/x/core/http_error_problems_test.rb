@@ -39,6 +39,7 @@ module X
 
       assert_equal [body], error.problems.map(&:to_h)
       assert_same error.problem, error.problems.first
+      assert_predicate error.problems, :frozen?
     end
 
     def test_a_body_that_describes_no_problem_has_no_problems
