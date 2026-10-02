@@ -39,9 +39,9 @@ module X
       #   megabytes of an image, 15 of a GIF, and one of subtitles, or larger than the 16 gigabytes it takes of any
       # @raise [ArgumentError] if the media category is invalid, the alt text is empty or longer than the API takes,
       #   the chunk size is not a positive Integer, is larger than a segment the API takes, or would need more
-      #   segments than the API numbers, the concurrency is not 1 to MAX_CONCURRENCY, the processing timeout is not a
-      #   number of seconds of at least 0, shared is neither true, false, nor nil, or additional_owners is neither nil
-      #   nor an Array of at least one user identifier
+      #   segments than the API numbers, the concurrency is not 1 to MAX_CONCURRENCY, the processing timeout is
+      #   neither nil nor a finite number of seconds of at least 0, shared is neither true, false, nor nil, or
+      #   additional_owners is neither nil nor an Array of at least one user identifier
       # @raise [InvalidMediaType] if no media category is given for media whose type neither its bytes nor the name of
       #   its file names, or the category does not take the type of the media
       # @raise [MissingMediaData] if a response of the upload holds no media, or carries no body at all
@@ -74,7 +74,7 @@ module X
       #   such as X::Media, the media key, or the media identifier
       # @param options [Hash] the options of {MediaUpload.await_processing}, such as processing_timeout
       # @return [UploadedMedia] the uploaded media, which holds the processing status, failed or not
-      # @raise [ArgumentError] if the processing timeout is not a number of seconds of at least 0
+      # @raise [ArgumentError] if the processing timeout is neither nil nor a finite number of seconds of at least 0
       # @raise [ArgumentError] if the media given is nil, holds no identifier, or is neither media, a media key, nor a
       #   media identifier, or its media key names none
       # @raise [MissingMediaData] if a status response holds no media or carries no body at all
@@ -93,7 +93,7 @@ module X
       #   such as X::Media, the media key, or the media identifier
       # @param options [Hash] the options of {MediaUpload.await_processing!}, such as processing_timeout
       # @return [UploadedMedia] the uploaded media, which holds the processing status
-      # @raise [ArgumentError] if the processing timeout is not a number of seconds of at least 0
+      # @raise [ArgumentError] if the processing timeout is neither nil nor a finite number of seconds of at least 0
       # @raise [ArgumentError] if the media given is nil, holds no identifier, or is neither media, a media key, nor a
       #   media identifier, or its media key names none
       # @raise [MissingMediaData] if a status response holds no media or carries no body at all

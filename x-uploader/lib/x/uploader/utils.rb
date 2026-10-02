@@ -260,19 +260,20 @@ module X
 
       # Wait as long as the status of media still processing asks
       #
-      # It waits at least a second, and gives up, rather than sleep, when the check would come after the deadline.
+      # It waits at least a second, and gives up, rather than sleep, when the check would come after the deadline, which
+      # a wait with no deadline never does.
       #
       # @api private
       # @param status [UploadedMedia] the status of the media, which is still processing
-      # @param deadline [Float] the time on the monotonic clock to give up at
-      # @param timeout [Integer, Float] the seconds the deadline was set from, which the error names
+      # @param deadline [Float, nil] the time on the monotonic clock to give up at, or nil to wait for as long as it takes
+      # @param timeout [Integer, Float, nil] the seconds the deadline was set from, which the error names
       # @return [void]
       # @raise [MediaProcessingTimeout] if the check would come after the deadline
       # @example Wait before checking the status of media again
       #   Uploader::Utils.wait_to_check(status, deadline: Uploader::Utils.seconds_from_now(600), timeout: 600)
       def wait_to_check(status, deadline:, timeout:)
         wait = [status.check_after_secs.to_i, MIN_CHECK_AFTER_SECS].max
-        raise MediaProcessingTimeout.new(media: status, timeout:) if seconds_from_now(wait) > deadline
+        raise MediaProcessingTimeout.new(media: status, timeout:) if deadline && seconds_from_now(wait) > deadline
 
         sleep wait
       end
@@ -283,7 +284,7 @@ module X
       # clock of the system is set, so the seconds between two of its times are the seconds that passed between them.
       #
       # @api private
-      # @param seconds [Integer, Float] the seconds from now, or Float::INFINITY for a time never reached
+      # @param seconds [Integer, Float] the seconds from now
       # @return [Float] the time on the monotonic clock
       # @example The time on the monotonic clock a minute from now
       #   Uploader::Utils.seconds_from_now(60) # => 1234.5

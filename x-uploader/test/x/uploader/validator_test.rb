@@ -216,7 +216,7 @@ module X
     end
 
     def test_validate_upload_validates_the_processing_timeout
-      assert_raises(ArgumentError) { validate_upload("test/sample_files/sample.png", processing_timeout: nil) }
+      assert_raises(ArgumentError) { validate_upload("test/sample_files/sample.png", processing_timeout: Float::INFINITY) }
     end
 
     private

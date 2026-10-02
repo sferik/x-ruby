@@ -136,9 +136,9 @@ module X
       # @param media_category [String, Symbol, nil] the media category, in any case, inferred when nil from the bytes
       #   the media begins with, or else from the name of its file
       # @param alt_text [String, nil] alt text describing the media, for people who cannot see it, of 1 to 1,000 characters
-      # @param processing_timeout [Integer, Float] the seconds to wait for media, such as a video or an animated GIF, to
-      #   process, of at least 0, from when it is uploaded, as {await_processing} counts them, or Float::INFINITY to
-      #   wait for as long as processing takes
+      # @param processing_timeout [Integer, Float, nil] the seconds to wait for media, such as a video or an animated
+      #   GIF, to process, of at least 0, from when it is uploaded, as {await_processing} counts them, or nil to wait
+      #   for as long as processing takes
       # @param media_type [String, nil] the MIME type of media uploaded in chunks, inferred from the media and
       #   category when nil; an upload in a single request sends no type, since the API types the media itself, so
       #   one given for an image is not sent
@@ -161,9 +161,9 @@ module X
       #   megabytes of an image, 15 of a GIF, and one of subtitles, or larger than the 16 gigabytes it takes of any
       # @raise [ArgumentError] if the media category is invalid, the alt text is empty or longer than the API takes,
       #   the chunk size is not a positive Integer, is larger than a segment the API takes, or would need more
-      #   segments than the API numbers, the concurrency is not 1 to MAX_CONCURRENCY, the processing timeout is not a
-      #   number of seconds of at least 0, shared is neither true, false, nor nil, or additional_owners is neither nil
-      #   nor an Array of at least one user identifier
+      #   segments than the API numbers, the concurrency is not 1 to MAX_CONCURRENCY, the processing timeout is
+      #   neither nil nor a finite number of seconds of at least 0, shared is neither true, false, nor nil, or
+      #   additional_owners is neither nil nor an Array of at least one user identifier
       # @raise [InvalidMediaType] if no media category is given for media whose type neither its bytes nor the name of
       #   its file names, if media uploaded in chunks is given no media type and none can be inferred, if the category does not
       #   take the type of the media, such as an MP4 video uploaded as a GIF, or if the file is named as a type every
@@ -271,10 +271,10 @@ module X
       # @param media [UploadedMedia, Hash, #media_key, String, Integer] the uploaded media, media that has a media key,
       #   such as X::Media, the media key, or the media identifier
       # @param client [Client] the X API client
-      # @param processing_timeout [Integer, Float] the seconds from now to wait for processing to finish, checks and
-      #   all, before giving up, or Float::INFINITY to wait for as long as processing takes
+      # @param processing_timeout [Integer, Float, nil] the seconds from now to wait for processing to finish, checks
+      #   and all, before giving up, or nil to wait for as long as processing takes
       # @return [UploadedMedia] the uploaded media, which holds the processing status
-      # @raise [ArgumentError] if the processing timeout is not a number of seconds of at least 0
+      # @raise [ArgumentError] if the processing timeout is neither a finite number of seconds of at least 0 nor nil
       # @raise [ArgumentError] if the media given is nil, holds no identifier, or is neither media, a media key, nor a
       #   media identifier, or its media key names none
       # @raise [MissingMediaData] if a status response holds no media or carries no body at all
@@ -288,7 +288,7 @@ module X
       def await_processing(media, client:, processing_timeout: DEFAULT_PROCESSING_TIMEOUT)
         Validator.validate_processing_timeout!(processing_timeout)
         uploaded = Utils.uploaded_media(media)
-        deadline, media_id = Utils.seconds_from_now(processing_timeout), Utils.media_id(uploaded)
+        deadline, media_id = processing_timeout&.then { |seconds| Utils.seconds_from_now(seconds) }, Utils.media_id(uploaded)
         pending = uploaded if uploaded.processing?
         loop do
           Utils.wait_to_check(pending, deadline:, timeout: processing_timeout) if pending
@@ -305,11 +305,10 @@ module X
       # @param media [UploadedMedia, Hash, #media_key, String, Integer] the uploaded media, media that has a media key,
       #   such as X::Media, the media key, or the media identifier
       # @param client [Client] the X API client
-      # @param processing_timeout [Integer, Float] the seconds from now to wait for processing to finish, checks and
-      #   all, before giving up, as {await_processing} counts them, or Float::INFINITY to wait for as long as
-      #   processing takes
+      # @param processing_timeout [Integer, Float, nil] the seconds from now to wait for processing to finish, checks
+      #   and all, before giving up, as {await_processing} counts them, or nil to wait for as long as processing takes
       # @return [UploadedMedia] the uploaded media, which holds the processing status
-      # @raise [ArgumentError] if the processing timeout is not a number of seconds of at least 0
+      # @raise [ArgumentError] if the processing timeout is neither a finite number of seconds of at least 0 nor nil
       # @raise [ArgumentError] if the media given is nil, holds no identifier, or is neither media, a media key, nor a
       #   media identifier, or its media key names none
       # @raise [MissingMediaData] if a status response holds no media or carries no body at all

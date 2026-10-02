@@ -6,6 +6,7 @@ require "x/uploader/media_upload"
 module X
   class MediaProcessingStatusTest < Minitest::Test
     cover Uploader::MediaUpload
+    cover Uploader.const_get(:Utils)
 
     STATUS_URL = "https://api.x.com/2/media/upload?command=STATUS&media_id=#{TEST_MEDIA_ID}".freeze
 
@@ -83,7 +84,7 @@ module X
     def test_waits_for_as_long_as_processing_takes_without_a_deadline
       stub_statuses(*Array.new(3) { {"processing_info" => {"state" => "pending", "check_after_secs" => 3600}} }, {"processing_info" => {"state" => "succeeded"}})
 
-      assert_equal "succeeded", await(processing_timeout: Float::INFINITY).dig("processing_info", "state")
+      assert_equal "succeeded", await(processing_timeout: nil).dig("processing_info", "state")
       assert_equal [3600] * 3, @sleeps
     end
 
@@ -91,7 +92,8 @@ module X
       stub_statuses({"processing_info" => {"state" => "pending", "check_after_secs" => 60}})
 
       assert_raises(MediaProcessingTimeout) { await }
-      assert_equal [60] * 10, @sleeps
+      assert_raises(MediaProcessingTimeout) { on_fake_clock(@sleeps) { Uploader::MediaUpload.await_processing!({"id" => TEST_MEDIA_ID}, client: @client) } }
+      assert_equal [60] * 20, @sleeps
     end
 
     def test_awaits_the_processing_of_a_media_identifier

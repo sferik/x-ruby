@@ -102,7 +102,7 @@ module X
       def sending_again: [T] (::X::Client client) { () -> T } -> T
       def processed!: (UploadedMedia status) -> UploadedMedia
       def seconds_from_now: (Numeric seconds) -> Float
-      def wait_to_check: (UploadedMedia status, deadline: Float, timeout: Numeric) -> void
+      def wait_to_check: (UploadedMedia status, deadline: Float?, timeout: Numeric?) -> void
     end
 
     module Multipart
@@ -216,7 +216,7 @@ module X
       MAX_SIMPLE_UPLOAD_BYTES: Integer
       extend Validator
 
-      def validate_upload!: (Source source, (String | Symbol)? media_category, alt_text: String?, chunk_size: Integer?, concurrency: Integer, processing_timeout: Numeric, ?shared: untyped, ?additional_owners: untyped) ?{ () -> (String | Symbol) } -> String
+      def validate_upload!: (Source source, (String | Symbol)? media_category, alt_text: String?, chunk_size: Integer?, concurrency: Integer, processing_timeout: Numeric?, ?shared: untyped, ?additional_owners: untyped) ?{ () -> (String | Symbol) } -> String
       def validate_source!: (Source source) -> nil
       def validate_sharing!: (untyped shared, untyped additional_owners) -> void
       def user_id?: (untyped value) -> bool
@@ -226,6 +226,7 @@ module X
       def validate_media_category!: (String | Symbol media_category) -> String
       def validate_chunks!: (chunk_size: Integer?, concurrency: Integer) -> nil
       def whole_number?: (untyped value, Integer least) -> bool
+      def finite_seconds?: (untyped value) -> bool
       def validate_banner_region!: (**untyped region) -> void
       def validate_processing_timeout!: (untyped processing_timeout) -> nil
       def validate_segments!: (Source source, Integer? chunk_size) -> Integer

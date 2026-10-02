@@ -306,21 +306,28 @@ module X
 
       # Validate the seconds to wait for media to process
       #
-      # A processing timeout is a number of seconds, of at least 0, which Float::INFINITY is, for an upload that waits
-      # for as long as processing takes. Nil is not one, so that no upload waits forever by accident.
+      # A processing timeout is a finite number of seconds of at least 0, or nil for an upload that waits for as long
+      # as processing takes, as a timeout of a client is.
       #
       # @api private
-      # @param processing_timeout [Integer, Float] the seconds to wait
+      # @param processing_timeout [Integer, Float, nil] the seconds to wait, or nil for no timeout
       # @return [void]
-      # @raise [ArgumentError] if the processing timeout is not a number of seconds of at least 0
+      # @raise [ArgumentError] if the processing timeout is neither a finite number of seconds of at least 0 nor nil
       # @example Validate a processing timeout
       #   Uploader::Validator.validate_processing_timeout!(1800)
       def validate_processing_timeout!(processing_timeout)
-        return if processing_timeout.is_a?(Numeric) && processing_timeout.real? && processing_timeout >= 0
+        return if processing_timeout.nil? || finite_seconds?(processing_timeout)
 
-        raise ArgumentError, "processing_timeout must be a number of seconds of at least 0, or Float::INFINITY to wait " \
-          "for as long as processing takes, not #{processing_timeout.inspect}"
+        raise ArgumentError, "processing_timeout must be a finite number of seconds of at least 0, or nil for no " \
+          "timeout, not #{processing_timeout.inspect}"
       end
+
+      # Check whether a value is a finite real number of at least 0
+      #
+      # @api private
+      # @param value [Object] the value
+      # @return [Boolean] true if the value is a finite real number of at least 0
+      def finite_seconds?(value) = value.is_a?(Numeric) && value.real? && !value.negative? && value.finite?
 
       # The size in bytes of the chunks a file uploads in
       #
