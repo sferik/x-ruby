@@ -10,7 +10,7 @@ module X
 
     # The streaming method mixed into a client
     module API
-      def streaming: (?read_timeout: Numeric?, ?max_reconnects: Float | Integer) -> StreamingClient
+      def streaming: (?read_timeout: Numeric?, ?max_reconnects: Float | Integer, ?on_reconnect: StreamingClient::_ReconnectHook?) -> StreamingClient
     end
   end
 
@@ -54,8 +54,14 @@ module X
     type addable_rule = StreamRule | Hash[untyped, untyped] | String
     type rule = addable_rule | Integer
 
+    # The callable passed the error that dropped a stream and its wait to reconnect, before each wait
+    interface _ReconnectHook
+      def call: (StandardError error, Integer | Float wait) -> untyped
+    end
+
     attr_reader client: Client
-    def initialize: (Client client, ?read_timeout: Numeric?, ?max_reconnects: Integer | Float) -> void
+    attr_reader on_reconnect: _ReconnectHook?
+    def initialize: (Client client, ?read_timeout: Numeric?, ?max_reconnects: Integer | Float, ?on_reconnect: _ReconnectHook?) -> void
     def inspect: () -> String
     def stream: (String endpoint, ?params: params?, ?headers: headers, ?array_class: Class, ?object_class: object_class) { (untyped) -> void } -> untyped
     def stop: () -> nil

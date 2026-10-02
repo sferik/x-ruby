@@ -25,7 +25,10 @@ module X
       # The message of the error raised for an object_class that is neither a Class nor responds to from_response
       INVALID_OBJECT_CLASS = "%s must be a Class that JSON.parse builds each object into, such as Hash, or respond to " \
         "from_response, as the resource classes of x-objects do, not %s"
-      private_constant :MINIMUM_READ_TIMEOUT, :INVALID_COUNT_OR_INFINITY, :INVALID_READ_TIMEOUT, :INVALID_ARRAY_CLASS, :INVALID_OBJECT_CLASS
+      # The message of the error raised for a callback that neither responds to call nor is nil
+      INVALID_CALLABLE = "%s must respond to call, as a Proc or a lambda does, or be nil, not a %s"
+      private_constant :MINIMUM_READ_TIMEOUT, :INVALID_COUNT_OR_INFINITY, :INVALID_READ_TIMEOUT, :INVALID_ARRAY_CLASS, :INVALID_OBJECT_CLASS,
+        :INVALID_CALLABLE
 
       # Check that a count is an Integer of at least 0, or Float::INFINITY for no limit
       #
@@ -55,6 +58,19 @@ module X
         return value if value.nil? || (value.is_a?(Numeric) && value.real? && value.finite? && value >= MINIMUM_READ_TIMEOUT)
 
         raise ArgumentError, format(INVALID_READ_TIMEOUT, name, value.inspect)
+      end
+
+      # Check that a callback responds to call, or is nil
+      #
+      # @api private
+      # @param name [Symbol] the name of the setting, which the error names
+      # @param value [Object] the value of the setting
+      # @return [#call, nil] the value
+      # @raise [ArgumentError] if the value neither responds to call nor is nil
+      def callable!(name, value)
+        return value if value.nil? || value.respond_to?(:call)
+
+        raise ArgumentError, format(INVALID_CALLABLE, name, value.class)
       end
 
       # Check the classes a stream parses its objects into

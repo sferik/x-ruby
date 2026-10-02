@@ -21,7 +21,10 @@ module X
       INVALID_ARRAY_CLASS: String
       INVALID_OBJECT_CLASS: String
 
+      INVALID_CALLABLE: String
+
       def count_or_infinity!: (Symbol name, untyped value) -> untyped
+      def callable!: (Symbol name, untyped value) -> untyped
       def read_timeout!: (Symbol name, untyped value) -> untyped
       def parsing_classes!: (array_class: untyped, object_class: untyped) -> void
     end
@@ -41,8 +44,10 @@ module X
       type state = Hash[Symbol, Integer]
 
       attr_reader max_reconnects: Integer | Float
+      @on_reconnect: untyped
+
       attr_reader max_rate_limit_wait: Numeric
-      def initialize: (?max_reconnects: Integer | Float, ?max_rate_limit_wait: Numeric) -> void
+      def initialize: (?max_reconnects: Integer | Float, ?max_rate_limit_wait: Numeric, ?on_reconnect: untyped) -> void
       def handle: (^(untyped) -> void consumer) { (^(untyped) -> void, ^() -> void) -> void } -> nil
 
       private
@@ -50,6 +55,7 @@ module X
       def run_once: (^(^(untyped) -> void, ^() -> void) -> void stream, ^(untyped) -> void deliver, ^() -> void alive, state state) -> bool
       def reconnectable?: (StandardError error) -> bool
       def out_of_reconnects?: (StandardError? error, state state) -> bool
+      def announce: (StandardError? error, Integer | Float wait) -> void
       def delivery_to: (^(untyped) -> void consumer, ^() -> void restart) -> ^(untyped) -> void
       def backoff: (StandardError? error, state state) -> (Float | Integer)
       def count: (state state, Symbol name) -> Integer

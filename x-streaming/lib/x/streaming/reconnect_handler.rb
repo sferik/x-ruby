@@ -20,8 +20,12 @@ module X
     # keep-alive X sends every 20 seconds, starts every count over, so that a stream that is quiet but connected is not
     # taken for one that keeps failing.
     #
-    # Internal to x-streaming: StreamingClient reconnects with it, max_reconnects is set on the streaming client, and
-    # max_rate_limit_wait is the client's, which the client checked when it was built.
+    # Before each wait it passes the error that dropped the stream and the seconds it waits to on_reconnect, whose
+    # error stops the stream, as an error of the consumer does.
+    #
+    # Internal to x-streaming: StreamingClient reconnects with it, max_reconnects and on_reconnect are set on the
+    # streaming client, which checked them, and max_rate_limit_wait is the client's, which the client checked when it
+    # was built.
     #
     # @api private
     class ReconnectHandler
@@ -66,23 +70,26 @@ module X
       # @api private
       # @param max_reconnects [Integer, Float] the maximum number of reconnects in a row, or Float::INFINITY
       # @param max_rate_limit_wait [Integer, Float] the longest wait for a rate limit to reset, in seconds
+      # @param on_reconnect [#call, nil] the callable passed the error that dropped the stream, or nil for a stream that
+      #   ended without one, and the seconds the handler waits, before each wait to reconnect, or nil for none
       # @return [ReconnectHandler] a new instance
       # @raise [ArgumentError] if the maximum number of reconnects is neither an Integer of at least 0 nor
       #   Float::INFINITY
       # @example Create a reconnect handler
       #   handler = X::Streaming::ReconnectHandler.new(max_reconnects: 5)
-      def initialize(max_reconnects: DEFAULT_MAX_RECONNECTS, max_rate_limit_wait: Client::DEFAULT_MAX_RATE_LIMIT_WAIT)
+      def initialize(max_reconnects: DEFAULT_MAX_RECONNECTS, max_rate_limit_wait: Client::DEFAULT_MAX_RATE_LIMIT_WAIT, on_reconnect: nil)
         @max_reconnects = Validator.count_or_infinity!(:max_reconnects, max_reconnects)
         @max_rate_limit_wait = max_rate_limit_wait
+        @on_reconnect = on_reconnect
       end
 
       # Run a stream, running it again whenever it drops
       #
       # An error raised by the consumer stops the stream, even one that would otherwise reconnect, and reaches the
-      # caller, as does an error raised by the on_response of the client or by the class an object is parsed into,
-      # which the stream tags as a CallbackError, so that one a stream reconnects after, such as an X::ServerError of
-      # a request on_response made, is not taken for the stream's own, and any error that is not one a stream
-      # reconnects after, such as the StreamError of a line that holds errors other than a disconnect.
+      # caller, as does an error raised by on_reconnect, by the on_response of the client, or by the class an object
+      # is parsed into, which the stream tags as a CallbackError, so that one a stream reconnects after, such as an
+      # X::ServerError of a request on_response made, is not taken for the stream's own, and any error that is not one
+      # a stream reconnects after, such as the StreamError of a line that holds errors other than a disconnect.
       # The stream is run again with while rather than Kernel#loop, which rescues StopIteration, so that a
       # StopIteration raised from an Enumerator that has run out, wherever it is raised, reaches the caller too,
       # rather than end the stream without a word.
@@ -160,11 +167,30 @@ module X
       # @param error [StandardError, nil] the error that dropped the stream, or nil if the stream ended
       # @param state [Hash{Symbol => Integer}] the counts of reconnects, for one call to handle
       # @return [Boolean] true if no reconnects remain, or false once it has waited for the next
+      # @raise [CallbackError] if on_reconnect raises
       def out_of_reconnects?(error, state)
         return true if count(state, :reconnects) > max_reconnects
 
-        sleep(backoff(error, state))
+        wait = backoff(error, state)
+        announce(error, wait)
+        sleep(wait)
         false
+      end
+
+      # Pass on_reconnect the error that dropped the stream and the wait to reconnect
+      #
+      # An error on_reconnect raises is tagged as a CallbackError, as one of on_response is, so that it is not taken
+      # for an error of the stream, even an X::NetworkError, which would otherwise be reconnected after.
+      #
+      # @api private
+      # @param error [StandardError, nil] the error that dropped the stream, or nil if the stream ended
+      # @param wait [Integer, Float] the seconds to wait
+      # @return [void]
+      # @raise [CallbackError] if on_reconnect raises
+      def announce(error, wait)
+        @on_reconnect&.call(error, wait)
+      rescue => e
+        raise CallbackError, e
       end
 
       # A block that passes an object to the consumer and starts the counts over

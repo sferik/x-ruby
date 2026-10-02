@@ -33,9 +33,9 @@ module X
     #
     # A streaming client keeps the settings it was built with for as long as it lives, as a client does, so a stream
     # that runs for hours never reads a setting another thread is halfway through changing. {Client#streaming} builds
-    # one whose read_timeout or max_reconnects differ, the two settings a streaming client reads, and it takes the rest
-    # of its settings from the client it is built from, which {#client} reads, so a stream that connects differently is
-    # opened from a copy of that client: client.with(open_timeout: 2).streaming.
+    # one whose read_timeout, max_reconnects, or on_reconnect differ, the settings a streaming client keeps itself, and
+    # it takes the rest of its settings from the client it is built from, which {#client} reads, so a stream that
+    # connects differently is opened from a copy of that client: client.with(open_timeout: 2).streaming.
     #
     # @api public
     class ::X::StreamingClient
@@ -68,6 +68,23 @@ module X
       #   streaming_client.client.base_url
       attr_reader :client
 
+      # The callable passed the error that dropped a stream and its wait to reconnect
+      #
+      # A stream that drops reconnects up to max_reconnects times in a row, without end by default, so one that can
+      # never connect, as with a certificate that does not verify, a host that does not resolve, or a proxy that
+      # refuses it, would reconnect in silence for as long as it runs. on_reconnect is passed the error that dropped
+      # the stream, such as an X::NetworkError or an X::ServiceUnavailable, and the seconds the stream waits before it
+      # reconnects, before each wait, so it can report the reconnects, or give up on them by calling {#stop}, after
+      # which the stream returns nil rather than reconnect. An error it raises stops the stream, and reaches the
+      # caller as it was raised, as an error of the block of the stream does. A stop does not cut it short, as it does
+      # not the block of the stream.
+      #
+      # @api public
+      # @return [#call, nil] the callable, or nil for none
+      # @example Read the callable passed each reconnect
+      #   streaming_client.on_reconnect
+      attr_reader :on_reconnect
+
       # Initialize a client for the streaming endpoints
       #
       # @api public
@@ -77,15 +94,24 @@ module X
       #   stopped sending to open until the operating system gives up on its connection
       # @param max_reconnects [Integer, Float] the maximum number of times in a row to reconnect a stream that drops
       #   without delivering an object or a keep-alive, or Float::INFINITY, the default, for no limit
+      # @param on_reconnect [#call, nil] a callable passed the error that dropped a stream and the seconds the stream
+      #   waits before it reconnects, before each wait, or nil, the default, for none; see {#on_reconnect}
       # @return [StreamingClient] a new instance
-      # @raise [ArgumentError] if the read timeout is neither a finite number of seconds of at least 25 nor nil, or the
-      #   maximum number of reconnects is neither a count nor Float::INFINITY
+      # @raise [ArgumentError] if the read timeout is neither a finite number of seconds of at least 25 nor nil, the
+      #   maximum number of reconnects is neither a count nor Float::INFINITY, or on_reconnect neither responds to call
+      #   nor is nil
       # @example Create a streaming client
       #   streaming_client = X::StreamingClient.new(client, max_reconnects: 5)
-      def initialize(client, read_timeout: DEFAULT_READ_TIMEOUT, max_reconnects: DEFAULT_MAX_RECONNECTS)
+      # @example Give up on a stream that has failed to connect for minutes, rather than reconnect it without end
+      #   streaming_client = X::StreamingClient.new(client, on_reconnect: lambda do |error, wait|
+      #     logger.warn("#{error.class}: #{error.message}; reconnecting in #{wait} seconds")
+      #     streaming_client.stop if error.is_a?(X::NetworkError) && wait >= 16
+      #   end)
+      def initialize(client, read_timeout: DEFAULT_READ_TIMEOUT, max_reconnects: DEFAULT_MAX_RECONNECTS, on_reconnect: nil)
         @client = client
         @stream_client = client.with(read_timeout: Validator.read_timeout!(:read_timeout, read_timeout), on_response: Stopper.guarding(client.on_response))
-        @reconnect_handler = ReconnectHandler.new(max_reconnects:, max_rate_limit_wait: client.max_rate_limit_wait)
+        @on_reconnect = Validator.callable!(:on_reconnect, on_reconnect)
+        @reconnect_handler = ReconnectHandler.new(max_reconnects:, max_rate_limit_wait: client.max_rate_limit_wait, on_reconnect: Stopper.guarding(@on_reconnect))
         @stream_parser = StreamParser.new
         @stopper = Stopper.new
       end
