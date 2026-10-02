@@ -122,11 +122,15 @@ module X
       attribute :location
 
       # @!attribute [r] url
-      #   The profile URL
+      #   The URL of the website the profile links to
+      #
+      #   The API gives it shortened, as a t.co link, and the URL it stands for is in the url entities of
+      #   {#entities}. It is not the address of the profile on x.com, which {#permalink} and {#uri} read.
+      #
       #   @api public
-      #   @return [String, nil] the URL
+      #   @return [String, nil] the URL, or nil for a profile that links to no website
       #   @example Get the URL
-      #     user.url
+      #     user.url # => "https://t.co/abc"
       attribute :url
 
       # @!attribute [r] profile_image_url
@@ -460,6 +464,8 @@ module X
 
       # The permalink of the profile, by username when known and by identifier otherwise
       #
+      # It is the address of the profile on x.com, not the website the profile links to, which {#url} reads.
+      #
       # @api public
       # @return [String] the x.com address of the profile
       # @example Get the permalink
@@ -467,6 +473,8 @@ module X
       def permalink = "https://x.com/#{username || "i/user/#{id}"}"
 
       # The permalink of the user as a URI
+      #
+      # It is the address of the profile on x.com, not the website the profile links to, which {#url} reads.
       #
       # @api public
       # @return [URI::Generic] the x.com address of the user
