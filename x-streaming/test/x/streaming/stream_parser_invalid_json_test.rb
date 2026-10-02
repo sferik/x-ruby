@@ -24,12 +24,11 @@ module X
       assert_equal [{"data" => {"id" => "1"}}], results
     end
 
-    def test_process_raises_invalid_response_for_remaining_data_that_is_not_json
-      response = streaming_response(chunks: ["{\"data\":"])
+    def test_process_drops_a_line_the_stream_ended_within_rather_than_raise_for_it
+      results = []
+      process(streaming_response(chunks: ["{\"data\":{\"id\":\"1\"}}\r\n{\"data\":"])) { |json| results << json }
 
-      error = assert_raises(InvalidResponse) { process(response) { flunk "unexpected yield" } }
-
-      assert_equal "{\"data\":", error.body
+      assert_equal [{"data" => {"id" => "1"}}], results
     end
 
     def test_process_leaves_the_error_of_a_connection_that_drops_while_reading_untagged

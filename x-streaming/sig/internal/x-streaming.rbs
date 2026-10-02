@@ -98,7 +98,6 @@ module X
       def tagging_callback_errors: [T] () { () -> T } -> T
       def read_lines: (response: Net::HTTPResponse, decode: ^(String) -> untyped, on_keep_alive: ^() -> void) { (untyped) -> void } -> void
       def process_buffer: (buffer: String, decode: ^(String) -> untyped, on_keep_alive: ^() -> void) { (untyped) -> void } -> void
-      def process_remaining: (buffer: String, decode: ^(String) -> untyped) { (untyped) -> void } -> void
       def yield_json: (line: String, decode: ^(String) -> untyped) { (untyped) -> void } -> void
     end
   end

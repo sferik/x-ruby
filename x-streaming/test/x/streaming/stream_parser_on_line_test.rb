@@ -13,12 +13,22 @@ module X
 
     def test_process_passes_each_line_to_on_line_before_decoding_it
       response = Net::HTTPOK.new("1.1", "200", "OK")
-      response.define_singleton_method(:read_body) { |&block| ["{\"a\":1}\r\n\r\n{\"b\"", ":2}"].each(&block) }
+      response.define_singleton_method(:read_body) { |&block| ["{\"a\":1}\r\n\r\n{\"b\"", ":2}\r\n"].each(&block) }
       events = []
       @stream_parser.process(response:, array_class: Array, object_class: Hash, client: nil, on_line: ->(line) { events << line },
         on_keep_alive: -> { events << :keep_alive }) { |json| events << json }
 
       assert_equal ['{"a":1}', {"a" => 1}, :keep_alive, '{"b":2}', {"b" => 2}], events
+    end
+
+    def test_process_passes_on_line_no_line_the_stream_ended_within
+      response = Net::HTTPOK.new("1.1", "200", "OK")
+      response.define_singleton_method(:read_body) { |&block| ["{\"a\":1}\r\n{\"b\":2}"].each(&block) }
+      lines = []
+      @stream_parser.process(response:, array_class: Array, object_class: Hash, client: nil, on_line: ->(line) { lines << line },
+        on_keep_alive: -> {}) { |_json| nil }
+
+      assert_equal ['{"a":1}'], lines
     end
 
     def test_process_calls_on_keep_alive_for_each_empty_line_alone

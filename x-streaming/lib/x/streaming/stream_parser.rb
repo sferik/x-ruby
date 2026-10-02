@@ -128,6 +128,12 @@ module X
       end
 
       # Read the body in chunks and yield each line as it completes
+      #
+      # X ends each line it sends, so what is left when the stream ends without a line ending is a line the stream was
+      # cut off within, as when the server closes the connection mid-line. It is dropped rather than parsed, which would
+      # raise InvalidResponse, and back off as from a server error, for a stream that ended, and it is not passed to
+      # on_line, which would report it as an object the API bills: the stream ends as a dropped stream does.
+      #
       # @api private
       # @param response [Net::HTTPResponse] the HTTP response
       # @param decode [Proc] the lambda that decodes a line
@@ -140,7 +146,6 @@ module X
           buffer << chunk
           process_buffer(buffer:, decode:, on_keep_alive:, &)
         end
-        process_remaining(buffer:, decode:, &)
       end
 
       # Process complete lines from the buffer
@@ -156,17 +161,6 @@ module X
           buffer.delete_prefix!(LINE_DELIMITER)
           line.empty? ? on_keep_alive.call : yield_json(line:, decode:, &)
         end
-      end
-
-      # Process any remaining data after the stream ends
-      # @api private
-      # @param buffer [String] the remaining data buffer
-      # @param decode [Proc] decodes a line of JSON
-      # @yield [Object] the decoded JSON document
-      # @return [void]
-      def process_remaining(buffer:, decode:, &)
-        buffer.strip!
-        yield_json(line: buffer, decode:, &) unless buffer.empty?
       end
 
       # Decode a line of JSON and yield the result

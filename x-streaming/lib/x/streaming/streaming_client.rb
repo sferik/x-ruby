@@ -451,7 +451,8 @@ module X
       # Read a stream once, and deliver each object it sends until it ends
       #
       # X holds a stream open until it drops it, so a stream the server ends raises a NetworkError, as one that drops
-      # does, which a stream reconnects after, and which reaches the caller once it has no reconnects left.
+      # does, which a stream reconnects after, and which reaches the caller once it has no reconnects left. A stream the
+      # server ends within a line raises it too, since the parser drops what it read of the line.
       #
       # @api private
       # @param response [Net::HTTPResponse] the response of the stream, whose body is not yet read
