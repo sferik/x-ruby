@@ -35,7 +35,7 @@ module X
   #   ├── X::AuthorizationDenied       the redirect back from X says the app was not authorized
   #   ├── X::TokenReportFailed         save_tokens raised for the tokens of an exchange of a code or a refresh
   #   ├── X::TooManyRedirects          a response redirected more times than max_redirects allows
-  #   ├── X::UnsupportedOperation      the API offers no way to do what was asked
+  #   ├── X::UnsupportedOperation      the API, or the credentials of the client, offer no way to do what was asked
   #   ├── X::UnsupportedMarshalFormat  Marshal or YAML read a state written in a format this release does not read
   #   ├── X::Objects::Error            the failures of the object layer, from x-objects
   #   │   ├── X::MissingResource               a resource that was asked for does not exist
