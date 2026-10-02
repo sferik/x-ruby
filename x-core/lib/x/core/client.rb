@@ -571,9 +571,12 @@ module X
       # its status, once on_response is passed it, without reaching the block. Nothing the block reads is passed to
       # on_response, since the body is the block's to read.
       #
-      # An error the block raises reaches the caller as it was raised, but for the errors of a socket, such as the
-      # IOError of a body that could not be read, or a read that timed out, which raise a NetworkError that names the
-      # request, as a connection that fails does, so that a stream that dropped is told apart from a block that failed.
+      # An error the block raises reaches the caller as it was raised, but for the errors of the socket the body is read
+      # from, such as the IOError of a body that could not be read, or a read that timed out, which raise a NetworkError
+      # that names the request, as a connection that fails does, so that a stream that dropped is told apart from a
+      # block that failed. An error is the socket's when read_body raises it from the socket, whatever its class, so
+      # the IOError or Errno::ENOSPC of a file the block writes to, in the block passed to read_body or out of it, is
+      # the block's, and raised as it was.
       #
       # @api public
       # @param endpoint [String] the endpoint, relative to the base URL with or without a leading slash, with or

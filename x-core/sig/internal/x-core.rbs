@@ -413,7 +413,7 @@ module X
       private
       def perform: (Client client, :delete | :get | :post | :put http_method, URI::Generic uri, body: String?, headers: headers, array_class: Class, object_class: object_class) ?{ (Response) -> void } -> untyped
       def perform_stream: [T] (URI::Generic uri, headers: headers) { (Net::HTTPResponse) -> T } -> T
-      def reading: [T] () { () -> T } -> T
+      def reading: [T] (Net::HTTPResponse response) { (Net::HTTPResponse) -> T } -> T
     end
 
     # What a Response and an HTTPError hold the headers of
@@ -495,6 +495,15 @@ module X
       def incomplete?: (Hash[Symbol, String | Time | Array[String] | nil] credentials) -> bool
       def unused_oauth2_credentials: (Hash[Symbol, String | Time | Array[String] | nil] credentials) -> Array[Symbol]
       def unused?: (Hash[Symbol, String | Time | Array[String] | nil] credentials, Symbol name) -> bool
+    end
+
+    module StreamBody : Net::HTTPResponse
+      SOCKET_ERRORS: ObjectSpace::WeakMap[Exception, Exception]
+
+      def self.socket_error?: (Exception error) -> bool
+      def self.passing: (^(String) -> void sink, Array[Exception] failed) -> ^(String) -> void
+      def self.noting: [T] (Array[Exception] failed) { () -> T } -> T
+      def read_body: (?untyped dest) ?{ (String chunk) -> void } -> untyped
     end
 
     class Connection

@@ -21,6 +21,7 @@ require_relative "request_builder"
 require_relative "request_encoding"
 require_relative "response_parser"
 require_relative "setting_validator"
+require_relative "stream_body"
 
 module X
   module Core
@@ -207,23 +208,25 @@ module X
             CallbackError.tagging { report(:get, uri, response) }
             raise @response_parser.error(response, request)
           end
-          reading { yield response }
+          reading(response) { |body| yield body }
         end
       end
 
-      # Run the block of a stream, tagging its errors but those of a socket
+      # Run the block of a stream, tagging its errors but those of its socket
       #
-      # The errors of a socket are those of a body that could not be read, which the connection raises as a
-      # NetworkError, and any other error is the block's own, which is raised as it was.
+      # The errors of the socket are those read_body raised from it, as StreamBody notes them, which the connection
+      # raises as a NetworkError, and any other error is the block's own, whatever its class, which is raised as it
+      # was, as is the error of a socket the block raised of its own, such as the IOError of a file it wrote to.
       #
       # @api private
-      # @yield reads the body of the response
+      # @param response [Net::HTTPResponse] the successful response, whose body is not yet read
+      # @yieldparam body [Net::HTTPResponse] the response, which notes the errors of the socket its body is read from
       # @return [Object] what the block returns
-      # @raise [CallbackError] if the block raises an error that is not one of a socket
-      def reading
-        yield
+      # @raise [CallbackError] if the block raises an error that read_body did not raise from the socket
+      def reading(response)
+        yield response.extend(StreamBody)
       rescue => e
-        raise if Connection.network_error?(e)
+        raise if StreamBody.socket_error?(e)
 
         raise CallbackError, e
       end

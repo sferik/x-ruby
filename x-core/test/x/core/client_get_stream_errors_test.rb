@@ -38,11 +38,11 @@ module X
       assert_equal "the hook failed", assert_raises(IOError) { client.get_stream("tweets/sample/stream") { |_response| } }.message
     end
 
-    def test_an_error_of_a_socket_the_block_raises_is_a_network_error
+    def test_an_error_of_a_socket_the_block_raises_of_its_own_is_raised_as_it_was
       stub_request(:get, STREAM_URL)
-      error = assert_raises(NetworkError) { @client.get_stream("tweets/sample/stream") { |_response| raise IOError, "the body dropped" } }
+      error = assert_raises(IOError) { @client.get_stream("tweets/sample/stream") { |_response| raise IOError, "the file closed" } }
 
-      assert_equal "GET /2/tweets/sample/stream: Network error: the body dropped", error.message
+      assert_equal "the file closed", error.message
     end
 
     def test_any_other_error_the_block_raises_is_raised_as_it_was
