@@ -29,11 +29,18 @@ module X
       ANSWERS = [Net::HTTPSuccess, Net::HTTPClientError].freeze
       private_constant :ANSWERS
 
-      # The URL of a token endpoint at the origin of a base URL
+      # The version of the API that ends the path of a base URL, such as the /2/ of https://api.x.com/2/
+      API_VERSION = %r{/\d+(?:\.\d+)*/?\z}
+      private_constant :API_VERSION
+
+      # The URL of a token endpoint at a base URL, under the path it serves the API at
       #
       # A token endpoint of X is requested at the scheme, host, and port of the base URL of the client that sends its
       # requests, so that a client pointed at another host, such as a test server or a recording proxy, sends its
-      # credentials there, as it sends its requests, rather than to X. The path is the one X serves the endpoint at.
+      # credentials there, as it sends its requests, rather than to X. The path is the one X serves the endpoint at,
+      # under the path the base URL serves the API at, which is its path without the version of the API that ends it,
+      # so that a gateway that serves the API under a path of its own, as https://gateway.example/x/2/ serves it under
+      # /x, serves the token endpoints under that path too, as X serves them beside the API.
       #
       # @api private
       # @param base_url [String] the base URL of the client
@@ -42,9 +49,13 @@ module X
       # @example The token endpoint of a client pointed at a test server
       #   X::Core::TokenEndpoint.url_at("http://localhost:3000/2/", X::AppOnlyAuthenticator::TOKEN_URL)
       #   # => "http://localhost:3000/oauth2/token"
+      # @example The token endpoint of a client pointed at a gateway that serves the API under a path
+      #   X::Core::TokenEndpoint.url_at("https://gateway.example/x/2/", X::OAuth2Authenticator::TOKEN_URL)
+      #   # => "https://gateway.example/x/2/oauth2/token"
       def url_at(base_url, token_url)
-        path = URI(token_url).path #: String
-        String(URI.join(base_url, path))
+        base_path, path = URI(base_url).path, URI(token_url).path #: [String, String]
+        mount = base_path.sub(API_VERSION, "").chomp("/")
+        String(URI.join(base_url, "#{mount}#{path}"))
       end
 
       # The scopes a token names

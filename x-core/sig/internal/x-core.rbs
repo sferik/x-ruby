@@ -9,6 +9,7 @@ module X
 
       REFUSALS: Array[singleton(Net::HTTPBadRequest) | singleton(Net::HTTPUnauthorized)]
       ANSWERS: Array[singleton(Net::HTTPSuccess) | singleton(Net::HTTPClientError)]
+      API_VERSION: Regexp
 
       def fetch: (SimpleOAuth::OAuth2::Request token_request, connection: Connection, refusal: String) -> SimpleOAuth::OAuth2::Token
       def url_at: (String base_url, String token_url) -> String

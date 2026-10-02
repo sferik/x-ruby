@@ -17,6 +17,35 @@ module X
       assert_equal APP_ONLY_TOKEN_URL, Core.const_get(:TokenEndpoint).url_at(Client::DEFAULT_BASE_URL, APP_ONLY_TOKEN_URL)
     end
 
+    def test_the_url_of_a_token_endpoint_is_under_the_path_the_base_url_serves_the_api_at
+      url_at = Core.const_get(:TokenEndpoint).method(:url_at)
+
+      assert_equal "https://gateway.example/x/oauth2/token", url_at.call("https://gateway.example/x/2/", APP_ONLY_TOKEN_URL)
+      assert_equal "https://gateway.example/x/2/oauth2/token", url_at.call("https://gateway.example/x/2/", OAUTH2_TOKEN_URL)
+      assert_equal "https://gateway.example/x/api/oauth2/token", url_at.call("https://gateway.example/x/api/1.1/", APP_ONLY_TOKEN_URL)
+    end
+
+    def test_a_base_url_whose_path_ends_in_no_version_of_the_api_serves_the_api_at_its_whole_path
+      url_at = Core.const_get(:TokenEndpoint).method(:url_at)
+
+      assert_equal "https://gateway.example/x/oauth2/token", url_at.call("https://gateway.example/x/", APP_ONLY_TOKEN_URL)
+      assert_equal "https://gateway.example/v2x/oauth2/token", url_at.call("https://gateway.example/v2x/", APP_ONLY_TOKEN_URL)
+      assert_equal "https://api.x.com/oauth2/token", url_at.call("https://api.x.com/1.1", APP_ONLY_TOKEN_URL)
+    end
+
+    def test_a_client_of_a_gateway_fetches_and_refreshes_its_tokens_under_the_path_of_the_gateway
+      app_token = stub_request(:post, "https://gateway.example/x/oauth2/token").to_return(headers: {"Content-Type" => "application/json"},
+        body: {token_type: "bearer", access_token: TEST_BEARER_TOKEN}.to_json)
+      refresh = stub_request(:post, "https://gateway.example/x/2/oauth2/token").to_return(headers: {"Content-Type" => "application/json"},
+        body: {token_type: "bearer", access_token: "new", refresh_token: "next", expires_in: 7200}.to_json)
+      stub_request(:get, "https://gateway.example/x/2/users/me").to_return(headers: {"Content-Type" => "application/json"}, body: "{}")
+      Client.new(api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET, base_url: "https://gateway.example/x/2/").get("users/me")
+      Client.new(client_id: "id", access_token: "old", refresh_token: "refresh", base_url: "https://gateway.example/x/2/").authenticator.refresh!
+
+      assert_requested app_token
+      assert_requested refresh
+    end
+
     def test_an_app_only_client_fetches_its_bearer_token_at_the_origin_of_its_base_url
       token_request = stub_request(:post, "http://localhost:3000/oauth2/token").to_return(headers: {"Content-Type" => "application/json"},
         body: {token_type: "bearer", access_token: TEST_BEARER_TOKEN}.to_json)
