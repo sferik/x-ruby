@@ -4,7 +4,7 @@ require_relative "../../test_helper"
 
 module X
   # A stopper raises in the threads of the streams it runs, under a lock, so that it raises in no thread that is not
-  # running one, and a stop is held back while a guarded block runs
+  # running one, and a stop is held back while a guarded block runs, and a stopper that was stopped runs no stream again
   class StopperTest < Minitest::Test
     cover Streaming.const_get(:Stopper)
 
@@ -24,27 +24,31 @@ module X
 
     def test_a_run_returns_what_its_block_returns
       assert_equal :done, @stopper.run { :done }
-      assert_equal 0, @stopper.stop
+      assert_nil @stopper.stop
+    end
+
+    def test_a_stopper_is_stopped_once_stop_is_called
+      assert_same false, @stopper.stopped?
+      @stopper.stop
+
+      assert_predicate @stopper, :stopped?
+    end
+
+    def test_a_run_after_a_stop_returns_nil_without_running_its_block
+      @stopper.stop
+      ran = false
+
+      assert_nil @stopper.run { ran = true }
+      refute ran
+      assert_empty @stopper.instance_variable_get(:@streams)
     end
 
     def test_a_stopped_run_returns_nil
       runner = start { @stopper.run { sleep } }
       wait_for(runner)
 
-      assert_equal 1, @stopper.stop
+      assert_nil @stopper.stop
       assert_nil runner.value
-    end
-
-    def test_stop_waits_for_the_lock
-      runner = start { @stopper.run { sleep } }
-      wait_for(runner)
-      @lock.lock
-      stopper = start { @stopper.stop }
-      waiting = wait_for(stopper)
-      @lock.unlock
-
-      assert waiting
-      assert_equal 1, stopper.value
     end
 
     def test_a_run_begins_under_the_lock

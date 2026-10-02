@@ -3,7 +3,8 @@
 require_relative "../../test_helper"
 
 module X
-  # A stream that delivers nothing is stopped from another thread with stop, which the stream returns nil for
+  # A stream that delivers nothing is stopped from another thread with stop, which the stream returns nil for, and a
+  # streaming client that was stopped stays stopped
   class StreamingClientStopTest < Minitest::Test
     cover StreamingClient
 
@@ -11,7 +12,7 @@ module X
 
     def setup
       @streaming = Client.new(bearer_token: TEST_BEARER_TOKEN).streaming
-      @readers = []
+      @readers, @answered = [], {}
       @started, @resume, @finished = Queue.new, Queue.new, Queue.new
     end
 
@@ -23,13 +24,15 @@ module X
       reader = read_in_thread([]) { |_post| flunk "unexpected yield" }
       waiting = wait_for(reader)
 
-      assert_equal 1, @streaming.stop
+      assert_nil @streaming.stop
       assert_nil reader.value
       assert waiting
     end
 
-    def test_stop_stops_nothing_when_no_stream_runs
-      assert_equal 0, @streaming.stop
+    def test_a_streaming_client_is_stopped_once_stop_is_called_though_no_stream_runs
+      refute_predicate @streaming, :stopped?
+      assert_nil @streaming.stop
+      assert_predicate @streaming, :stopped?
     end
 
     def test_stop_stops_every_stream_of_the_streaming_client_and_no_other
@@ -38,9 +41,10 @@ module X
       unstopped = read_in_thread([], streaming: other) { |_post| nil }
       [*readers, unstopped].each { |reader| wait_for(reader) }
 
-      assert_equal 2, @streaming.stop
+      assert_nil @streaming.stop
       assert_equal [nil, nil], readers.map(&:value)
       assert_equal "sleep", unstopped.status
+      refute_predicate other, :stopped?
     end
 
     def test_a_block_that_runs_when_the_stream_is_stopped_runs_to_its_end
@@ -66,12 +70,13 @@ module X
       assert_equal 2, delivered.size
     end
 
-    def test_a_stream_opened_after_a_stop_runs
+    def test_a_stream_asked_for_after_a_stop_returns_nil_without_a_request
       wait_for(read_in_thread([]) { |_post| nil })
       @streaming.stop
-      result = stubbing_the_stream([POST]) { @streaming.stream("tweets/sample/stream") { |post| break post } }
+      result = @streaming.stream("tweets/sample/stream") { |_post| flunk "unexpected yield" }
 
-      assert_equal({"data" => {"id" => "1"}}, result)
+      assert_nil result
+      assert_requested :any, //, times: 0
     end
 
     private
@@ -104,13 +109,15 @@ module X
     end
 
     # Answer each stream of a streaming client with a body that delivers the chunks given, and then waits on the API
-    # for good, as a stream that delivers nothing more does, returning the queue each stream that waits is told on
+    # for good, as a stream that delivers nothing more does, returning the queue each stream that waits is told on.
+    # The streams of a streaming client are answered once, with the chunks first given, so get_stream is defined once.
     def answering(streaming, chunks)
-      opened, respond = Queue.new, method(:waiting_response)
-      streaming.instance_variable_get(:@stream_client).define_singleton_method(:get_stream) do |endpoint, **, &block|
-        block.call(respond.call(URI.join("https://api.x.com/2/", endpoint), chunks, opened))
+      @answered[streaming] ||= Queue.new.tap do |opened|
+        respond = method(:waiting_response)
+        streaming.instance_variable_get(:@stream_client).define_singleton_method(:get_stream) do |endpoint, **, &block|
+          block.call(respond.call(URI.join("https://api.x.com/2/", endpoint), chunks, opened))
+        end
       end
-      opened
     end
 
     # A successful response whose body delivers the chunks given, tells the queue given, and then waits for good

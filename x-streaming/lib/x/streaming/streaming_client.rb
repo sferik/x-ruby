@@ -23,7 +23,9 @@ module X
     # that follows, as a client does between requests. So a streaming client has neither the keep_alive_timeout of a
     # client, which says how long a connection is kept open, nor its close, which closes the connections it kept: a
     # streaming client keeps none between streams. A stream is stopped by breaking or raising from the block that
-    # reads it, or from another thread with {#stop}, which stops a stream that delivers nothing as well.
+    # reads it, or from another thread, or the trap of a signal, with {#stop}, which stops a stream that delivers
+    # nothing as well. A streaming client that was stopped stays stopped, and {Client#streaming} builds a new one each
+    # time it is called, so a streaming client to be stopped is kept in a variable, rather than built again to stop.
     #
     # A stream is opened with X::Client#get_stream, of an app-only copy of the client whose read_timeout is the
     # stream's, so it carries the credentials, headers, and proxy of the client as any request does, and none of its
@@ -132,7 +134,8 @@ module X
       # A stream runs until its block stops it: break out of the block to stop the stream and return a value, throw to
       # unwind to a catch further out, or raise, which stops the stream even where a drop would have reconnected, and
       # reaches the caller unchanged, a StopIteration included. Another thread stops it with {#stop}, which ends a
-      # stream that delivers nothing as well, when it returns nil.
+      # stream that delivers nothing as well, when it returns nil, as a stream of a streaming client that was stopped
+      # does at once, without a request.
       #
       # @api public
       # @param endpoint [String] the streaming API endpoint, relative to the base URL with or without a leading slash
@@ -143,7 +146,7 @@ module X
       # @param object_class [Class, #from_response] the class for parsing JSON objects, or one that responds to
       #   from_response and builds the result from each whole object the stream delivers; see {Client}
       # @yield [Hash, Array] each parsed JSON object from the stream
-      # @return [Object, nil] what the block broke with, or nil for a stream {#stop} stopped
+      # @return [Object, nil] what the block broke with, or nil for a stream {#stop} stopped, or was called before
       # @raise [ArgumentError] if no block is given, or the endpoint is not a valid URL, or does not resolve to an http or
       #   https URL, before the stream is opened
       # @raise [ArgumentError] if array_class is not a Class, or object_class is neither a Class nor responds to
@@ -169,23 +172,41 @@ module X
         end
       end
 
-      # Stop every stream this streaming client is running, from any thread
+      # Stop every stream this streaming client runs, now and from then on
       #
       # A stream waits on the API for most of its life, for the next object, the keep-alive X sends every 20 seconds,
       # or the next reconnect, so its block, which runs only when an object arrives, cannot stop a stream that delivers
       # nothing. This stops each stream running in another thread, or in this one, the next time it waits on the API,
       # at once for a stream waiting now, closing its connection, and the stream returns nil. A block, or the
       # on_response of the client, that is running when a stream is stopped runs to its end first, so that what it
-      # does with an object is never cut short. A stream opened after stop returns runs until it is stopped again.
+      # does with an object is never cut short.
+      #
+      # A streaming client that was stopped stays stopped: a stream it is asked to run later, as one a thread started
+      # just before stop may not yet have opened, returns nil at once, without a request. {Client#streaming} builds a
+      # new streaming client to stream with again, and builds another each time it is called, so stop is called on
+      # the streaming client the stream runs on, kept in a variable, not on one a second call builds. It may be called
+      # from the trap of a signal, and waits for no lock, so it may return before the streams it stops have ended.
       #
       # @api public
-      # @return [Integer] the number of streams it stopped, 0 if none was running
+      # @return [nil]
       # @example Stop a stream that runs in a thread of its own
       #   streaming_client = client.streaming
       #   reader = Thread.new { streaming_client.stream("tweets/search/stream") { |post| queue << post } }
       #   streaming_client.stop
       #   reader.join
+      # @example Stop a stream when the process is interrupted
+      #   streaming_client = client.streaming
+      #   Signal.trap("INT") { streaming_client.stop }
+      #   streaming_client.stream("tweets/search/stream") { |post| puts post }
       def stop = @stopper.stop
+
+      # Whether {#stop} was called, after which each stream returns nil at once
+      #
+      # @api public
+      # @return [Boolean] true once {#stop} was called
+      # @example Check whether a streaming client was stopped
+      #   streaming_client.stopped? # => false
+      def stopped? = @stopper.stopped?
 
       # The rules the filtered stream matches posts against
       #

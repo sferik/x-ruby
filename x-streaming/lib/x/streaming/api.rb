@@ -15,6 +15,9 @@ module X
     module API
       # A client for the streaming endpoints, which reads and reconnects differently
       #
+      # Each call builds a new streaming client, so the one a stream runs on is kept in a variable to stop it with
+      # {StreamingClient#stop}, and a streaming client that was stopped, which stays stopped, is replaced by another.
+      #
       # @api public
       # @param read_timeout [Integer, Float, nil] the timeout for reading from a stream in seconds, as
       #   {StreamingClient#initialize} takes it

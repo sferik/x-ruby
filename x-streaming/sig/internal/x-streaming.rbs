@@ -119,11 +119,18 @@ module X
 
       @streams: Array[Thread]
       @lock: Thread::Mutex
+      @stopped: bool
 
       def self.guard: [T] () { () -> T } -> T
       def initialize: () -> void
+      def stopped?: () -> bool
       def run: [T] () { () -> T } -> T?
-      def stop: () -> Integer
+      def stop: () -> nil
+
+      private
+      def lock_at_once: () -> bool
+      def interrupt_and_unlock: () -> void
+      def interrupt: () -> void
     end
   end
 
