@@ -13,8 +13,8 @@ module X
     module Metadata
       extend self
 
-      # The media category the subtitles endpoint takes for a video attached to a post, which subtitles default to
-      SUBTITLED_MEDIA_CATEGORY = "TweetVideo"
+      # The media category of a video attached to a post, which subtitles default to, named as the uploaders name it
+      SUBTITLED_MEDIA_CATEGORY = "tweet_video"
       private_constant :SUBTITLED_MEDIA_CATEGORY
 
       # Describe uploaded media with alt text, for people who cannot see it
@@ -63,8 +63,9 @@ module X
       # @param language_code [String] the two-letter language code of the subtitles, in any case, such as EN
       # @param client [Client] the X API client
       # @param display_name [String, nil] the name of the language shown to viewers, such as English
-      # @param media_category [String, Symbol] the category the video was uploaded as, tweet_video or amplify_video,
-      #   in any case, as the uploaders take it, or as the subtitles endpoint names it, TweetVideo or AmplifyVideo
+      # @param media_category [String, Symbol] the category the video was uploaded as, tweet_video, the default, or
+      #   amplify_video, in any case, as the uploaders take it, or as the subtitles endpoint names it, TweetVideo or
+      #   AmplifyVideo
       # @return [UploadedMedia] the video given, if it is uploaded media, or else uploaded media built from the upload
       #   response, the media key, or the media identifier given
       # @raise [ArgumentError] if the media category is neither tweet_video nor amplify_video, or the language code is
