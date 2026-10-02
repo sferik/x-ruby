@@ -8,6 +8,8 @@ Most applications should install [`x`](https://rubygems.org/gems/x), which wires
 
 ## Installation
 
+`x-objects` requires Ruby 3.4 or later.
+
     bundle add x-objects
 
 ## Resources

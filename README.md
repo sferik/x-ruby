@@ -14,7 +14,7 @@ For updates and announcements, follow [this gem](https://x.com/gem) and [its cre
 
 ## Installation
 
-Install the gem and add to the application's Gemfile:
+The gems require Ruby 3.4 or later. Install the gem and add to the application's Gemfile:
 
     bundle add x
 

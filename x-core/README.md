@@ -8,6 +8,8 @@ Most applications should install [`x`](https://rubygems.org/gems/x), which adds 
 
 ## Installation
 
+`x-core` requires Ruby 3.4 or later.
+
     bundle add x-core
 
 ## Usage

@@ -9,6 +9,8 @@ Installing [`x`](https://rubygems.org/gems/x) installs this gem too.
 
 ## Installation
 
+`x-uploader` requires Ruby 3.4 or later.
+
     bundle add x-uploader
 
 ## Usage
