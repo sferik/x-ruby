@@ -56,6 +56,23 @@ module X
       assert_equal %w[1234 1234], identifiers({"resource_id" => "1234", "value" => "1234"})
     end
 
+    # A resource, as the object layer builds one, with an identifier
+    Identified = Struct.new(:id)
+
+    def test_a_problem_is_about_the_resource_its_resource_id_names
+      problem = Problem.new(NOT_FOUND)
+
+      assert_equal [true, true, true], [1, "1", Identified.new(1)].map { |resource| problem.about?(resource) }
+      assert_equal [false, false, false], [2, "01", Identified.new("2")].map { |resource| problem.about?(resource) }
+      assert Problem.new({"resource_id" => "sferik"}).about?("sferik")
+    end
+
+    def test_a_problem_that_names_no_resource_is_about_none
+      problem = Problem.new({"title" => "Not Found Error"})
+
+      assert_equal [false, false], ["", Identified.new(nil)].map { |resource| problem.about?(resource) }
+    end
+
     def test_a_value_that_is_not_a_string_is_as_the_api_gave_it
       assert_equal [nil, ["1"]], identifiers({"resource_type" => "user", "value" => ["1"]})
       assert_equal [nil, 1], identifiers({"resource_type" => "user", "value" => 1})

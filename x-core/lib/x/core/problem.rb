@@ -107,15 +107,13 @@ module X
     # The identifier of the resource the problem concerns
     #
     # It is the String the API gave, whatever the kind of resource, since the API names a user by a username as
-    # often as by an identifier, and a space, a place, or media by an identifier that is not a number; compare it with
-    # the id of a resource as a String, as resource.id.to_s.
+    # often as by an identifier, and a space, a place, or media by an identifier that is not a number; {#about?}
+    # compares it with a resource, or the identifier of one, as a String.
     #
     # @api public
     # @return [String, nil] the resource identifier
     # @example Get the resource identifier
     #   problem.resource_id # => "1"
-    # @example Check whether a problem is about a user
-    #   problem.resource_id.eql?(user.id.to_s)
     def resource_id = attrs["resource_id"]
 
     # The request parameter the problem concerns
@@ -176,6 +174,27 @@ module X
     # @example Tell the usage cap apart from a rate limit
     #   wait_for_the_next_month if error.problem&.usage_capped?
     def usage_capped? = type.to_s.end_with?("/usage-capped")
+
+    # Check whether the problem is about a resource
+    #
+    # The resource_id of a problem is the String the API gave, where the resources of x-objects hold an Integer
+    # identifier, so the identifier of the resource, or the identifier given, is compared with it as a String. A
+    # username names the user a problem names by it. A problem that names no resource is about none.
+    #
+    # @api public
+    # @param resource [#id, Integer, String] the resource, or its identifier
+    # @return [Boolean] true if the resource_id of the problem names the resource
+    # @example Check whether a problem is about a user
+    #   problem.about?(user) # => true
+    # @example Check whether a problem is about a post by its identifier
+    #   error.problems.any? { |problem| problem.about?(1_234_567_890) }
+    def about?(resource)
+      id = case resource
+      when Integer, String then resource
+      else resource.id
+      end
+      resource_id.eql?(id.to_s)
+    end
 
     # Check whether another problem is the same problem
     #

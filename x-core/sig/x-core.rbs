@@ -104,6 +104,11 @@ module X
   class Conflict < ClientError
   end
 
+  # A resource that Problem#about? reads the identifier of, such as the resources of x-objects
+  interface _Identified
+    def id: () -> untyped
+  end
+
   class Problem
     attr_reader attrs: Hash[String, untyped]
 
@@ -122,6 +127,7 @@ module X
     def not_found?: () -> bool
     def disconnect?: () -> bool
     def usage_capped?: () -> bool
+    def about?: (_Identified | Integer | String resource) -> bool
     def ==: (untyped other) -> bool
     def eql?: (untyped other) -> bool
     def hash: () -> Integer
