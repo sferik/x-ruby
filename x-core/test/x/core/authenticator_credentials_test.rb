@@ -28,6 +28,22 @@ module X
       end
     end
 
+    def test_a_bearer_token_authenticator_refuses_a_bearer_token_that_is_not_a_string
+      assert_refused("bearer_token must be a String, not a Integer") { BearerTokenAuthenticator.new(bearer_token: 123) }
+    end
+
+    def test_an_oauth1_authenticator_refuses_each_credential_that_is_not_a_string
+      test_oauth_credentials.each_key do |name|
+        assert_refused("#{name} must be a String, not a Integer") { OAuth1Authenticator.new(**test_oauth_credentials, name => 123) }
+      end
+    end
+
+    def test_an_oauth2_authenticator_refuses_each_credential_that_is_not_a_string
+      {**OAUTH2_CREDENTIALS, client_secret: TEST_CLIENT_SECRET}.each_key do |name|
+        assert_refused("#{name} must be a String, not a Symbol") { OAuth2Authenticator.new(**OAUTH2_CREDENTIALS, name => :token) }
+      end
+    end
+
     def test_an_oauth1_authenticator_refuses_each_missing_credential
       test_oauth_credentials.each_key do |name|
         [nil, "", " "].each do |value|

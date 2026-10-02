@@ -15,6 +15,22 @@ module X
       end
     end
 
+    def test_a_credential_that_is_not_a_string_is_refused
+      %i[api_key api_key_secret access_token access_token_secret bearer_token client_id client_secret refresh_token].each do |name|
+        [123, :token].each do |value|
+          error = assert_raises(ArgumentError) { Client.new(name => value) }
+
+          assert_equal "#{name} must be a String, not a #{value.class}", error.message
+        end
+      end
+    end
+
+    def test_a_credential_that_is_not_a_string_beside_a_complete_set_is_refused
+      error = assert_raises(ArgumentError) { Client.new(**test_oauth_credentials, bearer_token: 123) }
+
+      assert_equal "bearer_token must be a String, not a Integer", error.message
+    end
+
     def test_a_credential_of_whitespace_alone_is_refused
       assert_raises(ArgumentError) { Client.new(bearer_token: " \t\n") }
     end

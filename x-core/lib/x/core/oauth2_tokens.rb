@@ -143,7 +143,7 @@ module X
       #   X::OAuth2Tokens.new(access_token: "token", refresh_token: "refresh", expires_at: Time.now + 7200,
       #     scopes: %w[tweet.read users.read offline.access])
       def initialize(access_token:, refresh_token: nil, expires_at: nil, scopes: nil)
-        raise ArgumentError, format(NOT_A_STRING, :access_token, access_token.class) unless access_token.is_a?(String)
+        raise ArgumentError, format(NOT_A_STRING, :access_token, access_token.class) if access_token.nil?
         raise ArgumentError, format(NOT_A_STRING_OR_NIL, :refresh_token, refresh_token.class) unless refresh_token.nil? || refresh_token.is_a?(String)
 
         CredentialValidator.validate_required!({access_token:}, {refresh_token:, expires_at:, scopes:})

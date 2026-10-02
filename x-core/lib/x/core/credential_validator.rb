@@ -84,6 +84,10 @@ module X
       EMPTY_CREDENTIAL = "%s is empty. Pass the credential, or leave it out, since an empty one authenticates nothing"
       private_constant :EMPTY_CREDENTIAL
 
+      # The message of the error raised for a credential that is not a String
+      NOT_A_STRING = "%s must be a String, not a %s"
+      private_constant :NOT_A_STRING
+
       # The message raised for a credential an authenticator requires that is nil or empty
       MISSING_CREDENTIAL = "%s is nil or empty. Pass the credential, which the authenticator cannot authenticate without"
       private_constant :MISSING_CREDENTIAL
@@ -98,23 +102,26 @@ module X
         "given beside %s. Pass the authenticator, or the credentials, and leave out the other"
       private_constant :AUTHENTICATOR_AND_CREDENTIALS
 
-      # Raise for an empty credential, or an expiration time that is not a Time
+      # Raise for a credential not a String or empty, or an expiration time not a Time
       #
       # An environment variable that is not set is often read as an empty String, as ENV.fetch("X_BEARER_TOKEN", "")
-      # reads it, which would send an Authorization header that authenticates nothing, for the API to refuse.
+      # reads it, which would send an Authorization header that authenticates nothing, for the API to refuse. A
+      # credential that is not a String, such as the Integer of a client ID read from YAML, would be signed with as the
+      # String it converts to, if it converts to one at all, so it is refused rather than sent as something else.
       #
       # @api private
       # @param credentials [Hash{Symbol => String, Time, nil}] the credentials, as Client#initialize accepts them
       # @return [void]
-      # @raise [ArgumentError] if a credential is an empty String, or one of whitespace alone, if the expiration time
-      #   is neither a Time nor nil, or if the scopes are neither an Array of scopes nor nil
+      # @raise [ArgumentError] if a credential is neither a String nor nil, is an empty String, or one of whitespace
+      #   alone, if the expiration time is neither a Time nor nil, or if the scopes are neither an Array of scopes nor
+      #   nil
       # @example Check the credentials of a client
       #   X::Core::CredentialValidator.validate_values!(bearer_token: "", expires_at: nil)
       def validate_values!(credentials)
-        credentials.each do |name, value|
-          case value
-          when String then raise ArgumentError, format(EMPTY_CREDENTIAL, name) unless value.match?(/\S/)
-          end
+        credentials.except(:expires_at, :scopes).each do |name, value|
+          next if value.nil?
+          raise ArgumentError, format(NOT_A_STRING, name, value.class) unless String === value
+          raise ArgumentError, format(EMPTY_CREDENTIAL, name) unless value.match?(/\S/)
         end
         validate_expires_at!(credentials[:expires_at])
         validate_scopes!(credentials[:scopes])
@@ -123,8 +130,8 @@ module X
       # Raise for a credential an authenticator requires that is nil or empty
       #
       # An authenticator is given the credentials it authenticates with, so each is required, and one given as nil,
-      # as ENV[] reads a variable that is not set, or as an empty String, would authenticate nothing. The others it
-      # takes beside them are checked as {#validate_values!} checks those of a client.
+      # as ENV[] reads a variable that is not set, or as an empty String, would authenticate nothing. They, and those it
+      # takes beside them, are checked as {#validate_values!} checks those of a client.
       #
       # @api private
       # @param required [Hash{Symbol => String, nil}] the credentials the authenticator requires, by the names it
@@ -132,12 +139,13 @@ module X
       # @param others [Hash{Symbol => String, Time, nil}] the credentials and expiration time it takes beside them
       # @return [void]
       # @raise [ArgumentError] if a credential required is nil, an empty String, or one of whitespace alone
-      # @raise [ArgumentError] if another credential is empty, or the expiration time is neither a Time nor nil
+      # @raise [ArgumentError] if a credential is neither a String nor nil, another credential is empty, or the
+      #   expiration time is neither a Time nor nil
       # @example Check the credential of a bearer token authenticator
       #   X::Core::CredentialValidator.validate_required!({bearer_token: ENV["X_BEARER_TOKEN"]})
       def validate_required!(required, others = {})
         required.each { |name, value| raise ArgumentError, format(MISSING_CREDENTIAL, name) unless value.to_s.match?(/\S/) }
-        validate_values!(others)
+        validate_values!(required.merge(others))
       end
 
       # Raise for an expiration time that is not a Time
