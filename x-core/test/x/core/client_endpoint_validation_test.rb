@@ -13,6 +13,23 @@ module X
       @client = Client.new(bearer_token: TEST_BEARER_TOKEN)
     end
 
+    def test_an_endpoint_that_is_not_a_string_raises_argument_error_naming_its_class
+      [[:users, "Symbol"], [URI("https://api.x.com/2/users/me"), "URI::HTTPS"], [nil, "NilClass"]].each do |endpoint, name|
+        error = assert_raises(ArgumentError) { @client.get(endpoint) }
+
+        assert_equal %(endpoint must be a String, such as "users/me", not a #{name}), error.message
+      end
+      assert_raises(ArgumentError) { @client.get_stream(:users) { |_response| } }
+      assert_not_requested :any, /api\.x\.com/
+    end
+
+    def test_an_endpoint_of_a_subclass_of_string_is_a_string
+      stub_request(:get, "https://api.x.com/2/users/me")
+      @client.get(Class.new(String).new("users/me"))
+
+      assert_requested :get, "https://api.x.com/2/users/me"
+    end
+
     def test_an_endpoint_that_holds_a_space_raises_argument_error_naming_it
       error = assert_raises(ArgumentError) { @client.get("users/by/username/a b") }
 

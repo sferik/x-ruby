@@ -363,6 +363,7 @@ module X
       LEADING_SLASHES: Regexp
       BODY_AND_FORM: String
       INVALID_ENDPOINT: String
+      ENDPOINT_NOT_A_STRING: String
       extend RequestEncoding
 
       def uri_for: (String base_url, String endpoint, params? params) -> URI::HTTP

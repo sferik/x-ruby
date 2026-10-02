@@ -26,9 +26,14 @@ module X
       INVALID_ENDPOINT = "Invalid endpoint %s: %s"
       private_constant :INVALID_ENDPOINT
 
+      # The message of the error raised for an endpoint that is not a String
+      ENDPOINT_NOT_A_STRING = "endpoint must be a String, such as \"users/me\", not a %s"
+      private_constant :ENDPOINT_NOT_A_STRING
+
       # Resolve an endpoint and its query parameters against a base URL
       #
-      # An endpoint that is not a valid URL reference, such as one that holds a space or a malformed percent escape,
+      # An endpoint that is not a String, such as a Symbol or a URI, raises ArgumentError naming its class, rather than
+      # the NoMethodError of a String method it does not have. An endpoint that is not a valid URL reference, such as one that holds a space or a malformed percent escape,
       # or that resolves to anything but an http or https URL with a host, such as "foo:bar", raises ArgumentError
       # naming it, before any request is built, rather than the URI::InvalidURIError or the ArgumentError of Net::HTTP
       # it would raise as the request was built.
@@ -38,7 +43,7 @@ module X
       # @param endpoint [String] the endpoint, with or without a leading slash or a query string
       # @param params [Hash, nil] the query parameters
       # @return [URI::HTTP] the URL of the request
-      # @raise [ArgumentError] if the endpoint does not resolve to an http or https URL with a host
+      # @raise [ArgumentError] if the endpoint is not a String, or does not resolve to an http or https URL with a host
       def uri_for(base_url, endpoint, params)
         uri = URI.join(base_url, endpoint_with(endpoint, params))
         return uri if uri.is_a?(URI::HTTP) && !uri.host.to_s.empty?
@@ -80,7 +85,10 @@ module X
       # @param endpoint [String] the endpoint, with or without a leading slash or a query string
       # @param params [Hash, nil] the query parameters
       # @return [String] the endpoint, without leading slashes, with the parameters in its query string
+      # @raise [ArgumentError] if the endpoint is not a String
       def endpoint_with(endpoint, params)
+        raise ArgumentError, format(ENDPOINT_NOT_A_STRING, endpoint.class) unless endpoint.is_a?(String)
+
         endpoint = endpoint.sub(LEADING_SLASHES, "")
         query = encode_fields(params.to_h)
         return endpoint if query.empty?

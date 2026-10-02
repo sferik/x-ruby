@@ -467,8 +467,8 @@ module X
       # @param object_class [Class, #from_response] the class for parsing JSON objects, or one that responds to
       #   from_response and builds the result from the whole body; see {Client}
       # @return [Object, nil] the parsed response body, or what an object_class that responds to from_response builds
-      # @raise [ArgumentError] if the endpoint is not a valid URL, or does not resolve to an http or https URL, before
-      #   the request is sent
+      # @raise [ArgumentError] if the endpoint is not a String, is not a valid URL, or does not resolve to an http or
+      #   https URL, before the request is sent
       # @raise [ArgumentError] if array_class is not a Class, or object_class is neither a Class nor responds to
       #   from_response, before the request is sent
       # @raise [ArgumentError] if headers are not a Hash of header names to Strings, before the request is sent
@@ -500,8 +500,8 @@ module X
       # @return [Object, nil] the parsed response body, or what an object_class that responds to from_response builds
       # @raise [ArgumentError] if both a body and form fields are given, or a keyword is given that the method takes
       #   none of, as the fields of a body given without the braces of a Hash are, before the request is sent
-      # @raise [ArgumentError] if the endpoint is not a valid URL, or does not resolve to an http or https URL, before
-      #   the request is sent
+      # @raise [ArgumentError] if the endpoint is not a String, is not a valid URL, or does not resolve to an http or
+      #   https URL, before the request is sent
       # @raise [ArgumentError] if array_class is not a Class, or object_class is neither a Class nor responds to
       #   from_response, before the request is sent
       # @raise [ArgumentError] if headers are not a Hash of header names to Strings, before the request is sent
@@ -532,8 +532,8 @@ module X
       # @return [Object, nil] the parsed response body, or what an object_class that responds to from_response builds
       # @raise [ArgumentError] if both a body and form fields are given, or a keyword is given that the method takes
       #   none of, as the fields of a body given without the braces of a Hash are, before the request is sent
-      # @raise [ArgumentError] if the endpoint is not a valid URL, or does not resolve to an http or https URL, before
-      #   the request is sent
+      # @raise [ArgumentError] if the endpoint is not a String, is not a valid URL, or does not resolve to an http or
+      #   https URL, before the request is sent
       # @raise [ArgumentError] if array_class is not a Class, or object_class is neither a Class nor responds to
       #   from_response, before the request is sent
       # @raise [ArgumentError] if headers are not a Hash of header names to Strings, before the request is sent
@@ -556,8 +556,8 @@ module X
       # @param object_class [Class, #from_response] the class for parsing JSON objects, or one that responds to
       #   from_response and builds the result from the whole body; see {Client}
       # @return [Object, nil] the parsed response body, or what an object_class that responds to from_response builds
-      # @raise [ArgumentError] if the endpoint is not a valid URL, or does not resolve to an http or https URL, before
-      #   the request is sent
+      # @raise [ArgumentError] if the endpoint is not a String, is not a valid URL, or does not resolve to an http or
+      #   https URL, before the request is sent
       # @raise [ArgumentError] if array_class is not a Class, or object_class is neither a Class nor responds to
       #   from_response, before the request is sent
       # @raise [ArgumentError] if headers are not a Hash of header names to Strings, before the request is sent
@@ -592,8 +592,8 @@ module X
       # @param headers [Hash] additional headers for the request
       # @yieldparam http_response [Net::HTTPResponse] the successful response, whose body is not yet read
       # @return [Object] what the block returns
-      # @raise [ArgumentError] if no block is given, or the endpoint is not a valid URL, or does not resolve to an http
-      #   or https URL, before the request is sent
+      # @raise [ArgumentError] if no block is given, or the endpoint is not a String, is not a valid URL, or does not
+      #   resolve to an http or https URL, before the request is sent
       # @raise [ArgumentError] if headers are not a Hash of header names to Strings, before the request is sent
       # @raise [HTTPError] if the response is not successful
       # @raise [NetworkError] if the request cannot be sent, or its body cannot be read
