@@ -194,7 +194,8 @@ module X
       #   from_response, before the stream is opened
       # @raise [NetworkError] if the stream ends or drops, or cannot connect, with no reconnects left, or at once if the
       #   certificate of the connection does not verify
-      # @raise [HTTPError] if the response is not successful and the stream may not reconnect
+      # @raise [HTTPError] if the response is not successful and the stream may not reconnect, or asks in its
+      #   Retry-After header for a wait longer than the max_rate_limit_wait of the client
       # @raise [StreamError] if a line holds errors and no data, which the stream reconnects after only when each is an
       #   operational-disconnect, and then raises once it has no reconnects left
       # @example Stream filtered posts

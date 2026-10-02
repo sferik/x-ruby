@@ -66,7 +66,7 @@ module X
       def backoff: (StandardError error, state state) -> (Float | Integer)
       def count: (state state, Symbol name) -> Integer
       def network_backoff: (Integer reconnects) -> (Float | Integer)
-      def http_backoff: (Integer reconnects) -> Integer
+      def http_backoff: (HTTPError error, Integer reconnects) -> Integer
       def rate_limit_backoff: (TooManyRequests error, Integer reconnects) -> Integer
     end
 

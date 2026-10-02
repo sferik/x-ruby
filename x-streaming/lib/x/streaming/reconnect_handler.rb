@@ -12,7 +12,9 @@ module X
     # A stream that ends, loses its connection, or cannot open one, as when the connection is refused, or that X
     # disconnects with an operational-disconnect, reconnects at once, then after a delay that grows by a quarter
     # second each attempt, up to 16 seconds. A server error, a 408 Request Timeout, a 409 Conflict, or a line that is
-    # not JSON backs off from 5 seconds, doubling each attempt, up to 320 seconds. A rate limit backs off from a minute,
+    # not JSON backs off from 5 seconds, doubling each attempt, up to 320 seconds, and waits longer when the response
+    # asks for longer with a Retry-After header, as the retries of a client do; one that asks for longer than
+    # max_rate_limit_wait raises at once, as a rate limit that resets later does. A rate limit backs off from a minute,
     # doubling each attempt, up to 320 seconds, as X asks, and waits longer when the limit resets later; one that would
     # wait longer than max_rate_limit_wait raises at once, rather than hold the stream closed for hours, as a limit on
     # the requests of a day would. Each of the three backs off on a count of its own, as X asks, so that the dropped
@@ -112,6 +114,8 @@ module X
       #   the stream fails with no reconnects left
       # @raise [TooManyRequests] if a rate limit asks the stream to wait longer than max_rate_limit_wait, or the project
       #   has reached its usage cap
+      # @raise [ServerError, RequestTimeout, Conflict] if its Retry-After header asks the stream to wait longer than
+      #   max_rate_limit_wait
       # @raise [NetworkError] if the certificate of the connection does not verify, with reconnects left or not
       # @example Reconnect a stream
       #   handler.handle(->(post) { puts post }) { |deliver, alive| read_stream(on_keep_alive: alive, &deliver) }
@@ -233,9 +237,9 @@ module X
       # @return [Float, Integer] the seconds to wait
       def backoff(error, state)
         case error
-        when NetworkError, StreamError then network_backoff(count(state, :network))
         when TooManyRequests then rate_limit_backoff(error, count(state, :rate_limit))
-        else http_backoff(count(state, :http))
+        when HTTPError then http_backoff(error, count(state, :http))
+        else network_backoff(count(state, :network))
         end
       end
 
@@ -271,10 +275,25 @@ module X
       def network_backoff(reconnects) = [NETWORK_BACKOFF_STEP * (reconnects - 1), MAX_NETWORK_BACKOFF].min
 
       # The wait before a reconnect after a server error, a refusal, or a bad line
+      #
+      # A response that asks for a wait with a Retry-After header, as a 503 that names the time its endpoint is
+      # expected back does, waits that long when it is longer than the backoff, as a request a client sends again
+      # does. One that asks for longer than max_rate_limit_wait raises at once, as a rate limit that resets later does,
+      # rather than hold the stream closed for longer than a client would wait for its requests; the backoff alone
+      # never raises.
+      #
       # @api private
+      # @param error [HTTPError] the error the connection raised
       # @param reconnects [Integer] the number of the reconnect, counting from one
       # @return [Integer] the seconds to wait
-      def http_backoff(reconnects) = [HTTP_BACKOFF_START << (reconnects - 1), MAX_HTTP_BACKOFF].min
+      # @raise [HTTPError] the error, if it asks for a wait longer than max_rate_limit_wait
+      def http_backoff(error, reconnects)
+        requested = error.retry_after
+        raise if requested.to_i > max_rate_limit_wait
+
+        backoff = [HTTP_BACKOFF_START << (reconnects - 1), MAX_HTTP_BACKOFF].min
+        [requested, backoff].compact.max #: Integer
+      end
     end
     private_constant :ReconnectHandler
   end
