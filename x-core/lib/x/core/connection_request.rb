@@ -33,7 +33,8 @@ module X
       #
       # EOFError is read from a socket the peer closed, and a write to one it closed or reset is refused with EPIPE,
       # ECONNRESET, or ECONNABORTED. A timeout is not among them: a request that timed out waiting for its response
-      # may have reached the API, which may have acted on it.
+      # may have reached the API, which may have acted on it. Nor is any of them once the response has begun: a body
+      # cut off as it is read is one the API sent.
       STALE_CONNECTION_ERRORS = [EOFError, Errno::ECONNABORTED, Errno::ECONNRESET, Errno::EPIPE].freeze
       private_constant :NETWORK_ERRORS, :STALE_CONNECTION_ERRORS
 
@@ -46,9 +47,11 @@ module X
       # That request never reached the API, so an idempotent one is sent again, on a connection opened for it rather
       # than taken from the pool, where another connection may have gone stale too. A request that failed any other
       # way, such as by timing out, or on a connection opened for it, is not sent again: nothing about it says the API
-      # did not act on it. Net::HTTP would send a request again of its own, after a timeout as well, with the OAuth
-      # 1.0a nonce and signature of the attempt that failed, which is why its retries are turned off and the request
-      # the caller built is sent again here.
+      # did not act on it. Nor is one whose response had begun, which Net::HTTP says by passing it to the block of
+      # the request once its status and headers are read: a connection that drops as the body is read was not stale,
+      # and the API answered the request, so it raises as a read that timed out does. Net::HTTP would send a request
+      # again of its own, after a timeout as well, with the OAuth 1.0a nonce and signature of the attempt that failed,
+      # which is why its retries are turned off and the request the caller built is sent again here.
       #
       # @api private
       # @param request [Net::HTTPRequest] the HTTP request to send
@@ -57,14 +60,14 @@ module X
       # @return [Net::HTTPResponse] the HTTP response
       # @raise [StandardError] whatever the request raised, once it may not be sent again
       def send_request(request, key, open)
-        pooled = false
+        stale = false
         begin
           @pool.with(key, open) do |http_client, from_pool|
-            pooled = from_pool
-            http_client.request(request)
+            stale = from_pool
+            http_client.request(request) { stale = false }
           end
         rescue *STALE_CONNECTION_ERRORS
-          raise unless pooled && idempotent?(request)
+          raise unless stale && idempotent?(request)
 
           @pool.with(key, open, fresh: true) { |http_client, _| http_client.request(request) }
         end

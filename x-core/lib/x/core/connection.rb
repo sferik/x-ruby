@@ -285,6 +285,10 @@ module X
       # Net::HTTP keeps a connection for two seconds by default, which reuses it within a burst of requests alone, so
       # it keeps one for keep_alive_timeout instead.
       #
+      # Net::HTTP returns a body that ends before the length its Content-Length gives as though it were whole, which
+      # would be parsed as JSON cut short, so ignore_eof is turned off: a connection that closes before the body is
+      # read raises EOFError, which a request raises as a NetworkError.
+      #
       # @api private
       # @param http_client [Net::HTTP] the HTTP client to configure
       # @return [Net::HTTP] the configured HTTP client
@@ -294,6 +298,7 @@ module X
           c.read_timeout = read_timeout
           c.write_timeout = write_timeout
           c.max_retries = 0
+          c.ignore_eof = false
           c.keep_alive_timeout = keep_alive_timeout
           c.set_debug_output(debug_output)
         end

@@ -152,4 +152,30 @@ module LocalServer
     thread&.kill
     server&.close
   end
+
+  # Answer each connection the server accepts with the responses listed for it, a request each, in turn, and close it
+  # after the last, on a thread of its own, adding each request it reads to requests
+  def serve_connections(server, connections, requests)
+    Thread.new do
+      connections.each do |responses|
+        socket = server.accept
+        responses.each { |response| socket.write(response) if requests << socket.gets("\r\n\r\n") }
+        socket.close
+      end
+    end
+  end
+
+  # Serve connections from a port of the loopback interface, with webmock disabled, as Net::HTTP reads them, and yield
+  # that port and the requests the server read, which a test counts
+  def with_local_connections(*connections)
+    server = TCPServer.new("127.0.0.1", 0)
+    requests = []
+    thread = serve_connections(server, connections, requests)
+    WebMock.disable!
+    yield server.addr[1], requests
+  ensure
+    WebMock.enable!
+    thread&.kill
+    server&.close
+  end
 end
