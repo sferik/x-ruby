@@ -86,7 +86,8 @@ module X
 
     def test_a_copy_that_signs_with_oauth1_keeps_its_own_authenticator
       client = Client.new(**test_oauth2_credentials)
-      copy = client.with(api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET, access_token_secret: TEST_ACCESS_TOKEN_SECRET)
+      copy = client.with(api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET, access_token_secret: TEST_ACCESS_TOKEN_SECRET,
+        client_id: nil, client_secret: nil, refresh_token: nil)
 
       assert_instance_of OAuth1Authenticator, copy.authenticator
     end

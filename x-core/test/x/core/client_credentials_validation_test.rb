@@ -102,13 +102,49 @@ module X
       assert_instance_of OAuth1Authenticator, Client.new(**test_oauth_credentials, bearer_token: TEST_BEARER_TOKEN).authenticator
       assert_instance_of OAuth2Authenticator, Client.new(**test_oauth2_credentials, api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET).authenticator
       assert_instance_of AppOnlyAuthenticator, Client.new(bearer_token: TEST_BEARER_TOKEN, api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET).authenticator
-      assert_instance_of OAuth1Authenticator, Client.new(**test_oauth_credentials, **test_oauth2_credentials).authenticator
     end
 
     def test_a_copy_with_an_incomplete_set_raises
       client = Client.new(**test_oauth_credentials)
 
       assert_raises(ArgumentError) { client.with(access_token_secret: nil) }
+    end
+  end
+
+  # OAuth 2.0 credentials share the access token of OAuth 1.0a ones, which a client authenticates with first, so a
+  # client refuses them beside a complete set of OAuth 1.0a credentials, where they would go unused
+  class ClientMixedCredentialsTest < Minitest::Test
+    cover_client
+    cover Core.const_get(:CredentialValidator)
+
+    def test_oauth2_credentials_beside_oauth1_ones_are_refused
+      error = assert_raises(ArgumentError) do
+        Client.new(**test_oauth_credentials, client_id: TEST_CLIENT_ID, client_secret: TEST_CLIENT_SECRET, refresh_token: TEST_REFRESH_TOKEN)
+      end
+
+      assert_equal "client_id, client_secret, refresh_token are OAuth 2.0 credentials, which a client given OAuth 1.0a " \
+        "credentials would leave unused, since it authenticates with those, and the access_token they share is the " \
+        "OAuth 1.0a one. Pass the credentials of one or the other", error.message
+    end
+
+    def test_each_oauth2_credential_beside_oauth1_ones_is_refused
+      [{client_id: TEST_CLIENT_ID}, {client_id: TEST_CLIENT_ID, refresh_token: TEST_REFRESH_TOKEN}].each do |oauth2|
+        error = assert_raises(ArgumentError) { Client.new(**test_oauth_credentials, **oauth2) }
+
+        assert_match(/\A#{oauth2.keys.join(", ")} are OAuth 2.0 credentials/, error.message)
+      end
+    end
+
+    def test_oauth2_credentials_beside_part_of_oauth1_ones_build_an_oauth2_authenticator
+      client = Client.new(**test_oauth2_credentials, api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET)
+
+      assert_instance_of OAuth2Authenticator, client.authenticator
+    end
+
+    def test_a_copy_that_completes_oauth1_credentials_beside_oauth2_ones_is_refused
+      client = Client.new(**test_oauth2_credentials, api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET)
+
+      assert_raises(ArgumentError) { client.with(access_token_secret: TEST_ACCESS_TOKEN_SECRET) }
     end
   end
 end

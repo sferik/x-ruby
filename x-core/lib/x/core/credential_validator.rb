@@ -11,8 +11,9 @@ module X
     # authenticate as the app, or with a bearer token, rather than as the user it belongs to, and any other credential
     # of a set that is not complete, such as a client ID beside a bearer token, is a mistake that a client would
     # otherwise hide. So every credential must belong to a complete set. A client may hold several, such as the
-    # bearer token of an app beside its API key and secret. A client never changes the credentials it was
-    # built with, so this runs once, when the client is built.
+    # bearer token of an app beside its API key and secret, but not OAuth 2.0 credentials beside OAuth 1.0a ones, which
+    # share the access token, and which it authenticates with first, so that the OAuth 2.0 credentials would go unused.
+    # A client never changes the credentials it was built with, so this runs once, when the client is built.
     #
     # @api private
     module CredentialValidator
@@ -43,7 +44,15 @@ module X
       OAUTH1_CREDENTIALS = CREDENTIAL_SETS.first
       # The credentials of the least set of OAuth 2.0, which an expiration time is the expiration time of the token of
       OAUTH2_CREDENTIALS = CREDENTIAL_SETS.fetch(4)
-      private_constant :OAUTH1_CREDENTIALS, :OAUTH2_CREDENTIALS
+      # The credentials of OAuth 2.0 that no other set holds, which a client that authenticates with OAuth 1.0a ignores
+      OAUTH2_ONLY_CREDENTIALS = %i[client_id client_secret refresh_token].freeze
+      private_constant :OAUTH1_CREDENTIALS, :OAUTH2_CREDENTIALS, :OAUTH2_ONLY_CREDENTIALS
+
+      # The message of the error raised for OAuth 2.0 credentials the client would leave unused
+      UNUSED_OAUTH2_CREDENTIALS = "%s are OAuth 2.0 credentials, which a client given OAuth 1.0a credentials would " \
+        "leave unused, since it authenticates with those, and the access_token they share is the OAuth 1.0a one. Pass " \
+        "the credentials of one or the other"
+      private_constant :UNUSED_OAUTH2_CREDENTIALS
 
       # The message of the error raised for an expiration time the client would leave unused
       UNUSED_EXPIRES_AT = "expires_at is the time an OAuth 2.0 access token expires, so it is given beside the " \
@@ -202,23 +211,27 @@ module X
         raise ArgumentError, format(AUTHENTICATOR_AND_CREDENTIALS, given.join(", ")) unless given.empty?
       end
 
-      # Raise for incomplete credentials, or ones that leave expires_at or scopes unused
+      # Raise for incomplete credentials, or ones that leave others unused
       #
-      # An expiration time and scopes are those of an OAuth 2.0 access token, which a client reads only when it
-      # authenticates with OAuth 2.0 credentials, so either given to a client that authenticates otherwise, as with
-      # OAuth 1.0a credentials, which it authenticates with before OAuth 2.0 credentials it holds beside them, raises, as
-      # it does beside an authenticator.
+      # A client given OAuth 1.0a credentials authenticates with them, so OAuth 2.0 credentials given beside them, which
+      # would share their access token, raise. An expiration time and scopes are those of an OAuth 2.0 access token,
+      # which a client reads only when it authenticates with OAuth 2.0 credentials, so either given to a client that
+      # authenticates otherwise raises, as it does beside an authenticator.
       #
       # @api private
       # @param credentials [Hash{Symbol => String, Time, Array<String>, nil}] the credentials, as Client#initialize
       #   accepts them
       # @return [void]
-      # @raise [ArgumentError] if a credential belongs to no complete set, or an expiration time or scopes are given
-      #   to a client that does not authenticate with OAuth 2.0 credentials
+      # @raise [ArgumentError] if a credential belongs to no complete set, OAuth 2.0 credentials are given beside
+      #   OAuth 1.0a ones, or an expiration time or scopes are given to a client that does not authenticate with OAuth
+      #   2.0 credentials
       # @example Check the credentials of a client
       #   X::Core::CredentialValidator.validate!(api_key: "key")
       def validate!(credentials)
         raise ArgumentError, INCOMPLETE_CREDENTIALS if incomplete?(credentials)
+
+        unused = unused_oauth2_credentials(credentials)
+        raise ArgumentError, format(UNUSED_OAUTH2_CREDENTIALS, unused.join(", ")) unless unused.empty?
         raise ArgumentError, UNUSED_EXPIRES_AT if unused?(credentials, :expires_at)
         raise ArgumentError, UNUSED_SCOPES if unused?(credentials, :scopes)
       end
@@ -238,15 +251,26 @@ module X
         (given - complete.flatten).any?
       end
 
+      # The OAuth 2.0 credentials given beside OAuth 1.0a ones, which would go unused
+      #
+      # @api private
+      # @param credentials [Hash{Symbol => String, Time, Array<String>, nil}] the credentials
+      # @return [Array<Symbol>] the names of the OAuth 2.0 credentials given, or none when OAuth 1.0a ones are not
+      def unused_oauth2_credentials(credentials)
+        given = credentials.compact.keys
+        (OAUTH1_CREDENTIALS - given).empty? ? OAUTH2_ONLY_CREDENTIALS & given : []
+      end
+
       # Check whether expires_at or scopes were given that the client would leave unused
       #
       # @api private
       # @param credentials [Hash{Symbol => String, Time, Array<String>, nil}] the credentials
       # @param name [Symbol] the name of what was given of the access token, expires_at or scopes
-      # @return [Boolean] true if it was given, and the client authenticates with no OAuth 2.0 credentials
+      # @return [Boolean] true if it was given, and the client holds no OAuth 2.0 credentials, which validate! refuses
+      #   beside OAuth 1.0a ones before it checks this
       def unused?(credentials, name)
         given = credentials.compact.keys
-        given.include?(name) && ((OAUTH1_CREDENTIALS - given).empty? || !(OAUTH2_CREDENTIALS - given).empty?)
+        given.include?(name) && !(OAUTH2_CREDENTIALS - given).empty?
       end
     end
     private_constant :CredentialValidator

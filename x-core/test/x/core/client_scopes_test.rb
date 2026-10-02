@@ -54,8 +54,7 @@ module X
     end
 
     def test_scopes_are_refused_beside_credentials_other_than_those_of_oauth2
-      [{}, {bearer_token: TEST_BEARER_TOKEN}, test_oauth_credentials, test_oauth_credentials.slice(:api_key, :api_key_secret),
-        {**test_oauth_credentials, client_id: TEST_CLIENT_ID}].each do |credentials|
+      [{}, {bearer_token: TEST_BEARER_TOKEN}, test_oauth_credentials, test_oauth_credentials.slice(:api_key, :api_key_secret)].each do |credentials|
         assert_equal UNUSED_SCOPES, assert_raises(ArgumentError) { Client.new(**credentials, scopes: SCOPES) }.message
       end
     end

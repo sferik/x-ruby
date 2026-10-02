@@ -19,10 +19,10 @@ module X
       end
     end
 
-    def test_an_expiration_time_is_refused_beside_oauth2_credentials_the_client_authenticates_after_oauth1
+    def test_oauth2_credentials_beside_oauth1_ones_are_refused_before_their_expiration_time
       error = assert_raises(ArgumentError) { Client.new(**test_oauth_credentials, client_id: TEST_CLIENT_ID, expires_at: Time.now) }
 
-      assert_equal TEST_UNUSED_EXPIRES_AT, error.message
+      assert_match(/\Aclient_id are OAuth 2.0 credentials/, error.message)
     end
 
     def test_an_expiration_time_is_allowed_beside_the_oauth2_credentials_the_client_authenticates_with

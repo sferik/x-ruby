@@ -74,13 +74,6 @@ module X
   class ClientAuthenticatorPrecedenceTest < Minitest::Test
     cover_client
 
-    def test_oauth1_takes_precedence_over_oauth2
-      client = Client.new(**test_oauth_credentials, client_id: TEST_CLIENT_ID, client_secret: TEST_CLIENT_SECRET,
-        refresh_token: TEST_REFRESH_TOKEN)
-
-      assert_instance_of OAuth1Authenticator, client.authenticator
-    end
-
     def test_oauth2_takes_precedence_over_bearer_token
       client = Client.new(**test_oauth2_credentials, bearer_token: TEST_BEARER_TOKEN)
 

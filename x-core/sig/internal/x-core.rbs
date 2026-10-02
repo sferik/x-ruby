@@ -473,6 +473,8 @@ module X
       CREDENTIAL_SETS: Array[Array[Symbol]]
       OAUTH1_CREDENTIALS: Array[Symbol]
       OAUTH2_CREDENTIALS: Array[Symbol]
+      OAUTH2_ONLY_CREDENTIALS: Array[Symbol]
+      UNUSED_OAUTH2_CREDENTIALS: String
       UNUSED_EXPIRES_AT: String
       UNUSED_SCOPES: String
       INVALID_SCOPES: String
@@ -491,6 +493,7 @@ module X
 
       private
       def incomplete?: (Hash[Symbol, String | Time | Array[String] | nil] credentials) -> bool
+      def unused_oauth2_credentials: (Hash[Symbol, String | Time | Array[String] | nil] credentials) -> Array[Symbol]
       def unused?: (Hash[Symbol, String | Time | Array[String] | nil] credentials, Symbol name) -> bool
     end
 
