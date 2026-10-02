@@ -95,9 +95,9 @@ module X
     end
 
     def test_a_wait_that_is_not_a_number_of_seconds_of_at_least_zero_is_refused
-      messages = ["900", nil, -1, Complex(1, 0)].map { |value| message_of { Client.new(max_rate_limit_wait: value) } }
+      messages = ["900", nil, -1, Float::NAN, Complex(1, 0)].map { |value| message_of { Client.new(max_rate_limit_wait: value) } }
 
-      assert_equal ['"900"', "nil", "-1", "(1+0i)"].map { |value| "max_rate_limit_wait must be a number of seconds of at least 0, not #{value}" }, messages
+      assert_equal ['"900"', "nil", "-1", "NaN", "(1+0i)"].map { |value| "max_rate_limit_wait must be a number of seconds of at least 0, not #{value}" }, messages
     end
 
     def test_a_wait_of_any_real_number_of_seconds_of_at_least_zero_is_allowed

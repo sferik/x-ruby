@@ -308,10 +308,14 @@ module X
       def count?(value) = value.instance_of?(Integer) && !value.negative?
 
       # Check whether a value is a real number of at least 0
+      #
+      # Float::NAN is neither negative nor at least 0, and a wait compared with it is never longer, so it is compared
+      # with 0 rather than asked whether it is negative, which would let it pass as a limit that never applies.
+      #
       # @api private
       # @param value [Object] the value
       # @return [Boolean] true if the value is a real number of at least 0
-      def seconds?(value) = value.is_a?(Numeric) && value.real? && !value.negative?
+      def seconds?(value) = value.is_a?(Numeric) && value.real? && value >= 0
 
       # Check whether a value is a finite real number of at least 0
       # @api private

@@ -28,9 +28,9 @@ module X
     end
 
     def test_a_keep_alive_timeout_that_is_not_finite_seconds_of_at_least_zero_is_refused
-      messages = ["30", nil, -1, Float::INFINITY].map { |value| message_of { Client.new(keep_alive_timeout: value) } }
+      messages = ["30", nil, -1, Float::INFINITY, Float::NAN].map { |value| message_of { Client.new(keep_alive_timeout: value) } }
 
-      assert_equal ['"30"', "nil", "-1", "Infinity"].map { |value| "keep_alive_timeout must be a finite number of seconds of at least 0, not #{value}" }, messages
+      assert_equal ['"30"', "nil", "-1", "Infinity", "NaN"].map { |value| "keep_alive_timeout must be a finite number of seconds of at least 0, not #{value}" }, messages
     end
 
     def test_a_keep_alive_timeout_of_finite_seconds_of_at_least_zero_is_allowed
