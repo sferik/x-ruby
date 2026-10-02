@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require_relative "shape"
-
 module X
   module Objects
     # Resolves the posts a post refers to through its referenced_posts attribute
@@ -29,7 +27,7 @@ module X
       # @example Get the referenced posts
       #   post.references
       def references
-        Shape.objects("#{self.class}#referenced_posts", referenced_posts).filter_map do |reference|
+        referenced_posts.filter_map do |reference|
           resolve(Post, reference["id"]) #: Post?
         end.freeze
       end
@@ -108,7 +106,7 @@ module X
       # @return [Post, nil] the referenced post or nil if there is none of those types
       # @raise [InvalidAttribute] if the response holds a referenced post that is not an object
       def reference(*types)
-        found = Shape.objects("#{self.class}#referenced_posts", referenced_posts).find { |element| types.include?(element["type"]) }
+        found = referenced_posts.find { |element| types.include?(element["type"]) }
         return if found.nil?
 
         resolve(Post, found["id"]) #: Post?

@@ -46,7 +46,7 @@ module X
     #   @return [Array<Hash>] the options, empty if there are none
     #   @example Get the options
     #     poll.options
-    attribute :options, :list
+    attribute :options, :objects
 
     # @!attribute [r] duration_minutes
     #   The duration of the poll in minutes

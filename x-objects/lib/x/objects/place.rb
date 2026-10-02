@@ -102,6 +102,6 @@ module X
     #   @return [Hash, nil] the GeoJSON
     #   @example Get the GeoJSON
     #     place.geo
-    attribute :geo
+    attribute :geo, :object
   end
 end

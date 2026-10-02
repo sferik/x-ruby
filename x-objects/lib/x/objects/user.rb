@@ -239,7 +239,7 @@ module X
       #   @return [Hash, nil] the affiliation, with its description, url, badge_url, and user_id
       #   @example Get the affiliated organization
       #     user.affiliation&.fetch("description")
-      attribute :affiliation
+      attribute :affiliation, :object
 
       # @!attribute [r] affiliated_with_ids
       #   The identifiers of the accounts this account is affiliated with
@@ -335,7 +335,7 @@ module X
       #   @return [Hash, nil] the subscription, with subscribes_to_you, or nil when the response holds none
       #   @example Check whether a user subscribes to the authenticated user
       #     client.find_user("sferik", "user.fields": "subscription").subscription&.fetch("subscribes_to_you")
-      attribute :subscription
+      attribute :subscription, :object
 
       # @!attribute [r] pinned_post_id
       #   The identifier of the pinned post
@@ -359,7 +359,7 @@ module X
       #   @return [Hash, nil] the entities
       #   @example Get the entities
       #     user.entities
-      attribute :entities
+      attribute :entities, :object
 
       # @!attribute [r] withheld
       #   The withholding details
@@ -367,7 +367,7 @@ module X
       #   @return [Hash, nil] the withholding details
       #   @example Get the withholding details
       #     user.withheld
-      attribute :withheld
+      attribute :withheld, :object
 
       # @!attribute [r] public_metrics
       #   The public metrics
@@ -375,7 +375,7 @@ module X
       #   @return [Hash, nil] the public metrics
       #   @example Get the public metrics
       #     user.public_metrics
-      attribute :public_metrics
+      attribute :public_metrics, :object
 
       # @!attribute [r] followers_count
       #   The number of followers

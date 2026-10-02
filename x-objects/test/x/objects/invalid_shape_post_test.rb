@@ -14,8 +14,8 @@ module X
     def test_a_note_that_is_not_an_object_raises_from_the_text_and_the_entities
       post = Post.new({"id" => "1", "text" => "A long post…", "note_post" => "A long post"})
 
-      assert_equal "X::Post#text cannot be read from \"A long post\"", assert_raises(InvalidAttribute) { post.text }.message
-      assert_equal "X::Post#entities cannot be read from \"A long post\"", assert_raises(InvalidAttribute) { post.entities }.message
+      assert_equal "X::Post#note_post cannot be read from \"A long post\"", assert_raises(InvalidAttribute) { post.text }.message
+      assert_equal "X::Post#note_post cannot be read from \"A long post\"", assert_raises(InvalidAttribute) { post.entities }.message
     end
 
     def test_entities_that_are_not_an_object_raise

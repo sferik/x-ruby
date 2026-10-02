@@ -83,7 +83,7 @@ CGI.unescapeHTML(post.text)            # => "Ruby & Rails"
 
 ## Nested data
 
-A reader of an object the API nests in a resource, or of a list of them, returns it as the API sends it: a frozen Hash keyed by String, or an Array of them, as `Hash[String, untyped]` in the signatures. Among them are the `entities`, `urls`, `public_metrics`, `edit_controls`, `attachments`, and `withheld` of a post, the `variants` of media, the `options` of a poll, and the `subscription` and `affiliation` of a user. Others return objects, as `post.matching_rules` returns `X::MatchingRule`s and `space.topics` returns `X::Topic`s.
+A reader of an object the API nests in a resource, or of a list of them, returns it as the API sends it: a frozen Hash keyed by String, or an Array of them, as `Hash[String, untyped]` in the signatures. A response that holds anything else in its place, such as a String where the API documents an object, raises `X::InvalidAttribute` from the reader. Among them are the `entities`, `urls`, `public_metrics`, `edit_controls`, `attachments`, and `withheld` of a post, the `variants` of media, the `options` of a poll, and the `subscription` and `affiliation` of a user. Others return objects, as `post.matching_rules` returns `X::MatchingRule`s and `space.topics` returns `X::Topic`s.
 
 ```ruby
 post.public_metrics["like_count"]      # => 3, which post.like_count reads too

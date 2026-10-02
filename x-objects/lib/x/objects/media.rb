@@ -251,7 +251,7 @@ module X
       #   @return [Array<Hash>] the variants, empty if there are none
       #   @example Get the variants
       #     media.variants
-      attribute :variants, :list
+      attribute :variants, :objects
 
       # @!attribute [r] public_metrics
       #   The public metrics
@@ -259,7 +259,7 @@ module X
       #   @return [Hash, nil] the public metrics
       #   @example Get the public metrics
       #     media.public_metrics
-      attribute :public_metrics
+      attribute :public_metrics, :object
 
       # @!attribute [r] view_count
       #   The number of views

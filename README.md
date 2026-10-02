@@ -76,7 +76,7 @@ post.text                              # => "Ruby &amp; Rails"
 CGI.unescapeHTML(post.text)            # => "Ruby & Rails"
 ```
 
-**Nested data.** An object the API nests in a resource, or a list of them, such as `post.entities`, `post.urls`, `post.public_metrics`, `post.attachments`, `media.variants`, or `poll.options`, reads as the API sends it, a frozen Hash keyed by String, or an Array of them, and will throughout 1.x. A later 1.x release may add a reader that returns an object for some of it, as `post.matching_rules` returns `X::MatchingRule`s, but under a new name.
+**Nested data.** An object the API nests in a resource, or a list of them, such as `post.entities`, `post.urls`, `post.public_metrics`, `post.attachments`, `media.variants`, or `poll.options`, reads as the API sends it, a frozen Hash keyed by String, or an Array of them, and will throughout 1.x; a response that holds anything else in its place raises `X::InvalidAttribute`. A later 1.x release may add a reader that returns an object for some of it, as `post.matching_rules` returns `X::MatchingRule`s, but under a new name.
 
 ```ruby
 post.public_metrics["like_count"]      # => 3, which post.like_count reads too

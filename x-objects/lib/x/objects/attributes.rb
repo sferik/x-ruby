@@ -24,6 +24,8 @@ module X
         integer: ->(value) { Shape.integer(value) },
         integers: ->(value) { (Shape.list(value) || EMPTY_LIST).map { |id| Shape.integer(id) }.freeze },
         list: ->(value) { Shape.list(value) || EMPTY_LIST },
+        object: ->(value) { Shape.object(value) },
+        objects: ->(value) { Shape.object_list(value) },
         range: ->(value) { Shape.range(value) },
         requested_list: ->(value) { Shape.list(value) }
       }.freeze
@@ -95,10 +97,11 @@ module X
       #
       # @api private
       # @param name [Symbol] the reader name
-      # @param type [Symbol] the attribute type: raw, boolean, time, integer, integers, list, or requested_list, of
-      #   which integers and list read a list the response omitted as empty, and requested_list, the type of a field no
-      #   lookup asks for unless it is requested, reads it as nil, since a response that omits it does not say the list
-      #   is empty
+      # @param type [Symbol] the attribute type: raw, boolean, time, integer, integers, list, object, objects, range, or
+      #   requested_list, of which integers, list, and objects read a list the response omitted as empty, and
+      #   requested_list, the type of a field no lookup asks for unless it is requested, reads it as nil, since a
+      #   response that omits it does not say the list is empty; object is the type of an object the API nests in a
+      #   resource, and objects of a list of them
       # @param key [Array<String>] the key path
       # @param tweet_key [Array<String>, nil] the key path of the name the API gave the attribute before it named
       #   tweets posts, which it still gives it where it has not renamed it, such as in a stream, read when the

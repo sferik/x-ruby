@@ -138,6 +138,7 @@ module X
       def dig_first: (String name, untyped value, Array[Array[String]] paths) -> untyped
       def read_object: (String name, untyped value) -> Hash[untyped, untyped]?
       def objects: (String name, untyped value) -> Array[Hash[String, untyped]]
+      def object_list: (untyped value) -> Array[Hash[String, untyped]]
       def object: (untyped value) -> Hash[untyped, untyped]?
       def object!: (untyped value) -> Hash[untyped, untyped]
       def list: (untyped value) -> Array[untyped]?

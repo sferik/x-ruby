@@ -67,7 +67,15 @@ module X
       # @raise [InvalidAttribute] if the value is not a list, or holds something other than an object
       # @example Read the links of a post
       #   X::Objects::Shape.objects("X::Post#urls", entities["urls"])
-      def objects(name, value) = Utils.read(name, value) { Array(list(value)).each { |element| object!(element) }.freeze }
+      def objects(name, value) = Utils.read(name, value) { object_list(value) }
+
+      # Check that a value the API documents as a list of objects is one, if it is there
+      #
+      # @api private
+      # @param value [Array<Hash>, nil] the value
+      # @return [Array<Hash>] the objects, empty if the value is missing
+      # @raise [ArgumentError] if the value is not a list, or holds something other than an object
+      def object_list(value) = Array(list(value)).each { |element| object!(element) }.freeze
 
       # Check that a value the API documents as an object is one, if it is there
       #

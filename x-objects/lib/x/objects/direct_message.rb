@@ -183,7 +183,7 @@ module X
       #   @return [Array<Hash>] the referenced posts, empty if there are none
       #   @example Get the referenced posts
       #     message.referenced_posts
-      attribute :referenced_posts, :list, tweet_key: %w[referenced_tweets]
+      attribute :referenced_posts, :objects, tweet_key: %w[referenced_tweets]
       reference_keys.push(%w[referenced_posts], %w[referenced_tweets])
 
       # @!attribute [r] attachments
@@ -192,7 +192,7 @@ module X
       #   @return [Hash, nil] the attachments
       #   @example Get the attachments
       #     message.attachments
-      attribute :attachments
+      attribute :attachments, :object
 
       # @!attribute [r] entities
       #   The entities found in the text: its URLs, hashtags, mentions, and cashtags
@@ -200,7 +200,7 @@ module X
       #   @return [Hash, nil] the entities
       #   @example Get the URLs of a message
       #     message.entities&.fetch("urls")
-      attribute :entities
+      attribute :entities, :object
 
       # @!method sender
       #   The sender, resolved from the includes or as a stub holding only its identifier
@@ -234,7 +234,7 @@ module X
       # @example Get the referenced posts
       #   message.references
       def references
-        Shape.objects("#{self.class}#referenced_posts", referenced_posts).filter_map do |reference|
+        referenced_posts.filter_map do |reference|
           resolve(Post, reference["id"]) #: Post?
         end.freeze
       end

@@ -105,7 +105,7 @@ module X
       #   post.text # => "Ruby &amp; Rails"
       # @example Display the text
       #   CGI.unescapeHTML(post.text) # => "Ruby & Rails"
-      def text = Shape.dig("#{self.class}#text", full, %w[text])
+      def text = full["text"]
 
       # @!attribute [r] lang
       #   The BCP 47 language tag
@@ -192,7 +192,7 @@ module X
       #   @return [Hash, nil] the edit controls
       #   @example Get the edit controls
       #     post.edit_controls
-      attribute :edit_controls
+      attribute :edit_controls, :object
 
       # @!attribute [r] display_text_range
       #   The range of characters of the text the API gives the post that is shown
@@ -216,7 +216,7 @@ module X
       #   @return [Hash, nil] the scopes
       #   @example Check whether the post is shared with followers alone
       #     post.scopes&.fetch("followers", false)
-      attribute :scopes
+      attribute :scopes, :object
 
       # @!attribute [r] card_uri
       #   The URI of the card the post shows
@@ -232,7 +232,7 @@ module X
       #   @return [Hash, nil] the article
       #   @example Get the title of an article
       #     post.article&.fetch("title")
-      attribute :article
+      attribute :article, :object
 
       # @!attribute [r] article_title
       #   What the API describes of the title of the article the post publishes
@@ -240,7 +240,7 @@ module X
       #   @return [Hash, nil] the metadata of the article, or nil for a post that publishes none
       #   @example Get the metadata of the title of an article
       #     post.article_title
-      attribute :article_title
+      attribute :article_title, :object
 
       # @!attribute [r] media_metadata
       #   What the post describes of the media it attaches
@@ -248,7 +248,7 @@ module X
       #   @return [Array<Hash>] the metadata of each medium, empty if there is none
       #   @example Get the metadata of the media
       #     post.media_metadata
-      attribute :media_metadata, :list
+      attribute :media_metadata, :objects
 
       # @!attribute [r] paid_partnership
       #   Whether the post is a paid partnership
@@ -277,7 +277,7 @@ module X
       # @raise [InvalidAttribute] if the response holds a note_post, or entities, that is not an object
       # @example Get the entities
       #   post.entities
-      def entities = Shape.read_object("#{self.class}#entities", Shape.dig("#{self.class}#entities", full, %w[entities]))
+      def entities = Shape.read_object("#{self.class}#entities", full["entities"])
 
       # The links in the full text, each with its shortened url and its expanded_url
       #
@@ -312,7 +312,7 @@ module X
       #   @return [Array<Hash>] the context annotations, empty if there are none
       #   @example Get the context annotations
       #     post.context_annotations
-      attribute :context_annotations, :list
+      attribute :context_annotations, :objects
 
       # @!attribute [r] referenced_posts
       #   The referenced posts with their types and identifiers
@@ -320,7 +320,7 @@ module X
       #   @return [Array<Hash>] the referenced posts, empty if there are none
       #   @example Get the referenced posts
       #     post.referenced_posts
-      attribute :referenced_posts, :list, tweet_key: %w[referenced_tweets]
+      attribute :referenced_posts, :objects, tweet_key: %w[referenced_tweets]
       reference_keys.push(%w[referenced_posts], %w[referenced_tweets])
 
       # @!attribute [r] attachments
@@ -329,7 +329,7 @@ module X
       #   @return [Hash, nil] the attachments
       #   @example Get the attachments
       #     post.attachments
-      attribute :attachments
+      attribute :attachments, :object
 
       # @!attribute [r] coordinates
       #   The longitude and latitude the post was tagged with
@@ -345,7 +345,7 @@ module X
       #   @return [Hash, nil] the geo details
       #   @example Get the geo details
       #     post.geo
-      attribute :geo
+      attribute :geo, :object
 
       # @!attribute [r] withheld
       #   The withholding details
@@ -353,7 +353,7 @@ module X
       #   @return [Hash, nil] the withholding details
       #   @example Get the withholding details
       #     post.withheld
-      attribute :withheld
+      attribute :withheld, :object
 
       # @!attribute [r] note_post
       #   The full text and entities of a long post
@@ -361,7 +361,7 @@ module X
       #   @return [Hash, nil] the note details
       #   @example Get the note details
       #     post.note_post
-      attribute :note_post, tweet_key: %w[note_tweet]
+      attribute :note_post, :object, tweet_key: %w[note_tweet]
 
       # @!attribute [r] public_metrics
       #   The public metrics
@@ -369,7 +369,7 @@ module X
       #   @return [Hash, nil] the public metrics
       #   @example Get the public metrics
       #     post.public_metrics
-      attribute :public_metrics
+      attribute :public_metrics, :object
 
       # @!attribute [r] repost_count
       #   The number of reposts
