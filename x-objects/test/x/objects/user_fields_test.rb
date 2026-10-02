@@ -87,6 +87,7 @@ module X
       refute_includes User::FIELDS, "confirmed_email"
       refute_includes User::FIELDS, "receives_your_dm"
       refute_includes User::FIELDS, "subscription"
+      refute_includes User::FIELDS, "subscribes_to_you"
     end
   end
 end

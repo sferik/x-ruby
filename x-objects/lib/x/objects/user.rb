@@ -278,6 +278,65 @@ module X
       #     client.find_user("sferik", "user.fields": "connection_status").connection_status.include?("followed_by")
       attribute :connection_status, :requested_list
 
+      # @!attribute [r] receives_your_dm
+      #   Whether the authenticated user can send this user a direct message
+      #
+      #   It depends on who is authenticated, so no lookup asks for it unless user.fields names it, and a user looked
+      #   up otherwise holds none, and reads nil rather than false, which would say the user receives none.
+      #
+      #   @api public
+      #   @return [Boolean, nil] true if the authenticated user can send this user a direct message, or nil when the
+      #     response holds none
+      #   @example Check whether a user can be sent a direct message
+      #     client.find_user("sferik", "user.fields": "receives_your_dm").receives_your_dm?
+      attribute :receives_your_dm, :boolean
+
+      # @!method receives_your_dm?
+      #   Check whether the authenticated user can send this user a direct message
+      #
+      #   A user whose response holds no receives_your_dm, such as one looked up without asking for it, is not known to
+      #   receive one, and reads false.
+      #
+      #   @api public
+      #   @return [Boolean] true if the response says the authenticated user can send this user a direct message
+      #   @example Message the users who can be sent one
+      #     users.select(&:receives_your_dm?).each { |user| client.create_dm(user, "Hello!") }
+
+      # @!attribute [r] subscribes_to_you
+      #   Whether this user subscribes to the authenticated user
+      #
+      #   It depends on who is authenticated, so no lookup asks for it unless user.fields names it, and a user looked
+      #   up otherwise holds none, and reads nil rather than false.
+      #
+      #   @api public
+      #   @return [Boolean, nil] true if this user subscribes to the authenticated user, or nil when the response holds
+      #     none
+      #   @example Check whether a user subscribes to the authenticated user
+      #     client.find_user("sferik", "user.fields": "subscribes_to_you").subscribes_to_you?
+      attribute :subscribes_to_you, :boolean
+
+      # @!method subscribes_to_you?
+      #   Check whether this user subscribes to the authenticated user
+      #
+      #   A user whose response holds no subscribes_to_you, such as one looked up without asking for it, reads false.
+      #
+      #   @api public
+      #   @return [Boolean] true if the response says this user subscribes to the authenticated user
+      #   @example Find the subscribers among some users
+      #     users.select(&:subscribes_to_you?)
+
+      # @!attribute [r] subscription
+      #   The subscription between this user and the authenticated user
+      #
+      #   It depends on who is authenticated, so no lookup asks for it unless user.fields names it, and a user looked
+      #   up otherwise holds none.
+      #
+      #   @api public
+      #   @return [Hash, nil] the subscription, with subscribes_to_you, or nil when the response holds none
+      #   @example Check whether a user subscribes to the authenticated user
+      #     client.find_user("sferik", "user.fields": "subscription").subscription&.fetch("subscribes_to_you")
+      attribute :subscription
+
       # @!attribute [r] pinned_post_id
       #   The identifier of the pinned post
       #   @api public

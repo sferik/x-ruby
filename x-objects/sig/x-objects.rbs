@@ -502,6 +502,11 @@ module X
     def verified_followers_count: () -> Integer?
     def subscriber_count: () -> Integer?
     def connection_status: () -> Array[String]?
+    def receives_your_dm: () -> bool?
+    def receives_your_dm?: () -> bool
+    def subscribes_to_you: () -> bool?
+    def subscribes_to_you?: () -> bool
+    def subscription: () -> Hash[String, untyped]?
     def pinned_post_id: () -> Integer?
     def pinned_tweet_id: () -> Integer?
     def most_recent_post_id: () -> Integer?
