@@ -445,7 +445,7 @@ module X
       #   The accounts this account is affiliated with, such as its organization
       #
       #   They come from the includes, or as stubs holding their identifiers. They point the other way from
-      #   {#affiliates}, the accounts affiliated with this one.
+      #   affiliates, the accounts affiliated with this one.
       #   @api public
       #   @return [Array<User>] the accounts it is affiliated with, empty if there are none
       #   @example Get the username of the affiliated organization

@@ -24,18 +24,20 @@ module X
     # client, which says how long a connection is kept open, nor its close, which closes the connections it kept: a
     # streaming client keeps none between streams. A stream is stopped by breaking or raising from the block that
     # reads it, or from another thread, or the trap of a signal, with {#stop}, which stops a stream that delivers
-    # nothing as well. A streaming client that was stopped stays stopped, and {Client#streaming} builds a new one each
-    # time it is called, so a streaming client to be stopped is kept in a variable, rather than built again to stop.
+    # nothing as well. A streaming client that was stopped stays stopped, and
+    # {X::Streaming::API#streaming Client#streaming} builds a new one each time it is called, so a streaming client to
+    # be stopped is kept in a variable, rather than built again to stop.
     #
     # A stream is opened with X::Client#get_stream, of an app-only copy of the client whose read_timeout is the
     # stream's, so it carries the credentials, headers, and proxy of the client as any request does, and none of its
     # credentials to another origin than the base URL of the client.
     #
     # A streaming client keeps the settings it was built with for as long as it lives, as a client does, so a stream
-    # that runs for hours never reads a setting another thread is halfway through changing. {Client#streaming} builds
-    # one whose read_timeout, max_reconnects, or on_reconnect differ, the settings a streaming client keeps itself, and
-    # it takes the rest of its settings from the client it is built from, which {#client} reads, so a stream that
-    # connects differently is opened from a copy of that client: client.with(open_timeout: 2).streaming.
+    # that runs for hours never reads a setting another thread is halfway through changing.
+    # {X::Streaming::API#streaming Client#streaming} builds one whose read_timeout, max_reconnects, or on_reconnect
+    # differ, the settings a streaming client keeps itself, and it takes the rest of its settings from the client it is
+    # built from, which {#client} reads, so a stream that connects differently is opened from a copy of that client:
+    # client.with(open_timeout: 2).streaming.
     #
     # @api public
     class ::X::StreamingClient
@@ -170,7 +172,7 @@ module X
       #   name, which are themselves sent in place of the defaults of the gem
       # @param array_class [Class] the class for parsing JSON arrays
       # @param object_class [Class, #from_response] the class for parsing JSON objects, or one that responds to
-      #   from_response and builds the result from each whole object the stream delivers; see {Client}
+      #   from_response and builds the result from each whole object the stream delivers; see X::Client
       # @yield [Hash, Array] each parsed JSON object from the stream
       # @return [Object, nil] what the block broke with, or nil for a stream {#stop} stopped, or was called before
       # @raise [ArgumentError] if no block is given, or the endpoint is not a valid URL, or does not resolve to an http or
@@ -208,10 +210,11 @@ module X
       # does with an object, or on_response with a failed response, is never cut short.
       #
       # A streaming client that was stopped stays stopped: a stream it is asked to run later, as one a thread started
-      # just before stop may not yet have opened, returns nil at once, without a request. {Client#streaming} builds a
-      # new streaming client to stream with again, and builds another each time it is called, so stop is called on
-      # the streaming client the stream runs on, kept in a variable, not on one a second call builds. It may be called
-      # from the trap of a signal, and waits for no lock, so it may return before the streams it stops have ended.
+      # just before stop may not yet have opened, returns nil at once, without a request.
+      # {X::Streaming::API#streaming Client#streaming} builds a new streaming client to stream with again, and builds
+      # another each time it is called, so stop is called on the streaming client the stream runs on, kept in a
+      # variable, not on one a second call builds. It may be called from the trap of a signal, and waits for no lock,
+      # so it may return before the streams it stops have ended.
       #
       # @api public
       # @return [nil]

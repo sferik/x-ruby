@@ -26,6 +26,27 @@ module X
       include RequestContext
       include ResponseHeaders
 
+      # @!method http_method
+      #   The HTTP method the request was sent with
+      #   @api public
+      #   @return [Symbol, nil] the method, as :get, :post, :put, or :delete, or nil for an error built without one
+      #   @example Tell a read that failed from a write
+      #     writes_failed += 1 unless error.http_method.eql?(:get)
+      # @!method uri
+      #   The URI the request was sent to
+      #   @api public
+      #   @return [URI::Generic, nil] the URI, or nil for an error built without one
+      #   @example Count the failures of each endpoint
+      #     failures[error.uri.path] += 1
+      # @!method headers
+      #   The headers of the response
+      #
+      #   The names are lowercase, and a field the API sent more than once is joined with a comma.
+      #   @api public
+      #   @return [Hash{String => String}] the headers, frozen
+      #   @example Read how long the API took to answer
+      #     error.headers["x-response-time"]
+
       # Regular expression to match JSON content types
       JSON_CONTENT_TYPE_REGEXP = %r{application/(problem\+|)json}
       private_constant :JSON_CONTENT_TYPE_REGEXP

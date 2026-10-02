@@ -13,6 +13,15 @@ module X
     class ::X::Response
       include ResponseHeaders
 
+      # @!method headers
+      #   The headers of the response
+      #
+      #   The names are lowercase, and a field the API sent more than once is joined with a comma.
+      #   @api public
+      #   @return [Hash{String => String}] the headers, frozen
+      #   @example Read how long the API took to answer
+      #     response.headers["x-response-time"]
+
       # The HTTP method of the request
       # @api public
       # @return [Symbol] the HTTP method

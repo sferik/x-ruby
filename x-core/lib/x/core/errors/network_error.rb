@@ -22,6 +22,19 @@ module X
     class ::X::NetworkError < Error
       include RequestContext
 
+      # @!method http_method
+      #   The HTTP method the request that failed was sent with
+      #   @api public
+      #   @return [Symbol, nil] the method, as :get, :post, :put, or :delete, or nil for an error built without one
+      #   @example Tell a read that failed from a write
+      #     writes_failed += 1 unless error.http_method.eql?(:get)
+      # @!method uri
+      #   The URI the request that failed was sent to
+      #   @api public
+      #   @return [URI::Generic, nil] the URI, or nil for an error built without one
+      #   @example Count the failures of each host
+      #     failures[error.uri.host] += 1
+
       # Initialize a new NetworkError
       #
       # Public, so that code that rescues a NetworkError can be tested with one built by hand, as Connection builds one

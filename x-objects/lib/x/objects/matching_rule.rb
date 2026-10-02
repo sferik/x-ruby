@@ -18,7 +18,7 @@ module X
     # X::Post.from_response, as a request does.
     #
     # It is frozen, compares equal to a rule of the same attributes, and matches a pattern of its identifier and tag,
-    # as in rule in {tag: "ruby"}. Its attributes are what the stream sent of the rule, as those of a resource are, so
+    # as in `rule in {tag: "ruby"}`. Its attributes are what the stream sent of the rule, as those of a resource are, so
     # to_h, as_json, and to_json give them as the stream did, whatever the stream comes to send of a rule beside its
     # identifier and tag.
     #

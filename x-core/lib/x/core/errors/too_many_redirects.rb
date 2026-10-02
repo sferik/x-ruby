@@ -17,6 +17,19 @@ module X
     class ::X::TooManyRedirects < Error
       include RequestContext
 
+      # @!method http_method
+      #   The HTTP method the request whose redirect was one too many was sent with
+      #   @api public
+      #   @return [Symbol, nil] the method, as :get, :post, :put, or :delete, or nil for an error built without one
+      #   @example Tell a read that redirected in a loop from a write
+      #     writes_failed += 1 unless error.http_method.eql?(:get)
+      # @!method uri
+      #   The URI the request whose redirect was one too many was sent to
+      #   @api public
+      #   @return [URI::Generic, nil] the URI, or nil for an error built without one
+      #   @example Get the path that keeps redirecting
+      #     error.uri.path # => "/2/users/me"
+
       # Initialize a new TooManyRedirects
       #
       # Public, so that code that rescues a TooManyRedirects can be tested with one built by hand, as RedirectHandler

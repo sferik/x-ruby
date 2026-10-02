@@ -11,7 +11,7 @@ module X
   # built to be added has no identifier until the API gives it one, and is deleted by the value it matches.
   #
   # It is frozen, compares equal to a rule of the same identifier, value, and tag, and matches a pattern of them, as
-  # in rule in {value: /ruby/, tag: nil}.
+  # in `rule in {value: /ruby/, tag: nil}`.
   #
   # @api public
   class StreamRule

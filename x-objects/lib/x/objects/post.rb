@@ -215,7 +215,7 @@ module X
       # @!attribute [r] scopes
       #   Who may see the post
       #
-      #   A post its author shared with followers alone holds {"followers" => true}.
+      #   A post its author shared with followers alone holds `{"followers" => true}`.
       #
       #   @api public
       #   @return [Hash, nil] the scopes
