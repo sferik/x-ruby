@@ -37,9 +37,12 @@ module X
       assert_equal ["The upload could not be finished", nil], [error.message, error.media]
     end
 
-    def test_names_no_media_when_given_none_or_media_that_holds_no_identifier
-      assert_equal ["Media was initialized, but its upload could not be finished"] * 2,
-        [ChunkedUploadFailed.new, ChunkedUploadFailed.new(media: {})].map(&:message)
+    def test_names_no_media_when_given_none
+      assert_equal "Media was initialized, but its upload could not be finished", ChunkedUploadFailed.new.message
+    end
+
+    def test_media_that_holds_no_identifier_is_refused
+      assert_raises(ArgumentError) { ChunkedUploadFailed.new(media: {}) }
     end
 
     def test_a_message_of_its_own_ends_with_the_reason_it_failed

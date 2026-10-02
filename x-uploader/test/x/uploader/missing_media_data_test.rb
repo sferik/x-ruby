@@ -66,10 +66,10 @@ module X
     end
 
     def test_media_built_by_hand_without_an_identifier_is_a_mistake_of_the_caller
-      error = assert_raises(ArgumentError) { UploadedMedia.new({}).id }
+      error = assert_raises(ArgumentError) { UploadedMedia.new({}) }
 
-      assert_equal "The media holds no identifier", error.message
-      assert_raises(ArgumentError) { UploadedMedia.new({"media_key" => "3_7"}).media_id }
+      assert_equal "attrs must hold the \"id\" of the media, an Integer or a String of digits, as an upload returns it, not nil", error.message
+      assert_raises(ArgumentError) { UploadedMedia.new({"media_key" => "3_7"}) }
     end
 
     def test_a_response_of_an_upload_whose_identifier_is_nil_or_empty_raises

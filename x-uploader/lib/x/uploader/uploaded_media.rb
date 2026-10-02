@@ -20,8 +20,11 @@ module X
     PROCESSING_STATES = %w[pending in_progress].freeze
     # The attributes that name media, which media known by its identifier or media key alone holds, and nothing more
     IDENTIFYING_KEYS = %w[id media_key].freeze
+    # The pattern of a media ID, as a String: digits alone
+    MEDIA_ID = /\A\d+\z/
     # The message of the error raised for media that holds no identifier
-    NO_MEDIA_ID = "The media holds no identifier"
+    NO_MEDIA_ID = "attrs must hold the \"id\" of the media, an Integer or a String of digits, as an upload returns " \
+      "it, not %s"
     # The number of the format of the state Marshal writes, which every release of 1.x writes
     #
     # A later release of 1.x adds to the state only what an earlier one ignores, parts after those it reads and keys of a
@@ -29,7 +32,7 @@ module X
     MARSHAL_FORMAT = 1
     # The name YAML writes each part of the state under, in the order Marshal writes them
     YAML_KEYS = %w[format attrs].freeze
-    private_constant :PROCESSING_STATES, :IDENTIFYING_KEYS, :NO_MEDIA_ID, :MARSHAL_FORMAT, :YAML_KEYS
+    private_constant :PROCESSING_STATES, :IDENTIFYING_KEYS, :MEDIA_ID, :NO_MEDIA_ID, :MARSHAL_FORMAT, :YAML_KEYS
 
     # The response data the media was built from
     # @api public
@@ -42,13 +45,20 @@ module X
     # Initialize uploaded media
     #
     # @api public
+    # The media must hold its identifier under the String key "id", as every upload and status response does, so that
+    # the media can be attached to a post, and {id} raises for none.
+    #
+    # @api public
     # @param attrs [Hash{String => Object}] the data of an upload or status response
     # @return [UploadedMedia] a new, frozen instance
-    # @raise [ArgumentError] if the attributes are not a Hash
+    # @raise [ArgumentError] if the attributes are not a Hash, or hold no "id" that is an Integer that is not negative
+    #   or a String of digits
     # @example Refer to media that was uploaded before
     #   X::UploadedMedia.new({"id" => "1880028106020515840"})
     def initialize(attrs)
       @attrs = deep_freeze(Hash.try_convert(attrs) || raise(ArgumentError, "attrs must be a Hash, not #{attrs.inspect}"))
+      raise ArgumentError, format(NO_MEDIA_ID, self["id"].inspect) unless MEDIA_ID.match?(self["id"].to_s)
+
       freeze
     end
 
@@ -60,11 +70,9 @@ module X
     #
     # @api public
     # @return [Integer] the media ID, whether the response held it as a String or an Integer
-    # @raise [ArgumentError] if the media holds no id, or an id that names no number: media an upload returns always
-    #   holds one, so media without one was built by hand
     # @example Get the media ID
     #   media.id # => 1880028106020515840
-    def id = Integer(fetch("id") { raise ArgumentError, NO_MEDIA_ID }.to_s, 10)
+    def id = Integer(fetch("id").to_s, 10)
 
     # The numeric media ID, as the X::Media of x-objects names it
     #
@@ -72,8 +80,6 @@ module X
     #
     # @api public
     # @return [Integer] the media ID, whether the response held it as a String or an Integer
-    # @raise [ArgumentError] if the media holds no id, or an id that names no number: media an upload returns always
-    #   holds one, so media without one was built by hand
     # @example Get the media ID
     #   media.media_id # => 1880028106020515840
     def media_id = id
@@ -248,7 +254,7 @@ module X
     # @return [String] the class name, identifier, media key, and state
     # @example Inspect media
     #   media.inspect # => #<X::UploadedMedia id=1880028106020515840 media_key="3_1880028106020515840" state=nil>
-    def inspect = "#<#{self.class} id=#{self["id"] || "nil"} media_key=#{media_key.inspect} state=#{state.inspect}>"
+    def inspect = "#<#{self.class} id=#{id} media_key=#{media_key.inspect} state=#{state.inspect}>"
 
     # The state Marshal writes
     #
@@ -267,7 +273,7 @@ module X
     # @param state [Array] the state Marshal wrote
     # @return [void]
     # @raise [UnsupportedMarshalFormat] if the state is of a format this release does not read
-    # @raise [ArgumentError] if the attributes of the state are not a Hash
+    # @raise [ArgumentError] if the attributes of the state are not a Hash, or hold no "id" of the media
     # @example Read what an upload returned from a cache
     #   Marshal.load(Marshal.dump(media)).media_key
     def marshal_load(state)

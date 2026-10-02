@@ -9,7 +9,7 @@ module X
     cover Uploader.const_get(:Utils)
 
     def test_processed_is_the_status_of_media_that_has_not_failed
-      [{"id" => 7}, {"processing_info" => {"state" => "pending"}}, {"processing_info" => {"state" => "succeeded"}}].each do |attrs|
+      [{"id" => 7}, {"id" => 7, "processing_info" => {"state" => "pending"}}, {"id" => 7, "processing_info" => {"state" => "succeeded"}}].each do |attrs|
         status = UploadedMedia.new(attrs)
 
         assert_same status, Uploader.const_get(:Utils).processed!(status)
@@ -17,7 +17,7 @@ module X
     end
 
     def test_processed_raises_for_media_that_failed_to_process
-      status = UploadedMedia.new({"processing_info" => {"state" => "failed"}})
+      status = UploadedMedia.new({"id" => 7, "processing_info" => {"state" => "failed"}})
       error = assert_raises(MediaProcessingFailed) { Uploader.const_get(:Utils).processed!(status) }
 
       assert_same status, error.media
@@ -26,7 +26,7 @@ module X
 
     def test_processed_raises_for_media_in_no_state_x_documents
       errors = [{}, {"state" => "queued"}].map do |processing_info|
-        status = UploadedMedia.new({"processing_info" => processing_info})
+        status = UploadedMedia.new({"id" => 7, "processing_info" => processing_info})
         assert_raises(MediaProcessingFailed) { Uploader.const_get(:Utils).processed!(status) }.then { |error| [error.message, error.media.equal?(status)] }
       end
 
@@ -86,7 +86,7 @@ module X
     end
 
     def test_media_id_of_uploaded_media_without_an_id
-      assert_raises(ArgumentError) { Uploader.const_get(:Utils).media_id(UploadedMedia.new({"media_key" => "3_7"})) }
+      assert_raises(ArgumentError) { Uploader.const_get(:Utils).media_id({"media_key" => "3_7"}) }
     end
 
     def test_media_id_of_an_identifier
@@ -150,8 +150,16 @@ module X
       assert_equal "The response of the upload holds no media", error.message
     end
 
+    def test_uploaded_media_checks_the_identifier_of_a_hash_as_media_id_checks_it
+      error = assert_raises(ArgumentError) { Uploader.const_get(:Utils).uploaded_media({}) }
+
+      assert_equal "The media given holds no identifier", error.message
+      assert_raises(ArgumentError) { Uploader.const_get(:Utils).uploaded_media({"id" => "1" * 20}) }
+      assert_equal UploadedMedia.new({"id" => "7"}), Uploader.const_get(:Utils).uploaded_media({"id" => "7"})
+    end
+
     def test_media_id_refuses_an_identifier_the_api_does_not_take
-      [" 7", "-7", "7 ", "abc", "1" * 20, -7, {"id" => "abc"}, UploadedMedia.new({"id" => "7x"})].each do |media|
+      [" 7", "-7", "7 ", "abc", "1" * 20, -7, {"id" => "abc"}, UploadedMedia.new({"id" => "1" * 20})].each do |media|
         error = assert_raises(ArgumentError, media.inspect) { Uploader.const_get(:Utils).media_id(media) }
 
         assert_match(/\AThe media identifier ".*" is none the API takes, which is 1 to 19 digits\z/, error.message)

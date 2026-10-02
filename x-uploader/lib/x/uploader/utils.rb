@@ -124,21 +124,24 @@ module X
 
       # Media as uploaded media, which what an upload returned already is
       #
-      # The Hash of an upload response is built into the uploaded media it describes, and media known by a media key or
-      # by a media identifier into uploaded media that holds its identifier, and its media key if it has one.
+      # The Hash of an upload response is built into the uploaded media it describes, once its identifier is checked as
+      # the identifier of any media given is, and media known by a media key or by a media identifier into uploaded
+      # media that holds its identifier, and its media key if it has one.
       #
       # @api private
       # @param media [UploadedMedia, Hash, #media_key, String, Integer] the uploaded media, the upload response, media
       #   that has a media key, the media key, or the media identifier
       # @return [UploadedMedia] the uploaded media
-      # @raise [ArgumentError] if the media is nil or empty, neither media, a media key, nor a media identifier, or its
-      #   media key names none
+      # @raise [ArgumentError] if the media is nil or empty, neither media, a media key, nor a media identifier, holds
+      #   no identifier the API takes, or its media key names none
       # @example Uploaded media known by its identifier
       #   Uploader::Utils.uploaded_media(7) # => #<X::UploadedMedia id=7 media_key=nil state=nil>
       def uploaded_media(media)
         case media
         when UploadedMedia then media
-        when Hash then UploadedMedia.new(media)
+        when Hash
+          media_id(media)
+          UploadedMedia.new(media)
         else
           keyed = media #: untyped
           UploadedMedia.new({"id" => media_id(media), "media_key" => (keyed.media_key if keyed.respond_to?(:media_key))}.compact)

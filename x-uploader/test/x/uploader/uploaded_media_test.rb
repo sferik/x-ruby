@@ -57,7 +57,7 @@ module X
     end
 
     def test_media_known_by_its_identifiers_alone_is_not_ready
-      media = [{"id" => "7"}, {"id" => "7", "media_key" => "7_7"}, {"id" => "7", "size" => 1}, {"media_key" => "7_7", "expires_after_secs" => 1}]
+      media = [{"id" => "7"}, {"id" => "7", "media_key" => "7_7"}, {"id" => "7", "size" => 1}, {"id" => "7", "media_key" => "7_7", "expires_after_secs" => 1}]
 
       assert_equal [false, false, true, true], media.map { |attrs| UploadedMedia.new(attrs).ready? }
     end
@@ -128,10 +128,6 @@ module X
       assert_equal [false, false, false], [@media == other, @media == ATTRS, @media == Class.new(UploadedMedia).new(ATTRS)]
       refute_equal @media.hash, other.hash
       refute_equal @media.hash, Class.new(UploadedMedia).new(ATTRS).hash
-    end
-
-    def test_inspect_of_media_without_an_identifier_raises_nothing
-      assert_equal "#<X::UploadedMedia id=nil media_key=nil state=nil>", UploadedMedia.new({}).inspect
     end
 
     def test_inspect_names_the_identifier_the_media_key_and_the_state

@@ -7,7 +7,7 @@ module X
     cover MediaProcessingFailed
 
     def test_the_message_is_the_reason_x_gives
-      status = {"processing_info" => {"state" => "failed", "error" => {"code" => 1, "name" => "InvalidMedia", "message" => "Unsupported video format"}}}
+      status = {"id" => "7", "processing_info" => {"state" => "failed", "error" => {"code" => 1, "name" => "InvalidMedia", "message" => "Unsupported video format"}}}
       error = MediaProcessingFailed.new(media: status)
 
       assert_equal ["Unsupported video format", UploadedMedia.new(status)], [error.message, error.media]
@@ -21,14 +21,14 @@ module X
     end
 
     def test_holds_a_status_given_as_a_subclass_of_hash_as_uploaded_media
-      status = Class.new(Hash).new.merge!("processing_info" => {"state" => "failed"})
+      status = Class.new(Hash).new.merge!("id" => "7", "processing_info" => {"state" => "failed"})
 
       assert_instance_of UploadedMedia, MediaProcessingFailed.new(media: status).media
     end
 
     def test_the_message_without_a_reason
       assert_equal ["Media processing failed"] * 3,
-        [MediaProcessingFailed.new(media: {"processing_info" => {"state" => "failed"}}), MediaProcessingFailed.new(media: {}), MediaProcessingFailed.new].map(&:message)
+        [MediaProcessingFailed.new(media: {"id" => "7", "processing_info" => {"state" => "failed"}}), MediaProcessingFailed.new(media: {"id" => "7"}), MediaProcessingFailed.new].map(&:message)
     end
 
     def test_the_default_message_is_private
@@ -36,7 +36,7 @@ module X
     end
 
     def test_a_message_given_is_the_message_whatever_the_status
-      status = {"processing_info" => {"error" => {"message" => "Unsupported video format"}}}
+      status = {"id" => "7", "processing_info" => {"error" => {"message" => "Unsupported video format"}}}
 
       assert_equal ["Stubbed", UploadedMedia.new(status)], MediaProcessingFailed.new("Stubbed", media: status).then { |error| [error.message, error.media] }
     end
@@ -52,7 +52,7 @@ module X
     cover MediaProcessingTimeout
 
     def test_holds_the_last_status_and_names_the_timeout
-      status = {"processing_info" => {"state" => "in_progress"}}
+      status = {"id" => "7", "processing_info" => {"state" => "in_progress"}}
       error = MediaProcessingTimeout.new(media: status, timeout: 600)
 
       assert_equal [UploadedMedia.new(status), 600, "Media processing did not finish within the 600 seconds allowed: its next check would come after them"], [error.media, error.timeout, error.message]
@@ -66,7 +66,7 @@ module X
     end
 
     def test_holds_a_status_given_as_a_subclass_of_hash_as_uploaded_media
-      status = Class.new(Hash).new.merge!("processing_info" => {"state" => "in_progress"})
+      status = Class.new(Hash).new.merge!("id" => "7", "processing_info" => {"state" => "in_progress"})
 
       assert_instance_of UploadedMedia, MediaProcessingTimeout.new(media: status).media
     end
@@ -177,10 +177,6 @@ module X
       assert_equal "Media was uploaded, but its alt text could not be added", AltTextFailed.new.message
     end
 
-    def test_names_no_media_when_given_media_that_holds_no_identifier
-      assert_equal "Media was uploaded, but its alt text could not be added", AltTextFailed.new(media: UploadedMedia.new({})).message
-    end
-
     def test_a_message_of_its_own_ends_with_the_reason_it_failed
       error = assert_raises(AltTextFailed) do
         raise Error, "Connection reset"
@@ -238,10 +234,6 @@ module X
 
     def test_names_no_media_when_given_none
       assert_equal "Media was uploaded, but its processing could not be checked", MediaProcessingCheckFailed.new.message
-    end
-
-    def test_names_no_media_when_given_media_that_holds_no_identifier
-      assert_equal "Media was uploaded, but its processing could not be checked", MediaProcessingCheckFailed.new(media: UploadedMedia.new({})).message
     end
 
     def test_a_message_of_its_own_ends_with_the_reason_the_check_failed
