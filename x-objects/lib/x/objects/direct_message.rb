@@ -164,10 +164,12 @@ module X
       # @!attribute [r] dm_conversation_id
       #   The identifier of the conversation
       #   @api public
-      #   @return [String, nil] the conversation identifier
+      #   @return [String, nil] the conversation identifier: the identifiers of the two users of a one-to-one
+      #     conversation joined with a hyphen, or the number of a group conversation
+      #   @raise [InvalidAttribute] if the response holds an identifier that is neither
       #   @example Get the conversation identifier
       #     message.dm_conversation_id
-      attribute :dm_conversation_id
+      attribute :dm_conversation_id, :conversation_id
 
       # @!attribute [r] participant_ids
       #   The identifiers of the participants who joined or left
@@ -262,6 +264,7 @@ module X
       # @api public
       # @return [Boolean] true if the message belongs to a group conversation, false if to a one-to-one conversation or
       #   the message does not say
+      # @raise [InvalidAttribute] if the response holds a conversation identifier that is not one
       # @example Leave out the messages of group conversations
       #   client.direct_messages.reject(&:group?)
       def group?
@@ -282,6 +285,7 @@ module X
       # @param user [User, String, Integer] the user, usually the authenticated user, or their identifier
       # @return [User, nil] the other participant, or nil for a group conversation, one without another participant,
       #   or one the user is not a member of
+      # @raise [InvalidAttribute] if the response holds a conversation identifier that is not one
       # @example Print the identifier of the user each message was exchanged with
       #   me = client.current_user_id
       #   client.direct_messages.reject(&:group?).each { |message| puts message.peer(me)&.id }

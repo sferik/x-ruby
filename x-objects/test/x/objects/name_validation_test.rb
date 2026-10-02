@@ -84,11 +84,6 @@ module X
       assert_equal %w[1DXxyRYNejbKM 3_1880028106020515840 f29bbd03562e37d3 a], %w[1DXxyRYNejbKM 3_1880028106020515840 f29bbd03562e37d3 a].map { |id| Objects.const_get(:Utils).id_of(id, Space) }
     end
 
-    def test_a_one_to_one_conversation_identifier_is_taken_as_it_is
-      assert_equal "1-2", Objects.const_get(:Utils).id_of("1-2", Space)
-      assert_raises(ArgumentError) { Objects.const_get(:Utils).id_of("a-2", Space) }
-    end
-
     def test_find_by_username_looks_a_number_up_as_a_username
       @client.stub(:get, "users/by/username/1234567890", {"data" => {"id" => "9", "username" => "1234567890"}})
 

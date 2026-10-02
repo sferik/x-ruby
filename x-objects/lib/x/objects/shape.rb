@@ -12,6 +12,9 @@ module X
     #
     # @api private
     module Shape
+      # The pattern of a conversation identifier: two user identifiers joined with a hyphen, or a group's own number
+      CONVERSATION_ID = /\A\d+(?:-\d+)?\z/
+
       extend self
 
       # Read the value at a path of keys, through the object each key but the last names
@@ -134,6 +137,18 @@ module X
         raise ArgumentError, "invalid value for Integer(): #{value.to_s.inspect}" unless String === value && Utils::NUMERIC_ID.match?(value)
 
         Integer(value, 10)
+      end
+
+      # Read the identifier of a conversation of direct messages, if it is there
+      #
+      # @api private
+      # @param value [String, nil] the identifier
+      # @return [String, nil] the identifier, or nil if the value is missing
+      # @raise [ArgumentError] if the value is not a String of digits, or of two numbers joined with a hyphen
+      def conversation_id(value)
+        return value if value.nil? || (String === value && CONVERSATION_ID.match?(value))
+
+        raise ArgumentError, "#{value.inspect} is not a conversation identifier"
       end
     end
     private_constant :Shape

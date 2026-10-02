@@ -16,10 +16,9 @@ module X
       NUMERIC_ID = /\A\d+\z/
 
       # The pattern of the identifiers of each type, as the id_type of a resource class names it: a number; the word
-      # characters a space identifier is written with, or the two numbers a one-to-one conversation identifier joins
-      # with a hyphen; and a media key, which is the number of the type of media and the numeric identifier of the
-      # media, joined with an underscore
-      ID_PATTERNS = {integer: NUMERIC_ID, raw: /\A(?:\w+|\d+-\d+)\z/, media_key: /\A\d+_\d+\z/}.freeze
+      # characters the identifier of a space or a place is written with; and a media key, which is the number of the
+      # type of media and the numeric identifier of the media, joined with an underscore
+      ID_PATTERNS = {integer: NUMERIC_ID, raw: /\A\w+\z/, media_key: /\A\d+_\d+\z/}.freeze
 
       # What an identifier of each type is, which the error raised for one that is not names
       ID_DESCRIPTIONS = {integer: "an Integer, or a String of digits", raw: "or a String of word characters", media_key: "what an upload returned, or a media key, such as \"3_1880028106020515840\""}.freeze

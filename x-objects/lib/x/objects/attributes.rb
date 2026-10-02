@@ -19,6 +19,7 @@ module X
       CONVERTERS = {
         raw: ->(value) { value },
         media_key: ->(value) { value },
+        conversation_id: ->(value) { Shape.conversation_id(value) },
         boolean: ->(value) { FLAGS.include?(value) ? value : raise(ArgumentError, "#{value.inspect} is not true or false") },
         time: ->(value) { Utils.time(value) },
         integer: ->(value) { Shape.integer(value) },
@@ -97,8 +98,8 @@ module X
       #
       # @api private
       # @param name [Symbol] the reader name
-      # @param type [Symbol] the attribute type: raw, boolean, time, integer, integers, list, object, objects, range, or
-      #   requested_list, of which integers, list, and objects read a list the response omitted as empty, and
+      # @param type [Symbol] the attribute type: raw, boolean, time, integer, integers, list, object, objects, range,
+      #   conversation_id, or requested_list, of which integers, list, and objects read a list the response omitted as empty, and
       #   requested_list, the type of a field no lookup asks for unless it is requested, reads it as nil, since a
       #   response that omits it does not say the list is empty; object is the type of an object the API nests in a
       #   resource, and objects of a list of them

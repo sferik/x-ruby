@@ -2,6 +2,7 @@
 
 require_relative "cursor"
 require_relative "media_ids"
+require_relative "shape"
 require_relative "utils"
 
 module X
@@ -13,11 +14,9 @@ module X
     #
     # @api private
     module DirectMessageConversations
-      # The pattern of a conversation identifier: two user identifiers joined with a hyphen, or a group's own number
-      CONVERSATION_ID = /\A\d+(-\d+)?\z/
       # Maximum number of events per page of a conversation
       MAX_RESULTS = 100
-      private_constant :CONVERSATION_ID, :MAX_RESULTS
+      private_constant :MAX_RESULTS
 
       # Start a group conversation, sending its first message as the authenticated user
       #
@@ -92,7 +91,7 @@ module X
         when DirectMessage then conversation.dm_conversation_id.to_s
         else conversation.to_s
         end
-        return id if id.match?(CONVERSATION_ID)
+        return id if id.match?(Shape::CONVERSATION_ID)
 
         raise ArgumentError, "#{conversation.inspect} is not a conversation: pass a direct message or a conversation identifier"
       end

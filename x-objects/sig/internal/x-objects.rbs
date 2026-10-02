@@ -132,6 +132,8 @@ module X
     end
 
     module Shape
+      CONVERSATION_ID: Regexp
+
       extend Shape
 
       def dig: (String name, untyped value, Array[String] path) -> untyped
@@ -144,6 +146,7 @@ module X
       def list: (untyped value) -> Array[untyped]?
       def range: (untyped value) -> Range[Integer]?
       def integer: (untyped value) -> Integer?
+      def conversation_id: (untyped value) -> String?
     end
 
     module Parallel
@@ -397,7 +400,6 @@ module X
 
     module DirectMessageConversations
       MAX_RESULTS: Integer
-      CONVERSATION_ID: Regexp
 
       def create_group: (Array[id] users, ?String? text, client: _Client, ?media_ids: untyped, **untyped params) -> DirectMessage
       def create_in: (DirectMessage | String | Integer conversation, ?String? text, client: _Client, ?media_ids: untyped, **untyped params) -> DirectMessage

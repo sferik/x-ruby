@@ -66,5 +66,14 @@ module X
       assert_equal MESSAGE, assert_raises(ArgumentError) { @client.follow("sferik") }.message
       assert_equal ["users/me"], @client.paths
     end
+
+    def test_a_one_to_one_conversation_identifier_is_not_the_identifier_of_a_space_or_a_place
+      [Space, Place].each do |klass|
+        assert_equal "\"1-2\" is not an identifier: pass #{klass}, or a String of word characters", assert_raises(ArgumentError) { Objects.const_get(:Utils).id_of("1-2", klass) }.message
+        assert_raises(ArgumentError) { klass.new({"id" => "1-2"}) }
+      end
+      assert_raises(ArgumentError) { @client.find_space("1-2") }
+      assert_empty @client.requests
+    end
   end
 end

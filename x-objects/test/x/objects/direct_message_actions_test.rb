@@ -7,6 +7,7 @@ module X
     cover DirectMessage
     cover Objects.const_get(:Finders)
     cover Objects.const_get(:BatchFinders)
+    cover Objects.const_get(:Shape)
 
     def setup
       @client = FakeClient.new
@@ -66,6 +67,17 @@ module X
       assert_predicate DirectMessage.new({"id" => "1", "dm_conversation_id" => "1582838223204016129"}), :group?
       refute_predicate DirectMessage.new({"id" => "1", "dm_conversation_id" => "8-9"}), :group?
       refute_predicate DirectMessage.new({"id" => "1"}), :group?
+    end
+
+    def test_a_conversation_identifier_that_is_not_one_raises
+      [1, ["8-9"], "", "8-", "8-9-10", "a-9", " 9", "9\n"].each do |value|
+        message = DirectMessage.new({"id" => "1", "dm_conversation_id" => value})
+        error = assert_raises(InvalidAttribute) { message.group? }
+
+        assert_equal "X::DirectMessage#dm_conversation_id cannot be read from #{value.inspect}", error.message
+        assert_equal "#{value.inspect} is not a conversation identifier", error.cause.message
+        assert_raises(InvalidAttribute) { message.peer("9") }
+      end
     end
   end
 end
