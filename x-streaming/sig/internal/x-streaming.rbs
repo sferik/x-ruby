@@ -39,6 +39,7 @@ module X
       RECONNECTABLE_ERRORS: Array[singleton(NetworkError) | singleton(ServerError) | singleton(RequestTimeout) | singleton(Conflict) | singleton(TooManyRequests) | singleton(InvalidResponse)]
 
       FIRST_STATE: state
+      UNVERIFIED_CERTIFICATE: String
       ConsumerError: singleton(StandardError)
 
       type state = Hash[Symbol, Integer]
@@ -54,6 +55,7 @@ module X
       def cause_of: (StandardError error) -> StandardError
       def run_once: (^(^(untyped) -> void, ^() -> void) -> void stream, ^(untyped) -> void deliver, ^() -> void alive, state state) -> bool
       def reconnectable?: (StandardError error) -> bool
+      def unverified_certificate?: (Exception? cause) -> bool
       def out_of_reconnects?: (StandardError error, state state) -> bool
       def announce: (StandardError error, Integer | Float wait) -> void
       def delivery_to: (^(untyped) -> void consumer, ^() -> void restart) -> ^(untyped) -> void

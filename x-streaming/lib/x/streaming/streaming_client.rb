@@ -73,8 +73,8 @@ module X
       # The callable passed the error that dropped a stream and its wait to reconnect
       #
       # A stream that drops reconnects up to max_reconnects times in a row, without end by default, so one that can
-      # never connect, as with a certificate that does not verify, a host that does not resolve, or a proxy that
-      # refuses it, would reconnect in silence for as long as it runs. on_reconnect is passed the error that dropped
+      # never connect, as with a host that does not resolve, or a proxy that refuses it, would reconnect in silence
+      # for as long as it runs; only a certificate that does not verify raises at once. on_reconnect is passed the error that dropped
       # the stream, such as an X::NetworkError or an X::ServiceUnavailable, and the seconds the stream waits before it
       # reconnects, before each wait, so it can report the reconnects, or give up on them by calling {#stop}, after
       # which the stream returns nil rather than reconnect. An error it raises stops the stream, and reaches the
@@ -154,15 +154,21 @@ module X
       # The stream endpoints take app-only authentication, so a client that authenticates as a user streams with the
       # bearer token its app_only client holds. A client that authenticates with OAuth 2.0 as a user and holds neither
       # the app's bearer token nor its API key and secret has no app_only client, so it opens the stream as the user,
-      # which X refuses with 403 Forbidden, raising Forbidden, as any request X refuses the credentials of a client
-      # for does. A bearer token X rejects with 401 Unauthorized, as it does one
-      # that was invalidated, is fetched again with the API key and secret the app_only client holds, as it is for a
-      # request, and the stream is opened once more with it. A stream that drops, or that X disconnects with an
-      # operational-disconnect, reconnects, backing off as X recommends, up to max_reconnects times in a row. The API bills
-      # each object a stream delivers, so the client's on_response receives each one, as well as a failed response.
-      # An error on_response or the object_class raises stops the stream, and reaches the caller as it was raised, even
-      # an error of the X API, such as the X::ServiceUnavailable of a request on_response made, which a stream that
-      # dropped reconnects after.
+      # which X refuses with 403 Forbidden, raising Forbidden, as any request X refuses the credentials of a client for
+      # does. A bearer token X rejects with 401 Unauthorized, as it does one that was invalidated, is fetched again with
+      # the API key and secret the app_only client holds, as it is for a request, and the stream is opened once more
+      # with it. A stream that drops, or that X disconnects with an operational-disconnect, reconnects, backing off as X
+      # recommends, up to max_reconnects times in a row. The API bills each object a stream delivers, so the client's
+      # on_response receives each one, as well as a failed response. An error on_response or the object_class raises
+      # stops the stream, and reaches the caller as it was raised, even an error of the X API, such as the
+      # X::ServiceUnavailable of a request on_response made, which a stream that dropped reconnects after.
+      #
+      # Reconnects are unlimited by default, and made in silence but for on_reconnect, so a stream that cannot connect,
+      # as for a host that does not resolve or a network that is down, reconnects every 16 seconds, once its backoff has
+      # grown that long, for as long as it runs. Set max_reconnects to give up after that many in a row, when the stream
+      # raises the error of the last, or pass an on_reconnect that calls {#stop}, after which the stream returns nil.
+      # Only a certificate that does not verify, which will not verify the next time either, raises at once, as an
+      # X::NetworkError whose cause is the OpenSSL::SSL::SSLError.
       #
       # A stream runs until its block stops it: break out of the block to stop the stream and return a value, throw to
       # unwind to a catch further out, or raise, which stops the stream even where a drop would have reconnected, and
@@ -184,7 +190,8 @@ module X
       #   https URL, before the stream is opened
       # @raise [ArgumentError] if array_class is not a Class, or object_class is neither a Class nor responds to
       #   from_response, before the stream is opened
-      # @raise [NetworkError] if the stream ends or drops, or cannot connect, with no reconnects left
+      # @raise [NetworkError] if the stream ends or drops, or cannot connect, with no reconnects left, or at once if the
+      #   certificate of the connection does not verify
       # @raise [HTTPError] if the response is not successful and the stream may not reconnect
       # @raise [StreamError] if a line holds errors and no data, which the stream reconnects after only when each is an
       #   operational-disconnect, and then raises once it has no reconnects left

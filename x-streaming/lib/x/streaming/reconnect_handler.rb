@@ -20,6 +20,11 @@ module X
     # keep-alive X sends every 20 seconds, starts every count over, so that a stream that is quiet but connected is not
     # taken for one that keeps failing.
     #
+    # A connection whose certificate does not verify raises at once rather than reconnect, as a certificate that did
+    # not verify once will not the next time either, and reconnects are unlimited by default, so it would otherwise
+    # reconnect every 16 seconds for as long as the stream runs. Other errors of the network reconnect however long
+    # they last, as a host that does not resolve does, since most pass.
+    #
     # Before each wait it passes the error that dropped the stream and the seconds it waits to on_reconnect, whose
     # error stops the stream, as an error of the consumer does.
     #
@@ -46,6 +51,9 @@ module X
       # The counts a stream starts with, and starts over at: the reconnects in a row, which max_reconnects limits, and
       # the reconnects after each kind of error, which the wait before the next reconnect after that kind grows with
       FIRST_STATE = {reconnects: 0, network: 0, http: 0, rate_limit: 0}.freeze
+      # What OpenSSL says of a certificate that does not verify, such as one that expired, is signed by an authority
+      # the system does not trust, or names another host
+      UNVERIFIED_CERTIFICATE = "certificate verify failed"
 
       # Raised in place of an error the consumer of a stream raised, which is its cause, so that the stream stops
       ConsumerError = Class.new(StandardError) #: singleton(StandardError)
@@ -104,6 +112,7 @@ module X
       #   the stream fails with no reconnects left
       # @raise [TooManyRequests] if a rate limit asks the stream to wait longer than max_rate_limit_wait, or the project
       #   has reached its usage cap
+      # @raise [NetworkError] if the certificate of the connection does not verify, with reconnects left or not
       # @example Reconnect a stream
       #   handler.handle(->(post) { puts post }) { |deliver, alive| read_stream(on_keep_alive: alive, &deliver) }
       def handle(consumer, &stream)
@@ -147,19 +156,29 @@ module X
 
       # Check whether a stream reconnects after an error
       #
-      # A stream reconnects after a StreamError only when each of its problems is an operational-disconnect, and
-      # after a TooManyRequests unless it is the usage cap of the project, which lasts until the month ends.
+      # A stream reconnects after a StreamError only when each of its problems is an operational-disconnect, after a
+      # TooManyRequests unless it is the usage cap of the project, which lasts until the month ends, and after a
+      # NetworkError unless it is a certificate that does not verify, which x-core raises with the
+      # OpenSSL::SSL::SSLError as its cause.
       #
       # @api private
       # @param error [StandardError] the error that dropped the stream
-      # @return [Boolean] true unless the error is a StreamError of any problem but a disconnect, or the usage cap
+      # @return [Boolean] true unless the error is a StreamError of any problem but a disconnect, the usage cap, or a
+      #   certificate that does not verify
       def reconnectable?(error)
         case error
         when StreamError then error.problems.all?(&:disconnect?)
         when TooManyRequests then !error.problem&.usage_capped?
+        when NetworkError then !unverified_certificate?(error.cause)
         else true
         end
       end
+
+      # Check whether the cause of a NetworkError is a certificate that does not verify
+      # @api private
+      # @param cause [Exception, nil] the cause of the error
+      # @return [Boolean] true if the cause is an OpenSSL::SSL::SSLError of a certificate that does not verify
+      def unverified_certificate?(cause) = cause.is_a?(OpenSSL::SSL::SSLError) && cause.message.include?(UNVERIFIED_CERTIFICATE)
 
       # The error a consumer raised, which a consumer error stands in for
       # @api private

@@ -366,6 +366,9 @@ The stream endpoints take app-only authentication, so a client that signs with O
 
 X holds a stream open indefinitely, but drops it for deploys, network trouble, and slow readers. A stream that ends, drops, is refused a connection, or that X disconnects with an `operational-disconnect` reconnects at once, then waits a quarter second longer each attempt, up to 16 seconds. A server error, a 408 Request Timeout, a 409 Conflict, or a line that is not JSON waits 5 seconds, doubling each attempt, up to 320 seconds. A rate limit backs off from a minute, doubling each attempt, up to 320 seconds, as X asks, and waits longer for a limit that resets later, but raises `X::TooManyRequests` at once rather than wait longer than the `max_rate_limit_wait` of the client, 900 seconds by default, so that a limit on the connections of a day does not hold a stream closed for hours. Delivering a post starts the count over. A stream reconnects without limit by default; set `max_reconnects` to give up after that many attempts in a row, when it raises the error of the last, an `X::NetworkError` for a stream that ended or dropped, so a stream never returns but for a `break` from its block, or a `stop`.
 
+> [!IMPORTANT]
+> Reconnects are unlimited by default, and silent, so a stream that cannot connect at all, as for a host that does not resolve or a network that is down, keeps trying every 16 seconds for as long as it runs. Only a certificate that does not verify, which will not verify on the next attempt either, raises at once, an `X::NetworkError` whose `cause` is the `OpenSSL::SSL::SSLError`. To give up on the rest, set `max_reconnects`, or pass `on_reconnect`, which is called before each reconnect with the error that dropped the stream, never nil, and the seconds it waits, and can `stop` the stream or raise. It is called with those two arguments, and no others, by every release of 1.x.
+
 **The rules of the filtered stream.** The filtered stream delivers the posts that match the rules of the app, which belong to the stream and are read and changed through a streaming client: `stream_rules` reads them, `add_stream_rules` adds them, and `delete_stream_rules` deletes them, each authenticating as the app as a stream does. A rule to add is a `value` and the `tag` it is labelled with, or a String, which is the value of a rule with no tag. A rule is deleted by the identifier it was given, so what `stream_rules` returned deletes itself, or by the value it matches, so what `add_stream_rules` was given deletes what it added. `dry_run: true` has the API check the rules and change none of them. The API changes the rules it can and reports the rest, such as a rule the app already has or does not have, and both `add_stream_rules` and `delete_stream_rules` yield each problem it reported to a block.
 
 **Stopping a stream.** A stream runs until its block stops it. `break` out of the block to stop the stream and return a value, or `throw` to unwind to a `catch` further out; neither reconnects. An error raised by the block stops the stream too, even one a dropped connection would have reconnected after, and reaches the caller unchanged, as does an error raised by `on_response` or by the class that builds each object. A `StopIteration` is an error like any other here, so a block that exhausts an `Enumerator` of its own hears about it rather than ending the stream in silence. A block runs only when a post arrives, so it cannot stop a stream that delivers nothing; `stop` can, from any thread: it stops every stream the streaming client runs, the next time each waits on the API, and each returns nil. A block, or an `on_response`, that is running when the stream is stopped runs to its end first.
@@ -394,6 +397,12 @@ reader.value   # => nil
 
 # Give up after five reconnects in a row, and notice a quiet connection sooner
 streaming_client = x_client.streaming(max_reconnects: 5, read_timeout: 25)
+
+# Log each reconnect, and give up on a stream that has failed to connect for minutes
+streaming_client = x_client.streaming(on_reconnect: lambda do |error, wait|
+  warn "#{error.class}: #{error.message}; reconnecting in #{wait} seconds"
+  streaming_client.stop if error.is_a?(X::NetworkError) && wait >= 16
+end)
 
 # Delete the rules that were read, or the ones that match a value
 streaming.delete_stream_rules(streaming.stream_rules) # => 2
