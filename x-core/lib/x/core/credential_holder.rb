@@ -43,7 +43,7 @@ module X
       # @return [void]
       # @raise [TypeError] always
       # @example Enqueue the identifier of a user, rather than a client, for a job its queue writes as YAML
-      #   PostJob.perform_later(user_id: client.current_user_id)
+      #   PostJob.perform_later(user_id: client.authenticator.user_id)
       def encode_with(_coder) = raise(TypeError, format(REFUSAL_MESSAGE, self.class, "YAML"))
 
       # Refuse to be read as JSON, which would write the credentials
@@ -55,7 +55,7 @@ module X
       # @return [void]
       # @raise [TypeError] always
       # @example Render the user a client acts for, rather than the client
-      #   render json: {user_id: client.current_user_id}
+      #   render json: {user_id: client.authenticator.user_id}
       def as_json(*) = raise(TypeError, format(REFUSAL_MESSAGE, self.class, "JSON"))
 
       # Refuse to be written as JSON, which would write the credentials
@@ -68,7 +68,7 @@ module X
       # @return [void]
       # @raise [TypeError] always
       # @example Log the user a client acts for, rather than the client
-      #   logger.info(JSON.generate(user_id: client.current_user_id))
+      #   logger.info(JSON.generate(user_id: client.authenticator.user_id))
       def to_json(_state = nil) = raise(TypeError, format(REFUSAL_MESSAGE, self.class, "JSON"))
     end
     private_constant :CredentialHolder
