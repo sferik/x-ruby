@@ -125,10 +125,16 @@ module X
 
       # @!attribute [r] text
       #   The text
+      #
+      #   It is the text as the API sends it, which escapes &, <, and > as &amp;, &lt;, and &gt;, and it stays so
+      #   throughout 1.x, so unescape it to display it.
+      #
       #   @api public
-      #   @return [String, nil] the text
+      #   @return [String, nil] the text, HTML-escaped as the API sends it
       #   @example Get the text
-      #     message.text
+      #     message.text # => "Ruby &amp; Rails"
+      #   @example Display the text
+      #     CGI.unescapeHTML(message.text) # => "Ruby & Rails"
       attribute :text
 
       # @!attribute [r] event_type

@@ -94,11 +94,16 @@ module X
       # A long post, of more than 280 characters, holds its full text in note_post, and a text cut short with an
       # ellipsis and a link to the post; this reads the full text.
       #
+      # It is the text as the API sends it, which escapes &, <, and > as &amp;, &lt;, and &gt;, and it stays so
+      # throughout 1.x, so unescape it to display it.
+      #
       # @api public
-      # @return [String, nil] the text
+      # @return [String, nil] the text, HTML-escaped as the API sends it
       # @raise [InvalidAttribute] if the response holds a note_post that is not an object
       # @example Get the text
-      #   post.text
+      #   post.text # => "Ruby &amp; Rails"
+      # @example Display the text
+      #   CGI.unescapeHTML(post.text) # => "Ruby & Rails"
       def text = Shape.dig("#{self.class}#text", full, %w[text])
 
       # @!attribute [r] lang
@@ -504,11 +509,13 @@ module X
       # after it, and holds what it holds, even the shortened url of another link of the post. A url that begins
       # another, longer one is not read in it.
       #
+      # The rest of the text is as {#text} reads it, HTML-escaped as the API sends it, so unescape it to display it.
+      #
       # @api public
       # @return [String, nil] the text with expanded links
       # @raise [InvalidAttribute] if the response holds a link that is not an object with a url that is a String
       # @example Display a post with its links in full
-      #   post.expanded_text
+      #   CGI.unescapeHTML(post.expanded_text)
       def expanded_text
         expansions = urls.to_h { |link| Utils.read("#{self.class}#expanded_text", link) { expansion(link) } }
         text&.gsub(Regexp.union(expansions.keys.sort_by { |url| -url.length }), expansions)

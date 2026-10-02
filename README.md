@@ -67,6 +67,15 @@ post.text                              # the full text, even of a post longer th
 post.created_at                        # => 2026-09-11 12:00:00 UTC
 ```
 
+**Text.** Objects read every String as the API sends it, and the API escapes `&`, `<`, and `>` as `&amp;`, `&lt;`, and `&gt;` in the text of a post and of a direct message, so `post.text`, `post.expanded_text`, and `message.text` hold them, and will throughout 1.x. Unescape the text to display it:
+
+```ruby
+require "cgi/escape"
+
+post.text                              # => "Ruby &amp; Rails"
+CGI.unescapeHTML(post.text)            # => "Ruby & Rails"
+```
+
 **Any endpoint.** For an endpoint without a method, pass a resource class as the `object_class` of a request. A response that holds one resource comes back as an object, and one that holds a list comes back as an `X::Page` of the page you requested, which reads as an array does, and holds the `next_token` of the page after it. The object holds only the fields you asked for, so `hydrate` fetches the rest.
 
 ```ruby
