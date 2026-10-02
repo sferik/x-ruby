@@ -100,11 +100,12 @@ module X
         #
         # @api public
         # @param query [String] the search query
-        # @param params [Hash] query parameters, such as start_time and end_time
+        # @param params [Hash] query parameters, such as start_time and end_time, and max_pages, the most pages of
+        #   counts to request
         # @return [Integer] the number of matching posts
         # @example Count the recent posts about Ruby with an app-only client
         #   client.count_posts("ruby")
-        def count_posts(query, **params) = Post.count(query, client: self, **params)
+        def count_posts(query, **params) = Post.count(query, client: self, **params) # steep:ignore DifferentMethodParameterKind
 
         # Count the posts from the full archive that match a query, without reading them
         #
@@ -119,7 +120,7 @@ module X
         # @return [Integer] the number of matching posts
         # @example Count every post about Ruby from 2024
         #   client.count_all_posts("ruby", start_time: "2024-01-01T00:00:00Z", end_time: "2025-01-01T00:00:00Z")
-        def count_all_posts(query, **params) = Post.count_all(query, client: self, **params)
+        def count_all_posts(query, **params) = Post.count_all(query, client: self, **params) # steep:ignore DifferentMethodParameterKind
 
         # Count the posts from the last seven days that match a query, by period
         #
@@ -128,12 +129,13 @@ module X
         #
         # @api public
         # @param query [String] the search query
-        # @param params [Hash] query parameters, such as granularity, which is day by default
+        # @param params [Hash] query parameters, such as granularity, which is day by default, and max_pages, the most
+        #   pages of counts to request
         # @return [Hash{Range<Time> => Integer}] the number of matching posts, keyed by the time each period spans,
         #   from its start up to, but not including, its end, oldest first
         # @example Count the recent posts about Ruby by hour
         #   client.count_posts_by_period("ruby", granularity: "hour")
-        def count_posts_by_period(query, **params) = Post.count_by_period(query, client: self, **params)
+        def count_posts_by_period(query, **params) = Post.count_by_period(query, client: self, **params) # steep:ignore DifferentMethodParameterKind
 
         # Count the posts from the full archive that match a query, by period
         #
@@ -149,7 +151,7 @@ module X
         #   from its start up to, but not including, its end, oldest first
         # @example Count the posts about Ruby by day in 2024
         #   client.count_all_posts_by_period("ruby", start_time: "2024-01-01T00:00:00Z", end_time: "2025-01-01T00:00:00Z")
-        def count_all_posts_by_period(query, **params) = Post.count_all_by_period(query, client: self, **params)
+        def count_all_posts_by_period(query, **params) = Post.count_all_by_period(query, client: self, **params) # steep:ignore DifferentMethodParameterKind
 
         # Look up how many posts the app's project has read
         #

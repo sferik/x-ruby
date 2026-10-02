@@ -30,16 +30,21 @@ module X
 
       # Count the recent posts that match a query, without reading them
       #
+      # The recent posts are counted a page of periods at a time, as the full archive is, which max_pages limits.
+      #
       # @api public
       # @param query [String] the search query
       # @param client [Object] the client used to make the requests
+      # @param max_pages [Integer, nil] the most pages of counts to request, or nil for no limit
       # @param params [Hash] query parameters, such as start_time and end_time
       # @return [Integer] the number of matching posts
+      # @raise [ArgumentError] if max_pages is neither an Integer of at least 1 nor nil, before a request
       # @raise [InvalidAttribute] if the response holds a total that is not a number
       # @raise [UnreadableResponse] if a page names the token of a page before it as the next
+      # @raise [PageLimitReached] if the count requests max_pages pages, and the API names another
       # @example Count the recent posts about Ruby
       #   X::Post.count("ruby", client: client)
-      def count(query, client:, **params) = total(pages(RECENT_ENDPOINT, query, client:, **params))
+      def count(query, client:, max_pages: nil, **params) = total(pages(RECENT_ENDPOINT, query, client:, max_pages:, **params))
 
       # Count the posts from the full archive that match a query, without reading them
       #
@@ -64,18 +69,23 @@ module X
 
       # Count the posts from the last seven days that match a query, by period
       #
+      # The recent posts are counted a page of periods at a time, as the full archive is, which max_pages limits.
+      #
       # @api public
       # @param query [String] the search query
       # @param client [Object] the client used to make the requests
+      # @param max_pages [Integer, nil] the most pages of counts to request, or nil for no limit
       # @param params [Hash] query parameters, such as granularity, which is day by default
       # @return [Hash{Range<Time> => Integer}] the number of matching posts, keyed by the time each period spans, from
       #   its start up to, but not including, its end, oldest first
+      # @raise [ArgumentError] if max_pages is neither an Integer of at least 1 nor nil, before a request
       # @raise [InvalidAttribute] if the response holds a period without a start and an end in ISO 8601, or without a
       #   count
       # @raise [UnreadableResponse] if a page names the token of a page before it as the next
+      # @raise [PageLimitReached] if the count requests max_pages pages, and the API names another
       # @example Count the recent posts about Ruby by hour
       #   X::Post.count_by_period("ruby", client: client, granularity: "hour")
-      def count_by_period(query, client:, **params) = periods(pages(RECENT_ENDPOINT, query, client:, **params))
+      def count_by_period(query, client:, max_pages: nil, **params) = periods(pages(RECENT_ENDPOINT, query, client:, max_pages:, **params))
 
       # Count the posts from the full archive that match a query, by period
       #
@@ -112,7 +122,7 @@ module X
       # @raise [InvalidAttribute] if a response holds a meta that is not an object
       # @raise [UnreadableResponse] if a response names the token of a page before it as the next
       # @raise [PageLimitReached] if the pages requested reach max_pages, and the last names another
-      def pages(path, query, client:, max_pages: nil, **params)
+      def pages(path, query, client:, max_pages:, **params)
         params, max_pages = {query:, granularity: DEFAULT_GRANULARITY}.merge(params), PageLimit.check!(max_pages)
         client = Utils.app_client(client)
         bodies = [] #: Array[Hash[String, untyped]]

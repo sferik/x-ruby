@@ -86,8 +86,8 @@ module X
 
   # Raised when a scan or a count reads the pages its max_pages allows, and the API names a page after them
   #
-  # A check that pages through a collection, such as List#member? or User#follows?, and a count of the full archive,
-  # such as X::Post.count_all, read as many pages as the answer takes, and the API bills each one. Given max_pages,
+  # A check that pages through a collection, such as List#member? or User#follows?, and a count of posts, such as
+  # X::Post.count_all, read as many pages as the answer takes, and the API bills each one. Given max_pages,
   # each reads no more pages than that, and raises this rather than answer from the pages it read, which would be
   # wrong: a member on a page it did not read, or posts counted on one, would go unseen.
   #

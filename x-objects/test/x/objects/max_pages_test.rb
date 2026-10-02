@@ -3,8 +3,8 @@
 require_relative "../../test_helper"
 
 module X
-  # A scan or a count of the full archive reads no more pages than its max_pages, raising rather than answer from what
-  # it read when the API names another page
+  # A scan or a count of posts reads no more pages than its max_pages, raising rather than answer from what it read
+  # when the API names another page
   class MaxPagesTest < Minitest::Test
     cover Objects.const_get(:PageLimit)
     cover Objects.const_get(:Relationships)
@@ -32,10 +32,12 @@ module X
     end
 
     def stub_counts
-      @client.stub(:get, "tweets/counts/all", lambda { |query, _|
+      counts = lambda { |query, _|
         {"data" => [{"start" => "2024-01-01T00:00:00.000Z", "end" => "2024-01-02T00:00:00.000Z", "tweet_count" => 1}],
          "meta" => {"total_tweet_count" => 1, "next_token" => {nil => "p2", "p2" => "p3"}[query["next_token"]]}}
-      })
+      }
+      @client.stub(:get, "tweets/counts/all", counts)
+      @client.stub(:get, "tweets/counts/recent", counts)
     end
 
     def test_a_scan_answers_from_the_pages_its_limit_allows
@@ -86,6 +88,22 @@ module X
       assert_equal "The counts of X::Post read the 2 pages max_pages allows, and the API names another", error.message
       assert_equal 5, @client.requests.size
       refute_includes @client.queries.last, "max_pages"
+    end
+
+    def test_a_count_of_recent_posts_requests_no_more_pages_than_its_limit
+      assert_equal 3, Post.count("ruby", client: @client, max_pages: 3)
+      error = assert_raises(PageLimitReached) { Post.count_by_period("ruby", client: @client, max_pages: 2) }
+
+      assert_equal "The counts of X::Post read the 2 pages max_pages allows, and the API names another", error.message
+      assert_equal 5, @client.requests.size
+      refute_includes @client.queries.last, "max_pages"
+    end
+
+    def test_a_client_counts_recent_posts_up_to_its_limit
+      assert_raises(PageLimitReached) { @client.count_posts("ruby", max_pages: 1) }
+      assert_raises(PageLimitReached) { @client.count_posts_by_period("ruby", max_pages: 1) }
+      assert_raises(ArgumentError) { Post.count("ruby", client: @client, max_pages: 0) }
+      assert_equal 2, @client.requests.size
     end
 
     def test_a_client_counts_the_full_archive_up_to_its_limit

@@ -414,13 +414,13 @@ module X
       ALL_ENDPOINT: String
       DEFAULT_GRANULARITY: String
 
-      def count: (String query, client: _Client, **untyped params) -> Integer
+      def count: (String query, client: _Client, ?max_pages: Integer?, **untyped params) -> Integer
       def count_all: (String query, client: _Client, ?max_pages: Integer?, **untyped params) -> Integer
-      def count_by_period: (String query, client: _Client, **untyped params) -> Hash[Range[Time], Integer]
+      def count_by_period: (String query, client: _Client, ?max_pages: Integer?, **untyped params) -> Hash[Range[Time], Integer]
       def count_all_by_period: (String query, client: _Client, ?max_pages: Integer?, **untyped params) -> Hash[Range[Time], Integer]
 
       private
-      def pages: (String path, String query, client: _Client, ?max_pages: Integer?, **untyped params) -> Array[Hash[String, untyped]]
+      def pages: (String path, String query, client: _Client, max_pages: Integer?, **untyped params) -> Array[Hash[String, untyped]]
       def next_token: (Array[Hash[String, untyped]] bodies, untyped given, Integer? max_pages) -> untyped
       def total: (Array[Hash[String, untyped]] bodies) -> Integer
       def page_total: (Integer | String | nil value) -> Integer
@@ -548,14 +548,14 @@ module X
         def search_all_tweets: (String query, **untyped params) -> Cursor[Post]
         def post_usage: (**untyped params) ?{ (Problem problem) -> void } -> PostUsage?
         def post_usage!: (**untyped params) -> PostUsage
-        def count_posts: (String query, **untyped params) -> Integer
-        def count_tweets: (String query, **untyped params) -> Integer
-        def count_all_posts: (String query, **untyped params) -> Integer
-        def count_all_tweets: (String query, **untyped params) -> Integer
-        def count_posts_by_period: (String query, **untyped params) -> Hash[Range[Time], Integer]
-        def count_tweets_by_period: (String query, **untyped params) -> Hash[Range[Time], Integer]
-        def count_all_posts_by_period: (String query, **untyped params) -> Hash[Range[Time], Integer]
-        def count_all_tweets_by_period: (String query, **untyped params) -> Hash[Range[Time], Integer]
+        def count_posts: (String query, ?max_pages: Integer?, **untyped params) -> Integer
+        def count_tweets: (String query, ?max_pages: Integer?, **untyped params) -> Integer
+        def count_all_posts: (String query, ?max_pages: Integer?, **untyped params) -> Integer
+        def count_all_tweets: (String query, ?max_pages: Integer?, **untyped params) -> Integer
+        def count_posts_by_period: (String query, ?max_pages: Integer?, **untyped params) -> Hash[Range[Time], Integer]
+        def count_tweets_by_period: (String query, ?max_pages: Integer?, **untyped params) -> Hash[Range[Time], Integer]
+        def count_all_posts_by_period: (String query, ?max_pages: Integer?, **untyped params) -> Hash[Range[Time], Integer]
+        def count_all_tweets_by_period: (String query, ?max_pages: Integer?, **untyped params) -> Hash[Range[Time], Integer]
       end
 
       module Lists : _Client
