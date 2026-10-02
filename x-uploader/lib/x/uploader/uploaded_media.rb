@@ -37,17 +37,6 @@ module X
     attr_reader :attrs
     alias_method :to_h, :attrs
 
-    # Build media from the data of a response, if it has any
-    #
-    # @api public
-    # @param attrs [Hash{String => Object}, nil] the data of an upload or status response
-    # @return [UploadedMedia, nil] the media, or nil for a response without data
-    # @example Build media from a response
-    #   X::UploadedMedia.from(client.post("media/upload", body)&.fetch("data"))
-    def self.from(attrs)
-      new(attrs) unless attrs.nil?
-    end
-
     # Initialize uploaded media
     #
     # @api public

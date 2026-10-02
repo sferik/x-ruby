@@ -124,11 +124,6 @@ module X
       refute_equal @media.hash, Class.new(UploadedMedia).new(ATTRS).hash
     end
 
-    def test_from_builds_media_from_data_and_nothing_from_none
-      assert_equal @media, UploadedMedia.from(ATTRS)
-      assert_nil UploadedMedia.from(nil)
-    end
-
     def test_inspect_of_media_without_an_identifier_raises_nothing
       assert_equal "#<X::UploadedMedia id=nil media_key=nil state=nil>", UploadedMedia.new({}).inspect
     end

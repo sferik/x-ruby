@@ -67,7 +67,6 @@ module X
     attr_reader attrs: Hash[String, untyped]
     alias to_h attrs
 
-    def self.from: (Hash[String, untyped]? attrs) -> UploadedMedia?
     def initialize: (Hash[String, untyped] attrs) -> void
     def id: () -> Integer
     def media_id: () -> Integer
