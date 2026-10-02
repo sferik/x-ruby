@@ -39,6 +39,15 @@ module X
       assert_instance_of InvalidAttribute, period_error(period.merge("tweet_count" => "a"))
       assert_instance_of InvalidAttribute, period_error(period)
       assert_instance_of InvalidAttribute, period_error(period.merge("post_count" => 1.5))
+      assert_equal "a period needs a count", period_error(period).cause.message
+    end
+
+    def test_a_period_refuses_a_count_every_other_count_is_refused_for
+      period = {"start" => START_OF_PERIOD, "end" => END_OF_PERIOD}
+
+      [" 1_2 ", "1_2", " 12", "-1", "+1", -1].each do |count|
+        assert_equal "invalid value for Integer(): #{count.to_s.inspect}", period_error(period.merge("tweet_count" => count)).cause.message
+      end
     end
 
     def test_a_period_reads_a_count_the_api_names_for_either_as_a_number_in_base_ten

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative "serialization"
+require_relative "shape"
 require_relative "utils"
 require_relative "value_equality"
 require_relative "value_marshalling"
@@ -46,7 +47,7 @@ module X
       # @param attrs [Hash{String, Symbol => Object}] the attributes, which name the identifier as id, as an Integer or
       #   as the String the stream sends, and the tag as tag, unless the rule has none
       # @return [MatchingRule] the frozen rule
-      # @raise [ArgumentError] if the attributes are not a Hash, the identifier names no number, or the tag is neither a
+      # @raise [ArgumentError] if the attributes are not a Hash, the identifier is not one, or the tag is neither a
       #   String nor nil
       # @example Build a rule a post matched
       #   X::MatchingRule.new({"id" => "1165037377523306498", "tag" => "ruby"})
@@ -60,13 +61,16 @@ module X
 
       # The identifier the API gave the rule
       #
-      # The API sends it as a String, and it is read as an Integer, as the identifier of a stream rule is.
+      # The API sends it as a String, and it is read as an Integer, as the identifier of a stream rule is, and as
+      # strictly as any identifier is read: a String of digits alone, with no sign, underscore, or whitespace.
       #
       # @api public
       # @return [Integer] the identifier
+      # @raise [ArgumentError] if the attributes hold no identifier, or one that is neither an Integer that is not
+      #   negative nor a String of digits
       # @example Get the identifier
       #   rule.id # => 1165037377523306498
-      def id = Integer(attrs["id"].to_s, 10)
+      def id = Shape.integer(attrs["id"]) || raise(ArgumentError, "a matching rule needs an id")
 
       # The tag the rule is labelled with
       # @api public

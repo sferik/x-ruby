@@ -189,10 +189,11 @@ module X
       # @api private
       # @param entry [Hash] the period, with its start, its end, and its count
       # @return [Array(Range<Time>, Integer)] the time it spans and the count
-      # @raise [InvalidAttribute] if the period has no start and end in ISO 8601, or no count that is a number
+      # @raise [InvalidAttribute] if the period has no start and end in ISO 8601, or no count that is an Integer that is
+      #   not negative or a String of digits
       def period(entry)
         Utils.read("A period of the counts of #{self}", entry) do
-          [Time.iso8601(entry["start"].to_s)...Time.iso8601(entry["end"].to_s), Integer((entry["tweet_count"] || entry["post_count"]).to_s, 10)]
+          [Time.iso8601(entry["start"].to_s)...Time.iso8601(entry["end"].to_s), Shape.integer(entry["tweet_count"] || entry["post_count"]) || raise(ArgumentError, "a period needs a count")]
         end
       end
     end

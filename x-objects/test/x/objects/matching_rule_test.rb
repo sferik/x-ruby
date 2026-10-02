@@ -79,6 +79,18 @@ module X
       refute_equal Class.new(MatchingRule).new({"id" => "1", "tag" => "ruby"}).hash, rule.hash
     end
 
+    def test_a_rule_refuses_an_identifier_every_other_identifier_is_refused_for
+      [" 1_2 ", "1_2", " 12", "12\n", "-1", "+1", -1, 1.0].each do |id|
+        error = assert_raises(ArgumentError) { MatchingRule.new({"id" => id}) }
+
+        assert_equal "invalid value for Integer(): #{id.to_s.inspect}", error.message
+      end
+    end
+
+    def test_a_rule_without_an_identifier
+      assert_equal "a matching rule needs an id", assert_raises(ArgumentError) { MatchingRule.new({"tag" => "ruby"}) }.message
+    end
+
     def test_a_rule_refuses_what_is_not_one
       assert_raises(ArgumentError) { MatchingRule.new(nil) }
       assert_raises(ArgumentError) { MatchingRule.new({}) }
