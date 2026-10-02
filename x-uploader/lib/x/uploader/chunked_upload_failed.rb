@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "timeout"
 require_relative "error"
 require_relative "uploaded_media"
 
@@ -7,29 +8,35 @@ module X
   # Error raised when a chunked upload is initialized, but its chunks cannot be appended or it cannot be finalized
   #
   # The media is created, and its identifier given, once the upload is initialized, so the media is not lost to a
-  # chunk or a finalize that fails, as one the API answers with a server error, or to media that can no longer be
-  # read, as a file deleted, closed, or shrunk once the upload was initialized cannot: the error holds the media the
-  # upload initialized, which names it by its identifier and its media key. The error that failed the upload is the
-  # cause, whose message the message ends with.
+  # chunk or a finalize that fails, as one the API answers with a server error, to media that can no longer be read,
+  # as a file deleted, closed, or shrunk once the upload was initialized cannot, or to any other error that ends the
+  # upload, as one the on_response hook of the client raises, or a thread for the chunks that cannot be started: the
+  # error holds the media the upload initialized, which names it by its identifier and its media key. The error that
+  # failed the upload is the cause, whose message the message ends with. A Timeout::Error, as Timeout.timeout raises
+  # around the upload, is raised as it is, so that a rescue of it still catches it.
   #
   # @api public
   class ChunkedUploadFailed < Uploader::Error
     # Finish a chunked upload, raising this error, which holds the media, on failure
     #
     # Internal to x-uploader: a chunked upload appends its chunks and finalizes the media through it, and calls it
-    # with __send__, since it is private.
+    # with __send__, since it is private. A Timeout::Error, and an exception that is not a StandardError, such as an
+    # Interrupt, are raised as they are.
     #
     # @api private
     # @param media [Hash{String => Object}] the media the upload initialized
     # @yield appends the chunks and finalizes the upload
     # @return [Object] what the block returns
-    # @raise [ChunkedUploadFailed] if the block raises an error of the X API, or one of reading the media, such as a
-    #   file deleted, closed, or shrunk once the upload was initialized
+    # @raise [ChunkedUploadFailed] if the block raises a StandardError other than a Timeout::Error, such as an error
+    #   of the X API, or one of reading the media, as a file deleted, closed, or shrunk once the upload was initialized
+    #   raises
     # @example Finish a chunked upload, keeping the media if it fails
     #   X::ChunkedUploadFailed.__send__(:keeping, media) { Uploader::Chunks.finalize(client:, media:) }
     def self.keeping(media)
       yield
-    rescue X::Error, IOError, SystemCallError
+    rescue Timeout::Error
+      raise
+    rescue
       raise new(media:)
     end
     private_class_method :keeping

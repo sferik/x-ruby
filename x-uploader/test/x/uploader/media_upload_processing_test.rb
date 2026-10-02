@@ -52,6 +52,17 @@ module X
       assert_equal [TEST_MEDIA_ID, "pending", BadRequest], [error.media["id"], error.media.state, error.cause.class]
     end
 
+    def test_upload_keeps_the_media_when_the_response_hook_raises_for_a_check_of_its_processing
+      stub_pending_upload
+      stub_status(state: "succeeded")
+      client = Client.new(on_response: ->(response) { raise "Hook failed" if response.http_method.eql?(:get) })
+      error = Uploader.const_get(:Utils).stub(:sleep, nil) do
+        assert_raises(MediaProcessingCheckFailed) { Uploader::MediaUpload.upload(ANIMATED_GIF, client:) }
+      end
+
+      assert_equal [TEST_MEDIA_ID, "#<RuntimeError: Hook failed>"], [error.media["id"], error.cause.inspect]
+    end
+
     def test_upload_names_the_media_it_kept_when_a_check_of_its_processing_fails
       stub_pending_upload
       stub_request(:get, STATUS_URL).to_return(status: 400, headers: JSON_HEADERS, body: {title: "Invalid Request"}.to_json)

@@ -100,9 +100,9 @@ module X
       assert @appended.none? { |body| body.include?("GROWN") }
     end
 
-    def test_an_error_that_is_not_one_of_the_media_or_the_api_is_raised_as_it_is
+    def test_an_error_of_the_media_or_of_anything_else_holds_the_media
       media = {"id" => "7"}
-      assert_raises(ArgumentError) { ChunkedUploadFailed.__send__(:keeping, media) { raise ArgumentError } }
+      assert_raises(ChunkedUploadFailed) { ChunkedUploadFailed.__send__(:keeping, media) { raise ArgumentError } }
       assert_raises(ChunkedUploadFailed) { ChunkedUploadFailed.__send__(:keeping, media) { raise Errno::EACCES } }
       assert_raises(ChunkedUploadFailed) { ChunkedUploadFailed.__send__(:keeping, media) { raise IOError } }
     end

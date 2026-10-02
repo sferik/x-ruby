@@ -191,9 +191,28 @@ module X
       refute_respond_to AltTextFailed, :keeping
     end
 
-    def test_keeping_returns_what_the_block_returns_and_raises_what_is_not_an_error_of_the_api
+    def test_keeping_returns_what_the_block_returns
       assert_equal 1, AltTextFailed.__send__(:keeping, nil) { 1 }
-      assert_raises(ArgumentError) { AltTextFailed.__send__(:keeping, nil) { raise ArgumentError } }
+    end
+
+    def test_keeping_holds_the_media_for_an_error_that_is_not_one_of_the_api
+      media = UploadedMedia.new({"id" => "7"})
+      failure = RuntimeError.new("Hook failed")
+      error = assert_raises(AltTextFailed) { AltTextFailed.__send__(:keeping, media) { raise failure } }
+
+      assert_equal [media, failure], [error.media, error.cause]
+    end
+
+    def test_keeping_raises_a_timeout_as_it_was_raised
+      timeout = Timeout::Error.new
+
+      assert_same timeout, assert_raises(Timeout::Error) { AltTextFailed.__send__(:keeping, nil) { raise timeout } }
+    end
+
+    def test_keeping_raises_an_exception_that_is_not_a_standard_error_as_it_was_raised
+      interrupt = Interrupt.new
+
+      assert_same interrupt, assert_raises(Interrupt) { AltTextFailed.__send__(:keeping, nil) { raise interrupt } }
     end
   end
 
@@ -257,9 +276,28 @@ module X
       refute_respond_to MediaProcessingCheckFailed, :keeping
     end
 
-    def test_keeping_returns_what_the_block_returns_and_raises_what_is_not_an_error_of_the_api
+    def test_keeping_returns_what_the_block_returns
       assert_equal 1, MediaProcessingCheckFailed.__send__(:keeping, nil) { 1 }
-      assert_raises(ArgumentError) { MediaProcessingCheckFailed.__send__(:keeping, nil) { raise ArgumentError } }
+    end
+
+    def test_keeping_holds_the_media_for_an_error_that_is_not_one_of_the_api
+      media = UploadedMedia.new({"id" => "7"})
+      failure = RuntimeError.new("Hook failed")
+      error = assert_raises(MediaProcessingCheckFailed) { MediaProcessingCheckFailed.__send__(:keeping, media) { raise failure } }
+
+      assert_equal [media, failure], [error.media, error.cause]
+    end
+
+    def test_keeping_raises_a_timeout_as_it_was_raised
+      timeout = Timeout::Error.new
+
+      assert_same timeout, assert_raises(Timeout::Error) { MediaProcessingCheckFailed.__send__(:keeping, nil) { raise timeout } }
+    end
+
+    def test_keeping_raises_an_exception_that_is_not_a_standard_error_as_it_was_raised
+      interrupt = Interrupt.new
+
+      assert_same interrupt, assert_raises(Interrupt) { MediaProcessingCheckFailed.__send__(:keeping, nil) { raise interrupt } }
     end
   end
 

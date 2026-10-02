@@ -59,9 +59,28 @@ module X
       refute_respond_to ChunkedUploadFailed, :keeping
     end
 
-    def test_keeping_returns_what_the_block_returns_and_raises_what_is_not_an_error_of_the_api
+    def test_keeping_returns_what_the_block_returns
       assert_equal 1, ChunkedUploadFailed.__send__(:keeping, {}) { 1 }
-      assert_raises(ArgumentError) { ChunkedUploadFailed.__send__(:keeping, {}) { raise ArgumentError } }
+    end
+
+    def test_keeping_holds_the_media_for_an_error_that_is_not_one_of_the_api
+      [RuntimeError.new("Hook failed"), ThreadError.new("can't create Thread")].each do |failure|
+        error = assert_raises(ChunkedUploadFailed) { ChunkedUploadFailed.__send__(:keeping, {"id" => "7"}) { raise failure } }
+
+        assert_equal [7, failure], [error.media.id, error.cause]
+      end
+    end
+
+    def test_keeping_raises_a_timeout_as_it_was_raised
+      timeout = Timeout::Error.new
+
+      assert_same timeout, assert_raises(Timeout::Error) { ChunkedUploadFailed.__send__(:keeping, {"id" => "7"}) { raise timeout } }
+    end
+
+    def test_keeping_raises_an_exception_that_is_not_a_standard_error_as_it_was_raised
+      interrupt = Interrupt.new
+
+      assert_same interrupt, assert_raises(Interrupt) { ChunkedUploadFailed.__send__(:keeping, {"id" => "7"}) { raise interrupt } }
     end
   end
 
@@ -77,7 +96,10 @@ module X
       @finalize = "#{BASE_URL}/#{TEST_MEDIA_ID}/finalize"
     end
 
-    def upload = Uploader::MediaUpload.chunked_upload("test/sample_files/sample.mp4", client: Client.new, media_category: "tweet_video")
+    def upload(client = Client.new) = Uploader::MediaUpload.chunked_upload("test/sample_files/sample.mp4", client:, media_category: "tweet_video")
+
+    # A client whose on_response hook raises for the response of a request to the URL
+    def failing_on(url) = Client.new(on_response: ->(response) { raise "Hook failed" if response.uri.to_s.eql?(url) })
 
     def test_a_chunk_that_fails_raises_with_the_media_the_upload_initialized
       stub_request(:post, "#{BASE_URL}/#{TEST_MEDIA_ID}/append").to_return(status: 400)
@@ -93,6 +115,14 @@ module X
       error = assert_raises(ChunkedUploadFailed) { upload }
 
       assert_equal [TEST_MEDIA_ID.to_i, Forbidden], [error.media.id, error.cause.class]
+    end
+
+    def test_a_finalize_whose_response_hook_raises_raises_with_the_media_the_upload_initialized
+      stub_request(:post, "#{BASE_URL}/#{TEST_MEDIA_ID}/append").to_return(status: 204)
+      stub_request(:post, @finalize).to_return(headers: JSON_HEADERS, body: {data: {id: TEST_MEDIA_ID}}.to_json)
+      error = assert_raises(ChunkedUploadFailed) { upload(failing_on(@finalize)) }
+
+      assert_equal [TEST_MEDIA_ID.to_i, "#<RuntimeError: Hook failed>"], [error.media.id, error.cause.inspect]
     end
   end
 end

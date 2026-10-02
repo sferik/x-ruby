@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "timeout"
 require_relative "error"
 require_relative "uploaded_media"
 
@@ -7,26 +8,31 @@ module X
   # Error raised when media uploaded with alt text is uploaded, but its alt text cannot be added
   #
   # The alt text is added once the media is uploaded, and processed, so the media the upload billed is not lost to
-  # a failure to add it: the error holds the media, which can be attached to a post, or given its alt text again
-  # with add_alt_text. The error that failed to add it is the cause, whose message the message ends with.
+  # a failure to add it, whether the API refuses it or the on_response hook of the client raises: the error holds the
+  # media, which can be attached to a post, or given its alt text again with add_alt_text. The error that failed to
+  # add it is the cause, whose message the message ends with.
   #
   # @api public
   class AltTextFailed < Uploader::Error
     # Add alt text to uploaded media, raising this error, which holds it, on failure
     #
     # Internal to x-uploader: an upload adds the alt text it is given through it, and calls it with __send__, since it
-    # is private.
+    # is private. A Timeout::Error, as Timeout.timeout raises around the upload, and an exception that is not a
+    # StandardError, such as an Interrupt, are raised as they are.
     #
     # @api private
     # @param media [UploadedMedia] the uploaded media
     # @yield adds the alt text
     # @return [Object] what the block returns
-    # @raise [AltTextFailed] if the block raises an error of the X API
+    # @raise [AltTextFailed] if the block raises a StandardError other than a Timeout::Error, such as an error of the
+    #   X API
     # @example Add alt text to an upload, keeping the media if it cannot be added
     #   X::AltTextFailed.__send__(:keeping, media) { Uploader::Metadata.add_alt_text(media, "A cat", client:) }
     def self.keeping(media)
       yield
-    rescue X::Error
+    rescue Timeout::Error
+      raise
+    rescue
       raise new(media:)
     end
     private_class_method :keeping

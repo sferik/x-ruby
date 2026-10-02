@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "timeout"
 require_relative "error"
 require_relative "uploaded_media"
 require_relative "media_processing_timeout"
@@ -8,8 +9,9 @@ module X
   # Error raised when media is uploaded, but a check of its processing fails
   #
   # An upload awaits the processing of media X processes, such as a video, once the media is uploaded, and billed,
-  # so the media is not lost to a check that fails, as one the API answers with a server error: the error holds the
-  # media, which can be awaited again with await_processing. The error that failed the check is the cause, whose
+  # so the media is not lost to a check that fails, as one the API answers with a server error, or one the
+  # on_response hook of the client raises: the error holds the media, which can be awaited again with
+  # await_processing. The error that failed the check is the cause, whose
   # message the message ends with.
   #
   # @api public
@@ -17,21 +19,24 @@ module X
     # Await processing, raising this error, which holds the media, if a check fails
     #
     # Internal to x-uploader: an upload awaits the processing of the media it uploaded through it, and calls it with
-    # __send__, since it is private. A MediaProcessingTimeout, which holds the media itself, is raised as it is.
+    # __send__, since it is private. A MediaProcessingTimeout, which holds the media itself, a Timeout::Error, as
+    # Timeout.timeout raises around the upload, and an exception that is not a StandardError, such as an Interrupt,
+    # are raised as they are.
     #
     # @api private
     # @param media [UploadedMedia] the uploaded media
     # @yield awaits the processing
     # @return [Object] what the block returns
-    # @raise [MediaProcessingCheckFailed] if the block raises an error of the X API other than MediaProcessingTimeout
+    # @raise [MediaProcessingCheckFailed] if the block raises a StandardError other than a MediaProcessingTimeout or a
+    #   Timeout::Error, such as an error of the X API
     # @raise [MediaProcessingTimeout] if the media is still processing once the processing timeout would pass
     # @example Await the processing of an upload, keeping the media if a check fails
     #   X::MediaProcessingCheckFailed.__send__(:keeping, media) { Uploader::MediaUpload.await_processing(media, client:) }
     def self.keeping(media)
       yield
-    rescue MediaProcessingTimeout
+    rescue MediaProcessingTimeout, Timeout::Error
       raise
-    rescue X::Error
+    rescue
       raise new(media:)
     end
     private_class_method :keeping
