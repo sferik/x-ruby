@@ -468,6 +468,7 @@ module X
       #   the request is sent
       # @raise [ArgumentError] if array_class is not a Class, or object_class is neither a Class nor responds to
       #   from_response, before the request is sent
+      # @raise [ArgumentError] if headers are not a Hash of header names to Strings, before the request is sent
       # @yieldparam response [Response] the summary of each response the request got, as {#on_response} receives it
       # @example Get a user by username
       #   client.get("users/by/username/sferik")
@@ -500,6 +501,7 @@ module X
       #   the request is sent
       # @raise [ArgumentError] if array_class is not a Class, or object_class is neither a Class nor responds to
       #   from_response, before the request is sent
+      # @raise [ArgumentError] if headers are not a Hash of header names to Strings, before the request is sent
       # @yieldparam response [Response] the summary of each response the request got, as {#on_response} receives it
       # @example Create a post
       #   client.post("tweets", {text: "Hello, World!"})
@@ -531,6 +533,7 @@ module X
       #   the request is sent
       # @raise [ArgumentError] if array_class is not a Class, or object_class is neither a Class nor responds to
       #   from_response, before the request is sent
+      # @raise [ArgumentError] if headers are not a Hash of header names to Strings, before the request is sent
       # @yieldparam response [Response] the summary of each response the request got, as {#on_response} receives it
       # @example Update a resource
       #   client.put("some/endpoint", {key: "value"})
@@ -554,6 +557,7 @@ module X
       #   the request is sent
       # @raise [ArgumentError] if array_class is not a Class, or object_class is neither a Class nor responds to
       #   from_response, before the request is sent
+      # @raise [ArgumentError] if headers are not a Hash of header names to Strings, before the request is sent
       # @yieldparam response [Response] the summary of each response the request got, as {#on_response} receives it
       # @example Delete a post
       #   client.delete("tweets/1234567890")
@@ -587,6 +591,7 @@ module X
       # @return [Object] what the block returns
       # @raise [ArgumentError] if no block is given, or the endpoint is not a valid URL, or does not resolve to an http
       #   or https URL, before the request is sent
+      # @raise [ArgumentError] if headers are not a Hash of header names to Strings, before the request is sent
       # @raise [HTTPError] if the response is not successful
       # @raise [NetworkError] if the request cannot be sent, or its body cannot be read
       # @example Print the body of the sample stream as it arrives

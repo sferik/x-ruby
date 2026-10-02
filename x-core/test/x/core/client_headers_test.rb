@@ -65,6 +65,27 @@ module X
         headers: {"Content-Type" => "application/x-www-form-urlencoded; charset=utf-8"}
     end
 
+    def test_headers_of_a_request_that_are_not_a_hash_are_refused_before_it_is_sent
+      client = Client.new(bearer_token: TEST_BEARER_TOKEN)
+      [->(headers) { client.get("users/me", headers:) }, ->(headers) { client.post("tweets", headers:) },
+        ->(headers) { client.get_stream("tweets/sample/stream", headers:) { |_response| } }].each do |request|
+        error = assert_raises(ArgumentError) { request.call(nil) }
+
+        assert_equal "headers must be a Hash of header names to values, not a NilClass", error.message
+      end
+      assert_not_requested :any, /api\.x\.com/
+    end
+
+    def test_a_header_of_a_request_that_is_not_a_string_is_refused_before_it_is_sent
+      client = Client.new(bearer_token: TEST_BEARER_TOKEN)
+      [->(headers) { client.get("users/me", headers:) }, ->(headers) { client.get_stream("tweets/sample/stream", headers:) { |_response| } }].each do |request|
+        error = assert_raises(ArgumentError) { request.call({"X-Count" => 1}) }
+
+        assert_equal "headers must name each header with a String or a Symbol and give it a String, not \"X-Count\" with a Integer", error.message
+      end
+      assert_not_requested :any, /api\.x\.com/
+    end
+
     def test_the_headers_are_frozen_and_copied_from_the_hash_given
       given = {"X-Trace" => "abc"}
       client = Client.new(headers: given)
