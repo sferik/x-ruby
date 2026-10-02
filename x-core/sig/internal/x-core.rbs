@@ -848,9 +848,5 @@ module X
     include Core::CredentialHolder
 
     @internals: Core::ClientInternals
-
-    def with_retries: [T] () { () -> T } -> T
-    def memoized: (Symbol key) -> untyped
-    def memoize: [T] (Symbol key, T value) -> T
   end
 end

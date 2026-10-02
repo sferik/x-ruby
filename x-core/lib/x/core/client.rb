@@ -633,10 +633,10 @@ module X
       # again itself, so one wrapped in this is sent max_retries times more for each time this sends it, nine times in
       # all with the defaults, rather than three.
       #
-      # Internal to x-core and x-uploader, which sends each chunk of an upload with it, so that it can change within
-      # 1.x; it is public to Ruby so that x-uploader can call it.
+      # For the gems that extend a client, such as x-uploader, which sends each chunk of an upload with it, so that a
+      # later x-core 1.x, which installs beside an earlier x-uploader 1.x, keeps its name and behavior throughout 1.x.
       #
-      # @api private
+      # @api semipublic
       # @yield sends the request
       # @return [Object] what the block returns
       # @raise [NetworkError] if the request fails once more than the retries allow
@@ -648,12 +648,13 @@ module X
 
       # The value kept under a key for the authenticator the client holds
       #
-      # Internal to x-core and the gems that extend a client, such as x-objects, which keeps the identifier of the
-      # user its credentials act for with it, so that it can change within 1.x; it is public to Ruby so that they can
-      # call it. A value is read only while the client holds the authenticator it was kept with, and a client keeps
-      # values though it is frozen, which a copy made with dup or clone shares, and a copy made with {#with} does not.
+      # For the gems that extend a client, such as x-objects, which keeps the identifier of the user its credentials
+      # act for with it, so that a later x-core 1.x, which installs beside an earlier x-objects 1.x, keeps its name and
+      # behavior throughout 1.x. A value is read only while the client holds the authenticator it was kept with, and a
+      # client keeps values though it is frozen, which a copy made with dup or clone shares, and a copy made with
+      # {#with} does not.
       #
-      # @api private
+      # @api semipublic
       # @param key [Symbol] the key, which names the gem that keeps it
       # @return [Object, nil] the value, or nil if none is kept for the authenticator of the client
       # @example Read the identifier of the authenticated user that x-objects kept
@@ -662,9 +663,9 @@ module X
 
       # Keep a value under a key, for the authenticator of the client
       #
-      # Internal to x-core and the gems that extend a client, as {#memoized} is.
+      # For the gems that extend a client, and kept throughout 1.x, as {#memoized} is.
       #
-      # @api private
+      # @api semipublic
       # @param key [Symbol] the key, which names the gem that keeps it
       # @param value [Object] the value
       # @return [Object] the value
