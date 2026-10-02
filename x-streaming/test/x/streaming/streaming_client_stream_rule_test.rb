@@ -5,10 +5,12 @@ require_relative "../../test_helper"
 
 module X
   # A rule the API returned is a StreamRule, which adds itself by its value and tag, and deletes itself by the
-  # identifier the API gave it, or by its value when it holds none
+  # identifier the API gave it, or by its value when it holds none, and an identifier is read as strictly as a
+  # StreamRule reads one
   class StreamingClientStreamRuleTest < Minitest::Test
     cover StreamingClient
     cover Streaming.const_get(:StreamRules)
+    cover Streaming.const_get(:Validator)
 
     RULES_URL = "https://api.x.com/2/tweets/search/stream/rules"
     RUBY_RULE = {"id" => "1", "value" => "ruby -is:retweet", "tag" => "ruby"}.freeze
@@ -72,6 +74,16 @@ module X
       @streaming_client.add_rules([{"id" => "1", "value" => "ruby"}, {id: 2, value: "crystal"}])
 
       assert_requested(:post, RULES_URL, body: {add: [{"value" => "ruby"}, {value: "crystal"}]}.to_json)
+    end
+
+    def test_deleting_a_rule_by_an_identifier_that_is_not_one
+      [{id: " 1_0 "}, {"id" => "-1"}, {id: 1.0}, -1].each do |rule|
+        identifier = Hash.try_convert(rule)&.values&.first || rule
+        error = assert_raises(ArgumentError) { @streaming_client.delete_rules([rule]) }
+
+        assert_equal "invalid value for Integer(): #{identifier.to_s.inspect}", error.message
+      end
+      assert_not_requested(:post, RULES_URL)
     end
   end
 end

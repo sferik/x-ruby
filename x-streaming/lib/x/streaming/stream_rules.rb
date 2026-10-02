@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative "stream_rule"
+require_relative "validator"
 
 module X
   module Streaming
@@ -24,14 +25,16 @@ module X
       # The rules to delete, named by identifier and by the value they match
       #
       # A list the API is given none of would delete every rule, so neither is sent unless it holds something. The API
-      # takes an identifier as a String, as it sends one, so an Integer is sent as one.
+      # takes an identifier as a String, as it sends one, so an Integer is sent as one, and each is read as strictly
+      # as a StreamRule reads one, so that " 1_0 " is not sent for 10, nor -1 for a rule.
       #
       # @api private
       # @param ids [Array] the rules that hold an identifier
       # @param values [Array] the rules that hold a value and no identifier
       # @return [Hash{Symbol => Array}] the identifiers and values of the rules to delete
+      # @raise [ArgumentError] if an identifier is neither an Integer that is not negative nor a String of digits
       def deletion(ids, values)
-        {ids: ids.map { |rule| identifier_of(rule).to_s }, values: values.map { |rule| value_of(rule) }}.reject { |_, list| list.empty? }
+        {ids: ids.map { |rule| Validator.identifier!(identifier_of(rule)).to_s }, values: values.map { |rule| value_of(rule) }}.reject { |_, list| list.empty? }
       end
 
       # The rules given, which may be one rule rather than a list of them

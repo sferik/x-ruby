@@ -333,7 +333,8 @@ module X
       # @param dry_run [Boolean] true to have the API check the rules and delete none of them
       # @yieldparam problem [Problem] each problem the API reported of the rules it did not delete
       # @return [Integer] the number of rules deleted, or that a dry run would delete, 0 if none were given
-      # @raise [ArgumentError] if something is neither a rule nor the identifier of one
+      # @raise [ArgumentError] if something is neither a rule nor the identifier of one, or holds an identifier that is
+      #   neither an Integer that is not negative nor a String of digits alone
       # @raise [HTTPError] if the API refuses the request
       # @raise [RulesRejected] if the API reported a problem of a rule, and no block was given for it
       # @example Delete every rule

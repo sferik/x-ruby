@@ -22,7 +22,10 @@ module X
       INVALID_OBJECT_CLASS: String
 
       INVALID_CALLABLE: String
+      IDENTIFIER: Regexp
+      INVALID_IDENTIFIER: String
 
+      def identifier!: (untyped value) -> Integer
       def count_or_infinity!: (Symbol name, untyped value) -> untyped
       def callable!: (Symbol name, untyped value) -> untyped
       def read_timeout!: (Symbol name, untyped value) -> untyped

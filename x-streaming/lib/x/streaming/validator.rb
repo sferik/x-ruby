@@ -2,10 +2,12 @@
 
 module X
   module Streaming
-    # Checks the settings of a streaming client and the parsing classes of a stream before a stream is opened
+    # Checks the settings of a streaming client and the parsing classes of a stream before a stream is opened, and the
+    # identifiers of rules
     #
     # Internal to x-streaming: StreamingClient and ReconnectHandler check what they are given with it, with the
-    # messages X::Client checks its own settings with.
+    # messages X::Client checks its own settings with, and StreamRule and StreamRules read identifiers with it, as
+    # x-objects reads them.
     #
     # @api private
     module Validator
@@ -27,8 +29,13 @@ module X
         "from_response, as the resource classes of x-objects do, not %s"
       # The message of the error raised for a callback that neither responds to call nor is nil
       INVALID_CALLABLE = "%s must respond to call, as a Proc or a lambda does, or be nil, not a %s"
+      # The pattern of an identifier given as a String: digits alone, with no sign, underscore, or whitespace
+      IDENTIFIER = /\A\d+\z/
+      # The message of the error raised for an identifier that is neither an Integer that is not negative nor a String
+      # of digits, as Integer() words it
+      INVALID_IDENTIFIER = "invalid value for Integer(): %s"
       private_constant :MINIMUM_READ_TIMEOUT, :INVALID_COUNT_OR_INFINITY, :INVALID_READ_TIMEOUT, :INVALID_ARRAY_CLASS, :INVALID_OBJECT_CLASS,
-        :INVALID_CALLABLE
+        :INVALID_CALLABLE, :IDENTIFIER, :INVALID_IDENTIFIER
 
       # Check that a count is an Integer of at least 0, or Float::INFINITY for no limit
       #
@@ -71,6 +78,23 @@ module X
         return value if value.nil? || value.respond_to?(:call)
 
         raise ArgumentError, format(INVALID_CALLABLE, name, value.class)
+      end
+
+      # Read the identifier of a rule as an Integer
+      #
+      # It is read as strictly as x-objects reads an identifier: an Integer that is not negative, or a String of digits
+      # alone, as the API sends one, with no sign, underscore, or whitespace, which Integer() would take, so that
+      # " 1_0 " is not read as 10, nor "-1" as -1.
+      #
+      # @api private
+      # @param value [Object] the identifier
+      # @return [Integer] the identifier
+      # @raise [ArgumentError] if the identifier is neither an Integer that is not negative nor a String of digits
+      def identifier!(value)
+        return value if value.instance_of?(Integer) && !value.negative?
+        raise ArgumentError, format(INVALID_IDENTIFIER, value.to_s.inspect) unless value.instance_of?(String) && IDENTIFIER.match?(value)
+
+        Integer(value, 10)
       end
 
       # Check the classes a stream parses its objects into

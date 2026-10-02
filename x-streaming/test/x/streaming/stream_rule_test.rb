@@ -5,6 +5,7 @@ require_relative "../../test_helper"
 module X
   class StreamRuleTest < Minitest::Test
     cover StreamRule
+    cover Streaming.const_get(:Validator)
 
     def setup
       @rule = StreamRule.new(id: "1165037377523306498", value: "ruby -is:retweet", tag: "ruby")
@@ -83,6 +84,18 @@ module X
 
     def test_a_rule_refuses_an_identifier_that_names_no_number
       ["0x1", "one", 1.5].each { |id| assert_raises(ArgumentError) { StreamRule.new(id:, value: "ruby") } }
+    end
+
+    def test_a_rule_refuses_an_identifier_x_objects_refuses
+      [" 1_0 ", "1_0", " 10", "10\n", "-1", "+1", "", -1, 1.0, :"1"].each do |id|
+        error = assert_raises(ArgumentError) { StreamRule.new(id:, value: "ruby") }
+
+        assert_equal "invalid value for Integer(): #{id.to_s.inspect}", error.message
+      end
+    end
+
+    def test_a_rule_reads_an_identifier_of_digits_alone_or_an_integer_that_is_not_negative
+      assert_equal [0, 0, 10], [StreamRule.new(id: 0, value: "ruby").id, StreamRule.new(id: "0", value: "ruby").id, StreamRule.new(id: "10", value: "ruby").id]
     end
   end
 end
