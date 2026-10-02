@@ -99,7 +99,7 @@ module X
       # The fields of a message to send, which needs text or attachments
       #
       # The API takes media as attachments, each an object holding the identifier of one upload as a String, so
-      # media_ids builds them, and a caller who builds them itself passes attachments instead.
+      # media_ids builds them, and a caller who builds them itself passes attachments instead, by a String or a Symbol.
       #
       # @api private
       # @param text [String, nil] the text of the message
@@ -107,14 +107,16 @@ module X
       # @param media_ids [Array, #fetch, Media, String, Integer, nil] the identifiers of uploaded media to attach, what
       #   the uploads returned, or media, one or many; an empty list attaches nothing, as nil does
       # @return [Hash{Symbol => Object}] the fields, without the text when there is none
-      # @raise [ArgumentError] if the message has neither text nor any other field, or has both media_ids and
-      #   attachments
+      # @raise [ArgumentError] if the message has neither text nor any other field, or attaches media by both
+      #   media_ids and attachments
       def message(text, params, media_ids)
-        raise ArgumentError, "pass media_ids or attachments, not both" if !media_ids.nil? && params.key?(:attachments)
-
-        fields = {text:, **params}.compact
+        fields = {text:, **Utils.fields(params)}.compact
         attachments = MediaIds.media_ids_of(media_ids).map { |media_id| {media_id:} }
-        fields[:attachments] = attachments unless attachments.empty?
+        unless attachments.empty?
+          raise ArgumentError, "pass media_ids or attachments, not both" if fields.key?(:attachments)
+
+          fields[:attachments] = attachments
+        end
         raise ArgumentError, "a direct message needs text, or something else to show, such as media_ids" if fields.empty?
 
         fields

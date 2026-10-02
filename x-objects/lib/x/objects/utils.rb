@@ -95,6 +95,16 @@ module X
         params.transform_keys(&:to_s).compact.transform_values { |value| query_value(value) }
       end
 
+      # Normalize the fields of a request body into Symbol keys
+      #
+      # A caller may name a field by a String or by a Symbol, so each is read by its Symbol, by which a field the
+      # object layer sets, such as attachments or reply, is checked and merged, and a body never names a field twice.
+      #
+      # @api private
+      # @param fields [Hash, nil] the fields
+      # @return [Hash{Symbol => Object}] the fields, keyed by Symbol
+      def fields(fields) = fields.to_h.transform_keys(&:to_sym)
+
       # Normalize a query parameter value
       #
       # An Array is joined with commas, and a Time is given in UTC in the ISO 8601 form the API takes.
@@ -179,9 +189,7 @@ module X
       # @api private
       # @param value [String] the username, with or without a leading at sign
       # @return [String] the username
-      def username(value)
-        value.to_s.delete_prefix("@")
-      end
+      def username(value) = value.to_s.delete_prefix("@")
 
       # Normalize a username, which must be one, so nothing else reaches a path
       #

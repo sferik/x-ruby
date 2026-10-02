@@ -27,7 +27,7 @@ module X
       #   many; an empty list attaches nothing, as nil does
       # @param community [Community, String, Integer, nil] the community to post in or its identifier
       # @param params [Hash] additional request body fields, such as poll or reply_settings, among them reply and
-      #   media, whose other fields reply_to and media_ids are merged into
+      #   media, whose other fields reply_to and media_ids are merged into, each named by a String or a Symbol
       # @return [Post] the created post, holding only its identifier and text
       # @raise [ArgumentError] if the post has neither text nor any other field, which an empty media_ids is not
       # @raise [MissingResource] if the API answers without the post
@@ -44,6 +44,7 @@ module X
       # @example Quote a post
       #   X::Post.create("Worth reading", client: client, quote: post)
       def create(text = nil, client:, reply_to: nil, quote: nil, media_ids: nil, community: nil, **params)
+        params = Utils.fields(params)
         fields = {text:, **params, **referenced(params, reply_to:, quote:, media_ids:, community:)}.compact
         raise ArgumentError, "a post needs text, or something else to show, such as media_ids" if fields.empty?
 
@@ -128,11 +129,11 @@ module X
       # One nested field, with the convenience key merged over what the caller gave
       #
       # @api private
-      # @param params [Hash] the request body fields the caller gave
+      # @param params [Hash{Symbol => Object}] the request body fields the caller gave
       # @param key [Symbol] the nested field, reply or media
-      # @param field [Hash] the one field the convenience key sets, which wins
+      # @param field [Hash] the one field the convenience key sets, which wins over the caller's, by a String or a Symbol
       # @return [Hash{Symbol => Object}] the nested field
-      def merged(params, key, **field) = params[key].to_h.merge(field)
+      def merged(params, key, **field) = Utils.fields(params[key]).merge(field)
     end
     private_constant :PostWrites
   end

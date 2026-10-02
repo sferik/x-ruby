@@ -38,5 +38,12 @@ module X
       assert_raises(ArgumentError) { DirectMessage.create(8, client: @client, media_ids: []) }
       assert_empty @client.requests
     end
+
+    def test_create_with_no_media_ids_beside_attachments_sends_the_attachments
+      @client.stub(:post, "dm_conversations/with/8/messages", {"data" => {"dm_conversation_id" => "9-8", "dm_event_id" => "2"}})
+      DirectMessage.create(8, client: @client, media_ids: [], attachments: [{media_id: "3"}])
+
+      assert_equal({attachments: [{media_id: "3"}]}.to_json, @client.requests.first[:body])
+    end
   end
 end

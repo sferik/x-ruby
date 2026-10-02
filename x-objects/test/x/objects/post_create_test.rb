@@ -6,6 +6,7 @@ module X
   class PostCreateTest < Minitest::Test
     cover Post
     cover Objects.const_get(:PostWrites)
+    cover Objects.const_get(:Utils)
 
     def setup
       @client = FakeClient.new
