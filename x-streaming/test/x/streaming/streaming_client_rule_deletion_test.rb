@@ -124,14 +124,14 @@ module X
     def test_deleting_something_that_is_neither_a_rule_nor_an_identifier
       error = assert_raises(ArgumentError) { @streaming_client.delete_rules({"tag" => "ruby"}) }
 
-      assert_equal 'a rule is a StreamRule, a Hash holding an id or a value, the value it matches, or its identifier, not {"tag" => "ruby"}', error.message
+      assert_equal 'a rule is a StreamRule, a Hash holding an id or a value, anything with an id, the value it matches, or its identifier, not {"tag" => "ruby"}', error.message
     end
 
     def test_deleting_something_that_is_neither_a_hash_a_string_nor_an_integer
       [:ruby, nil, 1.0].each do |rule|
         error = assert_raises(ArgumentError) { @streaming_client.delete_rules([rule]) }
 
-        assert_equal "a rule is a StreamRule, a Hash holding an id or a value, the value it matches, or its identifier, not #{rule.inspect}", error.message
+        assert_equal "a rule is a StreamRule, a Hash holding an id or a value, anything with an id, the value it matches, or its identifier, not #{rule.inspect}", error.message
       end
       assert_not_requested(:post, RULES_URL)
     end
