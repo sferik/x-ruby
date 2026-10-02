@@ -253,9 +253,15 @@ module X
 
       # Wait for media processing to complete
       #
+      # Media that already says its processing has ended, in success or failure, or that holds an upload response
+      # which names no processing, as that of an image does, is returned as it is, without a request, since a check
+      # would tell no more than the media holds; await_processing! raises for media that says it failed, without a
+      # request too.
+      #
       # Before each check it waits as long as X asked, and at least a second: media an upload returned, or the Hash
       # of its response, which says how long to wait before the first check, is not checked until then, and media
-      # given as its identifier, or as media that says nothing of its processing, is checked at once.
+      # given as its identifier, or its identifier and media key alone, which say nothing of its processing, or as
+      # media in a state of processing X does not document, is checked at once.
       #
       # The processing timeout is a deadline, the seconds from when it is called, measured on the monotonic clock, so
       # that it counts the time each check takes, with any wait for a rate limit and any retry the client makes, as
@@ -273,7 +279,8 @@ module X
       # @param client [Client] the X API client
       # @param processing_timeout [Integer, Float, nil] the seconds from now to wait for processing to finish, checks
       #   and all, before giving up, or nil to wait for as long as processing takes
-      # @return [UploadedMedia] the uploaded media, which holds the processing status
+      # @return [UploadedMedia] the uploaded media, which holds the processing status, or the media given, as uploaded
+      #   media, if its processing has already ended
       # @raise [ArgumentError] if the processing timeout is neither a finite number of seconds of at least 0 nor nil
       # @raise [ArgumentError] if the media given is nil, holds no identifier, or is neither media, a media key, nor a
       #   media identifier, or its media key names none
@@ -288,8 +295,9 @@ module X
       def await_processing(media, client:, processing_timeout: DEFAULT_PROCESSING_TIMEOUT)
         Validator.validate_processing_timeout!(processing_timeout)
         uploaded = Utils.uploaded_media(media)
-        deadline, media_id = processing_timeout&.then { |seconds| Utils.seconds_from_now(seconds) }, Utils.media_id(uploaded)
-        pending = uploaded if uploaded.processing?
+        return uploaded if uploaded.ready? || uploaded.failed?
+
+        deadline, media_id, pending = processing_timeout&.then { |seconds| Utils.seconds_from_now(seconds) }, Utils.media_id(uploaded), (uploaded if uploaded.processing?)
         loop do
           Utils.wait_to_check(pending, deadline:, timeout: processing_timeout) if pending
           status = UploadedMedia.new(Utils.media_data(client.get("media/upload", params: {command: STATUS_COMMAND, media_id:}, **JSON_CLASSES), "of the status check"))
@@ -307,13 +315,14 @@ module X
       # @param client [Client] the X API client
       # @param processing_timeout [Integer, Float, nil] the seconds from now to wait for processing to finish, checks
       #   and all, before giving up, as {await_processing} counts them, or nil to wait for as long as processing takes
-      # @return [UploadedMedia] the uploaded media, which holds the processing status
+      # @return [UploadedMedia] the uploaded media, which holds the processing status, or the media given, as uploaded
+      #   media, if its processing has already succeeded
       # @raise [ArgumentError] if the processing timeout is neither a finite number of seconds of at least 0 nor nil
       # @raise [ArgumentError] if the media given is nil, holds no identifier, or is neither media, a media key, nor a
       #   media identifier, or its media key names none
       # @raise [MissingMediaData] if a status response holds no media or carries no body at all
       # @raise [MediaProcessingFailed] if media processing failed, or ended in no state X documents, with the status X
-      #   reported
+      #   reported, or the media given, without a request, if it already says its processing failed
       # @raise [MediaProcessingTimeout] if the media is still processing once the next check would pass the deadline
       # @example Wait for processing with error handling
       #   Uploader::MediaUpload.await_processing!(media, client: client)

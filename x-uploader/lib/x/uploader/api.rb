@@ -101,13 +101,16 @@ module X
       # Wait until media has been processed, whether its processing succeeded or failed
       #
       # It returns the status X reported, which failed? tells a failure by, and ready? a success by, since a status
-      # in no state X documents is neither; await_media_processing! raises for either instead.
+      # in no state X documents is neither; await_media_processing! raises for either instead. Media that already says
+      # its processing succeeded or failed, or holds an upload response that names no processing, such as that of an
+      # image, is returned as it is, without a request.
       #
       # @api public
       # @param media [UploadedMedia, Hash, #media_key, String, Integer] the uploaded media, media that has a media key,
       #   such as X::Media, the media key, or the media identifier
       # @param options [Hash] the options of {MediaUpload.await_processing}, such as processing_timeout
-      # @return [UploadedMedia] the uploaded media, which holds the processing status, failed or not
+      # @return [UploadedMedia] the uploaded media, which holds the processing status, failed or not, or the media
+      #   given, as uploaded media, if its processing has already ended
       # @raise [ArgumentError] if the processing timeout is neither nil nor a finite number of seconds of at least 0
       # @raise [ArgumentError] if the media given is nil, holds no identifier, or is neither media, a media key, nor a
       #   media identifier, or its media key names none
@@ -126,13 +129,14 @@ module X
       # @param media [UploadedMedia, Hash, #media_key, String, Integer] the uploaded media, media that has a media key,
       #   such as X::Media, the media key, or the media identifier
       # @param options [Hash] the options of {MediaUpload.await_processing!}, such as processing_timeout
-      # @return [UploadedMedia] the uploaded media, which holds the processing status
+      # @return [UploadedMedia] the uploaded media, which holds the processing status, or the media given, as uploaded
+      #   media, if its processing has already succeeded
       # @raise [ArgumentError] if the processing timeout is neither nil nor a finite number of seconds of at least 0
       # @raise [ArgumentError] if the media given is nil, holds no identifier, or is neither media, a media key, nor a
       #   media identifier, or its media key names none
       # @raise [MissingMediaData] if a status response holds no media or carries no body at all
       # @raise [MediaProcessingFailed] if media processing failed, or ended in no state X documents, with the status X
-      #   reported
+      #   reported, or the media given, without a request, if it already says its processing failed
       # @raise [MediaProcessingTimeout] if the media is still processing once the processing timeout would pass
       # @example Wait for a video uploaded with chunked_upload_media, raising if X could not process it
       #   client.await_media_processing!(video)
