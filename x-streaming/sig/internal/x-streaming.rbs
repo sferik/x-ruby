@@ -112,6 +112,21 @@ module X
     def string!: (Symbol name, untyped string) -> String
   end
 
+  module Streaming
+    class Stopper
+      class Stopped < StandardError
+      end
+
+      @streams: Array[Thread]
+      @lock: Thread::Mutex
+
+      def self.guard: [T] () { () -> T } -> T
+      def initialize: () -> void
+      def run: [T] () { () -> T } -> T?
+      def stop: () -> Integer
+    end
+  end
+
   class StreamingClient
     NO_BLOCK_MESSAGE: String
     ENDED_MESSAGE: String
@@ -122,6 +137,7 @@ module X
     @stream_client: Client
     @reconnect_handler: Streaming::ReconnectHandler
     @stream_parser: Streaming::StreamParser
+    @stopper: Streaming::Stopper
 
     private
     def change_rules: (Hash[Symbol, untyped] body, dry_run: bool) -> Hash[String, untyped]?

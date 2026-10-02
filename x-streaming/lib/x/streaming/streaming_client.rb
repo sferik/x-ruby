@@ -6,6 +6,7 @@ require_relative "rules_rejected"
 require_relative "stream_parser"
 require_relative "stream_rule"
 require_relative "stream_rules"
+require_relative "stopper"
 require_relative "validator"
 
 module X
@@ -21,7 +22,8 @@ module X
     # Each stream opens a connection of its own and closes it when it ends, rather than keep one open for the request
     # that follows, as a client does between requests. So a streaming client has neither the keep_alive_timeout of a
     # client, which says how long a connection is kept open, nor its close, which closes the connections it kept: a
-    # streaming client keeps none between streams, and a stream is stopped by raising from the block that reads it.
+    # streaming client keeps none between streams. A stream is stopped by breaking or raising from the block that
+    # reads it, or from another thread with {#stop}, which stops a stream that delivers nothing as well.
     #
     # A stream is opened with X::Client#get_stream, of an app-only copy of the client whose read_timeout is the
     # stream's, so it carries the credentials, headers, and proxy of the client as any request does, and none of its
@@ -83,6 +85,7 @@ module X
         @stream_client = client.with(read_timeout: Validator.read_timeout!(:read_timeout, read_timeout))
         @reconnect_handler = ReconnectHandler.new(max_reconnects:, max_rate_limit_wait: client.max_rate_limit_wait)
         @stream_parser = StreamParser.new
+        @stopper = Stopper.new
       end
 
       # The timeout for reading from a stream, in seconds
@@ -128,7 +131,8 @@ module X
       #
       # A stream runs until its block stops it: break out of the block to stop the stream and return a value, throw to
       # unwind to a catch further out, or raise, which stops the stream even where a drop would have reconnected, and
-      # reaches the caller unchanged, a StopIteration included.
+      # reaches the caller unchanged, a StopIteration included. Another thread stops it with {#stop}, which ends a
+      # stream that delivers nothing as well, when it returns nil.
       #
       # @api public
       # @param endpoint [String] the streaming API endpoint, relative to the base URL with or without a leading slash
@@ -139,7 +143,7 @@ module X
       # @param object_class [Class, #from_response] the class for parsing JSON objects, or one that responds to
       #   from_response and builds the result from each whole object the stream delivers; see {Client}
       # @yield [Hash, Array] each parsed JSON object from the stream
-      # @return [Object] what the block broke with
+      # @return [Object, nil] what the block broke with, or nil for a stream {#stop} stopped
       # @raise [ArgumentError] if no block is given, or the endpoint is not a valid URL, or does not resolve to an http or
       #   https URL, before the stream is opened
       # @raise [ArgumentError] if array_class is not a Class, or object_class is neither a Class nor responds to
@@ -157,10 +161,31 @@ module X
         raise ArgumentError, NO_BLOCK_MESSAGE if block.nil?
 
         Validator.parsing_classes!(array_class:, object_class:)
-        @reconnect_handler.handle(block) do |deliver, alive|
-          app_only(@stream_client).get_stream(endpoint, params:, headers:) { |response| read(response, array_class:, object_class:, alive:, &deliver) }
+        consumer = ->(object) { Stopper.guard { block.call(object) } }
+        @stopper.run do
+          @reconnect_handler.handle(consumer) do |deliver, alive|
+            app_only(@stream_client).get_stream(endpoint, params:, headers:) { |response| read(response, array_class:, object_class:, alive:, &deliver) }
+          end
         end
       end
+
+      # Stop every stream this streaming client is running, from any thread
+      #
+      # A stream waits on the API for most of its life, for the next object, the keep-alive X sends every 20 seconds,
+      # or the next reconnect, so its block, which runs only when an object arrives, cannot stop a stream that delivers
+      # nothing. This stops each stream running in another thread, or in this one, the next time it waits on the API,
+      # at once for a stream waiting now, closing its connection, and the stream returns nil. A block, or the
+      # on_response of the client, that is running when a stream is stopped runs to its end first, so that what it
+      # does with an object is never cut short. A stream opened after stop returns runs until it is stopped again.
+      #
+      # @api public
+      # @return [Integer] the number of streams it stopped, 0 if none was running
+      # @example Stop a stream that runs in a thread of its own
+      #   streaming_client = client.streaming
+      #   reader = Thread.new { streaming_client.stream("tweets/search/stream") { |post| queue << post } }
+      #   streaming_client.stop
+      #   reader.join
+      def stop = @stopper.stop
 
       # The rules the filtered stream matches posts against
       #
@@ -387,7 +412,7 @@ module X
       # @return [void]
       def report(response, line)
         uri = response.uri #: URI::Generic
-        client.on_response&.call(Response.new(http_response: response, http_method: :get, uri:, body: line))
+        Stopper.guard { client.on_response&.call(Response.new(http_response: response, http_method: :get, uri:, body: line)) }
       end
     end
   end
