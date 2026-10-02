@@ -142,7 +142,7 @@ module X
       # @param value [Integer, String, nil] the total the page holds
       # @return [Integer] the total
       # @raise [InvalidAttribute] if the total is not a number
-      def page_total(value) = Utils.read("The total of the counts of #{self}", value) { Utils.integer(value) } || 0
+      def page_total(value) = Utils.read("The total of the counts of #{self}", value) { Shape.integer(value) } || 0
 
       # The count of each period of every page, oldest first
       #

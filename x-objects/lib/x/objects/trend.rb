@@ -109,7 +109,7 @@ module X
       # @raise [InvalidAttribute] if the response holds a number of posts that is not a number
       # @example Get the number of posts
       #   trend.post_count # => 1234
-      def post_count = Utils.read("#{self.class}#post_count", attrs["post_count"] || attrs["tweet_count"]) { |value| Utils.integer(value) }
+      def post_count = Utils.read("#{self.class}#post_count", attrs["post_count"] || attrs["tweet_count"]) { |value| Shape.integer(value) }
 
       alias_method :tweet_count, :post_count
 

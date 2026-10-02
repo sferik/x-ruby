@@ -94,7 +94,6 @@ module X
       def not_an_identifier: (untyped value, Class klass) -> bot
       def username: (untyped value) -> String
       def username!: (untyped value) -> String
-      def integer: (String | Integer | nil value) -> Integer?
       def authenticated_user_id: (untyped client) -> Integer?
       def app_client: (untyped client) -> untyped
       def space_client: (untyped client) -> untyped
@@ -129,6 +128,7 @@ module X
       def object: (untyped value) -> Hash[untyped, untyped]?
       def object!: (untyped value) -> Hash[untyped, untyped]
       def list: (untyped value) -> Array[untyped]?
+      def integer: (untyped value) -> Integer?
     end
 
     module Parallel

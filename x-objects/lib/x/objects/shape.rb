@@ -92,6 +92,23 @@ module X
       # @return [Array, nil] the list, or nil if the value is missing
       # @raise [ArgumentError] if the value is not a list
       def list(value) = (Array.try_convert(value) || raise(ArgumentError, "#{value.inspect} is not a list") unless value.nil?)
+
+      # Read a numeric identifier or a count as an Integer, if it is there
+      #
+      # It is read as strictly as an identifier is checked: an Integer that is not negative, or a String of digits
+      # alone, with no sign, underscore, or whitespace, so that a count reads as the whole number it is, and the
+      # identifier of a resource a reader such as author_id returns is one that resource is found by.
+      #
+      # @api private
+      # @param value [String, Integer, nil] the identifier or count
+      # @return [Integer, nil] the Integer, or nil if the value is missing
+      # @raise [ArgumentError] if the value is neither an Integer that is not negative nor a String of digits
+      def integer(value)
+        return value if value.nil? || (Integer === value && !value.negative?)
+        raise ArgumentError, "invalid value for Integer(): #{value.to_s.inspect}" unless String === value && Utils::NUMERIC_ID.match?(value)
+
+        Integer(value, 10)
+      end
     end
     private_constant :Shape
   end

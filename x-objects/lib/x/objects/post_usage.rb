@@ -167,7 +167,7 @@ module X
       # @param value [String, Integer, nil] the value
       # @return [Integer, nil] the Integer, or nil if the value is missing
       # @raise [InvalidAttribute] if the value is not a number
-      def integer(reader, value) = Utils.read("#{self.class}##{reader}", value) { Utils.integer(value) }
+      def integer(reader, value) = Utils.read("#{self.class}##{reader}", value) { Shape.integer(value) }
 
       # Read a date the response holds as a Time, which it must hold
       # @api private

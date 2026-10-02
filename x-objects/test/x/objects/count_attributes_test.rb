@@ -34,7 +34,7 @@ module X
 
     def test_a_count_that_is_no_whole_number_raises
       each_count do |klass, name, path|
-        [1.5, "many", true].each do |value|
+        [1.5, "many", true, -3, "-3", "+3", "1_000", " 12\n", "12\n"].each do |value|
           error = assert_raises(InvalidAttribute, "#{klass}##{name}") { resource(klass, path, value).public_send(name) }
 
           assert_equal "#{klass}##{name} cannot be read from #{value.inspect}", error.message

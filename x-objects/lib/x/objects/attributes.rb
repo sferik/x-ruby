@@ -21,8 +21,8 @@ module X
         media_key: ->(value) { value },
         boolean: ->(value) { FLAGS.include?(value) ? value : raise(ArgumentError, "#{value.inspect} is not true or false") },
         time: ->(value) { Utils.time(value) },
-        integer: ->(value) { Utils.integer(value) },
-        integers: ->(value) { (Shape.list(value) || EMPTY_LIST).map { |id| Utils.integer(id) }.freeze },
+        integer: ->(value) { Shape.integer(value) },
+        integers: ->(value) { (Shape.list(value) || EMPTY_LIST).map { |id| Shape.integer(id) }.freeze },
         list: ->(value) { Shape.list(value) || EMPTY_LIST },
         requested_list: ->(value) { Shape.list(value) }
       }.freeze

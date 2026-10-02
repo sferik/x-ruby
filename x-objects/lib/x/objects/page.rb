@@ -170,7 +170,7 @@ module X
       # @example Get the result count
       #   page.result_count
       def result_count
-        Utils.read("#{self.class}#result_count", meta["result_count"]) { |value| Utils.integer(value) }
+        Utils.read("#{self.class}#result_count", meta["result_count"]) { |value| Shape.integer(value) }
       end
 
       # This page, as a JSON encoder reads it, in the shape of the response it came from

@@ -210,7 +210,7 @@ module X
       # @raise [ArgumentError] if the authenticator answers a user_id that is not an identifier
       def authenticated_user_id(client)
         authenticator = authenticator_of(client)
-        integer(authenticator.user_id) if authenticator.respond_to?(:user_id)
+        Shape.integer(authenticator.user_id) if authenticator.respond_to?(:user_id)
       end
 
       # The identifier of the user a lookup found for a client's credentials
@@ -270,15 +270,6 @@ module X
         app_client(client)
       rescue UnsupportedOperation
         client
-      end
-
-      # Read a numeric identifier as an Integer
-      #
-      # @api private
-      # @param value [String, Integer, nil] the identifier
-      # @return [Integer, nil] the identifier or nil if it is missing
-      def integer(value)
-        Integer(value.to_s, 10) unless value.nil?
       end
 
       # Check whether a value identifies a resource rather than naming one

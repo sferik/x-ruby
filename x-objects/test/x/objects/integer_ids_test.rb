@@ -6,6 +6,7 @@ module X
   class IntegerIdsTest < Minitest::Test
     cover Objects.const_get(:Attributes)
     cover Objects.const_get(:Utils)
+    cover Objects.const_get(:Shape)
     cover Resource
     cover Objects.const_get(:Finders)
     cover Objects.const_get(:BatchFinders)
@@ -35,10 +36,25 @@ module X
     end
 
     def test_integer_reads_decimal_digits
-      assert_equal 10, Objects.const_get(:Utils).integer("010")
-      assert_equal 7, Objects.const_get(:Utils).integer(7)
-      assert_nil Objects.const_get(:Utils).integer(nil)
-      assert_raises(ArgumentError) { Objects.const_get(:Utils).integer("sferik") }
+      assert_equal 10, Objects.const_get(:Shape).integer("010")
+      assert_equal 7, Objects.const_get(:Shape).integer(7)
+      assert_nil Objects.const_get(:Shape).integer(nil)
+      assert_raises(ArgumentError) { Objects.const_get(:Shape).integer("sferik") }
+    end
+
+    def test_integer_reads_neither_a_sign_an_underscore_whitespace_nor_a_negative_integer
+      ["-3", "+3", "1_000", " 12", "12\n", -3, 3.0, :"3"].each do |value|
+        error = assert_raises(ArgumentError, value.inspect) { Objects.const_get(:Shape).integer(value) }
+
+        assert_equal "invalid value for Integer(): #{value.to_s.inspect}", error.message
+      end
+    end
+
+    def test_an_identifier_of_a_resource_referred_to_is_read_as_strictly_as_that_resource_is_found
+      post = Post.new({"id" => "1", "author_id" => "-3", "edit_history_tweet_ids" => ["1", "+2"]})
+
+      assert_equal "X::Post#author_id cannot be read from \"-3\"", assert_raises(InvalidAttribute) { post.author_id }.message
+      assert_raises(InvalidAttribute) { post.edit_history_post_ids }
     end
   end
 end
