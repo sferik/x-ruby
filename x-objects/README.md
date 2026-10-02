@@ -81,6 +81,18 @@ post.text                              # => "Ruby &amp; Rails"
 CGI.unescapeHTML(post.text)            # => "Ruby & Rails"
 ```
 
+## Nested data
+
+A reader of an object the API nests in a resource, or of a list of them, returns it as the API sends it: a frozen Hash keyed by String, or an Array of them, as `Hash[String, untyped]` in the signatures. Among them are the `entities`, `urls`, `public_metrics`, `edit_controls`, `attachments`, and `withheld` of a post, the `variants` of media, the `options` of a poll, and the `subscription` and `affiliation` of a user. Others return objects, as `post.matching_rules` returns `X::MatchingRule`s and `space.topics` returns `X::Topic`s.
+
+```ruby
+post.public_metrics["like_count"]      # => 3, which post.like_count reads too
+post.urls.map { |url| url["expanded_url"] }
+media.variants.max_by { |variant| variant["bit_rate"].to_i }&.fetch("url")
+```
+
+Each reader of nested data returns a frozen Hash keyed by String, or an Array of them, throughout 1.x. A release within 1.x may add a reader that returns an object for some of that data, but under a new name, never in place of one of these.
+
 ## How it works
 
 * **Immutability.** Resources, pages, and cursors are frozen. Their attributes are deep-frozen copies of the response.

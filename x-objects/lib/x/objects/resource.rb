@@ -16,6 +16,13 @@ require_relative "utils"
 module X
   module Objects
     # Base class for immutable API resources with identity, references, and hydration
+    #
+    # A reader of an object the API nests in a resource, or of a list of them, such as the entities, urls,
+    # public_metrics, edit_controls, attachments, and withheld of a post, the variants of media, the options of a poll,
+    # or the subscription and affiliation of a user, returns it as the API sends it: a frozen Hash keyed by String, or
+    # an Array of them. Each returns that throughout 1.x. A reader that returns an object, as the matching_rules of a
+    # post and the topics of a space do, is only ever added under a new name, never in place of one of these.
+    #
     # @api public
     class ::X::Resource
       extend AbstractClass

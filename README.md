@@ -76,6 +76,13 @@ post.text                              # => "Ruby &amp; Rails"
 CGI.unescapeHTML(post.text)            # => "Ruby & Rails"
 ```
 
+**Nested data.** An object the API nests in a resource, or a list of them, such as `post.entities`, `post.urls`, `post.public_metrics`, `post.attachments`, `media.variants`, or `poll.options`, reads as the API sends it, a frozen Hash keyed by String, or an Array of them, and will throughout 1.x. A later 1.x release may add a reader that returns an object for some of it, as `post.matching_rules` returns `X::MatchingRule`s, but under a new name.
+
+```ruby
+post.public_metrics["like_count"]      # => 3, which post.like_count reads too
+post.urls.map { |url| url["expanded_url"] }
+```
+
 **Any endpoint.** For an endpoint without a method, pass a resource class as the `object_class` of a request. A response that holds one resource comes back as an object, and one that holds a list comes back as an `X::Page` of the page you requested, which reads as an array does, and holds the `next_token` of the page after it. The object holds only the fields you asked for, so `hydrate` fetches the rest.
 
 ```ruby
