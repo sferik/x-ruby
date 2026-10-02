@@ -253,8 +253,8 @@ module X
       #   line break, as the contents of media given in place of its path do
       # @raise [InvalidMedia] if the file does not exist
       # @raise [InvalidMedia] if the media cannot be read, or is empty, which holds nothing to upload
-      # @raise [InvalidMedia] if the media is larger than the API takes of its category, which is 15 megabytes of a
-      #   GIF and one of subtitles, or larger than the 16 gigabytes it takes of any
+      # @raise [InvalidMedia] if the media is larger than the API takes of its category, whatever the account: 5
+      #   megabytes of an image, 15 of a GIF, and one of subtitles, or larger than the 16 gigabytes it takes of any
       # @raise [ArgumentError] if the media category is invalid, the chunk size is not a positive Integer, is
       #   larger than a segment the API takes, or would need more segments than the API numbers, the concurrency is not
       #   1 to MAX_CONCURRENCY, shared is neither true, false, nor nil, or additional_owners is neither nil nor an
