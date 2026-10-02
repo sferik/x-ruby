@@ -260,7 +260,7 @@ module X
         authenticator, headers = Origin.credentials_for(from: URI(base_url), to: uri, authenticator: self.authenticator, headers:)
         request = @request_builder.build(http_method:, uri:, body:, headers:, authenticator:)
         response, request = @redirect_handler.follow(response: @connection.perform(request:), request:, headers:, authenticator:)
-        CallbackError.tagging { report(request.method.downcase.to_sym, request.uri, response, &) }
+        CallbackError.tagging { report(request.method, request.uri, response, &) }
         @response_parser.parse(response:, array_class:, object_class:, client:, request:)
       end
     end

@@ -148,7 +148,7 @@ module X
       # pass it to.
       #
       # @api private
-      # @param http_method [Symbol] the HTTP method of the request
+      # @param http_method [Symbol, String] the HTTP method of the request, in any case
       # @param uri [URI::Generic] the URI of the request
       # @param response [Net::HTTPResponse] the HTTP response
       # @yieldparam response [Response] the summary of the response

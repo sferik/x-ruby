@@ -45,7 +45,8 @@ module X
       # a response, or from a Net::HTTP response, as the client builds one for each response it reads.
       #
       # @api public
-      # @param http_method [Symbol] the HTTP method of the request
+      # @param http_method [Symbol, String] the HTTP method of the request, in any case, which is read as a lowercase
+      #   Symbol, as an error reads it
       # @param uri [URI::Generic] the URI of the request
       # @param http_response [Net::HTTPResponse, nil] the HTTP response, or nil for one built of the status, headers,
       #   and body
@@ -62,7 +63,7 @@ module X
       # @example Summarize a Net::HTTP response
       #   X::Response.new(http_response:, http_method: :get, uri: URI("https://api.x.com/2/users/me"))
       def initialize(http_method:, uri:, http_response: nil, status: nil, headers: nil, body: nil)
-        @http_method = http_method
+        @http_method = http_method.downcase.to_sym
         @uri = uri
         @http_response = BuiltResponse.of(http_response, status:, headers:, body: (body if http_response.nil?))
         @body = body

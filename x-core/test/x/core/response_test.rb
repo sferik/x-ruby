@@ -16,6 +16,12 @@ module X
       assert_predicate response, :success?
     end
 
+    def test_the_http_method_is_read_as_a_lowercase_symbol_in_any_case
+      %w[GET get Get].push(:GET).each do |http_method|
+        assert_equal :get, Response.new(http_method:, uri: URI_ME, status: 200).http_method, http_method.inspect
+      end
+    end
+
     def test_a_failed_request
       response = summarize(Net::HTTPNotFound, code: "404")
 

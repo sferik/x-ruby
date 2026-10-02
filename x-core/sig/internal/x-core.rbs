@@ -282,7 +282,7 @@ module X
       def proxy_url: () -> (URI::Generic | String)?
       def initialize_settings: (base_url: String, default_array_class: Class, default_object_class: object_class, headers: headers, on_response: _ResponseHook?, max_redirects: Integer, max_rate_limit_retries: Integer, max_rate_limit_wait: Numeric, max_retries: Integer) -> void
       def headers_for: (headers request_headers) -> headers
-      def report: (Symbol http_method, URI::Generic uri, Net::HTTPResponse response) ?{ (Response) -> void } -> void
+      def report: (Symbol | String http_method, URI::Generic uri, Net::HTTPResponse response) ?{ (Response) -> void } -> void
     end
 
     module ClientAppOnly : _CredentialHost
