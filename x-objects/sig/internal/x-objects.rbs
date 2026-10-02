@@ -280,8 +280,8 @@ module X
       def unmute: (id user) -> bool
       def like: (id post) -> bool
       def unlike: (id post) -> bool
-      def repost: (id post) -> Integer?
-      def retweet: (id post) -> Integer?
+      def repost: (id post) -> bool
+      def retweet: (id post) -> bool
       def unrepost: (id post) -> bool
       def unretweet: (id post) -> bool
       def bookmark: (id post) -> bool
@@ -633,8 +633,8 @@ module X
       module Engagement : _Client, _CurrentUser
         def like: (id post) -> bool
         def unlike: (id post) -> bool
-        def repost: (id post) -> Integer?
-        def retweet: (id post) -> Integer?
+        def repost: (id post) -> bool
+        def retweet: (id post) -> bool
         def unrepost: (id post) -> bool
         def unretweet: (id post) -> bool
         def bookmark: (id post) -> bool

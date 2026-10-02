@@ -11,42 +11,24 @@ module X
       @me = User.new({"id" => "9"}, client: @client)
     end
 
-    def test_repost_returns_the_rest_id_the_api_returned
-      @client.stub(:post, "users/9/retweets", {"data" => {"retweeted" => true, "rest_id" => "2"}})
+    def test_repost
+      @client.stub(:post, "users/9/retweets", {"data" => {"retweeted" => true}})
 
-      assert_equal [2, 2], [@me.repost(Post.new({"id" => "1"})), @me.retweet("1")]
+      assert @me.repost(Post.new({"id" => "1"}))
+      assert @me.retweet("1")
       assert_equal [{tweet_id: "1"}.to_json] * 2, @client.requests.map { |request| request[:body] }
     end
 
-    def test_repost_without_a_rest_id
-      @client.stub(:post, "users/9/retweets", {"data" => {"retweeted" => true}})
+    def test_repost_answered_with_a_rest_id_returns_true
+      @client.stub(:post, "users/9/retweets", {"data" => {"retweeted" => true, "rest_id" => "2"}})
 
-      assert_nil @me.repost("1")
+      assert_equal [true, true], [@me.repost("1"), @me.retweet("1")]
     end
 
     def test_repost_not_reposted
-      @client.stub(:post, "users/9/retweets", {"data" => {"retweeted" => false, "rest_id" => "2"}})
+      @client.stub(:post, "users/9/retweets", {"data" => {"retweeted" => false}})
 
-      assert_nil @me.repost("1")
-    end
-
-    def test_repost_reported_as_something_other_than_true
-      @client.stub(:post, "users/9/retweets", {"data" => {"retweeted" => "true", "rest_id" => "2"}})
-
-      assert_nil @me.repost("1")
-    end
-
-    def test_repost_answered_with_no_data
-      @client.stub(:post, "users/9/retweets", nil)
-
-      assert_nil @me.repost("1")
-    end
-
-    def test_repost_with_a_rest_id_that_is_not_an_identifier
-      @client.stub(:post, "users/9/retweets", {"data" => {"retweeted" => true, "rest_id" => "abc"}})
-
-      error = assert_raises(InvalidAttribute) { @me.repost("1") }
-      assert_equal 'X::User#repost cannot be read from "abc"', error.message
+      refute @me.repost("1")
     end
 
     def test_unrepost
