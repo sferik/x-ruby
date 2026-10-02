@@ -154,6 +154,7 @@ module X
     @stopper: Streaming::Stopper
 
     private
+    def read_rules: (params? params, into: Array[StreamRule], spent: Array[String]) -> String?
     def change_rules: (Hash[Symbol, untyped] body, dry_run: bool) -> Hash[String, untyped]?
     def reporting: (Hash[String, untyped]? body, { added: Array[StreamRule] } | { deleted_count: Integer } changed) ?{ (Problem problem) -> void } -> void
     def read: (Net::HTTPResponse response, array_class: Class, object_class: object_class, alive: ^() -> void) { (untyped) -> void } -> void

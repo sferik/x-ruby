@@ -61,5 +61,15 @@ module X
 
       assert_equal [RUBY_STREAM_RULE], @streaming_client.rules(params: {ids: 1, pagination_token: "PAGE2"})
     end
+
+    def test_a_stop_iteration_on_response_raises_while_a_page_is_read_reaches_the_caller
+      stub_rules({"data" => [RUBY_RULE], "meta" => {"next_token" => "PAGE2"}})
+      stub_rules({"data" => [{"id" => "2", "value" => "crystal"}]}, url: "#{RULES_URL}?pagination_token=PAGE2")
+      on_response = ->(response) { raise StopIteration if response.uri.query }
+      streaming_client = Client.new(bearer_token: TEST_BEARER_TOKEN, on_response:).streaming
+
+      assert_raises(StopIteration) { streaming_client.rules }
+      assert_requested(:get, "#{RULES_URL}?pagination_token=PAGE2", times: 1)
+    end
   end
 end

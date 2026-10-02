@@ -242,7 +242,10 @@ module X
       # The rules of an app are read, added, and deleted through a streaming client because they belong to the stream:
       # they are what the filtered stream delivers, and they take the app-only authentication a stream takes. The API
       # returns the rules a page at a time, and every page is read, so the rules are all of them. A page that names an
-      # empty next token, or the token of a page already read, is the last, as a page that names none is.
+      # empty next token, or the token of a page already read, is the last, as a page that names none is. The pages
+      # are read with while rather than Kernel#loop, which rescues StopIteration, so that a StopIteration the
+      # on_response of the client raises while a page is read reaches the caller, rather than end the reading in
+      # silence with the rules of the pages before it.
       #
       # @api public
       # @param params [Hash, nil] query parameters appended to the endpoint of each page
@@ -255,10 +258,7 @@ module X
       def rules(params: nil)
         rules = [] #: Array[StreamRule]
         spent = [] #: Array[String]
-        loop do
-          body = app_client.get(RULES_ENDPOINT, params:, **JSON_CLASSES)
-          rules.concat(StreamRules.rules_of(body))
-          token = StreamRules.next_token(body, spent) or break
+        while (token = read_rules(params, into: rules, spent:))
           spent << token
           params = params.to_h.merge(pagination_token: token)
         end
@@ -391,6 +391,18 @@ module X
       def to_json(_state = nil) = raise(TypeError, format(REFUSAL_MESSAGE, self.class, "JSON"))
 
       private
+
+      # Read a page of rules, as the app, adding them to those of the pages before it
+      # @api private
+      # @param params [Hash, nil] query parameters appended to the endpoint
+      # @param into [Array<StreamRule>] the rules of the pages before it, which the rules of the page are added to
+      # @param spent [Array<String>] the tokens that fetched the pages before it
+      # @return [String, nil] the token of the page after it, or nil if it is the last
+      def read_rules(params, into:, spent:)
+        body = app_client.get(RULES_ENDPOINT, params:, **JSON_CLASSES)
+        into.concat(StreamRules.rules_of(body))
+        StreamRules.next_token(body, spent)
+      end
 
       # Send a change of the rules, as the app
       # @api private
