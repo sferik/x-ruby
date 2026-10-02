@@ -45,10 +45,21 @@ require "x/objects"
 class MyClient
   include X::Objects::API # adds find_user, find_user_by_username, find_users, current_user, find_post, find_posts, search, find_list, find_media, find_space, find_community, find_dm, follow, like, ...
 
-  def get(path, **options) = ...
-  def post(path, body = nil, **options) = ...
-  def put(path, body = nil, **options) = ...
-  def delete(path, **options) = ...
+  def get(path, **options)
+    # Send the request and return the response body, parsed into options[:array_class] and options[:object_class]
+  end
+
+  def post(path, body = nil, **options)
+    # Send the body as JSON and return the response body, parsed as get parses it
+  end
+
+  def put(path, body = nil, **options)
+    # Send the body as JSON and return the response body, parsed as get parses it
+  end
+
+  def delete(path, **options)
+    # Send the request and return the response body, parsed as get parses it
+  end
 end
 ```
 
