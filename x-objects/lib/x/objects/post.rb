@@ -39,8 +39,8 @@ module X
       #
       # A minor release may add to it the expansions the API adds, so that a lookup asks for them too; see
       # {Resource#hydrated?} for what that means for a resource looked up with a list of expansions of its own.
-      EXPANSIONS = %w[attachments.media_keys attachments.poll_ids author_id geo.place_id in_reply_to_user_id
-        referenced_posts].freeze
+      EXPANSIONS = %w[attachments.media_keys attachments.media_source_tweet attachments.poll_ids author_id geo.place_id
+        in_reply_to_user_id referenced_posts].freeze
 
       include References
       include PostCollections
@@ -56,9 +56,7 @@ module X
         # @return [String] the endpoint
         # @example Get the endpoint
         #   X::Post.__send__(:endpoint) # => "tweets"
-        def endpoint
-          "tweets"
-        end
+        def endpoint = "tweets"
 
         # The key under which posts appear in the includes of a response
         #
@@ -66,9 +64,7 @@ module X
         # @return [String] the includes key
         # @example Get the includes key
         #   X::Post.__send__(:includes_key) # => "posts"
-        def includes_key
-          "posts"
-        end
+        def includes_key = "posts"
 
         # The query parameter that selects post fields
         #
@@ -476,10 +472,23 @@ module X
       #     post.polls.first.options
       references :polls, :Poll, key: %w[attachments poll_ids]
 
+      # @!method media_source_posts
+      #   The posts the attached media was first posted with
+      #
+      #   A post that attaches media another post was made with, as one that shares a video does, names that post as
+      #   the source of the media. Each is read from the includes, or built as a stub holding only its identifier.
+      #
+      #   @api public
+      #   @return [Array<Post>] the posts, empty if the media was first posted with this post, or it has none
+      #   @example Credit the author of shared media
+      #     post.media_source_posts.map { |source| source.author&.username }
+      references :media_source_posts, :Post, key: %w[attachments media_source_tweet_id]
+
       attribute_alias :retweet_count, :repost_count
       attribute_alias :edit_history_tweet_ids, :edit_history_post_ids
       attribute_alias :note_tweet, :note_post
       attribute_alias :referenced_tweets, :referenced_posts
+      alias_method :media_source_tweets, :media_source_posts
 
       # The permalink of the post, by the author's username when known
       #

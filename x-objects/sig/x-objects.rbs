@@ -638,6 +638,8 @@ module X
     def place: () -> Place?
     def media: () -> Array[Media]
     def polls: () -> Array[Poll]
+    def media_source_posts: () -> Array[Post]
+    def media_source_tweets: () -> Array[Post]
     def references: () -> Array[Post]
     def replied_to: () -> Post?
     def quoted: () -> Post?
