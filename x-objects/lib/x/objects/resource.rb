@@ -370,12 +370,18 @@ module X
 
       # Fetch the full resource, memoizing the result
       #
+      # Each resource that is not hydrated costs a request of its own, so hydrate many resources, such as the authors
+      # of the posts of a page, with the hydrate_all of their class, which looks them up a hundred at a time, rather
+      # than call hydrate on each.
+      #
       # @api public
       # @return [Resource, nil] the full resource or nil if it no longer exists
       # @raise [UnsupportedOperation] if the resource cannot be looked up by identifier, as a poll or a place cannot
       # @raise [MissingClient] if the resource has no client
-      # @example Fetch the full author of a post
-      #   post.author.hydrate.description
+      # @example Fetch the full user a stub names
+      #   X::User.from_id(7_505_382, client: client).hydrate.description
+      # @example Fetch the full authors of many posts in batches, rather than a request for each
+      #   X::User.hydrate_all(posts.map(&:author), client: client).map(&:description)
       def hydrate
         @memo.fetch { hydrated? ? self : fetch }
       end

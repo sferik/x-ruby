@@ -136,7 +136,8 @@ module X
       #   client.current_user!.bookmarks.each { |post| puts post.text }
       # @example Print the posts of the first bookmark folder
       #   user = client.current_user!
-      #   user.bookmarks(folder: user.bookmark_folders.first).each { |post| puts post.hydrate.text }
+      #   posts = user.bookmarks(folder: user.bookmark_folders.first).to_a
+      #   X::Post.hydrate_all(posts, client: client).each { |post| puts post.text }
       def bookmarks(folder: nil, **params)
         return cursor(Post, "users/#{id}/bookmarks", max_results: MAX_RESULTS, **params) if folder.nil?
 
