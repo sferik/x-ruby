@@ -45,14 +45,14 @@ module X
     end
 
     def test_a_streaming_client_checks_its_read_timeout
-      messages = ["30", 0, 0.0, -1, 19, 19.999, Rational(39, 2), Float::INFINITY, Float::NAN, Complex(30, 0)].map { |value| message_of { Client.new.streaming(read_timeout: value) } }
+      messages = ["30", 0, 0.0, -1, 20, 24, 24.999, Rational(49, 2), Float::INFINITY, Float::NAN, Complex(30, 0)].map { |value| message_of { Client.new.streaming(read_timeout: value) } }
 
-      assert_equal ['"30"', "0", "0.0", "-1", "19", "19.999", "(39/2)", "Infinity", "NaN", "(30+0i)"].map { |value| "read_timeout must be a finite number of seconds of at least 20, the interval of the keep-alive X sends a quiet stream, or nil for no timeout, not #{value}" }, messages
+      assert_equal ['"30"', "0", "0.0", "-1", "20", "24", "24.999", "(49/2)", "Infinity", "NaN", "(30+0i)"].map { |value| "read_timeout must be a finite number of seconds of at least 25, five more than the 20-second interval of the keep-alive X sends a quiet stream, or nil for no timeout, not #{value}" }, messages
       assert_nil Client.new.streaming(read_timeout: nil).read_timeout
     end
 
-    def test_a_read_timeout_of_at_least_20_is_allowed
-      assert_equal [20, 20.0, 20.5, Rational(41, 2), 600], [20, 20.0, 20.5, Rational(41, 2), 600].map { |value| Client.new.streaming(read_timeout: value).read_timeout }
+    def test_a_read_timeout_of_at_least_25_is_allowed
+      assert_equal [25, 25.0, 25.5, Rational(51, 2), 600], [25, 25.0, 25.5, Rational(51, 2), 600].map { |value| Client.new.streaming(read_timeout: value).read_timeout }
     end
 
     def test_the_classes_of_a_stream_are_checked_before_it_is_opened

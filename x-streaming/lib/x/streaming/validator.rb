@@ -13,12 +13,13 @@ module X
 
       # The message of the error raised for a count that is neither an Integer of at least 0 nor Float::INFINITY
       INVALID_COUNT_OR_INFINITY = "%s must be an Integer of at least 0, or Float::INFINITY for no limit, not %s"
-      # The fewest seconds a stream may wait for a read, the interval of the keep-alive X sends a quiet stream
-      MINIMUM_READ_TIMEOUT = 20 # seconds
+      # The fewest seconds a stream may wait for a read: the interval of the keep-alive X sends a quiet stream, and five
+      # seconds more, so that a keep-alive that arrives a little late does not time the read out
+      MINIMUM_READ_TIMEOUT = 25 # seconds
       # The message of the error raised for a read timeout that is neither a finite number of seconds of at least
       # MINIMUM_READ_TIMEOUT nor nil
-      INVALID_READ_TIMEOUT = "%s must be a finite number of seconds of at least #{MINIMUM_READ_TIMEOUT}, the interval of the " \
-        "keep-alive X sends a quiet stream, or nil for no timeout, not %s"
+      INVALID_READ_TIMEOUT = "%s must be a finite number of seconds of at least #{MINIMUM_READ_TIMEOUT}, five more than the " \
+        "20-second interval of the keep-alive X sends a quiet stream, or nil for no timeout, not %s"
       # The message of the error raised for an array_class that is not a Class
       INVALID_ARRAY_CLASS = "%s must be a Class that JSON.parse builds each array into, such as Array, not %s"
       # The message of the error raised for an object_class that is neither a Class nor responds to from_response
@@ -39,11 +40,11 @@ module X
         raise ArgumentError, format(INVALID_COUNT_OR_INFINITY, name, value.inspect)
       end
 
-      # Check that a read timeout is a finite number of seconds of at least 20, or nil
+      # Check that a read timeout is a finite number of seconds of at least 25, or nil
       #
-      # X sends a quiet stream a keep-alive every 20 seconds, so a read timeout shorter than that drops a stream that is
-      # quiet but connected, and reconnects it without end, delivering nothing, where the read timeout of a request may
-      # be as short as 0.
+      # X sends a quiet stream a keep-alive every 20 seconds, so a read timeout no longer than that drops a stream that
+      # is quiet but connected whenever a keep-alive arrives a little late, and one shorter drops it every time, and
+      # reconnects it without end, delivering nothing, where the read timeout of a request may be as short as 0.
       #
       # @api private
       # @param name [Symbol] the name of the setting, which the error names

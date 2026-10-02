@@ -68,13 +68,13 @@ module X
       #
       # @api public
       # @param client [Client] the client whose credentials, base URL, and settings the stream uses
-      # @param read_timeout [Integer, Float, nil] the timeout for reading from a stream in seconds, at least the 20
-      #   seconds between the keep-alives X sends a quiet stream, or nil for none, which leaves a stream X stopped
-      #   sending to open until the operating system gives up on its connection
+      # @param read_timeout [Integer, Float, nil] the timeout for reading from a stream in seconds, at least 25, five more
+      #   than the 20 seconds between the keep-alives X sends a quiet stream, or nil for none, which leaves a stream X
+      #   stopped sending to open until the operating system gives up on its connection
       # @param max_reconnects [Integer, Float] the maximum number of times in a row to reconnect a stream that drops
       #   without delivering an object or a keep-alive, or Float::INFINITY, the default, for no limit
       # @return [StreamingClient] a new instance
-      # @raise [ArgumentError] if the read timeout is neither a finite number of seconds of at least 20 nor nil, or the
+      # @raise [ArgumentError] if the read timeout is neither a finite number of seconds of at least 25 nor nil, or the
       #   maximum number of reconnects is neither a count nor Float::INFINITY
       # @example Create a streaming client
       #   streaming_client = X::StreamingClient.new(client, max_reconnects: 5)
