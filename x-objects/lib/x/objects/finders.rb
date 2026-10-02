@@ -119,6 +119,28 @@ module X
         client_for(client).get(Utils.path(path, query), **Utils::JSON_CLASSES)
       end
 
+      # Build the resource a request that creates one returned, which must hold it
+      #
+      # The API answers a request that creates a resource with the resource, so a successful response without one
+      # created nothing the caller can read, and raises, holding the problems the response reported, as current!
+      # raises for a users/me that returns no user, rather than return nil, which the caller would read as the
+      # resource. A response whose data holds no identifier holds no resource, as find reads it, so it raises too.
+      #
+      # @api private
+      # @param body [Hash, nil] the parsed response body
+      # @param request [String] the method and path of the request, which the message names
+      # @param client [Object] the client used to make the request
+      # @return [Resource] the resource
+      # @raise [MissingResource] if the response holds no resource, or data without an identifier
+      # @raise [InvalidAttribute] if the response holds a resource with an identifier that is not one
+      # @example Build the post a request created
+      #   X::Post.__send__(:created_from_response, {"data" => {"id" => "1"}}, "POST tweets", client: client)
+      def created_from_response(body, request, client:)
+        raise MissingResource.new("#{request} returned no #{self}", problems: Problem.all_from(body)) if resourceless?(body)
+
+        resource_built_from(body, client:, hydrated: false, query: nil) #: Resource
+      end
+
       # Whether a response body holds no resource
       #
       # It holds none when it holds no data, data that is no object, or an object with no identifier.

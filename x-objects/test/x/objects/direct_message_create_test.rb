@@ -117,11 +117,12 @@ module X
     end
 
     def test_create_without_event_id
-      @client.stub(:post, "dm_conversations/with/8/messages", {"data" => {"dm_conversation_id" => "9-8"}})
+      @client.stub(:post, "dm_conversations/with/8/messages", {"data" => {"dm_conversation_id" => "9-8"}, "errors" => [{"title" => "Forbidden", "detail" => "You are not permitted."}]})
 
-      error = assert_raises(InvalidAttribute) { DirectMessage.create("8", "yo", client: @client) }
+      error = assert_raises(MissingResource) { DirectMessage.create("8", "yo", client: @client) }
 
-      assert_equal "X::DirectMessage#id cannot be read from nil", error.message
+      assert_equal "POST dm_conversations/with/8/messages returned no X::DirectMessage: You are not permitted.", error.message
+      assert_equal ["Forbidden"], error.problems.map(&:title)
     end
   end
 end

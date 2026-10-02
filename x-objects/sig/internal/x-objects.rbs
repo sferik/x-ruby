@@ -352,6 +352,7 @@ module X
       def get: (String path, client: _Client, query: Hash[String, untyped]) -> body
       def reporting: (body body) ?{ (Problem problem) -> void } -> body
       def resourceless?: (body body) -> bool
+      def created_from_response: (body body, String request, client: _Client) -> Resource
 
       # The private class methods of the resource class that extends it, which it reads
       def endpoint!: () -> String
@@ -718,7 +719,6 @@ module X
     private def self.fields_key: () -> String?
     private def self.fully_requested_by?: (Hash[String, untyped] query) -> bool
     private def self.resource_from_response: (Objects::body body, client: Objects::_Client?, ?hydrated: bool) -> Resource?
-    private def self.created_from_response: (Objects::body body, String request, client: Objects::_Client?) -> Resource
     private def self.collection_from_response: (Objects::body body, client: Objects::_Client?, ?hydrated: bool) -> Page[Resource]
     private def self.resource_built_from: (Objects::body body, client: Objects::_Client?, hydrated: bool, query: Hash[String, untyped]?) -> Resource?
     private def self.collection_built_from: (Objects::body body, client: Objects::_Client?, hydrated: bool, query: Hash[String, untyped]?) -> Array[Resource]

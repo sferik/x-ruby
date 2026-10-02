@@ -11,6 +11,7 @@ module X
       cover DirectMessage
       cover Objects.const_get(:PostWrites)
       cover Objects.const_get(:DirectMessageConversations)
+      cover Objects.const_get(:Finders)
 
       FORBIDDEN = {"errors" => [{"title" => "Forbidden", "detail" => "You are not permitted."}, {"title" => "Not Found Error"}]}.freeze
 
@@ -31,6 +32,27 @@ module X
 
         assert_equal "POST users returned no X::User: You are not permitted.", error.message
         assert_equal ["Forbidden", "Not Found Error"], error.problems.map(&:title)
+      end
+
+      def test_created_from_response_with_data_without_an_identifier_raises_as_a_finder_finds_nothing
+        body = {"data" => {"text" => "Hello"}, "errors" => [{"title" => "Forbidden", "detail" => "You are not permitted."}]}
+        error = assert_raises(MissingResource) { Post.__send__(:created_from_response, body, "POST tweets", client: @client) }
+
+        assert_equal "POST tweets returned no X::Post: You are not permitted.", error.message
+        assert_equal ["Forbidden"], error.problems.map(&:title)
+        @client.stub(:get, "tweets/1", body)
+
+        assert_nil Post.find(1, client: @client)
+      end
+
+      def test_create_post_with_data_without_an_identifier
+        @client.stub(:post, "tweets", {"data" => {"text" => "Hello"}})
+
+        assert_equal "POST tweets returned no X::Post", assert_raises(MissingResource) { Post.create("Hello", client: @client) }.message
+      end
+
+      def test_created_from_response_with_an_identifier_that_is_not_one_raises
+        assert_raises(InvalidAttribute) { Post.__send__(:created_from_response, {"data" => {"id" => "a"}}, "POST tweets", client: @client) }
       end
 
       def test_created_from_response_with_nil_body_raises_without_problems

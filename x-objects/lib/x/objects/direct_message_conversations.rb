@@ -122,16 +122,16 @@ module X
 
       # The message a send created, from the identifiers the API returned
       #
-      # It is built as the resources of any response are, so an identifier the response lacks raises where it is read,
-      # and a response without the message raises, as any request that creates a resource does.
+      # It is built as the resources of any response are, so a response without the message, or without its event
+      # identifier, raises, as any request that creates a resource does.
       #
       # @api private
       # @param body [Hash, nil] the response body
       # @param path [String] the path the message was sent to
       # @param client [Object] the client used to make the request
       # @return [DirectMessage] the message
-      # @raise [MissingResource] if the response holds no data
-      # @raise [InvalidAttribute] if the response holds no event identifier, or one that is not one
+      # @raise [MissingResource] if the response holds no data, or no event identifier
+      # @raise [InvalidAttribute] if the response holds an event identifier that is not one
       def sent(body, path, client:)
         body = body.to_h
         data = body["data"]
