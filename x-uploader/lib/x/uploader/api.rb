@@ -21,9 +21,10 @@ module X
       # and media given as a File or a Tempfile through that IO, a chunk at a time, so media of any size uploads
       # without being held in memory; media given as any other IO, such as a StringIO, is read to its end and held.
       #
-      # A video or subtitles upload in chunks. The media category is inferred from the bytes the media begins with, or
-      # else from the name of its file, unless media_category says what it is. The chunks are sent by threads of their
-      # own, so the on_response of the client runs on those threads for the response of each chunk.
+      # A video or subtitles upload in chunks, which send their media type, as a single request does not. The media
+      # category is inferred from the bytes the media begins with, or else from the name of its file, unless
+      # media_category says what it is. The chunks are sent by threads of their own, so the on_response of the client
+      # runs on those threads for the response of each chunk.
       #
       # @api public
       # @param media [String, Pathname, IO, StringIO] the path to the media to upload, or an IO open on it

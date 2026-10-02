@@ -77,7 +77,9 @@ module X
       STATUS_COMMAND = "STATUS"
       # Media categories that are uploaded in chunks and processed after the upload
       VIDEO_CATEGORIES = [AMPLIFY_VIDEO, DM_VIDEO, TWEET_VIDEO].freeze
-      # Media categories uploaded in chunks: videos, and subtitles, which the API takes no other way
+      # Media categories uploaded in chunks whatever their size: videos and subtitles, which a single request takes too,
+      # but without the media type an upload in chunks sends, only up to MAX_SIMPLE_UPLOAD_BYTES, and not as
+      # amplify_video
       CHUNKED_CATEGORIES = [*VIDEO_CATEGORIES, SUBTITLES].freeze
       # Media categories of images, which upload in a single request unless they are shared
       IMAGE_CATEGORIES = [DM_IMAGE, TWEET_IMAGE].freeze
@@ -343,9 +345,12 @@ module X
 
         # Check whether a file uploads in chunks rather than in a single request
         #
-        # A video and subtitles upload in chunks whatever their size, since the API takes them no other way, and an
-        # animated GIF uploads in chunks once it is larger than MAX_SIMPLE_UPLOAD_BYTES, which a single request takes
-        # no more of; the API takes a GIF of up to 15 MB in chunks. An image uploads in a single request.
+        # A video and subtitles upload in chunks whatever their size. The API takes them in a single request too, but
+        # one that sends no media type, where an upload in chunks sends the type read from the media, such as WebVTT
+        # rather than SubRip subtitles, or the media_type given, and takes no more than MAX_SIMPLE_UPLOAD_BYTES, nor
+        # an amplify_video at all, so every video and subtitles upload the same way, whatever their size and category.
+        # An animated GIF uploads in chunks once it is larger than MAX_SIMPLE_UPLOAD_BYTES, which a single request
+        # takes no more of; the API takes a GIF of up to 15 MB in chunks. An image uploads in a single request.
         #
         # upload decides with it how to send media.
         #
