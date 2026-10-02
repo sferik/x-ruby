@@ -29,7 +29,15 @@ module X
     def test_expanded_text_inserts_a_url_that_holds_a_backslash_as_it_is
       post = Post.new({"id" => "1", "text" => "hi https://t.co/ax", "entities" => {"urls" => [{"url" => "https://t.co/ax", "expanded_url" => "https://ex.com/\\0\\&x"}]}})
 
-      assert_equal "hi https://ex.com/\\0\\&x", post.expanded_text
+      assert_equal "hi https://ex.com/\\0\\&amp;x", post.expanded_text
+    end
+
+    def test_expanded_text_escapes_each_url_as_the_text_is_escaped
+      link = {"url" => "https://t.co/abc", "expanded_url" => "https://example.com/?a=1&b=<2>\"'"}
+      post = Post.new({"id" => "1", "text" => "Q&amp;A https://t.co/abc", "entities" => {"urls" => [link]}})
+
+      assert_equal "Q&amp;A https://example.com/?a=1&amp;b=&lt;2&gt;&quot;&#39;", post.expanded_text
+      assert_equal "Q&A https://example.com/?a=1&b=<2>\"'", CGI.unescapeHTML(post.expanded_text)
     end
 
     def test_expanded_text_replaces_each_link_once_however_its_url_reads

@@ -5,6 +5,7 @@ target :lib do
   signature "sig"
   signature "../x-core/sig/x-core.rbs"
   check "lib"
+  library "cgi-escape"
   library "json"
   library "monitor"
   library "net-http"

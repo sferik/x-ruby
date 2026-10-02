@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "cgi/escape"
 require "json"
 require "uri"
 require_relative "batch_finders"
@@ -509,7 +510,8 @@ module X
       # after it, and holds what it holds, even the shortened url of another link of the post. A url that begins
       # another, longer one is not read in it.
       #
-      # The rest of the text is as {#text} reads it, HTML-escaped as the API sends it, so unescape it to display it.
+      # The rest of the text is as {#text} reads it, HTML-escaped as the API sends it, and each URL is HTML-escaped as
+      # it is put in, since the API sends a URL as it is, so the whole text is escaped alike: unescape it to display it.
       #
       # @api public
       # @return [String, nil] the text with expanded links
@@ -563,18 +565,18 @@ module X
 
       # The shortened url of a link, and the URL it stands for
       #
-      # A link the API expanded to no URL stands for its url itself.
+      # A link the API expanded to no URL stands for its url itself. The URL is HTML-escaped, as the text it goes into is.
       #
       # @api private
       # @param link [Hash] the link
-      # @return [Array(String, String)] the shortened url and the URL it stands for
+      # @return [Array(String, String)] the shortened url and the HTML-escaped URL it stands for
       # @raise [ArgumentError] if the link has no url, or names a URL that is not a String
       def expansion(link)
         url = link["url"]
         expanded_url = link["expanded_url"] || url
         raise ArgumentError, "a link needs a url, and an expanded_url if any, that are Strings" unless [url, expanded_url].all?(String)
 
-        [url, expanded_url]
+        [url, CGI.escapeHTML(expanded_url)]
       end
     end
   end
