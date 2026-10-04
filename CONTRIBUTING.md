@@ -1,0 +1,69 @@
+# Contributing
+
+## Getting started
+
+1. Clone the repo:
+
+       git clone git@github.com:sferik/x-ruby.git
+
+2. Enter the repo’s directory:
+
+       cd x-ruby
+
+3. Install dependencies via Bundler:
+
+       bin/setup
+
+   The root, `x-core`, `x-uploads`, `x-streams`, and `x-resources` each have their own bundle, so `bundle update` in the root updates only the root bundle. To update them all:
+
+       bin/update
+
+4. Run the default Rake task to ensure all tests pass:
+
+       bundle exec rake
+
+   Each of `x-core`, `x-uploads`, `x-streams`, and `x-resources` has its own `Gemfile`, `Rakefile`, `Steepfile`, signatures, test suite, and mutation config, and can be checked on its own:
+
+       cd x-core && bundle exec rake
+
+   From the root, `rake test`, `rake mutant`, `rake steep`, and `rake yardstick` run each gem's task inside that gem's directory, with that gem's bundle. Append a gem's name to run one, as in `rake test:x-core`, `rake steep:x-resources`, or `rake yardstick:x`.
+
+   On GitHub, each gem's workflow runs only when that gem, or a gem it depends on, changes. The `x` workflow runs when the meta-gem or the code and signatures of any gem change, and the linter runs when any Ruby file changes. Every workflow runs when `VERSION` changes as well, so the commit that prepares a release runs them all, which the workflow that pushes the gems waits for. A commit that changes none of the files a workflow watches, such as a fix to the documentation made after that commit, runs none of them, so run each on it before tagging it, with `gh workflow run x-core.yml --ref main`, and `x-uploads.yml`, `x-streams.yml`, `x-resources.yml`, `x.yml`, and `lint.yml` the same way.
+
+5. To release, write the new version to `VERSION`, run `rake update_versions` to write it into each gem's `version.rb`, record the release in each of the five changelogs, `CHANGELOG.md`, `x-core/CHANGELOG.md`, `x-uploads/CHANGELOG.md`, `x-streams/CHANGELOG.md`, and `x-resources/CHANGELOG.md`, with the link to its changes at the foot of each, commit on `main`, and run `rake release`, which checks that the versions agree and that the branch is `main`, builds every gem, tags the release as `v` and the version, and pushes `main` and the tag, which starts the workflow that pushes the gems to RubyGems. Before the first release of a new gem, add a pending trusted publisher for it on rubygems.org, with the same repository, workflow, and environment as those of `x`; it expires after 12 hours.
+
+6. Create a new branch for your feature or bug fix:
+
+       git checkout -b my-new-branch
+
+## Pull requests
+
+Bug reports and pull requests are welcome on GitHub at https://github.com/sferik/x-ruby.
+
+Pull requests will only be accepted if they meet all the following criteria:
+
+1. Code must conform to [Standard Ruby](https://github.com/standardrb/standard#readme). This can be verified with:
+
+       bundle exec rake standard
+
+2. Code must conform to the [RuboCop rules](https://github.com/rubocop/rubocop#readme). This can be verified with:
+
+       bundle exec rake rubocop
+
+3. 100% line, branch, and method coverage in each gem. This can be verified with:
+
+       bundle exec rake test
+
+4. 100% mutation coverage in `x-core`, `x-uploads`, `x-streams`, and `x-resources`. This can be verified with:
+
+       bundle exec rake mutant
+
+5. RBS type signatures (in each gem's `sig` directory). This can be verified with:
+
+       bundle exec rake steep
+
+6. 100% documentation coverage. This can be verified with:
+
+       bundle exec rake yardstick
+
+   `bundle exec rake yard` builds the documentation of every gem together into `doc`, or the directory `YARD_OUTPUT_DIR` names, as the Pages workflow publishes it. Each gem's `.yardopts` hides the API tagged `@api private`, so a module whose methods are public API of the class that includes it is tagged `@api semipublic`. The `.yardopts` of `x-resources` also passes `--private`, since those modules are private constants there, so every private constant of a public class or of such a module is tagged `@api private`, and a class opened as `::X::Name` names its mixins in full in a `@!parse` block; `x-resources/test/x/resources/documentation_test.rb` checks all of it.
