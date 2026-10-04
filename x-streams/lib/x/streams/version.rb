@@ -7,7 +7,7 @@ module X
   # @api public
   module Streams
     # The current version of the x-streams gem
-    VERSION = "0.19.0"
+    VERSION = "1.0.0"
 
     # The version as a Gem::Version, which compares one release with another
     #
