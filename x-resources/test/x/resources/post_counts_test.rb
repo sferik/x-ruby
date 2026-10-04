@@ -1,0 +1,83 @@
+# frozen_string_literal: true
+
+require_relative "../../test_helper"
+
+module X
+  class PostCountsTest < Minitest::Test
+    cover Resources.const_get(:PostCounts)
+    cover Resources.const_get(:Lookups)
+
+    def setup
+      @client = FakeClient.new
+      @client.stub(:get, "tweets/counts/recent", lambda { |query, _|
+        if query["next_token"]
+          {"data" => [{"start" => "2026-09-14T00:00:00.000Z", "end" => "2026-09-15T00:00:00.000Z", "post_count" => 4}], "meta" => {"total_post_count" => 4}}
+        else
+          {"data" => [{"start" => "2026-09-15T00:00:00.000Z", "end" => "2026-09-16T00:00:00.000Z", "tweet_count" => 6}], "meta" => {"total_tweet_count" => 6, "next_token" => "p2"}}
+        end
+      })
+    end
+
+    def test_count_totals_every_page
+      assert_equal 10, Post.count("ruby", client: @client)
+      assert_equal [{"query" => "ruby", "granularity" => "day"}, {"query" => "ruby", "granularity" => "day", "next_token" => "p2"}], @client.queries
+    end
+
+    def test_counts_by_period
+      counts = Post.count_by_period("ruby", client: @client, granularity: "hour", start_time: "2026-09-14T00:00:00Z")
+
+      assert_equal({(Time.utc(2026, 9, 14)...Time.utc(2026, 9, 15)) => 4, (Time.utc(2026, 9, 15)...Time.utc(2026, 9, 16)) => 6}, counts)
+      assert_equal [Time.utc(2026, 9, 14), Time.utc(2026, 9, 15)], counts.keys.map(&:begin)
+      assert_predicate counts, :frozen?
+      assert_equal({"query" => "ruby", "granularity" => "hour", "start_time" => "2026-09-14T00:00:00Z"}, @client.queries.first)
+    end
+
+    def test_a_period_spans_its_start_up_to_but_not_including_its_end
+      counts = Post.count_by_period("ruby", client: @client)
+
+      assert_equal 6, counts.find { |period, _count| period.cover?(Time.utc(2026, 9, 15, 12)) }.last
+      refute counts.keys.first.cover?(Time.utc(2026, 9, 15))
+    end
+
+    def test_the_full_archive
+      @client.stub(:get, "tweets/counts/all", {"data" => [{"start" => "2024-01-01T00:00:00.000Z", "end" => "2024-01-02T00:00:00.000Z", "tweet_count" => 3}], "meta" => {"total_tweet_count" => 3}})
+
+      assert_equal 3, Post.count_all("ruby", client: @client)
+      assert_equal({(Time.utc(2024)...Time.utc(2024, 1, 2)) => 3}, Post.count_all_by_period("ruby", client: @client))
+      assert_equal ["tweets/counts/all"] * 2, @client.paths
+    end
+
+    def test_a_response_without_counts
+      @client.stub(:get, "tweets/counts/all", {"errors" => []})
+
+      assert_equal 0, Post.count_all("ruby", client: @client)
+      assert_empty Post.count_all_by_period("ruby", client: @client)
+    end
+
+    def test_an_empty_response
+      @client.stub(:get, "tweets/counts/all", nil)
+
+      assert_equal 0, Post.count_all("ruby", client: @client)
+    end
+
+    def test_client_methods_pass_the_query_and_parameters
+      @client.stub(:get, "tweets/counts/all", {"meta" => {"total_tweet_count" => 3}})
+      %i[count_posts count_posts_by_period count_all_posts count_all_posts_by_period].each { |method| @client.public_send(method, "ruby", granularity: "hour") }
+
+      assert_equal [{"query" => "ruby", "granularity" => "hour"}], @client.queries.reject { |query| query.key?("next_token") }.uniq
+      assert_equal %w[tweets/counts/recent tweets/counts/all], @client.paths.uniq
+    end
+
+    def test_client_methods_and_tweet_aliases_for_recent_posts
+      assert_equal [10, 10], [@client.count_posts("ruby"), @client.count_tweets("ruby")]
+      assert_equal [6, 6], [@client.count_posts_by_period("ruby"), @client.count_tweets_by_period("ruby")].map { |counts| counts[Time.utc(2026, 9, 15)...Time.utc(2026, 9, 16)] }
+    end
+
+    def test_client_methods_and_tweet_aliases_for_the_full_archive
+      @client.stub(:get, "tweets/counts/all", {"data" => [{"start" => "2024-01-01T00:00:00.000Z", "end" => "2024-01-02T00:00:00.000Z", "tweet_count" => 3}], "meta" => {"total_tweet_count" => 3}})
+
+      assert_equal [3, 3], [@client.count_all_posts("ruby"), @client.count_all_tweets("ruby")]
+      assert_equal [{(Time.utc(2024)...Time.utc(2024, 1, 2)) => 3}] * 2, [@client.count_all_posts_by_period("ruby"), @client.count_all_tweets_by_period("ruby")]
+    end
+  end
+end

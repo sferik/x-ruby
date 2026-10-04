@@ -1,0 +1,112 @@
+# frozen_string_literal: true
+
+require_relative "../../test_helper"
+
+module X
+  module Resources
+    class APIListsTest < Minitest::Test
+      cover Resources.const_get(:Actions)::Lists
+      cover Resources.const_get(:RelationWrites)
+
+      def setup
+        @client = FakeClient.new
+        @client.stub(:get, "users/me", {"data" => {"id" => "9"}})
+      end
+
+      def test_create_list
+        @client.stub(:post, "lists", {"data" => {"id" => "1", "name" => "Rubyists"}})
+        list = @client.create_list("Rubyists", private: true)
+
+        assert_equal "Rubyists", list.name
+        assert_same @client, list.client
+        assert_equal({name: "Rubyists", private: true}.to_json, @client.requests.first[:body])
+      end
+
+      def test_update_list
+        @client.stub(:put, "lists/1", {"data" => {"updated" => true}})
+
+        assert @client.update_list("1", name: "Rubyists")
+        assert_equal [{method: :put, path: "lists/1", query: {}, body: {name: "Rubyists"}.to_json}], @client.requests
+      end
+
+      def test_delete_list
+        @client.stub(:delete, "lists/1", {"data" => {"deleted" => true}})
+
+        assert @client.delete_list("1")
+        assert_equal ["lists/1"], @client.paths
+      end
+
+      def test_delete_list_not_deleted
+        @client.stub(:delete, "lists/1", {"data" => {"deleted" => false}})
+
+        refute @client.delete_list(List.new({"id" => "1"}))
+      end
+
+      def test_add_list_member
+        @client.stub(:post, "lists/1/members", {"data" => {"is_member" => true}})
+
+        assert @client.add_list_member("1", User.new({"id" => "7"}))
+        assert_equal [{method: :post, path: "lists/1/members", query: {}, body: {user_id: "7"}.to_json}], @client.requests
+      end
+
+      def test_remove_list_member
+        @client.stub(:delete, "lists/1/members/7", {"data" => {"is_member" => false}})
+
+        assert @client.remove_list_member(List.new({"id" => "1"}), 7)
+        assert_equal ["lists/1/members/7"], @client.paths
+      end
+
+      def test_follow_list
+        @client.stub(:post, "users/9/followed_lists", {"data" => {"following" => true}})
+
+        assert @client.follow_list(List.new({"id" => "1"}))
+        assert_equal [{method: :post, path: "users/9/followed_lists", query: {}, body: {list_id: "1"}.to_json}], @client.requests.drop(1)
+      end
+
+      def test_unfollow_list
+        @client.stub(:delete, "users/9/followed_lists/1", {"data" => {"following" => false}})
+
+        assert @client.unfollow_list(List.new({"id" => "1"}))
+        assert_equal "users/9/followed_lists/1", @client.paths.last
+      end
+
+      def test_follow_list_not_following
+        @client.stub(:post, "users/9/followed_lists", {"data" => {"following" => false}})
+
+        refute @client.follow_list(1)
+      end
+
+      def test_unfollow_list_still_following
+        @client.stub(:delete, "users/9/followed_lists/1", {"data" => {"following" => true}})
+
+        refute @client.unfollow_list("1")
+      end
+
+      def test_pin_list
+        @client.stub(:post, "users/9/pinned_lists", {"data" => {"pinned" => true}})
+
+        assert @client.pin_list(List.new({"id" => "1"}))
+        assert_equal [{method: :post, path: "users/9/pinned_lists", query: {}, body: {list_id: "1"}.to_json}], @client.requests.drop(1)
+      end
+
+      def test_unpin_list
+        @client.stub(:delete, "users/9/pinned_lists/1", {"data" => {"pinned" => false}})
+
+        assert @client.unpin_list(List.new({"id" => "1"}))
+        assert_equal "users/9/pinned_lists/1", @client.paths.last
+      end
+
+      def test_pin_list_not_pinned
+        @client.stub(:post, "users/9/pinned_lists", {"data" => {"pinned" => false}})
+
+        refute @client.pin_list(1)
+      end
+
+      def test_unpin_list_still_pinned
+        @client.stub(:delete, "users/9/pinned_lists/1", {"data" => {"pinned" => true}})
+
+        refute @client.unpin_list("1")
+      end
+    end
+  end
+end

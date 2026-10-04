@@ -1,0 +1,121 @@
+# frozen_string_literal: true
+
+module X
+  module Resources
+    # Resolves the posts a post refers to through its referenced_posts attribute
+    #
+    # Internal to x-resources: the methods it gives a post, such as replied_to, are public API, but the module is only how
+    # they are shared, and which classes extend or include it can change within 1.x.
+    #
+    # @api semipublic
+    module References
+      # Referenced post type for replies
+      # @api private
+      REPLIED_TO = "replied_to"
+      # Referenced post type for quotes
+      # @api private
+      QUOTED = "quoted"
+      # Referenced post type for reposts, as the API labels them
+      # @api private
+      REPOSTED = "reposted"
+      # Referenced post type for reposts, as the API documentation labels them
+      # @api private
+      RETWEETED = "retweeted"
+      private_constant :REPLIED_TO, :QUOTED, :REPOSTED, :RETWEETED
+
+      # The referenced posts, resolved from the includes or built as stubs
+      #
+      # @api public
+      # @return [Array<Post>] the referenced posts
+      # @raise [InvalidAttribute] if the response holds a referenced post that is not an object
+      # @example Get the referenced posts
+      #   post.references
+      def references
+        referenced_posts.filter_map do |reference|
+          resolve(Post, reference["id"]) #: Post?
+        end.freeze
+      end
+
+      # The post this post replies to
+      #
+      # @api public
+      # @return [Post, nil] the replied-to post
+      # @raise [InvalidAttribute] if the response holds a referenced post that is not an object
+      # @example Get the replied-to post
+      #   post.replied_to
+      def replied_to
+        reference(REPLIED_TO)
+      end
+
+      # The post this post quotes
+      #
+      # @api public
+      # @return [Post, nil] the quoted post
+      # @raise [InvalidAttribute] if the response holds a referenced post that is not an object
+      # @example Get the quoted post
+      #   post.quoted
+      def quoted
+        reference(QUOTED)
+      end
+
+      # The post this post reposts
+      #
+      # @api public
+      # @return [Post, nil] the reposted post
+      # @raise [InvalidAttribute] if the response holds a referenced post that is not an object
+      # @example Get the reposted post
+      #   post.reposted
+      def reposted
+        reference(REPOSTED, RETWEETED)
+      end
+
+      # Check whether this post is a reply
+      #
+      # @api public
+      # @return [Boolean] true if the post replies to another post
+      # @example Check whether a post is a reply
+      #   post.reply?
+      def reply?
+        !replied_to.nil?
+      end
+
+      # Check whether this post is a quote
+      #
+      # @api public
+      # @return [Boolean] true if the post quotes another post
+      # @example Check whether a post is a quote
+      #   post.quote?
+      def quote?
+        !quoted.nil?
+      end
+
+      # Check whether this post is a repost
+      #
+      # @api public
+      # @return [Boolean] true if the post reposts another post
+      # @example Check whether a post is a repost
+      #   post.repost?
+      def repost?
+        !reposted.nil?
+      end
+
+      alias_method :retweeted, :reposted
+      alias_method :retweet?, :repost?
+
+      private
+
+      # Resolve the first referenced post of any of some types
+      # @api private
+      # @param types [Array<String>] the referenced post types
+      # @return [Post, nil] the referenced post or nil if there is none of those types
+      # @raise [InvalidAttribute] if the response holds a referenced post that is not an object
+      def reference(*types)
+        found = referenced_posts.find { |element| types.include?(element["type"]) }
+        return if found.nil?
+
+        resolve(Post, found["id"]) #: Post?
+      end
+    end
+    private_constant :References
+  end
+end

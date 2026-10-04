@@ -1,0 +1,147 @@
+# frozen_string_literal: true
+
+require_relative "cursor"
+require_relative "media_ids"
+require_relative "shape"
+require_relative "utils"
+
+module X
+  module Resources
+    # Group conversations of direct messages: starting one, sending to one, and reading one, extended by DirectMessage
+    #
+    # Internal to x-resources: the methods it gives DirectMessage, such as X::DirectMessage.create_group, are public API,
+    # but the module is only how they are shared, and which classes extend or include it can change within 1.x.
+    #
+    # @api semipublic
+    module DirectMessageConversations
+      # Maximum number of events per page of a conversation
+      # @api private
+      MAX_RESULTS = 100
+      private_constant :MAX_RESULTS
+
+      # Start a group conversation, sending its first message as the authenticated user
+      #
+      # @api public
+      # @param users [Array<User, String, Integer>] the other participants or their identifiers
+      # @param text [String, nil] the text of the first message, or nil for a message of attachments alone
+      # @param client [Object] the client used to make the request
+      # @param media_ids [Array<String, Integer, #fetch, Media>, String, Integer, #fetch, Media, nil] the identifiers or
+      #   media keys of uploaded media to attach, what the uploads returned, or media, such as that of a post, one or
+      #   many
+      # @param params [Hash] additional fields of the message, such as attachments
+      # @return [DirectMessage] the sent message, holding only its identifiers, among them the new conversation's
+      # @raise [ArgumentError] if the message has neither text nor any other field, or has both media_ids and
+      #   attachments
+      # @raise [MissingResource] if the API answers without the message
+      # @example Start a group conversation
+      #   X::DirectMessage.create_group([alice, bob], "Hello, both of you!", client: client)
+      # @example Start a group conversation with an image
+      #   X::DirectMessage.create_group([alice, bob], client: client, media_ids: media)
+      def create_group(users, text = nil, client:, media_ids: nil, **params)
+        body = {conversation_type: "Group", participant_ids: users.map { |user| Utils.id_of(user, User) }, message: message(text, params, media_ids)}
+        sent(client.post("dm_conversations", body, **Utils::JSON_CLASSES), "dm_conversations", client:)
+      end
+
+      # Send a direct message to a conversation as the authenticated user
+      #
+      # @api public
+      # @param conversation [DirectMessage, String, Integer] a message of the conversation, or the conversation's identifier
+      # @param text [String, nil] the text of the message, or nil for a message of attachments alone
+      # @param client [Object] the client used to make the request
+      # @param media_ids [Array<String, Integer, #fetch, Media>, String, Integer, #fetch, Media, nil] the identifiers or
+      #   media keys of uploaded media to attach, what the uploads returned, or media, such as that of a post, one or
+      #   many
+      # @param params [Hash] additional request body fields, such as attachments
+      # @return [DirectMessage] the sent message, holding only its identifiers
+      # @raise [ArgumentError] if the conversation identifier is not one, the message has neither text nor any other
+      #   field, or it has both media_ids and attachments
+      # @raise [MissingResource] if the API answers without the message
+      # @example Reply to the conversation of a message
+      #   X::DirectMessage.create_in(message, "Sounds good", client: client)
+      # @example Reply with an image
+      #   X::DirectMessage.create_in(message, client: client, media_ids: media)
+      def create_in(conversation, text = nil, client:, media_ids: nil, **params)
+        path = "dm_conversations/#{conversation_id_of(conversation)}/messages"
+        sent(client.post(path, message(text, params, media_ids), **Utils::JSON_CLASSES), path, client:)
+      end
+
+      # The direct message events of a conversation, one-to-one or group
+      #
+      # @api public
+      # @param conversation [DirectMessage, String, Integer] a message of the conversation, or the conversation's identifier
+      # @param client [Object] the client used to make the requests
+      # @param params [Hash] query parameters merged over the default parameters, such as event_types
+      # @return [Cursor] a cursor over the events
+      # @raise [ArgumentError] if the conversation identifier is not one
+      # @example Print the conversation a message belongs to
+      #   X::DirectMessage.in(message, client: client).each { |event| puts event.text }
+      def in(conversation, client:, **params)
+        path = "dm_conversations/#{conversation_id_of(conversation)}/dm_events"
+        Cursor.__send__(:build, DirectMessage, path, client:, params: {max_results: MAX_RESULTS}.merge(params))
+      end
+
+      private
+
+      # The identifier of a conversation, from a message of it or as given
+      # @api private
+      # @param conversation [DirectMessage, String, Integer] a message of the conversation, or the conversation's identifier
+      # @return [String] the conversation identifier
+      # @raise [ArgumentError] if the identifier is not one
+      def conversation_id_of(conversation)
+        id = case conversation
+        when DirectMessage then conversation.dm_conversation_id.to_s
+        else conversation.to_s
+        end
+        return id if id.match?(Shape::CONVERSATION_ID)
+
+        raise ArgumentError, "#{conversation.inspect} is not a conversation: pass a direct message or a conversation identifier"
+      end
+
+      # The fields of a message to send, which needs text or attachments
+      #
+      # The API takes media as attachments, each an object holding the identifier of one upload as a String, so
+      # media_ids builds them, and a caller who builds them itself passes attachments instead, by a String or a Symbol.
+      #
+      # @api private
+      # @param text [String, nil] the text of the message
+      # @param params [Hash] additional fields of the message, such as attachments
+      # @param media_ids [Array, #fetch, Media, String, Integer, nil] the identifiers of uploaded media to attach, what
+      #   the uploads returned, or media, one or many; an empty list attaches nothing, as nil does
+      # @return [Hash{Symbol => Object}] the fields, without the text when there is none
+      # @raise [ArgumentError] if the message has neither text nor any other field, or attaches media by both
+      #   media_ids and attachments
+      def message(text, params, media_ids)
+        fields = {text:, **Utils.fields(params)}.compact
+        attachments = MediaIds.media_ids_of(media_ids).map { |media_id| {media_id:} }
+        unless attachments.empty?
+          raise ArgumentError, "pass media_ids or attachments, not both" if fields.key?(:attachments)
+
+          fields[:attachments] = attachments
+        end
+        raise ArgumentError, "a direct message needs text, or something else to show, such as media_ids" if fields.empty?
+
+        fields
+      end
+
+      # The message a send created, from the identifiers the API returned
+      #
+      # It is built as the resources of any response are, so a response without the message, or without its event
+      # identifier, raises, as any request that creates a resource does.
+      #
+      # @api private
+      # @param body [Hash, nil] the response body
+      # @param path [String] the path the message was sent to
+      # @param client [Object] the client used to make the request
+      # @return [DirectMessage] the message
+      # @raise [MissingResource] if the response holds no data, or no event identifier
+      # @raise [InvalidAttribute] if the response holds an event identifier that is not one
+      def sent(body, path, client:)
+        body = body.to_h
+        data = body["data"]
+        data = {"id" => data["dm_event_id"], "dm_conversation_id" => data["dm_conversation_id"]} if data.is_a?(Hash)
+        created_from_response(body.merge("data" => data), "POST #{path}", client:)
+      end
+    end
+    private_constant :DirectMessageConversations
+  end
+end

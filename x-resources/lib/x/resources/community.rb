@@ -1,0 +1,137 @@
+# frozen_string_literal: true
+
+require "uri"
+require_relative "cursor"
+require_relative "finders"
+require_relative "resource"
+
+module X
+  module Resources
+    # A community of users who post to one another
+    # @api public
+    class ::X::Community < Resource
+      extend Finders
+
+      # The mixins of the class by their full names, which YARD needs to resolve them in a class opened under X
+      #
+      # @!parse
+      #   extend X::Resources::Finders
+
+      # Every public community field
+      #
+      # A minor release may add to it the fields the API adds, so that a lookup asks for them too; see
+      # {Resource#hydrated?} for what that means for a resource looked up with a list of fields of its own.
+      FIELDS = %w[access created_at description id join_policy member_count name].freeze
+      # Maximum number of communities per page of a search
+      # @api private
+      MAX_RESULTS = 100
+      private_constant :MAX_RESULTS
+
+      class << self
+        # The API endpoint used to look up communities by identifier
+        #
+        # @api private
+        # @return [String] the endpoint
+        # @example Get the endpoint
+        #   X::Community.__send__(:endpoint) # => "communities"
+        def endpoint = "communities"
+
+        # The query parameter that selects community fields
+        #
+        # @api private
+        # @return [String] the fields parameter
+        # @example Get the fields parameter
+        #   X::Community.__send__(:fields_key) # => "community.fields"
+        def fields_key = "community.fields"
+
+        private :endpoint, :fields_key
+
+        # The default query parameters requesting every community field
+        #
+        # @api public
+        # @return [Hash{String => Array<String>}] the default query parameters
+        # @example Get the default parameters
+        #   X::Community.default_params["community.fields"]
+        def default_params = {"community.fields" => FIELDS}
+
+        # Search communities
+        #
+        # @api public
+        # @param query [String] the search query
+        # @param client [Object] the client used to make the requests
+        # @param params [Hash] query parameters merged over the default parameters
+        # @return [Cursor] a cursor over the matching communities
+        # @example Print the communities matching a query
+        #   X::Community.search("ruby", client: client).each { |community| puts community.name }
+        def search(query, client:, **params)
+          Cursor.__send__(:build, self, "communities/search", client:, params: {query:, max_results: MAX_RESULTS}.merge(params),
+            token_param: "next_token", min_results: 10)
+        end
+      end
+
+      # @!attribute [r] name
+      #   The name
+      #   @api public
+      #   @return [String, nil] the name
+      #   @example Get the name
+      #     community.name
+      attribute :name
+
+      # @!attribute [r] description
+      #   The description
+      #   @api public
+      #   @return [String, nil] the description
+      #   @example Get the description
+      #     community.description
+      attribute :description
+
+      # @!attribute [r] created_at
+      #   The creation time
+      #   @api public
+      #   @return [Time, nil] the creation time
+      #   @example Get the creation time
+      #     community.created_at
+      attribute :created_at, :time
+
+      # @!attribute [r] member_count
+      #   The number of members
+      #   @api public
+      #   @return [Integer, nil] the member count
+      #   @example Get the member count
+      #     community.member_count
+      attribute :member_count, :integer
+
+      # @!attribute [r] access
+      #   Who can see the community's posts, as the API names it
+      #   @api public
+      #   @return [String, nil] the access level
+      #   @example Get the access level
+      #     community.access
+      attribute :access
+
+      # @!attribute [r] join_policy
+      #   How users become members, as the API names it
+      #   @api public
+      #   @return [String, nil] the join policy
+      #   @example Get the join policy
+      #     community.join_policy
+      attribute :join_policy
+
+      # The permalink of the community
+      #
+      # @api public
+      # @return [String] the x.com address of the community
+      # @example Get the permalink
+      #   community.permalink # => "https://x.com/i/communities/1234567890"
+      def permalink = "https://x.com/i/communities/#{id}"
+
+      # The permalink of the community as a URI
+      #
+      # @api public
+      # @return [URI::Generic] the x.com address of the community
+      # @example Get the address as a URI
+      #   community.uri # => #<URI::HTTPS https://x.com/i/communities/1234567890>
+      def uri = URI(permalink)
+    end
+  end
+end

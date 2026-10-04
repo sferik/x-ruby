@@ -1,0 +1,813 @@
+# The public interface of x-resources, as its @api public documentation states it. The modules the resource classes
+# and X::Resources::API are built of, such as Finders, Relationships, and Lookups::Users, the helpers of the
+# object layer, such as Utils, Pages, and Includes, and the constants, methods, and instance variables the code keeps
+# private are declared in sig/internal/x-resources.rbs, which reopens the same modules and classes, so that Steep type
+# checks the gem against them, but which the gem does not ship. The public methods those modules give a resource
+# class, or a client that includes API, are declared here on the class, and on API.
+module X
+  module Resources
+    class Error < ::X::Error
+    end
+  end
+
+  class MissingResource < Resources::Error
+    attr_reader problems: Array[Problem]
+
+    def initialize: (?String? message, ?problems: Array[Problem]) -> void
+  end
+
+  class UnreadableResponse < Resources::Error
+  end
+
+  class InvalidAttribute < UnreadableResponse
+  end
+
+  class MissingClient < Resources::Error
+  end
+
+  class PageLimitReached < Resources::Error
+  end
+
+  class Trend
+    FIELDS: Array[String]
+
+    attr_reader attrs: Hash[String, untyped]
+
+    def self.at: (Integer | String woeid, client: Resources::_Client, **untyped params) -> Array[Trend]
+    def initialize: (Hash[untyped, untyped] attrs) -> void
+    def to_h: () -> Hash[String, untyped]
+            | [K, V] () { (String key, untyped value) -> [K, V] } -> Hash[K, V]
+    def name: () -> String?
+    def post_count: () -> Integer?
+    def tweet_count: () -> Integer?
+    def ==: (untyped other) -> bool
+    def eql?: (untyped other) -> bool
+    def hash: () -> Integer
+    def deconstruct_keys: (Array[Symbol]? keys) -> Hash[Symbol, untyped]
+    def as_json: (*untyped) -> Hash[String, untyped]
+    def to_json: (?JSON::State? state) -> String
+    def marshal_dump: () -> untyped
+    def marshal_load: (untyped state) -> void
+    def encode_with: (untyped coder) -> void
+    def init_with: (untyped coder) -> void
+  end
+
+  class PersonalizedTrend
+    FIELDS: Array[String]
+
+    attr_reader attrs: Hash[String, untyped]
+
+    def self.all: (client: Resources::_Client, **untyped params) -> Array[PersonalizedTrend]
+    def initialize: (Hash[untyped, untyped] attrs) -> void
+    def to_h: () -> Hash[String, untyped]
+            | [K, V] () { (String key, untyped value) -> [K, V] } -> Hash[K, V]
+    def name: () -> String?
+    def category: () -> String?
+    def post_count_text: () -> String?
+    def trending_since_text: () -> String?
+    def ==: (untyped other) -> bool
+    def eql?: (untyped other) -> bool
+    def hash: () -> Integer
+    def deconstruct_keys: (Array[Symbol]? keys) -> Hash[Symbol, untyped]
+    def as_json: (*untyped) -> Hash[String, untyped]
+    def to_json: (?JSON::State? state) -> String
+    def marshal_dump: () -> untyped
+    def marshal_load: (untyped state) -> void
+    def encode_with: (untyped coder) -> void
+    def init_with: (untyped coder) -> void
+  end
+
+  class PostUsage
+    FIELDS: Array[String]
+
+    attr_reader attrs: Hash[String, untyped]
+
+    def self.current: (client: Resources::_Client, **untyped params) ?{ (Problem problem) -> void } -> PostUsage?
+    def self.current!: (client: Resources::_Client, **untyped params) -> PostUsage
+    def initialize: (Hash[untyped, untyped] attrs) -> void
+    def to_h: () -> Hash[String, untyped]
+            | [K, V] () { (String key, untyped value) -> [K, V] } -> Hash[K, V]
+    def project_id: () -> Integer?
+    def project_usage: () -> Integer?
+    def project_cap: () -> Integer?
+    def cap_reset_day: () -> Integer?
+    def daily: () -> Hash[Time, Integer]
+    def daily_by_app: () -> Hash[Integer?, Hash[Time, Integer]]
+    def ==: (untyped other) -> bool
+    def eql?: (untyped other) -> bool
+    def hash: () -> Integer
+    def deconstruct_keys: (Array[Symbol]? keys) -> Hash[Symbol, untyped]
+    def as_json: (*untyped) -> Hash[String, untyped]
+    def to_json: (?JSON::State? state) -> String
+    def marshal_dump: () -> untyped
+    def marshal_load: (untyped state) -> void
+    def encode_with: (untyped coder) -> void
+    def init_with: (untyped coder) -> void
+  end
+
+  module Resources
+    VERSION: String
+
+    def self.gem_version: () -> Gem::Version
+
+    type attrs = Hash[String, untyped]
+    type params = Hash[String | Symbol, untyped]
+    type query = Hash[String, untyped]
+    type body = Hash[String, untyped]?
+    type id = String | Integer | Resource
+
+    # What an upload returned, holding the identifier of the media: a Hash, or the uploaded media of x-uploads
+    interface _UploadedMedia
+      def fetch: (String key) -> untyped
+    end
+
+    # Media that holds a media key, such as the uploaded media of x-uploads, which media is looked up by
+    interface _MediaKeyHolder
+      def media_key: () -> String?
+    end
+
+    # One medium a new post or direct message attaches: what an upload returned, media such as X::Media, a media key,
+    # or a media identifier
+    type medium = _UploadedMedia | _MediaKeyHolder | String | Integer
+
+    # The media a new post or direct message attaches: one medium, a list of them, or nil for none
+    type media_ids = (medium | Array[medium])?
+
+    # What the object layer asks to make its requests: X::Client, or any other client that answers these four
+    # methods, since x-resources makes no request of its own. The endpoint carries the query, which the object layer
+    # builds, and array_class and object_class say what the response is parsed into, which is plain hashes and
+    # arrays wherever the object layer reads a response itself. A client that also answers app_only, authenticator,
+    # or current_user_id is asked for them where they save a request: without app_only, an endpoint that refuses
+    # the OAuth 1.0a of a user is requested with the client itself; without authenticator, the authenticated user
+    # is looked up rather than read from the access token that names them; and without current_user_id, a check of
+    # whether one user follows another scans rather than reads connection_status. A release within 1.x may pass any
+    # other keyword X::Client takes for the same method, such as params: or headers:, so each takes the rest of its
+    # keywords untyped.
+    interface _Client
+      def get: (String endpoint, ?array_class: Class, ?object_class: untyped, **untyped) -> untyped
+      def post: (String endpoint, ?(String | Hash[untyped, untyped])? body, ?array_class: Class, ?object_class: untyped, **untyped) -> untyped
+      def put: (String endpoint, ?(String | Hash[untyped, untyped])? body, ?array_class: Class, ?object_class: untyped, **untyped) -> untyped
+      def delete: (String endpoint, ?array_class: Class, ?object_class: untyped, **untyped) -> untyped
+    end
+
+    # The class side of every concrete resource class, typed with that class
+    interface _ResourceClass[R < Resource]
+      def new: (Hash[untyped, untyped] attrs, ?client: _Client?, ?hydrated: bool) -> R
+      def from_id: (id id, ?client: _Client?) -> R
+      def from_response: (body body, client: _Client?, ?hydrated: bool, **untyped) -> (R | Page[R])?
+    end
+
+    # The class-side lookups of a concrete resource class the API looks up by identifier, typed with that class
+    interface _Lookup[R]
+      def find: (id id, client: _Client, **untyped params) ?{ (Problem problem) -> void } -> R?
+      def find!: (id id, client: _Client, **untyped params) -> R
+    end
+
+    # The class-side lookups of a concrete resource class the API looks up many at a time, typed with that class
+    interface _BatchLookup[R]
+      def find_all: (Array[id] ids, client: _Client, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[R]
+      def hydrate_all: (Array[R?] resources, client: _Client, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[R]
+    end
+
+    # The instance-side hydration of a concrete resource class, typed with that class
+    interface _Hydration[R]
+      def hydrate: () -> R?
+      def refresh: () -> R?
+    end
+
+    module API : _Client
+      def find_user: (id | String id_or_username, **untyped params) ?{ (Problem problem) -> void } -> User?
+      def find_user!: (id | String id_or_username, **untyped params) -> User
+      def find_user_by_username: (String username, **untyped params) ?{ (Problem problem) -> void } -> User?
+      def find_user_by_username!: (String username, **untyped params) -> User
+      def find_all_users: (Array[id | String] ids_or_usernames, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[User]
+      def find_all_users_by_username: (Array[String] usernames, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[User]
+      def find_user_by_id: (id id, **untyped params) ?{ (Problem problem) -> void } -> User?
+      def find_user_by_id!: (id id, **untyped params) -> User
+      def find_all_users_by_id: (Array[id] ids, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[User]
+      def current_user: (**untyped params) ?{ (Problem problem) -> void } -> User?
+      def current_user!: (**untyped params) -> User
+      def current_user_id: () -> Integer
+      def search_users: (String query, **untyped params) -> Cursor[User]
+      def find_post: (id id, **untyped params) ?{ (Problem problem) -> void } -> Post?
+      def find_tweet: (id id, **untyped params) ?{ (Problem problem) -> void } -> Post?
+      def find_post!: (id id, **untyped params) -> Post
+      def find_tweet!: (id id, **untyped params) -> Post
+      def find_all_posts: (Array[id] ids, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[Post]
+      def find_all_tweets: (Array[id] ids, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[Post]
+      def search_posts: (String query, **untyped params) -> Cursor[Post]
+      def search_tweets: (String query, **untyped params) -> Cursor[Post]
+      def search_all_posts: (String query, **untyped params) -> Cursor[Post]
+      def reposts_of_me: (**untyped params) -> Cursor[Post]
+      def retweets_of_me: (**untyped params) -> Cursor[Post]
+      def search_all_tweets: (String query, **untyped params) -> Cursor[Post]
+      def post_usage: (**untyped params) ?{ (Problem problem) -> void } -> PostUsage?
+      def post_usage!: (**untyped params) -> PostUsage
+      def count_posts: (String query, ?max_pages: Integer?, **untyped params) -> Integer
+      def count_tweets: (String query, ?max_pages: Integer?, **untyped params) -> Integer
+      def count_all_posts: (String query, ?max_pages: Integer?, **untyped params) -> Integer
+      def count_all_tweets: (String query, ?max_pages: Integer?, **untyped params) -> Integer
+      def count_posts_by_period: (String query, ?max_pages: Integer?, **untyped params) -> Hash[Range[Time], Integer]
+      def count_tweets_by_period: (String query, ?max_pages: Integer?, **untyped params) -> Hash[Range[Time], Integer]
+      def count_all_posts_by_period: (String query, ?max_pages: Integer?, **untyped params) -> Hash[Range[Time], Integer]
+      def count_all_tweets_by_period: (String query, ?max_pages: Integer?, **untyped params) -> Hash[Range[Time], Integer]
+      def find_list: (id id, **untyped params) ?{ (Problem problem) -> void } -> List?
+      def find_list!: (id id, **untyped params) -> List
+      def find_space: (id id, **untyped params) ?{ (Problem problem) -> void } -> Space?
+      def find_space!: (id id, **untyped params) -> Space
+      def find_all_spaces: (Array[id] ids, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[Space]
+      def search_spaces: (String query, **untyped params) -> Cursor[Space]
+      def find_all_spaces_by_creator: (Array[id] users, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[Space]
+      def find_media: (String | _MediaKeyHolder media_key, **untyped params) ?{ (Problem problem) -> void } -> X::Media?
+      def find_all_media: (Array[String | _MediaKeyHolder] media, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[X::Media]
+      def find_media!: (String | _MediaKeyHolder media_key, **untyped params) -> X::Media
+      def find_community: (id id, **untyped params) ?{ (Problem problem) -> void } -> Community?
+      def find_community!: (id id, **untyped params) -> Community
+      def search_communities: (String query, **untyped params) -> Cursor[Community]
+      def trends: (Integer | String woeid, **untyped params) -> Array[Trend]
+      def personalized_trends: (**untyped params) -> Array[PersonalizedTrend]
+      def find_direct_message: (id id, **untyped params) ?{ (Problem problem) -> void } -> DirectMessage?
+      def find_dm: (id id, **untyped params) ?{ (Problem problem) -> void } -> DirectMessage?
+      def find_direct_message!: (id id, **untyped params) -> DirectMessage
+      def find_dm!: (id id, **untyped params) -> DirectMessage
+      def direct_messages: (**untyped params) -> Cursor[DirectMessage]
+      def dms: (**untyped params) -> Cursor[DirectMessage]
+      def direct_messages_with: (id user, **untyped params) -> Cursor[DirectMessage]
+      def dms_with: (id user, **untyped params) -> Cursor[DirectMessage]
+      def direct_messages_in: (DirectMessage | String | Integer conversation, **untyped params) -> Cursor[DirectMessage]
+      def dms_in: (DirectMessage | String | Integer conversation, **untyped params) -> Cursor[DirectMessage]
+      def create_post: (?String? text, ?reply_to: Resources::id?, ?quote: Resources::id?, ?media_ids: Resources::media_ids, ?community: Resources::id?, **untyped params) -> Post
+      def create_tweet: (?String? text, ?reply_to: Resources::id?, ?quote: Resources::id?, ?media_ids: Resources::media_ids, ?community: Resources::id?, **untyped params) -> Post
+      def delete_post: (id post) -> bool
+      def delete_tweet: (id post) -> bool
+      def hide_reply: (id post) -> bool
+      def unhide_reply: (id post) -> bool
+      def create_list: (String name, **untyped params) -> List
+      def update_list: (id list, **untyped params) -> bool
+      def delete_list: (id list) -> bool
+      def add_list_member: (id list, id user) -> bool
+      def remove_list_member: (id list, id user) -> bool
+      def follow_list: (id list) -> bool
+      def unfollow_list: (id list) -> bool
+      def pin_list: (id list) -> bool
+      def unpin_list: (id list) -> bool
+      def create_direct_message: (id user, ?String? text, ?media_ids: Resources::media_ids, **untyped params) -> DirectMessage
+      def create_dm: (id user, ?String? text, ?media_ids: Resources::media_ids, **untyped params) -> DirectMessage
+      def create_group_direct_message: (Array[id] users, ?String? text, ?media_ids: Resources::media_ids, **untyped params) -> DirectMessage
+      def create_group_dm: (Array[id] users, ?String? text, ?media_ids: Resources::media_ids, **untyped params) -> DirectMessage
+      def create_direct_message_in: (DirectMessage | String | Integer conversation, ?String? text, ?media_ids: Resources::media_ids, **untyped params) -> DirectMessage
+      def create_dm_in: (DirectMessage | String | Integer conversation, ?String? text, ?media_ids: Resources::media_ids, **untyped params) -> DirectMessage
+      def delete_direct_message: (id message) -> bool
+      def delete_dm: (id message) -> bool
+      def follow: (id user) -> bool
+      def unfollow: (id user) -> bool
+      def block: (id user) -> bool
+      def unblock: (id user) -> bool
+      def mute: (id user) -> bool
+      def unmute: (id user) -> bool
+      def like: (id post) -> bool
+      def unlike: (id post) -> bool
+      def repost: (id post) -> bool
+      def retweet: (id post) -> bool
+      def unrepost: (id post) -> bool
+      def unretweet: (id post) -> bool
+      def bookmark: (id post) -> bool
+      def unbookmark: (id post) -> bool
+    end
+  end
+
+  class Resource
+    attr_reader attrs: Resources::attrs
+    attr_reader client: Resources::_Client?
+
+    def self.default_params: () -> Hash[String, Array[String]]
+    private def self.new: (Hash[untyped, untyped] attrs, ?client: Resources::_Client?, ?hydrated: bool) -> instance
+    private def self.from_id: (Resources::id id, ?client: Resources::_Client?) -> Resource
+    private def self.from_response: (Resources::body body, client: Resources::_Client?, ?hydrated: bool, **untyped) -> (Resource | Page[Resource])?
+
+    def initialize: (Hash[untyped, untyped] attrs, ?client: Resources::_Client?, ?hydrated: bool) -> void
+    def id: () -> (Integer | String)
+    def to_h: () -> Resources::attrs
+            | [K, V] () { (String key, untyped value) -> [K, V] } -> Hash[K, V]
+    def problems: () -> Array[Problem]
+    def hydrated?: () -> bool
+    def stub?: () -> bool
+    def hydrate: () -> Resource?
+    def refresh: () -> Resource?
+    def ==: (untyped other) -> bool
+    def eql?: (untyped other) -> bool
+    def hash: () -> Integer
+    def deconstruct_keys: (Array[Symbol]? keys) -> Hash[Symbol, untyped]
+    def as_json: (*untyped) -> Hash[String, untyped]
+    def to_json: (?JSON::State? state) -> String
+    def marshal_dump: () -> untyped
+    def marshal_load: (untyped state) -> void
+    def encode_with: (untyped coder) -> void
+    def init_with: (untyped coder) -> void
+    def inspect: () -> String
+  end
+
+  class Page[R < Resource = Resource]
+    include Enumerable[R]
+
+    attr_reader items: Array[R]
+    attr_reader meta: Hash[String, untyped]
+    attr_reader problems: Array[Problem]
+
+    def initialize: (Array[R] items, ?meta: Hash[untyped, untyped], ?problems: Array[Problem]) -> void
+    def each: () { (R) -> void } -> self
+            | () -> Enumerator[R, self]
+    def to_a: () -> Array[R]
+    def entries: () -> Array[R]
+    def size: () -> Integer
+    def length: () -> Integer
+    def empty?: () -> bool
+    def []: (Integer index) -> R?
+          | (Integer start, Integer length) -> Array[R]?
+          | (Range[Integer?] range) -> Array[R]?
+    def last: () -> R?
+            | (Integer count) -> Array[R]
+    def next_token: () -> String?
+    def previous_token: () -> String?
+    def result_count: () -> Integer?
+    def ==: (untyped other) -> bool
+    def eql?: (untyped other) -> bool
+    def hash: () -> Integer
+    def as_json: (*untyped) -> Hash[String, untyped]
+    def to_h: () -> Hash[String, untyped]
+            | [K, V] () { (R resource) -> [K, V] } -> Hash[K, V]
+    def to_json: (?JSON::State? state) -> String
+    def marshal_dump: () -> untyped
+    def marshal_load: (untyped state) -> void
+    def encode_with: (untyped coder) -> void
+    def init_with: (untyped coder) -> void
+  end
+
+  class Cursor[R < Resource = Resource]
+    include Enumerable[R]
+
+    private def self.new: () -> instance
+
+    attr_reader resource_class: singleton(Resource)
+    attr_reader client: Resources::_Client
+
+    def prefetch?: () -> bool
+    def each: () { (R) -> void } -> self
+            | () -> Enumerator[R, self]
+    def each_page: () { (Page[R]) -> void } -> self
+                 | () -> Enumerator[Page[R], self]
+    def page: (Integer index) -> Page[R]?
+    def refresh: () -> Cursor[R]
+    def prefetch: () -> Cursor[R]
+    def stubs: () -> Cursor[R]
+    def first: () -> R?
+             | (Integer count) -> Array[R]
+    def take: (Integer count) -> Array[R]
+    def to_a: () -> Array[R]
+    def entries: () -> Array[R]
+    def ids: () -> Array[Integer | String]
+    def any?: (*untyped pattern) ?{ (R) -> boolish } -> bool
+    def none?: (*untyped pattern) ?{ (R) -> boolish } -> bool
+    def empty?: () -> bool
+    def one?: (*untyped pattern) ?{ (R) -> boolish } -> bool
+    def published_count: () -> Integer?
+    def as_json: (*untyped) -> bot
+    def to_h: () -> bot
+            | [K, V] () { (R resource) -> [K, V] } -> Hash[K, V]
+    def to_json: (?JSON::State? state) -> bot
+    def marshal_dump: () -> bot
+    def encode_with: (untyped coder) -> bot
+    def inspect: () -> String
+  end
+
+  # Media is looked up by its media key, or by what holds one, and not by the numeric identifier an upload returns, so
+  # it declares its lookups rather than take those of the resources looked up by any identifier
+  class Media < Resource
+    include Resources::_Hydration[Media]
+    FIELDS: Array[String]
+
+    def id: () -> String
+
+    def self.find: (String | Resources::_MediaKeyHolder media, client: Resources::_Client, **untyped params) ?{ (Problem problem) -> void } -> Media?
+    def self.find_all: (Array[String | Resources::_MediaKeyHolder] media, client: Resources::_Client, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[Media]
+    def self.find!: (String | Resources::_MediaKeyHolder media, client: Resources::_Client, **untyped params) -> Media
+    def self.new: (Hash[untyped, untyped] attrs, ?client: Resources::_Client?, ?hydrated: bool) -> Media
+    def self.from_id: (String | Resources::_MediaKeyHolder media, ?client: Resources::_Client?) -> Media
+    def self.from_response: (Resources::body body, client: Resources::_Client?, ?hydrated: bool, **untyped) -> (Media | Page[Media])?
+    def self.hydrate_all: (Array[Media?] resources, client: Resources::_Client, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[Media]
+    def self.default_params: () -> Hash[String, Array[String]]
+    def media_key: () -> String
+    def media_id: () -> Integer
+    def type: () -> String?
+    def url: () -> String?
+    def preview_image_url: () -> String?
+    def alt_text: () -> String?
+    def duration_ms: () -> Integer?
+    def height: () -> Integer?
+    def width: () -> Integer?
+    def variants: () -> Array[Hash[String, untyped]]
+    def public_metrics: () -> Hash[String, untyped]?
+    def view_count: () -> Integer?
+  end
+
+  class BookmarkFolder < Resource
+    extend Resources::_ResourceClass[BookmarkFolder]
+    include Resources::_Hydration[BookmarkFolder]
+
+    def id: () -> Integer
+
+    def name: () -> String?
+  end
+
+  class Poll < Resource
+    extend Resources::_ResourceClass[Poll]
+    include Resources::_Hydration[Poll]
+    FIELDS: Array[String]
+
+    def self.default_params: () -> Hash[String, Array[String]]
+
+    def id: () -> Integer
+
+    def options: () -> Array[Hash[String, untyped]]
+    def duration_minutes: () -> Integer?
+    def end_datetime: () -> Time?
+    def voting_status: () -> String?
+  end
+
+  class Topic < Resource
+    extend Resources::_ResourceClass[Topic]
+    include Resources::_Hydration[Topic]
+    FIELDS: Array[String]
+
+    def self.default_params: () -> Hash[String, Array[String]]
+
+    def id: () -> Integer
+
+    def name: () -> String?
+    def description: () -> String?
+  end
+
+  class Place < Resource
+    extend Resources::_ResourceClass[Place]
+    include Resources::_Hydration[Place]
+    FIELDS: Array[String]
+
+    def self.default_params: () -> Hash[String, Array[String]]
+
+    def id: () -> String
+
+    def name: () -> String?
+    def full_name: () -> String?
+    def country: () -> String?
+    def country_code: () -> String?
+    def place_type: () -> String?
+    def contained_within: () -> Array[String]
+    def geo: () -> Hash[String, untyped]?
+  end
+
+  class User < Resource
+    extend Resources::_ResourceClass[User]
+    extend Resources::_Lookup[User]
+    extend Resources::_BatchLookup[User]
+    include Resources::_Hydration[User]
+    def id: () -> Integer
+
+    FIELDS: Array[String]
+    EXPANSIONS: Array[String]
+
+    def self.default_params: () -> Hash[String, Array[String]]
+    def self.find_by_id: (Resources::id id, client: Resources::_Client, **untyped params) ?{ (Problem problem) -> void } -> User?
+    def self.find_by_id!: (Resources::id id, client: Resources::_Client, **untyped params) -> User
+    def self.find_all_by_id: (Array[Resources::id] ids, client: Resources::_Client, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[User]
+    def self.find_by_username: (String username, client: Resources::_Client, **untyped params) ?{ (Problem problem) -> void } -> User?
+    def self.find_by_username!: (String username, client: Resources::_Client, **untyped params) -> User
+    def self.find_all_by_username: (Array[String] usernames, client: Resources::_Client, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[User]
+    def self.current: (client: Resources::_Client, **untyped params) ?{ (Problem problem) -> void } -> User?
+    def self.current!: (client: Resources::_Client, **untyped params) -> User
+    def self.search: (String query, client: Resources::_Client, **untyped params) -> Cursor[User]
+
+    def name: () -> String?
+    def username: () -> String?
+    def description: () -> String?
+    def location: () -> String?
+    def url: () -> String?
+    def profile_image_url: () -> String?
+    def profile_banner_url: () -> String?
+    def created_at: () -> Time?
+    def protected: () -> bool?
+    def protected?: () -> bool
+    def verified: () -> bool?
+    def verified?: () -> bool
+    def verified_type: () -> String?
+    def parody: () -> bool?
+    def parody?: () -> bool
+    def identity_verified: () -> bool?
+    def identity_verified?: () -> bool
+    def subscription_type: () -> String?
+    def affiliation: () -> Hash[String, untyped]?
+    def affiliated_with_ids: () -> Array[Integer]
+    def verified_followers_count: () -> Integer?
+    def subscriber_count: () -> Integer?
+    def connection_status: () -> Array[String]?
+    def receives_your_dm: () -> bool?
+    def receives_your_dm?: () -> bool
+    def subscribes_to_you: () -> bool?
+    def subscribes_to_you?: () -> bool
+    def subscription: () -> Hash[String, untyped]?
+    def pinned_post_id: () -> Integer?
+    def pinned_tweet_id: () -> Integer?
+    def most_recent_post_id: () -> Integer?
+    def most_recent_tweet_id: () -> Integer?
+    def entities: () -> Hash[String, untyped]?
+    def withheld: () -> Hash[String, untyped]?
+    def public_metrics: () -> Hash[String, untyped]?
+    def followers_count: () -> Integer?
+    def following_count: () -> Integer?
+    def tweet_count: () -> Integer?
+    def post_count: () -> Integer?
+    def listed_count: () -> Integer?
+    def like_count: () -> Integer?
+    def media_count: () -> Integer?
+    def pinned_post: () -> Post?
+    def pinned_tweet: () -> Post?
+    def most_recent_post: () -> Post?
+    def most_recent_tweet: () -> Post?
+    def affiliated_with: () -> Array[User]
+    def permalink: () -> String
+    def uri: () -> URI::Generic
+    def followers: (**untyped params) -> Cursor[User]
+    def following: (**untyped params) -> Cursor[User]
+    def blocking: (**untyped params) -> Cursor[User]
+    def muting: (**untyped params) -> Cursor[User]
+    def affiliates: (**untyped params) -> Cursor[User]
+    def posts: (**untyped params) -> Cursor[Post]
+    def tweets: (**untyped params) -> Cursor[Post]
+    def home_timeline: (**untyped params) -> Cursor[Post]
+    def mentions: (**untyped params) -> Cursor[Post]
+    def liked_posts: (**untyped params) -> Cursor[Post]
+    def liked_tweets: (**untyped params) -> Cursor[Post]
+    def bookmarks: (?folder: Resources::id?, **untyped params) -> Cursor[Post]
+    def bookmark_folders: (**untyped params) -> Cursor[BookmarkFolder]
+    def owned_lists: (**untyped params) -> Cursor[List]
+    def list_memberships: (**untyped params) -> Cursor[List]
+    def followed_lists: (**untyped params) -> Cursor[List]
+    def pinned_lists: (**untyped params) -> Cursor[List]
+    def follows?: (Resources::id user, ?max_pages: Integer?) -> bool
+  end
+
+  class Post < Resource
+    extend Resources::_ResourceClass[Post]
+    extend Resources::_Lookup[Post]
+    extend Resources::_BatchLookup[Post]
+    include Resources::_Hydration[Post]
+    def id: () -> Integer
+
+    FIELDS: Array[String]
+    EXPANSIONS: Array[String]
+
+    def self.default_params: () -> Hash[String, Array[String]]
+    def self.search: (String query, client: Resources::_Client, **untyped params) -> Cursor[Post]
+    def self.search_all: (String query, client: Resources::_Client, **untyped params) -> Cursor[Post]
+    def self.reposts_of_me: (client: Resources::_Client, **untyped params) -> Cursor[Post]
+    def self.retweets_of_me: (client: Resources::_Client, **untyped params) -> Cursor[Post]
+    def self.count: (String query, client: Resources::_Client, ?max_pages: Integer?, **untyped params) -> Integer
+    def self.count_all: (String query, client: Resources::_Client, ?max_pages: Integer?, **untyped params) -> Integer
+    def self.count_by_period: (String query, client: Resources::_Client, ?max_pages: Integer?, **untyped params) -> Hash[Range[Time], Integer]
+    def self.count_all_by_period: (String query, client: Resources::_Client, ?max_pages: Integer?, **untyped params) -> Hash[Range[Time], Integer]
+    def self.create: (?String? text, client: Resources::_Client, ?reply_to: Resources::id?, ?quote: Resources::id?, ?media_ids: Resources::media_ids, ?community: Resources::id?, **untyped params) -> Post
+    def self.delete: (Resources::id post, client: Resources::_Client) -> bool
+    def self.hide_reply: (Resources::id post, client: Resources::_Client) -> bool
+    def self.unhide_reply: (Resources::id post, client: Resources::_Client) -> bool
+
+    def text: () -> String?
+    def lang: () -> String?
+    def created_at: () -> Time?
+    def author_id: () -> Integer?
+    def conversation_id: () -> Integer?
+    def community_id: () -> Integer?
+    def in_reply_to_user_id: () -> Integer?
+    def possibly_sensitive: () -> bool?
+    def possibly_sensitive?: () -> bool
+    def reply_settings: () -> String?
+    def edit_history_post_ids: () -> Array[Integer]
+    def edit_history_tweet_ids: () -> Array[Integer]
+    def edit_controls: () -> Hash[String, untyped]?
+    def display_text_range: () -> Range[Integer]?
+    def scopes: () -> Hash[String, untyped]?
+    def card_uri: () -> String?
+    def article: () -> Hash[String, untyped]?
+    def article_title: () -> Hash[String, untyped]?
+    def media_metadata: () -> Array[Hash[String, untyped]]
+    def paid_partnership: () -> bool?
+    def paid_partnership?: () -> bool
+    def entities: () -> Hash[String, untyped]?
+    def urls: () -> Array[Hash[String, untyped]]
+    def context_annotations: () -> Array[Hash[String, untyped]]
+    def referenced_posts: () -> Array[Hash[String, String]]
+    def referenced_tweets: () -> Array[Hash[String, String]]
+    def attachments: () -> Hash[String, untyped]?
+    def coordinates: () -> Array[Numeric]?
+    def geo: () -> Hash[String, untyped]?
+    def withheld: () -> Hash[String, untyped]?
+    def note_post: () -> Hash[String, untyped]?
+    def note_tweet: () -> Hash[String, untyped]?
+    def public_metrics: () -> Hash[String, untyped]?
+    def retweet_count: () -> Integer?
+    def repost_count: () -> Integer?
+    def reply_count: () -> Integer?
+    def like_count: () -> Integer?
+    def quote_count: () -> Integer?
+    def bookmark_count: () -> Integer?
+    def impression_count: () -> Integer?
+    def matching_rules: () -> Array[MatchingRule]
+    def author: () -> User?
+    def in_reply_to_user: () -> User?
+    def community: () -> Community?
+    def place: () -> Place?
+    def media: () -> Array[Media]
+    def polls: () -> Array[Poll]
+    def media_source_posts: () -> Array[Post]
+    def media_source_tweets: () -> Array[Post]
+    def references: () -> Array[Post]
+    def replied_to: () -> Post?
+    def quoted: () -> Post?
+    def reposted: () -> Post?
+    def retweeted: () -> Post?
+    def reply?: () -> bool
+    def quote?: () -> bool
+    def repost?: () -> bool
+    def retweet?: () -> bool
+    def liked_by: (**untyped params) -> Cursor[User]
+    def reposted_by: (**untyped params) -> Cursor[User]
+    def retweeted_by: (**untyped params) -> Cursor[User]
+    def reposts: (**untyped params) -> Cursor[Post]
+    def retweets: (**untyped params) -> Cursor[Post]
+    def quotes: (**untyped params) -> Cursor[Post]
+    def quote_tweets: (**untyped params) -> Cursor[Post]
+    def permalink: () -> String
+    def uri: () -> URI::Generic
+    def expanded_text: () -> String?
+    def delete: () -> bool
+    def hide_reply: () -> bool
+    def unhide_reply: () -> bool
+  end
+
+  class Tweet = Post
+
+  class MatchingRule
+    attr_reader attrs: Hash[String, untyped]
+
+    def initialize: (Hash[untyped, untyped] attrs) -> void
+    def id: () -> Integer
+    def tag: () -> String?
+    def to_h: () -> Hash[String, untyped]
+            | [K, V] () { (String key, untyped value) -> [K, V] } -> Hash[K, V]
+    def deconstruct_keys: (Array[Symbol]? keys) -> Hash[Symbol, Integer | String | nil]
+    def ==: (untyped other) -> bool
+    def eql?: (untyped other) -> bool
+    def hash: () -> Integer
+    def as_json: (*untyped) -> Hash[String, untyped]
+    def to_json: (?JSON::State? state) -> String
+    def marshal_dump: () -> untyped
+    def marshal_load: (untyped state) -> void
+    def encode_with: (untyped coder) -> void
+    def init_with: (untyped coder) -> void
+    def inspect: () -> String
+  end
+
+  class Community < Resource
+    extend Resources::_ResourceClass[Community]
+    extend Resources::_Lookup[Community]
+    include Resources::_Hydration[Community]
+    FIELDS: Array[String]
+
+    def id: () -> Integer
+
+    def self.default_params: () -> Hash[String, Array[String]]
+    def self.search: (String query, client: Resources::_Client, **untyped params) -> Cursor[Community]
+
+    def name: () -> String?
+    def description: () -> String?
+    def created_at: () -> Time?
+    def member_count: () -> Integer?
+    def access: () -> String?
+    def join_policy: () -> String?
+    def permalink: () -> String
+    def uri: () -> URI::Generic
+  end
+
+  class List < Resource
+    extend Resources::_ResourceClass[List]
+    extend Resources::_Lookup[List]
+    include Resources::_Hydration[List]
+    FIELDS: Array[String]
+    EXPANSIONS: Array[String]
+
+    def id: () -> Integer
+
+    def self.default_params: () -> Hash[String, Array[String]]
+    def self.create: (String name, client: Resources::_Client, **untyped params) -> List
+    def self.update: (Resources::id list, client: Resources::_Client, **untyped params) -> bool
+    def self.delete: (Resources::id list, client: Resources::_Client) -> bool
+
+    def name: () -> String?
+    def description: () -> String?
+    def created_at: () -> Time?
+    def follower_count: () -> Integer?
+    def member_count: () -> Integer?
+    def owner_id: () -> Integer?
+    def private: () -> bool?
+    def private?: () -> bool
+    def owner: () -> User?
+    def members: (**untyped params) -> Cursor[User]
+    def followers: (**untyped params) -> Cursor[User]
+    def posts: (**untyped params) -> Cursor[Post]
+    def tweets: (**untyped params) -> Cursor[Post]
+    def permalink: () -> String
+    def uri: () -> URI::Generic
+    def member?: (Resources::id user, ?max_pages: Integer?) -> bool
+    def add_member: (Resources::id user) -> bool
+    def update: (**untyped params) -> bool
+    def remove_member: (Resources::id user) -> bool
+    def delete: () -> bool
+  end
+
+  class DirectMessage < Resource
+    extend Resources::_ResourceClass[DirectMessage]
+    extend Resources::_Lookup[DirectMessage]
+    include Resources::_Hydration[DirectMessage]
+    FIELDS: Array[String]
+    EXPANSIONS: Array[String]
+
+    def id: () -> Integer
+
+    def self.default_params: () -> Hash[String, Array[String]]
+    def self.all: (client: Resources::_Client, **untyped params) -> Cursor[DirectMessage]
+    def self.with: (Resources::id user, client: Resources::_Client, **untyped params) -> Cursor[DirectMessage]
+    def self.create: (Resources::id user, ?String? text, client: Resources::_Client, ?media_ids: Resources::media_ids, **untyped params) -> DirectMessage
+    def self.create_group: (Array[Resources::id] users, ?String? text, client: Resources::_Client, ?media_ids: Resources::media_ids, **untyped params) -> DirectMessage
+    def self.create_in: (DirectMessage | String | Integer conversation, ?String? text, client: Resources::_Client, ?media_ids: Resources::media_ids, **untyped params) -> DirectMessage
+    def self.`in`: (DirectMessage | String | Integer conversation, client: Resources::_Client, **untyped params) -> Cursor[DirectMessage]
+    def self.delete: (Resources::id message, client: Resources::_Client) -> bool
+
+    def text: () -> String?
+    def event_type: () -> String?
+    def created_at: () -> Time?
+    def sender_id: () -> Integer?
+    def dm_conversation_id: () -> String?
+    def participant_ids: () -> Array[Integer]
+    def referenced_posts: () -> Array[Hash[String, String]]
+    def referenced_tweets: () -> Array[Hash[String, String]]
+    def attachments: () -> Hash[String, untyped]?
+    def entities: () -> Hash[String, untyped]?
+    def sender: () -> User?
+    def participants: () -> Array[User]
+    def media: () -> Array[Media]
+    def references: () -> Array[Post]
+    def from?: (Resources::id user) -> bool
+    def group?: () -> bool
+    def peer: (Resources::id user) -> User?
+    def delete: () -> bool
+  end
+
+  class Space < Resource
+    extend Resources::_ResourceClass[Space]
+    extend Resources::_Lookup[Space]
+    extend Resources::_BatchLookup[Space]
+    include Resources::_Hydration[Space]
+    FIELDS: Array[String]
+    EXPANSIONS: Array[String]
+
+    def id: () -> String
+
+    def self.default_params: () -> Hash[String, Array[String]]
+    def self.search: (String query, client: Resources::_Client, **untyped params) -> Cursor[Space]
+    def self.find_all_by_creator: (Array[Resources::id] users, client: Resources::_Client, ?concurrency: Integer, **untyped params) ?{ (Problem problem) -> void } -> Array[Space]
+
+    def title: () -> String?
+    def state: () -> String?
+    def lang: () -> String?
+    def created_at: () -> Time?
+    def started_at: () -> Time?
+    def ended_at: () -> Time?
+    def scheduled_start: () -> Time?
+    def updated_at: () -> Time?
+    def ticketed: () -> bool?
+    def ticketed?: () -> bool
+    def participant_count: () -> Integer?
+    def subscriber_count: () -> Integer?
+    def creator_id: () -> Integer?
+    def host_ids: () -> Array[Integer]
+    def speaker_ids: () -> Array[Integer]
+    def invited_user_ids: () -> Array[Integer]
+    def topic_ids: () -> Array[Integer]
+    def creator: () -> User?
+    def hosts: () -> Array[User]
+    def speakers: () -> Array[User]
+    def invited_users: () -> Array[User]
+    def topics: () -> Array[Topic]
+    def posts: (**untyped params) -> Cursor[Post]
+    def tweets: (**untyped params) -> Cursor[Post]
+    def buyers: (**untyped params) -> Cursor[User]
+  end
+end

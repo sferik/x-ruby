@@ -1,0 +1,107 @@
+# frozen_string_literal: true
+
+require_relative "resource"
+
+module X
+  # A place tagged in a post
+  #
+  # The API offers no lookup of places, so a place is read from the response of the post that expanded it, and the class
+  # answers no finder. from_id builds one from its identifier, which a place the response did not expand is built as
+  # too, and which compares equal to the place it identifies, but hydrate and refresh raise UnsupportedOperation for one
+  # that is not hydrated, since there is nothing to look it up with.
+  #
+  # @api public
+  class Place < Resource
+    # Every public place field
+    #
+    # A minor release may add to it the fields the API adds, so that a lookup asks for them too; see
+    # {Resource#hydrated?} for what that means for a resource looked up with a list of fields of its own.
+    FIELDS = %w[contained_within country country_code full_name geo id name place_type].freeze
+
+    # The type of the identifier, which is not a number
+    #
+    # @api private
+    # @return [Symbol] raw
+    # @example Get the identifier type
+    #   X::Place.__send__(:id_type) # => :raw
+    def self.id_type = :raw
+
+    # The default query parameters, which request every field
+    #
+    # The API offers no lookup of places, so they are requested by the posts that expand them, which ask for these
+    # fields, and a place a response included with all of them is hydrated.
+    #
+    # @api public
+    # @return [Hash{String => Array<String>}] the default query parameters
+    # @example Get the default parameters
+    #   X::Place.default_params # => {"place.fields" => [...]}
+    def self.default_params = {"place.fields" => FIELDS}
+
+    # The key under which places appear in the includes of a response
+    #
+    # @api private
+    # @return [String] the includes key
+    # @example Get the includes key
+    #   X::Place.__send__(:includes_key) # => "places"
+    def self.includes_key
+      "places"
+    end
+    private_class_method :id_type, :includes_key
+
+    # @!attribute [r] name
+    #   The short name
+    #   @api public
+    #   @return [String, nil] the short name
+    #   @example Get the name
+    #     place.name
+    attribute :name
+
+    # @!attribute [r] full_name
+    #   The full name
+    #   @api public
+    #   @return [String, nil] the full name
+    #   @example Get the full name
+    #     place.full_name
+    attribute :full_name
+
+    # @!attribute [r] country
+    #   The country name
+    #   @api public
+    #   @return [String, nil] the country name
+    #   @example Get the country
+    #     place.country
+    attribute :country
+
+    # @!attribute [r] country_code
+    #   The ISO 3166-1 alpha-2 country code
+    #   @api public
+    #   @return [String, nil] the country code
+    #   @example Get the country code
+    #     place.country_code
+    attribute :country_code
+
+    # @!attribute [r] place_type
+    #   The place type, such as city or poi
+    #   @api public
+    #   @return [String, nil] the place type
+    #   @example Get the place type
+    #     place.place_type
+    attribute :place_type
+
+    # @!attribute [r] contained_within
+    #   The identifiers of the places containing this place
+    #   @api public
+    #   @return [Array<String>] the containing place identifiers, empty if there are none
+    #   @example Get the containing places
+    #     place.contained_within
+    attribute :contained_within, :list
+
+    # @!attribute [r] geo
+    #   The GeoJSON bounding box
+    #   @api public
+    #   @return [Hash, nil] the GeoJSON
+    #   @example Get the GeoJSON
+    #     place.geo
+    attribute :geo, :object
+  end
+end

@@ -1,0 +1,159 @@
+# frozen_string_literal: true
+
+require_relative "../../test_helper"
+
+module X
+  class CursorFirstTest < Minitest::Test
+    cover Cursor
+    cover Resources.const_get(:Pages)
+    cover Community
+    cover Resources.const_get(:PostSearch)
+    cover Post
+    cover Resources.const_get(:PostCollections)
+    cover User
+    cover Resources.const_get(:UserCollections)
+    cover X::Resources.const_get(:UserFinders)
+    cover Resource
+    cover Resources.const_get(:Finders)
+    cover Resources.const_get(:BatchFinders)
+
+    def setup
+      @client = FakeClient.new
+      @client.stub(:get, "users/1/followers", lambda { |query, _|
+        size = query.fetch("max_results", "3").to_i
+        {"data" => (1..size).map { |id| {"id" => id.to_s} }, "meta" => {"next_token" => "p2"}.reject { query["pagination_token"] }}
+      })
+      @user = User.new({"id" => "1"}, client: @client)
+    end
+
+    def test_first_count_requests_a_page_of_that_size
+      assert_equal [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], @user.followers.first(10).map(&:id)
+      assert_equal [{"max_results" => "10"}], @client.queries.map { |query| query.slice("max_results") }
+    end
+
+    def test_every_resource_is_read_into_a_frozen_array
+      @client.stub(:get, "users/1/followers", ->(query, _) { {"data" => [{"id" => query["pagination_token"] ? "2" : "1"}], "meta" => {"next_token" => (query["pagination_token"] ? nil : "p2")}} })
+      cursor = @user.followers
+
+      [cursor.to_a, cursor.entries].each do |resources|
+        assert_equal [[1, 2], true], [resources.map(&:id), resources.frozen?]
+      end
+    end
+
+    def test_take_requests_a_page_of_that_size
+      assert_equal [1, 2, 3], @user.followers.take(3).map(&:id)
+      assert_equal "3", @client.queries.first["max_results"]
+      assert_empty @user.followers.take(0)
+      assert_raises(TypeError) { @user.followers.take(nil) }
+    end
+
+    def test_first_without_a_count_requests_one_resource
+      assert_equal 1, @user.followers.first.id
+      assert_equal "1", @client.queries.first["max_results"]
+    end
+
+    def test_first_rises_to_the_minimum_of_the_endpoint
+      @client.stub(:get, "users/1/tweets", {"data" => (1..5).map { |id| {"id" => id.to_s} }})
+
+      assert_equal [1, 2], @user.posts.first(2).map(&:id)
+      assert_equal "5", @client.queries.first["max_results"]
+      assert_equal 5, @user.posts.__send__(:min_results)
+    end
+
+    def test_first_rises_no_higher_than_the_max_results_the_cursor_was_given
+      @client.stub(:get, "users/1/tweets", {"data" => (1..3).map { |id| {"id" => id.to_s} }})
+      posts = @user.posts(max_results: 3)
+
+      assert_equal [[1], 1, true], [posts.first(1).map(&:id), posts.take(1).size, posts.any?]
+      assert_equal ["3"], @client.queries.map { |query| query["max_results"] }.uniq
+    end
+
+    def test_the_minimum_page_size_of_searches
+      searches = [Post.search("ruby", client: @client), Post.search_all("ruby", client: @client), Community.search("ruby", client: @client)]
+
+      assert_equal [10, 10, 10, 10], (searches + [Post.new({"id" => "2"}, client: @client).quotes]).map { |cursor| cursor.__send__(:min_results) }
+      assert_equal 1, User.search("ruby", client: @client).__send__(:min_results)
+    end
+
+    def test_the_minimum_page_size_of_timelines
+      assert_equal [5, 5, 5], [@user.posts, @user.mentions, @user.liked_posts].map { |cursor| cursor.__send__(:min_results) }
+      assert_equal [1, 1, 1], [@user.followers, @user.home_timeline, Post.new({"id" => "2"}, client: @client).liked_by].map { |cursor| cursor.__send__(:min_results) }
+    end
+
+    def test_first_of_the_page_size_sizes_its_own_pages
+      followers = @user.followers(max_results: 3)
+      followers.first(3)
+
+      assert_equal [{"max_results" => "3"}], @client.queries.map { |query| query.slice("max_results", "pagination_token") }
+    end
+
+    def test_a_later_page_asks_for_no_more_than_the_pages_before_it_left
+      @client.stub(:get, "users/1/followers", lambda { |query, _|
+        {"data" => query["pagination_token"] ? [{"id" => "3"}] : [{"id" => "1"}, {"id" => "2"}], "meta" => {"next_token" => "p2"}.reject { query["pagination_token"] }}
+      })
+
+      assert_equal [1, 2, 3], @user.followers(max_results: 3).first(3).map(&:id)
+      assert_equal [{"max_results" => "3"}, {"max_results" => "1", "pagination_token" => "p2"}], @client.queries.map { |query| query.slice("max_results", "pagination_token") }
+    end
+
+    def test_first_of_a_cursor_without_a_page_size
+      @client.stub(:get, "dm_events", {"data" => [{"id" => "1"}, {"id" => "2"}]})
+      cursor = Cursor.__send__(:build, DirectMessage, "dm_events", client: @client)
+
+      assert_equal [1], cursor.first(1).map(&:id)
+      refute_includes @client.queries.first, "max_results"
+    end
+
+    def test_first_with_a_negative_count_raises_without_a_request
+      assert_raises(ArgumentError) { @user.followers.first(-1) }
+      assert_empty @client.requests
+    end
+
+    def test_first_reads_a_page_size_given_as_a_string
+      followers = @user.followers(max_results: "3")
+      followers.first(5)
+
+      assert_equal %w[3 2], @client.queries.map { |query| query["max_results"] }
+    end
+
+    def test_refresh_and_prefetch_keep_dropped_defaults
+      cursor = @user.followers("user.fields": nil)
+
+      refute_includes cursor.refresh.__send__(:params), "user.fields"
+      refute_includes cursor.prefetch.__send__(:params), "user.fields"
+      assert_predicate cursor.prefetch, :prefetch?
+      refute_predicate cursor.refresh, :prefetch?
+    end
+
+    def test_derived_cursors_keep_the_minimum_page_size
+      cursor = Cursor.__send__(:build, User, "users/1/followers", client: @client, min_results: 7)
+
+      assert_equal [7, 7, 7], [cursor.refresh, cursor.prefetch, cursor.stubs].map { |cursor| cursor.__send__(:min_results) }
+    end
+  end
+
+  class CursorFirstCountTest < Minitest::Test
+    cover Cursor
+    cover Resources.const_get(:Utils)
+
+    def setup
+      @client = FakeClient.new
+      @client.stub(:get, "users/1/followers", ->(query, _) { {"data" => (1..query.fetch("max_results").to_i).map { |id| {"id" => id.to_s} }} })
+      @user = User.new({"id" => "1"}, client: @client)
+    end
+
+    def test_first_and_take_read_a_float_count_as_the_integer_it_converts_to
+      assert_equal [[1, 2], [1, 2]], [@user.followers.first(2.5).map(&:id), @user.followers.take(2.9).map(&:id)]
+      assert_equal %w[2 2], @client.queries.map { |query| query["max_results"] }
+    end
+
+    def test_first_and_take_refuse_a_count_that_is_not_a_number_without_a_request
+      [->(cursor) { cursor.first("2") }, ->(cursor) { cursor.take("2") }, ->(cursor) { cursor.take(nil) }].each do |read|
+        error = assert_raises(TypeError) { read.call(@user.followers) }
+
+        assert_match(/\Ano implicit conversion of (String|NilClass) into Integer\z/, error.message)
+      end
+      assert_empty @client.requests
+    end
+  end
+end

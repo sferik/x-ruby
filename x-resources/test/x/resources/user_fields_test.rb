@@ -1,0 +1,93 @@
+# frozen_string_literal: true
+
+require_relative "../../test_helper"
+
+module X
+  class UserFieldsTest < Minitest::Test
+    cover User
+    cover Resources.const_get(:UserCollections)
+
+    def setup
+      @user = User.new({"id" => "1", "profile_banner_url" => "https://pbs.twimg.com/b.jpg", "parody" => true,
+                        "is_identity_verified" => true, "subscription_type" => "Premium",
+                        "verified_followers_count" => 5, "affiliation" => {"description" => "Anthropic"}})
+    end
+
+    def test_the_fields_the_api_added
+      assert_equal "https://pbs.twimg.com/b.jpg", @user.profile_banner_url
+      assert_equal "Premium", @user.subscription_type
+      assert_equal 5, @user.verified_followers_count
+      assert_equal({"description" => "Anthropic"}, @user.affiliation)
+    end
+
+    def test_the_subscriber_count
+      assert_equal [12, nil], [User.new({"id" => "1", "subscriber_count" => 12}).subscriber_count, @user.subscriber_count]
+      assert_includes User::FIELDS, "subscriber_count"
+    end
+
+    def test_parody_and_identity_verified
+      assert_predicate @user, :parody?
+      assert @user.parody
+      assert_predicate @user, :identity_verified?
+      assert @user.identity_verified
+      refute_respond_to @user, :is_identity_verified
+    end
+
+    def test_parody_and_identity_verified_of_a_user_the_api_says_nothing_about
+      user = User.new({"id" => "1", "parody" => false, "is_identity_verified" => false})
+
+      assert_instance_of FalseClass, user.parody?
+      assert_instance_of FalseClass, user.identity_verified?
+      assert_instance_of FalseClass, User.new({"id" => "1"}).parody?
+      assert_instance_of FalseClass, User.new({"id" => "1"}).identity_verified?
+    end
+
+    def test_the_requested_fields_hold_the_ones_the_api_always_answers
+      assert_includes User::FIELDS, "subscription_type"
+      assert_equal User::FIELDS, User::FIELDS.sort
+    end
+
+    def test_the_affiliation_is_an_expansion_rather_than_a_field
+      refute_includes User::FIELDS, "affiliation"
+      assert_equal %w[affiliation most_recent_post_id pinned_post_id], User::EXPANSIONS
+      refute_includes Post::EXPANSIONS, "affiliation"
+    end
+
+    def test_the_fields_of_the_affiliation
+      user = User.new({"id" => "1", "affiliation" => {"description" => "X", "url" => "https://x.com",
+                                                      "badge_url" => "https://pbs.twimg.com/x.png", "user_id" => ["783214"]}})
+
+      assert_equal "https://pbs.twimg.com/x.png", user.affiliation.fetch("badge_url")
+      assert_equal [783_214], user.affiliated_with_ids
+      assert_empty @user.affiliated_with_ids
+      assert_equal [], User.new({"id" => "1"}).affiliated_with_ids
+    end
+
+    def test_the_accounts_a_user_is_affiliated_with_resolve_from_the_includes
+      body = {"data" => {"id" => "1", "affiliation" => {"user_id" => %w[783214 9]}},
+              "includes" => {"users" => [{"id" => "783214", "username" => "X"}]}}
+      user = User.__send__(:resource_from_response, body, client: nil)
+
+      assert_equal [[783_214, "X", false], [9, nil, true]], user.affiliated_with.map { |affiliated| [affiliated.id, affiliated.username, affiliated.stub?] }
+      assert_empty @user.affiliated_with
+    end
+
+    def test_a_lookup_asks_for_the_affiliation_expansion
+      client = FakeClient.new.stub(:get, "users/1", {"data" => {"id" => "1"}})
+      user = User.find(1, client:)
+
+      assert_equal "affiliation,most_recent_post_id,pinned_post_id", client.queries.first["expansions"]
+      refute_includes client.queries.first["user.fields"].split(","), "affiliation"
+      assert_predicate user, :hydrated?
+      refute_predicate User.find(1, client:, expansions: %w[most_recent_post_id pinned_post_id]), :hydrated?
+    end
+
+    def test_the_requested_fields_leave_out_the_ones_that_depend_on_who_is_authenticated
+      refute_includes User::FIELDS, "connection_status"
+      refute_includes User::FIELDS, "confirmed_email"
+      refute_includes User::FIELDS, "receives_your_dm"
+      refute_includes User::FIELDS, "subscription"
+      refute_includes User::FIELDS, "subscribes_to_you"
+    end
+  end
+end

@@ -1,0 +1,65 @@
+---
+coverage_criteria:
+  process_abort: true
+fail_fast: true
+includes:
+- lib
+integration:
+  name: minitest
+matcher:
+  # x-core is loaded too, and is mutated in its own suite, so the classes x-resources declares directly under X are named
+  # one by one rather than matched by X*
+  subjects:
+  - X::Resources*
+  - X::BookmarkFolder*
+  - X::Community*
+  - X::Cursor*
+  - X::DirectMessage*
+  - X::InvalidAttribute*
+  - X::List*
+  - X::MatchingRule*
+  - X::Media*
+  - X::MissingClient*
+  - X::MissingResource*
+  - X::Page*
+  - X::PersonalizedTrend*
+  - X::Place*
+  - X::Poll*
+  - X::Post*
+  - X::Resource*
+  - X::Space*
+  - X::Topic*
+  - X::Trend*
+  - X::PostUsage*
+  - X::User*
+  # Each class of resource makes X::Resource.from_id and X::Resource.from_response, which X::Resource keeps private,
+  # public on itself, which mutant would match as methods of that class, but are the ones of X::Resource, which are
+  # mutated as such
+  ignore:
+  - X::BookmarkFolder.from_id
+  - X::Community.from_id
+  - X::DirectMessage.from_id
+  - X::List.from_id
+  - X::Place.from_id
+  - X::Poll.from_id
+  - X::Post.from_id
+  - X::Space.from_id
+  - X::Topic.from_id
+  - X::User.from_id
+  - X::BookmarkFolder.from_response
+  - X::Community.from_response
+  - X::DirectMessage.from_response
+  - X::List.from_response
+  - X::Media.from_response
+  - X::Place.from_response
+  - X::Poll.from_response
+  - X::Post.from_response
+  - X::Space.from_response
+  - X::Topic.from_response
+  - X::User.from_response
+mutation:
+  operators: full
+  timeout: 10.0
+requires:
+- x/resources
+usage: opensource

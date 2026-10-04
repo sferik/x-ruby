@@ -1,0 +1,139 @@
+# frozen_string_literal: true
+
+require_relative "../../test_helper"
+
+module X
+  module Resources
+    class ErrorsTest < Minitest::Test
+      cover MissingResource
+      cover Resource
+      cover Resources.const_get(:Finders)
+      cover Resources.const_get(:BatchFinders)
+      cover Resources.const_get(:Lookups)
+
+      def setup
+        @client = FakeClient.new
+      end
+
+      def test_not_found_is_an_x_error
+        assert_operator MissingResource, :<, X::Error
+        assert_operator X::Error, :<, StandardError
+      end
+
+      def test_every_error_of_the_object_layer_descends_from_its_own_base
+        assert_operator MissingResource, :<, Resources::Error
+        assert_operator UnreadableResponse, :<, Resources::Error
+        assert_operator InvalidAttribute, :<, UnreadableResponse
+        assert_operator Resources::Error, :<, X::Error
+      end
+
+      # The object layer's own base class shares the name of x-core's, so a rescue inside X::Resources that means every
+      # error of the API, such as the one the connection status of a user falls back from, must name X::Error.
+      def test_the_base_of_the_object_layer_catches_none_of_the_errors_of_x_core
+        refute_operator X::Error, :<, Resources::Error
+        refute_operator UnsupportedOperation, :<, Resources::Error
+      end
+
+      # Every class a caller names is under X, as the classes of x-core are, and X::Resources::Error alone is left
+      # under the gem's module, for the rescue that means the failure of the object layer alone.
+      def test_the_error_of_a_missing_resource_is_named_under_x
+        assert X.const_defined?(:MissingResource, false)
+        refute Resources.const_defined?(:MissingResource, false)
+        assert Resources.const_defined?(:Error, false)
+      end
+
+      def test_unsupported_operation_is_an_x_error
+        assert_operator UnsupportedOperation, :<, X::Error
+      end
+
+      def test_find_bang
+        @client.stub(:get, "users/1", {"data" => {"id" => "1", "username" => "sferik"}})
+
+        assert_equal "sferik", User.find!(1, client: @client, "user.fields": "id").username
+        assert_equal "id", @client.queries.first["user.fields"]
+      end
+
+      def test_find_bang_by_username
+        @client.stub(:get, "users/by/username/sferik", {"data" => {"id" => "1", "username" => "sferik"}})
+
+        assert_equal 1, User.find!("sferik", client: @client).id
+      end
+
+      def test_find_bang_names_the_identifier_of_a_resource_it_was_given
+        @client.stub(:get, "tweets/1", {"errors" => []})
+        @client.stub(:get, "media/3_7", {"errors" => []})
+
+        assert_equal "Could not find X::Post 1", assert_raises(MissingResource) { Post.find!(Post.from_id(1), client: @client) }.message
+        assert_equal "Could not find X::Media 3_7", assert_raises(MissingResource) { Media.find!(Media.new({"media_key" => "3_7"}), client: @client) }.message
+      end
+
+      def test_find_bang_not_found
+        @client.stub(:get, "tweets/1", {"errors" => []})
+        error = assert_raises(MissingResource) { Post.find!(1, client: @client) }
+
+        assert_equal "Could not find X::Post 1", error.message
+      end
+
+      def test_find_user_bang
+        @client.stub(:get, "users/by/username/nobody", {"errors" => []})
+        @client.stub(:get, "users/by/username/sferik", {"data" => {"id" => "1", "username" => "sferik"}})
+
+        assert_equal "sferik", @client.find_user!("sferik", "user.fields": "id").username
+        assert_equal "id", @client.queries.first["user.fields"]
+        assert_raises(MissingResource) { @client.find_user!("nobody") }
+      end
+
+      def test_find_post_bang
+        @client.stub(:get, "tweets/1", {"data" => {"id" => "1", "text" => "hi"}})
+        @client.stub(:get, "tweets/2", {"errors" => []})
+
+        assert_equal "hi", @client.find_post!(1, "post.fields": "id").text
+        assert_equal "id", @client.queries.first["post.fields"]
+        assert_raises(MissingResource) { @client.find_post!(2) }
+      end
+
+      def test_find_media_bang
+        @client.stub(:get, "media/3_1", {"data" => {"media_key" => "3_1", "type" => "photo"}})
+        @client.stub(:get, "media/3_2", {"errors" => []})
+
+        assert_equal "photo", @client.find_media!("3_1", "media.fields": "type").type
+        assert_equal "type", @client.queries.first["media.fields"]
+        assert_raises(MissingResource) { @client.find_media!("3_2") }
+      end
+
+      def test_find_space_bang
+        @client.stub(:get, "spaces/1", {"data" => {"id" => "1", "title" => "Ruby"}})
+        @client.stub(:get, "spaces/2", {"errors" => []})
+
+        assert_equal "Ruby", @client.find_space!("1", "space.fields": "id").title
+        assert_equal "id", @client.queries.first["space.fields"]
+        assert_raises(MissingResource) { @client.find_space!("2") }
+      end
+
+      def test_find_direct_message_bang
+        @client.stub(:get, "dm_events/1", {"data" => {"id" => "1", "text" => "hi"}})
+        @client.stub(:get, "dm_events/2", {"errors" => []})
+
+        assert_equal "hi", @client.find_direct_message!("1", "dm_event.fields": "id").text
+        assert_equal "id", @client.queries.first["dm_event.fields"]
+        assert_raises(MissingResource) { @client.find_direct_message!("2") }
+      end
+
+      def test_find_list_bang
+        @client.stub(:get, "lists/1", {"data" => {"id" => "1", "name" => "Ruby"}})
+        @client.stub(:get, "lists/2", {"errors" => []})
+
+        assert_equal "Ruby", @client.find_list!(1, "list.fields": "id").name
+        assert_equal "id", @client.queries.first["list.fields"]
+        assert_raises(MissingResource) { @client.find_list!(2) }
+      end
+
+      def test_current_user_missing_raises_not_found
+        @client.stub(:get, "users/me", {"errors" => []})
+        error = assert_raises(MissingResource) { @client.current_user! }
+
+        assert_equal "users/me returned no user", error.message
+      end
+    end
+  end
+end

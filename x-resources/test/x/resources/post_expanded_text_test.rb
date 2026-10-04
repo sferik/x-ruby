@@ -1,0 +1,118 @@
+# frozen_string_literal: true
+
+require_relative "../../test_helper"
+
+module X
+  class PostExpandedTextTest < Minitest::Test
+    cover Post
+
+    LINK = {"url" => "https://t.co/abc", "expanded_url" => "https://github.com/sferik/x-ruby"}.freeze
+
+    def test_urls
+      assert_equal [LINK], Post.new({"id" => "1", "entities" => {"urls" => [LINK]}}).urls
+      assert_empty Post.new({"id" => "1"}).urls
+    end
+
+    def test_expanded_text_replaces_every_link
+      post = Post.new({"id" => "1", "text" => "See https://t.co/abc and https://t.co/def",
+                       "entities" => {"urls" => [LINK, {"url" => "https://t.co/def", "expanded_url" => "https://x.com"}]}})
+
+      assert_equal "See https://github.com/sferik/x-ruby and https://x.com", post.expanded_text
+    end
+
+    def test_expanded_text_replaces_a_repeated_link_everywhere
+      post = Post.new({"id" => "1", "text" => "https://t.co/abc https://t.co/abc", "entities" => {"urls" => [LINK]}})
+
+      assert_equal "https://github.com/sferik/x-ruby https://github.com/sferik/x-ruby", post.expanded_text
+    end
+
+    def test_expanded_text_inserts_a_url_that_holds_a_backslash_as_it_is
+      post = Post.new({"id" => "1", "text" => "hi https://t.co/ax", "entities" => {"urls" => [{"url" => "https://t.co/ax", "expanded_url" => "https://ex.com/\\0\\&x"}]}})
+
+      assert_equal "hi https://ex.com/\\0\\&amp;x", post.expanded_text
+    end
+
+    def test_expanded_text_escapes_each_url_as_the_text_is_escaped
+      link = {"url" => "https://t.co/abc", "expanded_url" => "https://example.com/?a=1&b=<2>\"'"}
+      post = Post.new({"id" => "1", "text" => "Q&amp;A https://t.co/abc", "entities" => {"urls" => [link]}})
+
+      assert_equal "Q&amp;A https://example.com/?a=1&amp;b=&lt;2&gt;&quot;&#39;", post.expanded_text
+      assert_equal "Q&A https://example.com/?a=1&b=<2>\"'", CGI.unescapeHTML(post.expanded_text)
+    end
+
+    def test_expanded_text_replaces_each_link_once_however_its_url_reads
+      links = [{"url" => "https://t.co/abc", "expanded_url" => "https://example.com/?next=https://t.co/def"}, {"url" => "https://t.co/def", "expanded_url" => "https://x.com"}]
+      post = Post.new({"id" => "1", "text" => "See https://t.co/abc and https://t.co/def", "entities" => {"urls" => links}})
+
+      assert_equal "See https://example.com/?next=https://t.co/def and https://x.com", post.expanded_text
+    end
+
+    def test_expanded_text_replaces_a_url_that_starts_another_apart_from_it
+      links = [{"url" => "https://t.co/a", "expanded_url" => "https://a.example"}, {"url" => "https://t.co/ab", "expanded_url" => "https://ab.example"}]
+      post = Post.new({"id" => "1", "text" => "https://t.co/ab https://t.co/a", "entities" => {"urls" => links}})
+
+      assert_equal "https://ab.example https://a.example", post.expanded_text
+    end
+
+    def test_expanded_text_keeps_a_link_without_an_expansion
+      post = Post.new({"id" => "1", "text" => "See https://t.co/abc", "entities" => {"urls" => [{"url" => "https://t.co/abc"}]}})
+
+      assert_equal "See https://t.co/abc", post.expanded_text
+    end
+
+    def test_expanded_text_passes_over_a_link_without_a_url_which_the_api_documents
+      [{"expanded_url" => "https://x.com/u/status/1/photo/1", "media_key" => "3_1"}, {"url" => nil, "expanded_url" => "https://x.com"}, {"url" => nil, "expanded_url" => 1}].each do |link|
+        post = Post.new({"id" => "1", "text" => "media https://t.co/M", "entities" => {"urls" => [link]}})
+
+        assert_equal "media https://t.co/M", post.expanded_text
+      end
+    end
+
+    def test_expanded_text_rejects_a_link_whose_urls_are_not_strings
+      [{"url" => 1}, {"url" => 1, "expanded_url" => "https://x.com"}, {"url" => "https://t.co/abc", "expanded_url" => 1}].each do |link|
+        post = Post.new({"id" => "1", "text" => "See https://t.co/abc", "entities" => {"urls" => [link]}})
+
+        error = assert_raises(InvalidAttribute) { post.expanded_text }
+
+        assert_equal "a link needs a url, and an expanded_url if any, that are Strings", error.cause.message
+        assert_equal "X::Post#expanded_text cannot be read from #{link.inspect}", error.message
+      end
+    end
+
+    def test_expanded_text_without_links
+      assert_equal "hi", Post.new({"id" => "1", "text" => "hi"}).expanded_text
+      assert_nil Post.new({"id" => "1"}).expanded_text
+      assert_nil Post.new({"id" => "1", "entities" => {"urls" => [LINK]}}).expanded_text
+    end
+
+    def test_a_long_post_reads_its_full_text_and_entities_from_its_note
+      note = {"text" => "A long post that links https://t.co/abc", "entities" => {"urls" => [LINK]}}
+      post = Post.new({"id" => "1", "text" => "A long post… https://t.co/xyz", "entities" => {"urls" => [{"url" => "https://t.co/xyz"}]}, "note_post" => note})
+
+      assert_equal ["A long post that links https://t.co/abc", note["entities"], [LINK]], [post.text, post.entities, post.urls]
+      assert_equal "A long post that links https://github.com/sferik/x-ruby", post.expanded_text
+      assert_equal({text: note["text"], urls: [LINK]}, post.deconstruct_keys(%i[text urls]))
+    end
+
+    def test_a_long_post_without_entities_in_its_note_has_none_of_the_text_cut_short
+      entities = {"annotations" => [{"normalized_text" => "Ruby"}], "urls" => [{"url" => "https://t.co/xyz"}]}
+      post = Post.new({"id" => "1", "text" => "A long post… https://t.co/xyz", "entities" => entities, "note_post" => {"text" => "A long post"}})
+
+      assert_equal ["A long post", nil, []], [post.text, post.entities, post.urls]
+    end
+
+    def test_a_long_post_without_entities_anywhere_has_none
+      post = Post.new({"id" => "1", "text" => "A long post…", "note_post" => {"text" => "A long post"}})
+
+      assert_equal ["A long post", nil, []], [post.text, post.entities, post.urls]
+    end
+
+    def test_expanded_text_uses_only_the_links_of_the_post_itself
+      includes = Resources.const_get(:Includes).new({"posts" => [{"id" => "2", "text" => "See https://t.co/abc", "entities" => {"urls" => [LINK]}}]})
+      post = Post.__send__(:build, {"id" => "1", "text" => "RT @sferik: See https://t.co/abc", "referenced_posts" => [{"type" => "reposted", "id" => "2"}]}, includes:)
+
+      assert_equal "RT @sferik: See https://t.co/abc", post.expanded_text
+      assert_equal "See https://github.com/sferik/x-ruby", post.reposted.expanded_text
+    end
+  end
+end
