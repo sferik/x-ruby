@@ -1,0 +1,418 @@
+# frozen_string_literal: true
+
+require "base64"
+require "digest"
+require_relative "../../test_helper"
+
+module X
+  class OAuth2AuthorizationURLTest < Minitest::Test
+    cover OAuth2Authorization
+    cover Core.const_get(:TokenEndpoint)
+
+    REDIRECT_URI = "https://example.com/callback"
+    CODE_VERIFIER = ("a" * 43).freeze
+
+    def authorization(**options)
+      OAuth2Authorization.new(client_id: TEST_CLIENT_ID, redirect_uri: REDIRECT_URI, **options)
+    end
+
+    def query_of(url) = URI.decode_www_form(URI(url).query).to_h
+
+    def test_url_asks_x_to_authorize_the_app
+      url = authorization(state: "STATE", code_verifier: CODE_VERIFIER).url
+      challenge = Base64.urlsafe_encode64(Digest::SHA256.digest(CODE_VERIFIER), padding: false)
+
+      assert url.start_with?("https://x.com/i/oauth2/authorize?")
+      assert_equal({"response_type" => "code", "client_id" => TEST_CLIENT_ID, "redirect_uri" => REDIRECT_URI,
+                    "scope" => "tweet.read users.read offline.access", "state" => "STATE", "code_challenge" => challenge,
+                    "code_challenge_method" => "S256"}, query_of(url))
+    end
+
+    def test_url_asks_for_the_scopes_given
+      assert_equal "tweet.read tweet.write", query_of(authorization(scopes: %w[tweet.read tweet.write]).url)["scope"]
+    end
+
+    def test_a_new_authorization_generates_its_state_and_code_verifier
+      first = authorization
+      second = authorization
+
+      refute_equal first.state, second.state
+      refute_equal first.code_verifier, second.code_verifier
+    end
+
+    def test_a_generated_state_and_code_verifier
+      authorization = authorization()
+
+      assert_equal 43, authorization.state.size
+      assert_match(/\A[A-Za-z0-9\-_]{64}\z/, authorization.code_verifier)
+      assert_equal authorization.state, query_of(authorization.url)["state"]
+    end
+
+    def test_attributes
+      authorization = authorization(client_secret: TEST_CLIENT_SECRET, scopes: %w[users.read], state: "STATE",
+        code_verifier: CODE_VERIFIER)
+
+      assert_equal [TEST_CLIENT_ID, REDIRECT_URI, %w[users.read], "STATE", CODE_VERIFIER],
+        [authorization.client_id, authorization.redirect_uri, authorization.scopes, authorization.state, authorization.code_verifier]
+    end
+
+    def test_the_connection_is_built_with_the_settings_given
+      output = StringIO.new
+      connection = authorization(proxy_url: "http://proxy.example.com:8080", open_timeout: 1, read_timeout: 2, write_timeout: 3,
+        keep_alive_timeout: 4, debug_output: output).send(:connection)
+
+      assert_equal ["http://proxy.example.com:8080", 1, 2, 3, 4, output],
+        [connection.send(:proxy_url), connection.open_timeout, connection.read_timeout, connection.write_timeout, connection.keep_alive_timeout, connection.debug_output]
+    end
+
+    def test_the_connection_is_private
+      refute_respond_to authorization, :connection
+    end
+
+    def test_the_client_secret_is_kept_private
+      authorization = authorization(client_secret: TEST_CLIENT_SECRET)
+
+      refute_respond_to authorization, :client_secret
+      assert_equal TEST_CLIENT_SECRET, authorization.send(:client_secret)
+    end
+
+    def test_defaults
+      authorization = authorization()
+
+      assert_nil authorization.send(:client_secret)
+      assert_equal OAuth2Authorization::DEFAULT_SCOPES, authorization.scopes
+      connection = authorization.send(:connection)
+
+      assert_equal [nil, Client::DEFAULT_OPEN_TIMEOUT, Client::DEFAULT_READ_TIMEOUT, Client::DEFAULT_WRITE_TIMEOUT, Client::DEFAULT_KEEP_ALIVE_TIMEOUT, nil],
+        [connection.send(:proxy_url), connection.open_timeout, connection.read_timeout, connection.write_timeout, connection.keep_alive_timeout, connection.debug_output]
+    end
+
+    def test_a_nil_state_is_refused
+      error = assert_raises(ArgumentError) { authorization(state: nil) }
+
+      assert_equal "state must be a String that is not empty; pass the state stored when the user was sent to X", error.message
+    end
+
+    def test_an_empty_state_is_refused
+      assert_raises(ArgumentError) { authorization(state: "") }
+    end
+
+    def test_a_state_that_is_not_a_string_is_refused_where_the_authorization_is_built
+      [12_345, :state].each do |state|
+        error = assert_raises(ArgumentError) { authorization(state:) }
+
+        assert_equal "state must be a String that is not empty; pass the state stored when the user was sent to X", error.message
+      end
+    end
+
+    def test_an_invalid_code_verifier_is_refused
+      assert_raises(ArgumentError) { authorization(code_verifier: "short") }
+    end
+
+    def test_inspect_hides_the_secrets
+      inspected = authorization(client_secret: TEST_CLIENT_SECRET, state: "STATE", code_verifier: CODE_VERIFIER).inspect
+
+      assert_equal "#<X::OAuth2Authorization client_id=\"#{TEST_CLIENT_ID}\" redirect_uri=\"#{REDIRECT_URI}\" " \
+        "scopes=[\"tweet.read\", \"users.read\", \"offline.access\"]>", inspected
+    end
+  end
+
+  class OAuth2AuthorizationCodeTest < Minitest::Test
+    cover OAuth2Authorization
+    cover AuthorizationDenied
+    cover Core.const_get(:TokenEndpoint)
+
+    REDIRECT_URI = "https://example.com/callback"
+    CODE_VERIFIER = ("a" * 43).freeze
+    TOKEN_BODY = "grant_type=authorization_code&code=CODE&redirect_uri=#{URI.encode_www_form_component(REDIRECT_URI)}&code_verifier=#{CODE_VERIFIER}".freeze
+    TOKENS = {token_type: "bearer", access_token: "ACCESS", refresh_token: "REFRESH", expires_in: 7200}.freeze
+
+    def authorization(**options)
+      OAuth2Authorization.new(client_id: TEST_CLIENT_ID, redirect_uri: REDIRECT_URI, state: "STATE", code_verifier: CODE_VERIFIER, **options)
+    end
+
+    def stub_token(body: TOKENS, status: 200)
+      stub_request(:post, "https://api.x.com/2/oauth2/token").to_return(status:, body: body.to_json)
+    end
+
+    def test_tokens_of_a_public_client
+      token = stub_token.with(body: "#{TOKEN_BODY}&client_id=#{TEST_CLIENT_ID}") { |request| !request.headers.key?("Authorization") }
+      tokens = Time.stub(:now, Time.at(1_000)) { authorization.tokens("#{REDIRECT_URI}?state=STATE&code=CODE") }
+
+      assert_equal OAuth2Tokens.new(access_token: "ACCESS", refresh_token: "REFRESH", expires_at: Time.at(8_200), scopes: OAuth2Authorization::DEFAULT_SCOPES), tokens
+      assert_requested token
+    end
+
+    def test_tokens_of_a_confidential_client
+      basic = "Basic #{Base64.strict_encode64("#{TEST_CLIENT_ID}:#{TEST_CLIENT_SECRET}")}"
+      token = stub_token.with(body: TOKEN_BODY, headers: {"Authorization" => basic})
+
+      tokens = authorization(client_secret: TEST_CLIENT_SECRET).tokens("state=STATE&code=CODE")
+
+      assert_equal %w[ACCESS REFRESH], [tokens.access_token, tokens.refresh_token]
+      assert_requested token
+    end
+
+    def test_tokens_hold_the_scopes_x_granted
+      stub_token(body: {**TOKENS, scope: "tweet.read  users.read"})
+      tokens = authorization.tokens("state=STATE&code=CODE")
+
+      assert_equal [%w[tweet.read users.read], true], [tokens.scopes, tokens.scopes.frozen?]
+    end
+
+    def test_tokens_hold_the_scopes_asked_for_when_x_names_none
+      stub_token(body: {**TOKENS, scope: ""})
+
+      assert_equal %w[users.read], authorization(scopes: %w[users.read]).tokens("state=STATE&code=CODE").scopes
+    end
+
+    def test_tokens_from_query_parameters
+      stub_token
+
+      assert_equal "ACCESS", authorization.tokens({state: "STATE", code: "CODE"}).access_token
+    end
+
+    def test_tokens_without_a_refresh_token_are_those_of_the_user_without_one
+      stub_token(body: {token_type: "bearer", access_token: "ACCESS", expires_in: 7200})
+      tokens = Time.stub(:now, Time.at(1_000)) { authorization.tokens("state=STATE&code=CODE") }
+
+      assert_equal OAuth2Tokens.new(access_token: "ACCESS", refresh_token: nil, expires_at: Time.at(8_200), scopes: OAuth2Authorization::DEFAULT_SCOPES), tokens
+    end
+
+    def test_tokens_of_a_confidential_client_without_a_refresh_token_or_a_lifetime_hold_neither
+      stub_token(body: {token_type: "bearer", access_token: "ACCESS"})
+
+      assert_equal OAuth2Tokens.new(access_token: "ACCESS", refresh_token: nil, expires_at: nil, scopes: OAuth2Authorization::DEFAULT_SCOPES),
+        authorization(client_secret: TEST_CLIENT_SECRET).tokens("state=STATE&code=CODE")
+    end
+
+    def test_tokens_are_exchanged_over_the_connection
+      response = Net::HTTPOK.new("1.1", "200", "OK")
+      response.instance_variable_set(:@body, TOKENS.to_json)
+      response.instance_variable_set(:@read, true)
+      authorization = authorization()
+      requests = []
+      authorization.send(:connection).stub(:perform, ->(request:) { requests << request.body and response }) do
+        authorization.tokens("state=STATE&code=CODE")
+      end
+
+      assert_equal ["#{TOKEN_BODY}&client_id=#{TEST_CLIENT_ID}"], requests
+    end
+
+    def test_a_denied_authorization_raises
+      error = assert_raises(AuthorizationDenied) do
+        authorization.tokens("error=access_denied&error_description=The+user+denied+the+request&state=STATE")
+      end
+
+      assert_equal ["The user denied the request", "access_denied", nil], [error.message, error.error_code, error.cause]
+      assert_not_requested :post, "https://api.x.com/2/oauth2/token"
+    end
+
+    def test_an_error_without_a_description_raises_its_code_or_else_the_default_message
+      assert_equal "access_denied", assert_raises(AuthorizationDenied) { authorization.tokens("error=access_denied") }.message
+      assert_equal "Authorization failed", assert_raises(AuthorizationDenied) { authorization.tokens({"error" => nil, "state" => "STATE"}) }.message
+    end
+
+    def test_a_redirect_for_another_authorization_raises
+      error = assert_raises(AuthorizationDenied) { authorization.tokens("state=OTHER&code=CODE") }
+
+      assert_equal ["The authorization response answers a different request", nil], [error.message, error.error_code]
+      assert_not_requested :post, "https://api.x.com/2/oauth2/token"
+    end
+
+    def test_a_refused_code_raises
+      stub_token(status: 400, body: {error: "invalid_grant", error_description: "Value passed for the authorization code was invalid."})
+      error = assert_raises(AuthorizationError) { authorization.tokens("state=STATE&code=CODE") }
+
+      assert_equal ["POST /2/oauth2/token: Value passed for the authorization code was invalid.", "invalid_grant", 400],
+        [error.message, error.error_code, error.status]
+      assert_kind_of ClientError, error
+    end
+
+    def test_a_redirect_that_is_not_a_valid_url_raises
+      error = assert_raises(AuthorizationDenied) { authorization.tokens("https://exa mple.com/callback?state=STATE&code=CODE") }
+
+      assert_equal ["The redirect back from X is not a valid URL", nil, nil], [error.message, error.error_code, error.cause]
+      assert_not_requested :post, "https://api.x.com/2/oauth2/token"
+    end
+
+    def test_a_failure_without_a_reason_raises_the_default_message
+      stub_request(:post, "https://api.x.com/2/oauth2/token").to_return(status: 400, body: "")
+      error = assert_raises(AuthorizationError) { authorization.tokens("state=STATE&code=CODE") }
+
+      assert_equal ["POST /2/oauth2/token: Authorization failed", nil], [error.message, error.error_code]
+      assert_kind_of Error, error
+    end
+
+    def test_a_token_endpoint_that_fails_to_answer_raises_the_error_of_its_status
+      stub_request(:post, "https://api.x.com/2/oauth2/token").to_return(status: 502, body: "")
+
+      assert_raises(BadGateway) { authorization.tokens("state=STATE&code=CODE") }
+    end
+  end
+
+  class OAuth2AuthorizationClientTest < Minitest::Test
+    cover OAuth2Authorization
+
+    REDIRECT_URI = "https://example.com/callback"
+    CODE_VERIFIER = ("a" * 43).freeze
+    TOKENS = {token_type: "bearer", access_token: "ACCESS", refresh_token: "REFRESH", expires_in: 7200}.freeze
+
+    def authorization(**options)
+      OAuth2Authorization.new(client_id: TEST_CLIENT_ID, redirect_uri: REDIRECT_URI, state: "STATE", code_verifier: CODE_VERIFIER, **options)
+    end
+
+    def stub_token(body: TOKENS, status: 200)
+      stub_request(:post, "https://api.x.com/2/oauth2/token").to_return(status:, body: body.to_json)
+    end
+
+    def test_client_acts_for_the_user
+      stub_token
+      client = authorization.client("state=STATE&code=CODE", base_url: "https://api.x.com/3/")
+
+      assert_instance_of OAuth2Authenticator, client.authenticator
+      assert_equal ["ACCESS", "REFRESH", "https://api.x.com/3/"], [internals(client).send(:access_token), internals(client).send(:refresh_token), client.base_url]
+    end
+
+    def test_the_client_of_a_confidential_app_holds_its_secret
+      stub_token
+      client = authorization(client_secret: TEST_CLIENT_SECRET).client("state=STATE&code=CODE")
+
+      assert_equal TEST_CLIENT_SECRET, internals(client).send(:client_secret)
+    end
+
+    def test_the_client_reaches_the_api_as_the_authorization_did
+      stub_token
+      client = authorization(proxy_url: "http://proxy.example.com:8080", read_timeout: 2, keep_alive_timeout: 4).client("state=STATE&code=CODE")
+
+      assert_equal ["http://proxy.example.com:8080", 2, Client::DEFAULT_OPEN_TIMEOUT, 4],
+        [internals(client).send(:proxy_url), client.read_timeout, client.open_timeout, client.keep_alive_timeout]
+    end
+
+    def test_the_client_holds_the_scopes_x_granted
+      stub_token(body: {**TOKENS, scope: "tweet.read users.read"})
+
+      assert_equal %w[tweet.read users.read], authorization.client("state=STATE&code=CODE").scopes
+    end
+
+    def test_the_client_is_refused_scopes_of_its_own
+      error = assert_raises(ArgumentError) { authorization.client("state=STATE&code=CODE", scopes: %w[tweet.read]) }
+
+      assert_match(/cannot be given scopes/, error.message)
+    end
+
+    def test_the_options_of_the_client_replace_the_settings_of_the_authorization
+      stub_token
+      client = authorization(read_timeout: 2).client("state=STATE&code=CODE", read_timeout: 5)
+
+      assert_equal 5, client.read_timeout
+    end
+
+    def test_save_tokens_is_passed_the_tokens_of_the_exchange
+      stub_token
+      passed = []
+      client = Time.stub(:now, Time.at(1_000)) { authorization.client("state=STATE&code=CODE", save_tokens: ->(tokens) { passed << tokens }) }
+
+      assert_equal [OAuth2Tokens.new(access_token: "ACCESS", refresh_token: "REFRESH", expires_at: Time.at(8_200), scopes: OAuth2Authorization::DEFAULT_SCOPES)], passed
+      assert_instance_of Client, client
+    end
+
+    def test_save_tokens_is_passed_the_tokens_of_an_exchange_without_a_refresh_token
+      stub_token(body: {token_type: "bearer", access_token: "ACCESS", expires_in: 7200})
+      passed = []
+      client = Time.stub(:now, Time.at(1_000)) { authorization.client("state=STATE&code=CODE", save_tokens: ->(tokens) { passed << tokens }) }
+
+      assert_equal [OAuth2Tokens.new(access_token: "ACCESS", expires_at: Time.at(8_200), scopes: OAuth2Authorization::DEFAULT_SCOPES)], passed
+      assert_instance_of OAuth2Authenticator, client.authenticator
+    end
+
+    def test_a_client_without_save_tokens_is_built_from_the_exchange
+      stub_token
+
+      assert_instance_of OAuth2Authenticator, authorization.client("state=STATE&code=CODE").authenticator
+    end
+
+    def test_an_error_of_save_tokens_for_the_tokens_of_the_exchange_keeps_the_client_and_tokens
+      stub_token
+      error = assert_raises(TokenReportFailed) { authorization.client("state=STATE&code=CODE", save_tokens: ->(_) { raise "unstored" }) }
+
+      assert_equal ["ACCESS", "REFRESH"], [error.tokens.access_token, error.tokens.refresh_token]
+      assert_equal ["unstored", "The code was exchanged for tokens, but save_tokens raised for them: unstored"], [error.cause.message, error.message]
+    end
+
+    def test_the_client_an_error_of_save_tokens_holds_acts_for_the_user
+      stub_token
+      stub_request(:get, "https://api.x.com/2/users/me").with(headers: {"Authorization" => "Bearer ACCESS"}).to_return(status: 200, body: "{}", headers: {"Content-Type" => "application/json"})
+      error = assert_raises(TokenReportFailed) { authorization.client("state=STATE&code=CODE", save_tokens: ->(_) { raise "unstored" }) }
+
+      assert_equal({}, error.client.get("users/me"))
+    end
+
+    def test_an_option_the_client_refuses_raises_before_the_code_is_exchanged
+      error = assert_raises(ArgumentError) { authorization.client("state=STATE&code=CODE", on_token_refersh: -> {}) }
+
+      assert_equal "unknown keyword: :on_token_refersh", error.message
+      assert_not_requested :post, "https://api.x.com/2/oauth2/token"
+    end
+
+    def test_a_setting_the_client_refuses_raises_before_the_code_is_exchanged
+      assert_raises(ArgumentError) { authorization.client("state=STATE&code=CODE", max_retries: -1) }
+
+      assert_not_requested :post, "https://api.x.com/2/oauth2/token"
+    end
+
+    def test_a_credential_given_to_the_client_raises_before_the_code_is_exchanged
+      %i[api_key api_key_secret access_token access_token_secret bearer_token client_id client_secret refresh_token
+        expires_at authenticator].each do |name|
+        error = assert_raises(ArgumentError) { authorization.client("state=STATE&code=CODE", name => nil, :base_url => "https://api.x.com/3/") }
+
+        assert_equal "The client of an authorization authenticates with the tokens X exchanges the code for, so it " \
+          "cannot be given #{name}", error.message
+      end
+      assert_not_requested :post, "https://api.x.com/2/oauth2/token"
+    end
+
+    def test_credentials_given_to_the_client_are_named_together
+      error = assert_raises(ArgumentError) { authorization.client("state=STATE&code=CODE", access_token: "A", refresh_token: "R") }
+
+      assert error.message.end_with?("cannot be given access_token, refresh_token")
+    end
+  end
+
+  # The code is exchanged at the origin of the base URL of the client it is exchanged for, as the client refreshes its
+  # tokens there
+  class OAuth2AuthorizationTokenEndpointTest < Minitest::Test
+    cover OAuth2Authorization
+
+    REDIRECT_URI = "https://example.com/callback"
+    CODE_VERIFIER = ("a" * 43).freeze
+    TOKENS = {token_type: "bearer", access_token: "ACCESS", refresh_token: "REFRESH", expires_in: 7200}.freeze
+
+    def authorization(**options)
+      OAuth2Authorization.new(client_id: TEST_CLIENT_ID, redirect_uri: REDIRECT_URI, state: "STATE", code_verifier: CODE_VERIFIER, **options)
+    end
+
+    def test_the_code_is_exchanged_at_the_origin_of_the_base_url_of_the_authorization
+      stub = stub_request(:post, "http://localhost:3000/2/oauth2/token").to_return(body: TOKENS.to_json)
+      client = authorization(base_url: "http://localhost:3000/2/").client("state=STATE&code=CODE")
+
+      assert_requested stub
+      assert_equal "http://localhost:3000/2/", client.base_url
+    end
+
+    def test_the_code_is_exchanged_at_the_origin_of_the_base_url_the_client_is_given
+      stub = stub_request(:post, "http://localhost:3000/2/oauth2/token").to_return(body: TOKENS.to_json)
+      client = authorization(base_url: "http://localhost:4000/2/").client("state=STATE&code=CODE", base_url: "http://localhost:3000/2/")
+
+      assert_requested stub
+      assert_equal "http://localhost:3000/2/", client.base_url
+    end
+
+    def test_the_tokens_are_exchanged_at_the_origin_of_the_base_url_of_the_authorization
+      stub = stub_request(:post, "http://localhost:3000/2/oauth2/token").to_return(body: TOKENS.to_json)
+      authorization(base_url: "http://localhost:3000/2/").tokens("state=STATE&code=CODE")
+
+      assert_requested stub
+    end
+  end
+end

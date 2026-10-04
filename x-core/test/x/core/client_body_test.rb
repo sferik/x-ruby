@@ -1,0 +1,146 @@
+# frozen_string_literal: true
+
+require "json"
+require "stringio"
+require_relative "../../test_helper"
+
+module X
+  class ClientBodyTest < Minitest::Test
+    cover_client
+
+    def setup
+      @client = Client.new
+    end
+
+    def test_post_encodes_a_hash_body_as_json
+      stub_request(:post, "https://api.x.com/2/tweets")
+      @client.post("tweets", {text: "Hello"})
+
+      assert_requested :post, "https://api.x.com/2/tweets", body: '{"text":"Hello"}',
+        headers: {"Content-Type" => "application/json; charset=utf-8"}
+    end
+
+    def test_put_encodes_a_hash_body_as_json
+      stub_request(:put, "https://api.x.com/2/tweets/1")
+      @client.put("tweets/1", {"text" => "Hello"})
+
+      assert_requested :put, "https://api.x.com/2/tweets/1", body: '{"text":"Hello"}'
+    end
+
+    def test_post_encodes_a_hash_subclass_body_as_json
+      stub_request(:post, "https://api.x.com/2/tweets")
+      @client.post("tweets", Class.new(Hash).new.merge!(text: "Hello"))
+
+      assert_requested :post, "https://api.x.com/2/tweets", body: '{"text":"Hello"}'
+    end
+
+    def test_post_refuses_a_body_that_is_not_a_string_a_hash_or_an_array
+      error = assert_raises(ArgumentError) { @client.post("tweets", StringIO.new("payload")) }
+
+      assert_equal "body must be a String, a Hash, or an Array, not a StringIO; read an IO, or call to_h, to give what it holds", error.message
+      assert_not_requested :post, "https://api.x.com/2/tweets"
+    end
+
+    def test_put_refuses_a_symbol_body
+      error = assert_raises(ArgumentError) { @client.put("tweets/1", :text) }
+
+      assert_match(/not a Symbol;/, error.message)
+    end
+
+    def test_post_sends_a_string_body_as_given
+      stub_request(:post, "https://api.x.com/2/tweets")
+      @client.post("tweets", '{"text": "Hello"}')
+
+      assert_requested :post, "https://api.x.com/2/tweets", body: '{"text": "Hello"}'
+    end
+
+    def test_post_without_a_body
+      stub_request(:post, "https://api.x.com/2/tweets")
+      @client.post("tweets")
+
+      assert_requested(:post, "https://api.x.com/2/tweets") { |request| request.body.to_s.empty? }
+    end
+
+    def test_a_get_sends_no_content_type
+      stub_request(:get, "https://api.x.com/2/users/me")
+      @client.get("users/me")
+
+      assert_requested(:get, "https://api.x.com/2/users/me") { |request| request.headers.to_h["Content-Type"].nil? }
+    end
+
+    def test_a_delete_sends_no_content_type
+      stub_request(:delete, "https://api.x.com/2/tweets/1")
+      @client.delete("tweets/1")
+
+      assert_requested(:delete, "https://api.x.com/2/tweets/1") { |request| request.headers.to_h["Content-Type"].nil? }
+    end
+
+    def test_a_post_without_a_body_sends_no_content_type
+      stub_request(:post, "https://api.x.com/2/media/upload/1/finalize")
+      @client.post("media/upload/1/finalize")
+
+      assert_requested(:post, "https://api.x.com/2/media/upload/1/finalize") { |request| request.headers.to_h["Content-Type"].nil? }
+    end
+
+    def test_post_encodes_a_form
+      stub_request(:post, "https://api.x.com/1.1/account/settings.json")
+      @client.post("https://api.x.com/1.1/account/settings.json", form: {lang: "en", tile: true})
+
+      assert_requested :post, "https://api.x.com/1.1/account/settings.json", body: "lang=en&tile=true",
+        headers: {"Content-Type" => "application/x-www-form-urlencoded; charset=utf-8"}
+    end
+
+    def test_post_encodes_a_form_as_it_encodes_query_parameters
+      stub_request(:post, "https://api.x.com/1.1/statuses/update.json")
+      @client.post("https://api.x.com/1.1/statuses/update.json", form: {media_ids: [1, 2], since: Time.utc(2024, 1, 1), place_id: nil})
+
+      assert_requested :post, "https://api.x.com/1.1/statuses/update.json", body: "media_ids=1%2C2&since=2024-01-01T00%3A00%3A00Z"
+    end
+
+    def test_a_body_beside_a_form_is_refused_before_any_request
+      error = assert_raises(ArgumentError) { @client.put("settings", {dropped: true}, form: {lang: "en"}) }
+
+      assert_equal "Pass a body or form fields, not both, since a request sends one body", error.message
+      assert_not_requested :put, "https://api.x.com/2/settings"
+    end
+
+    def test_post_encodes_an_array_body_as_json
+      stub_request(:post, "https://api.x.com/2/tweets")
+      @client.post("tweets", [{text: "Hello"}, {text: "World"}])
+
+      assert_requested :post, "https://api.x.com/2/tweets", body: '[{"text":"Hello"},{"text":"World"}]',
+        headers: {"Content-Type" => "application/json; charset=utf-8"}
+    end
+
+    def test_post_sends_a_string_subclass_body_as_given
+      stub_request(:post, "https://api.x.com/2/tweets")
+      @client.post("tweets", Class.new(String).new('{"text": "Hello"}'))
+
+      assert_requested :post, "https://api.x.com/2/tweets", body: '{"text": "Hello"}'
+    end
+
+    def test_form_headers_can_be_overridden
+      stub_request(:post, "https://api.x.com/2/settings")
+      @client.post("settings", form: {lang: "en"}, headers: {"Content-Type" => "text/plain"})
+
+      assert_requested :post, "https://api.x.com/2/settings", headers: {"Content-Type" => "text/plain"}
+    end
+
+    def test_form_headers_survive_redirects
+      stub_request(:post, "https://api.x.com/2/old")
+        .to_return(status: 307, headers: {"Location" => "https://api.x.com/2/new"})
+      stub_request(:post, "https://api.x.com/2/new")
+      @client.post("old", form: {lang: "en"})
+
+      assert_requested :post, "https://api.x.com/2/new", body: "lang=en", headers: {"Content-Type" => "application/x-www-form-urlencoded; charset=utf-8"}
+    end
+
+    def test_form_body_is_signed
+      client = Client.new(**test_oauth_credentials)
+      stub_request(:post, "https://api.x.com/2/settings")
+      client.post("settings", form: {lang: "en"})
+
+      assert_requested(:post, "https://api.x.com/2/settings") { |request| request.headers["Authorization"].include?("oauth_signature") }
+    end
+  end
+end

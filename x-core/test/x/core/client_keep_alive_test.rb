@@ -1,0 +1,30 @@
+# frozen_string_literal: true
+
+require_relative "../../test_helper"
+
+module X
+  class ClientKeepAliveTest < Minitest::Test
+    cover_client
+
+    def test_a_client_keeps_connections_open_for_the_default_time
+      assert_equal Core.const_get(:Connection)::DEFAULT_KEEP_ALIVE_TIMEOUT, Client.new.keep_alive_timeout
+    end
+
+    def test_a_client_takes_a_keep_alive_timeout
+      client = Client.new(keep_alive_timeout: 5)
+
+      assert_equal 5, client.keep_alive_timeout
+      assert_equal 5, internals(client).instance_variable_get(:@connection).keep_alive_timeout
+    end
+
+    def test_the_keep_alive_timeout_of_a_copy_reaches_its_connection
+      copy = Client.new.with(keep_alive_timeout: 5)
+
+      assert_equal 5, internals(copy).instance_variable_get(:@connection).keep_alive_timeout
+    end
+
+    def test_a_copy_keeps_the_keep_alive_timeout
+      assert_equal 5, Client.new(keep_alive_timeout: 5).with(read_timeout: 10).keep_alive_timeout
+    end
+  end
+end

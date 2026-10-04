@@ -1,0 +1,150 @@
+# frozen_string_literal: true
+
+require_relative "../../test_helper"
+
+module X
+  class ClientCredentialsValidationTest < Minitest::Test
+    cover_client
+    cover Core.const_get(:CredentialValidator)
+
+    def assert_incomplete(**credentials)
+      error = assert_raises(ArgumentError) { Client.new(**credentials) }
+
+      assert_equal TEST_INCOMPLETE_CREDENTIALS, error.message
+    end
+
+    def test_no_credentials_send_requests_without_them
+      assert_instance_of Authenticator, Client.new.authenticator
+    end
+
+    def test_an_expiration_time_that_is_not_a_time_is_refused
+      error = assert_raises(ArgumentError) { Client.new(**test_oauth2_credentials, expires_at: 1_789_600_000) }
+
+      assert_equal TEST_INVALID_EXPIRES_AT, error.message
+    end
+
+    def test_an_expiration_time_that_is_not_a_time_is_refused_beside_a_bearer_token
+      error = assert_raises(ArgumentError) { Client.new(bearer_token: TEST_BEARER_TOKEN, expires_at: "2026-09-28T00:00:00Z") }
+
+      assert_equal TEST_INVALID_EXPIRES_AT, error.message
+    end
+
+    def test_an_expiration_time_of_a_subclass_of_time_is_allowed
+      expires_at = Class.new(Time).at(Time.now.to_i + 60)
+
+      assert_same expires_at, Client.new(**test_oauth2_credentials, expires_at:).expires_at
+    end
+
+    def test_copying_with_an_expiration_time_that_is_not_a_time_is_refused
+      client = Client.new(**test_oauth2_credentials, expires_at: Time.now + 60)
+
+      assert_raises(ArgumentError) { client.with(expires_at: "2026-09-16T00:00:00Z") }
+      assert_kind_of Time, client.expires_at
+    end
+
+    def test_each_credential_alone_is_incomplete
+      test_oauth_credentials.merge(test_oauth2_credentials).except(:api_key, :access_token).each do |name, value|
+        assert_incomplete(name => value)
+      end
+    end
+
+    def test_an_access_token_alone_is_incomplete
+      assert_incomplete(access_token: TEST_ACCESS_TOKEN)
+    end
+
+    def test_an_api_key_alone_is_incomplete
+      assert_incomplete(api_key: TEST_API_KEY)
+    end
+
+    def test_an_access_token_without_its_secret_is_incomplete_rather_than_app_only
+      assert_incomplete(**test_oauth_credentials.except(:access_token_secret))
+    end
+
+    def test_an_access_token_beside_a_bearer_token_is_incomplete
+      assert_incomplete(bearer_token: TEST_BEARER_TOKEN, access_token: TEST_ACCESS_TOKEN)
+    end
+
+    def test_a_credential_of_an_incomplete_set_beside_a_bearer_token_is_incomplete
+      test_oauth_credentials.merge(test_oauth2_credentials).each do |name, value|
+        assert_incomplete(:bearer_token => TEST_BEARER_TOKEN, name => value)
+      end
+    end
+
+    def test_an_access_token_secret_beside_app_only_credentials_is_incomplete
+      assert_incomplete(**test_oauth_credentials.except(:access_token))
+    end
+
+    def test_a_credential_of_an_incomplete_set_beside_a_complete_one_is_incomplete
+      assert_incomplete(**test_oauth_credentials, refresh_token: TEST_REFRESH_TOKEN)
+      assert_incomplete(**test_oauth2_credentials, api_key: TEST_API_KEY)
+      assert_incomplete(**test_oauth2_credentials, access_token_secret: TEST_ACCESS_TOKEN_SECRET)
+    end
+
+    def test_a_client_secret_without_the_rest_of_its_set_is_incomplete
+      assert_incomplete(**test_oauth_credentials, client_secret: TEST_CLIENT_SECRET)
+    end
+
+    def test_an_oauth2_access_token_needs_no_refresh_token
+      [test_oauth2_credentials, test_oauth2_credentials.except(:client_secret)].each do |credentials|
+        assert_instance_of OAuth2Authenticator, Client.new(**credentials.except(:refresh_token)).authenticator
+      end
+    end
+
+    def test_a_refresh_token_without_a_client_id_is_incomplete
+      assert_incomplete(**test_oauth2_credentials.except(:client_id))
+    end
+
+    def test_a_public_oauth2_client_needs_no_client_secret
+      assert_instance_of OAuth2Authenticator, Client.new(**test_oauth2_credentials.except(:client_secret)).authenticator
+    end
+
+    def test_complete_sets_beside_each_other_are_allowed
+      assert_instance_of OAuth1Authenticator, Client.new(**test_oauth_credentials, bearer_token: TEST_BEARER_TOKEN).authenticator
+      assert_instance_of OAuth2Authenticator, Client.new(**test_oauth2_credentials, api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET).authenticator
+      assert_instance_of AppOnlyAuthenticator, Client.new(bearer_token: TEST_BEARER_TOKEN, api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET).authenticator
+    end
+
+    def test_a_copy_with_an_incomplete_set_raises
+      client = Client.new(**test_oauth_credentials)
+
+      assert_raises(ArgumentError) { client.with(access_token_secret: nil) }
+    end
+  end
+
+  # OAuth 2.0 credentials share the access token of OAuth 1.0a ones, which a client authenticates with first, so a
+  # client refuses them beside a complete set of OAuth 1.0a credentials, where they would go unused
+  class ClientMixedCredentialsTest < Minitest::Test
+    cover_client
+    cover Core.const_get(:CredentialValidator)
+
+    def test_oauth2_credentials_beside_oauth1_ones_are_refused
+      error = assert_raises(ArgumentError) do
+        Client.new(**test_oauth_credentials, client_id: TEST_CLIENT_ID, client_secret: TEST_CLIENT_SECRET, refresh_token: TEST_REFRESH_TOKEN)
+      end
+
+      assert_equal "client_id, client_secret, refresh_token are OAuth 2.0 credentials, which a client given OAuth 1.0a " \
+        "credentials would leave unused, since it authenticates with those, and the access_token they share is the " \
+        "OAuth 1.0a one. Pass the credentials of one or the other", error.message
+    end
+
+    def test_each_oauth2_credential_beside_oauth1_ones_is_refused
+      [{client_id: TEST_CLIENT_ID}, {client_id: TEST_CLIENT_ID, refresh_token: TEST_REFRESH_TOKEN}].each do |oauth2|
+        error = assert_raises(ArgumentError) { Client.new(**test_oauth_credentials, **oauth2) }
+
+        assert_match(/\A#{oauth2.keys.join(", ")} are OAuth 2.0 credentials/, error.message)
+      end
+    end
+
+    def test_oauth2_credentials_beside_part_of_oauth1_ones_build_an_oauth2_authenticator
+      client = Client.new(**test_oauth2_credentials, api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET)
+
+      assert_instance_of OAuth2Authenticator, client.authenticator
+    end
+
+    def test_a_copy_that_completes_oauth1_credentials_beside_oauth2_ones_is_refused
+      client = Client.new(**test_oauth2_credentials, api_key: TEST_API_KEY, api_key_secret: TEST_API_KEY_SECRET)
+
+      assert_raises(ArgumentError) { client.with(access_token_secret: TEST_ACCESS_TOKEN_SECRET) }
+    end
+  end
+end

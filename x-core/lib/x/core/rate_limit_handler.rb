@@ -1,0 +1,166 @@
+# frozen_string_literal: true
+
+require_relative "errors/too_many_requests"
+require_relative "setting_validator"
+
+module X
+  module Core
+    # Retries requests the API refuses for a rate limit, waiting until the limit resets
+    #
+    # Internal to x-core: Client retries with it, and takes max_rate_limit_retries and max_rate_limit_wait.
+    #
+    # @api private
+    class RateLimitHandler
+      # Default maximum number of retries, which retries nothing
+      DEFAULT_MAX_RETRIES = 0
+      # Default maximum number of seconds to wait for a rate limit to reset, the length of a 15-minute window
+      DEFAULT_MAX_WAIT = 900
+      # Seconds to wait before the first retry of a request refused without a Retry-After header or a reset time,
+      # doubled for each retry after
+      UNREPORTED_RESET_WAIT = 60
+      # The most seconds added at random to a wait, which keep apart the requests one reset releases
+      RESET_JITTER = 5
+      # The fiber-local key of the retries counted across the attempts of the request being sent
+      RETRIES = :x_core_rate_limit_retries
+      # The fiber-local key of the retries Client#with_retries hands down to the request it sends again
+      HANDED = :x_core_rate_limit_retries_handed
+
+      # The maximum number of times to retry a request refused for a rate limit
+      # @api private
+      # @return [Integer] the maximum number of retries
+      # @example Get or set the maximum retries
+      #   handler.max_rate_limit_retries = 3
+      attr_reader :max_rate_limit_retries
+
+      # The maximum number of seconds to wait for a rate limit to reset before retrying
+      # @api private
+      # @return [Integer, Float] the maximum wait in seconds
+      # @example Get or set the maximum wait
+      #   handler.max_rate_limit_wait = 60
+      attr_reader :max_rate_limit_wait
+
+      # Initialize a new rate limit handler
+      #
+      # @api private
+      # @param max_rate_limit_retries [Integer] the maximum number of times to retry a request refused for a rate limit
+      # @param max_rate_limit_wait [Integer, Float] the maximum number of seconds to wait for a rate limit to reset
+      # @return [RateLimitHandler] a new instance
+      # @raise [ArgumentError] if the maximum number of retries is not an Integer of at least 0, or the maximum wait
+      #   is not a number of seconds of at least 0
+      # @example Create a rate limit handler
+      #   handler = X::Core::RateLimitHandler.new(max_rate_limit_retries: 3)
+      def initialize(max_rate_limit_retries: DEFAULT_MAX_RETRIES, max_rate_limit_wait: DEFAULT_MAX_WAIT)
+        @max_rate_limit_retries = SettingValidator.count!(:max_rate_limit_retries, max_rate_limit_retries)
+        @max_rate_limit_wait = SettingValidator.seconds!(:max_rate_limit_wait, max_rate_limit_wait)
+      end
+
+      # Run a request, running it again after a rate limit resets
+      #
+      # A request is retried while retries remain and the wait the response asks for is within the maximum wait;
+      # otherwise the error is raised, as it is for the usage cap of the project, which lasts until the month ends. A response that asks for neither a wait nor a reset time waits a minute
+      # before the first retry, doubling the wait for each retry after, as X recommends. The block must build its
+      # request anew each time, so that each attempt is signed afresh.
+      #
+      # Every request of an app shares the app's limits, and so the time they reset, so a few seconds are added at
+      # random to each wait, to keep the requests one reset releases from being sent again in one burst.
+      #
+      # @api private
+      # @yield runs the request
+      # @return [Object] what the block returns
+      # @raise [TooManyRequests] if the request is refused once more than the retries allow, or for too long a wait
+      # @example Retry a request
+      #   handler.handle { client.get("users/me") }
+      def handle
+        retries = 0
+        begin
+          yield
+        rescue TooManyRequests => e
+          retries = counted(retries)
+          sleep wait_before_retry(e, retries)
+          retry
+        end
+      end
+
+      # Count the retries of each attempt of a request as retries of one request
+      #
+      # A request that another handler sends again, after a server error, is rate limited anew on each attempt, so its
+      # retries are counted across the attempts, rather than from nothing on each, so that max_rate_limit_retries
+      # bounds the retries of the request. The count is the request's own: a request a callback of it sends, such as
+      # on_response or save_tokens, counts afresh, and leaves the count of the request as it was. A request that
+      # Client#with_retries sends again counts on from the retries its earlier attempts took.
+      #
+      # @api private
+      # @yield runs the attempts of the request
+      # @return [Object] what the block returns
+      # @example Count the rate limits of a request across its attempts
+      #   handler.counting { retry_handler.handle(idempotent: true) { handler.handle { request } } }
+      def counting
+        previous = Thread.current[RETRIES]
+        handed = Thread.current[HANDED] #: Integer?
+        Thread.current[HANDED] = nil
+        Thread.current[RETRIES] = handed || 0
+        begin
+          yield
+        ensure
+          Thread.current[HANDED] = Thread.current.fetch(RETRIES) if handed
+          Thread.current[RETRIES] = previous
+        end
+      end
+
+      # Hand the retries of a request down across the attempts with_retries sends
+      #
+      # It is what Client#with_retries counts with, so that the request it wraps counts on from the retries its earlier
+      # attempts took.
+      #
+      # @api private
+      # @yield runs the attempts of the request
+      # @return [Object] what the block returns
+      # @example Count the rate limits of a request across the attempts with_retries sends
+      #   handler.handing_down { retry_handler.handle(idempotent: true) { client.post(...) } }
+      def handing_down
+        previous = Thread.current[HANDED]
+        begin
+          Thread.current[HANDED] = 0
+          yield
+        ensure
+          Thread.current[HANDED] = previous
+        end
+      end
+
+      private
+
+      # The number of a retry, counted across the attempts of a request that are counted
+      # @api private
+      # @param retries [Integer] the retries counted by the attempt alone
+      # @return [Integer] the number of the retry
+      def counted(retries)
+        shared = Thread.current[RETRIES] #: Integer?
+        return retries + 1 unless shared
+
+        Thread.current[RETRIES] = shared + 1
+      end
+
+      # The seconds to wait before a retry, raising the error if it may not retry
+      #
+      # The random share is added to the wait rather than taken off it, since a request sent before the limit
+      # resets is refused again, and so it is not counted against the maximum wait, which is the longest reset a
+      # request waits for.
+      #
+      # @api private
+      # @param error [TooManyRequests] the error the request raised
+      # @param retries [Integer] the number of the retry, counting from one
+      # @return [Float] the seconds the response asks the request to wait, and a random share of RESET_JITTER
+      # @raise [TooManyRequests] the error being rescued, if no retries remain, the wait is too long, or the project
+      #   has reached its usage cap
+      def wait_before_retry(error, retries)
+        raise if retries > max_rate_limit_retries || error.problem&.usage_capped?
+
+        wait = error.retry_after || UNREPORTED_RESET_WAIT << (retries - 1)
+        raise if wait > max_rate_limit_wait
+
+        wait + (rand * RESET_JITTER)
+      end
+    end
+    private_constant :RateLimitHandler
+  end
+end

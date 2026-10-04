@@ -1,0 +1,396 @@
+# The public interface of x-core, as its @api public documentation states it. The modules X::Client and the errors
+# include, the handlers, parsers, and connection of X::Core, and the constants, methods, and instance variables the
+# code keeps private are declared in sig/internal/x-core.rbs, which reopens the same modules and classes, so that
+# Steep type checks the gem against them, but which the gem does not ship. The public methods those modules give a
+# class are declared here on the class.
+module X
+  module Core
+    VERSION: String
+
+    def self.gem_version: () -> Gem::Version
+  end
+
+  # What an authenticator is guaranteed to read of the request it authenticates, which is all the authenticators of
+  # x-core read of it: its method, as a Symbol, the URI it is sent to, its body, and a header by its name
+  interface _AuthenticatorRequest
+    def http_method: () -> Symbol
+    def uri: () -> URI::Generic
+    def body: () -> String?
+    def []: (String name) -> String?
+  end
+
+  class Authenticator
+    AUTHENTICATION_HEADER: String
+
+    def user_id: () -> Integer?
+    def inspect: () -> String
+    def headers: (_AuthenticatorRequest request) -> Hash[String, String]
+    def marshal_dump: () -> bot
+    def encode_with: (untyped coder) -> bot
+    def as_json: (*untyped) -> bot
+    def to_json: (?JSON::State? state) -> bot
+  end
+
+  class BearerTokenAuthenticator < Authenticator
+    def initialize: (bearer_token: String) -> void
+    def headers: (_AuthenticatorRequest? request) -> Hash[String, String]
+  end
+
+  class OAuth2Authorization
+    AUTHORIZATION_URL: String
+    DEFAULT_SCOPES: Array[String]
+
+    attr_reader client_id: String
+    attr_reader redirect_uri: String
+    attr_reader scopes: Array[String]
+    attr_reader state: String
+    attr_reader code_verifier: String
+
+    def initialize: (client_id: String, redirect_uri: String, ?client_secret: String?, ?scopes: Array[String], ?state: String, ?code_verifier: String, ?base_url: String, ?proxy_url: (URI::Generic | String)?, ?open_timeout: Numeric?, ?read_timeout: Numeric?, ?write_timeout: Numeric?, ?keep_alive_timeout: Numeric, ?debug_output: _DebugOutput?, ?headers: headers) -> void
+    def inspect: () -> String
+    def url: () -> String
+    def tokens: (String | Hash[String | Symbol, String] callback) -> OAuth2Tokens
+    def client: (String | Hash[String | Symbol, String] callback, ?base_url: String, ?open_timeout: Numeric?, ?read_timeout: Numeric?, ?write_timeout: Numeric?, ?keep_alive_timeout: Numeric, ?debug_output: _DebugOutput?, ?proxy_url: (URI::Generic | String)?, ?default_array_class: Class, ?default_object_class: object_class, ?headers: headers, ?max_redirects: Integer, ?max_rate_limit_retries: Integer, ?max_rate_limit_wait: Numeric, ?max_retries: Integer, ?on_response: _ResponseHook?, ?save_tokens: _TokenSaver?, ?load_tokens: _TokenLoader?) -> Client
+    def marshal_dump: () -> bot
+    def encode_with: (untyped coder) -> bot
+    def as_json: (*untyped) -> bot
+    def to_json: (?JSON::State? state) -> bot
+  end
+
+  class AuthorizationDenied < Error
+    attr_reader error_code: String?
+
+    def initialize: (?String? message, ?error_code: String?) -> void
+  end
+
+  class TokenReportFailed < Error
+    attr_reader client: Client?
+    attr_reader tokens: OAuth2Tokens?
+
+    def initialize: (?String? message, ?client: Client?, ?tokens: OAuth2Tokens?) -> void
+    def to_s: () -> String
+  end
+
+  class AppOnlyAuthenticator < Authenticator
+
+    attr_reader api_key: String
+    def initialize: (api_key: String, api_key_secret: String, ?bearer_token: String?) -> void
+    def headers: (_AuthenticatorRequest? request) -> Hash[String, String]
+  end
+
+  class OAuth1Authenticator < Authenticator
+    attr_reader api_key: String
+    def initialize: (api_key: String, api_key_secret: String, access_token: String, access_token_secret: String) -> void
+    def user_id: () -> Integer?
+    def headers: (_AuthenticatorRequest request) -> Hash[String, String]
+  end
+
+  class Error < StandardError
+  end
+
+  class ClientError < HTTPError
+  end
+
+  class AuthorizationError < ClientError
+    def error_code: () -> String?
+  end
+
+  class BadGateway < ServerError
+  end
+
+  class BadRequest < ClientError
+  end
+
+  class Conflict < ClientError
+  end
+
+  # A resource that Problem#about? reads the identifier of, such as the resources of x-resources
+  interface _Identified
+    def id: () -> untyped
+  end
+
+  class Problem
+    attr_reader attrs: Hash[String, untyped]
+
+    def self.all_from: (Hash[String, untyped]? body) -> Array[Problem]
+    def initialize: (Hash[String | Symbol, untyped] attrs) -> void
+    def to_h: () -> Hash[String, untyped]
+    def title: () -> String?
+    def detail: () -> String?
+    def type: () -> String?
+    def resource_type: () -> String?
+    def resource_id: () -> String?
+    def parameter: () -> String?
+    def value: () -> untyped
+    def message: () -> String?
+    def not_found?: () -> bool
+    def disconnect?: () -> bool
+    def usage_capped?: () -> bool
+    def about?: (_Identified | Integer | String resource) -> bool
+    def ==: (untyped other) -> bool
+    def eql?: (untyped other) -> bool
+    def hash: () -> Integer
+    def as_json: (*untyped) -> Hash[String, untyped]
+    def to_json: (?JSON::State? state) -> String
+    def inspect: () -> String
+    def marshal_dump: () -> untyped
+    def marshal_load: (untyped state) -> void
+    def encode_with: (untyped coder) -> void
+    def init_with: (untyped coder) -> void
+  end
+
+  class HTTPError < Error
+    attr_reader http_response : Net::HTTPResponse
+    attr_reader problems: Array[Problem]
+    attr_reader problem: Problem?
+
+    def initialize: (?String? message, ?http_response: Net::HTTPResponse?, ?status: Integer?, ?headers: Hash[String | Symbol, String]?, ?body: String?, ?http_method: (Symbol | String)?, ?uri: URI::Generic?) -> void
+    def http_method: () -> Symbol?
+    def uri: () -> URI::Generic?
+    def headers: () -> Hash[String, String]
+    def status: () -> Integer
+    def body: () -> String?
+    def retry_after: () -> Integer?
+  end
+
+  class PaymentRequired < ClientError
+  end
+
+  class Forbidden < ClientError
+  end
+
+  class GatewayTimeout < ServerError
+  end
+
+  class Gone < ClientError
+  end
+
+  class InternalServerError < ServerError
+  end
+
+  class MethodNotAllowed < ClientError
+  end
+
+  class NetworkError < Error
+    def initialize: (?String? message, ?http_method: (Symbol | String)?, ?uri: URI::Generic?) -> void
+    def http_method: () -> Symbol?
+    def uri: () -> URI::Generic?
+  end
+
+  class NotAcceptable < ClientError
+  end
+
+  class NotFound < ClientError
+  end
+
+  class PayloadTooLarge < ClientError
+  end
+
+  class RequestTimeout < ClientError
+  end
+
+  class ServerError < HTTPError
+  end
+
+  class ServiceUnavailable < ServerError
+  end
+
+  class TooManyRedirects < Error
+    def initialize: (?String? message, ?http_method: (Symbol | String)?, ?uri: URI::Generic?) -> void
+    def http_method: () -> Symbol?
+    def uri: () -> URI::Generic?
+  end
+
+  class UnavailableForLegalReasons < ClientError
+  end
+
+  class UnsupportedMediaType < ClientError
+  end
+
+  class UnsupportedOperation < Error
+  end
+
+  class UnsupportedFormat < Error
+  end
+
+  class InvalidResponse < HTTPError
+    def body: () -> String?
+
+    def initialize: (?String? message, ?http_response: Net::HTTPResponse?, ?status: Integer?, ?headers: Hash[String | Symbol, String]?, ?body: String?, ?http_method: (Symbol | String)?, ?uri: URI::Generic?) -> void
+  end
+
+  class TooManyRequests < ClientError
+    def rate_limits: -> Array[RateLimit]
+    def rate_limit: -> RateLimit?
+    def exhausted_rate_limits: -> Array[RateLimit]
+    def limiting_rate_limit: -> RateLimit?
+    def reset_at: -> Time?
+    def reset_in: -> Integer?
+    def retry_after: -> Integer?
+  end
+
+  class Unauthorized < ClientError
+  end
+
+  class UnprocessableEntity < ClientError
+  end
+
+  # Where the requests and responses of a connection are written for debugging, as Net::HTTP writes them: an IO,
+  # a StringIO, a Logger, or anything else that takes a String with <<
+  interface _DebugOutput
+    def <<: (String data) -> untyped
+  end
+
+  interface _ResponseHook
+    def call: (Response response) -> untyped
+  end
+
+  class StreamResponse
+    attr_reader uri: URI::Generic
+    attr_reader http_response: Net::HTTPResponse
+
+    def headers: () -> Hash[String, String]
+    def status: () -> Integer
+    def rate_limits: () -> Array[RateLimit]
+    def rate_limit: () -> RateLimit?
+    def read_body: () -> String?
+                 | () { (String chunk) -> void } -> nil
+  end
+
+  class Response
+    attr_reader http_method: Symbol
+    attr_reader uri: URI::Generic
+    attr_reader http_response: Net::HTTPResponse
+
+    def initialize: (http_method: Symbol | String, uri: URI::Generic, ?http_response: Net::HTTPResponse?, ?status: Integer?, ?headers: Hash[String | Symbol, String]?, ?body: String?) -> void
+    def headers: () -> Hash[String, String]
+    def body: () -> String?
+    def status: () -> Integer
+    def success?: () -> bool
+    def rate_limits: () -> Array[RateLimit]
+    def rate_limit: () -> RateLimit?
+    def resource_counts: () -> Hash[String, Integer]
+    def resource_count: () -> Integer
+  end
+
+  class RateLimit
+    RATE_LIMIT_TYPE: String
+    APP_LIMIT_TYPE: String
+    USER_LIMIT_TYPE: String
+    TYPES: Array[String]
+
+    attr_reader type: String
+    def limit: -> Integer
+    def remaining: -> Integer
+    def exhausted?: -> bool
+    def reset_at: -> Time
+    def reset_in: -> Integer
+  end
+
+  class OAuth2Authenticator < Authenticator
+
+    attr_reader client_id: String
+    attr_reader expires_at: Time?
+    attr_reader scopes: Array[String]?
+    def initialize: (client_id: String, access_token: String, ?refresh_token: String?, ?client_secret: String?, ?expires_at: Time?, ?scopes: Array[String]?, ?load_tokens: _TokenLoader?) -> void
+    def inspect: () -> String
+    def token_expired?: -> bool
+    def refresh!: -> OAuth2Tokens
+    def headers: (_AuthenticatorRequest? request) -> Hash[String, String]
+  end
+
+  class OAuth2Tokens
+    def self.from_json: (String | Hash[String | Symbol, untyped] json) -> OAuth2Tokens
+    attr_reader access_token: String
+    attr_reader refresh_token: String?
+    attr_reader expires_at: Time?
+    attr_reader scopes: Array[String]?
+    def initialize: (access_token: String, ?refresh_token: String?, ?expires_at: Time?, ?scopes: Array[String]?) -> void
+    def to_h: () -> {access_token: String, refresh_token: String?, expires_at: Time?, scopes: Array[String]?}
+    def ==: (untyped other) -> bool
+    def eql?: (untyped other) -> bool
+    def hash: () -> Integer
+    def as_json: (*untyped) -> Hash[String, untyped]
+    def to_json: (?JSON::State? state) -> String
+    def inspect: () -> String
+    def marshal_dump: () -> untyped
+    def marshal_load: (untyped state) -> void
+    def encode_with: (untyped coder) -> void
+    def init_with: (untyped coder) -> void
+  end
+
+  interface _TokenSaver
+    def call: (OAuth2Tokens tokens) -> untyped
+  end
+
+  # What reads the OAuth2Tokens in the storage that the processes sharing the tokens of a user read, or nil for none
+  interface _TokenLoader
+    def call: () -> OAuth2Tokens?
+  end
+
+  # What builds the result of a request from the whole of its parsed body, as the object_class of a request, a
+  # stream, or a client; later versions of 1.x may pass it keywords of their own, which it accepts with **
+  interface _ResponseBuilder
+    def from_response: (untyped body, client: Client, **untyped) -> untyped
+  end
+
+  # The object_class of a request: a class JSON.parse builds each JSON object into, or a response builder
+  type object_class = Class | _ResponseBuilder
+
+  type params = Hash[String | Symbol, untyped]
+  type headers = Hash[String | Symbol, String]
+  type body = String | Hash[untyped, untyped] | Array[untyped]
+
+  class Client
+    DEFAULT_BASE_URL: String
+    DEFAULT_ARRAY_CLASS: singleton(Array)
+    DEFAULT_OBJECT_CLASS: singleton(Hash)
+    DEFAULT_OPEN_TIMEOUT: Float | Integer
+    DEFAULT_READ_TIMEOUT: Float | Integer
+    DEFAULT_WRITE_TIMEOUT: Float | Integer
+    DEFAULT_KEEP_ALIVE_TIMEOUT: Float | Integer
+    DEFAULT_MAX_REDIRECTS: Integer
+    DEFAULT_MAX_RATE_LIMIT_RETRIES: Integer
+    DEFAULT_MAX_RATE_LIMIT_WAIT: Float | Integer
+    DEFAULT_MAX_RETRIES: Integer
+
+    attr_reader save_tokens: _TokenSaver?
+    attr_reader load_tokens: _TokenLoader?
+    attr_reader authenticator: Authenticator | AppOnlyAuthenticator | BearerTokenAuthenticator | OAuth1Authenticator | OAuth2Authenticator
+    def initialize: (?api_key: String?, ?api_key_secret: String?, ?access_token: String?, ?access_token_secret: String?, ?bearer_token: String?, ?client_id: String?, ?client_secret: String?, ?refresh_token: String?, ?expires_at: Time?, ?scopes: Array[String]?, ?authenticator: Authenticator?, ?base_url: String, ?open_timeout: Numeric?, ?read_timeout: Numeric?, ?write_timeout: Numeric?, ?keep_alive_timeout: Numeric, ?debug_output: _DebugOutput?, ?proxy_url: (URI::Generic | String)?, ?default_array_class: Class, ?default_object_class: object_class, ?headers: headers, ?max_redirects: Integer, ?max_rate_limit_retries: Integer, ?max_rate_limit_wait: Numeric, ?max_retries: Integer, ?on_response: _ResponseHook?, ?save_tokens: _TokenSaver?, ?load_tokens: _TokenLoader?) -> void
+    def inspect: () -> String
+    def with: (?api_key: String?, ?api_key_secret: String?, ?access_token: String?, ?access_token_secret: String?, ?bearer_token: String?, ?client_id: String?, ?client_secret: String?, ?refresh_token: String?, ?expires_at: Time?, ?scopes: Array[String]?, ?authenticator: Authenticator?, ?base_url: String, ?open_timeout: Numeric?, ?read_timeout: Numeric?, ?write_timeout: Numeric?, ?keep_alive_timeout: Numeric, ?debug_output: _DebugOutput?, ?proxy_url: (URI::Generic | String)?, ?default_array_class: Class, ?default_object_class: object_class, ?headers: headers, ?max_redirects: Integer, ?max_rate_limit_retries: Integer, ?max_rate_limit_wait: Numeric, ?max_retries: Integer, ?on_response: _ResponseHook?, ?save_tokens: _TokenSaver?, ?load_tokens: _TokenLoader?) -> Client
+    def app_only: () -> (Client | self)
+    def api_key: () -> String?
+    def client_id: () -> String?
+    def expires_at: () -> Time?
+    def scopes: () -> Array[String]?
+    def base_url: () -> String
+    def default_array_class: () -> Class
+    def default_object_class: () -> object_class
+    def on_response: () -> _ResponseHook?
+    def headers: () -> Hash[String, String]
+    def open_timeout: () -> Numeric?
+    def read_timeout: () -> Numeric?
+    def write_timeout: () -> Numeric?
+    def keep_alive_timeout: () -> Numeric
+    def debug_output: () -> _DebugOutput?
+    def max_redirects: () -> Integer
+    def max_rate_limit_retries: () -> Integer
+    def max_rate_limit_wait: () -> Numeric
+    def max_retries: () -> Integer
+    def get: (String endpoint, ?params: params?, ?headers: headers, ?array_class: Class, ?object_class: object_class) ?{ (Response) -> void } -> untyped
+    def post: (String endpoint, ?body? body, ?params: params?, ?form: params?, ?headers: headers, ?array_class: Class, ?object_class: object_class) ?{ (Response) -> void } -> untyped
+    def put: (String endpoint, ?body? body, ?params: params?, ?form: params?, ?headers: headers, ?array_class: Class, ?object_class: object_class) ?{ (Response) -> void } -> untyped
+    def delete: (String endpoint, ?params: params?, ?headers: headers, ?array_class: Class, ?object_class: object_class) ?{ (Response) -> void } -> untyped
+    def get_stream: [T] (String endpoint, ?params: params?, ?headers: headers) { (StreamResponse response) -> T } -> T
+    def close: () -> void
+    def with_retries: [T] () { () -> T } -> T
+    def memoized: (Symbol key) -> untyped
+    def memoize: [T] (Symbol key, T value) -> T
+    def marshal_dump: () -> bot
+    def encode_with: (untyped coder) -> bot
+    def as_json: (*untyped) -> bot
+    def to_json: (?JSON::State? state) -> bot
+  end
+end

@@ -1,0 +1,22 @@
+# frozen_string_literal: true
+
+require_relative "../../test_helper"
+
+module X
+  class BearerTokenAuthenticatorTest < Minitest::Test
+    cover BearerTokenAuthenticator
+
+    def setup
+      @authenticator = BearerTokenAuthenticator.new(bearer_token: TEST_BEARER_TOKEN)
+    end
+
+    def test_header
+      assert_kind_of Hash, @authenticator.headers(nil)
+      assert_equal "Bearer #{TEST_BEARER_TOKEN}", @authenticator.headers(nil)["Authorization"]
+    end
+
+    def test_inspect_hides_the_bearer_token
+      assert_equal "#<X::BearerTokenAuthenticator>", @authenticator.inspect
+    end
+  end
+end

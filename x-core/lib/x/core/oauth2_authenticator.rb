@@ -1,0 +1,296 @@
+# frozen_string_literal: true
+
+require "simple_oauth"
+require_relative "authenticator"
+require_relative "connection"
+require_relative "credential_validator"
+require_relative "setting_validator"
+require_relative "errors/unsupported_operation"
+require_relative "oauth2_refresh"
+
+module X
+  module Core
+    # Handles OAuth 2.0 authentication, refreshing the access token when it expires
+    #
+    # X issues a new refresh token with each access token and accepts a refresh token once, so an authenticator
+    # refreshes under a lock, and the authenticator of a client passes the tokens each refresh issued, as OAuth2Tokens,
+    # to the save_tokens of that client and of each copy of it that shares the authenticator, so that they can be
+    # stored.
+    #
+    # Processes that share the tokens of a user, storing each refresh with save_tokens, read the store with
+    # load_tokens, which a refresh calls under its lock before it refreshes: X accepts a refresh token once, and a
+    # process that refreshed with the one another had already spent would be refused. The tokens a refresh takes from
+    # the store are not passed to save_tokens, since they came from it.
+    #
+    # X issues no refresh token for an authorization without the offline.access scope, so an authenticator built
+    # without one authenticates as the user until its access token expires, and refreshes nothing: a request sent
+    # with an access token that expired is sent as it is, for the API to reject with Unauthorized, and one the API
+    # rejects is not sent again.
+    #
+    # @api public
+    class ::X::OAuth2Authenticator < Authenticator
+      include OAuth2Refresh
+
+      # The endpoint that refreshes an access token, at X, whose path is requested at the origin of the base URL of
+      # the client that takes the authenticator
+      TOKEN_URL = "https://api.x.com/2/oauth2/token"
+      # Buffer time in seconds to account for clock skew and network latency
+      EXPIRATION_BUFFER = 30
+      private_constant :TOKEN_URL, :EXPIRATION_BUFFER
+      # The message raised for a refresh of an authenticator that holds no refresh token
+      NO_REFRESH_TOKEN = "The authenticator holds no refresh token, which X issues only for an authorization with the " \
+        "offline.access scope, so its access token cannot be refreshed. Ask the user to authorize the app again, with " \
+        "offline.access to refresh the token that authorization issues"
+      private_constant :NO_REFRESH_TOKEN
+
+      # The OAuth 2.0 client ID
+      # @api public
+      # @return [String] the client ID
+      # @example Get the client ID
+      #   authenticator.client_id
+      attr_reader :client_id
+      # The expiration time of the access token
+      # @api public
+      # @return [Time, nil] the expiration time
+      # @example Get the expiration time
+      #   authenticator.expires_at
+      attr_reader :expires_at
+      # The scopes X granted the access token, as last refreshed
+      #
+      # A refresh that names no scopes keeps those the authenticator held, as OAuth 2.0 has it.
+      #
+      # @api public
+      # @return [Array<String>, nil] the scopes, frozen, or nil if they are not known
+      # @example Check that the user let the app post
+      #   authenticator.scopes&.include?("tweet.write")
+      attr_reader :scopes
+
+      # Initialize a new OAuth 2.0 authenticator
+      #
+      # @api public
+      # @param client_id [String] the OAuth 2.0 client ID
+      # @param client_secret [String, nil] the OAuth 2.0 client secret, or nil for a public client, which sends its
+      #   client ID in the body of a refresh instead of authenticating with a secret
+      # @param access_token [String] the OAuth 2.0 access token
+      # @param refresh_token [String, nil] the OAuth 2.0 refresh token, or nil for an access token issued without the
+      #   offline.access scope, which the authenticator cannot refresh
+      # @param expires_at [Time, nil] the expiration time of the access token
+      # @param scopes [Array<String>, nil] the scopes X granted the access token, or nil if they are not known
+      # @param load_tokens [#call, nil] a callable that takes no arguments and returns the OAuth2Tokens in the storage
+      #   the tokens of the user are shared through, or nil for none there, which a refresh reads first, as the
+      #   load_tokens of X::Client#initialize describes; nil reads the load_tokens of a client that authenticates with
+      #   the authenticator instead
+      # @return [OAuth2Authenticator] a new authenticator instance
+      # @raise [ArgumentError] if the client ID or access token is nil or empty, the refresh token or client secret is
+      #   empty, the expiration time is neither a Time nor nil, the scopes are neither an Array of Strings that each name
+      #   a scope nor nil, or load_tokens is neither nil nor responds to call
+      # @example Create an authenticator
+      #   authenticator = X::OAuth2Authenticator.new(
+      #     client_id: "id",
+      #     client_secret: "secret",
+      #     access_token: "token",
+      #     refresh_token: "refresh"
+      #   )
+      # @example Share the tokens of a user among processes, storing each refresh and reading the store before one
+      #   authenticator = X::OAuth2Authenticator.new(client_id: "id", **store.load(user).to_h,
+      #     load_tokens: -> { store.load(user) })
+      #   client = X::Client.new(authenticator:, save_tokens: ->(tokens) { store.save(user, tokens) })
+      def initialize(client_id:, access_token:, refresh_token: nil, client_secret: nil, expires_at: nil, scopes: nil, load_tokens: nil)
+        CredentialValidator.validate_required!({client_id:, access_token:}, {refresh_token:, client_secret:, expires_at:, scopes:})
+        initialize_refresh(load_tokens)
+        @client_id, @client_secret = SettingValidator.frozen(client_id), SettingValidator.frozen(client_secret)
+        @access_token, @refresh_token = SettingValidator.frozen(access_token), SettingValidator.frozen(refresh_token)
+        @expires_at, @scopes = expires_at, CredentialValidator.frozen_scopes(scopes)
+        @connection, @token_url, @token_headers = Connection.new, TOKEN_URL, {}
+        @clients = ObjectSpace::WeakMap.new
+      end
+
+      # Generate the authentication header, refreshing an expired token first
+      #
+      # An authenticator that holds no refresh token sends an access token that expired as it is, for the API to reject.
+      #
+      # @api public
+      # @param _request [#http_method, #uri, #body, #[], nil] the request, which a bearer token does not sign
+      # @return [Hash{String => String}] the authentication header
+      # @raise [AuthorizationError] if the token has expired and X refuses to refresh it
+      # @raise [HTTPError, InvalidResponse] if the token endpoint limits the rate of the request or fails to answer,
+      #   as a server error, a redirect, or the page of a proxy says
+      # @raise [TokenReportFailed] if save_tokens raises for the tokens of a refresh, with the tokens
+      # @example Get the header
+      #   authenticator.headers(request)
+      def headers(_request)
+        refresh_expired_token(connection)
+        {AUTHENTICATION_HEADER => "Bearer #{access_token}"}
+      end
+
+      # Summarize the authenticator for the console without revealing credentials
+      #
+      # @api public
+      # @return [String] the class name, client ID, and expiration time
+      # @example Inspect an authenticator
+      #   authenticator.inspect # => #<X::OAuth2Authenticator client_id="id" expires_at=nil>
+      def inspect = "#<#{self.class} client_id=#{client_id.inspect} expires_at=#{expires_at.inspect}>"
+
+      # Check if the access token has expired or will expire soon
+      #
+      # @api public
+      # @return [Boolean] true if the token has expired or will expire within the buffer period
+      # @example Check expiration
+      #   authenticator.token_expired?
+      def token_expired?
+        return false if expires_at.nil?
+
+        Time.now >= expires_at - EXPIRATION_BUFFER
+      end
+
+      # Refresh the access token using the refresh token
+      #
+      # The authenticator holds the new tokens once it returns, and the authenticator of a client has passed them to the
+      # save_tokens of the clients that share it. The tokens it returns are those of this refresh, frozen, the
+      # same object save_tokens is passed, so they are a set that belongs together, whatever refreshes follow on
+      # other threads.
+      #
+      # A refresh reads the tokens in storage first, with load_tokens, and refreshes with the refresh token there when it
+      # is another. When X refuses the refresh for a refresh token another process spent, and the storage holds
+      # another, the tokens there are returned in place of an error, and are not passed to save_tokens.
+      #
+      # A save_tokens that raises, as one whose storage is briefly down may, raises TokenReportFailed once each
+      # has been passed the tokens, which holds them, since the refresh token they replaced is spent and the
+      # authenticator holds them alone, with the error save_tokens raised as its cause.
+      #
+      # @api public
+      # @return [OAuth2Tokens] the tokens the refresh issued, or those it took from storage in place of a refusal
+      # @raise [UnsupportedOperation] if the authenticator holds no refresh token, before any request
+      # @raise [AuthorizationError] if X refuses to refresh the token
+      # @raise [HTTPError, InvalidResponse] if the token endpoint limits the rate of the request or fails to answer,
+      #   as a server error, a redirect, or the page of a proxy says
+      # @raise [TokenReportFailed] if save_tokens raises for the tokens of the refresh, with the tokens
+      # @example Refresh the tokens and store them
+      #   store.save(**authenticator.refresh!.to_h)
+      def refresh!
+        raise UnsupportedOperation, NO_REFRESH_TOKEN unless refresh_token
+
+        tokens = @mutex.synchronize do
+          adopt_stored_tokens
+          refresh(connection, nil)
+        end
+        report_refresh(tokens, nil)
+        tokens
+      end
+
+      private
+
+      # The OAuth 2.0 access token, as last refreshed
+      #
+      # It is a secret, so it is private, as the access token of a client is, since a client hands out its
+      # authenticator. The tokens of a refresh are passed to save_tokens, and returned by {#refresh!}. Internal to
+      # x-core: a client reads it with __send__.
+      #
+      # @api private
+      # @return [String] the access token
+      attr_reader :access_token
+
+      # The OAuth 2.0 refresh token, as last refreshed
+      #
+      # It is private for the reason {#access_token} is.
+      #
+      # @api private
+      # @return [String, nil] the refresh token, or nil for an authenticator that cannot refresh
+      attr_reader :refresh_token
+
+      # The OAuth 2.0 client secret, which authenticates a refresh
+      # @api private
+      # @return [String, nil] the client secret, or nil for a public client
+      # @example Refresh with the client secret
+      #   client_secret
+      attr_reader :client_secret
+
+      # The connection for making token requests
+      #
+      # refresh! sends its request over it, as does a request signed with the authenticator alone, with the headers of
+      # the client that took the authenticator first. A client refreshes over its own connection, with its own headers,
+      # instead, so that the copies of a client that share its authenticator, but were given another proxy, other
+      # timeouts, other debug output, or other headers, refresh with those.
+      #
+      # @api private
+      # @return [Core::Connection] the connection
+      attr_reader :connection
+
+      # The clients that authenticate with the authenticator, held weakly
+      #
+      # Each refresh reaches the save_tokens of each of them. Internal to x-core: a client joins the clients of the
+      # authenticator it builds, shares with the client it was copied from, or is given, and reads them with __send__,
+      # since they are private.
+      #
+      # @api private
+      # @return [ObjectSpace::WeakMap] the clients, each held as a key
+      attr_reader :clients
+
+      # Send the token requests over the connection of the first client that takes it
+      #
+      # The token endpoint is requested at the scheme, host, and port of the base URL of the client, rather than of
+      # TOKEN_URL, so that a client pointed at another host sends the client credentials and refresh token there, as it
+      # sends its requests. A refresh a request of a later client makes goes to the origin of that client instead.
+      #
+      # The authenticator is shared by the copies of the client that takes it, and may be given to other clients
+      # besides, so a client that takes it after the first leaves it sending them over the connection of the first,
+      # as a copy of a client leaves the authenticator of that client. Internal to x-core: a client sends the token
+      # requests of the authenticator it builds, or is given, over its own connection, with its proxy, timeouts, debug
+      # output, and headers, and calls it with __send__, since it is private.
+      #
+      # @api private
+      # @param connection [Core::Connection] the connection to send the token requests over
+      # @param base_url [String] the base URL of the client, at whose origin the token endpoint is requested
+      # @param headers [Hash{String => String}] the headers of the client, which the token requests are sent with
+      # @return [OAuth2Authenticator] the authenticator
+      def token_requests_over(connection, base_url, headers)
+        @mutex.synchronize do
+          unless @taken
+            @connection = connection
+            @token_url = TokenEndpoint.url_at(base_url, TOKEN_URL)
+            @token_headers = headers
+          end
+          @taken = true
+        end
+        self
+      end
+
+      # Check whether the authenticator holds the credentials among some options
+      #
+      # The options are those of a client, and the credentials among them its OAuth 2.0 ones.
+      #
+      # Internal to x-core: a copy of a client shares the authenticator unless it was given a credential this does not
+      # hold, and calls it with __send__, since it is private.
+      #
+      # @api private
+      # @param options [Hash{Symbol => Object}] the options of a client, of which the others are ignored
+      # @return [Boolean] true if each client ID, client secret, access token, or refresh token among them is the one
+      #   this holds
+      def holds?(options)
+        options.slice(:client_id, :client_secret, :access_token, :refresh_token) <= {client_id:, client_secret:, access_token:, refresh_token:}
+      end
+
+      # Pass each refresh to the callables another reads
+      #
+      # Internal to x-core: Client passes the refreshes of the authenticator it builds to the save_tokens of each
+      # client that shares it, and calls it with __send__, since it is private.
+      #
+      # @api private
+      # @param hooks [#call] a callable that returns the callables to pass each refresh, read at each refresh
+      # @return [#call] the callable
+      def report_refreshes_to(hooks) = @reporter.to(hooks)
+
+      # The client for the token endpoint
+      # @api private
+      # @param token_url [String] the URL of the token endpoint
+      # @return [SimpleOAuth::OAuth2::Client] the OAuth 2.0 client
+      def oauth2_client(token_url) = SimpleOAuth::OAuth2::Client.new(client_id:, client_secret:, token_endpoint: token_url)
+
+      # The URL of the token endpoint a refresh is sent to, as token_headers tells
+      # @api private
+      # @param client [Client, nil] the client whose request refreshes, or nil for none
+      # @return [String] the URL
+      def token_url(client) = client ? TokenEndpoint.url_at(client.base_url, TOKEN_URL) : @token_url
+    end
+  end
+end
