@@ -1,0 +1,97 @@
+# frozen_string_literal: true
+
+require "stringio"
+require_relative "../../test_helper"
+require "x/uploads/account"
+
+module X
+  class AccountRequestTest < Minitest::Test
+    cover Uploads::Account
+
+    V1_URL = "https://api.x.com/1.1/account/"
+    V1_URL_PATTERN = /\A#{Regexp.escape(V1_URL)}/
+    CONTENT = "\x89PNG\r\n\x1A\n\x00\x00\x00...".b.freeze
+    PNG_FILE = "test/sample_files/sample.png"
+    HEX_BOUNDARY = %r{\Amultipart/form-data; boundary=(\h{32})\z}
+
+    def setup
+      @client = Client.new(**test_oauth_credentials)
+      stub_request(:post, V1_URL_PATTERN).to_return do |request|
+        @request = request
+        {status: 200}
+      end
+    end
+
+    def test_update_profile_image_body_of_an_io
+      Uploads::Account.update_profile_image(StringIO.new(CONTENT), client: @client)
+
+      assert_equal "/1.1/account/update_profile_image.json", @request.uri.path
+      assert_equal image_body(CONTENT, request_boundary), @request.body.b
+    end
+
+    def test_update_profile_image_sends_file_content
+      Uploads::Account.update_profile_image(PNG_FILE, client: @client)
+
+      assert_equal image_body(File.binread(PNG_FILE), request_boundary), @request.body.b
+    end
+
+    def test_update_profile_banner_body_of_an_io_without_dimensions
+      Uploads::Account.update_profile_banner(StringIO.new(CONTENT), client: @client)
+
+      assert_equal "/1.1/account/update_profile_banner.json", @request.uri.path
+      assert_equal banner_body(CONTENT, request_boundary), @request.body.b
+    end
+
+    def test_update_profile_banner_body_of_an_io_with_dimensions
+      Uploads::Account.update_profile_banner(StringIO.new(CONTENT), client: @client, width: 1500, height: 500,
+        offset_left: 10, offset_top: 20)
+
+      expected = banner_body(CONTENT, request_boundary, width: 1500, height: 500, offset_left: 10, offset_top: 20)
+
+      assert_equal expected, @request.body.b
+    end
+
+    def test_update_profile_banner_sends_file_content_and_dimensions
+      Uploads::Account.update_profile_banner(PNG_FILE, client: @client, width: 1500, height: 500,
+        offset_left: 10, offset_top: 20)
+
+      expected = banner_body(File.binread(PNG_FILE), request_boundary, width: 1500, height: 500, offset_left: 10, offset_top: 20)
+
+      assert_equal expected, @request.body.b
+    end
+
+    def test_each_upload_has_a_boundary_of_its_own
+      Uploads::Account.update_profile_image(StringIO.new(CONTENT), client: @client)
+      first = request_boundary
+      Uploads::Account.update_profile_image(StringIO.new(CONTENT), client: @client)
+
+      refute_equal first, request_boundary
+    end
+
+    private
+
+    def request_boundary
+      match = HEX_BOUNDARY.match(@request.headers["Content-Type"])
+
+      refute_nil match, "Expected a random hex boundary in #{@request.headers["Content-Type"].inspect}"
+      match[1]
+    end
+
+    def image_body(content, boundary)
+      file_part("image", content, boundary)
+    end
+
+    def banner_body(content, boundary, **fields)
+      fields.map { |name, value| field_part(name, value, boundary) }.join + file_part("banner", content, boundary)
+    end
+
+    def field_part(name, value, boundary)
+      "--#{boundary}\r\nContent-Disposition: form-data; name=\"#{name}\"\r\n\r\n#{value}\r\n"
+    end
+
+    def file_part(name, content, boundary)
+      "--#{boundary}\r\nContent-Disposition: form-data; name=\"#{name}\"\r\n" \
+        "Content-Type: application/octet-stream\r\n\r\n#{content}\r\n--#{boundary}--\r\n".b
+    end
+  end
+end

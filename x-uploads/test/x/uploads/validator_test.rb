@@ -1,0 +1,258 @@
+# frozen_string_literal: true
+
+require "tmpdir"
+require "tempfile"
+require_relative "../../test_helper"
+require "x/uploads/validator"
+
+module X
+  class ValidatorTest < Minitest::Test
+    cover Uploads.const_get(:Validator)
+
+    def test_validate_source_refuses_an_empty_file
+      Tempfile.create(["empty", ".png"]) do |file|
+        error = assert_raises(InvalidMedia) { Uploads.const_get(:Validator).validate_source!(Uploads.const_get(:Source).for(file.path)) }
+
+        assert_equal "#{file.path} is empty: there is nothing to upload", error.message
+      end
+    end
+
+    def test_validate_source
+      assert_nil Uploads.const_get(:Validator).validate_source!(Uploads.const_get(:Source).for("test/sample_files/sample.jpg"))
+    end
+
+    def test_validate_source_raises_for_missing_file
+      error = assert_raises(InvalidMedia) { Uploads.const_get(:Validator).validate_source!(Uploads.const_get(:Source).for("bad/path")) }
+
+      assert_equal "bad/path does not exist: there is no file to upload", error.message
+    end
+
+    def test_validate_source_of_a_pathname
+      assert_nil Uploads.const_get(:Validator).validate_source!(Uploads.const_get(:Source).for(Pathname("test/sample_files/sample.jpg")))
+    end
+
+    def test_validate_source_raises_for_a_missing_pathname
+      error = assert_raises(InvalidMedia) { Uploads.const_get(:Validator).validate_source!(Uploads.const_get(:Source).for(Pathname("bad/path"))) }
+
+      assert_equal "bad/path does not exist: there is no file to upload", error.message
+    end
+
+    def test_validate_chunks
+      assert_nil Uploads.const_get(:Validator).validate_chunks!(chunk_size: 65_536, concurrency: 1)
+    end
+
+    def test_validate_chunks_takes_the_chunk_size_of_a_caller_who_named_none
+      assert_nil Uploads.const_get(:Validator).validate_chunks!(chunk_size: nil, concurrency: 1)
+    end
+
+    def test_validate_chunks_raises_for_a_chunk_size_that_is_not_positive
+      error = assert_raises(ArgumentError) { Uploads.const_get(:Validator).validate_chunks!(chunk_size: 0, concurrency: 1) }
+
+      assert_equal "chunk_size must be a positive Integer of bytes, not 0", error.message
+      assert_raises(ArgumentError) { Uploads.const_get(:Validator).validate_chunks!(chunk_size: -1, concurrency: 1) }
+    end
+
+    def test_validate_chunks_raises_for_a_concurrency_less_than_one
+      error = assert_raises(ArgumentError) { Uploads.const_get(:Validator).validate_chunks!(chunk_size: 1, concurrency: 0) }
+
+      assert_equal "concurrency must be an Integer of 1 to 16, not 0", error.message
+      assert_raises(ArgumentError) { Uploads.const_get(:Validator).validate_chunks!(chunk_size: 1, concurrency: -1) }
+    end
+
+    def test_validate_chunks_takes_a_concurrency_of_up_to_the_most_chunks_uploaded_at_once
+      assert_nil Uploads.const_get(:Validator).validate_chunks!(chunk_size: 1, concurrency: 16)
+    end
+
+    def test_validate_chunks_raises_for_a_concurrency_above_the_most_chunks_uploaded_at_once
+      messages = [17, 1000].map { |concurrency| assert_raises(ArgumentError) { Uploads.const_get(:Validator).validate_chunks!(chunk_size: 1, concurrency:) }.message }
+
+      assert_equal ["17", "1000"].map { |value| "concurrency must be an Integer of 1 to 16, not #{value}" }, messages
+    end
+
+    def test_validate_chunks_raises_for_a_concurrency_that_is_not_an_integer
+      messages = [2.5, "4", nil].map { |concurrency| assert_raises(ArgumentError) { Uploads.const_get(:Validator).validate_chunks!(chunk_size: 1, concurrency:) }.message }
+
+      assert_equal ["2.5", '"4"', "nil"].map { |value| "concurrency must be an Integer of 1 to 16, not #{value}" }, messages
+    end
+
+    def test_validate_chunks_raises_for_a_chunk_size_that_is_not_an_integer
+      messages = ["1", Complex(1, 0), 1.0, Rational(1, 1), Float::INFINITY, Float::NAN].map { |chunk_size| assert_raises(ArgumentError) { Uploads.const_get(:Validator).validate_chunks!(chunk_size:, concurrency: 1) }.message }
+
+      assert_equal ['"1"', "(1+0i)", "1.0", "(1/1)", "Infinity", "NaN"].map { |value| "chunk_size must be a positive Integer of bytes, not #{value}" }, messages
+    end
+
+    def test_validate_media_category
+      assert_equal "tweet_image", Uploads.const_get(:Validator).validate_media_category!("tweet_image")
+    end
+
+    def test_validate_amplify_video
+      assert_equal "amplify_video", Uploads.const_get(:Validator).validate_media_category!("amplify_video")
+    end
+
+    def test_validate_media_category_ignores_case
+      assert_equal "tweet_image", Uploads.const_get(:Validator).validate_media_category!("TWEET_IMAGE")
+    end
+
+    def test_validate_media_category_takes_a_symbol
+      assert_equal %w[tweet_video tweet_image], [:tweet_video, :TWEET_IMAGE].map { |category| Uploads.const_get(:Validator).validate_media_category!(category) }
+    end
+
+    def test_validate_media_category_raises_for_a_symbol_that_names_no_category
+      error = assert_raises(ArgumentError) { Uploads.const_get(:Validator).validate_media_category!(:bogus) }
+
+      assert_includes error.message, "Invalid media_category: bogus"
+    end
+
+    def test_validate_media_category_raises_for_invalid_category
+      error = assert_raises(ArgumentError) { Uploads.const_get(:Validator).validate_media_category!("bogus") }
+
+      assert_equal "Invalid media_category: bogus. Valid values: amplify_video, dm_gif, dm_image, dm_video, subtitles, tweet_gif, " \
+        "tweet_image, tweet_video", error.message
+    end
+  end
+
+  class ValidatorUploadTest < Minitest::Test
+    cover Uploads.const_get(:Validator)
+
+    BYTES_PER_MB = Uploads.const_get(:Validator)::BYTES_PER_MB
+    # A file larger than the megabyte chunks every upload in chunks once used, of 11,000 of them
+    LARGE_FILE_BYTES = 11_000 * BYTES_PER_MB
+
+    def test_validate_alt_text
+      assert_nil Uploads.const_get(:Validator).validate_alt_text!("A cat asleep on a keyboard")
+      assert_nil Uploads.const_get(:Validator).validate_alt_text!("A")
+      assert_nil Uploads.const_get(:Validator).validate_alt_text!("A" * 1000)
+    end
+
+    def test_media_described_with_no_alt_text_is_valid
+      assert_nil Uploads.const_get(:Validator).validate_alt_text!(nil)
+    end
+
+    def test_validate_alt_text_raises_for_alt_text_that_is_not_a_string
+      [5, :cat, ["A cat"]].each do |alt_text|
+        error = assert_raises(ArgumentError) { Uploads.const_get(:Validator).validate_alt_text!(alt_text) }
+
+        assert_equal "alt_text must be a String, or nil for none, not #{alt_text.inspect}", error.message
+      end
+    end
+
+    def test_alt_text_of_a_subclass_of_string_is_valid
+      assert_nil Uploads.const_get(:Validator).validate_alt_text!(Class.new(String).new("A cat asleep on a keyboard"))
+    end
+
+    def test_validate_alt_text_raises_for_empty_alt_text
+      error = assert_raises(ArgumentError) { Uploads.const_get(:Validator).validate_alt_text!("") }
+
+      assert_equal "alt_text must be 1 to 1000 characters, not 0", error.message
+    end
+
+    def test_validate_alt_text_raises_for_alt_text_longer_than_the_api_takes
+      error = assert_raises(ArgumentError) { Uploads.const_get(:Validator).validate_alt_text!("A" * 1001) }
+
+      assert_equal "alt_text must be 1 to 1000 characters, not 1001", error.message
+    end
+
+    def test_a_chunk_size_of_four_megabytes_is_derived_for_a_file_the_api_numbers_the_segments_of
+      with_file(BYTES_PER_MB + 1) do |path|
+        assert_equal 4 * BYTES_PER_MB, Uploads.const_get(:Validator).validate_segments!(source(path), nil)
+      end
+    end
+
+    def test_the_chunk_size_derived_for_a_large_file_uploads_it_in_the_segments_the_api_numbers
+      with_file(45_000 * BYTES_PER_MB) do |path|
+        chunk_size = Uploads.const_get(:Validator).validate_segments!(source(path), nil)
+
+        assert_equal 4_718_592, chunk_size
+        assert_operator (45_000 * BYTES_PER_MB.to_f / chunk_size).ceil, :<=, 10_000
+      end
+    end
+
+    def test_a_chunk_size_given_is_taken_as_the_bytes_it_names
+      with_file(4000) do |path|
+        assert_equal [2_097_152, 1001], [2_097_152, 1001].map { |bytes| Uploads.const_get(:Validator).validate_segments!(source(path), bytes) }
+      end
+    end
+
+    def test_a_chunk_size_that_uploads_a_file_in_the_segments_the_api_numbers_exactly
+      with_file(10_000) do |path|
+        assert_equal 1, Uploads.const_get(:Validator).validate_segments!(source(path), 1)
+      end
+    end
+
+    def test_a_chunk_size_that_would_upload_a_file_in_more_segments_than_the_api_numbers
+      with_file(10_001) do |path|
+        error = assert_raises(ArgumentError) { Uploads.const_get(:Validator).validate_segments!(source(path), 1) }
+
+        assert_includes error.message, "uploads 10001 bytes in more than the 10000 segments the API numbers"
+      end
+    end
+
+    def test_a_chunk_size_of_a_megabyte_would_upload_a_large_file_in_more_segments_than_the_api_numbers
+      with_file(LARGE_FILE_BYTES) do |path|
+        error = assert_raises(ArgumentError) { Uploads.const_get(:Validator).validate_segments!(source(path), BYTES_PER_MB) }
+
+        assert_equal "chunk_size of #{BYTES_PER_MB} bytes uploads #{LARGE_FILE_BYTES} bytes in more than the 10000 segments the API numbers", error.message
+      end
+    end
+
+    def test_validate_upload_gives_the_media_category_in_the_case_the_api_takes
+      assert_equal "tweet_image", Uploads.const_get(:Validator).validate_upload!(source("test/sample_files/sample.png"), :TWEET_IMAGE,
+        alt_text: "A pixel", chunk_size: nil, concurrency: 4, processing_timeout: 300)
+    end
+
+    def test_validate_upload_infers_a_media_category_it_is_given_none_for_with_the_block
+      inferred = Uploads.const_get(:Validator).validate_upload!(source("test/sample_files/sample.png"), nil,
+        alt_text: nil, chunk_size: nil, concurrency: 4, processing_timeout: 300) { :TWEET_GIF }
+
+      assert_equal "tweet_gif", inferred
+    end
+
+    def test_validate_upload_validates_the_file_the_alt_text_and_the_chunk_options
+      assert_raises(InvalidMedia) { validate_upload("nope.png") }
+      assert_raises(ArgumentError) { validate_upload("test/sample_files/sample.png", alt_text: "") }
+      assert_raises(ArgumentError) { validate_upload("test/sample_files/sample.png", chunk_size: 0) }
+      assert_raises(ArgumentError) { validate_upload("test/sample_files/sample.png", concurrency: 0) }
+      assert_raises(ArgumentError) { validate_upload("test/sample_files/sample.png", media_category: "bogus") }
+    end
+
+    def test_validate_upload_validates_the_processing_timeout
+      assert_raises(ArgumentError) { validate_upload("test/sample_files/sample.png", processing_timeout: Float::INFINITY) }
+    end
+
+    private
+
+    def validate_upload(file_path, media_category: "tweet_image", alt_text: nil, chunk_size: nil, concurrency: 4, processing_timeout: 300)
+      Uploads.const_get(:Validator).validate_upload!(source(file_path), media_category, alt_text:, chunk_size:, concurrency:, processing_timeout:)
+    end
+
+    # The media an upload reads, which the validator takes in place of a path
+    def source(file_path) = Uploads.const_get(:Source).for(file_path)
+
+    # An empty file read as a size, which costs no disk, as a file of tens of gigabytes would
+    def with_file(size)
+      Dir.mktmpdir do |dir|
+        path = File.join(dir, "video.mp4")
+        File.write(path, "")
+        File.stub(:size, size) { yield path }
+      end
+    end
+  end
+
+  class ValidatorAltTextEncodingTest < Minitest::Test
+    cover Uploads.const_get(:Validator)
+
+    def test_alt_text_that_converts_to_utf8_is_valid
+      ["A cat".encode(Encoding::ISO_8859_1), "Caf\u00e9".encode(Encoding::ISO_8859_1), "A cat".b].each do |alt_text|
+        assert_nil Uploads.const_get(:Validator).validate_alt_text!(alt_text), alt_text.inspect
+      end
+    end
+
+    def test_alt_text_that_does_not_convert_to_utf8_is_refused
+      ["\xFF".b, (+"A \xFF cat").force_encoding(Encoding::UTF_8)].each do |alt_text|
+        error = assert_raises(ArgumentError, alt_text.inspect) { Uploads.const_get(:Validator).validate_alt_text!(alt_text) }
+
+        assert_equal "alt_text must be text that converts to UTF-8, not #{alt_text.inspect}", error.message
+      end
+    end
+  end
+end

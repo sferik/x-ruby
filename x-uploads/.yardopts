@@ -1,0 +1,8 @@
+--markup markdown
+--readme README.md
+--hide-api private
+--embed-mixins
+lib/**/*.rb
+-
+CHANGELOG.md
+LICENSE.txt

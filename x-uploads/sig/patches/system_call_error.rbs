@@ -1,0 +1,5 @@
+# Give SystemCallError.new the number of an error alone, which the core signatures leave out
+class SystemCallError
+  def initialize: (Integer errno) -> void
+                | ...
+end

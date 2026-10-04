@@ -1,0 +1,90 @@
+# frozen_string_literal: true
+
+require "fileutils"
+require "tmpdir"
+require_relative "../../test_helper"
+require "x/uploads/media_upload"
+
+module X
+  class MediaRequestTest < Minitest::Test
+    cover Uploads::MediaUpload
+    cover Uploads.const_get(:Chunks)
+    cover Uploads.const_get(:Utils)
+
+    UPLOAD_URL = "https://api.x.com/2/media/upload"
+    CONTENT = "\x89PNG\r\n\x1A\n\x00\x00\x00...".b.freeze
+    GIF_FILE = "test/sample_files/sample.gif"
+    HEX_BOUNDARY = %r{\Amultipart/form-data; boundary=(\h{32})\z}
+
+    def setup
+      @client = Client.new
+      stub_request(:post, UPLOAD_URL).to_return do |request|
+        @request = request
+        {headers: {"content-type" => "application/json"}, body: {data: {id: TEST_MEDIA_ID}}.to_json}
+      end
+    end
+
+    def test_single_request_body_and_headers
+      Uploads::MediaUpload.upload(StringIO.new(CONTENT), client: @client, media_category: "tweet_image")
+
+      assert_equal upload_body(CONTENT, "tweet_image", request_boundary), @request.body.b
+    end
+
+    def test_upload_sends_file_content
+      Uploads::MediaUpload.upload(GIF_FILE, client: @client, media_category: "tweet_gif")
+
+      assert_equal upload_body(File.binread(GIF_FILE), "tweet_gif", request_boundary), @request.body.b
+    end
+
+    def test_each_upload_has_a_boundary_of_its_own
+      Uploads::MediaUpload.upload(StringIO.new(CONTENT), client: @client, media_category: "tweet_image")
+      first = request_boundary
+      Uploads::MediaUpload.upload(StringIO.new(CONTENT), client: @client, media_category: "tweet_image")
+
+      refute_equal first, request_boundary
+    end
+
+    def test_a_single_request_rejects_invalid_category_before_requesting
+      assert_raises(ArgumentError) { Uploads::MediaUpload.upload(StringIO.new(CONTENT), client: @client, media_category: "bogus") }
+      assert_not_requested(:post, UPLOAD_URL)
+    end
+
+    def test_a_single_request_sends_the_media_category_in_lowercase
+      Uploads::MediaUpload.upload(StringIO.new(CONTENT), client: @client, media_category: "TWEET_Image")
+
+      assert_equal upload_body(CONTENT, "tweet_image", request_boundary), @request.body.b
+    end
+
+    def test_upload_rejects_an_unknown_option
+      assert_raises(ArgumentError) { Uploads::MediaUpload.upload(GIF_FILE, client: @client, chunk_size_mb: 1) }
+      assert_not_requested(:post, UPLOAD_URL)
+    end
+
+    def test_upload_rejects_invalid_chunk_options_for_media_it_uploads_whole
+      assert_raises(ArgumentError) { Uploads::MediaUpload.upload(GIF_FILE, client: @client, media_category: "tweet_image", chunk_size: 0) }
+      assert_raises(ArgumentError) { Uploads::MediaUpload.upload(GIF_FILE, client: @client, media_category: "tweet_image", concurrency: 0) }
+      assert_not_requested(:post, UPLOAD_URL)
+    end
+
+    def test_upload_rejects_missing_file_before_reading_it
+      error = assert_raises(InvalidMedia) { Uploads::MediaUpload.upload("nope.jpg", client: @client, media_category: "tweet_image") }
+
+      assert_equal "nope.jpg does not exist: there is no file to upload", error.message
+    end
+
+    private
+
+    def request_boundary
+      match = HEX_BOUNDARY.match(@request.headers["Content-Type"])
+
+      refute_nil match, "Expected a random hex boundary in #{@request.headers["Content-Type"].inspect}"
+      match[1]
+    end
+
+    def upload_body(content, media_category, boundary)
+      "--#{boundary}\r\nContent-Disposition: form-data; name=\"media_category\"\r\n\r\n#{media_category}\r\n" \
+        "--#{boundary}\r\nContent-Disposition: form-data; name=\"media\"\r\n" \
+        "Content-Type: application/octet-stream\r\n\r\n#{content}\r\n--#{boundary}--\r\n".b
+    end
+  end
+end

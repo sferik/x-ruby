@@ -1,0 +1,335 @@
+# frozen_string_literal: true
+
+require_relative "../../test_helper"
+
+module X
+  class UploadsMediaProcessingFailedTest < Minitest::Test
+    cover MediaProcessingFailed
+
+    def test_the_message_is_the_reason_x_gives
+      status = {"id" => "7", "processing_info" => {"state" => "failed", "error" => {"code" => 1, "name" => "InvalidMedia", "message" => "Unsupported video format"}}}
+      error = MediaProcessingFailed.new(media: status)
+
+      assert_equal ["Unsupported video format", UploadedMedia.new(status)], [error.message, error.media]
+      assert_kind_of Error, error
+    end
+
+    def test_holds_uploaded_media_given_as_it_was_given
+      status = UploadedMedia.new({"id" => "7", "processing_info" => {"state" => "failed"}})
+
+      assert_same status, MediaProcessingFailed.new(media: status).media
+    end
+
+    def test_holds_a_status_given_as_a_subclass_of_hash_as_uploaded_media
+      status = Class.new(Hash).new.merge!("id" => "7", "processing_info" => {"state" => "failed"})
+
+      assert_instance_of UploadedMedia, MediaProcessingFailed.new(media: status).media
+    end
+
+    def test_the_message_without_a_reason
+      assert_equal ["Media processing failed"] * 3,
+        [MediaProcessingFailed.new(media: {"id" => "7", "processing_info" => {"state" => "failed"}}), MediaProcessingFailed.new(media: {"id" => "7"}), MediaProcessingFailed.new].map(&:message)
+    end
+
+    def test_the_default_message_is_private
+      assert_raises(NameError) { MediaProcessingFailed::DEFAULT_MESSAGE }
+    end
+
+    def test_a_message_given_is_the_message_whatever_the_status
+      status = {"id" => "7", "processing_info" => {"error" => {"message" => "Unsupported video format"}}}
+
+      assert_equal ["Stubbed", UploadedMedia.new(status)], MediaProcessingFailed.new("Stubbed", media: status).then { |error| [error.message, error.media] }
+    end
+
+    def test_it_is_raised_with_a_message_alone
+      error = assert_raises(MediaProcessingFailed) { raise MediaProcessingFailed, "Stubbed" }
+
+      assert_equal ["Stubbed", nil], [error.message, error.media]
+    end
+  end
+
+  class UploadsMediaProcessingTimeoutTest < Minitest::Test
+    cover MediaProcessingTimeout
+
+    def test_holds_the_last_status_and_names_the_timeout
+      status = {"id" => "7", "processing_info" => {"state" => "in_progress"}}
+      error = MediaProcessingTimeout.new(media: status, timeout: 600)
+
+      assert_equal [UploadedMedia.new(status), 600, "Media processing did not finish within the 600 seconds allowed: its next check would come after them"], [error.media, error.timeout, error.message]
+      assert_kind_of Error, error
+    end
+
+    def test_holds_uploaded_media_given_as_it_was_given
+      status = UploadedMedia.new({"id" => "7", "processing_info" => {"state" => "in_progress"}})
+
+      assert_same status, MediaProcessingTimeout.new(media: status).media
+    end
+
+    def test_holds_a_status_given_as_a_subclass_of_hash_as_uploaded_media
+      status = Class.new(Hash).new.merge!("id" => "7", "processing_info" => {"state" => "in_progress"})
+
+      assert_instance_of UploadedMedia, MediaProcessingTimeout.new(media: status).media
+    end
+
+    def test_a_message_given_is_the_message_whatever_the_timeout
+      assert_equal "Stubbed", MediaProcessingTimeout.new("Stubbed", timeout: 600).message
+    end
+
+    def test_it_is_raised_with_a_message_alone
+      error = assert_raises(MediaProcessingTimeout) { raise MediaProcessingTimeout, "Stubbed" }
+
+      assert_equal ["Stubbed", nil, nil], [error.message, error.media, error.timeout]
+    end
+
+    def test_the_message_without_a_timeout
+      assert_equal "Media processing did not finish", MediaProcessingTimeout.new.message
+    end
+  end
+
+  class UploadsMissingMediaDataTest < Minitest::Test
+    cover MissingMediaData
+
+    def test_it_is_the_failure_of_an_upload_and_of_the_api
+      error = MissingMediaData.new("The response of the upload holds no media")
+
+      assert_kind_of Uploads::Error, error
+      assert_kind_of Error, error
+      assert_equal [[], true], [error.problems, error.problems.frozen?]
+    end
+
+    def test_it_names_the_reason_the_first_problem_gives_and_holds_the_problems
+      problems = [Problem.new({"title" => "Not Found Error", "detail" => "Could not find media"}), Problem.new({"title" => "Other"})]
+      error = MissingMediaData.new("The response holds no media", problems:)
+
+      assert_equal ["The response holds no media: Could not find media", problems, true], [error.message, error.problems, error.problems.frozen?]
+      refute_predicate problems, :frozen?
+    end
+
+    def test_it_names_the_message_or_else_the_title_of_a_problem_without_a_detail
+      messages = [{"message" => "Invalid media_id", "title" => "Bad"}, {"title" => "Not Found Error"}].map do |attrs|
+        MissingMediaData.new("No media", problems: [Problem.new(attrs)]).message
+      end
+
+      assert_equal ["No media: Invalid media_id", "No media: Not Found Error"], messages
+    end
+
+    def test_it_names_the_reason_alone_without_a_message_and_its_class_without_either
+      assert_equal "Could not find media", MissingMediaData.new(problems: [Problem.new({"detail" => "Could not find media"})]).message
+      assert_equal "X::MissingMediaData", MissingMediaData.new.message
+    end
+  end
+
+  class UploadsErrorNamesTest < Minitest::Test
+    # Every class a caller names is under X, as the classes of x-core are, and X::Uploads::Error alone is left
+    # under the gem's module, for the rescue that means the failure of an upload alone.
+    PROMOTED = %i[AltTextFailed InvalidMedia InvalidMediaType MediaProcessingCheckFailed MediaProcessingFailed MediaProcessingTimeout MissingMediaData
+      UploadedMedia].freeze
+
+    def test_each_is_named_under_x
+      PROMOTED.each { |name| assert X.const_defined?(name, false), "X::#{name} is not defined" }
+    end
+
+    def test_none_is_named_under_uploader
+      PROMOTED.each { |name| refute Uploads.const_defined?(name, false), "X::Uploads::#{name} is defined" }
+    end
+
+    def test_the_base_of_an_upload_failure_stays_under_uploader
+      assert Uploads.const_defined?(:Error, false)
+    end
+  end
+
+  class UploadsAltTextFailedTest < Minitest::Test
+    cover AltTextFailed
+
+    def test_holds_media_given_as_a_hash_as_uploaded_media
+      [{"id" => "7"}, Class.new(Hash).new.merge!("id" => "7")].each do |media|
+        assert_equal [UploadedMedia, 7], AltTextFailed.new(media:).media.then { |held| [held.class, held.id] }
+      end
+    end
+
+    def test_holds_uploaded_media_given_as_it_was_given
+      media = UploadedMedia.new({"id" => "7"})
+
+      assert_same media, AltTextFailed.new(media:).media
+    end
+
+    def test_holds_the_media_and_names_it_with_the_reason_it_failed
+      media = UploadedMedia.new({"id" => "7"})
+      failure = Class.new(Error) { def message = "Connection reset" }
+      error = assert_raises(AltTextFailed) { AltTextFailed.__send__(:keeping, media) { raise failure } }
+
+      assert_same media, error.media
+      assert_equal ["Media 7 was uploaded, but its alt text could not be added: Connection reset"] * 2, [error.message, error.to_s]
+    end
+
+    def test_names_the_media_alone_without_a_cause
+      assert_equal "Media 7 was uploaded, but its alt text could not be added", AltTextFailed.new(media: UploadedMedia.new({"id" => "7"})).message
+    end
+
+    def test_takes_a_message_of_its_own_as_a_test_stub_raises_it
+      error = assert_raises(AltTextFailed) { raise AltTextFailed, "Alt text could not be added" }
+
+      assert_equal "Alt text could not be added", error.message
+      assert_nil error.media
+    end
+
+    def test_names_no_media_when_given_none
+      assert_equal "Media was uploaded, but its alt text could not be added", AltTextFailed.new.message
+    end
+
+    def test_a_message_of_its_own_ends_with_the_reason_it_failed
+      error = assert_raises(AltTextFailed) do
+        raise Error, "Connection reset"
+      rescue Error
+        raise AltTextFailed.new("No alt text", media: UploadedMedia.new({"id" => "7"}))
+      end
+
+      assert_equal ["No alt text: Connection reset", 7], [error.message, error.media.id]
+    end
+
+    def test_keeping_is_private
+      refute_respond_to AltTextFailed, :keeping
+    end
+
+    def test_keeping_returns_what_the_block_returns
+      assert_equal 1, AltTextFailed.__send__(:keeping, nil) { 1 }
+    end
+
+    def test_keeping_holds_the_media_for_an_error_that_is_not_one_of_the_api
+      media = UploadedMedia.new({"id" => "7"})
+      failure = RuntimeError.new("Hook failed")
+      error = assert_raises(AltTextFailed) { AltTextFailed.__send__(:keeping, media) { raise failure } }
+
+      assert_equal [media, failure], [error.media, error.cause]
+    end
+
+    def test_keeping_raises_a_timeout_as_it_was_raised
+      timeout = Timeout::Error.new
+
+      assert_same timeout, assert_raises(Timeout::Error) { AltTextFailed.__send__(:keeping, nil) { raise timeout } }
+    end
+
+    def test_keeping_raises_a_failure_to_store_the_tokens_of_a_refresh_as_it_was_raised
+      failure = TokenReportFailed.new
+
+      assert_same failure, assert_raises(TokenReportFailed) { AltTextFailed.__send__(:keeping, nil) { raise failure } }
+    end
+
+    def test_keeping_raises_an_exception_that_is_not_a_standard_error_as_it_was_raised
+      interrupt = Interrupt.new
+
+      assert_same interrupt, assert_raises(Interrupt) { AltTextFailed.__send__(:keeping, nil) { raise interrupt } }
+    end
+  end
+
+  class UploadsMediaProcessingCheckFailedTest < Minitest::Test
+    cover MediaProcessingCheckFailed
+
+    def test_holds_media_given_as_a_hash_as_uploaded_media
+      [{"id" => "7"}, Class.new(Hash).new.merge!("id" => "7")].each do |media|
+        assert_equal [UploadedMedia, 7], MediaProcessingCheckFailed.new(media:).media.then { |held| [held.class, held.id] }
+      end
+    end
+
+    def test_holds_uploaded_media_given_as_it_was_given
+      media = UploadedMedia.new({"id" => "7"})
+
+      assert_same media, MediaProcessingCheckFailed.new(media:).media
+    end
+
+    def test_holds_the_media_and_names_it_with_the_reason_the_check_failed
+      media = UploadedMedia.new({"id" => "7"})
+      failure = Class.new(Error) { def message = "Service Unavailable" }
+      error = assert_raises(MediaProcessingCheckFailed) { MediaProcessingCheckFailed.__send__(:keeping, media) { raise failure } }
+
+      assert_same media, error.media
+      assert_equal ["Media 7 was uploaded, but its processing could not be checked: Service Unavailable"] * 2, [error.message, error.to_s]
+    end
+
+    def test_names_the_media_alone_without_a_cause
+      assert_equal "Media 7 was uploaded, but its processing could not be checked",
+        MediaProcessingCheckFailed.new(media: UploadedMedia.new({"id" => "7"})).message
+    end
+
+    def test_takes_a_message_of_its_own_as_a_test_stub_raises_it
+      error = assert_raises(MediaProcessingCheckFailed) { raise MediaProcessingCheckFailed, "Processing could not be checked" }
+
+      assert_equal ["Processing could not be checked", nil], [error.message, error.media]
+    end
+
+    def test_names_no_media_when_given_none
+      assert_equal "Media was uploaded, but its processing could not be checked", MediaProcessingCheckFailed.new.message
+    end
+
+    def test_a_message_of_its_own_ends_with_the_reason_the_check_failed
+      error = assert_raises(MediaProcessingCheckFailed) do
+        raise Error, "Service Unavailable"
+      rescue Error
+        raise MediaProcessingCheckFailed.new("No check", media: UploadedMedia.new({"id" => "7"}))
+      end
+
+      assert_equal ["No check: Service Unavailable", 7], [error.message, error.media.id]
+    end
+
+    def test_keeping_raises_a_processing_timeout_as_it_was_raised
+      timeout = MediaProcessingTimeout.new(timeout: 1)
+      error = assert_raises(MediaProcessingTimeout) { MediaProcessingCheckFailed.__send__(:keeping, nil) { raise timeout } }
+
+      assert_same timeout, error
+    end
+
+    def test_keeping_is_private
+      refute_respond_to MediaProcessingCheckFailed, :keeping
+    end
+
+    def test_keeping_returns_what_the_block_returns
+      assert_equal 1, MediaProcessingCheckFailed.__send__(:keeping, nil) { 1 }
+    end
+
+    def test_keeping_holds_the_media_for_an_error_that_is_not_one_of_the_api
+      media = UploadedMedia.new({"id" => "7"})
+      failure = RuntimeError.new("Hook failed")
+      error = assert_raises(MediaProcessingCheckFailed) { MediaProcessingCheckFailed.__send__(:keeping, media) { raise failure } }
+
+      assert_equal [media, failure], [error.media, error.cause]
+    end
+
+    def test_keeping_raises_a_timeout_as_it_was_raised
+      timeout = Timeout::Error.new
+
+      assert_same timeout, assert_raises(Timeout::Error) { MediaProcessingCheckFailed.__send__(:keeping, nil) { raise timeout } }
+    end
+
+    def test_keeping_raises_a_failure_to_store_the_tokens_of_a_refresh_as_it_was_raised
+      failure = TokenReportFailed.new
+
+      assert_same failure, assert_raises(TokenReportFailed) { MediaProcessingCheckFailed.__send__(:keeping, nil) { raise failure } }
+    end
+
+    def test_keeping_raises_an_exception_that_is_not_a_standard_error_as_it_was_raised
+      interrupt = Interrupt.new
+
+      assert_same interrupt, assert_raises(Interrupt) { MediaProcessingCheckFailed.__send__(:keeping, nil) { raise interrupt } }
+    end
+  end
+
+  class UploadsErrorTest < Minitest::Test
+    cover Uploads::Error
+
+    def test_every_error_of_an_upload_is_an_uploader_error
+      errors = [AltTextFailed.new(media: UploadedMedia.new({"id" => "7"})), InvalidMedia.new, InvalidMediaType.new, MediaProcessingCheckFailed.new,
+        MediaProcessingFailed.new, MediaProcessingTimeout.new]
+
+      assert(errors.all? { |error| error.is_a?(Uploads::Error) })
+      assert(errors.all? { |error| error.is_a?(Error) })
+    end
+
+    def test_media_of_a_type_the_api_does_not_take_is_media_the_api_would_refuse
+      assert_equal [InvalidMedia, Uploads::Error], InvalidMediaType.ancestors.grep(Class).drop(1).take(2)
+    end
+
+    def test_an_uploader_error_is_an_error_of_the_api
+      assert_equal [Error, StandardError], Uploads::Error.ancestors.grep(Class).drop(1).take(2)
+    end
+  end
+end

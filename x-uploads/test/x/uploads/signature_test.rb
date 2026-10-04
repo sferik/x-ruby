@@ -1,0 +1,72 @@
+# frozen_string_literal: true
+
+require "stringio"
+require_relative "../../test_helper"
+require "x/uploads/signature"
+require "x/uploads/source"
+require "x/uploads/validator"
+
+module X
+  class SignatureTest < Minitest::Test
+    cover Uploads.const_get(:Signature)
+
+    # The EBML header an encoder such as FFmpeg writes, before the DocType it names
+    EBML_HEADER = "\x1A\x45\xDF\xA3\x9F\x42\x86\x81\x01\x42\xF7\x81\x01\x42\xF2\x81\x04\x42\xF3\x81\x08"
+    # The header of a WebM file, whose DocType is webm
+    WEBM = "#{EBML_HEADER}\x42\x82\x84webm\x42\x87\x81\x04\x42\x85\x81\x02".freeze
+    # The header of a Matroska file that is not WebM, whose DocType is matroska
+    MATROSKA = "#{EBML_HEADER}\x42\x82\x88matroska\x42\x87\x81\x04\x42\x85\x81\x02".freeze
+
+    SIGNED = {
+      "image/gif" => ["GIF87a", "GIF89a"],
+      "image/png" => ["\x89PNG\r\n\x1A\n"],
+      "image/jpeg" => ["\xFF\xD8\xFF\xE0"],
+      "image/bmp" => ["BM\x00\x00"],
+      "image/tiff" => ["II*\x00", "MM\x00*"],
+      "image/webp" => ["RIFF\x00\x00\x00\x00WEBPVP8 "],
+      "video/webm" => [WEBM],
+      "video/quicktime" => ["\x00\x00\x00\x14ftypqt  "],
+      "video/mp4" => ["isom", "iso2", "iso3", "iso4", "iso5", "iso6", "iso7", "iso8", "iso9", "mp41", "mp42", "avc1", "M4V ", "M4VH",
+        "M4VP", "dash", "MSNV", "3gp4", "3gp5", "3gp6", "3g2a", "f4v ", "XAVC", "mmp4"]
+        .map { |brand| "\x00\x00\x00\x18ftyp#{brand}" },
+      "text/vtt" => ["WEBVTT\n\n", "\xEF\xBB\xBFWEBVTT\n"],
+      "video/mp2t" => [("G" + ("\xFF" * 187)) * 3, ("\x00\x00\x00\x00G" + ("\xFF" * 187)) * 3]
+    }.freeze
+
+    def test_every_signature_names_the_media_type_of_media_that_begins_with_it
+      SIGNED.each do |media_type, signatures|
+        signatures.each do |signature|
+          assert_equal media_type, Uploads.const_get(:Signature).media_type(signature.b), signature.inspect
+        end
+      end
+    end
+
+    def test_media_no_signature_names_has_no_media_type
+      ["", "not media at all", "RIFF\x00\x00\x00\x00AVI LIST", "PK\x03\x04", "glTF\x02\x00\x00\x00", "1\n00:00:01,000 --> 00:00:02,000\n"].each do |bytes|
+        assert_nil Uploads.const_get(:Signature).media_type(bytes.b), bytes.inspect
+      end
+    end
+
+    def test_a_matroska_file_that_is_not_webm_has_no_media_type
+      [MATROSKA, "\x1A\x45\xDF\xA3", "\x1A\x45\xDF\xA3\x42\x82\x88webmwebm"].each do |bytes|
+        assert_nil Uploads.const_get(:Signature).media_type(bytes.b), bytes.inspect
+      end
+    end
+
+    def test_images_and_audio_that_share_the_box_type_of_an_mp4_video_are_not_one
+      ["heic", "heix", "mif1", "msf1", "avif", "avis", "M4A ", "M4B "].each do |brand|
+        assert_nil Uploads.const_get(:Signature).media_type("\x00\x00\x00\x18ftyp#{brand}".b), brand
+      end
+    end
+
+    def test_media_with_the_sync_byte_of_a_transport_stream_in_too_few_packets_is_not_one
+      [("G" + ("\xFF" * 187)) * 2, "G" + ("\xFF" * 400), ("\x00\x00\x00\x00G" + ("\xFF" * 187)) * 2].each do |bytes|
+        assert_nil Uploads.const_get(:Signature).media_type(bytes.b)
+      end
+    end
+
+    def test_the_media_type_of_media_shorter_than_the_signature_it_begins_with
+      assert_nil Uploads.const_get(:Signature).media_type("GIF8")
+    end
+  end
+end

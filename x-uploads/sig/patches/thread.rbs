@@ -1,0 +1,5 @@
+# Give Thread.handle_interrupt the block it runs, which the core signatures leave out
+class Thread
+  def self.handle_interrupt: [T] (Hash[Module, Symbol] hash) { () -> T } -> T
+                           | ...
+end

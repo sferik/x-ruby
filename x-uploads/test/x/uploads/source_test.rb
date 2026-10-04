@@ -1,0 +1,128 @@
+# frozen_string_literal: true
+
+require "pathname"
+require "stringio"
+require "tempfile"
+require_relative "../../test_helper"
+require "x/uploads/source"
+
+module X
+  class SourceTest < Minitest::Test
+    cover Uploads.const_get(:Source)
+
+    PNG = "test/sample_files/sample.png"
+
+    def test_the_source_of_a_source_is_that_source
+      source = Uploads.const_get(:Source).for(PNG)
+
+      assert_same source, Uploads.const_get(:Source).for(source)
+    end
+
+    def test_a_string_and_a_pathname_name_the_file_they_are_read_from
+      [PNG, Pathname(PNG)].each do |path|
+        source = Uploads.const_get(:Source).for(path)
+
+        assert_equal [PNG, PNG, "png"], [source.name, source.description, source.extension]
+      end
+    end
+
+    def test_a_pathname_is_read_from_the_file_it_names
+      source = Uploads.const_get(:Source).for(Pathname(PNG))
+
+      assert_equal [File.binread(PNG), File.binread(PNG, 4, 1)], [source.content, source.read(4, 1)]
+    end
+
+    def test_the_size_of_a_file_named_by_a_path
+      assert_equal [File.size(PNG)] * 2, [PNG, Pathname(PNG)].map { |path| Uploads.const_get(:Source).for(path).size }
+    end
+
+    def test_an_io_open_on_a_file_is_read_from_that_file
+      File.open(PNG, "rb") do |file|
+        source = Uploads.const_get(:Source).for(file)
+
+        assert_equal PNG, source.name
+        assert_equal File.size(PNG), source.size
+      end
+    end
+
+    def test_an_io_open_on_a_file_is_flushed_so_the_upload_reads_what_it_has_written
+      Tempfile.create(%w[source .png]) do |file|
+        file.write("written")
+        source = Uploads.const_get(:Source).for(file)
+
+        assert_equal "written", source.content
+        assert_equal 7, source.size
+      end
+    end
+
+    def test_a_file_is_read_by_position_from_any_thread
+      source = Uploads.const_get(:Source).for(PNG)
+
+      assert_equal File.binread(PNG), source.content
+      assert_equal File.binread(PNG, 4, 1), source.read(4, 1)
+      assert_equal File.binread(PNG, 512), source.sniff
+    end
+
+    def test_a_file_that_is_there_exists_and_can_be_read
+      source = Uploads.const_get(:Source).for(PNG)
+
+      assert_equal [true, true], [source.exist?, source.readable?]
+    end
+
+    def test_a_file_that_is_not_there_neither_exists_nor_can_be_read
+      source = Uploads.const_get(:Source).for("nope.png")
+
+      assert_equal [false, false], [source.exist?, source.readable?]
+    end
+
+    def test_a_directory_exists_but_cannot_be_read
+      source = Uploads.const_get(:Source).for("test/sample_files")
+
+      assert_equal [true, false], [source.exist?, source.readable?]
+    end
+
+    def test_an_io_that_names_no_file_is_read_to_its_end_and_held
+      source = Uploads.const_get(:Source).for(StringIO.new("0123456789"))
+
+      assert_equal [nil, "the media given", ""], [source.name, source.description, source.extension]
+      assert_equal [true, true, 10], [source.exist?, source.readable?, source.size]
+      assert_equal "0123456789", source.content
+      assert_equal "1234", source.read(4, 1)
+    end
+
+    def test_media_held_in_memory_is_read_as_bytes
+      held = StringIO.new("héllo")
+      source = Uploads.const_get(:Source).for(held)
+
+      assert_equal Encoding::BINARY, source.content.encoding
+      assert_equal [6, Encoding::UTF_8], [source.size, held.string.encoding]
+    end
+
+    def test_the_signature_of_media_shorter_than_the_bytes_it_is_read_from
+      assert_equal "GIF89a", Uploads.const_get(:Source).for(StringIO.new("GIF89a")).sniff
+    end
+
+    def test_the_signature_is_read_from_enough_bytes_to_find_the_packets_of_a_transport_stream
+      assert_equal File.binread("test/sample_files/sample.mp4", 512), Uploads.const_get(:Source).for("test/sample_files/sample.mp4").sniff
+    end
+
+    def test_the_signature_of_empty_media_is_empty
+      Tempfile.create("source") do |file|
+        assert_empty Uploads.const_get(:Source).for(file.path).sniff
+      end
+    end
+
+    def test_an_io_that_reads_nothing_is_empty
+      reader = Object.new
+      def reader.read = nil
+
+      assert_equal 0, Uploads.const_get(:Source).for(reader).size
+    end
+
+    def test_media_that_is_neither_a_path_nor_an_io_is_refused
+      error = assert_raises(ArgumentError) { Uploads.const_get(:Source).for(42) }
+
+      assert_equal "media must be a path or an IO that reads one, not Integer", error.message
+    end
+  end
+end

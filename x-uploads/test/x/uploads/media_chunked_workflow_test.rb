@@ -1,0 +1,120 @@
+# frozen_string_literal: true
+
+require "tmpdir"
+require_relative "../../test_helper"
+require "x/uploads/media_upload"
+
+module X
+  class MediaChunkedWorkflowTest < Minitest::Test
+    cover Uploads::MediaUpload
+    cover Uploads.const_get(:Chunks)
+
+    BASE_URL = "https://api.x.com/2/media/upload"
+    INIT_URL = "#{BASE_URL}/initialize".freeze
+    APPEND_URL = "#{BASE_URL}/#{TEST_MEDIA_ID}/append".freeze
+    VIDEO_FILE = "test/sample_files/sample.mp4"
+    JSON_HEADERS = {"content-type" => "application/json"}.freeze
+
+    def setup
+      @client = Client.new
+    end
+
+    def test_default_media_category_and_type_are_inferred_from_the_file
+      stub_workflow
+      Uploads::MediaUpload.chunked_upload("test/sample_files/sample.png", client: @client)
+
+      assert_requested(:post, INIT_URL, body: {media_type: "image/png", media_category: "tweet_image", total_bytes: 68}.to_json)
+    end
+
+    def test_upload_an_amplify_video_in_chunks_as_mp4
+      stub_workflow
+      Uploads::MediaUpload.upload("test/sample_files/sample.mp4", client: @client, media_category: "amplify_video")
+
+      assert_requested(:post, INIT_URL, body: {media_type: "video/mp4", media_category: "amplify_video", total_bytes: File.size("test/sample_files/sample.mp4")}.to_json)
+      assert_not_requested(:post, BASE_URL)
+    end
+
+    def test_missing_file_is_rejected_before_requesting
+      error = assert_raises(InvalidMedia) do
+        Uploads::MediaUpload.chunked_upload("nope.mp4", client: @client, media_category: "tweet_video")
+      end
+
+      assert_equal "nope.mp4 does not exist: there is no file to upload", error.message
+    end
+
+    def test_missing_file_of_no_known_type_is_rejected_before_inferring_its_type
+      error = assert_raises(InvalidMedia) { Uploads::MediaUpload.chunked_upload("nope.xyz", client: @client) }
+
+      assert_equal "nope.xyz does not exist: there is no file to upload", error.message
+    end
+
+    def test_invalid_category_is_rejected_before_requesting
+      assert_raises(ArgumentError) do
+        Uploads::MediaUpload.chunked_upload(VIDEO_FILE, client: @client, media_category: "bogus", media_type: "video/mp4")
+      end
+      assert_not_requested(:post, INIT_URL)
+    end
+
+    def test_invalid_chunk_options_are_rejected_before_requesting
+      assert_raises(ArgumentError) { Uploads::MediaUpload.chunked_upload(VIDEO_FILE, client: @client, concurrency: 0) }
+      assert_raises(ArgumentError) { Uploads::MediaUpload.chunked_upload(VIDEO_FILE, client: @client, chunk_size: 0) }
+      assert_not_requested(:post, INIT_URL)
+    end
+
+    def test_media_without_id
+      stub_request(:post, INIT_URL).to_return(headers: JSON_HEADERS, body: {data: {}}.to_json)
+      error = without_thread_reports do
+        assert_raises(MissingMediaData) { Uploads::MediaUpload.chunked_upload(VIDEO_FILE, client: @client, media_category: "tweet_video") }
+      end
+
+      assert_equal "The response that initializes the upload holds no media to append the chunks to", error.message
+    end
+
+    def test_an_initialize_response_that_holds_problems_in_place_of_media_names_them
+      stub_request(:post, INIT_URL).to_return(headers: JSON_HEADERS, body: {errors: [{title: "Invalid Request", detail: "total_bytes is too large"}]}.to_json)
+      error = without_thread_reports do
+        assert_raises(MissingMediaData) { Uploads::MediaUpload.chunked_upload(VIDEO_FILE, client: @client, media_category: "tweet_video") }
+      end
+
+      assert_equal ["The response that initializes the upload holds no media to append the chunks to: total_bytes is too large", ["Invalid Request"]],
+        [error.message, error.problems.map(&:title)]
+    end
+
+    def test_chunks_are_read_from_the_file_without_temporary_files
+      stub_workflow
+      Dir.stub(:mktmpdir, ->(*) { flunk "wrote a temporary file" }) do
+        Uploads::MediaUpload.chunked_upload(VIDEO_FILE, client: @client, media_category: "tweet_video", chunk_size: 65_536)
+      end
+
+      assert_requested(:post, APPEND_URL, times: 2)
+    end
+
+    def test_an_empty_file_is_refused_before_the_upload_is_initialized
+      stub_workflow
+      Dir.mktmpdir do |dir|
+        path = File.join(dir, "empty.mp4")
+        File.binwrite(path, "")
+
+        assert_raises(InvalidMedia) { Uploads::MediaUpload.chunked_upload(path, client: @client, media_category: "tweet_video") }
+      end
+      assert_not_requested(:post, INIT_URL)
+    end
+
+    private
+
+    def stub_workflow
+      json = {headers: JSON_HEADERS, body: {data: {id: TEST_MEDIA_ID}}.to_json}
+      stub_request(:post, INIT_URL).to_return(json)
+      stub_request(:post, APPEND_URL).to_return(status: 204)
+      stub_request(:post, "#{BASE_URL}/#{TEST_MEDIA_ID}/finalize").to_return(json)
+    end
+
+    def without_thread_reports
+      original = Thread.report_on_exception
+      Thread.report_on_exception = false
+      yield
+    ensure
+      Thread.report_on_exception = original
+    end
+  end
+end

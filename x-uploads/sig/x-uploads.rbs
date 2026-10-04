@@ -1,0 +1,139 @@
+module X
+  module Uploads
+    VERSION: String
+
+    def self.gem_version: () -> Gem::Version
+
+    # Media that has a media key, which names its media identifier, such as the X::Media of x-resources
+    interface _MediaKeyed
+      def media_key: () -> String?
+    end
+
+    # Media to act on: what an upload returned, media that has a media key, or the identifier of media
+    type media = UploadedMedia | Hash[String, untyped] | _MediaKeyed | String | Integer
+
+    # Media to upload: a path to it, or an IO open on it
+    type uploadable = String | _ToPath | _Reader
+
+    module API
+      def upload_media: (uploadable media, ?media_category: (String | Symbol)?, ?alt_text: String?, ?processing_timeout: Numeric?, ?media_type: String?, ?chunk_size: Integer?, ?concurrency: Integer, ?shared: bool?, ?additional_owners: Array[Integer | String]?) -> UploadedMedia
+      def chunked_upload_media: (uploadable media, ?media_category: (String | Symbol)?, ?media_type: String?, ?chunk_size: Integer?, ?concurrency: Integer, ?shared: bool?, ?additional_owners: Array[Integer | String]?) -> UploadedMedia
+      def await_media_processing: (media media, ?processing_timeout: Numeric?) -> UploadedMedia
+      def await_media_processing!: (media media, ?processing_timeout: Numeric?) -> UploadedMedia
+      def add_alt_text: (media media, String text) -> UploadedMedia
+      def add_subtitles: (media video, media subtitles, String language_code, ?display_name: String?, ?media_category: String | Symbol) -> UploadedMedia
+      def update_profile_image: (uploadable media) -> void
+      def update_profile_banner: (uploadable media, ?width: Integer?, ?height: Integer?, ?offset_left: Integer?, ?offset_top: Integer?) -> void
+    end
+
+    class Error < ::X::Error
+    end
+
+    module MediaUpload
+      AMPLIFY_VIDEO: String
+      DM_GIF: String
+      DM_IMAGE: String
+      DM_VIDEO: String
+      SUBTITLES: String
+      TWEET_GIF: String
+      TWEET_IMAGE: String
+      TWEET_VIDEO: String
+      DEFAULT_PROCESSING_TIMEOUT: Integer
+      DEFAULT_CONCURRENCY: Integer
+      DEFAULT_CHUNK_SIZE: Integer
+      MAX_CONCURRENCY: Integer
+      extend MediaUpload
+
+      def upload: (uploadable media, client: ::X::Client, ?media_category: (String | Symbol)?, ?alt_text: String?, ?processing_timeout: Numeric?, ?media_type: String?, ?chunk_size: Integer?, ?concurrency: Integer, ?shared: bool?, ?additional_owners: Array[Integer | String]?) -> UploadedMedia
+      def chunked_upload: (uploadable media, client: ::X::Client, ?media_category: (String | Symbol)?, ?media_type: String?, ?chunk_size: Integer?, ?concurrency: Integer, ?shared: bool?, ?additional_owners: Array[Integer | String]?) -> UploadedMedia
+      def await_processing: (media media, client: ::X::Client, ?processing_timeout: Numeric?) -> UploadedMedia
+      def await_processing!: (media media, client: ::X::Client, ?processing_timeout: Numeric?) -> UploadedMedia
+    end
+
+    module Metadata
+      extend Metadata
+
+      def add_alt_text: (media media, String text, client: ::X::Client) -> UploadedMedia
+      def add_subtitles: (media video, media subtitles, String language_code, client: ::X::Client, ?display_name: String?, ?media_category: String | Symbol) -> UploadedMedia
+    end
+
+    module Account
+      extend Account
+
+      def update_profile_image: (uploadable media, client: ::X::Client) -> void
+      def update_profile_banner: (uploadable media, client: ::X::Client, ?width: Integer?, ?height: Integer?, ?offset_left: Integer?, ?offset_top: Integer?) -> void
+    end
+  end
+
+  class UploadedMedia
+    attr_reader attrs: Hash[String, untyped]
+    alias to_h attrs
+
+    def initialize: (Hash[String, untyped] attrs) -> void
+    def id: () -> Integer
+    def media_id: () -> Integer
+    def media_key: () -> String?
+    def bytesize: () -> Integer?
+    def expires_after_secs: () -> Integer?
+    def processing_info: () -> Hash[String, untyped]?
+    def state: () -> String?
+    def check_after_secs: () -> Integer?
+    def processing?: () -> bool
+    def failed?: () -> bool
+    def ready?: () -> bool
+    def []: (String key) -> untyped
+    def fetch: (String key, *untyped default) ?{ (String key) -> untyped } -> untyped
+    def dig: (*String | Integer keys) -> untyped
+    def key?: (String key) -> bool
+    def as_json: (*untyped) -> Hash[String, untyped]
+    def to_json: (?::JSON::State? state) -> String
+    def ==: (untyped other) -> bool
+    alias eql? ==
+    def hash: () -> Integer
+    def inspect: () -> String
+    def marshal_dump: () -> untyped
+    def marshal_load: (untyped state) -> void
+    def encode_with: (untyped coder) -> void
+    def init_with: (untyped coder) -> void
+  end
+
+  class InvalidMedia < Uploads::Error
+  end
+
+  class InvalidMediaType < InvalidMedia
+  end
+
+  class MissingMediaData < Uploads::Error
+    attr_reader problems: Array[Problem]
+    def initialize: (?String? message, ?problems: Array[Problem]) -> void
+  end
+
+  class MediaProcessingTimeout < Uploads::Error
+    attr_reader media: UploadedMedia?
+    attr_reader timeout: Numeric?
+    def initialize: (?String? message, ?media: UploadedMedia | Hash[String, untyped] | nil, ?timeout: Numeric?) -> void
+  end
+
+  class MediaProcessingCheckFailed < Uploads::Error
+    attr_reader media: UploadedMedia?
+    def initialize: (?String? message, ?media: UploadedMedia | Hash[String, untyped] | nil) -> void
+    def to_s: () -> String
+  end
+
+  class ChunkedUploadFailed < Uploads::Error
+    attr_reader media: UploadedMedia?
+    def initialize: (?String? message, ?media: UploadedMedia | Hash[String, untyped] | nil) -> void
+    def to_s: () -> String
+  end
+
+  class AltTextFailed < Uploads::Error
+    attr_reader media: UploadedMedia?
+    def initialize: (?String? message, ?media: UploadedMedia | Hash[String, untyped] | nil) -> void
+    def to_s: () -> String
+  end
+
+  class MediaProcessingFailed < Uploads::Error
+    attr_reader media: UploadedMedia?
+    def initialize: (?String? message, ?media: UploadedMedia | Hash[String, untyped] | nil) -> void
+  end
+end

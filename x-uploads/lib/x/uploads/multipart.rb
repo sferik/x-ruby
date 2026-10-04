@@ -1,0 +1,63 @@
+# frozen_string_literal: true
+
+require "securerandom"
+require_relative "json_classes"
+
+module X
+  module Uploads
+    # Builds the multipart form requests of the uploads
+    #
+    # Internal to x-uploads: the uploaders call it rather than mix its methods into themselves, so a class that
+    # includes an uploader gains none of them.
+    #
+    # @api private
+    module Multipart
+      extend self
+
+      # The headers of a multipart form request
+      #
+      # @api private
+      # @param boundary [String] the multipart boundary
+      # @return [Hash{String => String}] the content type, which names the boundary
+      # @example The headers of a request
+      #   Uploads::Multipart.headers("boundary") # => {"Content-Type" => "multipart/form-data; boundary=boundary"}
+      def headers(boundary) = {"Content-Type" => "multipart/form-data; boundary=#{boundary}"}
+
+      # Post a multipart form request, with a boundary of its own
+      #
+      # @api private
+      # @param client [Client] the X API client
+      # @param url [String] the endpoint, relative to the base URL of the client
+      # @param name [String] the name of the field that holds the content
+      # @param content [String] the content to upload
+      # @param fields [Hash{Symbol => Object}] the form fields that come before the content, less any that are nil
+      # @return [Hash, nil] the parsed response, or nil for a response with no body
+      # @example Update a profile image
+      #   Uploads::Multipart.post(client, "../1.1/account/update_profile_image.json", "image", png)
+      def post(client, url, name, content, **fields)
+        boundary = SecureRandom.hex
+        client.post(url, body(name, content, boundary:, **fields), headers: headers(boundary), **JSON_CLASSES)
+      end
+
+      # The body of a multipart form request: any form fields, then the content uploaded
+      #
+      # @api private
+      # @param name [String] the name of the field that holds the content
+      # @param content [String] the content to upload
+      # @param boundary [String] the multipart boundary
+      # @param fields [Hash{Symbol => Object}] the form fields that come before the content, less any that are nil
+      # @return [String] the multipart body
+      # @example The body of one chunk of a video
+      #   Uploads::Multipart.body("media", chunk, boundary: "boundary", segment_index: 0)
+      def body(name, content, boundary:, **fields)
+        fields.compact.map { |field, value| "--#{boundary}\r\nContent-Disposition: form-data; name=\"#{field}\"\r\n\r\n#{value}\r\n" }.join +
+          "--#{boundary}\r\n" \
+          "Content-Disposition: form-data; name=\"#{name}\"\r\n" \
+          "Content-Type: application/octet-stream\r\n\r\n" \
+          "#{content}\r\n" \
+          "--#{boundary}--\r\n"
+      end
+    end
+    private_constant :Multipart
+  end
+end

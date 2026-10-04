@@ -1,0 +1,18 @@
+# frozen_string_literal: true
+
+require_relative "uploads/version"
+require_relative "uploads/account"
+require_relative "uploads/alt_text_failed"
+require_relative "uploads/api"
+require_relative "uploads/chunked_upload_failed"
+require_relative "uploads/error"
+require_relative "uploads/gif"
+require_relative "uploads/invalid_media"
+require_relative "uploads/invalid_media_type"
+require_relative "uploads/media_upload"
+require_relative "uploads/media_processing_check_failed"
+require_relative "uploads/media_processing_failed"
+require_relative "uploads/media_processing_timeout"
+require_relative "uploads/metadata"
+require_relative "uploads/missing_media_data"
+require_relative "uploads/uploaded_media"

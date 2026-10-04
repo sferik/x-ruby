@@ -1,0 +1,99 @@
+# frozen_string_literal: true
+
+require_relative "../../test_helper"
+require "x/uploads/media_upload"
+require "x/uploads/metadata"
+
+module X
+  # The responses of an upload that describe no media, which every step of one raises MissingMediaData for
+  class MissingMediaDataTest < Minitest::Test
+    cover Uploads::MediaUpload
+    cover Uploads.const_get(:Chunks)
+    cover Uploads.const_get(:Utils)
+    cover UploadedMedia
+    cover Uploads::Metadata
+
+    BASE_URL = "https://api.x.com/2/media/upload"
+    VIDEO_FILE = "test/sample_files/sample.mp4"
+    JSON_HEADERS = {"content-type" => "application/json"}.freeze
+
+    def setup
+      @client = Client.new
+    end
+
+    def test_a_response_of_an_upload_that_holds_no_media_raises
+      stub_request(:post, BASE_URL).to_return(headers: JSON_HEADERS, body: "{}")
+      error = assert_raises(MissingMediaData) { Uploads::MediaUpload.upload("test/sample_files/sample.png", client: @client) }
+
+      assert_equal "The response of the upload holds no media", error.message
+    end
+
+    def test_data_that_is_not_media_raises_when_the_upload_is_initialized
+      stub_init({data: []})
+
+      assert_raises(MissingMediaData) { chunked_upload }
+    end
+
+    def test_a_response_that_finalizes_an_upload_without_media_raises
+      stub_init({data: {"id" => TEST_MEDIA_ID}})
+      stub_request(:post, "#{BASE_URL}/#{TEST_MEDIA_ID}/append").to_return(status: 204)
+      stub_request(:post, "#{BASE_URL}/#{TEST_MEDIA_ID}/finalize").to_return(headers: JSON_HEADERS, body: "{}")
+      error = assert_raises(ChunkedUploadFailed) { chunked_upload }.cause
+
+      assert_instance_of MissingMediaData, error
+
+      assert_equal "The response that finalizes the upload holds no media", error.message
+    end
+
+    def test_alt_text_whose_response_carries_no_body_raises
+      stub_request(:post, "https://api.x.com/2/media/metadata").to_return(status: 204)
+      error = assert_raises(MissingMediaData) { Uploads::Metadata.add_alt_text(7, "A cat", client: @client) }
+
+      assert_equal "The response that adds the metadata holds none", error.message
+    end
+
+    def test_subtitles_whose_response_carries_no_body_raise
+      stub_request(:post, "https://api.x.com/2/media/subtitles").to_return(status: 204)
+
+      assert_raises(MissingMediaData) { Uploads::Metadata.add_subtitles(7, 8, "EN", client: @client) }
+    end
+
+    def test_metadata_responses_whose_data_is_not_metadata_raise
+      stub_request(:post, %r{\Ahttps://api\.x\.com/2/media/(metadata|subtitles)\z}).to_return(headers: JSON_HEADERS, body: {data: []}.to_json)
+
+      assert_raises(MissingMediaData) { Uploads::Metadata.add_alt_text(7, "A cat", client: @client) }
+      assert_raises(MissingMediaData) { Uploads::Metadata.add_subtitles(7, 8, "EN", client: @client) }
+    end
+
+    def test_media_built_by_hand_without_an_identifier_is_a_mistake_of_the_caller
+      error = assert_raises(ArgumentError) { UploadedMedia.new({}) }
+
+      assert_equal "attrs must hold the \"id\" of the media, an Integer or a String of 1 to 19 digits, as an upload returns it, not nil", error.message
+      assert_raises(ArgumentError) { UploadedMedia.new({"media_key" => "3_7"}) }
+    end
+
+    def test_a_response_of_an_upload_whose_identifier_is_nil_or_empty_raises
+      [nil, ""].each do |id|
+        stub_request(:post, BASE_URL).to_return(headers: JSON_HEADERS, body: {data: {id:}}.to_json)
+        error = assert_raises(MissingMediaData, id.inspect) { Uploads::MediaUpload.upload("test/sample_files/sample.png", client: @client) }
+
+        assert_equal "The response of the upload holds no media", error.message
+      end
+    end
+
+    def test_a_response_that_initializes_an_upload_with_an_identifier_of_nil_or_empty_raises
+      [nil, ""].each do |id|
+        stub_init({data: {id:}})
+
+        assert_raises(MissingMediaData, id.inspect) { chunked_upload }
+      end
+      assert_not_requested :post, %r{/append\z}
+    end
+
+    private
+
+    def stub_init(body) = stub_request(:post, "#{BASE_URL}/initialize").to_return(status: 202, headers: JSON_HEADERS, body: body.to_json)
+
+    def chunked_upload = Uploads::MediaUpload.chunked_upload(VIDEO_FILE, client: @client, media_category: Uploads::MediaUpload::TWEET_VIDEO)
+  end
+end
