@@ -1,0 +1,206 @@
+# Signatures of the internals of x-streams, which Steep checks the gem against, and which the gem does not ship
+module X
+  module Streams
+    class Error < X::Error
+      private
+      def describe: (Array[Problem] problems) -> String?
+    end
+
+    class CallbackError < StandardError
+      attr_reader error: StandardError
+
+      def self.tagging: (untyped callable) -> untyped
+      def initialize: (StandardError error) -> void
+    end
+
+    module Validator
+      extend Validator
+
+      MINIMUM_READ_TIMEOUT: Integer
+      INVALID_COUNT_OR_INFINITY: String
+      INVALID_READ_TIMEOUT: String
+      INVALID_ARRAY_CLASS: String
+      INVALID_OBJECT_CLASS: String
+
+      INVALID_CALLABLE: String
+      VOWEL: Regexp
+      IDENTIFIER: Regexp
+      INVALID_IDENTIFIER: String
+
+      def identifier!: (untyped value) -> Integer
+      def count_or_infinity!: (Symbol name, untyped value) -> untyped
+      def callable!: (Symbol name, untyped value) -> untyped
+      def read_timeout!: (Symbol name, untyped value) -> untyped
+      def parsing_classes!: (array_class: untyped, object_class: untyped) -> void
+    end
+
+    class ReconnectHandler
+      DEFAULT_MAX_RECONNECTS: Float
+      NETWORK_BACKOFF_STEP: Float
+      MAX_NETWORK_BACKOFF: Integer
+      HTTP_BACKOFF_START: Integer
+      RATE_LIMIT_BACKOFF_START: Integer
+      STABLE_CONNECTION: Integer
+      MAX_HTTP_BACKOFF: Integer
+      RECONNECTABLE_ERRORS: Array[singleton(NetworkError) | singleton(ServerError) | singleton(RequestTimeout) | singleton(Conflict) | singleton(TooManyRequests) | singleton(InvalidResponse)]
+
+      FIRST_STATE: state
+      UNVERIFIED_CERTIFICATE: String
+      ConsumerError: singleton(StandardError)
+
+      type state = Hash[Symbol, Integer]
+
+      attr_reader max_reconnects: Integer | Float
+      @on_reconnect: untyped
+
+      attr_reader max_rate_limit_wait: Numeric
+      def initialize: (?max_reconnects: Integer | Float, ?max_rate_limit_wait: Numeric, ?on_reconnect: untyped) -> void
+      def handle: (^(untyped) -> void consumer) { (^(untyped) -> void, ^() -> void) -> void } -> nil
+
+      private
+      def cause_of: (StandardError error) -> StandardError
+      def run_once: (^(^(untyped) -> void, ^() -> void) -> void stream, ^(untyped) -> void consumer, state state) -> bool
+      def now: () -> Float
+      def reconnectable?: (StandardError error) -> bool
+      def unverified_certificate?: (Exception? cause) -> bool
+      def out_of_reconnects?: (StandardError error, state state) -> bool
+      def announce: (StandardError error, Integer | Float wait) -> void
+      def delivery_to: (^(untyped) -> void consumer, ^() -> void restart) -> ^(untyped) -> void
+      def backoff: (StandardError error, state state) -> (Float | Integer)
+      def count: (state state, Symbol name) -> Integer
+      def network_backoff: (Integer reconnects) -> (Float | Integer)
+      def http_backoff: (HTTPError error, Integer reconnects) -> Integer
+      def rate_limit_backoff: (TooManyRequests error, Integer reconnects) -> Integer
+    end
+
+    module StreamRules
+      extend StreamRules
+
+      NOT_A_RULE: String
+      NOT_A_RULE_TO_ADD: String
+      DUPLICATE_RULES: String
+
+      def deletion: (Array[untyped] ids, Array[untyped] values) -> Hash[Symbol, Array[untyped]]
+      def each_rule: (untyped rules) -> Array[untyped]
+      def rules_of: (Hash[String, untyped]? body) -> Array[StreamRule]
+      def duplicate?: (Problem problem) -> bool
+      def next_token: (Hash[String, untyped]? body, Array[String] spent) -> String?
+      def rule_to_add: (StreamingClient::addable_rule rule) -> Hash[untyped, untyped]
+      def identifier_of: (untyped rule) -> untyped
+      def matching_rule?: (untyped rule) -> bool?
+      def value_of: (untyped rule) -> String
+    end
+
+    class StreamParser
+      LINE_DELIMITER: String
+
+      def process: (response: StreamResponse, array_class: Class, object_class: untyped, client: Client, on_line: ^(String) -> void, on_keep_alive: ^() -> void) { (untyped) -> void } -> void
+
+      private
+      def parse_line: (String line, response: StreamResponse) -> untyped
+      def build: (untyped body, array_class: Class, object_class: untyped, client: Client) -> untyped
+      def rebuild: (untyped value, array_class: Class, object_class: Class) -> untyped
+      def tagging_callback_errors: [T] () { () -> T } -> T
+      def read_lines: (response: StreamResponse, decode: ^(String) -> untyped, on_keep_alive: ^() -> void) { (untyped) -> void } -> void
+      def process_buffer: (buffer: String, decode: ^(String) -> untyped, on_keep_alive: ^() -> void) { (untyped) -> void } -> void
+      def yield_json: (line: String, decode: ^(String) -> untyped) { (untyped) -> void } -> void
+    end
+  end
+
+  class StreamError < Streams::Error
+    @problems: Array[Problem]
+    @http_method: Symbol?
+    @uri: URI::Generic?
+
+    private
+    def naming_request: (String? message) -> String?
+  end
+
+  class RulesRejected < Streams::Error
+    @problems: Array[Problem]
+    @added: Array[StreamRule]?
+    @deleted_count: Integer?
+  end
+
+  class StreamRule
+    NOT_A_STRING: String
+    MARSHAL_FORMAT: Integer
+
+    private
+    def string!: (Symbol name, untyped string) -> String
+  end
+
+  module Streams
+    module RefreshReportGuard
+      KEY: Symbol
+      def self.around: [T] (untyped guard) { () -> T } -> T
+    end
+
+    class Stopper
+      class Stopped < Exception
+      end
+
+      class Stream
+        @thread: Thread
+        @scheduled: bool
+        @guarded: bool
+
+        attr_reader thread: Thread
+        attr_reader scheduled: bool
+        attr_accessor guarded: bool
+        def initialize: () -> void
+        def interruptible?: () -> bool
+      end
+
+      @streams: Array[Stream]
+      @lock: Thread::Mutex
+      @stopped: bool
+      @stop: singleton(Stopped)
+
+      CURRENT: Symbol
+      PAUSE: Integer
+
+      def self.guard: [T] () { () -> T } -> T
+      def self.guarding_stream: [T] (Stream stream) { () -> T } -> T
+      def self.discard_stop: () -> nil
+      def self.checking: (^() -> void callable) -> ^() -> void
+      def self.pausing: (Integer | Float seconds) { (Integer | Float seconds) -> void } -> void
+      def self.guarding: (untyped callable) -> untyped
+      def initialize: () -> void
+      def stopped?: () -> bool
+      def run: [T] () { () -> T } -> T?
+      def stop: () -> nil
+
+      private
+      def running: [T] (Stream stream) { () -> T } -> T
+      def stop_returned: (Stream stream) -> void
+      def reading_here?: () -> bool
+      def lock_at_once: () -> bool
+      def interrupt_and_unlock: () -> void
+      def interrupt: () -> void
+    end
+  end
+
+  class StreamingClient
+    NO_BLOCK_MESSAGE: String
+    ENDED_MESSAGE: String
+    RULES_ENDPOINT: String
+    JSON_CLASSES: Hash[Symbol, Class]
+    REFUSAL_MESSAGE: String
+
+    @on_response: untyped
+    @stream_client: Client
+    @reconnect_handler: Streams::ReconnectHandler
+    @stream_parser: Streams::StreamParser
+    @stopper: Streams::Stopper
+
+    private
+    def read_rules: (params? params, into: Array[StreamRule], spent: Array[String]) -> String?
+    def change_rules: (Hash[Symbol, untyped] body, dry_run: bool) -> Hash[String, untyped]?
+    def reporting: (Array[Problem] problems, { added: Array[StreamRule] } | { deleted_count: Integer } changed) ?{ (Problem problem) -> void } -> void
+    def read: (StreamResponse response, array_class: Class, object_class: object_class, alive: ^() -> void) { (untyped) -> void } -> void
+    def app_client: () -> Client
+    def app_only: (Client client) -> Client
+    def report: (StreamResponse response, String line) -> void
+  end
+end

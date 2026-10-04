@@ -1,0 +1,17 @@
+# frozen_string_literal: true
+
+# Type checks x-streams against the signatures that x-core ships
+target :lib do
+  signature "sig"
+  signature "../x-core/sig/x-core.rbs"
+  check "lib"
+  library "json"
+  library "monitor"
+  library "net-http"
+  library "openssl"
+  library "securerandom"
+  library "simple_oauth"
+  library "uri"
+  library "zlib"
+  configure_code_diagnostics(Steep::Diagnostic::Ruby.strict)
+end
