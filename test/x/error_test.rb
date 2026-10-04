@@ -1,54 +1,26 @@
-require "json"
+# frozen_string_literal: true
+
 require_relative "../test_helper"
 
 module X
-  class ErrorsTest < Minitest::Test
-    cover Client
-
-    def setup
-      @client = Client.new
+  # x-core declares X::Error, which every error of every gem descends from, so the meta-gem, which loads them all,
+  # checks that each does
+  class MetaErrorTest < Minitest::Test
+    def test_error_descends_from_standard_error
+      assert_equal StandardError, Error.superclass
     end
 
-    ResponseParser::ERROR_MAP.each do |status, error_class|
-      name = error_class.name.split("::").last
-      define_method :"test_initialize_#{name.downcase}_error" do
-        response = Net::HTTPResponse::CODE_TO_OBJ[status.to_s].new("1.1", status, error_class.name)
-        exception = error_class.new(response:)
-
-        assert_equal error_class.name, exception.message
-        assert_equal response, exception.response
-        assert_equal status, exception.code
-      end
+    def test_every_error_of_every_gem_descends_from_error
+      assert_operator HTTPError, :<, Error
+      assert_operator MissingResource, :<, Error
+      assert_operator Uploads::Error, :<, Error
+      assert_operator Streams::Error, :<, Error
+      assert_operator UnsupportedFormat, :<, Error
     end
 
-    Connection::NETWORK_ERRORS.each do |error_class|
-      define_method "test_#{error_class.name.split("::").last.downcase}_raises_network_error" do
-        stub_request(:get, "https://api.twitter.com/2/tweets").to_raise(error_class)
-
-        assert_raises NetworkError do
-          @client.get("tweets")
-        end
-      end
-    end
-
-    def test_unexpected_response
-      stub_request(:get, "https://api.twitter.com/2/tweets").to_return(status: 600)
-
-      assert_raises Error do
-        @client.get("tweets")
-      end
-    end
-
-    def test_problem_json
-      body = {error: "problem"}.to_json
-      stub_request(:get, "https://api.twitter.com/2/tweets")
-        .to_return(status: 400, headers: {"content-type" => "application/problem+json"}, body:)
-
-      begin
-        @client.get("tweets")
-      rescue BadRequest => e
-        assert_equal "problem", e.message
-      end
+    def test_the_errors_of_a_stream_descend_from_the_error_of_x_streams
+      assert_operator StreamError, :<, Streams::Error
+      assert_operator RulesRejected, :<, Streams::Error
     end
   end
 end
