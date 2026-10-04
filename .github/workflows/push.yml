@@ -16,22 +16,91 @@ jobs:
       name: rubygems.org
       url: https://rubygems.org/gems/x
     permissions:
-      contents: write
+      actions: read
+      contents: read
       id-token: write
     steps:
-      - uses: actions/checkout@v7
-      - uses: ruby/setup-ruby@v1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ruby/setup-ruby@14594264cd68ce8a2345dd349bc3d138a4ef85c8 # v1.327.0
         with:
           ruby-version: ruby
           bundler-cache: true
-      - uses: rubygems/configure-rubygems-credentials@v2.1.0
       - name: Update RubyGems
-        run: gem update --system
-      - name: Build gem
+        run: gem update --system 4.0.21
+      - name: Check that the tag and each gem version.rb hold the version in VERSION
+        run: |
+          version=$(cat VERSION)
+          if [ "${GITHUB_REF_NAME#v}" != "$version" ]; then
+            echo "Tag $GITHUB_REF_NAME does not name the version in VERSION, $version"
+            exit 1
+          fi
+          bundle exec rake check_versions
+      - name: Check that the tagged commit is on main
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # main is identical to the commit, or ahead of it, once the commit is on main
+          status=$(gh api "repos/$GITHUB_REPOSITORY/compare/$GITHUB_SHA...main" --jq .status)
+          case "$status" in
+            identical | ahead) echo "$GITHUB_SHA is on main" ;;
+            *)
+              echo "::error::$GITHUB_REF_NAME names $GITHUB_SHA, which is not on main"
+              exit 1
+              ;;
+          esac
+      - name: Check that CI passed on the tagged commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          # Every workflow that must have passed before the gems are pushed. A release commit triggers each of them,
+          # since `rake update_versions` writes the version into a version.rb of every gem, and the linter runs on any
+          # Ruby file; a commit after it that changes documentation alone triggers none, and each is run on it by hand,
+          # as CONTRIBUTING.md says. This workflow is left out, since it is the one running.
+          REQUIRED_WORKFLOWS: x-core x-uploads x-streams x-resources x linter
+        run: |
+          deadline=$((SECONDS + 1800))
+          while :; do
+            runs=$(gh run list --commit "$GITHUB_SHA" --limit 100 --json name,conclusion,createdAt)
+            failed=""
+            waiting=""
+            for workflow in $REQUIRED_WORKFLOWS; do
+              # The latest run of the workflow decides, since a run that failed or was cancelled may have been run
+              # again; a run of any other workflow on the commit, such as the deploy of the Pages, decides nothing
+              conclusion=$(jq -r --arg workflow "$workflow" \
+                '[.[] | select(.name == $workflow)] | sort_by(.createdAt) | last | if . == null then "missing" else .conclusion // "" end' <<<"$runs")
+              case "$conclusion" in
+                success) ;;
+                missing | "") waiting="$waiting $workflow" ;;
+                *) failed="$failed $workflow ($conclusion)" ;;
+              esac
+            done
+            if [ -n "$failed" ]; then
+              echo "::error::CI did not pass on $GITHUB_SHA:$failed"
+              exit 1
+            fi
+            [ -n "$waiting" ] || break
+            if [ "$SECONDS" -ge "$deadline" ]; then
+              echo "::error::Timed out waiting for CI on $GITHUB_SHA:$waiting"
+              exit 1
+            fi
+            echo "Waiting for CI on $GITHUB_SHA:$waiting"
+            sleep 30
+          done
+          echo "CI passed on $GITHUB_SHA"
+      - name: Build gems
         run: bundle exec rake build
-      - name: Sign gem with Sigstore
-        run: gem exec sigstore-cli sign pkg/*.gem --bundle pkg/x.gem.sigstore.json
-      - name: Push gem
-        run: gem push pkg/*.gem --attestation pkg/x.gem.sigstore.json
-      - name: Wait for release
-        run: gem exec rubygems-await pkg/*.gem
+      # The credentials are short-lived, so they are fetched once CI has passed and the gems are built
+      - uses: rubygems/configure-rubygems-credentials@dc5a8d8553e6ee01fc26761a49e99e733d17954a # v2.1.0
+      - name: Sign, push, and await each gem in dependency order
+        run: |
+          version=$(cat VERSION)
+          for name in x-core x-uploads x-streams x-resources x; do
+            file=pkg/$name-$version.gem
+            # A rerun after a failed push skips the gems the failed run already published
+            if curl --silent --fail --output /dev/null "https://rubygems.org/api/v2/rubygems/$name/versions/$version.json"; then
+              echo "$name $version is already published"
+              continue
+            fi
+            gem exec --version 0.2.3 sigstore-cli sign "$file" --bundle "pkg/$name.gem.sigstore.json"
+            gem push "$file" --attestation "pkg/$name.gem.sigstore.json"
+            gem exec --version 0.5.4 rubygems-await "$file"
+          done

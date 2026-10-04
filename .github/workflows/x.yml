@@ -1,0 +1,98 @@
+name: x
+on:
+  push:
+    # A tag names a commit whose push ran this workflow already, and a push of a tag skips the paths filter
+    branches:
+      - "**"
+    paths:
+      - "lib/**"
+      - "sig/**"
+      - "test/**"
+      - "examples/**"
+      - "Gemfile"
+      - "Rakefile"
+      - "Steepfile"
+      - "x.gemspec"
+      - "x-core/lib/**"
+      - "x-core/sig/*.rbs"
+      - "x-core/x-core.gemspec"
+      - "x-uploads/lib/**"
+      - "x-uploads/sig/*.rbs"
+      - "x-uploads/x-uploads.gemspec"
+      - "x-streams/lib/**"
+      - "x-streams/sig/*.rbs"
+      - "x-streams/x-streams.gemspec"
+      - "x-resources/lib/**"
+      - "x-resources/sig/*.rbs"
+      - "x-resources/x-resources.gemspec"
+      - "VERSION"
+      - ".github/workflows/x.yml"
+  # Run on a commit that changes none of the paths above, such as documentation alone, before it is tagged, since the
+  # workflow that pushes the gems waits for this one to pass on the tagged commit: gh workflow run <file> --ref main
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "lib/**"
+      - "sig/**"
+      - "test/**"
+      - "examples/**"
+      - "Gemfile"
+      - "Rakefile"
+      - "Steepfile"
+      - "x.gemspec"
+      - "x-core/lib/**"
+      - "x-core/sig/*.rbs"
+      - "x-core/x-core.gemspec"
+      - "x-uploads/lib/**"
+      - "x-uploads/sig/*.rbs"
+      - "x-uploads/x-uploads.gemspec"
+      - "x-streams/lib/**"
+      - "x-streams/sig/*.rbs"
+      - "x-streams/x-streams.gemspec"
+      - "x-resources/lib/**"
+      - "x-resources/sig/*.rbs"
+      - "x-resources/x-resources.gemspec"
+      - "VERSION"
+      - ".github/workflows/x.yml"
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        # JRuby is left out: its line coverage misses lines it runs, such as an empty array literal, so the
+        # suite cannot hold to the 100% floor there
+        ruby: ["3.4", "4.0", "ruby-head"]
+        include:
+          - os: macos-latest
+            ruby: "3.4"
+          - os: windows-latest
+            ruby: "3.4"
+    runs-on: ${{ matrix.os }}
+    # A head Ruby is informational: it reports a break before the release that carries it, without blocking a merge
+    continue-on-error: ${{ endsWith(matrix.ruby, '-head') }}
+    steps:
+    - uses: actions/checkout@v7
+    - uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: ${{ matrix.ruby }}
+        bundler-cache: true
+    - run: bundle exec rake test:x
+  steep:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v7
+    - uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: "3.4"
+        bundler-cache: true
+    - run: bundle exec rake steep:x
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v7
+    - uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: "3.4"
+        bundler-cache: true
+    - run: bundle exec rake yardstick:x

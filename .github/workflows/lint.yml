@@ -1,5 +1,39 @@
 name: linter
-on: [push, pull_request]
+on:
+  push:
+    # A tag names a commit whose push ran this workflow already, and a push of a tag skips the paths filter
+    branches:
+      - "**"
+    paths:
+      - "**.rb"
+      - "**.rbs"
+      - "**/Gemfile"
+      - "**/Rakefile"
+      - "**/Steepfile"
+      - "**.gemspec"
+      - "**/sig/manifest.yaml"
+      - "bin/**"
+      - ".rubocop.yml"
+      - ".standard.yml"
+      - "VERSION"
+      - ".github/workflows/lint.yml"
+  # Run on a commit that changes none of the paths above, such as documentation alone, before it is tagged, since the
+  # workflow that pushes the gems waits for this one to pass on the tagged commit: gh workflow run <file> --ref main
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "**.rb"
+      - "**.rbs"
+      - "**/Gemfile"
+      - "**/Rakefile"
+      - "**/Steepfile"
+      - "**.gemspec"
+      - "**/sig/manifest.yaml"
+      - "bin/**"
+      - ".rubocop.yml"
+      - ".standard.yml"
+      - "VERSION"
+      - ".github/workflows/lint.yml"
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -7,6 +41,15 @@ jobs:
     - uses: actions/checkout@v7
     - uses: ruby/setup-ruby@v1
       with:
-        ruby-version: "3.2"
+        ruby-version: "3.4"
         bundler-cache: true
     - run: bundle exec rake lint
+  signatures:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v7
+    - uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: "3.4"
+        bundler-cache: true
+    - run: bundle exec rake signatures
