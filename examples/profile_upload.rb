@@ -1,5 +1,6 @@
+# frozen_string_literal: true
+
 require "x"
-require "x/account_uploader"
 
 x_credentials = {
   api_key: "INSERT YOUR X API KEY HERE",
@@ -11,24 +12,23 @@ x_credentials = {
 client = X::Client.new(**x_credentials)
 
 # Update profile image (avatar)
-# Supported formats: GIF, JPG, JPEG, PNG
-# Image should be under 700 KB
+# Supported formats: GIF, JPEG, PNG, told by the bytes the image begins with, whatever its file is named
+# The image must be no larger than 700 KB, or X::InvalidMedia is raised before any request
 profile_image_path = "path/to/your/avatar.png"
 
-user = X::AccountUploader.update_profile_image(client:, file_path: profile_image_path)
-puts "Profile image updated for @#{user["screen_name"]}"
+client.update_profile_image(profile_image_path)
+puts "Profile image updated for @#{client.current_user!.username}"
 
 # Update profile banner
-# Recommended dimensions: 1500x500 pixels
+# Recommended dimensions: 1500x500 pixels, of no more than 5 MB
 banner_path = "path/to/your/banner.png"
 
-X::AccountUploader.update_profile_banner(client:, file_path: banner_path)
+client.update_profile_banner(banner_path)
 puts "Profile banner updated successfully"
 
 # Update profile banner with custom dimensions and offset
-X::AccountUploader.update_profile_banner(
-  client:,
-  file_path: banner_path,
+client.update_profile_banner(
+  banner_path,
   width: 1500,
   height: 500,
   offset_left: 0,
