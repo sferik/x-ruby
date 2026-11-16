@@ -102,5 +102,13 @@ jobs:
             fi
             gem exec --version 0.2.3 sigstore-cli sign "$file" --bundle "pkg/$name.gem.sigstore.json"
             gem push "$file" --attestation "pkg/$name.gem.sigstore.json"
-            gem exec --version 0.5.4 rubygems-await "$file"
+            # (Until RubyGems.org has it, 5 minutes at most, before the gems after it.)
+            for attempt in $(seq 60); do
+              curl --silent --fail --output /dev/null "https://rubygems.org/api/v2/rubygems/$name/versions/$version.json" && break
+              if [ "$attempt" -eq 60 ]; then
+                echo "::error::$name $version isn't on RubyGems.org after 5 minutes"
+                exit 1
+              fi
+              sleep 5
+            done
           done
